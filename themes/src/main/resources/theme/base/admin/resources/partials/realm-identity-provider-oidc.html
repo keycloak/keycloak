@@ -274,7 +274,7 @@
                 </div>
 
                 <div class="form-group clearfix" data-ng-hide="identityProvider.config.useJwksUrl == 'true'">
-                    <label class="col-md-2 control-label" for="publicKeySignatureVerifierKey">{{:: 'validating-public-key' | translate}}</label>
+                    <label class="col-md-2 control-label" for="publicKeySignatureVerifier">{{:: 'validating-public-key' | translate}}</label>
                     <div class="col-md-6">
                         <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"></textarea>
                     </div>
@@ -289,6 +289,27 @@
                     <kc-tooltip>{{:: 'identity-provider.validating-public-key-id.tooltip' | translate}}</kc-tooltip>
                 </div>
 
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="pkceEnabled">{{:: 'pkce-enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.pkceEnabled" id="pkceEnabled" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.pkce-enabled.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix" data-ng-hide="identityProvider.config.pkceEnabled == 'false'">
+                <label class="col-md-2 control-label" for="pkceMethod">{{:: 'pkce-method' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="pkceMethod" ng-model="identityProvider.config.pkceMethod">
+                            <option value="plain">{{:: 'pkce.plain.option' | translate}}</option>
+                            <option value="S256" selected>{{:: 'pkce.s256.option' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'pkce-method.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group">

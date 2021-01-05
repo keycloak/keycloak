@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -44,12 +45,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
@@ -68,7 +71,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.UUID;
 
 /**
  * @author Pedro Igor
@@ -317,6 +319,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             super(callback, realm, event);
         }
 
+        @Override
+        public SimpleHttp generateTokenRequest(String authorizationCode) {
+            SimpleHttp simpleHttp = super.generateTokenRequest(authorizationCode);
+            return simpleHttp;
+        }
 
         @GET
         @Path("logout_response")
@@ -760,7 +767,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
         uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        
+
         return uriBuilder;
     }
 

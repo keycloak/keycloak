@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -28,6 +29,7 @@ import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -51,11 +53,13 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.vault.VaultStringSecret;
@@ -102,6 +106,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_CLIENT_ID = "client_id";
     public static final String OAUTH2_PARAMETER_CLIENT_SECRET = "client_secret";
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
+
+    private static final String BROKER_CODE_CHALLENGE_PARAM = "BROKER_CODE_CHALLENGE";
+    private static final String BROKER_CODE_CHALLENGE_METHOD_PARAM = "BROKER_CODE_CHALLENGE_METHOD";
 
 
     public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
@@ -349,6 +356,18 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 uriBuilder.queryParam(forwardParameter, parameter);
             }
         }
+
+        if (getConfig().isPkceEnabled()) {
+            String codeVerifier = PkceUtils.generateCodeVerifier();
+            String codeChallengeMethod = getConfig().getPkceMethod();
+            request.getAuthenticationSession().setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
+            request.getAuthenticationSession().setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
+
+            String codeChallenge = PkceUtils.encodeCodeChallenge(codeVerifier, codeChallengeMethod);
+            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }
+
         return uriBuilder;
     }
 
@@ -384,6 +403,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
+
         if (getConfig().isJWTAuthentication()) {
             String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(getSignatureContext());
             return tokenRequest
@@ -441,6 +461,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         @Context
         protected HttpHeaders headers;
+
+        @Context
+        protected HttpRequest httpRequest;
 
         public Endpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
             this.callback = callback;
@@ -507,6 +530,45 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
                             getConfig().getAlias(), context.getRealm().getName()).toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+
+            if (getConfig().isPkceEnabled()) {
+
+                // reconstruct the original code verifier that was used to generate the code challenge from the HttpRequest.
+                String stateParam = session.getContext().getUri().getQueryParameters().getFirst(OAuth2Constants.STATE);
+                if (stateParam == null) {
+                    logger.warn("Cannot lookup PKCE code_verifier: state param is missing.");
+                    return tokenRequest;
+                }
+
+                RealmModel realm = context.getRealm();
+
+                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
+                ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
+
+                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(
+                        idpBrokerState.getEncoded(),
+                        idpBrokerState.getTabId(),
+                        session,
+                        realm,
+                        client,
+                        event,
+                        AuthenticationSessionModel.class);
+
+                if (authSession == null) {
+                    logger.warnf("Cannot lookup PKCE code_verifier: authSession not found. state=%s", stateParam);
+                    return tokenRequest;
+                }
+
+                String brokerCodeChallenge = authSession.getClientNote(BROKER_CODE_CHALLENGE_PARAM);
+                if (brokerCodeChallenge == null) {
+                    logger.warnf("Cannot lookup PKCE code_verifier: brokerCodeChallenge not found. state=%s", stateParam);
+                    return tokenRequest;
+                }
+
+                tokenRequest.param(OAuth2Constants.CODE_VERIFIER, brokerCodeChallenge);
+                tokenRequest.param(OAuth2Constants.CODE_CHALLENGE_METHOD, getConfig().getPkceMethod());
+            }
+
             return authenticateTokenRequest(tokenRequest);
         }
         
