@@ -534,7 +534,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             if (getConfig().isPkceEnabled()) {
 
                 // reconstruct the original code verifier that was used to generate the code challenge from the HttpRequest.
-                String stateParam = httpRequest.getUri().getQueryParameters().getFirst(OAuth2Constants.STATE);
+                String stateParam = session.getContext().getUri().getQueryParameters().getFirst(OAuth2Constants.STATE);
                 if (stateParam == null) {
                     logger.warn("Cannot lookup PKCE code_verifier: state param is missing.");
                     return tokenRequest;
