@@ -20,6 +20,9 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -128,6 +131,11 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             if(userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
                 logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
                 user.setEnabled(false);
+                new EventBuilder(realm, session, event.ip)
+                    .event(EventType.USER_LOCKED)
+                    .detail(Details.REASON, "brute_force_protection")
+                    .user(user)
+                    .success();
                 return;
             }
 
