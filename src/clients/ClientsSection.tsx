@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -21,6 +21,7 @@ export const ClientsSection = () => {
   const { t } = useTranslation("clients");
   const { addAlert } = useAlerts();
   const history = useHistory();
+  const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
   const baseUrl = adminClient.keycloak
@@ -51,7 +52,7 @@ export const ClientsSection = () => {
 
   const ClientDetailLink = (client: ClientRepresentation) => (
     <>
-      <Link key={client.id} to={`/clients/${client.id}`}>
+      <Link key={client.id} to={`${url}/${client.id}`}>
         {client.clientId}
         {!client.enabled && <Badge isRead>Disabled</Badge>}
       </Link>
@@ -71,11 +72,11 @@ export const ClientsSection = () => {
           searchPlaceholderKey="clients:searchForClient"
           toolbarItem={
             <>
-              <Button onClick={() => history.push("/add-client")}>
+              <Button onClick={() => history.push(`${url}/add-client`)}>
                 {t("createClient")}
               </Button>
               <Button
-                onClick={() => history.push("/import-client")}
+                onClick={() => history.push(`${url}/import-client`)}
                 variant="link"
               >
                 {t("importClient")}

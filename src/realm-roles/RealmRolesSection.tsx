@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -23,6 +23,7 @@ export const RealmRolesSection = () => {
   const history = useHistory();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
+  const { url } = useRouteMatch();
 
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
 
@@ -37,7 +38,7 @@ export const RealmRolesSection = () => {
 
   const RoleDetailLink = (role: RoleRepresentation) => (
     <>
-      <Link key={role.id} to={`/roles/${role.id}`}>
+      <Link key={role.id} to={`${url}/${role.id}`}>
         {role.name}
       </Link>
     </>
@@ -81,7 +82,7 @@ export const RealmRolesSection = () => {
     },
   });
 
-  const goToCreate = () => history.push("/roles/add-role");
+  const goToCreate = () => history.push(`${url}/add-role`);
   return (
     <>
       <ViewHeader titleKey="roles:title" subKey="roles:roleExplain" />

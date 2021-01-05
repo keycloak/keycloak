@@ -21,7 +21,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 
 import "./GroupsSection.css";
-import { Link } from "react-router-dom";
+import { Link, useRouteMatch } from "react-router-dom";
 
 type GroupTableData = GroupRepresentation & {
   membersLength?: number;
@@ -35,6 +35,7 @@ export const GroupsSection = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
   const { addAlert } = useAlerts();
+  const { url } = useRouteMatch();
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
 
@@ -82,7 +83,7 @@ export const GroupsSection = () => {
 
   const GroupNameCell = (group: GroupTableData) => (
     <>
-      <Link key={group.id} to={`/groups/${group.id}`}>
+      <Link key={group.id} to={`${url}/${group.id}`}>
         {group.name}
       </Link>
     </>

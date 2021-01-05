@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import {
   AlertVariant,
   ButtonVariant,
@@ -44,6 +44,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const history = useHistory();
+  const { url } = useRouteMatch();
 
   const [filteredData, setFilteredData] = useState<
     { mapper: ProtocolMapperRepresentation; cells: Row }[]
@@ -70,7 +71,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   ): Promise<void> => {
     if (filter === undefined) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      history.push(`/client-scopes/${clientScope.id}/${mapper.id}`);
+      history.push(`${url}/${mapper.id}`);
     } else {
       try {
         await adminClient.clientScopes.addMultipleProtocolMappers(
@@ -122,7 +123,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         cells: {
           name: (
             <>
-              <Link to={`/client-scopes/${clientScope.id}/${mapper.id}`}>
+              <Link to={`${url}/${clientScope.id}/${mapper.id}`}>
                 {mapper.name}
               </Link>
             </>

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -16,7 +16,7 @@ import {
 import { CheckIcon } from "@patternfly/react-icons";
 
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import { RealmContext } from "../../context/realm-context/RealmContext";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 
 import "./realm-selector.css";
@@ -26,13 +26,14 @@ type RealmSelectorProps = {
 };
 
 export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
-  const { realm, setRealm } = useContext(RealmContext);
+  const { realm, setRealm } = useRealm();
   const whoami = useContext(WhoAmIContext);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filteredItems, setFilteredItems] = useState(realmList);
   const history = useHistory();
   const { t } = useTranslation("common");
+  const { url } = useRouteMatch();
 
   const toUpperCase = (realmName: string) =>
     realmName.charAt(0).toUpperCase() + realmName.slice(1);
@@ -48,7 +49,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     <Button
       component="div"
       isBlock
-      onClick={() => history.push("/add-realm")}
+      onClick={() => history.push(`${url}/add-realm"`)}
       className={className}
     >
       {t("createRealm")}
@@ -74,6 +75,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
       key={`realm-dropdown-item-${r.realm}`}
       onClick={() => {
         setRealm(r.realm!);
+        history.push(`/${r.realm}`);
         setOpen(!open);
       }}
     >

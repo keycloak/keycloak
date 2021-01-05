@@ -27,6 +27,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RoleAttributes } from "./RoleAttributes";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type RoleFormType = {
   form?: UseFormMethods;
@@ -37,6 +38,7 @@ type RoleFormType = {
 export const RoleForm = ({ form, save, editMode }: RoleFormType) => {
   const { t } = useTranslation("roles");
   const history = useHistory();
+  const { realm } = useRealm();
   return (
     <FormAccess
       isHorizontal
@@ -90,7 +92,7 @@ export const RoleForm = ({ form, save, editMode }: RoleFormType) => {
         <Button variant="primary" type="submit">
           {t("common:save")}
         </Button>
-        <Button variant="link" onClick={() => history.push("/roles/")}>
+        <Button variant="link" onClick={() => history.push(`/${realm}/roles`)}>
           {editMode ? t("common:reload") : t("common:cancel")}
         </Button>
       </ActionGroup>
@@ -104,6 +106,7 @@ export const RealmRolesForm = () => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const history = useHistory();
+  const { realm } = useRealm();
 
   const { id } = useParams<{ id: string }>();
   const [name, setName] = useState("");
@@ -143,7 +146,7 @@ export const RealmRolesForm = () => {
         const createdRole = await adminClient.roles.findOneByName({
           name: role.name!,
         });
-        history.push(`/roles/${createdRole.id}`);
+        history.push(`/${realm}/roles/${createdRole.id}`);
       }
       addAlert(t(id ? "roleSaveSuccess" : "roleCreated"), AlertVariant.success);
     } catch (error) {
@@ -163,7 +166,7 @@ export const RealmRolesForm = () => {
       try {
         await adminClient.roles.delById({ id });
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        history.push("/roles");
+        history.push(`/${realm}/roles`);
       } catch (error) {
         addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
       }

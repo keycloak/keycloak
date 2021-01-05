@@ -4,11 +4,15 @@ import useBreadcrumbs from "use-react-router-breadcrumbs";
 import { useTranslation } from "react-i18next";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { routes } from "../../route-config";
 
 export const PageBreadCrumbs = () => {
   const { t } = useTranslation();
-  const crumbs = useBreadcrumbs(routes(t), { excludePaths: ["/"] });
+  const { realm } = useRealm();
+  const crumbs = useBreadcrumbs(routes(t), {
+    excludePaths: ["/", `/${realm}`],
+  });
   return (
     <>
       {crumbs.length > 1 && (

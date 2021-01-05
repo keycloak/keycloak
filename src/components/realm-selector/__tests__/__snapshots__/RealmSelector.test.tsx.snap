@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`renders realm selector 1`] = `
-<RealmContextProvider>
+<div
+  id="realm"
+>
   <RealmSelector
     realmList={
       Array [
@@ -34,7 +36,7 @@ exports[`renders realm selector 1`] = `
           id="realm-select-toggle"
           onToggle={[Function]}
         >
-          Master
+          
         </DropdownToggle>
       }
     >
@@ -67,7 +69,7 @@ exports[`renders realm selector 1`] = `
             id="realm-select-toggle"
             onToggle={[Function]}
           >
-            Master
+            
           </DropdownToggle>
         }
       >
@@ -107,11 +109,7 @@ exports[`renders realm selector 1`] = `
                     id="realm-select-toggle"
                     type="button"
                   >
-                    <span
-                      class="pf-c-dropdown__toggle-text"
-                    >
-                      Master
-                    </span>
+                    
                     <span
                       class="pf-c-dropdown__toggle-icon"
                     >
@@ -201,11 +199,7 @@ exports[`renders realm selector 1`] = `
                       id="realm-select-toggle"
                       type="button"
                     >
-                      <span
-                        class="pf-c-dropdown__toggle-text"
-                      >
-                        Master
-                      </span>
+                      
                       <span
                         class="pf-c-dropdown__toggle-icon"
                       >
@@ -273,11 +267,6 @@ exports[`renders realm selector 1`] = `
                 type="button"
               >
                 <span
-                  className="pf-c-dropdown__toggle-text"
-                >
-                  Master
-                </span>
-                <span
                   className="pf-c-dropdown__toggle-icon"
                 >
                   <CaretDownIcon
@@ -312,5 +301,5 @@ exports[`renders realm selector 1`] = `
       </DropdownWithContext>
     </Dropdown>
   </RealmSelector>
-</RealmContextProvider>
+</div>
 `;

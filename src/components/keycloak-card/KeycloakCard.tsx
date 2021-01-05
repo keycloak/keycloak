@@ -13,7 +13,7 @@ import {
   FlexItem,
 } from "@patternfly/react-core";
 import "./keycloak-card.css";
-import { useHistory } from "react-router-dom";
+import { useHistory, useRouteMatch } from "react-router-dom";
 
 export type KeycloakCardProps = {
   id: string;
@@ -38,6 +38,7 @@ export const KeycloakCard = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const history = useHistory();
+  const { url } = useRouteMatch();
 
   const onDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -48,11 +49,7 @@ export const KeycloakCard = ({
   };
 
   const openSettings = () => {
-    if (providerId === "kerberos") {
-      history.push(`/user-federation/Kerberos/${id}`);
-    } else {
-      history.push(`/user-federation/LDAP/${id}`);
-    }
+    history.push(`${url}/${providerId}/${id}`);
   };
 
   return (

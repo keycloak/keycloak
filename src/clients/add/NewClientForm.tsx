@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useRouteMatch } from "react-router-dom";
 import {
   PageSection,
   Wizard,
@@ -89,6 +89,7 @@ export const NewClientForm = () => {
   );
 
   const title = t("createClient");
+  const { url } = useRouteMatch();
   return (
     <>
       <ViewHeader
@@ -97,7 +98,7 @@ export const NewClientForm = () => {
       />
       <PageSection variant="light">
         <Wizard
-          onClose={() => history.push("/clients")}
+          onClose={() => history.push(`${url}/clients`)}
           navAriaLabel={`${title} steps`}
           mainAriaLabel={`${title} content`}
           steps={[

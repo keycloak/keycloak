@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { Button, PageSection } from "@patternfly/react-core";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
@@ -11,6 +11,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 export const ClientScopesSection = () => {
   const { t } = useTranslation("client-scopes");
   const history = useHistory();
+  const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
 
@@ -18,7 +19,7 @@ export const ClientScopesSection = () => {
 
   const ClientScopeDetailLink = (clientScope: ClientScopeRepresentation) => (
     <>
-      <Link key={clientScope.id} to={`/client-scopes/${clientScope.id}`}>
+      <Link key={clientScope.id} to={`${url}/${clientScope.id}`}>
         {clientScope.name}
       </Link>
     </>
@@ -35,7 +36,7 @@ export const ClientScopesSection = () => {
           ariaLabelKey="client-scopes:clientScopeList"
           searchPlaceholderKey="client-scopes:searchFor"
           toolbarItem={
-            <Button onClick={() => history.push("/client-scopes/new")}>
+            <Button onClick={() => history.push(`${url}/new`)}>
               {t("createClientScope")}
             </Button>
           }

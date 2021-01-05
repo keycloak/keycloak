@@ -9,6 +9,7 @@ import {
   PageSidebar,
 } from "@patternfly/react-core";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
+import { useRealm } from "./context/realm-context/RealmContext";
 import { DataLoader } from "./components/data-loader/DataLoader";
 import { useAdminClient } from "./context/auth/AdminClient";
 import { useAccess } from "./context/access/Access";
@@ -44,13 +45,16 @@ export const PageNav: React.FunctionComponent = () => {
 
   type LeftNavProps = { title: string; path: string };
   const LeftNav = ({ title, path }: LeftNavProps) => {
-    const route = routes(() => {}).find((route) => route.path === path);
+    const { realm } = useRealm();
+    const route = routes(() => {}).find(
+      (route) => route.path.substr("/:realm".length) === path
+    );
     if (!route || !hasAccess(route.access)) return <></>;
 
     return (
       <NavItem
         id={"nav-item" + path.replace("/", "-")}
-        to={path}
+        to={`/${realm}${path}`}
         isActive={activeItem === path}
       >
         {t(title)}

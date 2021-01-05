@@ -23,172 +23,177 @@ import { ClientDetails } from "./clients/ClientDetails";
 import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
 import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
+import { BreadcrumbsRoute } from "use-react-router-breadcrumbs";
 
-export type RouteDef = {
-  path: string;
+export type RouteDef = BreadcrumbsRoute & {
   component: () => JSX.Element;
-  breadcrumb: TFunction | "";
   access: AccessType;
 };
 
 type RoutesFn = (t: TFunction) => RouteDef[];
 
-export const routes: RoutesFn = (t: any) => [
+export const routes: RoutesFn = (t) => [
   {
-    path: "/add-realm",
+    path: "/:realm/add-realm",
     component: NewRealmForm,
     breadcrumb: t("realm:createRealm"),
     access: "manage-realm",
   },
   {
-    path: "/clients/:id",
-    component: ClientDetails,
-    breadcrumb: t("clients:clientSettings"),
-    access: "view-clients",
-  },
-  {
-    path: "/clients",
+    path: "/:realm/clients",
     component: ClientsSection,
     breadcrumb: t("clients:clientList"),
     access: "query-clients",
   },
   {
-    path: "/add-client",
+    path: "/:realm/clients/add-client",
     component: NewClientForm,
     breadcrumb: t("clients:createClient"),
     access: "manage-clients",
   },
   {
-    path: "/import-client",
+    path: "/:realm/clients/import-client",
     component: ImportForm,
     breadcrumb: t("clients:importClient"),
     access: "manage-clients",
   },
   {
-    path: "/client-scopes/new",
+    path: "/:realm/clients/:id",
+    component: ClientDetails,
+    breadcrumb: t("clients:clientSettings"),
+    access: "view-clients",
+  },
+  {
+    path: "/:realm/client-scopes/new",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:createClientScope"),
     access: "manage-clients",
   },
   {
-    path: "/client-scopes/:id",
+    path: "/:realm/client-scopes/:id",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:clientScopeDetails"),
     access: "view-clients",
   },
   {
-    path: "/client-scopes/:scopeId/oidc-role-name-mapper",
+    path: "/:realm/client-scopes/:scopeId/oidc-role-name-mapper",
     component: RoleMappingForm,
     breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
   },
   {
-    path: "/client-scopes/:scopeId/:id",
+    path: "/:realm/client-scopes/:scopeId/:id",
     component: MappingDetails,
     breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
   },
   {
-    path: "/client-scopes/:id",
+    path: "/:realm/client-scopes/:id",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:clientScopeDetails"),
     access: "view-clients",
   },
   {
-    path: "/client-scopes",
+    path: "/:realm/client-scopes",
     component: ClientScopesSection,
     breadcrumb: t("client-scopes:clientScopeList"),
     access: "view-clients",
   },
   {
-    path: "/roles",
+    path: "/:realm/roles",
     component: RealmRolesSection,
     breadcrumb: t("roles:roleList"),
     access: "view-realm",
   },
   {
-    path: "/roles/add-role",
+    path: "/:realm/roles/add-role",
     component: RealmRolesForm,
     breadcrumb: t("roles:createRole"),
     access: "manage-realm",
   },
   {
-    path: "/roles/:id",
+    path: "/:realm/roles/:id",
     component: RealmRolesForm,
     breadcrumb: t("roles:roleDetails"),
     access: "view-realm",
   },
   {
-    path: "/users",
+    path: "/:realm/users",
     component: UsersSection,
     breadcrumb: t("users:title"),
     access: "query-users",
   },
   {
-    path: "/groups",
+    path: "/:realm/groups",
     component: GroupsSection,
     breadcrumb: t("groups"),
     access: "query-groups",
   },
   {
-    path: "/sessions",
+    path: "/:realm/sessions",
     component: SessionsSection,
     breadcrumb: t("sessions:title"),
     access: "view-realm",
   },
   {
-    path: "/events",
+    path: "/:realm/events",
     component: EventsSection,
     breadcrumb: t("events:title"),
     access: "view-events",
   },
   {
-    path: "/realm-settings",
+    path: "/:realm/realm-settings",
     component: RealmSettingsSection,
     breadcrumb: t("realmSettings"),
     access: "view-realm",
   },
   {
-    path: "/authentication",
+    path: "/:realm/authentication",
     component: AuthenticationSection,
     breadcrumb: t("authentication"),
     access: "view-realm",
   },
   {
-    path: "/identity-providers",
+    path: "/:realm/identity-providers",
     component: IdentityProvidersSection,
     breadcrumb: t("identityProviders"),
     access: "view-identity-providers",
   },
   {
-    path: "/user-federation",
+    path: "/:realm/user-federation",
     component: UserFederationSection,
     breadcrumb: t("userFederation"),
     access: "view-realm",
   },
   {
-    path: "/user-federation/kerberos",
+    path: "/:realm/user-federation/kerberos",
     component: UserFederationSection,
     breadcrumb: null,
     access: "view-realm",
   },
   {
-    path: "/user-federation/ldap",
+    path: "/:realm/user-federation/ldap",
     component: UserFederationSection,
     breadcrumb: null,
     access: "view-realm",
   },
   {
-    path: "/user-federation/kerberos/:id",
+    path: "/:realm/user-federation/kerberos/:id",
     component: UserFederationKerberosSettings,
     breadcrumb: t("common:settings"),
     access: "view-realm",
   },
   {
-    path: "/user-federation/ldap/:id",
+    path: "/:realm/user-federation/ldap/:id",
     component: UserFederationLdapSettings,
     breadcrumb: t("common:settings"),
     access: "view-realm",
+  },
+  {
+    path: "/:realm/",
+    component: ClientsSection,
+    breadcrumb: t("common:home"),
+    access: "anyone",
   },
   {
     path: "/",
@@ -199,7 +204,7 @@ export const routes: RoutesFn = (t: any) => [
   {
     path: "*",
     component: PageNotFoundSection,
-    breadcrumb: "",
+    breadcrumb: null,
     access: "anyone",
   },
 ];

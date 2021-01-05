@@ -1,9 +1,13 @@
-import React, { useState, useContext } from "react";
-import { WhoAmIContext } from "../../context/whoami/WhoAmI";
+import React, { useContext, useState } from "react";
 
-export const RealmContext = React.createContext({
+type RealmContextType = {
+  realm: string;
+  setRealm: (realm: string) => void;
+};
+
+export const RealmContext = React.createContext<RealmContextType>({
   realm: "",
-  setRealm: (realm: string) => {},
+  setRealm: () => {},
 });
 
 type RealmContextProviderProps = { children: React.ReactNode };
@@ -11,8 +15,7 @@ type RealmContextProviderProps = { children: React.ReactNode };
 export const RealmContextProvider = ({
   children,
 }: RealmContextProviderProps) => {
-  const homeRealm = useContext(WhoAmIContext).getHomeRealm();
-  const [realm, setRealm] = useState(homeRealm);
+  const [realm, setRealm] = useState("");
 
   return (
     <RealmContext.Provider value={{ realm, setRealm }}>
@@ -20,3 +23,5 @@ export const RealmContextProvider = ({
     </RealmContext.Provider>
   );
 };
+
+export const useRealm = () => useContext(RealmContext);

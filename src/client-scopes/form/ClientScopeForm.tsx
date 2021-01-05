@@ -307,7 +307,11 @@ export const ClientScopeForm = () => {
               </ActionGroup>
             </Form>
           </Tab>
-          <Tab eventKey={1} title={<TabTitleText>{t("mappers")}</TabTitleText>}>
+          <Tab
+            isHidden={!id}
+            eventKey={1}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
+          >
             {clientScope && (
               <MapperList clientScope={clientScope} refresh={refresh} />
             )}

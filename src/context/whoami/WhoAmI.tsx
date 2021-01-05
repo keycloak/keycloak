@@ -3,6 +3,7 @@ import i18n from "../../i18n";
 
 import { DataLoader } from "../../components/data-loader/DataLoader";
 import { AdminClient } from "../auth/AdminClient";
+import { RealmContext } from "../realm-context/RealmContext";
 import WhoAmIRepresentation, {
   AccessType,
 } from "keycloak-admin/lib/defs/whoAmIRepresentation";
@@ -54,17 +55,23 @@ export const WhoAmIContext = React.createContext(new WhoAmI());
 type WhoAmIProviderProps = { children: React.ReactNode };
 export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
   const adminClient = useContext(AdminClient)!;
+  const { realm, setRealm } = useContext(RealmContext);
 
   const whoAmILoader = async () => {
-    return await adminClient.whoAmI.find();
+    const whoamiResponse = await adminClient.whoAmI.find({
+      realm: adminClient.keycloak?.realm,
+    });
+    const whoAmI = new WhoAmI(adminClient.keycloak?.realm, whoamiResponse);
+    if (!realm) {
+      setRealm(whoAmI.getHomeRealm());
+    }
+    return whoAmI;
   };
 
   return (
     <DataLoader loader={whoAmILoader}>
-      {(whoamirep) => (
-        <WhoAmIContext.Provider
-          value={new WhoAmI(adminClient.keycloak?.realm, whoamirep.data)}
-        >
+      {(whoami) => (
+        <WhoAmIContext.Provider value={whoami.data}>
           {children}
         </WhoAmIContext.Provider>
       )}

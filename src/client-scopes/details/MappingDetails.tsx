@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ActionGroup,
@@ -52,6 +52,7 @@ export const MappingDetails = () => {
 
   const history = useHistory();
   const serverInfo = useServerInfo();
+  const { url } = useRouteMatch();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export const MappingDetails = () => {
           []
         );
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        history.push(`/client-scopes/${scopeId}`);
+        history.push(`${url}/${scopeId}`);
       } catch (error) {
         addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
       }

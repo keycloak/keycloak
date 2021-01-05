@@ -1,6 +1,11 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { Page } from "@patternfly/react-core";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch,
+  useParams,
+} from "react-router-dom";
 
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
@@ -13,6 +18,7 @@ import { AccessContextProvider, useAccess } from "./context/access/Access";
 import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
+import { useRealm } from "./context/realm-context/RealmContext";
 
 // This must match the id given as scrollableSelector in scroll-form
 const mainPageContentId = "kc-main-content-page-container";
@@ -31,6 +37,13 @@ const AppContexts = ({ children }: { children: ReactNode }) => (
 // have access to, show forbidden page.
 type SecuredRouteProps = { route: RouteDef };
 const SecuredRoute = ({ route }: SecuredRouteProps) => {
+  const { setRealm } = useRealm();
+  const { realm } = useParams<{ realm: string }>();
+  useEffect(() => {
+    if (realm) {
+      setRealm(realm);
+    }
+  }, []);
   const { hasAccess } = useAccess();
 
   if (hasAccess(route.access)) return <route.component />;
