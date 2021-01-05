@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 
 export const UserFederationLdapWizard = () => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
 
   const steps = [
     {

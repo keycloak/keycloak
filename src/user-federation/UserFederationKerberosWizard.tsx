@@ -6,7 +6,6 @@ import { KerberosSettingsCache } from "./kerberos/KerberosSettingsCache";
 
 export const UserFederationKerberosWizard = () => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
 
   const steps = [
     {
