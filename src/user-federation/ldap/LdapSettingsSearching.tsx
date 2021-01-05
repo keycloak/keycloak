@@ -12,7 +12,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 import { convertToFormValues } from "../../util";
 
@@ -54,12 +54,10 @@ export const LdapSettingsSearching = () => {
   };
 
   useEffect(() => {
-    (async () => {
-      const fetchedComponent = await adminClient.components.findOne({ id });
-      if (fetchedComponent) {
-        setupForm(fetchedComponent);
-      }
-    })();
+    return useFetch(
+      () => adminClient.components.findOne({ id }),
+      (fetchedComponent) => setupForm(fetchedComponent)
+    );
   }, []);
 
   return (

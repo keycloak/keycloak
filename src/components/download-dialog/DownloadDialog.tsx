@@ -18,7 +18,7 @@ import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { HelpContext } from "../help-enabler/HelpHeader";
 
 export type DownloadDialogProps = {
@@ -65,23 +65,20 @@ export const DownloadDialog = ({
   const [openType, setOpenType] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const snippet = await adminClient.clients.getInstallationProviders({
-        id,
-        providerId: selected,
-      });
-      if (isMounted) {
+    return useFetch(
+      async () => {
+        const snippet = await adminClient.clients.getInstallationProviders({
+          id,
+          providerId: selected,
+        });
         if (typeof snippet === "string") {
-          setSnippet(snippet);
+          return snippet;
         } else {
-          setSnippet(JSON.stringify(snippet, undefined, 3));
+          return JSON.stringify(snippet, undefined, 3);
         }
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
+      },
+      (snippet) => setSnippet(snippet)
+    );
   }, [selected]);
   return (
     <ConfirmDialogModal

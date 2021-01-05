@@ -22,7 +22,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
@@ -64,17 +64,25 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
   const [open, isOpen] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
-        { id: clientId }
-      );
-      setProviders(providers);
+    return useFetch(
+      async () => {
+        const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
+          { id: clientId }
+        );
 
-      const secret = await adminClient.clients.getClientSecret({
-        id: clientId,
-      });
-      setSecret(secret.value!);
-    })();
+        const secret = await adminClient.clients.getClientSecret({
+          id: clientId,
+        });
+        return {
+          providers,
+          secret: secret.value!,
+        };
+      },
+      ({ providers, secret }) => {
+        setProviders(providers);
+        setSecret(secret);
+      }
+    );
   }, []);
 
   async function regenerate<T>(

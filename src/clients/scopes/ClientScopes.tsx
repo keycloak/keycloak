@@ -23,7 +23,7 @@ import { FilterIcon } from "@patternfly/react-icons";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import KeycloakAdminClient from "keycloak-admin";
 
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { TableToolbar } from "../../components/table-toolbar/TableToolbar";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { AddScopeDialog } from "./AddScopeDialog";
@@ -133,52 +133,57 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const [rows, setRows] = useState<TableRow[]>();
   const [rest, setRest] = useState<ClientScopeRepresentation[]>();
 
-  const loader = async () => {
-    const defaultClientScopes = await adminClient.clients.listDefaultClientScopes(
-      { id: clientId }
-    );
-    const optionalClientScopes = await adminClient.clients.listOptionalClientScopes(
-      { id: clientId }
-    );
-    const clientScopes = await adminClient.clientScopes.find();
-
-    const find = (id: string) =>
-      clientScopes.find((clientScope) => id === clientScope.id)!;
-
-    const optional = optionalClientScopes.map((c) => {
-      const scope = find(c.id!);
-      return {
-        selected: false,
-        clientScope: c,
-        type: ClientScope.optional,
-        cells: [c.name, c.id, scope.description],
-      };
-    });
-
-    const defaultScopes = defaultClientScopes.map((c) => {
-      const scope = find(c.id!);
-      return {
-        selected: false,
-        clientScope: c,
-        type: ClientScope.default,
-        cells: [c.name, c.id, scope.description],
-      };
-    });
-
-    const data = [...optional, ...defaultScopes];
-    setRows(data);
-    const names = data.map((row) => row.cells[0]);
-
-    setRest(
-      clientScopes
-        .filter((scope) => !names.includes(scope.name))
-        .filter((scope) => scope.protocol === protocol)
-    );
-  };
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    loader();
-  }, []);
+    return useFetch(
+      async () => {
+        const defaultClientScopes = await adminClient.clients.listDefaultClientScopes(
+          { id: clientId }
+        );
+        const optionalClientScopes = await adminClient.clients.listOptionalClientScopes(
+          { id: clientId }
+        );
+        const clientScopes = await adminClient.clientScopes.find();
+
+        const find = (id: string) =>
+          clientScopes.find((clientScope) => id === clientScope.id)!;
+
+        const optional = optionalClientScopes.map((c) => {
+          const scope = find(c.id!);
+          return {
+            selected: false,
+            clientScope: c,
+            type: ClientScope.optional,
+            cells: [c.name, c.id, scope.description],
+          };
+        });
+
+        const defaultScopes = defaultClientScopes.map((c) => {
+          const scope = find(c.id!);
+          return {
+            selected: false,
+            clientScope: c,
+            type: ClientScope.default,
+            cells: [c.name, c.id, scope.description],
+          };
+        });
+
+        const rows = [...optional, ...defaultScopes];
+        const names = rows.map((row) => row.cells[0]);
+
+        const rest = clientScopes
+          .filter((scope) => !names.includes(scope.name))
+          .filter((scope) => scope.protocol === protocol);
+        return { rows, rest };
+      },
+      ({ rows, rest }) => {
+        setRows(rows);
+        setRest(rest);
+      }
+    );
+  }, [key]);
 
   const dropdown = (): IFormatter => (data?: IFormatterValueType) => {
     if (!data) {
@@ -199,7 +204,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
               value
             );
             addAlert(t("clientScopeSuccess"), AlertVariant.success);
-            await loader();
+            await refresh();
           } catch (error) {
             addAlert(t("clientScopeError", { error }), AlertVariant.danger);
           }
@@ -237,7 +242,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                 )
               );
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
-              loader();
+              refresh();
             } catch (error) {
               addAlert(t("clientScopeError", { error }), AlertVariant.danger);
             }
@@ -316,7 +321,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                         })
                       );
                       setAddToggle(false);
-                      await loader();
+                      await refresh();
                       addAlert(t("clientScopeSuccess"), AlertVariant.success);
                     } catch (error) {
                       addAlert(
@@ -363,7 +368,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                             t("clientScopeRemoveSuccess"),
                             AlertVariant.success
                           );
-                          loader();
+                          refresh();
                         } catch (error) {
                           addAlert(
                             t("clientScopeRemoveError", { error }),
@@ -416,7 +421,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                       t("clientScopeRemoveSuccess"),
                       AlertVariant.success
                     );
-                    loader();
+                    refresh();
                   } catch (error) {
                     addAlert(
                       t("clientScopeRemoveError", { error }),

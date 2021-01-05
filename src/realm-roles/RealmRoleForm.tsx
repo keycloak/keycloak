@@ -24,7 +24,7 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import { useAlerts } from "../components/alert/Alerts";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RoleAttributes } from "./RoleAttributes";
 
@@ -110,15 +110,22 @@ export const RealmRolesForm = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
-    (async () => {
-      if (id) {
-        const fetchedRole = await adminClient.roles.findOneById({ id });
-        setName(fetchedRole.name!);
-        setupForm(fetchedRole);
-      } else {
-        setName(t("createRole"));
+    return useFetch(
+      async () => {
+        if (id) {
+          const role = await adminClient.roles.findOneById({ id });
+          return { role, name: role.name };
+        } else {
+          return { name: t("createRole") };
+        }
+      },
+      ({ role, name }) => {
+        setName(name!);
+        if (role) {
+          setupForm(role);
+        }
       }
-    })();
+    );
   }, []);
 
   const setupForm = (role: RoleRepresentation) => {

@@ -14,6 +14,7 @@ import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { TableToolbar } from "./TableToolbar";
+import { useFetch } from "../../context/auth/AdminClient";
 
 type Row<T> = {
   data: T;
@@ -127,30 +128,35 @@ export function KeycloakDataTable<T>({
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState("");
 
-  const load = async () => {
-    setLoading(true);
-    const data = await loader(first, max, search);
-
-    setRows(
-      data!.map((value) => {
-        return {
-          data: value,
-          selected: false,
-          cells: columns.map((col) => {
-            if (col.cellRenderer) {
-              return col.cellRenderer(value);
-            }
-            return (value as any)[col.name];
-          }),
-        };
-      })
-    );
-    setLoading(false);
-  };
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    load();
-  }, [first, max]);
+    return useFetch(
+      async () => {
+        setLoading(true);
+        const data = await loader(first, max, search);
+
+        const result = data!.map((value) => {
+          return {
+            data: value,
+            selected: false,
+            cells: columns.map((col) => {
+              if (col.cellRenderer) {
+                return col.cellRenderer(value);
+              }
+              return (value as any)[col.name];
+            }),
+          };
+        });
+        return result;
+      },
+      (result) => {
+        setRows(result);
+        setLoading(false);
+      }
+    );
+  }, [key, first, max]);
 
   const getNodeText = (node: keyof T | JSX.Element): string => {
     if (["string", "number"].includes(typeof node)) {
@@ -184,7 +190,7 @@ export function KeycloakDataTable<T>({
       action.onClick = async (_, rowIndex) => {
         const result = await actions[index].onRowClick!(rows![rowIndex].data);
         if (result) {
-          load();
+          refresh();
         }
       };
       return action;
@@ -235,7 +241,7 @@ export function KeycloakDataTable<T>({
           }}
           inputGroupName={`${ariaLabelKey}input`}
           inputGroupOnChange={searchOnChange}
-          inputGroupOnClick={load}
+          inputGroupOnClick={refresh}
           inputGroupPlaceholder={t(searchPlaceholderKey)}
           toolbarItem={toolbarItem}
         >

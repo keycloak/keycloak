@@ -16,3 +16,20 @@ export const useAdminClient = () => {
 
   return adminClient;
 };
+
+export function useFetch<T>(
+  adminClientCall: () => Promise<T>,
+  callback: (param: T) => void
+) {
+  let canceled = false;
+
+  adminClientCall().then((result) => {
+    if (!canceled) {
+      callback(result);
+    }
+  });
+
+  return () => {
+    canceled = true;
+  };
+}

@@ -24,7 +24,7 @@ import { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configProp
 import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -55,31 +55,39 @@ export const MappingDetails = () => {
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
 
   useEffect(() => {
-    if (id.match(isGuid)) {
-      (async () => {
-        const data = await adminClient.clientScopes.findProtocolMapper({
-          id: scopeId,
-          mapperId: id,
-        });
-        if (data) {
-          Object.entries(data).map((entry) => {
-            convertToFormValues(entry[1], "config", setValue);
+    return useFetch(
+      async () => {
+        if (id.match(isGuid)) {
+          const data = await adminClient.clientScopes.findProtocolMapper({
+            id: scopeId,
+            mapperId: id,
           });
-        }
-        const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
-        const properties = mapperTypes.find(
-          (type) => type.id === data!.protocolMapper
-        )?.properties!;
-        setConfigProperties(properties);
+          if (data) {
+            Object.entries(data).map((entry) => {
+              convertToFormValues(entry[1], "config", setValue);
+            });
+          }
+          const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
+          const properties = mapperTypes.find(
+            (type) => type.id === data!.protocolMapper
+          )?.properties!;
 
-        setMapping(data);
-      })();
-    } else {
-      (async () => {
-        const scope = await adminClient.clientScopes.findOne({ id: scopeId });
-        setMapping({ protocol: scope.protocol, protocolMapper: id });
-      })();
-    }
+          return {
+            configProperties: properties,
+            mapping: data,
+          };
+        } else {
+          const scope = await adminClient.clientScopes.findOne({ id: scopeId });
+          return {
+            mapping: { protocol: scope.protocol, protocolMapper: id },
+          };
+        }
+      },
+      (result) => {
+        setConfigProperties(result.configProperties);
+        setMapping(result.mapping);
+      }
+    );
   }, []);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

@@ -22,7 +22,7 @@ import { Controller, useForm } from "react-hook-form";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -45,25 +45,29 @@ export const ClientScopeForm = () => {
   const [open, isOpen] = useState(false);
   const { addAlert } = useAlerts();
 
-  const load = async () => {
-    if (id) {
-      const data = await adminClient.clientScopes.findOne({ id });
-      if (data) {
-        Object.entries(data).map((entry) => {
-          if (entry[0] === "attributes") {
-            convertToFormValues(entry[1], "attributes", setValue);
-          }
-          setValue(entry[0], entry[1]);
-        });
-      }
-
-      setClientScope(data);
-    }
-  };
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    load();
-  }, []);
+    return useFetch(
+      async () => {
+        if (id) {
+          const data = await adminClient.clientScopes.findOne({ id });
+          if (data) {
+            Object.entries(data).map((entry) => {
+              if (entry[0] === "attributes") {
+                convertToFormValues(entry[1], "attributes", setValue);
+              }
+              setValue(entry[0], entry[1]);
+            });
+          }
+
+          return data;
+        }
+      },
+      (data) => setClientScope(data)
+    );
+  }, [key]);
 
   const save = async (clientScopes: ClientScopeRepresentation) => {
     try {
@@ -305,7 +309,7 @@ export const ClientScopeForm = () => {
           </Tab>
           <Tab eventKey={1} title={<TabTitleText>{t("mappers")}</TabTitleText>}>
             {clientScope && (
-              <MapperList clientScope={clientScope} refresh={load} />
+              <MapperList clientScope={clientScope} refresh={refresh} />
             )}
           </Tab>
         </Tabs>
