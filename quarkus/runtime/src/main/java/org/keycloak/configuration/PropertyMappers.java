@@ -79,6 +79,7 @@ public final class PropertyMappers {
         create("https.cipher-suites", "quarkus.http.ssl.cipher-suites", "The cipher suites to use. If none is given, a reasonable default is selected.");
         create("https.protocols", "quarkus.http.ssl.protocols", "The list of protocols to explicitly enable.");
         create("https.certificate.file", "quarkus.http.ssl.certificate.file", "The file path to a server certificate or certificate chain in PEM format.");
+        create("https.certificate.key-file", "quarkus.http.ssl.certificate.key-file", "The file path to a private key in PEM format.");
         createWithDefault("https.certificate.key-store-file", "quarkus.http.ssl.certificate.key-store-file",
                 new Supplier<String>() {
                     @Override
