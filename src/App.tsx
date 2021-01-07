@@ -19,6 +19,7 @@ import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { useRealm } from "./context/realm-context/RealmContext";
+import { useAdminClient, useFetch } from "./context/auth/AdminClient";
 
 // This must match the id given as scrollableSelector in scroll-form
 const mainPageContentId = "kc-main-content-page-container";
@@ -33,19 +34,32 @@ const AppContexts = ({ children }: { children: ReactNode }) => (
   </AccessContextProvider>
 );
 
+// set the realm form the path if it's one of the know realms
+const RealmPathSelector = ({ children }: { children: ReactNode }) => {
+  const { setRealm } = useRealm();
+  const { realm } = useParams<{ realm: string }>();
+  const adminClient = useAdminClient();
+  useEffect(
+    () =>
+      useFetch(
+        () => adminClient.realms.find(),
+        (realms) => {
+          if (realms.findIndex((r) => r.realm == realm) !== -1) {
+            setRealm(realm);
+          }
+        }
+      ),
+    []
+  );
+
+  return <>{children}</>;
+};
+
 // If someone tries to go directly to a route they don't
 // have access to, show forbidden page.
 type SecuredRouteProps = { route: RouteDef };
 const SecuredRoute = ({ route }: SecuredRouteProps) => {
-  const { setRealm } = useRealm();
-  const { realm } = useParams<{ realm: string }>();
-  useEffect(() => {
-    if (realm) {
-      setRealm(realm);
-    }
-  }, []);
   const { hasAccess } = useAccess();
-
   if (hasAccess(route.access)) return <route.component />;
 
   return <ForbiddenSection />;
@@ -68,7 +82,11 @@ export const App = () => {
                 exact
                 key={i}
                 path={route.path}
-                component={() => <SecuredRoute route={route} />}
+                component={() => (
+                  <RealmPathSelector>
+                    <SecuredRoute route={route} />
+                  </RealmPathSelector>
+                )}
               />
             ))}
           </Switch>
