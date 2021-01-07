@@ -721,6 +721,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
             clientRep.setSecret(clientSecret);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestUris(Arrays.asList(TestApplicationResourceUrls.clientRequestUri()));
         });
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name("sample-client-role").build());
 

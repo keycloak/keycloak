@@ -20,9 +20,13 @@ package org.keycloak.protocol.oidc;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -77,6 +81,14 @@ public class OIDCAdvancedConfigWrapper {
     
     public void setRequestObjectRequired(String requestObjectRequired) {
         setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED, requestObjectRequired);
+    }
+
+    public List<String> getRequestUris() {
+        return getAttributeMultivalued(OIDCConfigAttributes.REQUEST_URIS);
+    }
+
+    public void setRequestUris(List<String> requestUris) {
+        setAttributeMultivalued(OIDCConfigAttributes.REQUEST_URIS, requestUris);
     }
 
     public boolean isUseJwksUrl() {
@@ -242,6 +254,22 @@ public class OIDCAdvancedConfigWrapper {
                     clientRep.getAttributes().put(attrKey, null);
                 }
             }
+        }
+    }
+
+    private List<String> getAttributeMultivalued(String attrKey) {
+        String attrValue = getAttribute(attrKey);
+        if (attrValue == null) return Collections.emptyList();
+        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+    }
+
+    private void setAttributeMultivalued(String attrKey, List<String> attrValues) {
+        if (attrValues == null || attrValues.size() == 0) {
+            // Remove attribute
+            setAttribute(attrKey, null);
+        } else {
+            String attrValueFull = String.join(Constants.CFG_DELIMITER, attrValues);
+            setAttribute(attrKey, attrValueFull);
         }
     }
 }
