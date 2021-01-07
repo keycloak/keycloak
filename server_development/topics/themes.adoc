@@ -280,8 +280,8 @@ See <<_locale_selector,Locale Selector>> on details on how the current locale is
 ==== Custom Identity providers icons
 
 {project_name} supports adding icons for custom Identity providers, which are displayed on the login screen.
-You just have to define an icon classes in your login `theme.properties` file (f.e. `themes/mytheme/login/theme.properties`) with key pattern `kcLogoIdP-<alias>`.
-For Identity provider with alias `myProvider`, you may add line, like below, to login theme properties of your custom theme.
+You just have to define icon classes in your login `theme.properties` file (i.e. `themes/mytheme/login/theme.properties`) with key pattern `kcLogoIdP-<alias>`.
+For Identity provider with an alias `myProvider`, you may add a line, like below, to `theme.properties` file of your custom theme.
 
 [source]
 ----
