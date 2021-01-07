@@ -689,6 +689,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             String[] defaultRoles = {"sample-client-role"};
             clientRep.setDefaultRoles(defaultRoles);
             clientRep.setSecret(clientSecret);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestUris(Arrays.asList(TestApplicationResourceUrls.clientRequestUri()));
         });
 
         try {

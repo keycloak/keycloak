@@ -518,6 +518,25 @@
                 </div>
                 <kc-tooltip>{{:: 'request-object-required.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="newRequestUri">{{:: 'request-uris' | translate}}</label>
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, requestUri) in clientEdit.requestUris track by $index">
+                        <input class="form-control" ng-model="clientEdit.requestUris[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteRequestUri($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newRequestUri" id="newRequestUri">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newRequestUri.length > 0 && addRequestUri()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-uris.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset data-ng-show="protocol == 'openid-connect'">
