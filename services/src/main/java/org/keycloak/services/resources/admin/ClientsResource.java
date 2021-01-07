@@ -534,6 +534,9 @@ public class ClientsResource {
         Iterator<Policy> associatedPoliciesIterable = associatedPolicies.iterator();
         Set<Resource> resources = new LinkedHashSet<>();
         Resource parent = authorizationProvider.getStoreFactory().getResourceStore().findByName(resourceName, resourceServer.getId());
+        if (parent == null) {
+            return resources;
+        }
         while (associatedPoliciesIterable.hasNext()) {
             Policy associatedPolicie = associatedPoliciesIterable.next();
             String roles = associatedPolicie.getConfig().get("roles");
@@ -547,9 +550,9 @@ public class ClientsResource {
                 if (!roleConfig.isEmpty()) {
                     for (Map<String, Object> roleMap : roleConfig) {
                         if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
-
                             for (Resource resource : policy.getResources()) {
-                                if (parent.getId().equals(resource.getId()) || parent.getId().equals(resource.getParentId())) {
+                                if (parent.getId().equals(resource.getId()) ||
+                                        (resource.getParentId() != null && resource.getParentId().equals(parent.getId()))) {
                                     resources.add(resource);
                                 }
                             }

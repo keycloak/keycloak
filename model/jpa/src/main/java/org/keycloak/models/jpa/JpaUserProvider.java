@@ -1030,7 +1030,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return toModel(entity);
     }
-
+  
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
         CredentialEntity entity = credentialStore.removeCredentialEntity(realm, user, id);

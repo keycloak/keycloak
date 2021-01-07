@@ -33,6 +33,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
@@ -146,6 +147,10 @@ public class UsersResource {
                 session.getTransactionManager().commit();
             }
 
+            UserCache cache = session.getProvider(UserCache.class);
+            if (cache != null) {
+                cache.clear();
+            }
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             if (session.getTransactionManager().isActive()) {

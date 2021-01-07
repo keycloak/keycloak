@@ -21,6 +21,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -93,6 +94,11 @@ public class PartialImportManager {
             } catch (ModelException e) {
                 return ErrorResponse.exists(e.getLocalizedMessage());
             }
+        }
+
+        UserCache cache = session.getProvider(UserCache.class);
+        if (cache != null) {
+            cache.clear();
         }
 
         return Response.ok(results).build();

@@ -124,7 +124,7 @@ public class UserEntity {
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-
+    @Nationalized
     @Column(name="IDCARD")
     protected String  idcard;
 
@@ -137,6 +137,7 @@ public class UserEntity {
     @Column(name = "LOGIN_TIMESTAMP")
     protected Long loginTimestamp;
 
+    @Nationalized
     @Column(name = "PHONE")
     private String phone;
 
