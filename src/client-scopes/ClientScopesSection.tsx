@@ -1,11 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory, useRouteMatch } from "react-router-dom";
-import { Button, PageSection } from "@patternfly/react-core";
+import { AlertVariant, Button, PageSection } from "@patternfly/react-core";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 
 export const ClientScopesSection = () => {
@@ -14,6 +15,7 @@ export const ClientScopesSection = () => {
   const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
+  const { addAlert } = useAlerts();
 
   const loader = async () => await adminClient.clientScopes.find();
 
@@ -47,7 +49,21 @@ export const ClientScopesSection = () => {
             },
             {
               title: t("common:delete"),
-              onRowClick: () => {},
+              onRowClick: async (clientScope) => {
+                try {
+                  await adminClient.clientScopes.del({ id: clientScope.id! });
+                  addAlert(t("deletedSuccess"), AlertVariant.success);
+                  return true;
+                } catch (error) {
+                  addAlert(
+                    t("deleteError", {
+                      error: error.response.data?.errorMessage || error,
+                    }),
+                    AlertVariant.danger
+                  );
+                  return false;
+                }
+              },
             },
           ]}
           columns={[

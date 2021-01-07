@@ -11,6 +11,8 @@
     "type": "Type",
     "priority": "Priority",
     "protocol": "Protocol",
+    "deletedSuccess": "The client scope has been deleted",
+    "deleteError": "Could not delete client scope: {{error}}",
     "includeInTokenScope": "Include in token scope",
     "mappingDetails": "Mapper details",
     "mappingCreatedSuccess": "Mapping successfully created",
