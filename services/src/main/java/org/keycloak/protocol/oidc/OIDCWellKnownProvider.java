@@ -133,6 +133,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setRequestParameterSupported(true);
         config.setRequestUriParameterSupported(true);
+        config.setRequireRequestUriRegistration(true);
 
         // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
         config.setCodeChallengeMethodsSupported(DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED);

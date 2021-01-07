@@ -109,6 +109,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("request_uri_parameter_supported")
     private Boolean requestUriParameterSupported;
 
+    @JsonProperty("require_request_uri_registration")
+    private Boolean requireRequestUriRegistration;
+
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     @JsonProperty("code_challenge_methods_supported")
     private List<String> codeChallengeMethodsSupported;
@@ -341,6 +344,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setRequestUriParameterSupported(Boolean requestUriParameterSupported) {
         this.requestUriParameterSupported = requestUriParameterSupported;
+    }
+
+    public Boolean getRequireRequestUriRegistration() {
+        return requireRequestUriRegistration;
+    }
+
+    public void setRequireRequestUriRegistration(Boolean requireRequestUriRegistration) {
+        this.requireRequestUriRegistration = requireRequestUriRegistration;
     }
 
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
