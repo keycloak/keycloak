@@ -1,6 +1,7 @@
 {
   "roles": {
     "attributes": "Attributes",
+    "add": "Add",
     "addAttributeText": "Add an attribute",
     "deleteAttributeText": "Delete an attribute",
     "addAssociatedRolesText": "Add associated roles",

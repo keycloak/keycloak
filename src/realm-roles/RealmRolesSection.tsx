@@ -71,6 +71,26 @@ export const RealmRolesSection = () => {
     },
   });
 
+  // const [toggleAssociatedRoleDialog, associatedRolesList] = useConfirmDialog({
+  //   titleKey: "roles:associatedRolesModalTitle",
+  //   messageKey: t("roles:roleDeleteConfirmDialog", {
+  //     selectedRoleName: selectedRole ? selectedRole!.name : "",
+  //   }),
+  //   continueButtonLabel: t("Add"),
+  //   continueButtonVariant: ButtonVariant.danger,
+  //   onConfirm: async () => {
+  //     try {
+  //       await adminClient.roles.delById({
+  //         id: selectedRole!.id!,
+  //       });
+  //       setSelectedRole(undefined);
+  //       addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+  //     } catch (error) {
+  //       addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+  //     }
+  //   },
+  // });
+
   const goToCreate = () => history.push(`${url}/add-role`);
   return (
     <>
@@ -95,7 +115,7 @@ export const RealmRolesSection = () => {
                 setSelectedRole(role);
                 toggleDeleteDialog();
               },
-            },
+            }
           ]}
           columns={[
             {
