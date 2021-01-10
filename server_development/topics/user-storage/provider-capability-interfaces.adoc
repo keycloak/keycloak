@@ -1,3 +1,4 @@
+[[_provider_capability_interfaces]]
 
 === Provider Capability Interfaces
 
