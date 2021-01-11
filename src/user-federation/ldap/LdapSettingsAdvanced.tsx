@@ -11,8 +11,17 @@ import {
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsAdvanced = () => {
+export type LdapSettingsAdvancedProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsAdvanced = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsAdvancedProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
   const adminClient = useAdminClient();
@@ -38,6 +47,14 @@ export const LdapSettingsAdvanced = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("advancedSettings")}
+          description={helpText("ldapAdvancedSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("enableLdapv3Password")}

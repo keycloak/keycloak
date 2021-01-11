@@ -3,7 +3,10 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  Text,
+  TextContent,
   TextInput,
+  Title,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
@@ -14,8 +17,17 @@ import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresenta
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsCache = () => {
+export type LdapSettingsCacheProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsCache = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsCacheProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
@@ -102,6 +114,14 @@ export const LdapSettingsCache = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("cacheSettings")}
+          description={helpText("ldapCacheSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       {/* Cache settings */}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup

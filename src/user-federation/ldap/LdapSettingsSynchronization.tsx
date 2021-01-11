@@ -11,8 +11,17 @@ import {
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsSynchronization = () => {
+export type LdapSettingsSynchronizationProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsSynchronization = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsSynchronizationProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
   const adminClient = useAdminClient();
@@ -38,6 +47,14 @@ export const LdapSettingsSynchronization = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("synchronizationSettings")}
+          description={helpText("ldapSynchronizationSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           hasNoPaddingTop

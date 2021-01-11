@@ -3,7 +3,10 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  Text,
+  TextContent,
   TextInput,
+  Title,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
@@ -17,8 +20,17 @@ import {
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsGeneral = () => {
+export type LdapSettingsGeneralProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsGeneral = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
   const adminClient = useAdminClient();
@@ -65,6 +77,14 @@ export const LdapSettingsGeneral = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("generalOptions")}
+          description={helpText("ldapGeneralOptionsSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("consoleDisplayName")}
