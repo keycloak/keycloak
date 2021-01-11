@@ -14,7 +14,6 @@ import {
 } from "@patternfly/react-table";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { useHistory, useRouteMatch } from "react-router-dom";
 import { FormAccess } from "../components/form-access/FormAccess";
 
 export type KeyValueType = { key: string; value: string };
@@ -26,8 +25,6 @@ type RoleAttributesProps = {
 
 export const RoleAttributes = ({ form, save }: RoleAttributesProps) => {
   const { t } = useTranslation("roles");
-  const history = useHistory();
-  const { url } = useRouteMatch();
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
