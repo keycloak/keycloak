@@ -22,7 +22,10 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
@@ -64,7 +67,7 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
   const [open, isOpen] = useState(false);
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
           { id: clientId }

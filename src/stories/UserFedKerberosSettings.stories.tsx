@@ -12,7 +12,9 @@ export default {
 export const view = () => {
   return (
     <Page>
-      <MockAdminClient>
+      <MockAdminClient
+        mock={{ components: { findOne: () => Promise.resolve({}) } }}
+      >
         <UserFederationKerberosSettings />
       </MockAdminClient>
     </Page>

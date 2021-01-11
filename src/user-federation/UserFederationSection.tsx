@@ -22,7 +22,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { RealmContext } from "../context/realm-context/RealmContext";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import "./user-federation.css";
 
@@ -38,7 +38,7 @@ export const UserFederationSection = () => {
   const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       () => {
         const testParams: { [name: string]: string | number } = {
           parentId: realm,

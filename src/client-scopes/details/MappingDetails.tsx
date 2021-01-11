@@ -24,7 +24,10 @@ import { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configProp
 import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -56,7 +59,7 @@ export const MappingDetails = () => {
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         if (id.match(isGuid)) {
           const data = await adminClient.clientScopes.findProtocolMapper({

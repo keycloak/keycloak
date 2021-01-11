@@ -23,7 +23,10 @@ import { FilterIcon } from "@patternfly/react-icons";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import KeycloakAdminClient from "keycloak-admin";
 
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 import { TableToolbar } from "../../components/table-toolbar/TableToolbar";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { AddScopeDialog } from "./AddScopeDialog";
@@ -137,7 +140,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         const defaultClientScopes = await adminClient.clients.listDefaultClientScopes(
           { id: clientId }

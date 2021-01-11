@@ -14,7 +14,7 @@ import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { TableToolbar } from "./TableToolbar";
-import { useFetch } from "../../context/auth/AdminClient";
+import { asyncStateFetch } from "../../context/auth/AdminClient";
 
 type Row<T> = {
   data: T;
@@ -132,7 +132,7 @@ export function KeycloakDataTable<T>({
   const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         setLoading(true);
         const data = await loader(first, max, search);

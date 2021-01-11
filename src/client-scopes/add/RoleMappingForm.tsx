@@ -24,7 +24,10 @@ import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RealmContext } from "../../context/realm-context/RealmContext";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
@@ -47,7 +50,7 @@ export const RoleMappingForm = () => {
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         const clients = await adminClient.clients.find();
 
@@ -76,7 +79,7 @@ export const RoleMappingForm = () => {
   }, []);
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         const client = selectedClient as ClientRepresentation;
         if (client && client.name !== "realmRoles") {

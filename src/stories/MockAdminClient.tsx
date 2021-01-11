@@ -4,7 +4,7 @@ import KeycloakAdminClient from "keycloak-admin";
 
 import { AccessContextProvider } from "../context/access/Access";
 import { WhoAmIContextProvider } from "../context/whoami/WhoAmI";
-import { RealmContextProvider } from "../context/realm-context/RealmContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
 
 import whoamiMock from "../context/whoami/__tests__/mock-whoami.json";
 import { AdminClient } from "../context/auth/AdminClient";
@@ -39,9 +39,11 @@ export const MockAdminClient = (props: {
         }
       >
         <WhoAmIContextProvider>
-          <RealmContextProvider>
+          <RealmContext.Provider
+            value={{ realm: "master", setRealm: () => {} }}
+          >
             <AccessContextProvider>{props.children}</AccessContextProvider>
-          </RealmContextProvider>
+          </RealmContext.Provider>
         </WhoAmIContextProvider>
       </AdminClient.Provider>
     </HashRouter>

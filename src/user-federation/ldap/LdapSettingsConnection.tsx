@@ -16,7 +16,10 @@ import { convertToFormValues } from "../../util";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { EyeIcon } from "@patternfly/react-icons";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 
 export const LdapSettingsConnection = () => {
@@ -62,7 +65,7 @@ export const LdapSettingsConnection = () => {
   };
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       () => adminClient.components.findOne({ id }),
       (fetchedComponent) => setupForm(fetchedComponent)
     );

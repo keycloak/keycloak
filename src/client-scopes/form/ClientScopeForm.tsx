@@ -22,7 +22,10 @@ import { Controller, useForm } from "react-hook-form";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -49,7 +52,7 @@ export const ClientScopeForm = () => {
   const refresh = () => setKey(new Date().getTime());
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         if (id) {
           const data = await adminClient.clientScopes.findOne({ id });

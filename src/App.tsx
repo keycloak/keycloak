@@ -19,7 +19,7 @@ import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { useRealm } from "./context/realm-context/RealmContext";
-import { useAdminClient, useFetch } from "./context/auth/AdminClient";
+import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
 
 // This must match the id given as scrollableSelector in scroll-form
 const mainPageContentId = "kc-main-content-page-container";
@@ -41,7 +41,7 @@ const RealmPathSelector = ({ children }: { children: ReactNode }) => {
   const adminClient = useAdminClient();
   useEffect(
     () =>
-      useFetch(
+      asyncStateFetch(
         () => adminClient.realms.find(),
         (realms) => {
           if (realms.findIndex((r) => r.realm == realm) !== -1) {

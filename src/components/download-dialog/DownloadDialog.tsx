@@ -18,7 +18,10 @@ import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import {
+  useAdminClient,
+  asyncStateFetch,
+} from "../../context/auth/AdminClient";
 import { HelpContext } from "../help-enabler/HelpHeader";
 
 export type DownloadDialogProps = {
@@ -65,7 +68,7 @@ export const DownloadDialog = ({
   const [openType, setOpenType] = useState(false);
 
   useEffect(() => {
-    return useFetch(
+    return asyncStateFetch(
       async () => {
         const snippet = await adminClient.clients.getInstallationProviders({
           id,
