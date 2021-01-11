@@ -11,7 +11,6 @@ import { EventsSection } from "./events/EventsSection";
 import { GroupsSection } from "./groups/GroupsSection";
 import { IdentityProvidersSection } from "./identity-providers/IdentityProvidersSection";
 import { PageNotFoundSection } from "./PageNotFoundSection";
-import { RealmRolesForm } from "./realm-roles/RealmRoleForm";
 import { RealmRolesSection } from "./realm-roles/RealmRolesSection";
 import { RealmSettingsSection } from "./realm-settings/RealmSettingsSection";
 import { NewRealmForm } from "./realm/add/NewRealmForm";
@@ -24,6 +23,7 @@ import { UserFederationKerberosSettings } from "./user-federation/UserFederation
 import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { BreadcrumbsRoute } from "use-react-router-breadcrumbs";
+import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 
 export type RouteDef = BreadcrumbsRoute & {
   component: () => JSX.Element;
@@ -107,13 +107,13 @@ export const routes: RoutesFn = (t) => [
   },
   {
     path: "/:realm/roles/add-role",
-    component: RealmRolesForm,
+    component: RealmRoleTabs,
     breadcrumb: t("roles:createRole"),
     access: "manage-realm",
   },
   {
     path: "/:realm/roles/:id",
-    component: RealmRolesForm,
+    component: RealmRoleTabs,
     breadcrumb: t("roles:roleDetails"),
     access: "view-realm",
   },

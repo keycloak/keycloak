@@ -2,7 +2,11 @@
   {
      "name":"Admin",
      "composite":true,
-     "description": "Lorem ipsum dolor sit amet"
+     "description": "Lorem ipsum dolor sit amet",
+     "attributes": {
+        "key input 1": "value input 1",
+        "key input 2": "value input 2"
+      }
   },
   {
      "name":"Author",
