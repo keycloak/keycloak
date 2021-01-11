@@ -1,8 +1,9 @@
 import React from "react";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
 import { Button, ButtonProps } from "@patternfly/react-core";
+import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 
-export const ExternalLink = ({ title, href, ...rest }: ButtonProps) => {
+export const FormattedLink = ({ title, href, ...rest }: ButtonProps) => {
   return (
     <Button
       variant="link"
@@ -16,4 +17,12 @@ export const ExternalLink = ({ title, href, ...rest }: ButtonProps) => {
       {title ? title : href}
     </Button>
   );
+};
+
+export const formattedLinkTableCell = (): IFormatter => (
+  data?: IFormatterValueType
+) => {
+  return (data ? (
+    <FormattedLink href={data.toString()} />
+  ) : undefined) as object;
 };

@@ -14,9 +14,10 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { ExternalLink } from "../components/external-link/ExternalLink";
+import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { emptyFormatter } from "../util";
 
 export const RealmRolesSection = () => {
   const { t } = useTranslation("roles");
@@ -43,16 +44,6 @@ export const RealmRolesSection = () => {
       </Link>
     </>
   );
-
-  const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-    return data ? data : "—";
-  };
-
-  const externalLink = (): IFormatter => (data?: IFormatterValueType) => {
-    return (data ? (
-      <ExternalLink href={"roles/" + data.toString()} />
-    ) : undefined) as object;
-  };
 
   const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
     const boolVal = data?.toString();
@@ -113,7 +104,7 @@ export const RealmRolesSection = () => {
               name: "name",
               displayKey: "roles:roleName",
               cellRenderer: RoleDetailLink,
-              cellFormatters: [externalLink(), emptyFormatter()],
+              cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
             },
             {
               name: "composite",

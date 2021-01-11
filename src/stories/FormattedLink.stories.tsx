@@ -1,14 +1,14 @@
 import React from "react";
 import { Meta, Story } from "@storybook/react";
-import { ExternalLink } from "../components/external-link/ExternalLink";
+import { FormattedLink } from "../components/external-link/FormattedLink";
 import { ButtonProps } from "@patternfly/react-core";
 
 export default {
-  title: "External link",
-  component: ExternalLink,
+  title: "Formatted link",
+  component: FormattedLink,
 } as Meta;
 
-const Template: Story<ButtonProps> = (args) => <ExternalLink {...args} />;
+const Template: Story<ButtonProps> = (args) => <FormattedLink {...args} />;
 
 export const WithTitle = Template.bind({});
 WithTitle.args = {

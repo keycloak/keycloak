@@ -18,7 +18,7 @@ import {
 } from "@patternfly/react-core";
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
-import { ExternalLink } from "../external-link/ExternalLink";
+import { FormattedLink } from "../external-link/FormattedLink";
 
 export type ViewHeaderProps = {
   titleKey: string;
@@ -117,7 +117,7 @@ export const ViewHeader = ({
             <Text>
               {t(subKey)}
               {subKeyLinkProps && (
-                <ExternalLink
+                <FormattedLink
                   {...subKeyLinkProps}
                   isInline
                   className="pf-u-ml-md"

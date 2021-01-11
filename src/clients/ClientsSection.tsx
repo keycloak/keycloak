@@ -11,11 +11,10 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-import { exportClient } from "../util";
+import { emptyFormatter, exportClient } from "../util";
 import { useAlerts } from "../components/alert/Alerts";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { ExternalLink } from "../components/external-link/ExternalLink";
+import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -38,16 +37,6 @@ export const ClientsSection = () => {
       params.search = "true";
     }
     return await adminClient.clients.find({ ...params });
-  };
-
-  const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-    return data ? data : "—";
-  };
-
-  const externalLink = (): IFormatter => (data?: IFormatterValueType) => {
-    return (data ? (
-      <ExternalLink href={data.toString()} />
-    ) : undefined) as object;
   };
 
   const ClientDetailLink = (client: ClientRepresentation) => (
@@ -123,7 +112,7 @@ export const ClientsSection = () => {
             {
               name: "baseUrl",
               displayKey: "clients:homeURL",
-              cellFormatters: [externalLink(), emptyFormatter()],
+              cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
               cellRenderer: (client) => {
                 if (client.rootUrl) {
                   if (
