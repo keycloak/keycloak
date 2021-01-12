@@ -85,7 +85,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 validator.checkRevocationStatus()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
-                         .validateTimestamps(config.isCertValidationEnabled());
+                         .validateTimestamps();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages

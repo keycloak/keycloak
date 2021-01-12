@@ -109,7 +109,9 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .cRLrelativePath(config.getCRLRelativePath())
                         .oCSPEnabled(config.getOCSPEnabled())
                         .oCSPResponseCertificate(config.getOCSPResponderCertificate())
-                        .oCSPResponderURI(config.getOCSPResponder());
+                        .oCSPResponderURI(config.getOCSPResponder())
+                    .timestampValidation()
+                        .enabled(config.isCertValidationEnabled());
         }
     }
 
