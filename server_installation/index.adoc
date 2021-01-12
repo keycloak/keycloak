@@ -6,6 +6,7 @@
 include::topics/templates/document-attributes-community.adoc[]
 
 :server_installation_and_configuration_guide:
+:context: server_installation_and_configuration_guide
 
 = {installguide_name}
 
@@ -14,3 +15,5 @@ include::topics/templates/document-attributes-community.adoc[]
 include::topics/templates/release-header.adoc[]
 
 include::topics.adoc[]
+
+:context:

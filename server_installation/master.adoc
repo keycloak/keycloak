@@ -6,7 +6,11 @@
 include::topics/templates/document-attributes-product.adoc[]
 
 :server_installation_and_configuration_guide:
+:context: server_installation_and_configuration_guide
 
 = {installguide_name}
 
 include::topics.adoc[]
+
+:context:
+

@@ -23,9 +23,14 @@ As this is an advanced topic, we recommend you first read the following, which p
 * link:{installguide_clustering_link}[Clustering with {project_name}]
 When setting up for Cross-Datacenter Replication, you will use more independent {project_name} clusters, so you must understand how a cluster works and the basic concepts and requirements such as load balancing, shared databases, and multicasting.
 
-* link:{jdgserver_crossdcdocs_link}[JBoss Data Grid Cross-Datacenter Replication]
-{project_name} uses JBoss Data Grid (JDG) for the replication of Infinispan data between the data centers.
+ifeval::[{project_product}==true]
+* link:{jdgserver_crossdcdocs_link}[Red Hat Data Grid Cross-Datacenter Replication]
+{project_name} uses Red Hat Data Grid (RHDG) for the replication of data between the data centers.
+endif::[]
 
+ifeval::[{project_community}==true]
+* link:https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html#xsite_replication[Infinispan Cross-Site Replication] replicates data across clusters in separate geographic locations.
+endif::[]
 
 
 [[technicaldetails]]
@@ -132,42 +137,41 @@ For more detail about how caches can be configured see <<tuningcache>>.
 [[communication]]
 ==== Communication details
 
-{project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external JDG (actually {jdgserver_name} servers) for communication across data centers. This is done using the link:https://infinispan.org/docs/stable/titles/hotrod_java/hotrod_java.html[Infinispan HotRod protocol].
+{project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external {jdgserver_name} servers for communication across data centers. This is done using the link:[Infinispan Hot Rod protocol].
 
-The Infinispan caches on the {project_name} side must be configured with the link:https://infinispan.org/docs/stable/titles/configuring/configuring.html#remote_cache_store[remoteStore] to ensure that data are saved to the remote cache. There is separate Infinispan cluster between JDG servers, so the data saved on JDG1 on `site1` are replicated to JDG2 on `site2` .
+The Infinispan caches on the {project_name} side must be configured with the link:https://infinispan.org/docs/stable/titles/configuring/configuring.html#remote_cache_store[remoteStore] to ensure that data are saved to the remote cache. There is separate Infinispan cluster between {jdgserver_name} servers, so the data saved on SERVER1 on `site1` are replicated to SERVER2 on `site2` .
 
-Finally, the receiving JDG server notifies the {project_name} servers in its cluster through the Client Listeners, which are a feature of the HotRod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`.
+Finally, the receiving {jdgserver_name} server notifies the {project_name} servers in its cluster through the Client Listeners, which are a feature of the Hot Rod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`.
 
 See the <<archdiagram>> for more details.
 
-
 [[setup]]
-==== Basic setup
+==== Setting up Cross DC with {jdgserver_name} {jdgserver_version}
 
-For this example, we describe using two data centers, `site1` and `site2`. Each data center consists of 1 {jdgserver_name} server and 2 {project_name} servers. We will end up with 2 {jdgserver_name} servers and 4 {project_name} servers in total.
+This example for {jdgserver_name} {jdgserver_version} involves two data centers, `site1` and `site2`. Each data center consists of 1 {jdgserver_name} server and 2 {project_name} servers. We will end up with 2 {jdgserver_name} servers and 4 {project_name} servers in total.
 
-* `Site1` consists of {jdgserver_name} server, `jdg1`, and 2 {project_name} servers, `node11` and `node12` .
+* `Site1` consists of {jdgserver_name} server, `server1`, and 2 {project_name} servers, `node11` and `node12` .
 
-* `Site2` consists of {jdgserver_name} server, `jdg2`, and 2 {project_name} servers, `node21` and `node22` .
+* `Site2` consists of {jdgserver_name} server, `server2`, and 2 {project_name} servers, `node21` and `node22` .
 
-* {jdgserver_name} servers `jdg1` and `jdg2` are connected to each other through the RELAY2 protocol and `backup` based {jdgserver_name}
-caches in a similar way as described in the link:{jdgserver_crossdcdocs_link}[JDG documentation].
+* {jdgserver_name} servers `server1` and `server2` are connected to each other through the RELAY2 protocol and `backup` based {jdgserver_name}
+caches in a similar way as described in the link:{jdgserver_crossdcdocs_link}[{jdgserver_name} documentation].
 
 * {project_name} servers `node11` and `node12` form a cluster with each other, but they do not communicate directly with any server in `site2`.
-They communicate with the Infinispan server `jdg1` using the HotRod protocol (Remote cache). See <<communication>> for the details.
+They communicate with the Infinispan server `server1` using the Hot Rod protocol (Remote cache). See <<communication>> for the details.
 
-* The same details apply for `node21` and `node22`. They cluster with each other and communicate only with `jdg2` server using the HotRod protocol.
+* The same details apply for `node21` and `node22`. They cluster with each other and communicate only with `server2` server using the Hot Rod protocol.
 
 Our example setup assumes all that all 4 {project_name} servers talk to the same database. In production, it is recommended to use separate synchronously replicated databases across data centers as described in <<database>>.
 
 
 [[jdgsetup]]
-===== {jdgserver_name} server setup
+===== Setting up the {jdgserver_name} server
 Follow these steps to set up the {jdgserver_name} server:
 
-. Download {jdgserver_name} {jdgserver_version} server and unzip to a directory you choose. This location will be referred in later steps as `JDG1_HOME` .
+. Download {jdgserver_name} {jdgserver_version} server and unzip to a directory you choose. This location will be referred in later steps as `SERVER1_HOME` .
 
-. Change those things in the `JDG1_HOME/standalone/configuration/clustered.xml` in the configuration of JGroups subsystem:
+. Change those things in the `SERVER1_HOME/server/conf/infinispan-xsite.xml` in the configuration of JGroups subsystem:
 .. Add the `xsite` channel, which will use `tcp` stack, under `channels` element:
 +
 ```xml
@@ -189,13 +193,13 @@ Follow these steps to set up the {jdgserver_name} server:
 </stack>
 ```
 +
-.. Configure the `tcp` stack to use `TCPPING` protocol instead of `MPING`. Remove the `MPING` element and replace it with the `TCPPING`. The `initial_hosts` element points to the hosts `jdg1` and `jdg2`:
+.. Configure the `tcp` stack to use `TCPPING` protocol instead of `MPING`. Remove the `MPING` element and replace it with the `TCPPING`. The `initial_hosts` element points to the hosts `server1` and `server2`:
 +
 ```xml
 <stack name="tcp">
     <transport type="TCP" socket-binding="jgroups-tcp"/>
     <protocol type="TCPPING">
-        <property name="initial_hosts">jdg1[7600],jdg2[7600]</property>
+        <property name="initial_hosts">server1[7600],server2[7600]</property>
         <property name="ergonomics">false</property>
     </protocol>
     <protocol type="MERGE3"/>
@@ -207,7 +211,7 @@ Details of this more-detailed setup are out-of-scope of the {project_name} docum
 
 +
 
-. Add this into `JDG1_HOME/standalone/configuration/clustered.xml` under cache-container named `clustered`:
+. Add this into `SERVER1_HOME/standalone/configuration/clustered.xml` under cache-container named `clustered`:
 +
 ```xml
 <cache-container name="clustered" default-cache="default" statistics="true">
@@ -300,9 +304,9 @@ Issues related to authorization may exist just for some other versions of {jdgse
 ```
 
 +
-. Copy the server to the second location, which will be referred to later as `JDG2_HOME`.
+. Copy the server to the second location, which will be referred to later as `SERVER2_HOME`.
 
-. In the `JDG2_HOME/standalone/configuration/clustered.xml` exchange `site1` with `site2` and vice versa, both in the configuration of `relay` in the JGroups subsystem and in configuration of `backups` in the cache-subsystem. For example:
+. In the `SERVER2_HOME/standalone/configuration/clustered.xml` exchange `site1` with `site2` and vice versa, both in the configuration of `relay` in the JGroups subsystem and in configuration of `backups` in the cache-subsystem. For example:
 .. The `relay` element should look like this:
 +
 ```xml
@@ -321,60 +325,58 @@ Issues related to authorization may exist just for some other versions of {jdgse
                 ...
 ```
 +
-It is currently required to have different configuration files for the JDG servers on both sites as the Infinispan subsystem does not support replacing site names with expressions. See link:https://issues.redhat.com/browse/WFLY-9458[this issue] for more details.
-
 NOTE: The _PUBLIC_IP_ADDRESS_ below refers to the IP address or hostname, which can be used for your server to bind to. Note that
 every {jdgserver_name} server and {project_name} server needs to use different address. During example setup with all the servers running on the same host,
 you may need to add the option `-Djboss.bind.address.management=_PUBLIC_IP_ADDRESS_` as every server needs to use also different management interface.
 But this option usually should be omitted in production environments to avoid the ability for remote access to your server. For more information,
 see the link:{appserver_socket_link}[_{appserver_socket_name}_].
 
-. Start server `jdg1`:
+. Start server `server1`:
 +
 [source,subs="+quotes"]
 ----
-cd JDG1_HOME/bin
+cd SERVER1_HOME/bin
 ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true \
   -Djboss.default.multicast.address=234.56.78.99 \
-  -Djboss.node.name=jdg1 -b _PUBLIC_IP_ADDRESS_
+  -Djboss.node.name=server1 -b _PUBLIC_IP_ADDRESS_
 ----
 +
 
-. Start server `jdg2`. There is a different multicast address, so the `jdg1` and `jdg2` servers are not directly clustered with each other; rather, they are just connected through the RELAY2 protocol, and the TCP JGroups stack is used for communication between them. The start up command looks like this:
+. Start server `server2`. There is a different multicast address, so the `server1` and `server2` servers are not directly clustered with each other; rather, they are just connected through the RELAY2 protocol, and the TCP JGroups stack is used for communication between them. The start up command looks like this:
 +
 [source,subs="+quotes"]
 ----
-cd JDG2_HOME/bin
+cd SERVER2_HOME/bin
 ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true \
   -Djboss.default.multicast.address=234.56.78.100 \
-  -Djboss.node.name=jdg2 -b _PUBLIC_IP_ADDRESS_
+  -Djboss.node.name=server2 -b _PUBLIC_IP_ADDRESS_
 ----
 +
 
-. To verify that channel works at this point, you may need to use JConsole and connect either to the running `JDG1` or the `JDG2` server. When you use the MBean `jgroups:type=protocol,cluster="cluster",protocol=RELAY2` and operation `printRoutes`, you should see output like this:
+. To verify that channel works at this point, you may need to use JConsole and connect either to the running `SERVER1` or the `SERVER2` server. When you use the MBean `jgroups:type=protocol,cluster="cluster",protocol=RELAY2` and operation `printRoutes`, you should see output like this:
 +
 ```
-site1 --> _jdg1:site1
-site2 --> _jdg2:site2
+site1 --> _server1:site1
+site2 --> _server2:site2
 ```
 When you use the MBean `jgroups:type=protocol,cluster="cluster",protocol=GMS`, you should see that the attribute member contains just single member:
-.. On `JDG1` it should be like this:
+.. On `SERVER1` it should be like this:
 +
 ```
-(1) jdg1
+(1) server1
 ```
 +
-.. And on JDG2 like this:
+.. And on SERVER2 like this:
 +
 ```
-(1) jdg2
+(1) server2
 ```
 +
 NOTE: In production, you can have more {jdgserver_name} servers in every data center. You just need to ensure that {jdgserver_name} servers in same data center are using the same multicast address (In other words, the same `jboss.default.multicast.address` during startup). Then in jconsole in `GMS` protocol view, you will see all the members of current cluster.
 
 
 [[serversetup]]
-===== {project_name} servers setup
+===== Setting up {project_name} servers
 
 . Unzip {project_name} server distribution to a location you choose. It will be referred to later as `NODE11`.
 
@@ -551,7 +553,7 @@ for the {jdgserver_name} servers as described above) to the `connectionsInfinisp
 ----
 cd NODE11/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node11 -Djboss.site.name=site1 \
-  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=jdg1 \
+  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=server1 \
   -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
 
 ----
@@ -563,7 +565,7 @@ cd NODE11/bin
 ----
 cd NODE12/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node12 -Djboss.site.name=site1 \
-  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=jdg1 \
+  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=server1 \
   -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
 ----
 +
@@ -580,7 +582,7 @@ NOTE: The channel name in the log might be different.
 ----
 cd NODE21/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node21 -Djboss.site.name=site2 \
-  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=jdg2 \
+  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=server2 \
   -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
 ----
 +
@@ -597,7 +599,7 @@ Received new cluster view for channel keycloak: [node21|0] (1) [node21]
 ----
 cd NODE22/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node22 -Djboss.site.name=site2 \
-  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=jdg2 \
+  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=server2 \
   -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
 ----
 +
@@ -628,11 +630,12 @@ should be immediately visible on any of 4 nodes as caches should be properly inv
 2017-08-25 17:35:17,737 DEBUG [org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener] (Client-Listener-sessions-30012a77422542f5) Received event from remote store.
 Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', skip 'false'
 ```
-+
 
+include::crossdc/assembly-setting-up-crossdc.adoc[leveloffset=3]
 
 [[administration]]
 ==== Administration of Cross DC deployment
+
 
 This section contains some tips and options related to Cross-Datacenter Replication.
 
@@ -640,9 +643,9 @@ This section contains some tips and options related to Cross-Datacenter Replicat
 
 * Every data center can have more database nodes if you want to support database failover and better reliability. Refer to the documentation of your database and JDBC driver for the details how to set this up on the database side and how the `KeycloakDS` datasource on Keycloak side needs to be configured.
 
-* Every datacenter can have more {jdgserver_name} servers running in the cluster. This is useful if you want some failover and better fault tolerance. The HotRod protocol used for communication between {jdgserver_name} servers and {project_name} servers has a feature that {jdgserver_name} servers will automatically send new topology to the {project_name} servers about the change in the {jdgserver_name} cluster, so the remote store on {project_name} side will know to which {jdgserver_name} servers it can connect. Read the {jdgserver_name} and WildFly documentation for more details.
+* Every datacenter can have more {jdgserver_name} servers running in the cluster. This is useful if you want some failover and better fault tolerance. The Hot Rod protocol used for communication between {jdgserver_name} servers and {project_name} servers has a feature that {jdgserver_name} servers will automatically send new topology to the {project_name} servers about the change in the {jdgserver_name} cluster, so the remote store on {project_name} side will know to which {jdgserver_name} servers it can connect. Read the {jdgserver_name} and WildFly documentation for more details.
 
-* It is highly recommended that a master {jdgserver_name} server is running in every site before the {project_name} servers in **any** site are started. As in our example, we started both `jdg1` and `jdg2` first, before all {project_name} servers. If you still need to run the {project_name} server and the backup site is offline, it is recommended to manually switch the backup site offline on the {jdgserver_name} servers on your site, as described in <<onoffline>>. If you do not manually switch the unavailable site offline, the first startup may fail or they may be some exceptions during startup until the backup site is taken offline automatically due the configured count of failed operations.
+* It is highly recommended that a master {jdgserver_name} server is running in every site before the {project_name} servers in **any** site are started. As in our example, we started both `server1` and `server2` first, before all {project_name} servers. If you still need to run the {project_name} server and the backup site is offline, it is recommended to manually switch the backup site offline on the {jdgserver_name} servers on your site, as described in <<onoffline>>. If you do not manually switch the unavailable site offline, the first startup may fail or they may be some exceptions during startup until the backup site is taken offline automatically due the configured count of failed operations.
 
 
 [[onoffline]]
@@ -651,22 +654,28 @@ This section contains some tips and options related to Cross-Datacenter Replicat
 For example, assume this scenario:
 
 . Site `site2` is entirely offline from the `site1` perspective. This means that all {jdgserver_name} servers on `site2` are off *or* the network between `site1` and `site2` is broken.
-. You run {project_name} servers and {jdgserver_name} server `jdg1` in site `site1`
+. You run {project_name} servers and {jdgserver_name} server `server1` in site `site1`
 . Someone logs in on a {project_name} server on `site1`.
-. The {project_name} server from `site1` will try to write the session to the remote cache on `jdg1` server, which is supposed to backup data to the `jdg2` server in the `site2`. See <<communication>> for more information.
-. Server `jdg2` is offline or unreachable from `jdg1`. So the backup from `jdg1` to `jdg2` will fail.
-. The exception is thrown in `jdg1` log and the failure will be propagated from `jdg1` server to {project_name} servers as well because the default `FAIL` backup failure policy is configured. See <<backupfailure>> for details around the backup policies.
+. The {project_name} server from `site1` will try to write the session to the remote cache on `server1` server, which is supposed to backup data to the `server2` server in the `site2`. See <<communication>> for more information.
+. Server `server2` is offline or unreachable from `server1`. So the backup from `server1` to `server2` will fail.
+. The exception is thrown in `server1` log and the failure will be propagated from `server1` server to {project_name} servers as well because the default `FAIL` backup failure policy is configured. See <<backupfailure>> for details around the backup policies.
 . The error will happen on {project_name} side too and user may not be able to finish his login.
 
-According to your environment, it may be more or less probable that the network between sites is unavailable or temporarily broken (split-brain). In case this happens, it is good that {jdgserver_name} servers on `site1` are aware of the fact that {jdgserver_name} servers on `site2` are unavailable, so they will stop trying to reach the servers in the `jdg2` site and the backup failures won't happen. This is called `Take site offline` .
+According to your environment, it may be more or less probable that the network between sites is unavailable or temporarily broken (split-brain). In case this happens, it is good that {jdgserver_name} servers on `site1` are aware of the fact that {jdgserver_name} servers on `site2` are unavailable, so they will stop trying to reach the servers in the `server2` site and the backup failures won't happen. This is called `Take site offline` .
 
 .Take site offline
 
 There are 2 ways to take the site offline.
 
 **Manually by admin** - Admin can use the `jconsole` or other tool and run some JMX operations to manually take the particular site offline.
-This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `jdg1` server and take the `site2` offline.
-More details about this are available in the link:{jdgserver_crossdcdocs_link}#taking_a_site_offline[JDG documentation].
+This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `server1` server and take the `site2` offline.
+More details about this are available in the
+ifeval::[{project_product}==true]
+link:{jdgserver_crossdcdocs_link}#taking_a_site_offline[{jdgserver_name} documentation].
+endif::[]
+ifeval::[{project_community}==true]
+link:{jdgserver_crossdcdocs_link}[{jdgserver_name} documentation].
+endif::[]
 
 WARNING: These steps usually need to be done for all the {project_name} caches mentioned in <<backups>>.
 
@@ -719,14 +728,14 @@ When the network is back, it is sufficient to clear the cache just on one {proje
 
 
 [[tuningcache]]
-==== Tuning the JDG cache configuration
+==== Tuning the {jdgserver_name} cache configuration
 
 This section contains tips and options for configuring your JDG cache.
 
 [[backupfailure]]
 .Backup failure policy
 
-By default, the configuration of backup `failure-policy` in the Infinispan cache configuration in the JDG `clustered.xml` file is configured as `FAIL`. You may change it to `WARN` or `IGNORE`, as you prefer.
+By default, the configuration of backup `failure-policy` in the Infinispan cache configuration in the {jdgserver_name} `clustered.xml` file is configured as `FAIL`. You may change it to `WARN` or `IGNORE`, as you prefer.
 
 The difference between `FAIL` and `WARN` is that when `FAIL` is used and the {jdgserver_name} server tries to back data up to the other site and the backup fails then the failure will be propagated back to the caller (the {project_name} server). The backup might fail because the second site is temporarily unreachable or there is a concurrent transaction which is trying to update same entity. In this case, the {project_name} server will then retry the operation a few times. However, if the retry fails, then the user might see the error after a longer timeout.
 
@@ -743,7 +752,7 @@ You only need to manually restore the site when it is back online as mentioned i
 
 In summary, if you expect frequent, longer outages between sites and it is acceptable for you to have some data inconsistencies and a not 100% accurate single-use cache, but you never want end-users to see the errors and long timeouts, then switch to `WARN`.
 
-The difference between `WARN` and `IGNORE` is, that with `IGNORE` warnings are not written in the JDG log. See more details in the Infinispan documentation.
+The difference between `WARN` and `IGNORE` is, that with `IGNORE` warnings are not written in the {jdgserver_name} log. See more details in the Infinispan documentation.
 
 
 .Lock acquisition timeout
@@ -856,7 +865,7 @@ then check the log of corresponding {jdgserver_name} server of your site and che
 ```
 (HotRodServerHandler-6-35) ISPN000136: Error executing command ReplaceCommand,
 writing keys [[B0x033E243034396234..[39]]: org.infinispan.util.concurrent.TimeoutException: ISPN000299: Unable to acquire lock after
-0 milliseconds for key [B0x033E243034396234..[39] and requestor GlobalTx:jdg1:4353. Lock is held by GlobalTx:jdg1:4352
+0 milliseconds for key [B0x033E243034396234..[39] and requestor GlobalTx:server1:4353. Lock is held by GlobalTx:server1:4352
 ```
 +
 Those exceptions are not necessarily an issue. They may happen anytime when a concurrent edit of the same entity is triggered on both DCs. This is common in a deployment. Usually the {project_name} server is notified about the failed operation and will retry it, so from the user's point of view, there is usually not any issue.
@@ -929,8 +938,8 @@ other issues caused by the bug https://issues.redhat.com/browse/ISPN-9323. So fo
 	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:248)
 ```
 +
-and you see some similar errors in the {project_name} log, it can indicate that there are incompatible versions of the HotRod protocol being used.
-This is likely happen when you try to use {project_name} with the JDG 7.2 server or an old version of the Infinispan server. It
+and you see some similar errors in the {project_name} log, it can indicate that there are incompatible versions of the Hot Rod protocol being used.
+This is likely happen when you try to use {project_name} with an old version of the Infinispan server. It
 will help if you add the `protocolVersion` property as an additional property to the `remote-store` element in the {project_name}
 configuration file. For example:
 +
