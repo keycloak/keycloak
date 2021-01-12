@@ -45,8 +45,6 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     private ClientModel client;
 
-    private ClientConnection connection;
-
     private KeycloakSession session;
 
     private Map<UrlType, KeycloakUriInfo> uriInfo;
