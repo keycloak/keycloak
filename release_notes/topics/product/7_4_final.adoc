@@ -158,11 +158,11 @@ Two features have a change in status:
 
 = Fixed Issues
 
-More than 1100 issues were fixed during this release. For details on the fixed issues, see link:https://issues.redhat.com/issues/?filter=12346377[https://issues.redhat.com/issues/?filter=12346377].
+More than 1100 issues were fixed during this release. For details on the fixed issues, see link:https://issues.redhat.com/browse/KEYCLOAK-13785?filter=12346377[https://issues.redhat.com/issues/?filter=12346377].
 
 = Known issues
 
-This release includes the following link:https://issues.redhat.com/issues/?jql=project%20%3D%20KEYCLOAK%20AND%20issuetype%20%3D%20Bug%20AND%20fixVersion%20%3D%209.0.4%20AND%20component%20not%20in%20(Infra%2C%20Testsuite%2C%20%22Testsuite%20-%20Performance%22)[known issues] and in particular these higher level issues.
+This release includes the following known issues:
 
 * link:https://issues.redhat.com/browse/KEYCLOAK-13589[KEYCLOAK-13589] - Can't add user in admin console when 'Email as username' is enabled
 

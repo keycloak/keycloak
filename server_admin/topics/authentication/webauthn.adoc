@@ -2,7 +2,7 @@
 
 === W3C Web Authentication (WebAuthn)
 
-{project_name} provides the limited support for https://www.w3.org/TR/webauthn/[W3C Web Authentication (WebAuthn)]. {project_name} works as a WebAuthn's https://www.w3.org/TR/webauthn/#rp-operations[Relying Party (RP)].
+{project_name} provides the limited support for https://www.w3.org/TR/webauthn/[W3C Web Authentication (WebAuthn)]. {project_name} works as a WebAuthn's https://www.w3.org/TR/webauthn/#sctn-rp-operations[Relying Party (RP)].
 
 ifeval::[{project_product}==true]
 :tech_feature_name: WebAuthn
@@ -122,14 +122,14 @@ The configurable items and their description follow.
 
 |Attestation Conveyance Preference
 |It tells the WebAuthn API implementation on the browser (https://www.w3.org/TR/webauthn/#webauthn-client[WebAuthn Client]) the preference of how to generate an Attestation Statement. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "none".
- For more details, see https://www.w3.org/TR/webauthn/#attestation-convey[WebAuthn Specification].
+ For more details, see https://www.w3.org/TR/webauthn/#attestation-conveyance[WebAuthn Specification].
 
 |Authenticator Attachment
 |It tells the WebAuthn Client an acceptable attachment pattern of a WebAuthn authenticator. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, the WebAuthn Client does not consider the attachment pattern.
  For more details, see https://www.w3.org/TR/webauthn/#enumdef-authenticatorattachment[WebAuthn Specification].
 
 |Require Resident Key
-|It tells the WebAuthn authenticator to generate the Public Key Credential as https://www.w3.org/TR/webauthn/#client-side-resident-public-key-credential-source[Client-side-resident Public Key Credential Source]. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "No".
+|It tells the WebAuthn authenticator to generate the Public Key Credential as https://www.w3.org/TR/webauthn/#client-side-discoverable-public-key-credential-source[Client-side-resident Public Key Credential Source]. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "No".
  For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-requireresidentkey[WebAuthn Specification].
 
 |User Verification Requirement

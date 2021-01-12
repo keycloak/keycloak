@@ -20,7 +20,7 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Maven
-      run: mvn package
+      run: mvn package -B
   build-product:
     name: Build and test Product documentation
     runs-on: ubuntu-latest
@@ -31,4 +31,4 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Maven
-      run: mvn package -Dproduct
+      run: mvn package -B -Dproduct
