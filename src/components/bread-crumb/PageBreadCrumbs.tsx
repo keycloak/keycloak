@@ -6,6 +6,7 @@ import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { routes } from "../../route-config";
+import { GroupBreadCrumbs } from "./GroupBreadCrumbs";
 
 export const PageBreadCrumbs = () => {
   const { t } = useTranslation();
@@ -25,6 +26,7 @@ export const PageBreadCrumbs = () => {
           ))}
         </Breadcrumb>
       )}
+      <GroupBreadCrumbs />
     </>
   );
 };

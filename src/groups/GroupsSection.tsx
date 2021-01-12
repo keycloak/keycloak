@@ -1,4 +1,11 @@
-import React, { useState } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { Link, useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -21,10 +28,56 @@ import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 
 import "./GroupsSection.css";
-import { Link, useRouteMatch } from "react-router-dom";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type GroupTableData = GroupRepresentation & {
   membersLength?: number;
+};
+
+type SubGroupsProps = {
+  subGroups: GroupRepresentation[];
+  setSubGroups: (group: GroupRepresentation[]) => void;
+  clear: () => void;
+  remove: (group: GroupRepresentation) => void;
+};
+
+const SubGroupContext = createContext<SubGroupsProps>({
+  subGroups: [],
+  setSubGroups: () => {},
+  clear: () => {},
+  remove: () => {},
+});
+
+export const SubGroups = ({ children }: { children: ReactNode }) => {
+  const [subGroups, setSubGroups] = useState<GroupRepresentation[]>([]);
+
+  const clear = () => setSubGroups([]);
+  const remove = (group: GroupRepresentation) =>
+    setSubGroups(
+      subGroups.slice(
+        0,
+        subGroups.findIndex((g) => g.id === group.id)
+      )
+    );
+  return (
+    <SubGroupContext.Provider
+      value={{ subGroups, setSubGroups, clear, remove }}
+    >
+      {children}
+    </SubGroupContext.Provider>
+  );
+};
+
+export const useSubGroups = () => useContext(SubGroupContext);
+
+const getId = (pathname: string) => {
+  const pathParts = pathname.substr(1).split("/");
+  return pathParts.length > 1 ? pathParts.splice(2) : undefined;
+};
+
+const getLastId = (pathname: string) => {
+  const pathParts = getId(pathname);
+  return pathParts ? pathParts[pathParts.length - 1] : undefined;
 };
 
 export const GroupsSection = () => {
@@ -34,8 +87,14 @@ export const GroupsSection = () => {
   const [createGroupName, setCreateGroupName] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
+  const { subGroups, setSubGroups } = useSubGroups();
   const { addAlert } = useAlerts();
-  const { url } = useRouteMatch();
+  const { realm } = useRealm();
+  const history = useHistory();
+
+  const location = useLocation();
+  const id = getLastId(location.pathname);
+
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
 
@@ -45,16 +104,46 @@ export const GroupsSection = () => {
   };
 
   const loader = async () => {
-    const groupsData = await adminClient.groups.find();
+    let groupsData;
+    if (!id) {
+      groupsData = await adminClient.groups.find();
+    } else {
+      const ids = getId(location.pathname);
+      const isNavigationStateInValid = ids && ids.length !== subGroups.length;
+      if (isNavigationStateInValid) {
+        const groups = [];
+        for (const i of ids!) {
+          const group = await adminClient.groups.findOne({ id: i });
+          if (group) groups.push(group);
+        }
+        setSubGroups(groups);
+        groupsData = groups.pop()?.subGroups!;
+      } else {
+        const group = await adminClient.groups.findOne({ id });
+        if (group) {
+          setSubGroups([...subGroups, group]);
+          groupsData = group.subGroups!;
+        }
+      }
+    }
 
-    const memberPromises = groupsData.map((group) => getMembers(group.id!));
-    const memberData = await Promise.all(memberPromises);
-    const updatedObject = groupsData.map((group: GroupTableData, i) => {
-      group.membersLength = memberData[i];
-      return group;
-    });
-    return updatedObject;
+    if (groupsData) {
+      const memberPromises = groupsData.map((group) => getMembers(group.id!));
+      const memberData = await Promise.all(memberPromises);
+      return groupsData.map((group: GroupTableData, i) => {
+        group.membersLength = memberData[i];
+        return group;
+      });
+    } else {
+      history.push(`/${realm}/groups`);
+    }
+
+    return [];
   };
+
+  useEffect(() => {
+    refresh();
+  }, [id]);
 
   const handleModalToggle = () => {
     setIsCreateModalOpen(!isCreateModalOpen);
@@ -85,7 +174,7 @@ export const GroupsSection = () => {
 
   const GroupNameCell = (group: GroupTableData) => (
     <>
-      <Link key={group.id} to={`${url}/${group.id}`}>
+      <Link key={group.id} to={`${location.pathname}/${group.id}`}>
         {group.name}
       </Link>
     </>
@@ -107,8 +196,8 @@ export const GroupsSection = () => {
           onSelect={(rows) => setSelectedRows([...rows])}
           canSelectAll={false}
           loader={loader}
-          ariaLabelKey="client-scopes:clientScopeList"
-          searchPlaceholderKey="client-scopes:searchFor"
+          ariaLabelKey="groups:groups"
+          searchPlaceholderKey="groups:searchForGroups"
           toolbarItem={
             <>
               <ToolbarItem>

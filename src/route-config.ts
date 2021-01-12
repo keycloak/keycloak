@@ -26,13 +26,13 @@ import { BreadcrumbsRoute } from "use-react-router-breadcrumbs";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 
 export type RouteDef = BreadcrumbsRoute & {
-  component: () => JSX.Element;
   access: AccessType;
+  component: () => JSX.Element;
 };
 
 type RoutesFn = (t: TFunction) => RouteDef[];
 
-export const routes: RoutesFn = (t) => [
+export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/add-realm",
     component: NewRealmForm,
@@ -126,7 +126,10 @@ export const routes: RoutesFn = (t) => [
   {
     path: "/:realm/groups",
     component: GroupsSection,
-    breadcrumb: t("groups"),
+    breadcrumb: null,
+    matchOptions: {
+      exact: false,
+    },
     access: "query-groups",
   },
   {

@@ -18,6 +18,7 @@ import { AccessContextProvider, useAccess } from "./context/access/Access";
 import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
+import { SubGroups } from "./groups/GroupsSection";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
 
@@ -28,7 +29,9 @@ const AppContexts = ({ children }: { children: ReactNode }) => (
   <AccessContextProvider>
     <Help>
       <AlertProvider>
-        <ServerInfoProvider>{children}</ServerInfoProvider>
+        <ServerInfoProvider>
+          <SubGroups>{children}</SubGroups>
+        </ServerInfoProvider>
       </AlertProvider>
     </Help>
   </AccessContextProvider>
@@ -79,7 +82,11 @@ export const App = () => {
           <Switch>
             {routes(() => {}).map((route, i) => (
               <Route
-                exact
+                exact={
+                  route.matchOptions?.exact === undefined
+                    ? true
+                    : route.matchOptions.exact
+                }
                 key={i}
                 path={route.path}
                 component={() => (
