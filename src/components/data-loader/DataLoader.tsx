@@ -1,37 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { DependencyList, useEffect, useState } from "react";
 import { Spinner } from "@patternfly/react-core";
 import { asyncStateFetch } from "../../context/auth/AdminClient";
 
 type DataLoaderProps<T> = {
   loader: () => Promise<T>;
-  deps?: any[];
-  children: ((arg: Result<T>) => any) | React.ReactNode;
-};
-
-type Result<T> = {
-  data: T;
-  refresh: () => void;
+  deps?: DependencyList;
+  children: ((arg: T) => any) | React.ReactNode;
 };
 
 export function DataLoader<T>(props: DataLoaderProps<T>) {
-  const [data, setData] = useState<{ result: T } | undefined>(undefined);
-
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const [data, setData] = useState<T | undefined>();
 
   useEffect(() => {
     return asyncStateFetch(
       () => props.loader(),
-      (result) => setData({ result })
+      (result) => setData(result)
     );
-  }, [key]);
+  }, props.deps || []);
 
   if (data) {
     if (props.children instanceof Function) {
-      return props.children({
-        data: data.result,
-        refresh: refresh,
-      });
+      return props.children(data);
     }
     return props.children;
   }

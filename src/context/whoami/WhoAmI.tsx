@@ -1,8 +1,7 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import i18n from "../../i18n";
 
-import { DataLoader } from "../../components/data-loader/DataLoader";
-import { AdminClient } from "../auth/AdminClient";
+import { AdminClient, asyncStateFetch } from "../auth/AdminClient";
 import { RealmContext } from "../realm-context/RealmContext";
 import WhoAmIRepresentation, {
   AccessType,
@@ -50,31 +49,42 @@ export class WhoAmI {
   }
 }
 
-export const WhoAmIContext = React.createContext(new WhoAmI());
+type WhoAmIProps = {
+  refresh: () => void;
+  whoAmI: WhoAmI;
+};
+
+export const WhoAmIContext = React.createContext<WhoAmIProps>({
+  refresh: () => {},
+  whoAmI: new WhoAmI(),
+});
 
 type WhoAmIProviderProps = { children: React.ReactNode };
 export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
   const adminClient = useContext(AdminClient)!;
   const { realm, setRealm } = useContext(RealmContext);
+  const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
+  const [key, setKey] = useState(0);
 
-  const whoAmILoader = async () => {
-    const whoamiResponse = await adminClient.whoAmI.find({
-      realm: adminClient.keycloak?.realm,
-    });
-    const whoAmI = new WhoAmI(adminClient.keycloak?.realm, whoamiResponse);
-    if (!realm) {
-      setRealm(whoAmI.getHomeRealm());
-    }
-    return whoAmI;
-  };
+  useEffect(() => {
+    return asyncStateFetch(
+      () =>
+        adminClient.whoAmI.find({
+          realm: adminClient.keycloak?.realm,
+        }),
+      (me) => {
+        const whoAmI = new WhoAmI(adminClient.keycloak?.realm, me);
+        if (!realm) {
+          setRealm(whoAmI.getHomeRealm());
+        }
+        setWhoAmI(whoAmI);
+      }
+    );
+  }, [key]);
 
   return (
-    <DataLoader loader={whoAmILoader}>
-      {(whoami) => (
-        <WhoAmIContext.Provider value={whoami.data}>
-          {children}
-        </WhoAmIContext.Provider>
-      )}
-    </DataLoader>
+    <WhoAmIContext.Provider value={{ refresh: () => setKey(key + 1), whoAmI }}>
+      {children}
+    </WhoAmIContext.Provider>
   );
 };

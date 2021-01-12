@@ -133,7 +133,7 @@ export const Header = () => {
   };
 
   const UserDropdown = () => {
-    const whoami = useContext(WhoAmIContext);
+    const { whoAmI } = useContext(WhoAmIContext);
     const [isDropdownOpen, setDropdownOpen] = useState(false);
 
     const onDropdownToggle = () => {
@@ -147,7 +147,7 @@ export const Header = () => {
         isOpen={isDropdownOpen}
         toggle={
           <DropdownToggle onToggle={onDropdownToggle}>
-            {whoami.getDisplayName()}
+            {whoAmI.getDisplayName()}
           </DropdownToggle>
         }
         dropdownItems={userDropdownItems}

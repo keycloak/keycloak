@@ -22,7 +22,7 @@ describe("<DataLoader />", () => {
         <DataLoader loader={loader}>
           {(result) => (
             <div>
-              {result.data.map((d, i) => (
+              {result.map((d, i) => (
                 <i key={i}>{d}</i>
               ))}
             </div>

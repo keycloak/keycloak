@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -27,13 +27,12 @@ type RealmSelectorProps = {
 
 export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
   const { realm, setRealm } = useRealm();
-  const whoami = useContext(WhoAmIContext);
+  const { whoAmI } = useContext(WhoAmIContext);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filteredItems, setFilteredItems] = useState(realmList);
   const history = useHistory();
   const { t } = useTranslation("common");
-  const { url } = useRouteMatch();
 
   const toUpperCase = (realmName: string) =>
     realmName.charAt(0).toUpperCase() + realmName.slice(1);
@@ -49,7 +48,10 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     <Button
       component="div"
       isBlock
-      onClick={() => history.push(`${url}/add-realm"`)}
+      onClick={() => {
+        history.push(`/${realm}/add-realm`);
+        setOpen(!open);
+      }}
       className={className}
     >
       {t("createRealm")}
@@ -85,7 +87,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
 
   const addRealmComponent = (
     <React.Fragment key="Add Realm">
-      {whoami.canCreateRealm() && (
+      {whoAmI.canCreateRealm() && (
         <>
           <Divider key="divider" />
           <DropdownItem key="add">

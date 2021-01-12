@@ -137,7 +137,7 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
         </>
       }
     >
-      <DataLoader loader={loader}>
+      <DataLoader loader={loader} deps={[clientId]}>
         {(clientRoles) => (
           <>
             {hide ? "" : " "}
@@ -152,7 +152,7 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
                 },
                 { title: t("description"), cellFormatters: [emptyFormatter()] },
               ]}
-              rows={clientRoles.data}
+              rows={clientRoles}
               aria-label="roleList"
             >
               <TableHeader />

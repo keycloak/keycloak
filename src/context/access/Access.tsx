@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 import { RealmContext } from "../../context/realm-context/RealmContext";
@@ -18,17 +18,20 @@ export const useAccess = () => useContext(AccessContext);
 
 type AccessProviderProps = { children: React.ReactNode };
 export const AccessContextProvider = ({ children }: AccessProviderProps) => {
-  const whoami = useContext(WhoAmIContext);
+  const { whoAmI } = useContext(WhoAmIContext);
   const realmCtx = useContext(RealmContext);
+  const [access, setAccess] = useState<readonly AccessType[]>([]);
 
-  const access = () => whoami.getRealmAccess()[realmCtx.realm];
+  useEffect(() => {
+    setAccess(whoAmI.getRealmAccess()[realmCtx.realm]);
+  }, [whoAmI]);
 
   const hasAccess = (...types: AccessType[]) => {
-    return types.every((type) => type === "anyone" || access().includes(type));
+    return types.every((type) => type === "anyone" || access.includes(type));
   };
 
   const hasSomeAccess = (...types: AccessType[]) => {
-    return types.some((type) => type === "anyone" || access().includes(type));
+    return types.some((type) => type === "anyone" || access.includes(type));
   };
 
   return (

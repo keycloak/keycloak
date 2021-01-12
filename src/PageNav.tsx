@@ -18,6 +18,7 @@ import { routes } from "./route-config";
 export const PageNav: React.FunctionComponent = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
+  const { realm } = useRealm();
   const adminClient = useAdminClient();
   const realmLoader = async () => {
     return await adminClient.realms.find();
@@ -81,10 +82,10 @@ export const PageNav: React.FunctionComponent = () => {
       nav={
         <Nav onSelect={onSelect}>
           <NavList>
-            <DataLoader loader={realmLoader}>
+            <DataLoader loader={realmLoader} deps={[realm]}>
               {(realmList) => (
                 <NavItem className="keycloak__page_nav__nav_item__realm-selector">
-                  <RealmSelector realmList={realmList.data || []} />
+                  <RealmSelector realmList={realmList || []} />
                 </NavItem>
               )}
             </DataLoader>

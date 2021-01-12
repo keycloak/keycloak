@@ -14,7 +14,9 @@ describe("<FormAccess />", () => {
   const Form = ({ realm }: { realm: string }) => {
     const { register, control } = useForm();
     return (
-      <WhoAmIContext.Provider value={new WhoAmI("master", whoami)}>
+      <WhoAmIContext.Provider
+        value={{ refresh: () => {}, whoAmI: new WhoAmI("master", whoami) }}
+      >
         <RealmContext.Provider value={{ realm, setRealm: () => {} }}>
           <AccessContextProvider>
             <FormAccess role="manage-clients">
