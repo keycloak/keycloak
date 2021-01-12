@@ -114,7 +114,7 @@ temp/
 **/*.backup.*
 **/*.back.*
 
-node_modules
+**/node_modules
 
 *.sublime*
 
@@ -135,4 +135,9 @@ server/
 
 # VS Code #
 ###########
-*.code-workspace
+**/*.code-workspace
+
+# Cypress #
+###########
+**/assets
+**/cypress.env.json

@@ -1,0 +1,14 @@
+{
+  "name": "cypress-keycloak-ui-testsuite",
+  "version": "1.0.0",
+  "description": "UI tests for Keycloak using Cypress.",
+  "main": "index.js",
+  "scripts": {
+    "test": "cypress open"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cypress": "^5.6.0"
+  }
+}
