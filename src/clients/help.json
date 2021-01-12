@@ -5,6 +5,9 @@
     "client-authenticator-type": "Client Authenticator used for authentication of this client against Keycloak server",
     "registration-access-token": "The registration access token provides access for clients to the client registration service.",
     "signature-algorithm": "JWA algorithm, which the client needs to use when signing a JWT for authentication. If left blank, the client is allowed to use any algorithm.",
-    "subject": "A regular expression for validating Subject DN in the Client Certificate. Use \"(.*?)(?:$)\" to match all kind of expressions."
+    "subject": "A regular expression for validating Subject DN in the Client Certificate. Use \"(.*?)(?:$)\" to match all kind of expressions.",
+    "evaluateExplain": "This page allows you to see all protocol mappers and role scope mappings",
+    "scopeParameter": "You can copy/paste this value of scope parameter and use it in initial OpenID Connect Authentication Request sent from this client adapter. Default client scopes and selected optional client scopes will be used when generating token issued for this client",
+    "user": "Optionally select user, for whom the example access token will be generated. If you do not select a user, example access token will not be generated during evaluation"
   }
 }

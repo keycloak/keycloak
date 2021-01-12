@@ -241,7 +241,7 @@ export const ClientDetails = () => {
                 eventKey={31}
                 title={<TabTitleText>{t("evaluate")}</TabTitleText>}
               >
-                <EvaluateScopes />
+                <EvaluateScopes clientId={id} protocol={client!.protocol!} />
               </Tab>
             </Tabs>
           </Tab>

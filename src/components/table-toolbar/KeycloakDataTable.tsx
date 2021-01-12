@@ -97,15 +97,15 @@ export type DataListProps<T> = {
  *        cellRenderer: ClientDetailLink, //optionally you can use a component to render the column when you don't want just the content of the field, the whole row / entire object is passed in.
  *     }
  *   ]}
- * @param {Object} props - The properties.
+ * @param {DataListProps} props - The properties.
  * @param {string} props.ariaLabelKey - The aria label key i18n key to lookup the label
  * @param {string} props.searchPlaceholderKey - The i18n key to lookup the placeholder for the search box
  * @param {boolean} props.isPaginated - if true the the loader will be called with first, max and search and a pager will be added in the header
  * @param {(first?: number, max?: number, search?: string) => Promise<T[]>} props.loader - loader function that will fetch the data to display first, max and search are only applicable when isPaginated = true
  * @param {Field<T>} props.columns - definition of the columns
  * @param {Action[]} props.actions - the actions that appear on the row
- * @param {ReactNode} props.toolbarItem - Toolbar items that appear on the top of the table @see ToolbarItem
- * @param {ReactNode} props.emptyState - ReactNode show when the list is empty could be any component but best to use @see ListEmptyState
+ * @param {ReactNode} props.toolbarItem - Toolbar items that appear on the top of the table {@link ToolbarItem}
+ * @param {ReactNode} props.emptyState - ReactNode show when the list is empty could be any component but best to use {@link ListEmptyState}
  */
 export function KeycloakDataTable<T>({
   ariaLabelKey,
@@ -145,7 +145,7 @@ export function KeycloakDataTable<T>({
               if (col.cellRenderer) {
                 return col.cellRenderer(value);
               }
-              return (value as any)[col.name];
+              return _.get(value, col.name);
             }),
           };
         });
