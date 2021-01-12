@@ -41,7 +41,6 @@ exports[`<FormAccess /> render normal form 1`] = `
               >
                 <TextInput
                   id="field"
-                  isDisabled={false}
                   key=".0"
                   name="fieldName"
                   type="text"

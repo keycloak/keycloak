@@ -99,19 +99,18 @@ export const FormAccess = ({
       return child;
     });
   };
+
+  const isDisabled = !hasAccess(role) && !fineGrainedAccess;
+
   return (
     <>
       {!unWrap && (
         <Form {...rest}>
-          {recursiveCloneChildren(children, {
-            isDisabled: !hasAccess(role) && !fineGrainedAccess,
-          })}
+          {recursiveCloneChildren(children, isDisabled ? { isDisabled } : {})}
         </Form>
       )}
       {unWrap &&
-        recursiveCloneChildren(children, {
-          isDisabled: !hasAccess(role) && !fineGrainedAccess,
-        })}
+        recursiveCloneChildren(children, isDisabled ? { isDisabled } : {})}
     </>
   );
 };
