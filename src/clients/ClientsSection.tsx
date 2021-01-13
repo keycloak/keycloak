@@ -11,7 +11,7 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { emptyFormatter, exportClient } from "../util";
+import { emptyFormatter, exportClient, getBaseUrl } from "../util";
 import { useAlerts } from "../components/alert/Alerts";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
@@ -23,9 +23,7 @@ export const ClientsSection = () => {
   const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
-  const baseUrl = adminClient.keycloak
-    ? adminClient.keycloak.authServerUrl!
-    : adminClient.baseUrl + "/";
+  const baseUrl = getBaseUrl(adminClient);
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {

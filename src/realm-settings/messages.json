@@ -1,0 +1,30 @@
+{
+  "realm-settings": {
+    "partialImport": "Partial import",
+    "partialExport": "Partial export",
+    "deleteRealm": "Delete realm",
+    "deleteConfirmTitle": "Delete realm?",
+    "deleteConfirm": "If you delete this realm, all associated data will be removed.",
+    "deletedSuccess": "The realm has been deleted",
+    "deleteError": "Could not delete realm: {{error}}",
+    "disableConfirmTitle": "Disable realm?",
+    "disableConfirm": "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
+    "saveSuccess": "Realm successfully updated",
+    "saveError": "Realm could not be updated: {error}",
+    "general": "General",
+    "realmId": "Realm ID",
+    "displayName": "Display name",
+    "htmlDisplayName": "HTML Display name",
+    "frontendUrl": "Frontend URL",
+    "requireSsl": "Require SSL",
+    "sslType": {
+      "all": "All requests",
+      "external": "External requests",
+      "none": "None"
+    },
+    "userManagedAccess": "User-managed access",
+    "endpoints": "Endpoints",
+    "openEndpointConfiguration": "Open Endpoint Configuration",
+    "samlIdentityProviderMetadata": "SAML 2.0 Identity Provider Metadata"
+  }
+}

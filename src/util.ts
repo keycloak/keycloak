@@ -3,6 +3,7 @@ import FileSaver from "file-saver";
 import _ from "lodash";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { ProviderRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import KeycloakAdminClient from "keycloak-admin";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;
@@ -49,6 +50,9 @@ export const exportClient = (client: ClientRepresentation): void => {
   );
 };
 
+export const toUpperCase = (realmName: string) =>
+  realmName.charAt(0).toUpperCase() + realmName.slice(1);
+
 export const convertToFormValues = (
   obj: any,
   prefix: string,
@@ -72,4 +76,10 @@ export const emptyFormatter = (): IFormatter => (
   data?: IFormatterValueType
 ) => {
   return data ? data : "—";
+};
+
+export const getBaseUrl = (adminClient: KeycloakAdminClient) => {
+  return adminClient.keycloak
+    ? adminClient.keycloak.authServerUrl!
+    : adminClient.baseUrl + "/";
 };

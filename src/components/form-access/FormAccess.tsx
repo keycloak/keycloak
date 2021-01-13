@@ -7,11 +7,14 @@ import React, {
 import { Controller } from "react-hook-form";
 import {
   ActionGroup,
+  ClipboardCopy,
   Form,
   FormGroup,
   FormProps,
   Grid,
   GridItem,
+  Stack,
+  StackItem,
   TextArea,
 } from "@patternfly/react-core";
 import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
@@ -91,7 +94,10 @@ export const FormAccess = ({
           child.type === FormGroup ||
             child.type === GridItem ||
             child.type === Grid ||
-            child.type === ActionGroup
+            child.type === ActionGroup ||
+            child.type === ClipboardCopy ||
+            child.type === Stack ||
+            child.type === StackItem
             ? { children }
             : { ...newProps, children }
         );

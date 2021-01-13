@@ -20,6 +20,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 
 import "./realm-selector.css";
+import { toUpperCase } from "../../util";
 
 type RealmSelectorProps = {
   realmList: RealmRepresentation[];
@@ -33,9 +34,6 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
   const [filteredItems, setFilteredItems] = useState(realmList);
   const history = useHistory();
   const { t } = useTranslation("common");
-
-  const toUpperCase = (realmName: string) =>
-    realmName.charAt(0).toUpperCase() + realmName.slice(1);
 
   const RealmText = ({ value }: { value: string }) => (
     <Split className="keycloak__realm_selector__list-item-split">
