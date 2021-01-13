@@ -85,9 +85,7 @@
     "userFedDeleteConfirmTitle": "Delete user federation provider?",
     "userFedDeleteConfirm": "If you delete this user federation provider, all associated data will be removed.",
 
-    "*** mappers ***": "",
     "id": "ID",
-    "name": "Name",
 
     "mapperType": "Mapper type",
     "mapperTypeMsadUserAccountControlManager": "msad-user-account-control-mapper",
@@ -132,8 +130,6 @@
     "roleObjectClasses": "Role object classes",
     "useRealmRolesMapping": "Use realm roles mapping",
     "clientId": "Client ID",
-
-    "role": "Role",
 
     "derFormatted": "DER formatted",
 

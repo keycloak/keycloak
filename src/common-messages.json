@@ -39,6 +39,12 @@
     "enableHelpMode": "Enable help mode",
     "learnMore": "Learn more",
     "test": "Test",
+    "name": "Name",
+    "role": "Role",
+    "description": "Description",
+    "type": "Type",
+    "category": "Category",
+    "priority": "Priority",
 
     "home": "Home",
     "manage": "Manage",

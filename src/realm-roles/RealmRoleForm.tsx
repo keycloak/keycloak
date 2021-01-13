@@ -45,7 +45,7 @@ export const RealmRoleForm = ({ form, save, editMode }: RealmRoleFormProps) => {
         />
       </FormGroup>
       <FormGroup
-        label={t("description")}
+        label={t("common:description")}
         fieldId="kc-description"
         validated={
           form.errors.description

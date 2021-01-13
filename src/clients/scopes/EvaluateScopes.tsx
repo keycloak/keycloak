@@ -71,11 +71,11 @@ const ProtocolMappers = ({
         },
         {
           name: "type.category",
-          displayKey: "clients:category",
+          displayKey: "common:category",
         },
         {
           name: "type.priority",
-          displayKey: "clients:priority",
+          displayKey: "commmon:priority",
         },
       ]}
     />

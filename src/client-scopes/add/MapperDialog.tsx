@@ -142,7 +142,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
       {isBuiltIn && rows.length > 0 && (
         <Table
           variant={TableVariant.compact}
-          cells={[t("name"), t("description")]}
+          cells={[t("common:name"), t("common:description")]}
           onSelect={(_, isSelected, rowIndex) => {
             rows[rowIndex].selected = isSelected;
             setRows([...rows]);

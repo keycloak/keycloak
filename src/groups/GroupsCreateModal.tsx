@@ -75,7 +75,7 @@ export const GroupsCreateModal = ({
         <Form isHorizontal onSubmit={submitForm}>
           <FormGroup
             name="create-modal-group"
-            label={t("name")}
+            label={t("common:name")}
             fieldId="group-id"
             helperTextInvalid={t("common:required")}
             validated={

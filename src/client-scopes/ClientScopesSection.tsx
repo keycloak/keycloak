@@ -68,12 +68,12 @@ export const ClientScopesSection = () => {
           ]}
           columns={[
             {
-              name: "name",
+              name: t("common:name"),
               cellRenderer: ClientScopeDetailLink,
             },
-            { name: "description" },
+            { name: t("common:description") },
             {
-              name: "protocol",
+              name: t("protocol"),
             },
           ]}
         />

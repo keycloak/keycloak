@@ -189,7 +189,12 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
       />
       <Table
         variant={TableVariant.compact}
-        cells={[t("name"), t("category"), t("type"), t("priority")]}
+        cells={[
+          t("common:name"),
+          t("common:category"),
+          t("common:type"),
+          t("common:priority"),
+        ]}
         rows={(filteredData || data).map((cell) => {
           return { cells: Object.values(cell.cells), mapper: cell.mapper };
         })}

@@ -97,35 +97,35 @@
     "memberofLdapAttributeHelp": "Used just when 'User Roles Retrieve Strategy' is GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE. It specifies the name of the LDAP attribute on the LDAP user, which contains the groups, which the user is member of. Usually it will be 'memberOf' and that's also the default value.",
     "mappedGroupAttributesHelp": "List of names of attributes divided by comma. This points to the list of attributes on LDAP group, which will be mapped as attributes of Group in Keycloak. Leave this empty if no additional group attributes are required to be mapped in Keycloak.",
     "dropNonexistingGroupsDuringSync": "If this flag is true, then during sync of groups from LDAP to Keycloak, we will keep just those Keycloak groups, which still exists in LDAP. Rest will be deleted",
-    "groupsPath": "Keycloak group path the LDAP groups are added to. For example if value '/Applications/App1' is used, then LDAP groups will be available in Keycloak under group 'App1', which is child of top level group 'Applications'. The default value is '/' so LDAP groups will be mapped to the Keycloak groups at the top level. The configured group path must already exists in the Keycloak when creating this mapper.",
+    "groupsPath": "Keycloak group path the LDAP groups are added to. For example if value '/Applications/App1' is used, then LDAP groups will be available in Keycloak under group 'App1', which is child of top level group 'Applications'. The default value is '/' so LDAP groups will be mapped to the Keycloak groups at the top level. The configured group path must already exist in the Keycloak when creating this mapper.",
 
     "userModelAttributeHelp": "Name of the UserModel property or attribute you want to map the LDAP attribute into. For example 'firstName', 'lastName, 'email', 'street' etc.",
-    "ldapAttribute": "Name of mapped attribute on LDAP object. For example 'cn', 'sn, 'mail', 'street' etc.",
+    "ldapAttribute": "Name of mapped attribute on LDAP object. For example 'cn', 'sn', 'mail', 'street' etc.",
     "readOnlyHelp": "Read-only attribute is imported from LDAP to UserModel, but it's not saved back to LDAP when user is updated in Keycloak.",
     "alwaysReadValueFromLdapHelp": "If on, then during reading of the LDAP attribute value will always used instead of the value from Keycloak DB",
     "isMandatoryInLdapHelp": "If true, attribute is mandatory in LDAP. Hence if there is no value in Keycloak DB, the empty value will be set to be propagated to LDAP",
     "isBinaryAttributeHelp": "Should be true for binary LDAP attributes",
 
-    "ldapRolesDNHelp": "LDAP DN where are roles of this tree saved. For example 'ou=finance,dc=example,dc=org'",
+    "ldapRolesDNHelp": "LDAP DN where roles of this tree are saved. For example 'ou=finance,dc=example,dc=org'",
     "roleNameLdapAttributeHelp": "Name of LDAP attribute, which is used in role objects for name and RDN of role. Usually it will be 'cn'. In this case typical group/role object may have DN like 'cn=role1,ou=finance,dc=example,dc=org'",
     "roleObjectClassesHelp": "Object class (or classes) of the role object. It's divided by comma if more classes needed. In typical LDAP deployment it could be 'groupOfNames'. In Active Directory it's usually 'group'",
     "useRealmRolesMappingHelp": "If true, then LDAP role mappings will be mapped to realm role mappings in Keycloak. Otherwise it will be mapped to client role mappings",
     "clientIdHelp": "Client ID of client to which LDAP role mappings will be mapped. Applicable just if 'Use Realm Roles Mapping' is false",
 
-    "userModelAttributeNameHelp": "Name of the model attribute, which will be added when importing user from ldap",
-    "attributeValueHelp": "Value of the model attribute, which will be added when importing user from ldap.",
+    "userModelAttributeNameHelp": "Name of the model attribute, which will be added when importing user from LDAP",
+    "attributeValueHelp": "Value of the model attribute, which will be added when importing user from LDAP.",
 
     "roleHelp": "Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole",
 
     "derFormattedHelp": "Activate this if the certificate is DER formatted in LDAP and not PEM formatted.",
 
     "ldapFullNameAttributeHelp": "Name of LDAP attribute, which contains fullName of user. Usually it will be 'cn'",
-    "fullNameLdapMapperReadOnlyHelp": "For Read-only is data imported from LDAP to Keycloak DB, but it's not saved back to LDAP when user is updated in Keycloak.",
+    "fullNameLdapMapperReadOnlyHelp": "For Read-only data is imported from LDAP to Keycloak DB, but it's not saved back to LDAP when user is updated in Keycloak.",
     "fullNameLdapMapperWriteOnlyHelp": "For Write-only is data propagated to LDAP when user is created or updated in Keycloak. But this mapper is not used to propagate data from LDAP back into Keycloak. This setting is useful if you configured separate firstName and lastName attribute mappers and you want to use those to read attribute from LDAP into Keycloak",
 
-    "groupHelp": "When user is imported from LDAP, he will be automatically added into this configured group.",
+    "groupHelp": "When user is imported from LDAP, they will be automatically added into this configured group.",
 
     "ldapAttributeNameHelp": "Name of the LDAP attribute, which will be added to the new user during registration",
-    "ldapAttributeValueHelp": "Value of the LDAP attribute, which will be added to the new user during registration. You can either hardcode any value like 'foo' but you can also use some special tokens. Only supported token right now is '${RANDOM}' , which will be replaced with some randomly generated String."
+    "ldapAttributeValueHelp": "Value of the LDAP attribute, which will be added to the new user during registration. You can either hardcode any value like 'foo' but you can also use some special tokens. Only supported token right now is '${RANDOM}', which will be replaced with some randomly generated String."
   }
 }

@@ -404,9 +404,9 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
             }}
             variant={TableVariant.compact}
             cells={[
-              t("name"),
+              t("common:name"),
               { title: t("assignedType"), cellFormatters: [dropdown()] },
-              t("description"),
+              t("common:description"),
             ]}
             rows={rows}
             actions={[

@@ -58,7 +58,7 @@ export const ImportForm = () => {
         <Form isHorizontal onSubmit={handleSubmit(save)}>
           <JsonFileUpload id="realm-file" onChange={handleFileChange} />
           <ClientDescription form={form} />
-          <FormGroup label={t("type")} fieldId="kc-type">
+          <FormGroup label={t("common:type")} fieldId="kc-type">
             <TextInput
               type="text"
               id="kc-type"

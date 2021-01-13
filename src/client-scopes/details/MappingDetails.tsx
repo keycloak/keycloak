@@ -157,11 +157,11 @@ export const MappingDetails = () => {
         <Form isHorizontal onSubmit={handleSubmit(save)}>
           {!id.match(isGuid) && (
             <FormGroup
-              label={t("name")}
+              label={t("common:name")}
               labelIcon={
                 <HelpItem
                   helpText="client-scopes-help:mapperName"
-                  forLabel={t("name")}
+                  forLabel={t("common:name")}
                   forID="name"
                 />
               }

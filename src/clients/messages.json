@@ -5,10 +5,7 @@
     "createClient": "Create client",
     "importClient": "Import client",
     "clientID": "Client ID",
-    "type": "Type",
     "homeURL": "Home URL",
-    "description": "Description",
-    "name": "Name",
     "formatOption": "Format option",
     "downloadAdaptorTitle": "Download adaptor configs",
     "credentials": "Credentials",
@@ -25,8 +22,8 @@
     "changeTypeTo": "Change type to",
     "assignRole": "Assign role",
     "clientScope": {
-      "default" : "Default",
-      "optional" : "Optional"
+      "default": "Default",
+      "optional": "Optional"
     },
     "clientScopeSearch": {
       "client": "Client scope",
@@ -45,10 +42,7 @@
     "generatedAccessToken": "Generated access token",
     "searchForProtocol": "Search protocol mapper",
     "parentClientScope": "Parent client scope",
-    "category": "Category",
-    "priority": "Priority",
     "searchForRole": "Search role",
-    "role": "Role",
     "origin": "Origin",
     "user": "User",
     "details": "Details",
