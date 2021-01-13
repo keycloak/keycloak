@@ -31,7 +31,7 @@ import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 import org.keycloak.adapters.spi.*;
 import org.keycloak.adapters.tomcat.CatalinaHttpFacade;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
-import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.adapters.tomcat.PrincipalFactory;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 import javax.servlet.RequestDispatcher;
@@ -186,7 +186,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
     }
 
-    protected abstract GenericPrincipalFactory createPrincipalFactory();
+    protected abstract PrincipalFactory createPrincipalFactory();
     protected abstract boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException;
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 

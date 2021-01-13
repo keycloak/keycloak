@@ -183,7 +183,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
     }
 
-    protected abstract GenericPrincipalFactory createPrincipalFactory();
+    protected abstract PrincipalFactory createPrincipalFactory();
     protected abstract boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException;
     protected abstract AbstractAuthenticatedActionsValve createAuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container);
 
