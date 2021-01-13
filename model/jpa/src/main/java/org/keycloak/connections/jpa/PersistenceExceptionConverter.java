@@ -29,19 +29,18 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PersistenceExceptionConverter implements InvocationHandler {
 
-    private static final Collection<String> WRITE_METHOD_NAMES = Arrays.asList("persist", "merge");
+    private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
 
     private final EntityManager em;
-    private final Boolean batchEnabled;
-    private final Integer batchSize;
+    private final boolean batchEnabled;
+    private final int batchSize;
     private int changeCount = 0;
 
     public static EntityManager create(KeycloakSession session, EntityManager em) {
@@ -66,7 +65,7 @@ public class PersistenceExceptionConverter implements InvocationHandler {
 
     private void flushInBatchIfEnabled(Method method) {
         if (batchEnabled) {
-            if (WRITE_METHOD_NAMES.contains(method.getName())) {
+            if (WRITE_METHOD_NAMES.matcher(method.getName()).matches()) {
                 if (changeCount++ > batchSize) {
                     em.flush();
                     em.clear();
