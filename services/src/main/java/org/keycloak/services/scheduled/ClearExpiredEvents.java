@@ -17,6 +17,8 @@
 
 package org.keycloak.services.scheduled;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.timer.ScheduledTask;
@@ -26,17 +28,19 @@ import org.keycloak.timer.ScheduledTask;
  */
 public class ClearExpiredEvents implements ScheduledTask {
 
+    protected static final Logger logger = Logger.getLogger(ClearExpiredEvents.class);
+
     @Override
     public void run(KeycloakSession session) {
+        long currentTimeMillis = Time.currentTimeMillis();
+
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         if (eventStore != null) {
-            session.realms().getRealmsStream().forEach(realm -> {
-                if (realm.isEventsEnabled() && realm.getEventsExpiration() > 0) {
-                    long olderThan = System.currentTimeMillis() - realm.getEventsExpiration() * 1000;
-                    eventStore.clear(realm.getId(), olderThan);
-                }
-            });
+            eventStore.clearExpiredEvents();
         }
+
+        long took = Time.currentTimeMillis() - currentTimeMillis;
+        logger.debugf("ClearExpiredEvents finished in %d ms", took);
     }
 
 }

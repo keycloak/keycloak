@@ -17,6 +17,8 @@
 
 package org.keycloak.services.scheduled;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -27,16 +29,23 @@ import org.keycloak.timer.ScheduledTask;
  */
 public class ClearExpiredUserSessions implements ScheduledTask {
 
+    protected static final Logger logger = Logger.getLogger(ClearExpiredUserSessions.class);
+
     public static final String TASK_NAME = "ClearExpiredUserSessions";
 
     @Override
     public void run(KeycloakSession session) {
+        long currentTimeMillis = Time.currentTimeMillis();
+
         UserSessionProvider sessions = session.sessions();
         session.realms().getRealmsStream().forEach(realm -> {
             sessions.removeExpired(realm);
             session.authenticationSessions().removeExpired(realm);
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
         });
+
+        long took = Time.currentTimeMillis() - currentTimeMillis;
+        logger.debugf("ClearExpiredUserSessions finished in %d ms", took);
     }
 
 }

@@ -35,6 +35,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserCredentialModel;
@@ -689,6 +690,14 @@ public final class KeycloakModelUtils {
         } else {
             return provider.getAlias();
         }
+    }
+
+    /**
+     * @return true if implementation of realmProvider is "jpa" . Which is always the case in standard Keycloak installations.
+     */
+    public static boolean isRealmProviderJpa(KeycloakSession session) {
+        Set<String> providerIds = session.listProviderIds(RealmProvider.class);
+        return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
     }
 
 }

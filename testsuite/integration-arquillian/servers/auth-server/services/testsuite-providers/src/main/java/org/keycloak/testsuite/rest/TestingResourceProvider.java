@@ -282,11 +282,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/clear-event-store-older-than")
+    @Path("/clear-expired-events")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
+    public Response clearExpiredEvents() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear(realmId, olderThan);
+        eventStore.clearExpiredEvents();
         return Response.noContent().build();
     }
 
