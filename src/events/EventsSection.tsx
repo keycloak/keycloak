@@ -5,7 +5,6 @@ import {
   Label,
   PageSection,
   Tab,
-  Tabs,
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -19,13 +18,13 @@ import { RealmContext } from "../context/realm-context/RealmContext";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { AdminEvents } from "./AdminEvents";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 export const EventsSection = () => {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
   const { realm } = useContext(RealmContext);
 
-  const [activeTab, setActiveTab] = useState(0);
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
 
@@ -55,13 +54,9 @@ export const EventsSection = () => {
     <>
       <ViewHeader titleKey="events:title" subKey="events:eventExplain" />
       <PageSection variant="light">
-        <Tabs
-          activeKey={activeTab}
-          onSelect={(_, key) => setActiveTab(key as number)}
-          isBox
-        >
+        <KeycloakTabs isBox>
           <Tab
-            eventKey={0}
+            eventKey="userEvents"
             title={<TabTitleText>{t("userEvents")}</TabTitleText>}
           >
             <KeycloakDataTable
@@ -110,12 +105,12 @@ export const EventsSection = () => {
             />
           </Tab>
           <Tab
-            eventKey={1}
+            eventKey="adminEvents"
             title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
           >
             <AdminEvents />
           </Tab>
-        </Tabs>
+        </KeycloakTabs>
       </PageSection>
     </>
   );

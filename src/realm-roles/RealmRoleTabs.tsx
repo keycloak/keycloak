@@ -6,7 +6,6 @@ import {
   DropdownItem,
   PageSection,
   Tab,
-  Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -20,6 +19,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RealmRoleForm } from "./RealmRoleForm";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 const arrayToAttributes = (attributeArray: KeyValueType[]) => {
   const initValue: { [index: string]: string[] } = {};
@@ -50,7 +50,6 @@ export const RealmRoleTabs = () => {
   const history = useHistory();
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
-  const [activeTab, setActiveTab] = useState(0);
   const { realm } = useRealm();
 
   const { id } = useParams<{ id: string }>();
@@ -145,24 +144,20 @@ export const RealmRoleTabs = () => {
       />
       <PageSection variant="light">
         {id && (
-          <Tabs
-            activeKey={activeTab}
-            onSelect={(_, key) => setActiveTab(key as number)}
-            isBox
-          >
+          <KeycloakTabs isBox>
             <Tab
-              eventKey={0}
+              eventKey="details"
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
               <RealmRoleForm form={form} save={save} editMode={true} />
             </Tab>
             <Tab
-              eventKey={1}
+              eventKey="attributes"
               title={<TabTitleText>{t("attributes")}</TabTitleText>}
             >
               <RoleAttributes form={form} save={save} />
             </Tab>
-          </Tabs>
+          </KeycloakTabs>
         )}
         {!id && <RealmRoleForm form={form} save={save} editMode={false} />}
       </PageSection>

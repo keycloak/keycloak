@@ -12,7 +12,6 @@ import {
   SelectVariant,
   Switch,
   Tab,
-  Tabs,
   TabTitleText,
   TextInput,
   ValidatedOptions,
@@ -26,6 +25,7 @@ import {
   useAdminClient,
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
+import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -39,7 +39,6 @@ export const ClientScopeForm = () => {
   >();
   const history = useHistory();
   const [clientScope, setClientScope] = useState<ClientScopeRepresentation>();
-  const [activeTab, setActiveTab] = useState(0);
 
   const adminClient = useAdminClient();
   const providers = useLoginProviders();
@@ -103,13 +102,9 @@ export const ClientScopeForm = () => {
       />
 
       <PageSection variant="light">
-        <Tabs
-          activeKey={activeTab}
-          onSelect={(_, key) => setActiveTab(key as number)}
-          isBox
-        >
+        <KeycloakTabs isBox>
           <Tab
-            eventKey={0}
+            eventKey="settings"
             title={<TabTitleText>{t("common:settings")}</TabTitleText>}
           >
             <Form
@@ -312,14 +307,14 @@ export const ClientScopeForm = () => {
           </Tab>
           <Tab
             isHidden={!id}
-            eventKey={1}
+            eventKey="mappers"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
           >
             {clientScope && (
               <MapperList clientScope={clientScope} refresh={refresh} />
             )}
           </Tab>
-        </Tabs>
+        </KeycloakTabs>
       </PageSection>
     </>
   );

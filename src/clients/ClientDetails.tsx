@@ -6,7 +6,6 @@ import {
   PageSection,
   Spinner,
   Tab,
-  Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -33,6 +32,7 @@ import {
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 type ClientDetailHeaderProps = {
   onChange: (...event: any[]) => void;
@@ -106,8 +106,6 @@ export const ClientDetails = () => {
 
   const { id } = useParams<{ id: string }>();
 
-  const [activeTab, setActiveTab] = useState(0);
-  const [activeTab2, setActiveTab2] = useState(30);
   const [client, setClient] = useState<ClientRepresentation>();
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -203,57 +201,49 @@ export const ClientDetails = () => {
         )}
       />
       <PageSection variant="light">
-        <Tabs
-          activeKey={activeTab}
-          onSelect={(_, key) => setActiveTab(key as number)}
-          isBox
-        >
+        <KeycloakTabs isBox>
           <Tab
-            eventKey={0}
+            eventKey="settings"
             title={<TabTitleText>{t("common:settings")}</TabTitleText>}
           >
             <ClientSettings form={form} save={save} />
           </Tab>
           {publicClient && (
             <Tab
-              eventKey={1}
+              eventKey="credentials"
               title={<TabTitleText>{t("credentials")}</TabTitleText>}
             >
               <Credentials clientId={id} form={form} save={save} />
             </Tab>
           )}
           <Tab
-            eventKey={2}
+            eventKey="clientScopes"
             title={<TabTitleText>{t("clientScopes")}</TabTitleText>}
           >
-            <Tabs
-              activeKey={activeTab2}
-              isSecondary
-              onSelect={(_, key) => setActiveTab2(key as number)}
-            >
+            <KeycloakTabs paramName="subtab" isSecondary>
               <Tab
-                eventKey={30}
+                eventKey="setup"
                 title={<TabTitleText>{t("setup")}</TabTitleText>}
               >
                 <ClientScopes clientId={id} protocol={client!.protocol!} />
               </Tab>
               <Tab
-                eventKey={31}
+                eventKey="evaluate"
                 title={<TabTitleText>{t("evaluate")}</TabTitleText>}
               >
                 <EvaluateScopes clientId={id} protocol={client!.protocol!} />
               </Tab>
-            </Tabs>
+            </KeycloakTabs>
           </Tab>
           {client && client.serviceAccountsEnabled && (
             <Tab
-              eventKey={3}
+              eventKey="serviceAccount"
               title={<TabTitleText>{t("serviceAccount")}</TabTitleText>}
             >
               <ServiceAccount clientId={id} />
             </Tab>
           )}
-        </Tabs>
+        </KeycloakTabs>
       </PageSection>
     </>
   );

@@ -64,6 +64,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-clients",
   },
   {
+    path: "/:realm/clients/:id/:tab?/:subtab?",
+    component: ClientDetails,
+    breadcrumb: null,
+    access: "view-clients",
+  },
+  {
     path: "/:realm/client-scopes/new",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:createClientScope"),
@@ -73,6 +79,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/:realm/client-scopes/:id",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:clientScopeDetails"),
+    access: "view-clients",
+  },
+  {
+    path: "/:realm/client-scopes/:id/:tab",
+    component: ClientScopeForm,
+    breadcrumb: null,
     access: "view-clients",
   },
   {
@@ -118,6 +130,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
+    path: "/:realm/roles/:id/:tab",
+    component: RealmRoleTabs,
+    breadcrumb: null,
+    access: "view-realm",
+  },
+  {
     path: "/:realm/users",
     component: UsersSection,
     breadcrumb: t("users:title"),
@@ -142,6 +160,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/:realm/events",
     component: EventsSection,
     breadcrumb: t("events:title"),
+    access: "view-events",
+  },
+  {
+    path: "/:realm/events/:tab",
+    component: EventsSection,
+    breadcrumb: null,
     access: "view-events",
   },
   {
