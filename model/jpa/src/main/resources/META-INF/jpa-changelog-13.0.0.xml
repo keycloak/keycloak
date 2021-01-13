@@ -30,4 +30,12 @@
         <dropTable tableName="CLIENT_DEFAULT_ROLES" />
     </changeSet>
 
+    <changeSet author="keycloak" id="13.0.0-KEYCLOAK-16844">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD">
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="CREATED_ON" type="INT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
