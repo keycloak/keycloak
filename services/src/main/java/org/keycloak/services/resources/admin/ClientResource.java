@@ -332,8 +332,7 @@ public class ClientResource {
         }
         client.addClientScope(clientScope, defaultScope);
 
-        final ClientScopeRepresentation rep = ModelToRepresentation.toRepresentation(clientScope, session);
-        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).representation(rep).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).success();
     }
 
 
@@ -349,8 +348,7 @@ public class ClientResource {
         }
         client.removeClientScope(clientScope);
 
-        final ClientScopeRepresentation rep = ModelToRepresentation.toRepresentation(clientScope, session);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).representation(rep).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).success();
     }
 
 
