@@ -26,7 +26,7 @@ import org.apache.catalina.deploy.LoginConfig;
 import org.keycloak.adapters.jbossweb.JBossWebPrincipalFactory;
 import org.keycloak.adapters.saml.*;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
-import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.adapters.tomcat.PrincipalFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
     }
 
     @Override
-    protected GenericPrincipalFactory createPrincipalFactory() {
+    protected PrincipalFactory createPrincipalFactory() {
         return new JBossWebPrincipalFactory();
     }
 

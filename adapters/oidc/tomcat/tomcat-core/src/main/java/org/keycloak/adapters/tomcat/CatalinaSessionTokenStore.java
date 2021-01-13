@@ -45,12 +45,12 @@ public class CatalinaSessionTokenStore extends CatalinaAdapterSessionStore imple
 
     private KeycloakDeployment deployment;
     private CatalinaUserSessionManagement sessionManagement;
-    protected GenericPrincipalFactory principalFactory;
+    protected PrincipalFactory principalFactory;
 
 
     public CatalinaSessionTokenStore(Request request, KeycloakDeployment deployment,
                                      CatalinaUserSessionManagement sessionManagement,
-                                     GenericPrincipalFactory principalFactory,
+                                     PrincipalFactory principalFactory,
                                      AbstractKeycloakAuthenticatorValve valve) {
         super(request, valve);
         this.deployment = deployment;

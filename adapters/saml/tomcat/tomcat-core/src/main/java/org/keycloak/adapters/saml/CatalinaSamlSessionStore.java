@@ -26,7 +26,7 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
-import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.adapters.tomcat.PrincipalFactory;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.servlet.http.HttpSession;
@@ -44,7 +44,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
     public static final String SAML_REDIRECT_URI = "SAML_REDIRECT_URI";
 
     private final CatalinaUserSessionManagement sessionManagement;
-    protected final GenericPrincipalFactory principalFactory;
+    protected final PrincipalFactory principalFactory;
     private final SessionIdMapper idMapper;
     private final SessionIdMapperUpdater idMapperUpdater;
     protected final Request request;
@@ -52,7 +52,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
     protected final HttpFacade facade;
     protected final SamlDeployment deployment;
 
-    public CatalinaSamlSessionStore(CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory,
+    public CatalinaSamlSessionStore(CatalinaUserSessionManagement sessionManagement, PrincipalFactory principalFactory,
                                     SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater,
                                     Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade,
                                     SamlDeployment deployment) {
