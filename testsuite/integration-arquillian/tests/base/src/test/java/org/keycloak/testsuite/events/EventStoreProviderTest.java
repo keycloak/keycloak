@@ -21,23 +21,44 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventType;
+import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class EventStoreProviderTest extends AbstractEventsTest {
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        super.addTestRealms(testRealms);
+
+        for (String realmId : new String[] {"realmId", "realmId2"}) {
+            RealmRepresentation adminRealmRep = new RealmRepresentation();
+            adminRealmRep.setId(realmId);
+            adminRealmRep.setRealm(realmId);
+            adminRealmRep.setEnabled(true);
+            adminRealmRep.setEventsEnabled(true);
+            adminRealmRep.setEventsExpiration(0);
+            testRealms.add(adminRealmRep);
+        }
+    }
 
     @After
     public void after() {
@@ -175,15 +196,41 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
     @Test
     public void clearOld() {
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 20000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 200000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
         testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
         testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
-        testing().clearEventStore("realmId", System.currentTimeMillis() - 10000);
+        // Set expiration of events for "realmId" .
+        RealmRepresentation realm = realmsResouce().realm("realmId").toRepresentation();
+        realm.setEventsExpiration(100);
+        realmsResouce().realm("realmId").update(realm);
 
+        // The first 2 events from realmId will be deleted
+        testing().clearExpiredEvents();
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+
+        // Set expiration of events for realmId2 as well
+        RealmRepresentation realm2 = realmsResouce().realm("realmId2").toRepresentation();
+        realm2.setEventsExpiration(100);
+        realmsResouce().realm("realmId2").update(realm2);
+
+        // The first event from "realmId2" will be deleted now
+        testing().clearExpiredEvents();
         Assert.assertEquals(3, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+
+        // set time offset to the future. The remaining 2 events from "realmId" and 1 event from "realmId2" should be expired now
+        setTimeOffset(150);
+        testing().clearExpiredEvents();
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+
+        // Revert expirations
+        realm.setEventsExpiration(0);
+        realmsResouce().realm("realmId").update(realm);
+        realm2.setEventsExpiration(0);
+        realmsResouce().realm("realmId2").update(realm2);
     }
 
     private EventRepresentation create(EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {

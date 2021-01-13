@@ -89,9 +89,9 @@ public interface TestingResource {
     void clearEventStore(@QueryParam("realmId") String realmId);
 
     @GET
-    @Path("/clear-event-store-older-than")
+    @Path("/clear-expired-events")
     @Produces(MediaType.APPLICATION_JSON)
-    void clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+    void clearExpiredEvents();
 
     /**
      * Query events
