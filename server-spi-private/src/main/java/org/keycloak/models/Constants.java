@@ -108,4 +108,14 @@ public final class Constants {
     public static final Pattern CFG_DELIMITER_PATTERN = Pattern.compile("\\s*" + CFG_DELIMITER + "\\s*");
 
     public static final String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
+
+    /**
+     * If set as an attribute in the {@link KeycloakSession}, indicates that the storage should batch write operations.
+     */
+    public static final String STORAGE_BATCH_ENABLED = "org.keycloak.storage.batch_enabled";
+
+    /**
+     * If {@code #STORAGE_BATCH_ENABLED} is set, indicates the batch size.
+     */
+    public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
 }
