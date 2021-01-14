@@ -90,7 +90,6 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.RequestedScopeValidationManager;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
@@ -767,7 +766,7 @@ public class TokenEndpoint {
     private String getRequestedScopes() {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        if (!new RequestedScopeValidationManager(session).isValid(scope, client)) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
                     Status.BAD_REQUEST);

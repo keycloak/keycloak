@@ -561,6 +561,16 @@ public class TokenManager {
                 clientScopes).distinct();
     }
 
+    public static boolean isValidScope(KeycloakSession session, String scopes, ClientModel client) {
+        Set<RequestedScopeValidationProvider> providers = session.getAllProviders(RequestedScopeValidationProvider.class);
+        for (RequestedScopeValidationProvider provider : providers) {
+            if (provider.isValid(scopes, client)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static Stream<String> parseScopeParameter(String scopeParam) {
         return Arrays.stream(scopeParam.split(" ")).distinct();
     }
