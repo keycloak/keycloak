@@ -743,6 +743,7 @@ public class UserResource {
             throw new WebApplicationException(
                     ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST));
         }
+        this.session.getContext().setClient(client);
 
         String redirect;
         if (redirectUri != null) {
@@ -767,6 +768,7 @@ public class UserResource {
 
             this.session.getProvider(EmailTemplateProvider.class)
               .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
+              .setAttribute(Constants.CLIENT_ID, clientId)
               .setRealm(realm)
               .setUser(user)
               .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
