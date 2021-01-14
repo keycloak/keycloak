@@ -4,5 +4,9 @@
     "baseUrl": "http://localhost:8080",
     "chromeWebSecurity": false,
     "viewportWidth": 1360,
-    "viewportHeight": 768
+    "viewportHeight": 768,
+    "retries": {
+        "runMode": 2,
+        "openMode": 0
+      }
 }
