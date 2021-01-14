@@ -98,7 +98,7 @@
     "mapperTypeCertificateLdapMapper": "certificate-ldap-mapper",
     "mapperTypeFullNameLdapMapper": "full-name-ldap-mapper",
     "mapperTypeHardcodedLdapGroupMapper": "hardcoded-ldap-group-mapper",
-    "mapperTypeLdaoAttributeMapper": "hardcoded-ldap-attribute-mapper",
+    "mapperTypeLdapAttributeMapper": "hardcoded-ldap-attribute-mapper",
 
     "passwordPolicyHintsEnabled": "Password policy hints enabled",
 
