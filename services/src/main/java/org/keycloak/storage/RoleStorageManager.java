@@ -16,8 +16,11 @@
  */
 package org.keycloak.storage;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
@@ -27,6 +30,8 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.role.RoleLookupProvider;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderFactory;
@@ -69,6 +74,14 @@ public class RoleStorageManager implements RoleProvider {
 
 
     public static <T> Stream<RoleStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory()
+                .getProviderFactories(RoleStorageProvider.class);
+
+        // there is no need iterate over the database if there is no role storage provider
+        if (factories.isEmpty()) {
+            return Stream.empty();
+        }
+
         return realm.getRoleStorageProvidersStream()
                 .filter(model -> {
                     RoleStorageProviderFactory factory = getRoleStorageProviderFactory(model, session);

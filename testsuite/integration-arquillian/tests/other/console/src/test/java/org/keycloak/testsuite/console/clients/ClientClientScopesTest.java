@@ -155,7 +155,7 @@ public class ClientClientScopesTest extends AbstractClientTest {
         // Test roles
         evaluateForm.showRoles();
         Assert.assertNames(evaluateForm.getGrantedRealmRoles(), "offline_access");
-        Assert.assertNames(evaluateForm.getNotGrantedRealmRoles(), "uma_authorization");
+        Assert.assertNames(evaluateForm.getNotGrantedRealmRoles(), "default-roles-test", "uma_authorization");
 
         // Test access token
         evaluateForm.showToken();

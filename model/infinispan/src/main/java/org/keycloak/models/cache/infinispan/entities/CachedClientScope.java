@@ -21,11 +21,14 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -34,13 +37,17 @@ import java.util.stream.Collectors;
  */
 public class CachedClientScope extends AbstractRevisioned implements InRealm {
 
+    private static Set<ProtocolMapperModel> fetchMappers(ClientScopeModel c) {
+        return c.getProtocolMappersStream().collect(Collectors.toSet());
+    }
+
     private String name;
     private String description;
     private String realm;
     private String protocol;
     private Set<String> scope = new HashSet<>();
-    private Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
-    private Map<String, String> attributes = new HashMap<>();
+    private LazyLoader<ClientScopeModel, Set<ProtocolMapperModel>> protocolMappers;
+    private LazyLoader<ClientScopeModel, Map<String, String>> attributes;
 
     public CachedClientScope(Long revision, RealmModel realm, ClientScopeModel model) {
         super(revision, model.getId());
@@ -48,9 +55,9 @@ public class CachedClientScope extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         this.realm = realm.getId();
         protocol = model.getProtocol();
-        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
+        protocolMappers = new DefaultLazyLoader<>(CachedClientScope::fetchMappers, Collections::emptySet);
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
-        attributes.putAll(model.getAttributes());
+        attributes = new DefaultLazyLoader<>(ClientScopeModel::getAttributes, Collections::emptyMap);
     }
 
     public String getName() {
@@ -64,8 +71,8 @@ public class CachedClientScope extends AbstractRevisioned implements InRealm {
     public String getRealm() {
         return realm;
     }
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return protocolMappers;
+    public Set<ProtocolMapperModel> getProtocolMappers(Supplier<ClientScopeModel> scope) {
+        return protocolMappers.get(scope);
     }
 
     public String getProtocol() {
@@ -76,7 +83,7 @@ public class CachedClientScope extends AbstractRevisioned implements InRealm {
         return scope;
     }
 
-    public Map<String, String> getAttributes() {
-        return attributes;
+    public Map<String, String> getAttributes(Supplier<ClientScopeModel> scope) {
+        return attributes.get(scope);
     }
 }

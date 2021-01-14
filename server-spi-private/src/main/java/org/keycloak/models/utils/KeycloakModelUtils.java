@@ -191,9 +191,7 @@ public final class KeycloakModelUtils {
             return false;
         }
 
-        Set<RoleModel> compositeRoles = composite.getCompositesStream().collect(Collectors.toSet());
-        return compositeRoles.contains(role) ||
-                        compositeRoles.stream().anyMatch(x -> x.isComposite() && searchFor(role, x, visited));
+        return composite.getCompositesStream().anyMatch(x -> role.equals(x) || (x.isComposite() && searchFor(role, x, visited)));
     }
 
     /**
@@ -601,14 +599,16 @@ public final class KeycloakModelUtils {
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
-        return realm.getClientScopesStream()
-                .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
+        ClientScopeModel clientScope = realm.getClientScopeByName(clientScopeName);
+
+        if(clientScope == null) {
+            return realm.getClientsStream()
+                .filter(c -> Objects.equals(clientScopeName, c.getClientId()))
                 .findFirst()
-                // check if we are referencing a client instead of a scope
-                .orElse(realm.getClientsStream()
-                        .filter(c -> Objects.equals(clientScopeName, c.getClientId()))
-                        .findFirst()
-                        .orElse(null));
+                .orElse(null);
+        }
+
+        return clientScope;
     }
 
     /**

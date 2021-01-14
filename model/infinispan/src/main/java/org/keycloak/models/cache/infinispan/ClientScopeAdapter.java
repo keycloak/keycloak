@@ -80,7 +80,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         if (isUpdated()) return updated.getProtocolMappersStream();
-        return cached.getProtocolMappers().stream();
+        return cached.getProtocolMappers(this::getClientScope).stream();
     }
 
     @Override
@@ -105,7 +105,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers(this::getClientScope)) {
             if (mapping.getId().equals(id)) return mapping;
         }
         return null;
@@ -113,7 +113,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers(this::getClientScope)) {
             if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
         }
         return null;
@@ -201,14 +201,14 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public String getAttribute(String name) {
         if (isUpdated()) return updated.getAttribute(name);
-        return cached.getAttributes().get(name);
+        return cached.getAttributes(this::getClientScope).get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
         Map<String, String> copy = new HashMap<>();
-        copy.putAll(cached.getAttributes());
+        copy.putAll(cached.getAttributes(this::getClientScope));
         return copy;
     }
 
@@ -227,4 +227,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
         return getId().hashCode();
     }
 
+    private ClientScopeModel getClientScope() {
+        return cacheSession.getRealmDelegate().getClientScopeById(cached.getId(), cachedRealm);
+    }
 }

@@ -32,6 +32,8 @@ public class RoleCompositeRoles extends Form {
     protected Select availableRealmRolesSelect;
     @FindBy(id = "assigned")
     protected Select assignedRealmRolesSelect;
+    @FindBy(id = "realm-composite")
+    protected Select effectiveRealmRolesSelect;
 
     @FindBy(id = "clients")
     protected Select clientSelect;
@@ -163,6 +165,11 @@ public class RoleCompositeRoles extends Form {
     public boolean isAssignedClientRole(String role) {
         waitUntilElement(By.id("assigned")).is().present();
         return UIUtils.selectContainsOption(assignedClientRolesSelect, role);
+    }
+
+    public boolean isEffectiveRole(String role) {
+        waitUntilElement(By.id("realm-composite")).is().present();
+        return UIUtils.selectContainsOption(effectiveRealmRolesSelect, role);
     }
 
     public void selectClientRole(String client) {

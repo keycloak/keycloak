@@ -65,7 +65,7 @@ import java.util.Set;
         @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm"),
         @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm.id = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
 })
-
+@BatchSize(size = 50)
 public class RoleEntity {
     @Id
     @Column(name="ID", length = 36)
@@ -99,9 +99,10 @@ public class RoleEntity {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
+    @BatchSize(size = 20)
     private Set<RoleEntity> compositeRoles;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     protected List<RoleAttributeEntity> attributes;
