@@ -17,20 +17,6 @@
 
 package org.keycloak.protocol.oidc;
 
-import static org.keycloak.representations.IDToken.NONCE;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -88,6 +74,25 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
+import static org.keycloak.representations.IDToken.NONCE;
+import static org.keycloak.representations.IDToken.PHONE_NUMBER;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes

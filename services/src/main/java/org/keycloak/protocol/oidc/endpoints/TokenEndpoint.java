@@ -17,32 +17,6 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.xml.namespace.QName;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -92,8 +66,6 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
@@ -120,13 +92,15 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientManager;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -134,6 +108,34 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.xml.namespace.QName;
+import java.io.IOException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
