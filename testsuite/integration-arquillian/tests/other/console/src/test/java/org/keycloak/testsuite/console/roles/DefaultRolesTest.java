@@ -57,7 +57,7 @@ public class DefaultRolesTest extends AbstractRolesTest {
         users.table().clickUser(newUser.getUsername());
 
         userPage.tabs().roleMappings();
-        assertTrue(userRolesPage.form().isAssignedRole(defaultRoleName));
+        assertTrue(userRolesPage.form().isEffectiveRole(defaultRoleName));
     }
 
     public RolesResource rolesResource() {

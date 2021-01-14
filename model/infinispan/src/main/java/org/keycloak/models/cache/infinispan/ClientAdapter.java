@@ -89,7 +89,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     public Set<String> getWebOrigins() {
         if (isUpdated()) return updated.getWebOrigins();
-        return cached.getWebOrigins();
+        return cached.getWebOrigins(this::getClient);
     }
 
     public void setWebOrigins(Set<String> webOrigins) {
@@ -119,7 +119,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
         if (isUpdated()) return updated.getClientScopes(defaultScope, filterByProtocol);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultClientScopesIds() : cached.getOptionalClientScopesIds();
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultClientScopesIds(this::getClient) : cached.getOptionalClientScopesIds(this::getClient);
 
         // Defaults to openid-connect
         String clientProtocol = getProtocol() == null ? "openid-connect" : getProtocol();
@@ -148,7 +148,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     public Set<String> getRedirectUris() {
         if (isUpdated()) return updated.getRedirectUris();
-        return cached.getRedirectUris();
+        return cached.getRedirectUris(this::getClient);
     }
 
     public void setRedirectUris(Set<String> redirectUris) {
@@ -317,14 +317,14 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public String getAttribute(String name) {
         if (isUpdated()) return updated.getAttribute(name);
-        return cached.getAttributes().get(name);
+        return cached.getAttributes(this::getClient).get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
         Map<String, String> copy = new HashMap<>();
-        copy.putAll(cached.getAttributes());
+        copy.putAll(cached.getAttributes(this::getClient));
         return copy;
     }
 
@@ -345,21 +345,19 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public String getAuthenticationFlowBindingOverride(String name) {
         if (isUpdated()) return updated.getAuthenticationFlowBindingOverride(name);
-        return cached.getAuthFlowBindings().get(name);
+        return cached.getAuthFlowBindings(this::getClient).get(name);
     }
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
         if (isUpdated()) return updated.getAuthenticationFlowBindingOverrides();
-        Map<String, String> copy = new HashMap<>();
-        copy.putAll(cached.getAuthFlowBindings());
-        return copy;
+        return new HashMap<>(cached.getAuthFlowBindings(this::getClient));
     }
 
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         if (isUpdated()) return updated.getProtocolMappersStream();
-        return cached.getProtocolMappers().stream();
+        return cached.getProtocolMappers(this::getClient).stream();
     }
 
     @Override
@@ -384,7 +382,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers(this::getClient)) {
             if (mapping.getId().equals(id)) return mapping;
         }
         return null;
@@ -392,7 +390,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers(this::getClient)) {
             if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
         }
         return null;
@@ -629,7 +627,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public Map<String, Integer> getRegisteredNodes() {
         if (isUpdated()) return updated.getRegisteredNodes();
-        return cached.getRegisteredNodes();
+        return cached.getRegisteredNodes(this::getClient);
     }
 
     @Override
@@ -667,5 +665,9 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    private ClientModel getClient() {
+        return cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
     }
 }

@@ -43,6 +43,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -93,18 +94,32 @@ public class RealmsAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RealmRepresentation> getRealms() {
+    public Stream<RealmRepresentation> getRealms(@QueryParam("briefRepresentation") boolean briefRepresentation) {
         Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
-                .map(this::toRealmRep)
+                .map(realm -> toRealmRep(realm, briefRepresentation))
                 .filter(Objects::nonNull);
         return throwIfEmpty(realms, new ForbiddenException());
     }
 
     protected RealmRepresentation toRealmRep(RealmModel realm) {
+        return toRealmRep(realm, false);
+    }
+
+    protected RealmRepresentation toRealmRep(RealmModel realm, boolean briefRepresentation) {
         if (AdminPermissions.realms(session, auth).canView(realm)) {
+            if (briefRepresentation) {
+                RealmRepresentation rep = new RealmRepresentation();
+
+                rep.setId(realm.getId());
+                rep.setRealm(realm.getName());
+
+                return rep;
+            }
+
             return ModelToRepresentation.toRepresentation(realm, false);
         } else if (AdminPermissions.realms(session, auth).isAdmin(realm)) {
             RealmRepresentation rep = new RealmRepresentation();
+            rep.setId(realm.getId());
             rep.setRealm(realm.getName());
             return rep;
         }

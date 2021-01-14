@@ -259,7 +259,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         // Check realm only contains name if missing view realm permission
         List<RealmRepresentation> realms = clients.get(AdminRoles.VIEW_USERS).realms().findAll();
         Assert.assertNames(realms, REALM_NAME);
-        assertGettersEmpty(realms.get(0));
+        assertGettersEmpty(realms.get(0), "getRealm", "getId");
 
         realms = clients.get(AdminRoles.VIEW_REALM).realms().findAll();
         Assert.assertNames(realms, REALM_NAME);
@@ -268,7 +268,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         // Check the same when access with users from 'master' realm
         realms = clients.get("master-" + AdminRoles.VIEW_USERS).realms().findAll();
         Assert.assertNames(realms, REALM_NAME);
-        assertGettersEmpty(realms.get(0));
+        assertGettersEmpty(realms.get(0), "getRealm", "getId");
 
         realms = clients.get("master-" + AdminRoles.VIEW_REALM).realms().findAll();
         Assert.assertNames(realms, REALM_NAME);

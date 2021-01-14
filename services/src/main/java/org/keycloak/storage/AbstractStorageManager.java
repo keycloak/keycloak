@@ -27,6 +27,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.utils.ServicesUtils;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -91,6 +92,14 @@ public abstract class AbstractStorageManager<ProviderType extends Provider,
      * @return enabled storage providers for realm and @{code getProviderTypeClass()}
      */
     protected <T> Stream<T> getEnabledStorageProviders(RealmModel realm, Class<T> capabilityInterface) {
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory()
+                .getProviderFactories(providerTypeClass);
+
+        // there is no need iterate over the database if there is no provider
+        if (factories.isEmpty()) {
+            return Stream.empty();
+        }
+
         return getStorageProviderModels(realm, providerTypeClass)
                 .map(toStorageProviderModelTypeFunction)
                 .filter(StorageProviderModelType::isEnabled)

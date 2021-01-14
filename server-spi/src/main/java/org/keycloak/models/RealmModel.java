@@ -779,6 +779,8 @@ public interface RealmModel extends RoleContainerModel {
 
     ClientScopeModel getClientScopeById(String id);
 
+    ClientScopeModel getClientScopeByName(String clientScopeName);
+
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
     void removeDefaultClientScope(ClientScopeModel clientScope);
 

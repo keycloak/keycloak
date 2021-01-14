@@ -22,14 +22,16 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -37,26 +39,45 @@ import java.util.stream.Collectors;
  * @version $Revision: 1 $
  */
 public class CachedClient extends AbstractRevisioned implements InRealm {
+
+    private static Set<ProtocolMapperModel> fetchMappers(ClientModel c) {
+        return c.getProtocolMappersStream().collect(Collectors.toSet());
+    }
+
+    private static Map<String, Integer> fetchRegisteredNodes(ClientModel c) {
+        return new TreeMap<>(c.getRegisteredNodes());
+    }
+
+    private static List<String> fetchDefaultClientScopes(ClientModel c) {
+        return c.getClientScopes(true, false).values().stream().map(ClientScopeModel::getId)
+                .collect(Collectors.toList());
+    }
+
+    private static List<String> fetchOptionalClientScopes(ClientModel c) {
+        return c.getClientScopes(false, false).values().stream().map(ClientScopeModel::getId)
+                .collect(Collectors.toList());
+    }
+
     protected String clientId;
     protected String name;
     protected String description;
     protected String realm;
-    protected Set<String> redirectUris = new HashSet<>();
+    protected LazyLoader<ClientModel, Set<String>> redirectUris;
     protected boolean enabled;
     protected boolean alwaysDisplayInConsole;
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationToken;
     protected String protocol;
-    protected Map<String, String> attributes = new HashMap<>();
-    protected Map<String, String> authFlowBindings = new HashMap<>();
+    protected LazyLoader<ClientModel, Map<String, String>> attributes;
+    protected LazyLoader<ClientModel, Map<String, String>> authFlowBindings;
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean frontchannelLogout;
     protected int notBefore;
     protected Set<String> scope = new HashSet<>();
-    protected Set<String> webOrigins = new HashSet<>();
-    protected Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
+    protected LazyLoader<ClientModel, Set<String>> webOrigins;
+    protected LazyLoader<ClientModel, Set<ProtocolMapperModel>> protocolMappers;
     protected boolean surrogateAuthRequired;
     protected String managementUrl;
     protected String rootUrl;
@@ -68,9 +89,9 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean directAccessGrantsEnabled;
     protected boolean serviceAccountsEnabled;
     protected int nodeReRegistrationTimeout;
-    protected Map<String, Integer> registeredNodes;
-    protected List<String> defaultClientScopesIds;
-    protected List<String> optionalClientScopesIds;
+    protected LazyLoader<ClientModel, Map<String, Integer>> registeredNodes;
+    protected LazyLoader<ClientModel, List<String>> defaultClientScopesIds;
+    protected LazyLoader<ClientModel, List<String>> optionalClientScopesIds;
 
     public CachedClient(Long revision, RealmModel realm, ClientModel model) {
         super(revision, model.getId());
@@ -84,16 +105,16 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         enabled = model.isEnabled();
         alwaysDisplayInConsole = model.isAlwaysDisplayInConsole();
         protocol = model.getProtocol();
-        attributes.putAll(model.getAttributes());
-        authFlowBindings.putAll(model.getAuthenticationFlowBindingOverrides());
+        attributes = new DefaultLazyLoader<>(ClientModel::getAttributes, Collections::emptyMap);
+        authFlowBindings = new DefaultLazyLoader<>(ClientModel::getAuthenticationFlowBindingOverrides, Collections::emptyMap);
         notBefore = model.getNotBefore();
         frontchannelLogout = model.isFrontchannelLogout();
         publicClient = model.isPublicClient();
         fullScopeAllowed = model.isFullScopeAllowed();
-        redirectUris.addAll(model.getRedirectUris());
-        webOrigins.addAll(model.getWebOrigins());
+        redirectUris = new DefaultLazyLoader<>(ClientModel::getRedirectUris, Collections::emptySet);
+        webOrigins = new DefaultLazyLoader<>(ClientModel::getWebOrigins, Collections::emptySet);
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
-        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
+        protocolMappers = new DefaultLazyLoader<>(CachedClient::fetchMappers, Collections::emptySet);
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();
@@ -106,16 +127,10 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
-        registeredNodes = new TreeMap<>(model.getRegisteredNodes());
+        registeredNodes = new DefaultLazyLoader<>(CachedClient::fetchRegisteredNodes, Collections::emptyMap);
 
-        defaultClientScopesIds = new LinkedList<>();
-        for (ClientScopeModel clientScope : model.getClientScopes(true, false).values()) {
-            defaultClientScopesIds.add(clientScope.getId());
-        }
-        optionalClientScopesIds = new LinkedList<>();
-        for (ClientScopeModel clientScope : model.getClientScopes(false, false).values()) {
-            optionalClientScopesIds.add(clientScope.getId());
-        }
+        defaultClientScopesIds = new DefaultLazyLoader<>(CachedClient::fetchDefaultClientScopes, Collections::emptyList);
+        optionalClientScopesIds = new DefaultLazyLoader<>(CachedClient::fetchOptionalClientScopes, Collections::emptyList);
     }
 
     public String getClientId() {
@@ -134,8 +149,8 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return realm;
     }
 
-    public Set<String> getRedirectUris() {
-        return redirectUris;
+    public Set<String> getRedirectUris(Supplier<ClientModel> client) {
+        return redirectUris.get(client);
     }
 
     public boolean isEnabled() {
@@ -170,8 +185,8 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return scope;
     }
 
-    public Set<String> getWebOrigins() {
-        return webOrigins;
+    public Set<String> getWebOrigins(Supplier<ClientModel> client) {
+        return webOrigins.get(client);
     }
 
     public boolean isFullScopeAllowed() {
@@ -182,16 +197,16 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return protocol;
     }
 
-    public Map<String, String> getAttributes() {
-        return attributes;
+    public Map<String, String> getAttributes(Supplier<ClientModel> client) {
+        return attributes.get(client);
     }
 
     public boolean isFrontchannelLogout() {
         return frontchannelLogout;
     }
 
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return protocolMappers;
+    public Set<ProtocolMapperModel> getProtocolMappers(Supplier<ClientModel> client) {
+        return protocolMappers.get(client);
     }
 
     public boolean isSurrogateAuthRequired() {
@@ -238,19 +253,19 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return nodeReRegistrationTimeout;
     }
 
-    public Map<String, Integer> getRegisteredNodes() {
-        return registeredNodes;
+    public Map<String, Integer> getRegisteredNodes(Supplier<ClientModel> client) {
+        return registeredNodes.get(client);
     }
 
-    public List<String> getDefaultClientScopesIds() {
-        return defaultClientScopesIds;
+    public List<String> getDefaultClientScopesIds(Supplier<ClientModel> client) {
+        return defaultClientScopesIds.get(client);
     }
 
-    public List<String> getOptionalClientScopesIds() {
-        return optionalClientScopesIds;
+    public List<String> getOptionalClientScopesIds(Supplier<ClientModel> client) {
+        return optionalClientScopesIds.get(client);
     }
 
-    public Map<String, String> getAuthFlowBindings() {
-        return authFlowBindings;
+    public Map<String, String> getAuthFlowBindings(Supplier<ClientModel> client) {
+        return authFlowBindings.get(client);
     }
 }

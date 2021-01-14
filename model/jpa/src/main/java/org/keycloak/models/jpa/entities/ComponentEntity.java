@@ -32,6 +32,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.BatchSize;
+
 /**
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
@@ -64,6 +66,7 @@ public class ComponentEntity {
     protected String subType;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={ CascadeType.ALL}, orphanRemoval = true, mappedBy = "component")
+    @BatchSize(size = 20)
     Set<ComponentConfigEntity> componentConfigs;
 
     public String getId() {

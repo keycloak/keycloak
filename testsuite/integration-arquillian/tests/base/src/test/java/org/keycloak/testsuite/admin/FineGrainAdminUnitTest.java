@@ -852,17 +852,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newClient.setProtocol("openid-connect");
             newClient.setPublicClient(false);
             newClient.setEnabled(true);
-            Response response = realmClient.realm("anotherRealm").clients().create(newClient);
-            Assert.assertEquals(403, response.getStatus());
-            response.close();
-
-            realmClient.close();
-            //creating new client to refresh token
-            realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                    "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
             assertThat(realmClient.realms().findAll().stream().map(RealmRepresentation::getRealm).collect(Collectors.toSet()),
                     hasItem("anotherRealm"));
-            response = realmClient.realm("anotherRealm").clients().create(newClient);
+            Response response = realmClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(201, response.getStatus());
             response.close();
         } finally {

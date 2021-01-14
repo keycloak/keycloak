@@ -67,6 +67,13 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public ClientScopeModel getClientScopeByName(String clientScopeName) {
+        return getClientScopesStream()
+                .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
+                .findFirst().orElse(null);
+    }
+
+    @Override
     public String getId() {
         return realm.getId();
     }

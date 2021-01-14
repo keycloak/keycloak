@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
 
     private final Function<S, D> loader;
-    private Supplier<D> fallback;
+    private final Supplier<D> fallback;
     private D data;
 
     public DefaultLazyLoader(Function<S, D> loader, Supplier<D> fallback) {
@@ -36,12 +36,24 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
         this.fallback = fallback;
     }
 
+    public DefaultLazyLoader(Function<S, D> loader) {
+        this.loader = loader;
+        this.fallback = null;
+    }
+
     @Override
     public D get(Supplier<S> sourceSupplier) {
         if (data == null) {
             S source = sourceSupplier.get();
-            data = source == null ? fallback.get() : this.loader.apply(source);
+            data = source == null ? getDefaultValue() : this.loader.apply(source);
         }
         return data;
+    }
+
+    private D getDefaultValue() {
+        if (fallback == null) {
+            return null;
+        }
+        return fallback.get();
     }
 }

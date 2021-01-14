@@ -33,6 +33,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import java.util.Map;
 
+import org.hibernate.annotations.BatchSize;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -73,6 +75,7 @@ public class RequiredActionProviderEntity {
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="REQUIRED_ACTION_CONFIG", joinColumns={ @JoinColumn(name="REQUIRED_ACTION_ID") })
+    @BatchSize(size = 20)
     private Map<String, String> config;
 
     public String getId() {
