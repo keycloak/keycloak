@@ -17,6 +17,20 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.representations.IDToken.NONCE;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -74,25 +88,6 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
-import static org.keycloak.representations.IDToken.NONCE;
-import static org.keycloak.representations.IDToken.PHONE_NUMBER;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -564,35 +559,6 @@ public class TokenManager {
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam).map(allOptionalScopes::get).filter(Objects::nonNull),
                 clientScopes).distinct();
-    }
-    
-    public static boolean isValidScope(String scopes, ClientModel client) {
-        if (scopes == null) {
-            return true;
-        }
-
-        Set<String> clientScopes = getRequestedClientScopes(scopes, client)
-                .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
-                .map(ClientScopeModel::getName)
-                .collect(Collectors.toSet());
-        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
-
-        if (TokenUtil.isOIDCRequest(scopes)) {
-            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
-        }
-
-        if (!requestedScopes.isEmpty() && clientScopes.isEmpty()) {
-            return false;
-        }
-
-        for (String requestedScope : requestedScopes) {
-            // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
-            if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
-                return false;
-            }
-        }
-        
-        return true;
     }
 
     public static Stream<String> parseScopeParameter(String scopeParam) {
