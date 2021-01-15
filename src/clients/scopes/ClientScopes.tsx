@@ -27,6 +27,7 @@ import {
   useAdminClient,
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
+import { toUpperCase } from "../../util";
 import { TableToolbar } from "../../components/table-toolbar/TableToolbar";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { AddScopeDialog } from "./AddScopeDialog";
@@ -41,9 +42,6 @@ export type ClientScopesProps = {
   clientId: string;
   protocol: string;
 };
-
-const firstUpperCase = (name: string) =>
-  name.charAt(0).toUpperCase() + name.slice(1);
 
 const castAdminClient = (adminClient: KeycloakAdminClient) =>
   (adminClient.clients as unknown) as {
@@ -67,7 +65,7 @@ const removeScope = async (
   clientScope: ClientScopeRepresentation,
   type: ClientScopeType
 ) => {
-  const typeToName = firstUpperCase(type);
+  const typeToName = toUpperCase(type);
   await castAdminClient(adminClient)[`del${typeToName}ClientScope`]({
     id: clientId,
     clientScopeId: clientScope.id!,
@@ -80,7 +78,7 @@ const addScope = async (
   clientScope: ClientScopeRepresentation,
   type: ClientScopeType
 ) => {
-  const typeToName = firstUpperCase(type);
+  const typeToName = toUpperCase(type);
   await castAdminClient(adminClient)[`add${typeToName}ClientScope`]({
     id: clientId,
     clientScopeId: clientScope.id!,

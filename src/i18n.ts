@@ -4,6 +4,7 @@ import { initReactI18next } from "react-i18next";
 
 import common from "./common-messages.json";
 import help from "./common-help.json";
+import dashboard from "./dashboard/messages.json";
 import clients from "./clients/messages.json";
 import clientsHelp from "./clients/help.json";
 import clientScopes from "./client-scopes/messages.json";
@@ -26,6 +27,7 @@ const initOptions = {
     en: {
       ...common,
       ...help,
+      ...dashboard,
       ...clients,
       ...clientsHelp,
       ...clientScopes,

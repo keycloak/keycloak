@@ -50,8 +50,8 @@ export const exportClient = (client: ClientRepresentation): void => {
   );
 };
 
-export const toUpperCase = (realmName: string) =>
-  realmName.charAt(0).toUpperCase() + realmName.slice(1);
+export const toUpperCase = (name: string) =>
+  name.charAt(0).toUpperCase() + name.slice(1);
 
 export const convertToFormValues = (
   obj: any,

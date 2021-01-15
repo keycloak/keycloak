@@ -1,6 +1,6 @@
 @import "@patternfly/patternfly/patternfly.min.css";
 @import "@patternfly/patternfly/patternfly-addons.css";
 
-.pf-c-brand {
+.keycloak__pageheader_brand {
   height: 35px;
 }

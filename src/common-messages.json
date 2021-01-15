@@ -33,6 +33,7 @@
     "signOut": "Sign out",
     "manageAccount": "Manage account",
     "serverInfo": "Server info",
+    "realmInfo": "Realm info",
     "help": "Help",
     "helpLabel": "More help for {{label}}",
     "documentation": "Documentation",

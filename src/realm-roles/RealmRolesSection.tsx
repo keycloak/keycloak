@@ -17,7 +17,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter } from "../util";
+import { emptyFormatter, toUpperCase } from "../util";
 
 export const RealmRolesSection = () => {
   const { t } = useTranslation("roles");
@@ -28,9 +28,9 @@ export const RealmRolesSection = () => {
 
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
 
-  const loader = async (first?: number, max?: number, search?: string) => {
+  const loader = async (to?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {
-      first: first!,
+      to: to!,
       max: max!,
       search: search!,
     };
@@ -48,9 +48,7 @@ export const RealmRolesSection = () => {
   const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
     const boolVal = data?.toString();
 
-    return (boolVal
-      ? boolVal.charAt(0).toUpperCase() + boolVal.slice(1)
-      : undefined) as string;
+    return (boolVal ? toUpperCase(boolVal) : undefined) as string;
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

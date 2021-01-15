@@ -26,8 +26,7 @@ export const PageNav: React.FunctionComponent = () => {
 
   const history = useHistory();
 
-  let initialItem = history.location.pathname;
-  if (initialItem === "/") initialItem = "/client-list";
+  const initialItem = history.location.pathname;
 
   const [activeItem, setActiveItem] = useState(initialItem);
 
@@ -56,7 +55,7 @@ export const PageNav: React.FunctionComponent = () => {
       <NavItem
         id={"nav-item" + path.replace("/", "-")}
         to={`/${realm}${path}`}
-        isActive={activeItem === path}
+        isActive={activeItem.substr(realm.length + 1) === path}
       >
         {t(title)}
       </NavItem>
@@ -90,6 +89,9 @@ export const PageNav: React.FunctionComponent = () => {
               )}
             </DataLoader>
           </NavList>
+          <NavGroup title="">
+            <LeftNav title="home" path="/" />
+          </NavGroup>
           {showManage && (
             <NavGroup title={t("manage")}>
               <LeftNav title="clients" path="/clients" />
