@@ -817,7 +817,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         } else if (managedRoles.containsKey(id)) {
             return managedRoles.get(id);
         }
-        RoleAdapter adapter = new RoleAdapter(cached,this, realm);
+        RoleAdapter adapter = new RoleAdapter(cached,this, realm, session);
         managedRoles.put(id, adapter);
         return adapter;
     }

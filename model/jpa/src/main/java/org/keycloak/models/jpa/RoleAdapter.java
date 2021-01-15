@@ -115,7 +115,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>(), session);
     }
 
     private void persistAttributeValue(String name, String value) {

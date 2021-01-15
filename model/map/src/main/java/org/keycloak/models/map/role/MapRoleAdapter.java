@@ -125,7 +125,7 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>(), session);
     }
 
     @Override

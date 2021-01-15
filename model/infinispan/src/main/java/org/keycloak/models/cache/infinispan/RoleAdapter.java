@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -43,19 +44,23 @@ public class RoleAdapter implements RoleModel {
     protected CachedRole cached;
     protected RealmCacheSession cacheSession;
     protected RealmModel realm;
+    private final KeycloakSession session;
     protected Set<RoleModel> composites;
     private final Supplier<RoleModel> modelSupplier;
 
-    public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
+    public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm,
+            KeycloakSession keycloakSession) {
         this.cached = cached;
         this.cacheSession = session;
         this.realm = realm;
+        this.session = keycloakSession;
         this.modelSupplier = this::getRoleModel;
     }
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
+            KeycloakModelUtils.invalidateCompositeRoleCache(session);
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -170,7 +175,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>(), session);
     }
 
     @Override
