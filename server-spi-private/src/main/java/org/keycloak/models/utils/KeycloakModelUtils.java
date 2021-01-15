@@ -54,8 +54,11 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -70,6 +73,8 @@ import org.keycloak.models.AccountRoles;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public final class KeycloakModelUtils {
+
+    private static final String SESSION_COMPOSITE_ROLE_CACHE = "org.keycloak.utils.composite_role.cache";
 
     private KeycloakModelUtils() {
     }
@@ -173,7 +178,61 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Deep search if given role is descendant of composite role
+     * <p>Deep search if given role is descendant of composite role, caching the outcome when a {@code session} is provided
+     * as well as querying the cache prior to searching.
+     *
+     * <p>The result is cached in the scope of the {@code session} (if provided).
+     *
+     * @param role      role to check
+     * @param composite composite role
+     * @param visited   set of already visited roles (used for recursion)
+     * @param session the keycloak session
+     * @return true if "role" is descendant of "composite"
+     */
+    public static boolean searchFor(RoleModel role, RoleModel composite, Set<String> visited,
+            KeycloakSession session) {
+        if (role == null) {
+            return false;
+        }
+
+        Map<String, Set<String>> cache = null;
+
+        if (session != null) {
+            cache = (Map<String, Set<String>>) session.getAttribute(SESSION_COMPOSITE_ROLE_CACHE);
+
+            if (cache == null) {
+                cache = new HashMap<>();
+                session.setAttribute(SESSION_COMPOSITE_ROLE_CACHE, cache);
+            }
+
+            Set<String> roles = cache.getOrDefault(composite.getId(), Collections.emptySet());
+
+            if (roles.contains(role.getId())) {
+                return true;
+            }
+        }
+
+        if (!visited.add(composite.getId())) {
+            return false;
+        }
+
+        if (!composite.isComposite()) {
+            return false;
+        }
+
+        boolean contains = composite.getCompositesStream()
+                .anyMatch(x -> role.equals(x) || (x.isComposite() && searchFor(role, x, visited, session)));
+
+        if (cache != null && contains) {
+            cache.computeIfAbsent(composite.getId(), s -> new HashSet<>()).add(role.getId());
+        }
+
+        return contains;
+    }
+
+    /**
+     * <p>Same as {@link #searchFor(RoleModel, RoleModel, Set, KeycloakSession)}, but the search does not cache
+     * or query the cache.
      *
      * @param role      role to check
      * @param composite composite role
@@ -181,17 +240,20 @@ public final class KeycloakModelUtils {
      * @return true if "role" is descendant of "composite"
      */
     public static boolean searchFor(RoleModel role, RoleModel composite, Set<String> visited) {
-        if (visited.contains(composite.getId())) {
-            return false;
+        return searchFor(role, composite, visited, null);
+    }
+
+    /**
+     * Invalidates the composite role cache
+     *
+     * @param session the keycloak session
+     */
+    public static void invalidateCompositeRoleCache(KeycloakSession session) {
+        if (session == null) {
+            throw new IllegalArgumentException("KeycloakSession can not be null");
         }
-
-        visited.add(composite.getId());
-
-        if (!composite.isComposite()) {
-            return false;
-        }
-
-        return composite.getCompositesStream().anyMatch(x -> role.equals(x) || (x.isComposite() && searchFor(role, x, visited)));
+        // for now we just invalidate everything
+        session.removeAttribute(SESSION_COMPOSITE_ROLE_CACHE);
     }
 
     /**
