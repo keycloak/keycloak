@@ -15,22 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
-public enum ClientPolicyEvent {
+import javax.ws.rs.core.MultivaluedMap;
 
-    REGISTER,
-    REGISTERED,
-    UPDATE,
-    UPDATED,
-    VIEW,
-    UNREGISTER,
-    AUTHORIZATION_REQUEST,
-    TOKEN_REQUEST,
-    TOKEN_REFRESH,
-    TOKEN_REVOKE,
-    TOKEN_INTROSPECT,
-    USERINFO_REQUEST,
-    LOGOUT_REQUEST
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+
+public class TokenRefreshContext implements ClientPolicyContext {
+
+    private final MultivaluedMap<String, String> params;
+
+    public TokenRefreshContext(MultivaluedMap<String, String> params) {
+        this.params = params;
+    }
+
+    @Override
+    public ClientPolicyEvent getEvent() {
+        return ClientPolicyEvent.TOKEN_REFRESH;
+    }
+
+    public MultivaluedMap<String, String> getParams() {
+        return params;
+    }
 
 }

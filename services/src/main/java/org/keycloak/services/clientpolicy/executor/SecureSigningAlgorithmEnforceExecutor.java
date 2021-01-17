@@ -28,13 +28,13 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
-import org.keycloak.services.clientpolicy.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
-import org.keycloak.services.clientpolicy.DynamicClientRegisterContext;
-import org.keycloak.services.clientpolicy.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider {
 

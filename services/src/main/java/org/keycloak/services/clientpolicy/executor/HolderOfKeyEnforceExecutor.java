@@ -27,7 +27,12 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.clientpolicy.*;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
+import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
+import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
+import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -75,29 +80,26 @@ public class HolderOfKeyEnforceExecutor extends AbstractAugumentingClientRegistr
         HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
 
         switch (context.getEvent()) {
-
             case TOKEN_REQUEST:
                 AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
                 if (certConf == null) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding");
                 }
                 break;
-
             case TOKEN_REFRESH:
                 checkTokenRefresh((TokenRefreshContext) context, request);
                 break;
-
             case TOKEN_REVOKE:
                 checkTokenRevoke((TokenRevokeContext) context, request);
                 break;
-
             case USERINFO_REQUEST:
                 checkUserInfo((UserInfoRequestContext) context, request);
                 break;
-
             case LOGOUT_REQUEST:
                 checkLogout((LogoutRequestContext) context, request);
                 break;
+            default:
+                return;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
-public class TokenIntrospectContext implements ClientPolicyContext {
+public class DynamicClientUpdatedContext extends AbstractDynamicClientCRUDContext {
 
-    private final MultivaluedMap<String, String> params;
+    private final ClientModel updatedClient;
 
-    public TokenIntrospectContext(MultivaluedMap<String, String> params) {
-        this.params = params;
+    public DynamicClientUpdatedContext(KeycloakSession session, ClientModel updatedClient, JsonWebToken token, RealmModel realm) {
+        super(session, token, realm);
+        this.updatedClient = updatedClient;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.TOKEN_INTROSPECT;
+        return ClientPolicyEvent.UPDATED;
     }
 
-    public MultivaluedMap<String, String> getParams() {
-        return params;
+    @Override
+    public ClientModel getTargetClient() {
+        return updatedClient;
     }
-
 }

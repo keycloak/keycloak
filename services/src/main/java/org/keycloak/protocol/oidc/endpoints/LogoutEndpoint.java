@@ -46,7 +46,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.LogoutRequestContext;
+import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;

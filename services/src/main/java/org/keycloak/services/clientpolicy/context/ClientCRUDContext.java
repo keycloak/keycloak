@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,31 +15,35 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
 
 /**
- * Represents the context in the client registration/update by Dynamic Client Registration or Admin REST API.
+ * Represents the context in the request to register/read/update/unregister client by Dynamic Client Registration or Admin REST API.
  */
-public interface ClientUpdateContext extends ClientPolicyContext {
+public interface ClientCRUDContext extends ClientPolicyContext {
 
     /**
-     * returns {@link ClientRepresentation} for creating or updating the current client.
+     * returns {@link ClientRepresentation} for creating the new client or updating the existing client.
      *
      * @return {@link ClientRepresentation}
      */
-    ClientRepresentation getProposedClientRepresentation();
+    default ClientRepresentation getProposedClientRepresentation() {
+        return null;
+    }
 
     /**
-     * returns {@link ClientModel} of the current client to be updated.
+     * returns {@link ClientModel} of the existing client to be updated/read/updated/deleted.
+     * on REGISTER event, it returns null.
      *
      * @return {@link ClientModel}
      */
-    default ClientModel getClientToBeUpdated() {
+    default ClientModel getTargetClient() {
         return null;
     }
 
@@ -48,19 +52,25 @@ public interface ClientUpdateContext extends ClientPolicyContext {
      *
      * @return {@link UserModel}
      */
-    UserModel getAuthenticatedUser();
+    default UserModel getAuthenticatedUser() {
+        return null;
+    }
+
     /**
      * returns {@link UserModel} of the authenticated client.
      *
      * @return {@link UserModel}
      */
-    ClientModel getAuthenticatedClient();
+    default ClientModel getAuthenticatedClient() {
+        return null;
+    }
 
     /**
-     * returns {@link JsonWebToken} of the token accompanied with registration/update client
+     * returns {@link JsonWebToken} of the token accompanied with the request to register/read/update/unregister client
      *
      * @return {@link JsonWebToken}
      */
-    JsonWebToken getToken();
-
+    default JsonWebToken getToken() {
+        return null;
+    }
 }

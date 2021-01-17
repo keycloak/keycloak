@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,34 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-public class AdminClientRegisterContext implements ClientUpdateContext {
+abstract class AbstractAdminClientCRUDContext implements ClientCRUDContext {
 
-    private final ClientRepresentation clientRepresentation;
-    private final AdminAuth adminAuth;
+    protected final AdminAuth adminAuth;
 
-    public AdminClientRegisterContext(ClientRepresentation clientRepresentation,
-            AdminAuth adminAuth) {
-        this.clientRepresentation = clientRepresentation;
+    public AbstractAdminClientCRUDContext(AdminAuth adminAuth) {
         this.adminAuth = adminAuth;
-    }
-
-    @Override
-    public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.REGISTER;
-    }
-
-    @Override
-    public ClientRepresentation getProposedClientRepresentation() {
-        return clientRepresentation;
     }
 
     @Override

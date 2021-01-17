@@ -50,8 +50,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.clientpolicy.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AdminClientUnregisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
+import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
@@ -130,12 +133,8 @@ public class ClientResource {
         auth.clients().requireConfigure(client);
 
         try {
-            session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(rep, auth.adminAuth(), client));
-        } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
+            session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(rep, client, auth.adminAuth()));
 
-        try {
             updateClientFromRep(rep, client, session);
 
             ValidationUtil.validateClient(session, client, false, r -> {
@@ -146,10 +145,14 @@ public class ClientResource {
                         Response.Status.BAD_REQUEST);
             });
 
+            session.clientPolicy().triggerOnEvent(new AdminClientUpdatedContext(rep, client, auth.adminAuth()));
+
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client already exists");
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -162,6 +165,12 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation getClient() {
+        try {
+            session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         auth.clients().requireView(client);
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
@@ -204,6 +213,12 @@ public class ClientResource {
 
         if (client == null) {
             throw new NotFoundException("Could not find client");
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         new ClientManager(new RealmManager(session)).removeClient(realm, client);

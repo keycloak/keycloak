@@ -28,7 +28,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.ClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -45,7 +45,7 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
-            if (isAuthMethodMatched((ClientUpdateContext)context)) return ClientPolicyVote.YES;
+            if (isAuthMethodMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;
@@ -72,7 +72,7 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
         return isMatched;
     }
 
-    private boolean isAuthMethodMatched(ClientUpdateContext context) {
+    private boolean isAuthMethodMatched(ClientCRUDContext context) {
         String authMethod = null;
 
         if (context.getToken() == null) {

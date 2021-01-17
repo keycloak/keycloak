@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.models.ClientModel;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.resources.admin.AdminAuth;
 
-public class UserInfoRequestContext implements ClientPolicyContext {
+public class AdminClientUnregisterContext extends AbstractAdminClientCRUDContext {
 
-    private final String tokenString;
+    private final ClientModel targetClient;
 
-    public UserInfoRequestContext(String tokenString) {
-        this.tokenString = tokenString;
+    public AdminClientUnregisterContext(ClientModel targetClient, AdminAuth adminAuth) {
+        super(adminAuth);
+        this.targetClient = targetClient;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.USERINFO_REQUEST;
+        return ClientPolicyEvent.UNREGISTER;
     }
 
-    public String getTokenString() {
-        return tokenString;
+    @Override
+    public ClientModel getTargetClient() {
+        return this.targetClient;
     }
-
 }

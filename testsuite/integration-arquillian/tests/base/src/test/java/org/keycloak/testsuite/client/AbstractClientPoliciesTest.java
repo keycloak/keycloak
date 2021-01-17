@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpResponse;
@@ -423,10 +425,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Client CRUD operation by Admin REST API primitives
 
-    protected String createClientByAdmin(String clientId, Consumer<ClientRepresentation> op) throws ClientPolicyException {
+    protected String createClientByAdmin(String clientName, Consumer<ClientRepresentation> op) throws ClientPolicyException {
         ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId(clientId);
-        clientRep.setName(clientId);
+        clientRep.setClientId(clientName);
+        clientRep.setName(clientName);
         clientRep.setProtocol("openid-connect");
         clientRep.setBearerOnly(Boolean.FALSE);
         clientRep.setPublicClient(Boolean.FALSE);
@@ -435,7 +437,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
-            throw new ClientPolicyException(Errors.INVALID_REGISTRATION, "registration error by admin");
+            String respBody = resp.readEntity(String.class);
+            Map<String, String> responseJson = null;
+            try {
+                responseJson = JsonSerialization.readValue(respBody, Map.class);
+            } catch (IOException e) {
+                fail();
+            }
+            throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR), responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
         }
         resp.close();
         assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
@@ -445,21 +454,55 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return cId;
     }
 
-    protected ClientRepresentation getClientByAdmin(String cId) {
+    protected ClientRepresentation getClientByAdmin(String cId) throws ClientPolicyException {
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cId);
-        return clientResource.toRepresentation();
+        try {
+            return clientResource.toRepresentation();
+        } catch (BadRequestException bre) {
+            processClientPolicyExceptionByAdmin(bre);
+        }
+        return null;
     }
 
-    protected void updateClientByAdmin(String cId, Consumer<ClientRepresentation> op) {
+    protected ClientRepresentation getClientByAdminWithName(String clientName) {
+        return adminClient.realm(REALM_NAME).clients().findByClientId(clientName).get(0);
+    }
+
+    protected void updateClientByAdmin(String cId, Consumer<ClientRepresentation> op) throws ClientPolicyException {
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
         op.accept(clientRep);
-        clientResource.update(clientRep);
+        try {
+            clientResource.update(clientRep);
+        } catch (BadRequestException bre) {
+            processClientPolicyExceptionByAdmin(bre);
+        }
     }
 
-    protected void deleteClientByAdmin(String cId) {
+    protected void deleteClientByAdmin(String cId) throws ClientPolicyException {
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cId);
-        clientResource.remove();
+        try {
+            clientResource.remove();
+        } catch (BadRequestException bre) {
+            processClientPolicyExceptionByAdmin(bre);
+        }
+    }
+
+    private void processClientPolicyExceptionByAdmin(BadRequestException bre) throws ClientPolicyException {
+        Response resp = bre.getResponse();
+        if (resp.getStatus() != Response.Status.BAD_REQUEST.getStatusCode()) {
+            resp.close();
+            return;
+        }
+
+        String respBody = resp.readEntity(String.class);
+        Map<String, String> responseJson = null;
+        try {
+            responseJson = JsonSerialization.readValue(respBody, Map.class);
+        } catch (IOException e) {
+            fail();
+        }
+        throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR), responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
     // Registration/Initial Access Token acquisition for Dynamic Client Registration

@@ -15,36 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
-public class TokenRequestContext implements ClientPolicyContext {
+public class TokenIntrospectContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
-    private final OAuth2CodeParser.ParseResult parseResult;
 
-    public TokenRequestContext(MultivaluedMap<String, String> params,
-            OAuth2CodeParser.ParseResult parseResult) {
+    public TokenIntrospectContext(MultivaluedMap<String, String> params) {
         this.params = params;
-        this.parseResult = parseResult;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.TOKEN_REQUEST;
+        return ClientPolicyEvent.TOKEN_INTROSPECT;
     }
 
     public MultivaluedMap<String, String> getParams() {
         return params;
-    }
-
-    public OAuth2CodeParser.ParseResult getParseResult() {
-        return parseResult;
     }
 
 }
