@@ -15,22 +15,26 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
-public enum ClientPolicyEvent {
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
-    REGISTER,
-    REGISTERED,
-    UPDATE,
-    UPDATED,
-    VIEW,
-    UNREGISTER,
-    AUTHORIZATION_REQUEST,
-    TOKEN_REQUEST,
-    TOKEN_REFRESH,
-    TOKEN_REVOKE,
-    TOKEN_INTROSPECT,
-    USERINFO_REQUEST,
-    LOGOUT_REQUEST
+public class UserInfoRequestContext implements ClientPolicyContext {
+
+    private final String tokenString;
+
+    public UserInfoRequestContext(String tokenString) {
+        this.tokenString = tokenString;
+    }
+
+    @Override
+    public ClientPolicyEvent getEvent() {
+        return ClientPolicyEvent.USERINFO_REQUEST;
+    }
+
+    public String getTokenString() {
+        return tokenString;
+    }
 
 }

@@ -23,10 +23,10 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.util.TokenUtil;
 
 public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider {

@@ -33,7 +33,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
-import org.keycloak.services.clientpolicy.TokenIntrospectContext;
+import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;

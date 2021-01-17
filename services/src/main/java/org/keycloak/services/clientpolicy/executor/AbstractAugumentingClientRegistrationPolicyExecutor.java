@@ -23,7 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
 public abstract class AbstractAugumentingClientRegistrationPolicyExecutor implements ClientPolicyExecutorProvider {
@@ -46,7 +46,7 @@ public abstract class AbstractAugumentingClientRegistrationPolicyExecutor implem
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
-            ClientUpdateContext clientUpdateContext = (ClientUpdateContext)context;
+            ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
             augment(clientUpdateContext.getProposedClientRepresentation());
             validate(clientUpdateContext.getProposedClientRepresentation());
             break;

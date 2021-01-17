@@ -15,37 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 
-public class DynamicClientUpdateContext implements ClientUpdateContext {
+public class DynamicClientUpdateContext extends AbstractDynamicClientCRUDContext {
 
-    private final ClientRegistrationContext context;
     private final ClientModel clientToBeUpdated;
-    private JsonWebToken token;
-    private UserModel user;
-    private ClientModel client;
+    private final ClientRepresentation proposedClientRepresentation;
 
-    public DynamicClientUpdateContext(ClientRegistrationContext context,
-            ClientModel client, JsonWebToken token, RealmModel realm) {
-        this.context = context;
-        this.clientToBeUpdated = client;
-        this.token = token;
-        if (token != null) {
-            if (token.getSubject() != null) {
-                this.user = context.getSession().users().getUserById(realm, token.getSubject());
-            }
-            if (token.getIssuedFor() != null) {
-                this.client = realm.getClientByClientId(token.getIssuedFor());
-            }
-        }
+    public DynamicClientUpdateContext(ClientRegistrationContext context, ClientModel proposedClientRepresentation, JsonWebToken token, RealmModel realm) {
+        super(context.getSession(), token, realm);
+        this.clientToBeUpdated = proposedClientRepresentation;
+        this.proposedClientRepresentation = context.getClient();
     }
 
     @Override
@@ -55,26 +42,11 @@ public class DynamicClientUpdateContext implements ClientUpdateContext {
 
     @Override
     public ClientRepresentation getProposedClientRepresentation() {
-        return context.getClient();
+        return proposedClientRepresentation;
     }
 
     @Override
-    public ClientModel getClientToBeUpdated() {
+    public ClientModel getTargetClient() {
         return clientToBeUpdated;
-    }
-
-    @Override
-    public ClientModel getAuthenticatedClient() {
-        return client;
-    }
-
-    @Override
-    public UserModel getAuthenticatedUser() {
-        return user;
-    }
-
-    @Override
-    public JsonWebToken getToken() {
-        return token;
     }
 }

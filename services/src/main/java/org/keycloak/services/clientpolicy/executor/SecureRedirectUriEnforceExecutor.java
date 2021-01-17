@@ -24,15 +24,15 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
-import org.keycloak.services.clientpolicy.AdminClientUpdateContext;
-import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
-import org.keycloak.services.clientpolicy.ClientUpdateContext;
-import org.keycloak.services.clientpolicy.DynamicClientRegisterContext;
-import org.keycloak.services.clientpolicy.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider {
 
@@ -61,14 +61,14 @@ public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorPro
         switch (context.getEvent()) {
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    confirmSecureRedirectUris(((ClientUpdateContext)context).getProposedClientRepresentation().getRedirectUris());
+                    confirmSecureRedirectUris(((ClientCRUDContext)context).getProposedClientRepresentation().getRedirectUris());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    confirmSecureRedirectUris(((ClientUpdateContext)context).getProposedClientRepresentation().getRedirectUris());
+                    confirmSecureRedirectUris(((ClientCRUDContext)context).getProposedClientRepresentation().getRedirectUris());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }

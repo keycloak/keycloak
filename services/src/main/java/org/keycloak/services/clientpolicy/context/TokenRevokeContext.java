@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
-public class LogoutRequestContext implements ClientPolicyContext {
+public class TokenRevokeContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
 
-    public LogoutRequestContext(MultivaluedMap<String, String> params) {
+    public TokenRevokeContext(MultivaluedMap<String, String> params) {
         this.params = params;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.LOGOUT_REQUEST;
+        return ClientPolicyEvent.TOKEN_REVOKE;
     }
 
     public MultivaluedMap<String, String> getParams() {
         return params;
     }
+
 }

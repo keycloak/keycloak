@@ -30,12 +30,12 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.TokenRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
 public class ClientScopesCondition extends AbstractClientPolicyConditionProvider {
 

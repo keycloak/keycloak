@@ -32,10 +32,10 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.Urls;
-import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

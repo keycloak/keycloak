@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.models.ClientModel;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.resources.admin.AdminAuth;
 
-public class TokenRevokeContext implements ClientPolicyContext {
+public class AdminClientViewContext extends AbstractAdminClientCRUDContext {
 
-    private final MultivaluedMap<String, String> params;
+    private final ClientModel targetClient;
 
-    public TokenRevokeContext(MultivaluedMap<String, String> params) {
-        this.params = params;
+    public AdminClientViewContext(ClientModel targetClient, AdminAuth adminAuth) {
+        super(adminAuth);
+        this.targetClient = targetClient;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.TOKEN_REVOKE;
+        return ClientPolicyEvent.VIEW;
     }
 
-    public MultivaluedMap<String, String> getParams() {
-        return params;
+    @Override
+    public ClientModel getTargetClient() {
+        return targetClient;
     }
-
 }

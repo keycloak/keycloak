@@ -15,26 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-public class AdminClientUpdateContext implements ClientUpdateContext {
+public class AdminClientUpdateContext extends AbstractAdminClientCRUDContext {
 
-    private final ClientRepresentation clientRepresentation;
-    private final AdminAuth adminAuth;
-    private final ClientModel client;
+    private final ClientRepresentation proposedClientRepresentation;
+    private final ClientModel targetClient;
 
-    public AdminClientUpdateContext(ClientRepresentation clientRepresentation,
-            AdminAuth adminAuth, ClientModel client) {
-        this.clientRepresentation = clientRepresentation;
-        this.adminAuth = adminAuth;
-        this.client = client;
+    public AdminClientUpdateContext(ClientRepresentation proposedClientRepresentation, ClientModel targetClient, AdminAuth adminAuth) {
+        super(adminAuth);
+        this.proposedClientRepresentation = proposedClientRepresentation;
+        this.targetClient = targetClient;
     }
 
     @Override
@@ -44,26 +40,11 @@ public class AdminClientUpdateContext implements ClientUpdateContext {
 
     @Override
     public ClientRepresentation getProposedClientRepresentation() {
-        return clientRepresentation;
+        return proposedClientRepresentation;
     }
 
     @Override
-    public ClientModel getClientToBeUpdated() {
-        return client;
-    }
-
-    @Override
-    public ClientModel getAuthenticatedClient() {
-        return adminAuth.getClient();
-    }
-
-    @Override
-    public UserModel getAuthenticatedUser() {
-        return adminAuth.getUser();
-    }
-
-    @Override
-    public JsonWebToken getToken() {
-        return adminAuth.getToken();
+    public ClientModel getTargetClient() {
+        return targetClient;
     }
 }

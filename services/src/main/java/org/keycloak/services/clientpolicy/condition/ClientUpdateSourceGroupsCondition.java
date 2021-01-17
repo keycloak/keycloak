@@ -29,15 +29,15 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
-import org.keycloak.services.clientpolicy.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.ClientUpdateContext;
-import org.keycloak.services.clientpolicy.DynamicClientRegisterContext;
-import org.keycloak.services.clientpolicy.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyConditionProvider {
 
@@ -52,17 +52,17 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyCondi
         switch (context.getEvent()) {
         case REGISTER:
             if (context instanceof AdminClientRegisterContext) {
-                return getVoteForGroupsMatched(((ClientUpdateContext)context).getAuthenticatedUser());
+                return getVoteForGroupsMatched(((ClientCRUDContext)context).getAuthenticatedUser());
             } else if (context instanceof DynamicClientRegisterContext) {
-                return getVoteForGroupsMatched(((ClientUpdateContext)context).getToken());
+                return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
         case UPDATE:
             if (context instanceof AdminClientUpdateContext) {
-                return getVoteForGroupsMatched(((ClientUpdateContext)context).getAuthenticatedUser());
+                return getVoteForGroupsMatched(((ClientCRUDContext)context).getAuthenticatedUser());
             } else if (context instanceof DynamicClientUpdateContext) {
-                return getVoteForGroupsMatched(((ClientUpdateContext)context).getToken());
+                return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
