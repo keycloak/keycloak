@@ -111,7 +111,7 @@ export const RealmRolesSection = () => {
             },
             {
               name: "description",
-              displayKey: "roles:description",
+              displayKey: "common:description",
               cellFormatters: [emptyFormatter()],
             },
           ]}

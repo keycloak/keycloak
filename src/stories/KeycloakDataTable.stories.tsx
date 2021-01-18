@@ -27,10 +27,10 @@ SimpleList.args = {
   searchPlaceholderKey: "common:search",
   columns: [
     { name: "clientId", displayKey: "clients:clientID" },
-    { name: "protocol", displayKey: "clients:type" },
+    { name: "protocol", displayKey: "common:type" },
     {
       name: "description",
-      displayKey: "clients:description",
+      displayKey: "common:description",
       cellFormatters: [
         (data?: IFormatterValueType) => {
           return data ? data : "—";

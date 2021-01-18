@@ -150,7 +150,10 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
                   title: t("inherentFrom"),
                   cellFormatters: [emptyFormatter()],
                 },
-                { title: t("description"), cellFormatters: [emptyFormatter()] },
+                {
+                  title: t("common:description"),
+                  cellFormatters: [emptyFormatter()],
+                },
               ]}
               rows={clientRoles}
               aria-label="roleList"

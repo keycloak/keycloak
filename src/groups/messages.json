@@ -9,7 +9,6 @@
     "members": "Members",
     "moveTo": "Move to",
     "tableOfGroups": "Table of groups",
-    "name": "Name",
     "groupsDescription": "Description goes here",
     "groupCreated": "Group created",
     "couldNotCreateGroup": "Could not create group",

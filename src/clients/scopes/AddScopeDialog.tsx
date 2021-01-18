@@ -112,7 +112,7 @@ export const AddScopeDialog = ({
     >
       <Table
         variant={TableVariant.compact}
-        cells={[t("name"), t("description")]}
+        cells={[t("common:name"), t("common:description")]}
         onSelect={(_, isSelected, rowIndex) => {
           if (rowIndex === -1) {
             setRows(

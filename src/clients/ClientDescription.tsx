@@ -32,10 +32,10 @@ export const ClientDescription = ({ form }: ClientDescriptionProps) => {
           }
         />
       </FormGroup>
-      <FormGroup label={t("name")} fieldId="kc-name">
+      <FormGroup label={t("common:name")} fieldId="kc-name">
         <TextInput ref={register()} type="text" id="kc-name" name="name" />
       </FormGroup>
-      <FormGroup label={t("description")} fieldId="kc-description">
+      <FormGroup label={t("common:description")} fieldId="kc-description">
         <TextInput
           ref={register()}
           type="text"

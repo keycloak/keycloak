@@ -170,11 +170,11 @@ export const RoleMappingForm = () => {
             />
           </FormGroup>
           <FormGroup
-            label={t("name")}
+            label={t("common:name")}
             labelIcon={
               <HelpItem
                 helpText="client-scopes-help:mapperName"
-                forLabel={t("name")}
+                forLabel={t("common:name")}
                 forID="name"
               />
             }
@@ -196,11 +196,11 @@ export const RoleMappingForm = () => {
             />
           </FormGroup>
           <FormGroup
-            label={t("role")}
+            label={t("common:role")}
             labelIcon={
               <HelpItem
                 helpText="client-scopes-help:role"
-                forLabel={t("role")}
+                forLabel={t("common:role")}
                 forID="role"
               />
             }

@@ -101,10 +101,10 @@ export const ClientsSection = () => {
               displayKey: "clients:clientID",
               cellRenderer: ClientDetailLink,
             },
-            { name: "protocol", displayKey: "clients:type" },
+            { name: "protocol", displayKey: "common:type" },
             {
               name: "description",
-              displayKey: "clients:description",
+              displayKey: "common:description",
               cellFormatters: [emptyFormatter()],
             },
             {

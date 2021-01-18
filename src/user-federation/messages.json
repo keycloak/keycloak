@@ -83,6 +83,62 @@
     "userFedDeletedSuccess": "The user federation provider has been deleted.",
     "userFedDeleteError": "Could not delete user federation provider: '{{error}}'",
     "userFedDeleteConfirmTitle": "Delete user federation provider?",
-    "userFedDeleteConfirm": "If you delete this user federation provider, all associated data will be removed."
+    "userFedDeleteConfirm": "If you delete this user federation provider, all associated data will be removed.",
+
+    "id": "ID",
+
+    "mapperType": "Mapper type",
+    "mapperTypeMsadUserAccountControlManager": "msad-user-account-control-mapper",
+    "mapperTypeMsadLdsUserAccountControlMapper": "msad-user-account-control-mapper",
+    "mapperTypeGroupLdapMapper": "group-ldap-mapper",
+    "mapperTypeUserAttributeLdapMapper": "user-attribute-ldap-mapper",
+    "mapperTypeRoleLdapMapper": "role-ldap-mapper",
+    "mapperTypeHardcodedAttributeMapper": "hardcoded-attribute-mapper",
+    "mapperTypeHardcodedLdapRoleMapper": "hardcoded-ldap-role-mapper",
+    "mapperTypeCertificateLdapMapper": "certificate-ldap-mapper",
+    "mapperTypeFullNameLdapMapper": "full-name-ldap-mapper",
+    "mapperTypeHardcodedLdapGroupMapper": "hardcoded-ldap-group-mapper",
+    "mapperTypeLdapAttributeMapper": "hardcoded-ldap-attribute-mapper",
+
+    "passwordPolicyHintsEnabled": "Password policy hints enabled",
+
+    "ldapGroupsDn": "LDAP Groups DN",
+    "groupNameLDAPAttribute": "Group name LDAP attribute",
+    "groupObjectClasses": "Group object classes",
+    "preserveGroupInheritance": "Preserve group inheritance",
+    "ignoreMissingGroups": "Ignore missing groups",
+    "membershipLdapAttribute": "Membership LDAP attribute",
+    "membershipAttributeType": "Membership attribute type",
+    "membershipUserLdapAttribute": "Membership user LDAP attribute",
+    "ldapFilter": "LDAP filter",
+    "mode": "Mode",
+    "userGroupsRetrieveStrategy": "User groups retrieve strategy",
+    "memberofLdapAttribute": "Member-of LDAP attribute",
+    "mappedGroupAttributes": "Mapped group attributes",
+    "dropNonexistingGroupsDuringSync": "Drop non-existing groups during sync",
+    "groupsPath": "Groups path",
+
+    "userModelAttribute": "User model attribute",
+    "ldapAttribute": "LDAP attribute",
+    "readOnly": "Read only",
+    "alwaysReadValueFromLdap": "Always read value from LDAP",
+    "isMandatoryInLdap": "Is mandatory in LDAP",
+    "isBinaryAttribute": "Is binary attribute",
+
+    "ldapRolesDN": "LDAP roles DN",
+    "roleNameLdapAttribute": "Role Name LDAP attribute",
+    "roleObjectClasses": "Role object classes",
+    "useRealmRolesMapping": "Use realm roles mapping",
+    "clientId": "Client ID",
+
+    "derFormatted": "DER formatted",
+
+    "ldapFullNameAttribute": "LDAP full name attribute",
+    "writeOnly": "Write only",
+
+    "group": "Group",
+
+    "ldapAttributeName": "LDAP attribute name",
+    "ldapAttributeValue": "LDAP attribute value"
   }
 }

@@ -113,11 +113,11 @@ export const ClientScopeForm = () => {
               className="pf-u-mt-md"
             >
               <FormGroup
-                label={t("name")}
+                label={t("common:name")}
                 labelIcon={
                   <HelpItem
                     helpText="client-scopes-help:name"
-                    forLabel={t("name")}
+                    forLabel={t("common:name")}
                     forID="kc-name"
                   />
                 }
@@ -143,11 +143,11 @@ export const ClientScopeForm = () => {
                 />
               </FormGroup>
               <FormGroup
-                label={t("description")}
+                label={t("common:description")}
                 labelIcon={
                   <HelpItem
                     helpText="client-scopes-help:description"
-                    forLabel={t("description")}
+                    forLabel={t("common:description")}
                     forID="kc-description"
                   />
                 }
