@@ -2,6 +2,21 @@
 
 === Migrating to 12.0.2
 
+==== Read-only attributes
+
+There was added support for the read-only user attributes. This includes the user attributes, which are not supposed to be edited by the user
+or by the administrator when updating user with REST API or with the {project_name} user interfaces. It can be important especially if you
+use:
+
+* Custom user storage providers
+* Custom authenticators
+* Custom Javascript authorization policies, which establish authorization based on some user attribute
+* X.509 authenticator with custom attribute for mapping the X.509 certificate to the user identity
+* Any other custom functionality, where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather
+than simple user profile informations.
+
+See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+
 ==== Valid Request URIs
 
 If you use the OpenID Connect parameter `request_uri`, a requirement exists that your client needs to have `Valid Request URIs` configured.

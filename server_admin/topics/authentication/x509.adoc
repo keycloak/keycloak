@@ -186,6 +186,9 @@ Defines how to match the certificate identity to an existing user. _Username or 
 `A name of user attribute` (optional)::
 A custom attribute which value will be matched against the certificate identity. Multiple custom attributes are relevant when attribute mapping is related to multiple values, e.g. 'Certificate Serial Number and IssuerDN'.
 
+WARNING: It is highly recommended that attribute used here is read-only for the users. By default, only the `usercertificate` attribute is read-only by {project_name}.
+If you use a different attribute name, you may need to add it to the list of read-only attributes. See the details in the link:#_read_only_user_attributes[Threat model mitigation chapter].
+
 `CRL Checking Enabled` (optional)::
 Defines whether to check the revocation status of the certificate using Certificate Revocation List.
 

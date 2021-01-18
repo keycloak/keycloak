@@ -1,0 +1,60 @@
+[[_read_only_user_attributes]]
+=== Read-only User Attributes
+
+Typical users who are stored in {project_name} have various attributes related to their user profiles. Such attributes include email, firstName or lastname.
+However users may also have attributes, which are not typical profile data, but rather metadata. The metadata attributes usually should be read-only for the users
+and the typical users never should have a way to update those attributes from the {project_name} user interface or Account REST API. Some of the attributes should
+be even read-only for the administrators when creating or updating user with the Admin REST API.
+
+The metadata attributes are usually attributes from those groups:
+
+* Various links or metadata related to the user storage providers. For example in case of the LDAP integration, the `LDAP_ID` attribute contains
+the ID of the user in the LDAP server.
+* Metadata provisioned by User Storage. For example `createdTimestamp` provisioned from the LDAP should be always read-only by user or administrator.
+* Metadata related to various authenticators. For example `KERBEROS_PRINCIPAL` attribute can contain the kerberos principal name of the particular user. Similarly attribute
+`usercertificate` can contain metadata related to binding the user with the data from the X.509 certificate, which is used typically when X.509 certificate authentication is enabled.
+* Metadata related to the identificator of users by the applications/clients. For example `saml.persistent.name.id.for.my_app` can contain SAML NameID, which will
+be used by the client application `my_app` as the identifier of the user.
+* Metadata related to the authorization policies, which are used for the attribute based access control (ABAC). Values of those attributes may be used for the
+authorization decisions. Hence it is important that those attributes cannot be updated by the users.
+
+From the long term perspective, {project_name} will have a proper User Profile SPI, which will allow fine-grained configuration of every user attribute. Currently
+this capability is not fully available yet. So {project_name} has the internal list of user attributes, which are read-only for the users and read-only for the administrators configured
+at the server level.
+
+This is the list of the read-only attributes, which are used internally by the {project_name} default providers and functionalities and hence are always read-only:
+
+* For users: `KERBEROS_PRINCIPAL`, `LDAP_ID`, `LDAP_ENTRY_DN`, `CREATED_TIMESTAMP`, `createTimestamp`, `modifyTimestamp`, `userCertificate`, `saml.persistent.name.id.for.*`, `ENABLED`, `EMAIL_VERIFIED`
+* For administrators: `KERBEROS_PRINCIPAL`, `LDAP_ID`, `LDAP_ENTRY_DN`, `CREATED_TIMESTAMP`, `createTimestamp`, `modifyTimestamp`
+
+System administrators have a way to add additional attributes to this list. The configuration is currently available at the server level.
+You can add this configuration to your `standalone(-*).xml` files to the configuration of the {project_name} server subsystem:
+
+[options="nowrap"]
+----
+<spi name="userProfile">
+    <provider name="legacy-user-profile" enabled="true">
+        <properties>
+            <property name="read-only-attributes" value="[&quot;foo&quot;,&quot;bar*&quot;]"/>
+            <property name="admin-read-only-attributes" value="[&quot;foo&quot;]"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The same can be configured with the usage of the JBoss CLI with the commands:
+
+
+[options="nowrap"]
+----
+/subsystem=keycloak-server/spi=userProfile/:add
+/subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:add(properties={},enabled=true)
+/subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=read-only-attributes,value=[foo,bar*])
+/subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value=[foo])
+----
+
+For this example, users and administrators would not be able to update attribute `foo`. Users would not be able to edit any attributes starting with the `bar`.
+So for example `bar` or `barrier`. Configuration is case insensitive, so attributes like `FOO` or `BarRier` will be denied as well for this example. The wildcard character `\*` is supported
+only at the end of the attribute name, so the administrator can effectively deny all the attributes starting with the specified character. The `*` in the middle of the attribute is considered
+as a normal character.
+

@@ -9,6 +9,9 @@ User Storage SPI provider implementations can also perform complex criteria quer
 
 User Storage SPI provider implementations are packaged and deployed similarly to (and often are) Java EE components. They are not enabled by default, but instead must be enabled and configured per realm under the `User Federation` tab in the administration console.
 
+WARNING: If your user provider implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
+then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. The example is the `LDAP_ID` attribute, which the built-in {project_name}
+LDAP provider is using for to store the ID of the user on the LDAP server side. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
 
 
 
