@@ -51,6 +51,7 @@ export const RealmRoleTabs = () => {
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
+  const [role, setRole] = useState<RoleRepresentation>();
 
   const { id } = useParams<{ id: string }>();
 
@@ -62,6 +63,7 @@ export const RealmRoleTabs = () => {
         const fetchedRole = await adminClient.roles.findOneById({ id });
         setName(fetchedRole.name!);
         setupForm(fetchedRole);
+        setRole(fetchedRole);
       } else {
         setName(t("createRole"));
       }
@@ -78,6 +80,11 @@ export const RealmRoleTabs = () => {
     });
   };
 
+  // reset form to default values
+  const reset = () => {
+    setupForm(role!);
+  };
+
   const save = async (role: RoleRepresentation) => {
     try {
       if (id) {
@@ -87,6 +94,8 @@ export const RealmRoleTabs = () => {
             (role.attributes as unknown) as KeyValueType[]
           );
         }
+        setRole(role!);
+        setupForm(role!);
         await adminClient.roles.updateById({ id }, role);
       } else {
         await adminClient.roles.create(role);
@@ -149,17 +158,29 @@ export const RealmRoleTabs = () => {
               eventKey="details"
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
-              <RealmRoleForm form={form} save={save} editMode={true} />
+              <RealmRoleForm
+                reset={reset}
+                form={form}
+                save={save}
+                editMode={true}
+              />
             </Tab>
             <Tab
               eventKey="attributes"
               title={<TabTitleText>{t("attributes")}</TabTitleText>}
             >
-              <RoleAttributes form={form} save={save} />
+              <RoleAttributes form={form} save={save} reset={reset} />
             </Tab>
           </KeycloakTabs>
         )}
-        {!id && <RealmRoleForm form={form} save={save} editMode={false} />}
+        {!id && (
+          <RealmRoleForm
+            reset={reset}
+            form={form}
+            save={save}
+            editMode={false}
+          />
+        )}
       </PageSection>
     </>
   );

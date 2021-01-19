@@ -1,6 +1,6 @@
 import React from "react";
 import { ActionGroup, Button, TextInput } from "@patternfly/react-core";
-import { SubmitHandler, useFieldArray, UseFormMethods } from "react-hook-form";
+import { useFieldArray, UseFormMethods } from "react-hook-form";
 import "./RealmRolesSection.css";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 
@@ -20,10 +20,11 @@ export type KeyValueType = { key: string; value: string };
 
 type RoleAttributesProps = {
   form: UseFormMethods;
-  save: SubmitHandler<RoleRepresentation>;
+  save: (role: RoleRepresentation) => void;
+  reset: () => void;
 };
 
-export const RoleAttributes = ({ form, save }: RoleAttributesProps) => {
+export const RoleAttributes = ({ form, save, reset }: RoleAttributesProps) => {
   const { t } = useTranslation("roles");
 
   const { fields, append, remove } = useFieldArray({
@@ -78,9 +79,7 @@ export const RoleAttributes = ({ form, save }: RoleAttributesProps) => {
                 >
                   <TextInput
                     name={`attributes[${rowIndex}].value`}
-                    ref={form.register({
-                      required: true,
-                    })}
+                    ref={form.register({})}
                     aria-label="value-input"
                     defaultValue={attribute.value}
                   />
@@ -127,7 +126,9 @@ export const RoleAttributes = ({ form, save }: RoleAttributesProps) => {
           >
             {t("common:save")}
           </Button>
-          <Button variant="link">{t("common:reload")}</Button>
+          <Button variant="link" onClick={reset}>
+            {t("common:reload")}{" "}
+          </Button>
         </ActionGroup>
       </FormAccess>
     </>
