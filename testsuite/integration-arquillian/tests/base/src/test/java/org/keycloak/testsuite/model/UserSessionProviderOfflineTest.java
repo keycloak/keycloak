@@ -20,6 +20,7 @@ package org.keycloak.testsuite.model;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -41,6 +42,7 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.HashMap;
@@ -61,6 +63,10 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTest {
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
+
     private static KeycloakSession currentSession;
     private static RealmModel realm;
     private static UserSessionManager sessionManager;
@@ -545,7 +551,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
                 Assert.assertEquals(1, persister.getUserSessionsCount(true));
 
                 // Expire everything and assert nothing found
-                Time.setOffset(6000000);
+                Time.setOffset(7000000);
 
                 currentSession.sessions().removeExpired(realm);
                 persister.removeExpired(realm);

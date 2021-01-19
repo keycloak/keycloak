@@ -139,6 +139,11 @@ public interface UserSessionProvider extends Provider {
     void removeUserSessions(RealmModel realm, UserModel user);
 
     /**
+     * Remove expired user sessions and client sessions in all the realms
+     */
+    void removeAllExpired();
+
+    /**
      * Removes expired user sessions owned by this realm from this provider.
      * If this `UserSessionProvider` uses `UserSessionPersister`, the removal of the expired
      * {@link UserSessionModel user sessions} is also propagated to relevant `UserSessionPersister`.

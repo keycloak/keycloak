@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.infinispan.Cache;
@@ -154,6 +155,10 @@ public class ConcurrencyJDGCacheReplaceTest {
         // Create caches, listeners and finally worker threads
         remoteCache1 = InfinispanUtil.getRemoteCache(cache1);
         remoteCache2 = InfinispanUtil.getRemoteCache(cache2);
+
+        // Manual test of lifespans
+        testLifespans();
+
         Thread worker1 = createWorker(cache1, 1);
         Thread worker2 = createWorker(cache2, 2);
 
@@ -374,6 +379,30 @@ public class ConcurrencyJDGCacheReplaceTest {
 
     private enum ReplaceStatus {
         REPLACED, NOT_REPLACED, ERROR
+    }
+
+
+    private static void testLifespans() throws Exception {
+        long l1 = InfinispanUtil.toHotrodTimeMs(remoteCache1, 5000);
+        long l2 = InfinispanUtil.toHotrodTimeMs(remoteCache2, 2592000000L);
+        long l3 = InfinispanUtil.toHotrodTimeMs(remoteCache2, 2592000001L);
+        //long l4 = InfinispanUtil.getLifespanMs(remoteCache1, Time.currentTimeMillis() + 5000);
+
+        remoteCache1.put("k1", "v1", l1, TimeUnit.MILLISECONDS);
+        remoteCache1.put("k2", "v2", l2, TimeUnit.MILLISECONDS);
+        remoteCache1.put("k3", "v3", l3, TimeUnit.MILLISECONDS);
+        remoteCache1.put("k4", "v4", Time.currentTimeMillis() + 5000, TimeUnit.MILLISECONDS);
+
+        System.out.println("l1=" + l1 + ", l2=" + l2 + ", l3=" + l3);
+        System.out.println("k1=" + remoteCache1.get("k1") + ", k2=" + remoteCache1.get("k2") + ", k3=" + remoteCache1.get("k3") + ", k4=" + remoteCache1.get("k4"));
+
+        Thread.sleep(4000);
+
+        System.out.println("k1=" + remoteCache1.get("k1") + ", k2=" + remoteCache1.get("k2") + ", k3=" + remoteCache1.get("k3") + ", k4=" + remoteCache1.get("k4"));
+
+        Thread.sleep(2000);
+
+        System.out.println("k1=" + remoteCache1.get("k1") + ", k2=" + remoteCache1.get("k2") + ", k3=" + remoteCache1.get("k3") + ", k4=" + remoteCache1.get("k4"));
     }
 /*
     // Worker, which operates on "classic" cache and rely on operations delegated to the second cache

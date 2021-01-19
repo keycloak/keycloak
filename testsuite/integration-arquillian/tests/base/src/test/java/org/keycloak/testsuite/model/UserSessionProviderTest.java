@@ -20,6 +20,7 @@ package org.keycloak.testsuite.model;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -57,12 +58,16 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     public static void setupRealm(KeycloakSession session){
         RealmModel realm = session.realms().getRealmByName("test");
@@ -469,6 +474,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 assertEquals(userSession, clientSession.getUserSession());
                 Time.setOffset(-(realm.getSsoSessionIdleTimeout() * 2));
                 userSession.setLastSessionRefresh(Time.currentTime());
+                clientSession.setTimestamp(Time.currentTime());
                 validUserSessions.add(userSession.getId());
                 validClientSessions.add(clientSession.getId());
             });

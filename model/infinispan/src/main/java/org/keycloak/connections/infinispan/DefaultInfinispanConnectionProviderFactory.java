@@ -185,10 +185,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
             configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr);
             gcb.jmx()
-              .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName());
+              .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();
+        } else {
+            gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         }
-
-        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
 
         // For Infinispan 10, we go with the JBoss marshalling.
         // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.

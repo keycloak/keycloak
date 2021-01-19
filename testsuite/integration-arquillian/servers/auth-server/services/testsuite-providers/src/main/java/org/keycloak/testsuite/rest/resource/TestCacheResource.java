@@ -107,6 +107,13 @@ public class TestCacheResource {
         cache.remove(id);
     }
 
+    @POST
+    @Path("/process-expiration")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void processExpiration() {
+        cache.getAdvancedCache().getExpirationManager().processExpiration();
+    }
+
     @GET
     @Path("/jgroups-stats")
     @Produces(MediaType.APPLICATION_JSON)

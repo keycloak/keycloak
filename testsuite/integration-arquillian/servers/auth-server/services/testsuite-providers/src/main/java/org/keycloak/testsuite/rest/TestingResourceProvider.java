@@ -66,6 +66,7 @@ import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
+import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
@@ -178,6 +179,22 @@ public class TestingResourceProvider implements RealmResourceProvider {
         session.authenticationSessions().removeExpired(realm);
         session.realms().removeExpiredClientInitialAccess();
 
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/set-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setTestingInfinispanTimeService() {
+        InfinispanTestUtil.setTestingTimeService(session);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/revert-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revertTestingInfinispanTimeService() {
+        InfinispanTestUtil.revertTimeService(session);
         return Response.noContent().build();
     }
 

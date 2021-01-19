@@ -25,9 +25,11 @@ import java.util.function.Supplier;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,7 +53,8 @@ public class InfinispanCodeToTokenStoreProvider implements CodeToTokenStoreProvi
 
         try {
             BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
-            cache.put(codeId, tokenValue, lifespanSeconds, TimeUnit.SECONDS);
+            long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds));
+            cache.put(codeId, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             if (logger.isDebugEnabled()) {
