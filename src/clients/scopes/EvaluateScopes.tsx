@@ -335,6 +335,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       <Grid hasGutter className="keycloak__scopes_evaluate__tabs">
         <GridItem span={8}>
           <TabContent
+            aria-labelledby="pf-tab-0-effectiveProtocolMappers"
             eventKey={0}
             id="effectiveProtocolMappers"
             ref={tabContent1}
@@ -342,6 +343,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <ProtocolMappers protocolMappers={protocolMappers} />
           </TabContent>
           <TabContent
+            aria-labelledby="pf-tab-0-effectiveRoleScopeMappings"
             eventKey={1}
             id="effectiveRoleScopeMappings"
             ref={tabContent2}
@@ -350,6 +352,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <EffectiveRoles effectiveRoles={effectiveRoles} />
           </TabContent>
           <TabContent
+            aria-labelledby="pf-tab-0-generatedAccessToken"
             eventKey={2}
             id="generatedAccessToken"
             ref={tabContent3}
@@ -378,6 +381,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             onSelect={(_, key) => setActiveTab(key as number)}
           >
             <Tab
+              id="effectiveProtocolMappers"
+              aria-controls="effectiveProtocolMappers"
               eventKey={0}
               title={
                 <TabTitleText>{t("effectiveProtocolMappers")}</TabTitleText>
@@ -385,6 +390,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               tabContentRef={tabContent1}
             />
             <Tab
+              id="effectiveRoleScopeMappings"
+              aria-controls="effectiveRoleScopeMappings"
               eventKey={1}
               title={
                 <TabTitleText>{t("effectiveRoleScopeMappings")}</TabTitleText>
@@ -392,6 +399,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               tabContentRef={tabContent2}
             ></Tab>
             <Tab
+              id="generatedAccessToken"
+              aria-controls="generatedAccessToken"
               eventKey={2}
               title={<TabTitleText>{t("generatedAccessToken")}</TabTitleText>}
               tabContentRef={tabContent3}
