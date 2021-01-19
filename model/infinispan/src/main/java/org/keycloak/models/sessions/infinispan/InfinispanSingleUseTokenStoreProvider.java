@@ -23,9 +23,11 @@ import java.util.function.Supplier;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * TODO: Check if Boolean can be used as single-use cache argument instead of ActionTokenValueEntity. With respect to other single-use cache usecases like "Revoke Refresh Token" .
@@ -55,7 +57,8 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
 
         try {
             BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
-            ActionTokenValueEntity existing = cache.putIfAbsent(tokenId, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
+            long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanInSeconds));
+            ActionTokenValueEntity existing = cache.putIfAbsent(tokenId, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
             return existing == null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.

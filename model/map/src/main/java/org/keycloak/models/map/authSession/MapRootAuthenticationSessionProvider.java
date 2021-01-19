@@ -132,6 +132,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     }
 
     @Override
+    public void removeAllExpired() {
+        session.realms().getRealmsStream().forEach(this::removeExpired);
+    }
+
+    @Override
     public void removeExpired(RealmModel realm) {
         Objects.requireNonNull(realm, "The provided realm can't be null!");
         LOG.debugf("Removing expired sessions");

@@ -18,6 +18,7 @@
 package org.keycloak.sessions;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 
@@ -70,6 +71,11 @@ public interface AuthenticationSessionProvider extends Provider {
      * @param authenticationSession {@code RootAuthenticationSessionModel} Can't be {@code null}.
      */
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
+
+    /**
+     * Remove expired authentication sessions in all the realms
+     */
+    void removeAllExpired();
 
     /**
      * Removes all expired root authentication sessions for the given realm.

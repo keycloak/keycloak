@@ -770,23 +770,28 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCodeWithExplicitRemoveExpired() {
-        loginPage.open();
-        setTimeOffset(5000);
-        // Explicitly call "removeExpired". Hence authSession won't exist, but will be restarted from the KC_RESTART
-        testingClient.testing().removeExpired("test");
+        getTestingClient().testing().setTestingInfinispanTimeService();
 
-        loginPage.login("login@test.com", "password");
+        try {
+            loginPage.open();
+            setTimeOffset(5000);
+            // Explicitly call "removeExpired". Hence authSession won't exist, but will be restarted from the KC_RESTART
+            testingClient.testing().removeExpired("test");
 
-        //loginPage.assertCurrent();
-        loginPage.assertCurrent();
+            loginPage.login("login@test.com", "password");
 
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
-        setTimeOffset(0);
+            //loginPage.assertCurrent();
+            loginPage.assertCurrent();
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
-                .assertEvent();
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+
+            events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+                    .detail(Details.RESTART_AFTER_TIMEOUT, "true")
+                    .client((String) null)
+                    .assertEvent();
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+        }
     }
 
     @Test

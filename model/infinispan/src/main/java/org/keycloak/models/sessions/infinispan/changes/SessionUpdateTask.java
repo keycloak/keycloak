@@ -30,11 +30,6 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper);
 
-    default long getLifespanMs() {
-        return -1;
-    }
-
-
     enum CacheOperation {
 
         ADD,

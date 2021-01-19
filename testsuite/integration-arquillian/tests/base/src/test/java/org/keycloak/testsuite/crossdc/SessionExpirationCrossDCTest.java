@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.ws.rs.NotFoundException;
 
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -99,12 +100,30 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
                 .build();
 
         RealmRepresentation realmRep = RealmBuilder.create()
+                .ssoSessionIdleTimeout(300)
+                .ssoSessionMaxLifespan(600)
+                .offlineSessionIdleTimeout(900)
                 .name(REALM_NAME)
                 .user(user)
                 .client(client)
                 .build();
 
         adminClient.realms().create(realmRep);
+
+        setInfinispanTestTimeServiceOnAllStartedAuthServers();
+    }
+
+    @After
+    public void afterTest() {
+        // Expire all sessions
+        setTimeOffset(1500);
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).processExpiration();
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).processExpiration();
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).processExpiration();
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).processExpiration();
+        resetTimeOffset();
+
+        revertInfinispanTestTimeServiceOnAllStartedAuthServers();
     }
 
 
@@ -195,7 +214,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             int remoteSessions2 = (Integer) cacheDc2Statistics.getSingleStatistics(InfinispanStatistics.Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
             // Needs to use "received_messages" on Infinispan 9.2.4.Final.  Stats for "sent_messages" is always null
             long messagesCount = (Long) channelStatisticsCrossDc.getSingleStatistics(InfinispanStatistics.Constants.STAT_CHANNEL_RECEIVED_MESSAGES);
-            log.infof(messagePrefix + ": sessions1: %d, sessions2: %d, remoteSessions1: %d, remoteSessions2: %d, sentMessages: %d", sessions1, sessions2, remoteSessions1, remoteSessions2, messagesCount);
+            log.infof(messagePrefix + ": sessions1: %d, sessions2: %d, clientSessions1: %d, clientSessions2: %d, remoteSessions1: %d, remoteSessions2: %d, sentMessages: %d", sessions1, sessions2, clientSessions1, clientSessions2, remoteSessions1, remoteSessions2, messagesCount);
 
             Assert.assertEquals(sessions1, sessions1Expected);
             Assert.assertEquals(sessions2, sessions2Expected);
@@ -275,8 +294,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
                 remoteSessions01 + SESSIONS_COUNT, remoteSessions02 + SESSIONS_COUNT, false);
 
 
-        // Set time offset
-        setTimeOffset(10000000);
+        // Increase offset to 10 minutes (SSO Session Idle is 5 minutes for the realm). To make sure that admin session from master realm won't expire
+        setTimeOffset(610);
 
         // Assert I am not able to refresh anymore
         refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
@@ -287,7 +306,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         channelStatisticsCrossDc.reset();
 
         // Remove expired in DC0
-        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).processExpiration();
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).processExpiration();
 
         // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After remove expired - 2", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
@@ -312,7 +332,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         channelStatisticsCrossDc.reset();
 
         // Remove expired in DC0
-        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).processExpiration();
 
         // Nothing yet expired. It may happen that no message sent between DCs
         assertStatisticsExpected("After remove expired - 1", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
@@ -321,8 +341,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
                 remoteSessions01 + SESSIONS_COUNT, remoteSessions02 + SESSIONS_COUNT, false);
 
 
-        // Set time offset
-        setTimeOffset(10000000);
+        // Increase offset to 20 minutes. Client offline sessions should be expired from infinispan by that. Master sessions will still remain there.
+        setTimeOffset(1210);
 
         // Assert I am not able to refresh anymore
         refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
@@ -333,7 +353,8 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         channelStatisticsCrossDc.reset();
 
         // Remove expired in DC0
-        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).processExpiration();
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).processExpiration();
 
         // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After remove expired - 2", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
@@ -555,12 +576,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).removeKey(userSessionId);
         }
 
-        // Increase offset to big value like 100 hours
-        setTimeOffset(360000);
+        // Increase offset to 10 minutes (SSO Session Idle is 5 minutes for the realm). To make sure that admin session from master realm won't expire
+        setTimeOffset(610);
 
         // Trigger removeExpired
-        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
-        getTestingClientForStartedNodeInDc(1).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).processExpiration();
 
         // Ensure clientSessions were removed
         assertStatisticsExpected("After remove expired", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
@@ -586,12 +606,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).removeKey(userSessionId);
         }
 
-        // Increase offset to big value like 10000 hours (400+ days)
-        setTimeOffset(36000000);
+        // Increase offset to 20 minutes. Client offline sessions should be expired from infinispan by that. Master sessions will still remain there.
+        setTimeOffset(1210);
 
         // Trigger removeExpired
-        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
-        getTestingClientForStartedNodeInDc(1).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).processExpiration();
 
         // Ensure clientSessions were removed
         assertStatisticsExpected("After remove expired", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
