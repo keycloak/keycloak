@@ -891,6 +891,9 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             oauth.scope("microprofile-jwt" + " " + "profile");
             failLoginByNotFollowingPKCE(clientAlphaId);
 
+            oauth.scope("microprofile-jwt" + " " + "profile");
+            failLoginByNotFollowingPKCE(clientAlphaId);
+
             successfulLoginAndLogoutWithPKCE(clientAlphaId, clientAlphaSecret, "test-user@localhost", "password");
         } catch (Exception e) {
             fail();
@@ -1112,6 +1115,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     }
 
     @AuthServerContainerExclude(AuthServer.REMOTE)
+    @Test
     public void testClientUpdateSourceHostsCondition() throws ClientRegistrationException, ClientPolicyException {
         String policyName = "MyPolicy";
         createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);

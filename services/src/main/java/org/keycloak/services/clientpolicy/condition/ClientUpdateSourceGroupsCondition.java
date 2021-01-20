@@ -109,7 +109,7 @@ public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionP
         Set<String> expectedGroups = instantiateGroupsForMatching();
         if (expectedGroups == null) return false;
 
-        // user.getRolesStream() never returns null according to {@link UserModel.getGroupsStream}
+        // user.getGroupsStream() never returns null according to {@link UserModel.getGroupsStream}
         Set<String> groups = user.getGroupsStream().map(GroupModel::getName).collect(Collectors.toSet());
 
         if (logger.isTraceEnabled()) {
