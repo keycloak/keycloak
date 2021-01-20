@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.oauth2DeviceAuthUrl;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
@@ -60,6 +61,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -68,8 +70,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -1058,11 +1058,6 @@ public class OAuthClient {
         driver.navigate().to(getLoginFormUrl());
     }
 
-    public void openOAuth2DeviceVerificationForm() {
-        UriBuilder b = RealmsResource.oauth2DeviceVerificationUrl(UriBuilder.fromUri(baseUrl));
-        openOAuth2DeviceVerificationForm(b.build(realm).toString());
-    }
-
     public void openOAuth2DeviceVerificationForm(String verificationUri) {
         driver.navigate().to(verificationUri);
     }
@@ -1206,7 +1201,7 @@ public class OAuthClient {
     }
 
     public String getDeviceAuthorizationUrl() {
-        UriBuilder b = OIDCLoginProtocolService.oauth2DeviceAuthUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = oauth2DeviceAuthUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 

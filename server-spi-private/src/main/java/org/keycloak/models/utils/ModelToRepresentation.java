@@ -352,8 +352,8 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());
         rep.setActionTokenGeneratedByAdminLifespan(realm.getActionTokenGeneratedByAdminLifespan());
         rep.setActionTokenGeneratedByUserLifespan(realm.getActionTokenGeneratedByUserLifespan());
-        rep.setOAuth2DeviceCodeLifespan(realm.getOAuth2DeviceCodeLifespan());
-        rep.setOAuth2DevicePollingInterval(realm.getOAuth2DevicePollingInterval());
+        rep.setOAuth2DeviceCodeLifespan(realm.getOAuth2DeviceConfig().getLifespan());
+        rep.setOAuth2DevicePollingInterval(realm.getOAuth2DeviceConfig().getPoolingInterval());
         rep.setSmtpServer(new HashMap<>(realm.getSmtpConfig()));
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());
@@ -585,7 +585,6 @@ public class ModelToRepresentation {
         rep.setImplicitFlowEnabled(clientModel.isImplicitFlowEnabled());
         rep.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
         rep.setServiceAccountsEnabled(clientModel.isServiceAccountsEnabled());
-        rep.setOAuth2DeviceAuthorizationGrantEnabled(clientModel.isOAuth2DeviceAuthorizationGrantEnabled());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
         rep.setRootUrl(clientModel.getRootUrl());
         rep.setBaseUrl(clientModel.getBaseUrl());
