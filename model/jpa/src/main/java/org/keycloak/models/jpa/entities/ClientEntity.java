@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Nationalized;
 
 import javax.persistence.Access;
@@ -98,26 +99,26 @@ public class ClientEntity {
     @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @Column(name="VALUE")
     @CollectionTable(name = "WEB_ORIGINS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> webOrigins;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @Column(name="VALUE")
     @CollectionTable(name = "REDIRECT_URIS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> redirectUris;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client", fetch = FetchType.LAZY)
     protected Collection<ClientAttributeEntity> attributes;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @MapKeyColumn(name="BINDING_NAME")
     @Column(name="FLOW_ID", length = 4000)
     @CollectionTable(name="CLIENT_AUTH_FLOW_BINDINGS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> authFlowBindings;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client", fetch = FetchType.LAZY)
     Collection<ProtocolMapperEntity> protocolMappers;
 
     @Column(name="SURROGATE_AUTH_REQUIRED")
@@ -156,9 +157,10 @@ public class ClientEntity {
     @ElementCollection
     @Column(name="ROLE_ID")
     @CollectionTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")})
+    @BatchSize(size = 20)
     private Set<String> scopeMappingIds;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="CLIENT_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })

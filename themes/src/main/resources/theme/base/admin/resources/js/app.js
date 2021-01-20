@@ -10,12 +10,26 @@ var loadingTimer = -1;
 var translateProvider = null;
 var currentRealm = null;
 
+function getRealmName() {
+    var match = window.location.href.match("/realms/(.*)");
+
+    if (match && match.length > 1) {
+        var realmName = match[1];
+        if (realmName.indexOf('/') != -1) {
+            realmName = realmName.substring(0, realmName.indexOf('/'));
+        }
+        return realmName;
+    }
+
+    return null;
+}
+
 angular.element(document).ready(function () {
     var keycloakAuth = new Keycloak(consoleBaseUrl + 'config');
 
-    function whoAmI(success, error) {
+    function whoAmI(realmName, success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + 'whoami', true);
+        req.open('GET', consoleBaseUrl + 'whoami/' + realmName, true);
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + keycloakAuth.token);
 
@@ -25,7 +39,10 @@ angular.element(document).ready(function () {
                     var data = JSON.parse(req.responseText);
                     success(data);
                 } else {
-                    error();
+                    console.error("Failed to query whoami endpoint");
+                    if (error) {
+                        error();
+                    }
                 }
             }
         }
@@ -83,14 +100,22 @@ angular.element(document).ready(function () {
     }
 
     auth.refreshPermissions = function(success, error) {
-        whoAmI(function(data) {
+        refreshPermissions(getRealmName(), success, error);
+    };
+
+    auth.refreshPermissions = function(realmName, success, error) {
+        whoAmI(realmName, function(data) {
             auth.user = data;
             auth.loggedIn = true;
             auth.hasAnyAccess = hasAnyAccess(data);
 
             success();
         }, function() {
-            error();
+            if (error) {
+                error();
+            } else {
+                window.location.reload();
+            }
         });
     };
 
@@ -101,7 +126,7 @@ angular.element(document).ready(function () {
     keycloakAuth.init({ onLoad: 'login-required', pkceMethod: 'S256' }).then(function () {
         auth.authz = keycloakAuth;
 
-        whoAmI(function(data) {
+        whoAmI(getRealmName(), function(data) {
             auth.user = data;
             auth.loggedIn = true;
             auth.hasAnyAccess = hasAnyAccess(data);

@@ -371,6 +371,10 @@ module.factory('Realm', function($resource) {
     });
 });
 
+module.factory('Realms', function($resource) {
+    return $resource(authUrl + '/admin/realms/?briefRepresentation=true');
+});
+
 module.factory('RealmKeys', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/keys', {
         id : '@realm'
@@ -1543,14 +1547,14 @@ module.factory('ClientServiceAccountUser', function($resource) {
     });
 });
 
-module.factory('Current', function(Realm, $route, $rootScope) {
+module.factory('Current', function(Realms, $route, $rootScope) {
     var current = {
         realms: {},
         realm: null
     };
 
-    $rootScope.$on('$routeChangeStart', function() {
-        current.realms = Realm.query(null, function(realms) {
+    current.refreshRealms = function() {
+        current.realms = Realms.query(function(realms) {
             var currentRealm = null;
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
@@ -1561,7 +1565,7 @@ module.factory('Current', function(Realm, $route, $rootScope) {
             }
             current.realm = currentRealm;
         });
-    });
+    };
 
     return current;
 });

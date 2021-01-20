@@ -51,7 +51,7 @@ public class RealmAdapter implements CachedRealmModel {
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
-            updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
+            updated = getRealm();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -640,7 +640,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<RequiredCredentialModel> getRequiredCredentialsStream() {
         if (isUpdated()) return updated.getRequiredCredentialsStream();
-        return cached.getRequiredCredentials().stream();
+        return cached.getRequiredCredentials(this::getRealm).stream();
     }
 
     @Override
@@ -707,7 +707,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<GroupModel> getDefaultGroupsStream() {
         if (isUpdated()) return updated.getDefaultGroupsStream();
-        return cached.getDefaultGroups().stream().map(this::getGroupById);
+        return cached.getDefaultGroups(this::getRealm).stream().map(this::getGroupById);
     }
 
     @Override
@@ -829,7 +829,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Map<String, String> getSmtpConfig() {
         if (isUpdated()) return updated.getSmtpConfig();
-        return cached.getSmtpConfig();
+        return cached.getSmtpConfig(this::getRealm);
     }
 
     @Override
@@ -842,7 +842,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
         if (isUpdated()) return updated.getIdentityProvidersStream();
-        return cached.getIdentityProviders().stream();
+        return cached.getIdentityProviders(this::getRealm).stream();
     }
 
     @Override
@@ -959,7 +959,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<String> getEventsListenersStream() {
         if (isUpdated()) return updated.getEventsListenersStream();
-        return cached.getEventsListeners().stream();
+        return cached.getEventsListeners(this::getRealm).stream();
     }
 
     @Override
@@ -971,7 +971,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<String> getEnabledEventTypesStream() {
         if (isUpdated()) return updated.getEnabledEventTypesStream();
-        return cached.getEnabledEventTypes().stream();
+        return cached.getEnabledEventTypes(this::getRealm).stream();
     }
 
     @Override
@@ -1006,7 +1006,8 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientModel getMasterAdminClient() {
-        return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
+        String clientId = cached.getMasterAdminClient(this::getRealm);
+        return clientId ==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient(this::getRealm));
     }
 
     @Override
@@ -1023,7 +1024,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel getDefaultRole() {
-        return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
+        return cached.getDefaultRoleId(this::getRealm) == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId(this::getRealm));
     }
 
     @Override
@@ -1065,7 +1066,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public boolean isIdentityFederationEnabled() {
         if (isUpdated()) return updated.isIdentityFederationEnabled();
-        return cached.isIdentityFederationEnabled();
+        return cached.isIdentityFederationEnabled(this::getRealm);
     }
 
 
@@ -1098,7 +1099,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<String> getSupportedLocalesStream() {
         if (isUpdated()) return updated.getSupportedLocalesStream();
-        return cached.getSupportedLocales().stream();
+        return cached.getSupportedLocales(this::getRealm).stream();
     }
 
     @Override
@@ -1121,13 +1122,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream() {
         if (isUpdated()) return updated.getIdentityProviderMappersStream();
-        return cached.getIdentityProviderMapperSet().stream();
+        return cached.getIdentityProviderMapperSet(this::getRealm).stream();
     }
 
     @Override
     public Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias) {
         if (isUpdated()) return updated.getIdentityProviderMappersByAliasStream(brokerAlias);
-        Set<IdentityProviderMapperModel> mappings = new HashSet<>(cached.getIdentityProviderMappers().getList(brokerAlias));
+        Set<IdentityProviderMapperModel> mappings = new HashSet<>(cached.getIdentityProviderMappers(this::getRealm).getList(brokerAlias));
         return mappings.stream();
     }
 
@@ -1152,7 +1153,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id) {
         if (isUpdated()) return updated.getIdentityProviderMapperById(id);
-        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
+        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers(this::getRealm).values()) {
             for (IdentityProviderMapperModel model : models) {
                 if (model.getId().equals(id)) return model;
             }
@@ -1163,7 +1164,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String alias, String name) {
         if (isUpdated()) return updated.getIdentityProviderMapperByName(alias, name);
-        List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers().getList(alias);
+        List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers(this::getRealm).getList(alias);
         if (models == null) return null;
         for (IdentityProviderMapperModel model : models) {
             if (model.getName().equals(name)) return model;
@@ -1174,7 +1175,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getBrowserFlow() {
         if (isUpdated()) return updated.getBrowserFlow();
-        return cached.getBrowserFlow();
+        return cached.getBrowserFlow(this::getRealm);
     }
 
     @Override
@@ -1187,7 +1188,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getRegistrationFlow() {
         if (isUpdated()) return updated.getRegistrationFlow();
-        return cached.getRegistrationFlow();
+        return cached.getRegistrationFlow(this::getRealm);
     }
 
     @Override
@@ -1200,7 +1201,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getDirectGrantFlow() {
         if (isUpdated()) return updated.getDirectGrantFlow();
-        return cached.getDirectGrantFlow();
+        return cached.getDirectGrantFlow(this::getRealm);
     }
 
     @Override
@@ -1212,7 +1213,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getResetCredentialsFlow() {
         if (isUpdated()) return updated.getResetCredentialsFlow();
-        return cached.getResetCredentialsFlow();
+        return cached.getResetCredentialsFlow(this::getRealm);
     }
 
     @Override
@@ -1225,7 +1226,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getClientAuthenticationFlow() {
         if (isUpdated()) return updated.getClientAuthenticationFlow();
-        return cached.getClientAuthenticationFlow();
+        return cached.getClientAuthenticationFlow(this::getRealm);
     }
 
     @Override
@@ -1237,7 +1238,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getDockerAuthenticationFlow() {
         if (isUpdated()) return updated.getDockerAuthenticationFlow();
-        return cached.getDockerAuthenticationFlow();
+        return cached.getDockerAuthenticationFlow(this::getRealm);
     }
 
     @Override
@@ -1249,7 +1250,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         if (isUpdated()) return updated.getAuthenticationFlowsStream();
-        return cached.getAuthenticationFlowList().stream();
+        return cached.getAuthenticationFlowList(this::getRealm).stream();
     }
 
     @Override
@@ -1278,7 +1279,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getAuthenticationFlowById(String id) {
         if (isUpdated()) return updated.getAuthenticationFlowById(id);
-        return cached.getAuthenticationFlows().get(id);
+        return cached.getAuthenticationFlows(this::getRealm).get(id);
     }
 
     @Override
@@ -1298,19 +1299,19 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId) {
         if (isUpdated()) return updated.getAuthenticationExecutionsStream(flowId);
-        return cached.getAuthenticationExecutions().get(flowId).stream();
+        return cached.getAuthenticationExecutions(this::getRealm).get(flowId).stream();
     }
 
     @Override
     public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
         if (isUpdated()) return updated.getAuthenticationExecutionById(id);
-        return cached.getExecutionsById().get(id);
+        return cached.getExecutionsById(this::getRealm).get(id);
     }
 
     @Override
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
         if (isUpdated()) return updated.getAuthenticationExecutionByFlowId(flowId);
-        return cached.getAuthenticationExecutionByFlowId(flowId);
+        return cached.getAuthenticationExecutionByFlowId(this::getRealm, flowId);
     }
 
     @Override
@@ -1336,7 +1337,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<AuthenticatorConfigModel> getAuthenticatorConfigsStream() {
         if (isUpdated()) return updated.getAuthenticatorConfigsStream();
-        return cached.getAuthenticatorConfigs().values().stream();
+        return cached.getAuthenticatorConfigs(this::getRealm).values().stream();
     }
 
     @Override
@@ -1362,13 +1363,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
         if (isUpdated()) return updated.getAuthenticatorConfigById(id);
-        return cached.getAuthenticatorConfigs().get(id);
+        return cached.getAuthenticatorConfigs(this::getRealm).get(id);
     }
 
     @Override
     public Stream<RequiredActionProviderModel> getRequiredActionProvidersStream() {
         if (isUpdated()) return updated.getRequiredActionProvidersStream();
-        return cached.getRequiredActionProviderList().stream();
+        return cached.getRequiredActionProviderList(this::getRealm).stream();
     }
 
     @Override
@@ -1394,13 +1395,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public RequiredActionProviderModel getRequiredActionProviderById(String id) {
         if (isUpdated()) return updated.getRequiredActionProviderById(id);
-        return cached.getRequiredActionProviders().get(id);
+        return cached.getRequiredActionProviders(this::getRealm).get(id);
     }
 
     @Override
     public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
         if (isUpdated()) return updated.getRequiredActionProviderByAlias(alias);
-        return cached.getRequiredActionProvidersByAlias().get(alias);
+        return cached.getRequiredActionProvidersByAlias(this::getRealm).get(alias);
     }
 
     @Override
@@ -1456,7 +1457,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
-        return cached.getClientScopes().stream().map(scope -> {
+        return cached.getClientScopes(this::getRealm).stream().map(scope -> {
             ClientScopeModel model = cacheSession.getClientScopeById(scope, this);
             if (model == null) {
                 throw new IllegalStateException("Cached clientScope not found: " + scope);
@@ -1495,6 +1496,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public ClientScopeModel getClientScopeByName(String clientScopeName) {
+        if (isUpdated()) return updated.getClientScopeByName(clientScopeName);
+        String id = cached.getClientScopeByName(this::getRealm, clientScopeName);
+
+        if (id == null) {
+            return null;
+        }
+
+        return cacheSession.getClientScopeById(id, this);
+    }
+
+    @Override
     public void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         getDelegateForUpdate();
         updated.addDefaultClientScope(clientScope, defaultScope);
@@ -1509,7 +1522,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope) {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(this::getRealm) : cached.getOptionalDefaultClientScopes(this::getRealm);
         return clientScopeIds.stream()
                 .map(scope -> cacheSession.getClientScopeById(scope, this))
                 .filter(Objects::nonNull);
@@ -1583,25 +1596,25 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ComponentModel> getComponentsStream(String parentId, String providerType) {
         if (isUpdated()) return updated.getComponentsStream(parentId, providerType);
-        return cached.getComponentsByParentAndType().getList(parentId + providerType).stream();
+        return cached.getComponentsByParentAndType(this::getRealm).getList(parentId + providerType).stream();
     }
 
     @Override
     public Stream<ComponentModel> getComponentsStream(String parentId) {
         if (isUpdated()) return updated.getComponentsStream(parentId);
-        return cached.getComponentsByParent().getList(parentId).stream();
+        return cached.getComponentsByParent(this::getRealm).getList(parentId).stream();
     }
 
     @Override
     public Stream<ComponentModel> getComponentsStream() {
         if (isUpdated()) return updated.getComponentsStream();
-        return cached.getComponents().values().stream();
+        return cached.getComponents(this::getRealm).values().stream();
     }
 
     @Override
     public ComponentModel getComponent(String id) {
         if (isUpdated()) return updated.getComponent(id);
-        return cached.getComponents().get(id);
+        return cached.getComponents(this::getRealm).get(id);
     }
 
     public void setAttribute(String name, String value) {
@@ -1636,31 +1649,31 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public String getAttribute(String name) {
         if (isUpdated()) return updated.getAttribute(name);
-        return cached.getAttribute(name);
+        return cached.getAttribute(this::getRealm, name);
     }
 
     @Override
     public Integer getAttribute(String name, Integer defaultValue) {
         if (isUpdated()) return updated.getAttribute(name, defaultValue);
-        return cached.getAttribute(name, defaultValue);
+        return cached.getAttribute(this::getRealm, name, defaultValue);
     }
 
     @Override
     public Long getAttribute(String name, Long defaultValue) {
         if (isUpdated()) return updated.getAttribute(name, defaultValue);
-        return cached.getAttribute(name, defaultValue);
+        return cached.getAttribute(this::getRealm, name, defaultValue);
     }
 
     @Override
     public Boolean getAttribute(String name, Boolean defaultValue) {
         if (isUpdated()) return updated.getAttribute(name, defaultValue);
-        return cached.getAttribute(name, defaultValue);
+        return cached.getAttribute(this::getRealm, name, defaultValue);
     }
 
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
-        return cached.getAttributes();
+        return cached.getAttributes(this::getRealm);
     }
 
     @Override
@@ -1678,7 +1691,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Map<String, Map<String, String>> getRealmLocalizationTexts() {
         if (isUpdated()) return updated.getRealmLocalizationTexts();
-        return cached.getRealmLocalizationTexts();
+        return cached.getRealmLocalizationTexts(this::getRealm);
     }
 
     @Override
@@ -1686,14 +1699,21 @@ public class RealmAdapter implements CachedRealmModel {
         if (isUpdated()) return updated.getRealmLocalizationTextsByLocale(locale);
 
         Map<String, String> localizationTexts = Collections.emptyMap();
-        if (cached.getRealmLocalizationTexts() != null && cached.getRealmLocalizationTexts().containsKey(locale)) {
-            localizationTexts = cached.getRealmLocalizationTexts().get(locale);
+        Map<String, Map<String, String>> texts = cached.getRealmLocalizationTexts(this::getRealm);
+
+        if (texts != null && texts.containsKey(locale)) {
+            localizationTexts = texts.get(locale);
         }
+
         return Collections.unmodifiableMap(localizationTexts);
     }
 
     @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    private RealmModel getRealm() {
+        return cacheSession.getRealmDelegate().getRealm(cached.getId());
     }
 }

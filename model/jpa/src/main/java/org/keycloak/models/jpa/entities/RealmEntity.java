@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -151,7 +153,7 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientScopeEntity> clientScopes;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
@@ -167,14 +169,15 @@ public class RealmEntity {
     @Column(name="EVENTS_EXPIRATION")
     protected long eventsExpiration;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @Column(name="VALUE")
     @CollectionTable(name="REALM_EVENTS_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> eventsListeners;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @Column(name="VALUE")
     @CollectionTable(name="REALM_ENABLED_EVENT_TYPES", joinColumns={ @JoinColumn(name="REALM_ID") })
+    @BatchSize(size = 20)
     protected Set<String> enabledEventTypes;
     
     @Column(name="ADMIN_EVENTS_ENABLED")
@@ -190,21 +193,26 @@ public class RealmEntity {
     protected String defaultRoleId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @BatchSize(size = 20)
     protected List<IdentityProviderEntity> identityProviders;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.LAZY)
     Collection<IdentityProviderMapperEntity> identityProviderMappers;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
     Collection<AuthenticatorConfigEntity> authenticators;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
     Collection<RequiredActionProviderEntity> requiredActionProviders;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
     Collection<AuthenticationFlowEntity> authenticationFlows;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.ALL}, orphanRemoval = true, mappedBy = "realm")
+    @BatchSize(size = 20)
     Set<ComponentEntity> components;
 
     @Column(name="BROWSER_FLOW")
@@ -229,7 +237,7 @@ public class RealmEntity {
     @Column(name="INTERNATIONALIZATION_ENABLED")
     protected boolean internationalizationEnabled;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SUPPORTED_LOCALES", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Set<String> supportedLocales;
@@ -240,7 +248,7 @@ public class RealmEntity {
     @Column(name="ALLOW_USER_MANAGED_ACCESS")
     private boolean allowUserManagedAccess;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId", fetch = FetchType.LAZY)
     @MapKey(name="locale")
     Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts;
 
