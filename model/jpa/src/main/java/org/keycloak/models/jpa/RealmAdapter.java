@@ -588,23 +588,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public int getOAuth2DeviceCodeLifespan() {
-        return getAttribute(RealmAttributes.OAUTH2_DEVICE_CODE_LIFESPAN, Constants.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN);
-    }
-
-    @Override
-    public void setOAuth2DeviceCodeLifespan(int seconds) {
-        setAttribute(RealmAttributes.OAUTH2_DEVICE_CODE_LIFESPAN, seconds);
-    }
-
-    @Override
-    public int getOAuth2DevicePollingInterval() {
-        return getAttribute(RealmAttributes.OAUTH2_DEVICE_POLLING_INTERVAL, Constants.DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL);
-    }
-
-    @Override
-    public void setOAuth2DevicePollingInterval(int seconds) {
-        setAttribute(RealmAttributes.OAUTH2_DEVICE_POLLING_INTERVAL, seconds);
+    public OAuth2DeviceConfig getOAuth2DeviceConfig() {
+        return new OAuth2DeviceConfig(this);
     }
 
     @Override

@@ -142,6 +142,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("backchannel_logout_session_supported")
     private Boolean backchannelLogoutSessionSupported;
 
+    @JsonProperty("device_authorization_endpoint")
+    private String deviceAuthorizationEndpoint;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -444,5 +447,13 @@ public class OIDCConfigurationRepresentation {
     @JsonAnySetter
     public void setOtherClaims(String name, Object value) {
         otherClaims.put(name, value);
+    }
+
+    public void setDeviceAuthorizationEndpoint(String deviceAuthorizationEndpoint) {
+        this.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint;
+    }
+
+    public String getDeviceAuthorizationEndpoint() {
+        return deviceAuthorizationEndpoint;
     }
 }

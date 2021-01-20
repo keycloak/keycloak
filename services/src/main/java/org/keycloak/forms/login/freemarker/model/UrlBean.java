@@ -16,6 +16,8 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.realmOAuth2DeviceVerificationAction;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
 import org.keycloak.theme.Theme;
@@ -110,7 +112,7 @@ public class UrlBean {
             return this.actionuri.getPath();
         }
 
-        return Urls.realmOAuth2DeviceVerificationAction(baseURI, realm).toString();
+        return realmOAuth2DeviceVerificationAction(baseURI, realm).toString();
     }
 
     public String getResourcesPath() {

@@ -16,19 +16,19 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.util.Time;
-
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
 public class OAuth2DeviceCodeModel {
 
+    private static final String REALM_ID = "rid";
     private static final String CLIENT_ID = "cid";
     private static final String EXPIRATION_NOTE = "exp";
     private static final String POLLING_INTERVAL_NOTE = "int";
@@ -46,15 +46,14 @@ public class OAuth2DeviceCodeModel {
     private final String scope;
     private final String nonce;
     private final String userSessionId;
-    private final boolean denied;
+    private final Boolean denied;
     private final Map<String, String> additionalParams;
 
     public static OAuth2DeviceCodeModel create(RealmModel realm, ClientModel client,
-                                               String deviceCode, String scope, String nonce, Map<String, String> additionalParams) {
-        int expiresIn = realm.getOAuth2DeviceCodeLifespan();
+                                               String deviceCode, String scope, String nonce, int expiresIn, int pollingInterval, Map<String, String> additionalParams) {
+        
         int expiration = Time.currentTime() + expiresIn;
-        int pollingInterval = realm.getOAuth2DevicePollingInterval();
-        return new OAuth2DeviceCodeModel(realm, client.getClientId(), deviceCode, scope, nonce, expiration, pollingInterval,  null, false, additionalParams);
+        return new OAuth2DeviceCodeModel(realm, client.getClientId(), deviceCode, scope, nonce, expiration, pollingInterval,  null, null, additionalParams);
     }
 
     public OAuth2DeviceCodeModel approve(String userSessionId) {
@@ -67,7 +66,7 @@ public class OAuth2DeviceCodeModel {
 
     private OAuth2DeviceCodeModel(RealmModel realm, String clientId,
                                   String deviceCode, String scope, String nonce, int expiration, int pollingInterval,
-                                  String userSessionId, boolean denied, Map<String, String> additionalParams) {
+                                  String userSessionId, Boolean denied, Map<String, String> additionalParams) {
         this.realm = realm;
         this.clientId = clientId;
         this.deviceCode = deviceCode;
@@ -81,7 +80,13 @@ public class OAuth2DeviceCodeModel {
     }
 
     public static OAuth2DeviceCodeModel fromCache(RealmModel realm, String deviceCode, Map<String, String> data) {
-        return new OAuth2DeviceCodeModel(realm, deviceCode, data);
+        OAuth2DeviceCodeModel model = new OAuth2DeviceCodeModel(realm, deviceCode, data);
+
+        if (!realm.getId().equals(data.get(REALM_ID))) {
+            return null;
+        }
+
+        return model;
     }
 
     private OAuth2DeviceCodeModel(RealmModel realm, String deviceCode, Map<String, String> data) {
@@ -128,58 +133,51 @@ public class OAuth2DeviceCodeModel {
         return userSessionId == null;
     }
 
-    public boolean isApproved() {
-        return userSessionId != null && !denied;
-    }
-
     public boolean isDenied() {
-        return userSessionId != null && denied;
+        return denied;
     }
 
     public String getUserSessionId() {
         return userSessionId;
     }
 
-    public static String createKey(RealmModel realm, String deviceCode) {
-        return String.format("%s.dc.%s", realm.getId(), deviceCode);
+    public static String createKey(String deviceCode) {
+        return String.format("dc.%s", deviceCode);
     }
 
     public String serializeKey() {
-        return createKey(realm, deviceCode);
+        return createKey(deviceCode);
     }
 
     public String serializePollingKey() {
-        return createKey(realm, deviceCode) + ".polling";
+        return createKey(deviceCode) + ".polling";
     }
 
-    public Map<String, String> serializeValue() {
+    public Map<String, String> toMap() {
         Map<String, String> result = new HashMap<>();
-        result.put(CLIENT_ID, clientId);
-        result.put(EXPIRATION_NOTE, String.valueOf(expiration));
-        result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
-        result.put(SCOPE_NOTE, scope);
-        result.put(NONCE_NOTE, nonce);
-        additionalParams.forEach((key, value) -> result.put(ADDITIONAL_PARAM_PREFIX + key, value));
-        return result;
-    }
 
-    public Map<String, String> serializeApprovedValue() {
-        Map<String, String> result = new HashMap<>();
-        result.put(EXPIRATION_NOTE, String.valueOf(expiration));
-        result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
-        result.put(SCOPE_NOTE, scope);
-        result.put(NONCE_NOTE, nonce);
-        result.put(USER_SESSION_ID_NOTE, userSessionId);
-        additionalParams.forEach((key, value) -> result.put(ADDITIONAL_PARAM_PREFIX + key, value));
-        return result;
-    }
+        result.put(REALM_ID, realm.getId());
 
-    public Map<String, String> serializeDeniedValue() {
-        Map<String, String> result = new HashMap<>();
-        result.put(EXPIRATION_NOTE, String.valueOf(expiration));
-        result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
-        result.put(DENIED_NOTE, String.valueOf(denied));
+        if (denied == null) {
+            result.put(CLIENT_ID, clientId);
+            result.put(EXPIRATION_NOTE, String.valueOf(expiration));
+            result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
+            result.put(SCOPE_NOTE, scope);
+            result.put(NONCE_NOTE, nonce);
+        } else if (denied) {
+            result.put(EXPIRATION_NOTE, String.valueOf(expiration));
+            result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
+            result.put(DENIED_NOTE, String.valueOf(denied));
+        } else {
+            result.put(EXPIRATION_NOTE, String.valueOf(expiration));
+            result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
+            result.put(SCOPE_NOTE, scope);
+            result.put(NONCE_NOTE, nonce);
+            result.put(USER_SESSION_ID_NOTE, userSessionId);
+        }
+
         additionalParams.forEach((key, value) -> result.put(ADDITIONAL_PARAM_PREFIX + key, value));
+
         return result;
     }
 
@@ -191,5 +189,9 @@ public class OAuth2DeviceCodeModel {
         }
         this.additionalParams.forEach(params::putSingle);
         return params;
+    }
+
+    public boolean isExpired() {
+        return getExpiration() - Time.currentTime() < 0;
     }
 }

@@ -62,7 +62,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.models.utils.SystemClientUtil;
-import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
@@ -90,7 +89,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -102,6 +100,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 import static org.keycloak.services.util.CookieHelper.getCookie;
 
 /**
@@ -1078,11 +1077,6 @@ public class AuthenticationManager {
         }
         return null;
 
-    }
-
-    public static boolean isOAuth2DeviceVerificationFlow(final AuthenticationSessionModel authSession) {
-        String flow = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
-        return flow != null && flow.equals(LoginActionsService.OAUTH2_DEVICE_VERIFICATION_PATH);
     }
 
     private static List<ClientScopeModel> getClientScopesToApproveOnConsentScreen(RealmModel realm, UserConsentModel grantedConsent,

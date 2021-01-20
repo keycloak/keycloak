@@ -49,7 +49,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
 
     @Override
     public boolean isCurrent() {
-        if (driver.getTitle().startsWith("Log in to ")) {
+        if (driver.getTitle().startsWith("Sign in to ")) {
             try {
                 driver.findElement(By.id("device-user-code"));
                 return true;
@@ -59,38 +59,23 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
         return false;
     }
 
-    public void assertLoginPage() {
-        String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected device login page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
-                isLoginPage());
-    }
-
     public void assertApprovedPage() {
-        String name = getClass().getSimpleName();
         Assert.assertTrue("Expected device approved page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
                 isApprovedPage());
     }
 
     public void assertDeniedPage() {
-        String name = getClass().getSimpleName();
         Assert.assertTrue("Expected device denied page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
                 isDeniedPage());
     }
 
-    private boolean isLoginPage() {
-        if (driver.getTitle().startsWith("Log in to ")) {
-            try {
-                driver.findElement(By.id("username"));
-                driver.findElement(By.id("password"));
-                return true;
-            } catch (Throwable t) {
-            }
-        }
-        return false;
+    public void assertInvalidUserCodePage() {
+        Assert.assertTrue("Expected invalid user code page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
+            isInvalidUserCodePage());
     }
 
     private boolean isApprovedPage() {
-        if (driver.getTitle().startsWith("Log in to ")) {
+        if (driver.getTitle().startsWith("Sign in to ")) {
             try {
                 driver.findElement(By.id("kc-page-title")).getText().equals("Device Login Successful");
                 return true;
@@ -101,10 +86,23 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     }
 
     private boolean isDeniedPage() {
-        if (driver.getTitle().startsWith("Log in to ")) {
+        if (driver.getTitle().startsWith("Sign in to ")) {
             try {
                 driver.findElement(By.id("kc-page-title")).getText().equals("Device Login Failed");
                 driver.findElement(By.className("instruction")).getText().equals("Consent denied for connecting the device.");
+                return true;
+            } catch (Throwable t) {
+            }
+        }
+        return false;
+    }
+
+    private boolean isInvalidUserCodePage() {
+        if (driver.getTitle().startsWith("Sign in to ")) {
+            try {
+                driver.findElement(By.id("device-user-code"));
+                driver.findElement(By.id("kc-page-title")).getText().equals("Device Login");
+                driver.findElement(By.className("kc-feedback-text")).getText().equals("Invalid code, please try again.");
                 return true;
             } catch (Throwable t) {
             }

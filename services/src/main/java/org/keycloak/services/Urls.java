@@ -245,10 +245,6 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmName);
     }
 
-    public static URI realmOAuth2DeviceVerificationAction(URI baseUri, String realmName) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "processOAuth2DeviceVerification").build(realmName);
-    }
-
     public static URI firstBrokerLoginProcessor(URI baseUri, String realmName) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "firstBrokerLoginGet")
                 .build(realmName);
@@ -262,7 +258,7 @@ public class Urls {
         return themeBase(baseUri).path(Version.RESOURCES_VERSION).build();
     }
 
-    private static UriBuilder loginActionsBase(URI baseUri) {
+    public static UriBuilder loginActionsBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getLoginActionsService");
     }
 

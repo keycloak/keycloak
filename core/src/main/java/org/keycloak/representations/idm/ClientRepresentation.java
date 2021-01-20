@@ -268,14 +268,6 @@ public class ClientRepresentation {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
     }
 
-    public Boolean isOAuth2DeviceAuthorizationGrantEnabled() {
-        return oauth2DeviceAuthorizationGrantEnabled;
-    }
-
-    public void setOAuth2DeviceAuthorizationGrantEnabled(Boolean oauth2DeviceAuthorizationGrantEnabled) {
-        this.oauth2DeviceAuthorizationGrantEnabled = oauth2DeviceAuthorizationGrantEnabled;
-    }
-
     public Boolean getAuthorizationServicesEnabled() {
         if (authorizationSettings != null) {
             return true;

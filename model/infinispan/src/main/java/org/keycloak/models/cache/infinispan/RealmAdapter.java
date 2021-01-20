@@ -29,6 +29,7 @@ import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -40,18 +41,20 @@ public class RealmAdapter implements CachedRealmModel {
     protected RealmCacheSession cacheSession;
     protected volatile RealmModel updated;
     protected KeycloakSession session;
+    private final Supplier<RealmModel> modelSupplier;
 
     public RealmAdapter(KeycloakSession session, CachedRealm cached, RealmCacheSession cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = session;
+        this.modelSupplier = this::getRealm;
     }
 
     @Override
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
-            updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -643,27 +646,11 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getRequiredCredentials().stream();
     }
 
-    public int getOAuth2DeviceCodeLifespan() {
-        if (isUpdated()) return updated.getOAuth2DeviceCodeLifespan();
-        return cached.getOAuth2DeviceCodeLifespan();
-    }
-
     @Override
-    public void setOAuth2DeviceCodeLifespan(int oauth2DeviceCodeLifespan) {
-        getDelegateForUpdate();
-        updated.setOAuth2DeviceCodeLifespan(oauth2DeviceCodeLifespan);
-    }
-
-    @Override
-    public int getOAuth2DevicePollingInterval() {
-        if (isUpdated()) return updated.getOAuth2DevicePollingInterval();
-        return cached.getOAuth2DevicePollingInterval();
-    }
-
-    @Override
-    public void setOAuth2DevicePollingInterval(int oauth2DevicePollingInterval) {
-        getDelegateForUpdate();
-        updated.setOAuth2DevicePollingInterval(oauth2DevicePollingInterval);
+    public OAuth2DeviceConfig getOAuth2DeviceConfig() {
+        if (isUpdated())
+            return updated.getOAuth2DeviceConfig();
+        return cached.getOAuth2DeviceConfig(modelSupplier);
     }
 
     @Override
@@ -1719,6 +1706,10 @@ public class RealmAdapter implements CachedRealmModel {
             localizationTexts = cached.getRealmLocalizationTexts().get(locale);
         }
         return Collections.unmodifiableMap(localizationTexts);
+    }
+
+    private RealmModel getRealm() {
+        return cacheSession.getRealmDelegate().getRealm(cached.getId());
     }
 
     @Override

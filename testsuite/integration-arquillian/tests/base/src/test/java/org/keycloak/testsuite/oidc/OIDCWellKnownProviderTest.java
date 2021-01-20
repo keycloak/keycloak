@@ -121,7 +121,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
-            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT);
+            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
+                OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
@@ -177,6 +178,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256,
                 Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256,
                 Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+
+            assertEquals(oidcConfig.getDeviceAuthorizationEndpoint(), oauth.getDeviceAuthorizationUrl());
         } finally {
             client.close();
         }

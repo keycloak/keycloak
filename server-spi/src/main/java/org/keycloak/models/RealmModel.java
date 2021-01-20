@@ -213,11 +213,7 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAccessCodeLifespanUserAction(int seconds);
 
-    int getOAuth2DeviceCodeLifespan();
-    void setOAuth2DeviceCodeLifespan(int seconds);
-
-    int getOAuth2DevicePollingInterval();
-    void setOAuth2DevicePollingInterval(int seconds);
+    OAuth2DeviceConfig getOAuth2DeviceConfig();
 
     /**
      * This method will return a map with all the lifespans available

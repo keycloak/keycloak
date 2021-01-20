@@ -76,6 +76,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
@@ -250,12 +251,10 @@ public class RepresentationToModel {
         else newRealm.setActionTokenGeneratedByUserLifespan(newRealm.getAccessCodeLifespanUserAction());
 
         // OAuth 2.0 Device Authorization Grant
-        if (rep.getOAuth2DeviceCodeLifespan() != null)
-            newRealm.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
-        else newRealm.setOAuth2DeviceCodeLifespan(Constants.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN);
-        if (rep.getOAuth2DevicePollingInterval() != null)
-            newRealm.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
-        else newRealm.setOAuth2DevicePollingInterval(Constants.DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL);
+        OAuth2DeviceConfig deviceConfig = newRealm.getOAuth2DeviceConfig();
+
+        deviceConfig.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
+        deviceConfig.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
 
         if (rep.getSslRequired() != null)
             newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
@@ -1118,10 +1117,12 @@ public class RepresentationToModel {
             realm.setActionTokenGeneratedByAdminLifespan(rep.getActionTokenGeneratedByAdminLifespan());
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
-        if (rep.getOAuth2DeviceCodeLifespan() != null)
-            realm.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
-        if (rep.getOAuth2DevicePollingInterval() != null)
-            realm.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
+
+        OAuth2DeviceConfig deviceConfig = realm.getOAuth2DeviceConfig();
+
+        deviceConfig.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
+        deviceConfig.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
+
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
@@ -1487,10 +1488,6 @@ public class RepresentationToModel {
             client.setFullScopeAllowed(!client.isConsentRequired());
         }
 
-        if (resourceRep.isOAuth2DeviceAuthorizationGrantEnabled() != null) {
-            client.setOAuth2DeviceAuthorizationGrantEnabled(resourceRep.isOAuth2DeviceAuthorizationGrantEnabled());
-        }
-
         client.updateClient();
         resourceRep.setId(client.getId());
 
@@ -1556,6 +1553,7 @@ public class RepresentationToModel {
                 }
             }
         }
+
         if (rep.getNotBefore() != null) {
             resource.setNotBefore(rep.getNotBefore());
         }
@@ -1587,10 +1585,6 @@ public class RepresentationToModel {
             } else if (newSecret != null) {
                 resource.setSecret(newSecret);
             }
-        }
-
-        if (rep.isOAuth2DeviceAuthorizationGrantEnabled() != null) {
-            resource.setOAuth2DeviceAuthorizationGrantEnabled(rep.isOAuth2DeviceAuthorizationGrantEnabled());
         }
 
         resource.updateClient();
