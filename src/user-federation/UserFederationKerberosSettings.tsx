@@ -1,23 +1,71 @@
+import React, { useEffect } from "react";
 import {
   ActionGroup,
   AlertVariant,
   Button,
+  ButtonVariant,
+  DropdownItem,
   Form,
   PageSection,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import React, { useEffect } from "react";
 
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { KerberosSettingsCache } from "./kerberos/KerberosSettingsCache";
-import { useHistory } from "react-router-dom";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useParams } from "react-router-dom";
 import { convertToFormValues } from "../util";
-import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient } from "../context/auth/AdminClient";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { useForm } from "react-hook-form";
+
+import { Controller, useForm } from "react-hook-form";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useAlerts } from "../components/alert/Alerts";
+import { useTranslation } from "react-i18next";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useHistory, useParams } from "react-router-dom";
+
+type KerberosSettingsHeaderProps = {
+  onChange: (...event: any[]) => void;
+  value: any;
+  toggleDeleteDialog: () => void;
+};
+
+const KerberosSettingsHeader = ({
+  onChange,
+  value,
+  toggleDeleteDialog,
+}: KerberosSettingsHeaderProps) => {
+  const { t } = useTranslation("user-federation");
+  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+    titleKey: "user-federation:userFedDisableConfirmTitle",
+    messageKey: "user-federation:userFedDisableConfirm",
+    continueButtonLabel: "common:disable",
+    onConfirm: () => {
+      onChange(!value);
+    },
+  });
+  return (
+    <>
+      <DisableConfirm />
+      <ViewHeader
+        titleKey="Kerberos"
+        subKey=""
+        dropdownItems={[
+          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+            {t("deleteProvider")}
+          </DropdownItem>,
+        ]}
+        isEnabled={value}
+        onToggle={(value) => {
+          if (!value) {
+            toggleDisableDialog();
+          } else {
+            onChange(value);
+          }
+        }}
+      />
+    </>
+  );
+};
 
 export const UserFederationKerberosSettings = () => {
   const { t } = useTranslation("user-federation");
@@ -61,9 +109,38 @@ export const UserFederationKerberosSettings = () => {
       addAlert(`${t("saveError")} '${error}'`, AlertVariant.danger);
     }
   };
+  // const form = useForm();
+
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "user-federation:userFedDeleteConfirmTitle",
+    messageKey: "user-federation:userFedDeleteConfirm",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.clients.del({ id });
+        addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(`${t("userFedDeleteError")} ${error}`, AlertVariant.danger);
+      }
+    },
+  });
 
   return (
     <>
+      <DeleteConfirm />
+      <Controller
+        name="enabled"
+        control={form.control}
+        defaultValue={true}
+        render={({ onChange, value }) => (
+          <KerberosSettingsHeader
+            value={value}
+            onChange={onChange}
+            toggleDeleteDialog={toggleDeleteDialog}
+          />
+        )}
+      />
       <PageSection variant="light">
         <KerberosSettingsRequired form={form} showSectionHeading />
       </PageSection>
