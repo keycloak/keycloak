@@ -31,7 +31,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.protocol.oidc.endpoints.OAuth2DeviceAuthorizationEndpoint;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
@@ -99,15 +98,6 @@ public class RealmsResource {
 
     public static UriBuilder brokerUrl(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getBrokerService");
-    }
-
-    public static UriBuilder oauth2DeviceVerificationUrl(UriInfo uriInfo) {
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        return oauth2DeviceVerificationUrl(baseUriBuilder);
-    }
-
-    public static UriBuilder oauth2DeviceVerificationUrl(UriBuilder baseUriBuilder) {
-        return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getOAuth2DeviceVerificationService");
     }
 
     public static UriBuilder wellKnownProviderUrl(UriBuilder builder) {
@@ -279,18 +269,6 @@ public class RealmsResource {
         return service;
     }
 
-    @GET
-    @Path("{realm}/device")
-    public Object getOAuth2DeviceVerificationService(@PathParam("realm") String realmName, @QueryParam("user_code") String userCode) {
-        RealmModel realm = init(realmName);
-        EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        OAuth2DeviceAuthorizationEndpoint endpoint = new OAuth2DeviceAuthorizationEndpoint(realm, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-
-        return endpoint.buildVerificationResponse(userCode);
-    }
-
     /**
      * A JAX-RS sub-resource locator that uses the {@link org.keycloak.services.resource.RealmResourceSPI} to resolve sub-resources instances given an <code>unknownPath</code>.
      *
@@ -299,9 +277,9 @@ public class RealmsResource {
      */
     @Path("{realm}/{extension}")
     public Object resolveRealmExtension(@PathParam("realm") String realmName, @PathParam("extension") String extension) {
+        init(realmName);
         RealmResourceProvider provider = session.getProvider(RealmResourceProvider.class, extension);
         if (provider != null) {
-            init(realmName);
             Object resource = provider.getResource();
             if (resource != null) {
                 return resource;

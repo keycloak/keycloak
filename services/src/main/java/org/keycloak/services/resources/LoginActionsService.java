@@ -18,7 +18,6 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -68,7 +67,6 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.endpoints.OAuth2DeviceAuthorizationEndpoint;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -80,6 +78,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
@@ -120,7 +119,6 @@ public class LoginActionsService {
     public static final String REQUIRED_ACTION = "required-action";
     public static final String FIRST_BROKER_LOGIN_PATH = "first-broker-login";
     public static final String POST_BROKER_LOGIN_PATH = "post-broker-login";
-    public static final String OAUTH2_DEVICE_VERIFICATION_PATH = "verification";
 
     public static final String RESTART_PATH = "restart";
 
@@ -130,8 +128,6 @@ public class LoginActionsService {
     public static final String AUTH_SESSION_ID = "auth_session_id";
     
     public static final String CANCEL_AIA = "cancel-aia";
-
-    public static final String OAUTH2_DEVICE_USER_CODE = "device_user_code";
 
     private RealmModel realm;
 
@@ -848,36 +844,6 @@ public class LoginActionsService {
         logger.debugf("Redirecting to '%s' ", redirect);
 
         return Response.status(302).location(redirect).build();
-    }
-
-   /**
-     * Verifying user code page. You should not invoked this directly!
-     *
-     * @param formData
-     * @return
-     */
-    @Path("verification")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processOAuth2DeviceVerification(final MultivaluedMap<String, String> formData) {
-        event.event(EventType.OAUTH2_DEVICE_VERIFY_USER_CODE);
-
-        String code = formData.getFirst(SESSION_CODE);
-        String tabId = session.getContext().getUri().getQueryParameters().getFirst(Constants.TAB_ID);
-
-        String systemClientId = SystemClientUtil.getSystemClient(realm).getClientId();
-
-        SessionCodeChecks checks = checksForCode(null, code, null, systemClientId, tabId, OAUTH2_DEVICE_VERIFICATION_PATH);
-        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.USER_CODE_VERIFICATION.name(), ClientSessionCode.ActionType.LOGIN)) {
-            return checks.getResponse();
-        }
-
-        OAuth2DeviceAuthorizationEndpoint endpoint = new OAuth2DeviceAuthorizationEndpoint(realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-
-        AuthenticationSessionModel authSessionWithSystemClient = checks.getAuthenticationSession();
-        String userCode = formData.getFirst(OAUTH2_DEVICE_USER_CODE);
-        return endpoint.processVerification(authSessionWithSystemClient, userCode);
     }
 
     /**

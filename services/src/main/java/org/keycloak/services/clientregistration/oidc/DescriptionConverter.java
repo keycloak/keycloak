@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -312,7 +314,8 @@ public class DescriptionConverter {
         if (client.isServiceAccountsEnabled()) {
             grantTypes.add(OAuth2Constants.CLIENT_CREDENTIALS);
         }
-        if (client.isOAuth2DeviceAuthorizationGrantEnabled()) {
+        boolean oauth2DeviceEnabled = client.getAttributes() != null && Boolean.parseBoolean(client.getAttributes().get(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
+        if (oauth2DeviceEnabled) {
             grantTypes.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
         }
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {

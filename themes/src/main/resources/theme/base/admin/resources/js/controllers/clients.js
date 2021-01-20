@@ -1108,6 +1108,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     $scope.disableCredentialsTab = client.publicClient;
+    $scope.oauth2DeviceAuthorizationGrantEnabled = false;
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
@@ -1118,6 +1119,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.clientSessionMaxLifespan = TimeUnit2.asUnit(client.attributes['client.session.max.lifespan']);
     $scope.clientOfflineSessionIdleTimeout = TimeUnit2.asUnit(client.attributes['client.offline.session.idle.timeout']);
     $scope.clientOfflineSessionMaxLifespan = TimeUnit2.asUnit(client.attributes['client.offline.session.max.lifespan']);
+    $scope.oauth2DeviceCodeLifespan = TimeUnit2.asUnit(client.attributes['oauth2.device.code.lifespan']);
+    $scope.oauth2DevicePollingInterval = parseInt(client.attributes['oauth2.device.polling.interval']);
 
     if(client.origin) {
         if ($scope.access.viewRealm) {
@@ -1278,6 +1281,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                 $scope.excludeSessionStateFromAuthResponse = false;
             }
         }
+
+       if ($scope.client.attributes["oauth2.device.authorization.grant.enabled"]) {
+           if ($scope.client.attributes["oauth2.device.authorization.grant.enabled"] == "true") {
+               $scope.oauth2DeviceAuthorizationGrantEnabled = true;
+           } else {
+               $scope.oauth2DeviceAuthorizationGrantEnabled = false;
+           }
+       }
 
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
@@ -1521,6 +1532,22 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         }
     }
 
+    $scope.updateOauth2DeviceCodeLifespan = function() {
+        if ($scope.oauth2DeviceCodeLifespan.time) {
+            $scope.clientEdit.attributes['oauth2.device.code.lifespan'] = $scope.oauth2DeviceCodeLifespan.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['oauth2.device.code.lifespan'] = null;
+        }
+    }
+
+    $scope.updateOauth2DevicePollingInterval = function() {
+        if ($scope.oauth2DevicePollingInterval) {
+            $scope.clientEdit.attributes['oauth2.device.polling.interval'] = $scope.oauth2DevicePollingInterval;
+        } else {
+            $scope.clientEdit.attributes['oauth2.device.polling.interval'] = null;
+        }
+    }
+
     function configureAuthorizationServices() {
         if ($scope.clientEdit.authorizationServicesEnabled) {
             if ($scope.accessType == 'public') {
@@ -1662,6 +1689,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes["exclude.session.state.from.auth.response"] = "false";
 
+        }
+
+        if ($scope.oauth2DeviceAuthorizationGrantEnabled == true) {
+            $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "true";
+        } else {
+            $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "false";
         }
 
         // KEYCLOAK-6771 Certificate Bound Token
