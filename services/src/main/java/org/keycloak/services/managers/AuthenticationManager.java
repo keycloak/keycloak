@@ -937,7 +937,7 @@ public class AuthenticationManager {
                     .setSuccess(Messages.ACCOUNT_UPDATED);
             if (authSession.getAuthNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
                 if (authSession.getRedirectUri() != null) {
-                    infoPage.setAttribute("pageRedirectUri", authSession.getRedirectUri());
+                    infoPage.setAttribute(Constants.TEMPLATE_ATTR_REDIRECT_URI, authSession.getRedirectUri());
                 }
 
             } else {

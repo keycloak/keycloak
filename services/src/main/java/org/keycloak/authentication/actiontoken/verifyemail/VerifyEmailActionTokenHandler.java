@@ -103,10 +103,21 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
             AuthenticationSessionManager asm = new AuthenticationSessionManager(tokenContext.getSession());
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
 
-            return tokenContext.getSession().getProvider(LoginFormsProvider.class)
+            LoginFormsProvider loginFormsProvider = tokenContext.getSession().getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
-                    .setSuccess(Messages.EMAIL_VERIFIED)
-                    .createInfoPage();
+                    .setSuccess(Messages.EMAIL_VERIFIED);
+
+            // restore redirectUri from original auth session
+            AuthenticationSessionCompoundId compoundOriginalAuthSessionId = AuthenticationSessionCompoundId.encoded(token.getCompoundOriginalAuthenticationSessionId());
+            AuthenticationSessionModel originalAuthSession = asm.getAuthenticationSessionByIdAndClient(realm, compoundOriginalAuthSessionId.getEncodedId(), authSession.getClient(), compoundOriginalAuthSessionId.getTabId());
+            if (originalAuthSession != null) {
+                String redirectUri = originalAuthSession.getRedirectUri();
+                if (redirectUri != null) {
+                    loginFormsProvider.setAttribute(Constants.TEMPLATE_ATTR_REDIRECT_URI, redirectUri);
+                }
+            }
+
+            return loginFormsProvider.createInfoPage();
         }
 
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
