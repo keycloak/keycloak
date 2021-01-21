@@ -96,6 +96,13 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         for (ClientPolicyConditionProvider condition : conditions) {
             try {
                 ClientPolicyVote vote = op.run(condition);
+                if (condition.isNegativeLogic()) {
+                    if (vote == ClientPolicyVote.YES) {
+                        vote = ClientPolicyVote.NO;
+                    } else if (vote == ClientPolicyVote.NO) {
+                        vote = ClientPolicyVote.YES;
+                    }
+                }
                 if (vote == ClientPolicyVote.ABSTAIN) {
                     ClientPolicyLogger.logv(logger, "SKIP : This condition is not evaluated due to its nature. name = {0}, provider id = {1}", condition.getName(), condition.getProviderId());
                     continue;

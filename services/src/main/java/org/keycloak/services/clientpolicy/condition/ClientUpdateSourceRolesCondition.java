@@ -40,26 +40,12 @@ import org.keycloak.services.clientpolicy.ClientUpdateContext;
 import org.keycloak.services.clientpolicy.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.DynamicClientUpdateContext;
 
-public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionProvider {
+public class ClientUpdateSourceRolesCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceRolesCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientUpdateSourceRolesCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
+        super(session, componentModel);
     }
 
     @Override

@@ -37,16 +37,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.TokenRequestContext;
 
-public class ClientScopesCondition implements ClientPolicyConditionProvider {
+public class ClientScopesCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientScopesCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientScopesCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+        super(session, componentModel);
     }
 
     @Override
@@ -61,16 +57,6 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider {
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
     }
 
     private boolean isScopeMatched(AuthenticatedClientSessionModel clientSession) {

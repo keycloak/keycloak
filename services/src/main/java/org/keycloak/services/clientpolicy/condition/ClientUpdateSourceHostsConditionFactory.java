@@ -17,19 +17,16 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.Arrays;
 import java.util.List;
 
-import org.keycloak.Config.Scope;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientUpdateSourceHostsConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "clientupdatesourcehost-condition";
 
@@ -48,18 +45,6 @@ public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyCond
     }
 
     @Override
-    public void init(Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
     public String getId() {
         return PROVIDER_ID;
     }
@@ -71,7 +56,10 @@ public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyCond
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Arrays.asList(TRUSTED_HOSTS_PROPERTY, HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH_PROPERTY);
+        List<ProviderConfigProperty> l = super.getConfigProperties();
+        l.add(TRUSTED_HOSTS_PROPERTY);
+        l.add(HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH_PROPERTY);
+        return l;
     }
 
     @Override

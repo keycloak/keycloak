@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,22 +20,28 @@ package org.keycloak.services.clientpolicy.condition;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
-public class AnyClientConditionFactory extends AbstractClientPolicyConditionProviderFactory {
+public abstract class AbstractClientPolicyConditionProvider implements ClientPolicyConditionProvider {
 
-    public static final String PROVIDER_ID = "anyclient-condition";
+    protected final KeycloakSession session;
+    protected final ComponentModel componentModel;
 
-    @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
-        return new AnyClientCondition(session, model);
+    public AbstractClientPolicyConditionProvider(KeycloakSession session, ComponentModel componentModel) {
+        this.session = session;
+        this.componentModel = componentModel;
     }
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public boolean isNegativeLogic() {
+        return Boolean.valueOf(componentModel.getConfig().getFirst(AbstractClientPolicyConditionProviderFactory.IS_NEGATIVE_LOGIC)).booleanValue();
     }
 
     @Override
-    public String getHelpText() {
-        return "The condition is satisfied by any client on any event.";
+    public String getName() {
+        return componentModel.getName();
+    }
+
+    @Override
+    public String getProviderId() {
+        return componentModel.getProviderId();
     }
 }

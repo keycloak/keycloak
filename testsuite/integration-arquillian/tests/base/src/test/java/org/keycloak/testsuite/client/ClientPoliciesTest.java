@@ -74,6 +74,7 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyProviderFactory;
+import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
@@ -1276,6 +1277,43 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(false);
             clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testNegativeLogicCondition() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = POLICY_NAME;
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        String conditionName = AnyClientCondition_NAME;
+        createCondition(conditionName, AnyClientConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {});
+        registerCondition(conditionName, policyName);
+        logger.info("... Registered Condition : " + conditionName);
+
+        String executorName = SecureSessionEnforceExecutor_NAME;
+        createExecutor(executorName, SecureSessionEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {});
+        registerExecutor(executorName, policyName);
+        logger.info("... Registered Executor : " + executorName);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secretBeta";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+        });
+
+        try {
+            failLoginWithoutSecureSessionParameter(clientId, ERR_MSG_MISSING_NONCE);
+            updateCondition("AnyClientCondition", (ComponentRepresentation provider) -> {
+                provider.getConfig().putSingle(AbstractClientPolicyConditionProviderFactory.IS_NEGATIVE_LOGIC, Boolean.TRUE.toString());
+            });
+            successfulLoginAndLogout(clientId, clientSecret);
+            updateCondition("AnyClientCondition", (ComponentRepresentation provider) -> {
+                provider.getConfig().putSingle(AbstractClientPolicyConditionProviderFactory.IS_NEGATIVE_LOGIC, Boolean.FALSE.toString());
+            });
+            failLoginWithoutSecureSessionParameter(clientId, ERR_MSG_MISSING_NONCE);
+        } catch (Exception e) {
+            fail();
         }
     }
 

@@ -24,30 +24,17 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class AnyClientCondition implements ClientPolicyConditionProvider {
+public class AnyClientCondition extends AbstractClientPolicyConditionProvider {
+
     private static final Logger logger = Logger.getLogger(AnyClientCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public AnyClientCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+        super(session, componentModel);
     }
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
         return ClientPolicyVote.YES;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
     }
 
 }

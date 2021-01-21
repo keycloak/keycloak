@@ -29,20 +29,15 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.ClientUpdateContext;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
-public class ClientUpdateContextCondition implements ClientPolicyConditionProvider {
+public class ClientUpdateContextCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientUpdateContextCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+        super(session, componentModel);
     }
 
     @Override
@@ -107,15 +102,5 @@ public class ClientUpdateContextCondition implements ClientPolicyConditionProvid
 
     private boolean isBearerToken(JsonWebToken jwt) {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
     }
 }
