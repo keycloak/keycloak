@@ -113,7 +113,7 @@ export const ViewHeader = ({
           </LevelItem>
         </Level>
         {enabled && (
-          <TextContent>
+          <TextContent id="view-header-subkey">
             <Text>
               {t(subKey)}
               {subKeyLinkProps && (

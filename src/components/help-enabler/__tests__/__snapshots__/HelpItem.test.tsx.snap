@@ -6,6 +6,7 @@ exports[`<HelpItem /> render 1`] = `
     aria-describedby="placeholder"
     aria-label="helpLabel"
     class="pf-c-form__group-label-help"
+    id="storybook"
   >
     <svg
       aria-hidden="true"

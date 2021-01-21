@@ -1,85 +1,74 @@
-import LoginPage from '../support/pages/LoginPage.js'
-import HeaderPage from '../support/pages/admin_console/HeaderPage.js'
-import ListingPage from '../support/pages/admin_console/ListingPage.js'
-import SidebarPage from '../support/pages/admin_console/SidebarPage.js'
-import CreateClientScopePage from '../support/pages/admin_console/manage/client_scopes/CreateClientScopePage.js'
+import LoginPage from "../support/pages/LoginPage.js";
+import Masthead from "../support/pages/admin_console/Masthead.js";
+import ListingPage from "../support/pages/admin_console/ListingPage.js";
+import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
+import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage.js";
 
-describe('Client Scopes test', function () {
+describe("Client Scopes test", function () {
+  const itemId = "client_scope_1";
+  const loginPage = new LoginPage();
+  const masthead = new Masthead();
+  const sidebarPage = new SidebarPage();
+  const listingPage = new ListingPage();
+  const createClientScopePage = new CreateClientScopePage();
 
-    const itemId = 'client_scope_1';
-    const loginPage = new LoginPage();
-    const headerPage = new HeaderPage();
-    const sidebarPage = new SidebarPage();
-    const listingPage = new ListingPage();
-    const createClientScopePage = new CreateClientScopePage();
-  
-    describe('Client Scope creation', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
+  describe("Client Scope creation", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
 
-      it('should fail creating client scope', function () {
-          loginPage.logIn();
+    it("should fail creating client scope", function () {
+      loginPage.logIn();
 
-          sidebarPage.goToClientScopes();
+      sidebarPage.goToClientScopes();
 
-          listingPage.goToCreateItem();
+      listingPage.goToCreateItem();
 
-          createClientScopePage
-              .save()
-              .checkClientNameRequiredMessage();
+      createClientScopePage.save().checkClientNameRequiredMessage();
 
-          createClientScopePage
-              .fillClientScopeData('address')
-              .save()
-              .checkClientNameRequiredMessage(false);
-          
-          // The error should inform about duplicated name/id
-          headerPage.checkNotificationMessage('Could not create client scope: \'Error: Request failed with status code 409\'');
-      });
+      createClientScopePage
+        .fillClientScopeData("address")
+        .save()
+        .checkClientNameRequiredMessage(false);
 
-      it('should create client scope', function () {
-          loginPage.logIn();
+      // The error should inform about duplicated name/id
+      masthead.checkNotificationMessage(
+        "Could not create client scope: 'Error: Request failed with status code 409'"
+      );
+    });
 
-          sidebarPage.goToClientScopes();
+    it("should create client scope", function () {
+      loginPage.logIn();
 
-          listingPage
-              .itemExist(itemId, false)
-              .goToCreateItem();
+      sidebarPage.goToClientScopes();
 
-          createClientScopePage
-              .fillClientScopeData(itemId)
-              .save();
+      listingPage.itemExist(itemId, false).goToCreateItem();
 
-          headerPage.checkNotificationMessage('Client scope created');
+      createClientScopePage.fillClientScopeData(itemId).save();
 
-          sidebarPage.goToClientScopes();
-            
-          listingPage
-              .itemExist(itemId)
-              .searchItem(itemId)
-              .itemExist(itemId);
-      });
-    })
+      masthead.checkNotificationMessage("Client scope created");
 
-    describe('Client scope elimination', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
-      
-      it('should delete client scope', function () {
-          loginPage.logIn();
+      sidebarPage.goToClientScopes();
 
-          sidebarPage.goToClientScopes();
+      listingPage.itemExist(itemId).searchItem(itemId).itemExist(itemId);
+    });
+  });
 
-          listingPage
-              .itemExist(itemId)
-              .deleteItem(itemId); // There should be a confirmation pop-up
+  describe("Client scope elimination", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
 
-          headerPage.checkNotificationMessage('The client scope has been deleted');
+    it("should delete client scope", function () {
+      loginPage.logIn();
 
-          listingPage
-              .itemExist(itemId, false);
-      });
-    })
-  })
+      sidebarPage.goToClientScopes();
+
+      listingPage.itemExist(itemId).deleteItem(itemId); // There should be a confirmation pop-up
+
+      masthead.checkNotificationMessage("The client scope has been deleted");
+
+      listingPage.itemExist(itemId, false);
+    });
+  });
+});

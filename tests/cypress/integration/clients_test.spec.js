@@ -1,101 +1,91 @@
-import LoginPage from '../support/pages/LoginPage.js'
-import HeaderPage from '../support/pages/admin_console/HeaderPage.js'
-import ListingPage from '../support/pages/admin_console/ListingPage.js'
-import SidebarPage from '../support/pages/admin_console/SidebarPage.js'
-import CreateClientPage from '../support/pages/admin_console/manage/clients/CreateClientPage.js'
+import LoginPage from "../support/pages/LoginPage.js";
+import Masthead from "../support/pages/admin_console/Masthead.js";
+import ListingPage from "../support/pages/admin_console/ListingPage.js";
+import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
+import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage.js";
 
-describe('Clients test', function () {
+describe("Clients test", function () {
+  const itemId = "client_1";
+  const loginPage = new LoginPage();
+  const masthead = new Masthead();
+  const sidebarPage = new SidebarPage();
+  const listingPage = new ListingPage();
+  const createClientPage = new CreateClientPage();
 
-    const itemId = 'client_1';
-    const loginPage = new LoginPage();
-    const headerPage = new HeaderPage();
-    const sidebarPage = new SidebarPage();
-    const listingPage = new ListingPage();
-    const createClientPage = new CreateClientPage();
-  
-    describe('Client creation', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
+  describe("Client creation", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
 
-      it('should fail creating client', function () {
-          loginPage.logIn();
+    it("should fail creating client", function () {
+      loginPage.logIn();
 
-          sidebarPage.goToClients();
+      sidebarPage.goToClients();
 
-          listingPage.goToCreateItem();
+      listingPage.goToCreateItem();
 
-          createClientPage
-              .continue()
-              .checkClientTypeRequiredMessage()
-              .checkClientIdRequiredMessage();
-            
-          createClientPage
-              .fillClientData(itemId)
-              .continue()
-              .checkClientTypeRequiredMessage()
-              .checkClientIdRequiredMessage(false);
-            
-          createClientPage
-              .fillClientData('')
-              .selectClientType('openid-connect')
-              .continue()
-              .checkClientTypeRequiredMessage(false)
-              .checkClientIdRequiredMessage();
-            
-          createClientPage
-              .fillClientData('account')
-              .continue()
-              .continue();
-              
-          // The error should inform about duplicated name/id
-          headerPage.checkNotificationMessage('Could not create client: \'Error: Request failed with status code 409\'');
-      });
+      createClientPage
+        .continue()
+        .checkClientTypeRequiredMessage()
+        .checkClientIdRequiredMessage();
 
-      it('should create client', function () {
-          loginPage.logIn();
+      createClientPage
+        .fillClientData(itemId)
+        .continue()
+        .checkClientTypeRequiredMessage()
+        .checkClientIdRequiredMessage(false);
 
-          sidebarPage.goToClients();
+      createClientPage
+        .fillClientData("")
+        .selectClientType("openid-connect")
+        .continue()
+        .checkClientTypeRequiredMessage(false)
+        .checkClientIdRequiredMessage();
 
-          listingPage
-              .itemExist(itemId, false)
-              .goToCreateItem();
+      createClientPage.fillClientData("account").continue().continue();
 
-          createClientPage
-              .selectClientType('openid-connect')
-              .fillClientData(itemId)
-              .continue()
-              .continue();
+      // The error should inform about duplicated name/id
+      masthead.checkNotificationMessage(
+        "Could not create client: 'Error: Request failed with status code 409'"
+      );
+    });
 
-          headerPage.checkNotificationMessage('Client created successfully');
+    it("should create client", function () {
+      loginPage.logIn();
 
-          sidebarPage.goToClients();
-            
-          listingPage
-              .itemExist(itemId)
-              .searchItem(itemId)
-              .itemExist(itemId);
-      });
-    })
+      sidebarPage.goToClients();
 
-    describe('Client elimination', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
-      
-      it('should delete client', function () {
-          loginPage.logIn();
+      listingPage.itemExist(itemId, false).goToCreateItem();
 
-          sidebarPage.goToClients();
+      createClientPage
+        .selectClientType("openid-connect")
+        .fillClientData(itemId)
+        .continue()
+        .continue();
 
-          listingPage
-              .itemExist(itemId)
-              .deleteItem(itemId); // There should be a confirmation pop-up
+      masthead.checkNotificationMessage("Client created successfully");
 
-          headerPage.checkNotificationMessage('The client has been deleted');
+      sidebarPage.goToClients();
 
-          listingPage
-              .itemExist(itemId, false);
-      });
-    })
-  })
+      listingPage.itemExist(itemId).searchItem(itemId).itemExist(itemId);
+    });
+  });
+
+  describe("Client elimination", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
+
+    it("should delete client", function () {
+      loginPage.logIn();
+
+      sidebarPage.goToClients();
+
+      listingPage.itemExist(itemId).deleteItem(itemId); // There should be a confirmation pop-up
+
+      masthead.checkNotificationMessage("The client has been deleted");
+
+      listingPage.itemExist(itemId, false);
+    });
+  });
+});

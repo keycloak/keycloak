@@ -1,50 +1,45 @@
-import LoginPage from '../support/pages/LoginPage.js'
-import SidebarPage from '../support/pages/admin_console/SidebarPage.js'
-import CreateRealmPage from '../support/pages/admin_console/CreateRealmPage.js'
-import HeaderPage from '../support/pages/admin_console/HeaderPage.js'
+import LoginPage from "../support/pages/LoginPage.js";
+import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
+import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage.js";
+import Masthead from "../support/pages/admin_console/Masthead.js";
 
-describe('Realms test', function () {
+describe("Realms test", function () {
+  const loginPage = new LoginPage();
+  const sidebarPage = new SidebarPage();
+  const createRealmPage = new CreateRealmPage();
+  const masthead = new Masthead();
 
-    const loginPage = new LoginPage();
-    const sidebarPage = new SidebarPage();
-    const createRealmPage = new CreateRealmPage();
-    const headerPage = new HeaderPage();
-  
-    describe('Realm creation', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
+  describe("Realm creation", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
 
-      it('should fail creating Master realm', function () {
-          loginPage.logIn();
+    it("should fail creating Master realm", function () {
+      loginPage.logIn();
 
-          sidebarPage.goToCreateRealm();
-          createRealmPage
-              .fillRealmName('master')
-              .createRealm();
+      sidebarPage.goToCreateRealm();
+      createRealmPage.fillRealmName("master").createRealm();
 
-          headerPage.checkNotificationMessage('Error: Request failed with status code 409');
-      });
+      masthead.checkNotificationMessage(
+        "Error: Request failed with status code 409"
+      );
+    });
 
-      it('should create Test realm', function () {
-          loginPage.logIn();
+    it("should create Test realm", function () {
+      loginPage.logIn();
 
-          sidebarPage.goToCreateRealm();
-          createRealmPage
-              .fillRealmName('Test')
-              .createRealm();
-          
-          headerPage.checkNotificationMessage('Realm created');
-      });
+      sidebarPage.goToCreateRealm();
+      createRealmPage.fillRealmName("Test").createRealm();
 
-      it('should change to Test realm', function () {
-          loginPage.logIn();
+      masthead.checkNotificationMessage("Realm created");
+    });
 
-          sidebarPage.getCurrentRealm().should('eq', 'Master');
+    it("should change to Test realm", function () {
+      loginPage.logIn();
 
-          sidebarPage
-              .goToRealm('Test')
-              .getCurrentRealm().should('eq', 'Test');
-      });
-    })
-  })
+      sidebarPage.getCurrentRealm().should("eq", "Master");
+
+      sidebarPage.goToRealm("Test").getCurrentRealm().should("eq", "Test");
+    });
+  });
+});

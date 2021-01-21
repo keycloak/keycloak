@@ -1,88 +1,75 @@
-import LoginPage from '../support/pages/LoginPage.js'
-import HeaderPage from '../support/pages/admin_console/HeaderPage.js'
-import ListingPage from '../support/pages/admin_console/ListingPage.js'
-import SidebarPage from '../support/pages/admin_console/SidebarPage.js'
-import CreateRealmRolePage from '../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage.js'
+import LoginPage from "../support/pages/LoginPage.js";
+import Masthead from "../support/pages/admin_console/Masthead.js";
+import ModalUtils from "../support/util/ModalUtils.js";
+import ListingPage from "../support/pages/admin_console/ListingPage.js";
+import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
+import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage.js";
 
-describe('Realm roles test', function () {
+describe("Realm roles test", function () {
+  const itemId = "realm_role_1";
+  const loginPage = new LoginPage();
+  const masthead = new Masthead();
+  const modalUtils = new ModalUtils();
+  const sidebarPage = new SidebarPage();
+  const listingPage = new ListingPage();
+  const createRealmRolePage = new CreateRealmRolePage();
 
-    const itemId = 'realm_role_1';
-    const loginPage = new LoginPage();
-    const headerPage = new HeaderPage();
-    const sidebarPage = new SidebarPage();
-    const listingPage = new ListingPage();
-    const createRealmRolePage = new CreateRealmRolePage();
-  
-    describe('Realm roles creation', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
+  describe("Realm roles creation", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
 
-      it('should fail creating realm role', function () {
-        loginPage.logIn();
+    it("should fail creating realm role", function () {
+      loginPage.logIn();
 
-        sidebarPage.goToRealmRoles();
+      sidebarPage.goToRealmRoles();
 
-        listingPage.goToCreateItem();
+      listingPage.goToCreateItem();
 
-        createRealmRolePage
-            .save()
-            .checkRealmRoleNameRequiredMessage();
-            
-        createRealmRolePage
-            .fillRealmRoleData('admin')
-            .save();
-              
-        // The error should inform about duplicated name/id (THIS MESSAGE DOES NOT HAVE QUOTES AS THE OTHERS)
-        headerPage.checkNotificationMessage('Could not create role: Role with name admin already exists');
-      });
+      createRealmRolePage.save().checkRealmRoleNameRequiredMessage();
 
-      it('should create realm role', function () {
-        loginPage.logIn();
+      createRealmRolePage.fillRealmRoleData("admin").save();
 
-        sidebarPage.goToRealmRoles();
+      // The error should inform about duplicated name/id (THIS MESSAGE DOES NOT HAVE QUOTES AS THE OTHERS)
+      masthead.checkNotificationMessage(
+        "Could not create role: Role with name admin already exists"
+      );
+    });
 
-        listingPage
-            .itemExist(itemId, false)
-            .goToCreateItem();
+    it("should create realm role", function () {
+      loginPage.logIn();
 
-        createRealmRolePage
-            .fillRealmRoleData(itemId)
-            .save();
+      sidebarPage.goToRealmRoles();
 
-        headerPage.checkNotificationMessage('Role created');
+      listingPage.itemExist(itemId, false).goToCreateItem();
 
-        sidebarPage.goToRealmRoles();
-        
-        listingPage
-            .itemExist(itemId)
-            .searchItem(itemId)
-            .itemExist(itemId);
-      });
-    })
+      createRealmRolePage.fillRealmRoleData(itemId).save();
 
-    describe('Realm roles elimination', function () {
-      beforeEach(function () {
-        cy.visit('')
-      })
-      
-      it('should delete realm role', function () {
-        loginPage.logIn();
+      masthead.checkNotificationMessage("Role created");
 
-        sidebarPage.goToRealmRoles();
+      sidebarPage.goToRealmRoles();
 
-        listingPage
-            .itemExist(itemId)
-            .deleteItem(itemId);
+      listingPage.itemExist(itemId).searchItem(itemId).itemExist(itemId);
+    });
+  });
 
-        headerPage
-            .checkModalTitle('Delete role?')
-            .confirmModal();
+  describe("Realm roles elimination", function () {
+    beforeEach(function () {
+      cy.visit("");
+    });
 
-        headerPage.checkNotificationMessage('The role has been deleted');
+    it("should delete realm role", function () {
+      loginPage.logIn();
 
-        listingPage
-            .itemExist(itemId, false);
-      });
-    })
-  })
+      sidebarPage.goToRealmRoles();
+
+      listingPage.itemExist(itemId).deleteItem(itemId);
+
+      modalUtils.checkModalTitle("Delete role?").confirmModal();
+
+      masthead.checkNotificationMessage("The role has been deleted");
+
+      listingPage.itemExist(itemId, false);
+    });
+  });
+});
