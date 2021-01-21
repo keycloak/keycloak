@@ -139,7 +139,15 @@ public class FlowTest extends AbstractAuthenticationTest {
         data.put("alias", "SomeFlow");
         data.put("type", "basic-flow");
         data.put("description", "Test flow");
+        // This tests against a regression in KEYCLOAK-16656
         data.put("provider", "registration-page-form");
+
+        Map<String, String> data2 = new HashMap<>();
+        data2.put("alias", "SomeFlow2");
+        data2.put("type", "form-flow");
+        data2.put("description", "Test flow 2");
+        data2.put("provider", "registration-page-form");
+
 
         // inexistent parent flow - should fail
         try {
@@ -161,7 +169,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         // Successfully add flow
         data.put("alias", "SomeFlow");
         authMgmtResource.addExecutionFlow("browser-2", data);
+        authMgmtResource.addExecutionFlow("browser-2", data2);
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data2, ResourceType.AUTH_EXECUTION_FLOW);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
@@ -170,16 +180,24 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         List<AuthenticationExecutionExportRepresentation> execs = found2.getAuthenticationExecutions();
         Assert.assertNotNull(execs);
-        Assert.assertEquals("Size one", 1, execs.size());
+        Assert.assertEquals("Size two", 2, execs.size());
 
         AuthenticationExecutionExportRepresentation expected = new AuthenticationExecutionExportRepresentation();
         expected.setFlowAlias("SomeFlow");
         expected.setUserSetupAllowed(false);
-        expected.setAuthenticator("registration-page-form");
         expected.setAutheticatorFlow(true);
         expected.setRequirement("DISABLED");
         expected.setPriority(0);
         compareExecution(expected, execs.get(0));
+
+        expected = new AuthenticationExecutionExportRepresentation();
+        expected.setFlowAlias("SomeFlow2");
+        expected.setUserSetupAllowed(false);
+        expected.setAuthenticator("registration-page-form");
+        expected.setAutheticatorFlow(true);
+        expected.setRequirement("DISABLED");
+        expected.setPriority(1);
+        compareExecution(expected, execs.get(1));
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());

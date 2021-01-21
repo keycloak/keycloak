@@ -428,7 +428,9 @@ public class AuthenticationManagementResource {
         execution.setFlowId(newFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
         execution.setAuthenticatorFlow(true);
-        execution.setAuthenticator(provider);
+        if (type.equals("form-flow")) {
+            execution.setAuthenticator(provider);
+        }
         execution.setPriority(getNextPriority(parentFlow));
         execution = realm.addAuthenticatorExecution(execution);
 
