@@ -31,26 +31,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientUpdateSourceHostsCondition implements ClientPolicyConditionProvider {
+public class ClientUpdateSourceHostsCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceHostsCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientUpdateSourceHostsCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
+        super(session, componentModel);
     }
 
     @Override

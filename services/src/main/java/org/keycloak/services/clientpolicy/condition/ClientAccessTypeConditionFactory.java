@@ -17,17 +17,14 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.keycloak.Config.Scope;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class ClientAccessTypeConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientAccessTypeConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "client-accesstype-condition";
     public static final String TYPE = "type";
@@ -35,31 +32,15 @@ public class ClientAccessTypeConditionFactory implements ClientPolicyConditionPr
     public static final String TYPE_PUBLIC = "public";
     public static final String TYPE_BEARERONLY = "bearer-only";
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
+    private static final ProviderConfigProperty CLIENTACCESSTYPE_PROPERTY;
     static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty(TYPE, "client-accesstype.label", "client-accesstype.tooltip", ProviderConfigProperty.MULTIVALUED_LIST_TYPE, TYPE_CONFIDENTIAL);
-        List<String> updateProfileValues = Arrays.asList(TYPE_CONFIDENTIAL, TYPE_PUBLIC, TYPE_BEARERONLY);
-        property.setOptions(updateProfileValues);
-        configProperties.add(property);
+        CLIENTACCESSTYPE_PROPERTY = new ProviderConfigProperty(TYPE, "client-accesstype.label", "client-accesstype.tooltip", ProviderConfigProperty.MULTIVALUED_LIST_TYPE, TYPE_CONFIDENTIAL);
+        CLIENTACCESSTYPE_PROPERTY.setOptions(Arrays.asList(TYPE_CONFIDENTIAL, TYPE_PUBLIC, TYPE_BEARERONLY));
     }
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
         return new ClientAccessTypeCondition(session, model);
-    }
-
-    @Override
-    public void init(Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 
     @Override
@@ -74,7 +55,8 @@ public class ClientAccessTypeConditionFactory implements ClientPolicyConditionPr
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        List<ProviderConfigProperty> l = super.getConfigProperties();
+        l.add(CLIENTACCESSTYPE_PROPERTY);
+        return l;
     }
-
 }

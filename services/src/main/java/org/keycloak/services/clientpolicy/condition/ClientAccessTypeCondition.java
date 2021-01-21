@@ -29,26 +29,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientAccessTypeCondition implements ClientPolicyConditionProvider {
+public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientAccessTypeCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientAccessTypeCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
+        super(session, componentModel);
     }
 
     @Override

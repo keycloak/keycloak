@@ -17,16 +17,13 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.keycloak.Config.Scope;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class ClientScopesConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientScopesConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "clientscopes-condition";
     public static final String SCOPES = "scopes";
@@ -34,31 +31,14 @@ public class ClientScopesConditionFactory implements ClientPolicyConditionProvid
     public static final String DEFAULT = "Default";
     public static final String OPTIONAL = "Optional";
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
-    static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty(SCOPES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "offline_access");
-        configProperties.add(property);
-        property = new ProviderConfigProperty(TYPE, "Scope Type", "Default or Optional", ProviderConfigProperty.LIST_TYPE, OPTIONAL);
-        configProperties.add(property);
-    }
+    private static final ProviderConfigProperty CLIENTSCOPES_PROPERTY = new ProviderConfigProperty(
+            SCOPES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "offline_access");
+    private static final ProviderConfigProperty CLIENTSCOPETYPE_PROPERTY = new ProviderConfigProperty(
+            TYPE, "Scope Type", "Default or Optional", ProviderConfigProperty.LIST_TYPE, OPTIONAL);
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
         return new ClientScopesCondition(session, model);
-    }
-
-    @Override
-    public void init(Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 
     @Override
@@ -73,7 +53,9 @@ public class ClientScopesConditionFactory implements ClientPolicyConditionProvid
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        List<ProviderConfigProperty> l = super.getConfigProperties();
+        l.add(CLIENTSCOPES_PROPERTY);
+        l.add(CLIENTSCOPETYPE_PROPERTY);
+        return l;
     }
-
 }
