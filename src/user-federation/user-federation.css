@@ -5,3 +5,7 @@
 .keycloak-admin--user-federation__gallery-item {
   display: contents;
 }
+
+.error {
+  color: red;
+}

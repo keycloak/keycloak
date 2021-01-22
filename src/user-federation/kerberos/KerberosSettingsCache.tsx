@@ -7,57 +7,30 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import React, { useEffect, useState } from "react";
-import { convertToFormValues } from "../../util";
-import { useForm, Controller, useWatch } from "react-hook-form";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import React, { useState } from "react";
+import { UseFormMethods, Controller, useWatch } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
 import _ from "lodash";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type KerberosSettingsCacheProps = {
+  form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
 export const KerberosSettingsCache = ({
+  form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: KerberosSettingsCacheProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
-  const adminClient = useAdminClient();
-  const { register, control, setValue } = useForm<ComponentRepresentation>();
-  const { id } = useParams<{ id: string }>();
-
   const cachePolicyType = useWatch({
-    control: control,
+    control: form.control,
     name: "config.cachePolicy",
   });
-
-  const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      setValue("config.cachePolicy", component.config?.cachePolicy);
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", setValue);
-      } else {
-        setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.components.findOne({ id }),
-      (component) => setupForm(component)
-    );
-  }, []);
 
   const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] = useState(
     false
@@ -73,18 +46,16 @@ export const KerberosSettingsCache = ({
     false
   );
 
-  const hourOptions = [
-    <SelectOption key={0} value={t("common:selectOne")} isPlaceholder />,
-  ];
-  for (let index = 1; index <= 24; index++) {
-    hourOptions.push(<SelectOption key={index + 1} value={[`${index}`]} />);
+  const hourOptions = [<SelectOption key={0} value={[`${1}`]} isPlaceholder />];
+  for (let index = 2; index <= 24; index++) {
+    hourOptions.push(<SelectOption key={index - 1} value={[`${index}`]} />);
   }
 
   const minuteOptions = [
-    <SelectOption key={0} value={t("common:selectOne")} isPlaceholder />,
+    <SelectOption key={0} value={[`${1}`]} isPlaceholder />,
   ];
-  for (let index = 1; index <= 60; index++) {
-    minuteOptions.push(<SelectOption key={index + 1} value={[`${index}`]} />);
+  for (let index = 2; index <= 60; index++) {
+    minuteOptions.push(<SelectOption key={index - 1} value={[`${index}`]} />);
   }
 
   return (
@@ -112,8 +83,8 @@ export const KerberosSettingsCache = ({
         >
           <Controller
             name="config.cachePolicy"
-            defaultValue=""
-            control={control}
+            defaultValue={["DEFAULT"]}
+            control={form.control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-cache-policy"
@@ -129,16 +100,11 @@ export const KerberosSettingsCache = ({
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption
-                  key={0}
-                  value={t("common:selectOne")}
-                  isPlaceholder
-                />
-                <SelectOption key={1} value={["DEFAULT"]} />
-                <SelectOption key={2} value={["EVICT_DAILY"]} />
-                <SelectOption key={3} value={["EVICT_WEEKLY"]} />
-                <SelectOption key={4} value={["MAX_LIFESPAN"]} />
-                <SelectOption key={5} value={["NO_CACHE"]} />
+                <SelectOption key={0} value={["DEFAULT"]} isPlaceholder />
+                <SelectOption key={1} value={["EVICT_DAILY"]} />
+                <SelectOption key={2} value={["EVICT_WEEKLY"]} />
+                <SelectOption key={3} value={["MAX_LIFESPAN"]} />
+                <SelectOption key={4} value={["NO_CACHE"]} />
               </Select>
             )}
           ></Controller>
@@ -154,12 +120,13 @@ export const KerberosSettingsCache = ({
                 forID="kc-eviction-day"
               />
             }
+            isRequired
             fieldId="kc-eviction-day"
           >
             <Controller
               name="config.evictionDay"
-              defaultValue=""
-              control={control}
+              defaultValue={[t("common:Sunday")]}
+              control={form.control}
               render={({ onChange, value }) => (
                 <Select
                   toggleId="kc-eviction-day"
@@ -175,30 +142,25 @@ export const KerberosSettingsCache = ({
                   selections={value}
                   variant={SelectVariant.single}
                 >
-                  <SelectOption
-                    key={0}
-                    value={t("common:selectOne")}
-                    isPlaceholder
-                  />
-                  <SelectOption key={1} value={["1"]}>
+                  <SelectOption key={0} value={["1"]} isPlaceholder>
                     {t("common:Sunday")}
                   </SelectOption>
-                  <SelectOption key={2} value={["2"]}>
+                  <SelectOption key={1} value={["2"]}>
                     {t("common:Monday")}
                   </SelectOption>
-                  <SelectOption key={3} value={["3"]}>
+                  <SelectOption key={2} value={["3"]}>
                     {t("common:Tuesday")}
                   </SelectOption>
-                  <SelectOption key={4} value={["4"]}>
+                  <SelectOption key={3} value={["4"]}>
                     {t("common:Wednesday")}
                   </SelectOption>
-                  <SelectOption key={5} value={["5"]}>
+                  <SelectOption key={4} value={["5"]}>
                     {t("common:Thursday")}
                   </SelectOption>
-                  <SelectOption key={6} value={["6"]}>
+                  <SelectOption key={5} value={["6"]}>
                     {t("common:Friday")}
                   </SelectOption>
-                  <SelectOption key={7} value={["7"]}>
+                  <SelectOption key={6} value={["7"]}>
                     {t("common:Saturday")}
                   </SelectOption>
                 </Select>
@@ -221,12 +183,13 @@ export const KerberosSettingsCache = ({
                   forID="kc-eviction-hour"
                 />
               }
+              isRequired
               fieldId="kc-eviction-hour"
             >
               <Controller
                 name="config.evictionHour"
-                defaultValue=""
-                control={control}
+                defaultValue={["1"]}
+                control={form.control}
                 render={({ onChange, value }) => (
                   <Select
                     toggleId="kc-eviction-hour"
@@ -256,12 +219,13 @@ export const KerberosSettingsCache = ({
                   forID="kc-eviction-minute"
                 />
               }
+              isRequired
               fieldId="kc-eviction-minute"
             >
               <Controller
                 name="config.evictionMinute"
-                defaultValue=""
-                control={control}
+                defaultValue={["1"]}
+                control={form.control}
                 render={({ onChange, value }) => (
                   <Select
                     toggleId="kc-eviction-minute"
@@ -297,14 +261,15 @@ export const KerberosSettingsCache = ({
                 forID="kc-max-lifespan"
               />
             }
+            isRequired
             fieldId="kc-max-lifespan"
           >
             <TextInput
               isRequired
               type="text"
               id="kc-max-lifespan"
-              name="config.maxLifespan"
-              ref={register}
+              name="config.maxLifespan[0]"
+              ref={form.register}
             />
           </FormGroup>
         ) : (
