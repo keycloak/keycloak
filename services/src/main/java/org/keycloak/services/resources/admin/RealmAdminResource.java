@@ -438,6 +438,9 @@ public class RealmAdminResource {
             realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
                     usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false));
 
+            // This populates the map in DefaultKeycloakContext to be used when treating the event
+            session.getContext().getUri();
+
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
             
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
