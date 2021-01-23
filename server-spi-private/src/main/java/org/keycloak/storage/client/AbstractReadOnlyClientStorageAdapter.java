@@ -59,6 +59,12 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
     }
 
     @Override
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        throw new ReadOnlyException("client is read only for this update");
+
+    }
+
+    @Override
     public void setWebOrigins(Set<String> webOrigins) {
         throw new ReadOnlyException("client is read only for this update");
 
@@ -215,6 +221,11 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
 
     @Override
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
+        throw new ReadOnlyException("client is read only for this update");
+    }
+
+    @Override
+    public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         throw new ReadOnlyException("client is read only for this update");
     }
 

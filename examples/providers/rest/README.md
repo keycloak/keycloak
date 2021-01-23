@@ -1,7 +1,7 @@
 Example Realm REST Resource provider
 ====================================
 
-To deploy copy target/hello-rest-example.jar to providers directory. Alternatively you can deploy as a module by running:
+You can deploy as a module by running:
 
     $KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.hello-rest-example --resources=target/hello-rest-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-server-spi-private,javax.ws.rs.api"
 

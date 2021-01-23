@@ -44,6 +44,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.auth.page.login.LoginActions;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.ServerURLs;
 
 /**
  *
@@ -64,8 +66,8 @@ public abstract class AbstractAdapterClusteredTest extends AbstractServletsAdapt
     protected static final int HTTP_PORT_NODE_1 = 8080 + PORT_OFFSET_NODE_1;
     protected static final int PORT_OFFSET_NODE_2 = NumberUtils.toInt(System.getProperty("app.server.2.port.offset"), -1);
     protected static final int HTTP_PORT_NODE_2 = 8080 + PORT_OFFSET_NODE_2;
-    protected static final URI NODE_1_URI = URI.create("http://localhost:" + HTTP_PORT_NODE_1);
-    protected static final URI NODE_2_URI = URI.create("http://localhost:" + HTTP_PORT_NODE_2);
+    protected static final URI NODE_1_URI = URI.create("http://" + ServerURLs.APP_SERVER_HOST + ":" + HTTP_PORT_NODE_1);
+    protected static final URI NODE_2_URI = URI.create("http://" + ServerURLs.APP_SERVER_HOST + ":" + HTTP_PORT_NODE_2);
 
     protected LoadBalancingProxyClient loadBalancerToNodes;
     protected Undertow reverseProxyToNodes;
@@ -84,6 +86,7 @@ public abstract class AbstractAdapterClusteredTest extends AbstractServletsAdapt
         Assume.assumeThat(PORT_OFFSET_NODE_1, not(is(-1)));
         Assume.assumeThat(PORT_OFFSET_NODE_2, not(is(-1)));
         Assume.assumeThat(PORT_OFFSET_NODE_REVPROXY, not(is(-1)));
+        ContainerAssume.assumeNotAppServerSSL();
     }
 
     @Before
@@ -91,7 +94,7 @@ public abstract class AbstractAdapterClusteredTest extends AbstractServletsAdapt
         loadBalancerToNodes = new LoadBalancingProxyClient().addHost(NODE_1_URI, NODE_1_NAME).setConnectionsPerThread(10);
         int maxTime = 3600000; // 1 hour for proxy request timeout, so we can debug the backend keycloak servers
         reverseProxyToNodes = Undertow.builder()
-          .addHttpListener(HTTP_PORT_NODE_REVPROXY, "localhost")
+          .addHttpListener(HTTP_PORT_NODE_REVPROXY, ServerURLs.APP_SERVER_HOST)
           .setIoThreads(2)
           .setHandler(new ProxyHandler(loadBalancerToNodes, maxTime, ResponseCodeHandler.HANDLE_404)).build();
         reverseProxyToNodes.start();

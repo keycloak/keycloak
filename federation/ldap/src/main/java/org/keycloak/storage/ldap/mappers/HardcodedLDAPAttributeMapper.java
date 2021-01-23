@@ -41,6 +41,13 @@ public class HardcodedLDAPAttributeMapper extends AbstractLDAPStorageMapper {
 
     public static final String LDAP_ATTRIBUTE_VALUE = "ldap.attribute.value";
 
+    private static final String RANDOM = "RANDOM";
+
+    /**
+     * When this is configured as LDAP_ATTRIBUTE_VALUE, the mapper will use randomly generated value
+     */
+    public static final String RANDOM_ATTRIBUTE_VALUE = "${" + RANDOM + "}";
+
     public static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");
 
     public HardcodedLDAPAttributeMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
@@ -65,7 +72,7 @@ public class HardcodedLDAPAttributeMapper extends AbstractLDAPStorageMapper {
 
         while (m.find()) {
             String token = m.group(1);
-            if (token.equals("RANDOM")) {
+            if (token.equals(RANDOM)) {
                 String randomVal = getRandomValue();
                 m.appendReplacement(sb, randomVal);
             } else {

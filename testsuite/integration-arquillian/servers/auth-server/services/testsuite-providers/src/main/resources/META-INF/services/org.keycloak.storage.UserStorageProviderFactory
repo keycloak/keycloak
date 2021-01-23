@@ -1,3 +1,4 @@
+org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory
 org.keycloak.testsuite.federation.DummyUserFederationProviderFactory
 org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory
 org.keycloak.testsuite.federation.UserMapStorageFactory

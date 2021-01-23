@@ -10,14 +10,19 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(REMOTE)
 public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -36,8 +41,9 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
 
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             Assert.assertEquals(1, list.size());
             passwordId.set(list.get(0).getId());
 
@@ -53,10 +59,11 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: password, otp1, otp2
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, passwordId.get(), otp1Id.get(), otp2Id.get());
 
             // Assert can't move password when newPreviousCredential not found
@@ -71,10 +78,11 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: password, otp2, otp1
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, passwordId.get(), otp2Id.get(), otp1Id.get());
 
             // Move otp2 to the top
@@ -83,10 +91,11 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, password, otp1
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp2Id.get(), passwordId.get(), otp1Id.get());
 
             // Move password down
@@ -95,10 +104,11 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, otp1, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp2Id.get(), otp1Id.get(), passwordId.get());
 
             // Remove otp2 down two positions
@@ -107,10 +117,11 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, otp1, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp1Id.get(), passwordId.get(), otp2Id.get());
 
             // Remove password
@@ -119,10 +130,11 @@ public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
-            UserModel user = currentSession.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = currentSession.users().getUserByUsername(realm, "test-user@localhost");
 
             // Assert priorities: otp2, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp1Id.get(), otp2Id.get());
         });
     }

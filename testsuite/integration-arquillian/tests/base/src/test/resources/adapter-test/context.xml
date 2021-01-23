@@ -17,4 +17,5 @@
 
 <Context path="/%CONTEXT_PATH%">
     <Valve className="org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve"/>
+    <CookieProcessor sameSiteCookies="None" />
 </Context>

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.ui.account2.page;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.ui.account2.page.fragment.ContentAlert;
+import org.keycloak.testsuite.ui.account2.page.fragment.ContinueCancelModal;
 import org.keycloak.testsuite.ui.account2.page.fragment.LoggedInPageHeader;
 import org.keycloak.testsuite.ui.account2.page.fragment.Sidebar;
 import org.openqa.selenium.WebElement;
@@ -26,6 +27,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.LinkedList;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
@@ -43,8 +45,17 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     @Page
     private ContentAlert alert;
 
+    @Page
+    private ContinueCancelModal modal;
+
     @FindBy(xpath = ".//*[@id='page-heading']//h1")
     private WebElement pageTitle;
+
+    @FindBy(id = "refresh-page")
+    private WebElement refreshPageBtn;
+    
+    @FindBy(id = "brandLink")
+    private WebElement brandLink;
 
     public AbstractLoggedInPage() {
         hashPath = new LinkedList<>();
@@ -53,14 +64,14 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     }
 
     /**
-     * This is currently used only by navigation menu to identify nav items. See content.js in themes module for IDs.
+     * This is currently used only by navigation menu to identify nav items. See content.json in themes module for IDs.
      *
      * @return page ID
      */
     public abstract String getPageId();
 
     /**
-     * In case the page is placed is a subpage, i.e. placed in a subsection. See content.js in themes module for IDs.
+     * In case the page is placed is a subpage, i.e. placed in a subsection. See content.json in themes module for IDs.
      *
      * @return parent page ID
      */
@@ -93,8 +104,20 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
         return alert;
     }
 
+    public ContinueCancelModal modal() {
+        return modal;
+    }
+
     public String getPageTitle() {
         return getTextFromElement(pageTitle);
+    }
+
+    public void clickRefreshPage() {
+        clickLink(refreshPageBtn);
+    }
+
+    public void clickBrandLink() {
+        clickLink(brandLink);
     }
 
     @Override

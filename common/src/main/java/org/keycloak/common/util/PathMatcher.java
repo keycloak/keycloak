@@ -202,7 +202,9 @@ public abstract class PathMatcher<P> {
                         }
                     }
 
-                    i = expectedUri.indexOf('}', i);
+                    if (c == '{') {
+                        i = expectedUri.indexOf('}', i);
+                    }
 
                     if (i == expectedUri.lastIndexOf('}') && onlyFirstParam) {
                         return String.valueOf(matchingUri).substring(0, matchingUriLastIndex);

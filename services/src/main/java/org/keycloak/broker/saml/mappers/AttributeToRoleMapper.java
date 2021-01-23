@@ -27,6 +27,7 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -35,7 +36,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,6 +55,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -74,12 +80,17 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         property = new ProviderConfigProperty();
         property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
-        property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "saml-role-idp-mapper";
+
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -121,7 +132,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         if (name != null && name.trim().equals("")) name = null;
         String friendly = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
         if (friendly != null && friendly.trim().equals("")) friendly = null;
-        String desiredValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
+        String desiredValue = Optional.ofNullable(mapperModel.getConfig().get(ATTRIBUTE_VALUE)).orElse("");
         AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
         for (AttributeStatementType statement : assertion.getAttributeStatements()) {
             for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
@@ -129,7 +140,9 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
                 if (name != null && !name.equals(attr.getName())) continue;
                 if (friendly != null && !friendly.equals(attr.getFriendlyName())) continue;
                 for (Object val : attr.getAttributeValue()) {
-                    if (val.equals(desiredValue)) return true;
+                    val = Optional.ofNullable(val).orElse("");
+                    if (val.equals(desiredValue))
+                        return true;
                 }
             }
         }
@@ -151,7 +164,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public String getHelpText() {
-        return "If a claim exists, grant the user the specified realm or application role.";
+        return "If an attribute exists, grant the user the specified realm or client role.";
     }
 
 }

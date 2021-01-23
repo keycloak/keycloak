@@ -49,18 +49,27 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.security.Key;
+import java.security.KeyManagementException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 
 import org.jboss.logging.Logger;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import org.keycloak.common.VerificationException;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.rotation.KeyLocator;
 import static org.keycloak.saml.common.constants.GeneralConstants.RELAY_STATE;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
@@ -106,7 +115,7 @@ public class SamlClient {
     public enum Binding {
         POST {
             @Override
-            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response) throws IOException {
+            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
                 String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
                 response.close();
@@ -115,16 +124,21 @@ public class SamlClient {
 
             @Override
             public HttpPost createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
-                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, null, null);
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, null, null, null);
             }
 
             @Override
             public HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
-                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_RESPONSE_KEY, null, null);
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_RESPONSE_KEY, null, null, null);
             }
 
             @Override
             public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return createSamlSignedResponse(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
                 return null;
             }
 
@@ -138,10 +152,15 @@ public class SamlClient {
 
             @Override
             public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
-                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey);
+                return createSamlSignedRequest(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
             }
 
-            private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType, String privateKeyStr, String publicKeyStr) {
+            @Override
+            public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey, certificateStr);
+            }
+
+            private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType, String privateKeyStr, String publicKeyStr, String certificateStr) {
                 HttpPost post = new HttpPost(samlEndpoint);
 
                 List<NameValuePair> parameters = new LinkedList<>();
@@ -153,9 +172,10 @@ public class SamlClient {
                     if (privateKeyStr != null && publicKeyStr != null) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
                         PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
                         binding
                                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
-                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();
                     }
 
@@ -194,11 +214,11 @@ public class SamlClient {
 
         REDIRECT {
             @Override
-            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response) throws IOException {
+            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.FOUND));
                 String location = response.getFirstHeader("Location").getValue();
                 response.close();
-                return extractSamlResponseFromRedirect(location);
+                return extractSamlResponseFromRedirect(location, realmPublicKey);
             }
 
             @Override
@@ -234,6 +254,11 @@ public class SamlClient {
 
             @Override
             public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return createSamlSignedResponse(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
 
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
@@ -241,9 +266,10 @@ public class SamlClient {
                     if (realmPrivateKey != null && realmPublicKey != null) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(realmPrivateKey);
                         PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                        X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
                         binding
                                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
-                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();
                     }
 
@@ -264,22 +290,48 @@ public class SamlClient {
             }
 
             @Override
-            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
-                throw new UnsupportedOperationException("Not implemented yet.");
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String privateKeyStr, String publicKeyStr) {
+                return createSamlSignedRequest(samlEndpoint, relayState, samlRequest, privateKeyStr, publicKeyStr, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String privateKeyStr, String publicKeyStr, String certificateStr) {
+                try {
+                    BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
+                    if (privateKeyStr != null && publicKeyStr != null) {
+                        PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
+                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
+                        binding.signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
+                                .signDocument();
+                    }
+                    return new HttpGet(binding.redirectBinding(samlRequest).requestURI(samlEndpoint.toString()));
+                } catch (IOException | ConfigurationException | ProcessingException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         };
 
-        public abstract SAMLDocumentHolder extractResponse(CloseableHttpResponse response) throws IOException;
+        public abstract SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException;
+
+        public SAMLDocumentHolder extractResponse(CloseableHttpResponse response) throws IOException {
+            return extractResponse(response, null);
+        }
 
         public abstract HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
 
         public abstract HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
+
+        public abstract HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr);
 
         public abstract URI getBindingUri();
 
         public abstract HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest);
 
         public abstract HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
+
+        public abstract HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr);
 
         public abstract String extractRelayState(CloseableHttpResponse response) throws IOException;
     }
@@ -337,24 +389,63 @@ public class SamlClient {
                 .findFirst().map(NameValuePair::getValue).orElse(null);
     }
 
+    public static MultivaluedMap<String, String> parseEncodedQueryParameters(String queryString) throws IOException {
+        MultivaluedMap<String, String> encodedParams = new MultivaluedHashMap<>();
+        if (queryString != null) {
+            String[] params = queryString.split("&");
+            for (String param : params) {
+                if (param.indexOf('=') >= 0) {
+                    String[] nv = param.split("=", 2);
+                    encodedParams.add(RedirectBindingUtil.urlDecode(nv[0]), nv.length > 1 ? nv[1] : "");
+                } else {
+                    encodedParams.add(RedirectBindingUtil.urlDecode(param), "");
+                }
+            }
+        }
+        return encodedParams;
+    }
+
     /**
      * Extracts and parses value of SAMLResponse query parameter from the given URI.
+     * If the realmPublicKey parameter is passed the response signature is
+     * validated.
      *
-     * @param responseUri
+     * @param responseUri The redirect URI to use
+     * @param realmPublicKey The public realm key for validating signature in REDIRECT query parameters
      * @return
      */
-    public static SAMLDocumentHolder extractSamlResponseFromRedirect(String responseUri) {
-        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), "UTF-8");
+    public static SAMLDocumentHolder extractSamlResponseFromRedirect(String responseUri, String realmPublicKey) throws IOException {
+        MultivaluedMap<String, String> encodedParams = parseEncodedQueryParameters(URI.create(responseUri).getRawQuery());
 
-        String samlDoc = null;
-        for (NameValuePair param : params) {
-            if ("SAMLResponse".equals(param.getName()) || "SAMLRequest".equals(param.getName())) {
-                assertThat("Only one SAMLRequest/SAMLResponse check", samlDoc, nullValue());
-                samlDoc = param.getValue();
+        String samlResponse = encodedParams.getFirst(GeneralConstants.SAML_RESPONSE_KEY);
+        String samlRequest = encodedParams.getFirst(GeneralConstants.SAML_REQUEST_KEY);
+        assertTrue("Only one SAMLRequest/SAMLResponse check", (samlResponse != null && samlRequest == null)
+                || (samlResponse == null && samlRequest != null));
+
+        String samlDoc = RedirectBindingUtil.urlDecode(samlResponse != null? samlResponse : samlRequest);
+        SAMLDocumentHolder documentHolder = SAMLRequestParser.parseResponseRedirectBinding(samlDoc);
+
+        if (realmPublicKey != null) {
+            // if the public key is passed verify the signature of the redirect URI
+            try {
+                KeyLocator locator = new KeyLocator() {
+                    @Override
+                    public Key getKey(String kid) throws KeyManagementException {
+                        return org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                    }
+
+                    @Override
+                    public void refreshKeyCache() {
+                    }
+                };
+                SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, encodedParams,
+                        samlResponse != null? GeneralConstants.SAML_RESPONSE_KEY : GeneralConstants.SAML_REQUEST_KEY);
+            } catch (VerificationException e) {
+                throw new IOException(e);
             }
         }
 
-        return SAMLRequestParser.parseResponseRedirectBinding(samlDoc);
+        return documentHolder;
     }
 
     /**

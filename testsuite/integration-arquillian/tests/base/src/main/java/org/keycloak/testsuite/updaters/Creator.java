@@ -17,23 +17,34 @@
 package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.IdentityProvidersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.ws.rs.core.Response;
+import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 
 /**
@@ -90,6 +101,26 @@ public class Creator<T> implements AutoCloseable {
         }
     }
 
+    public static Creator.Flow create(RealmResource realmResource, AuthenticationFlowRepresentation rep) {
+        final AuthenticationManagementResource authMgmgRes = realmResource.flows();
+        try (Response response = authMgmgRes.createFlow(rep)) {
+            String createdId = getCreatedId(response);
+            LOG.debugf("Created flow ID %s", createdId);
+            return new Flow(createdId, rep.getAlias(), authMgmgRes, () -> authMgmgRes.deleteFlow(createdId));
+        }
+    }
+
+    public static Creator<IdentityProviderResource> create(RealmResource realmResource, IdentityProviderRepresentation rep) {
+        final IdentityProvidersResource res = realmResource.identityProviders();
+        Assert.assertThat("Identity provider alias must be specified", rep.getAlias(), Matchers.notNullValue());
+        try (Response response = res.create(rep)) {
+            String createdId = getCreatedId(response);
+            final IdentityProviderResource r = res.get(rep.getAlias());
+            LOG.debugf("Created identity provider ID %s", createdId);
+            return new Creator(createdId, r, r::remove);
+        }
+    }
+
     private final String id;
     private final T resource;
     private final Runnable closer;
@@ -123,4 +154,24 @@ public class Creator<T> implements AutoCloseable {
         }
     }
 
+    public static class Flow extends Creator<AuthenticationManagementResource> {
+
+        private final String alias;
+
+        public Flow(String id, String alias, AuthenticationManagementResource resource, Runnable closer) {
+            super(id, resource, closer);
+            this.alias = alias;
+        }
+
+        public AuthenticationExecutionInfoRepresentation addExecution(String providerId) {
+            Map<String, String> c = new HashMap<>();
+            c.put("provider", providerId);
+            resource().addExecution(alias, c);  // addExecution only handles "provider" in data
+            return resource().getExecutions(alias).stream()
+              .filter(aer -> Objects.equals(providerId, aer.getProviderId()))
+              .findFirst()
+              .orElse(null);
+        }
+
+    }
 }

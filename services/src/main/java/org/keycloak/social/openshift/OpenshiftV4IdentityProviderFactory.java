@@ -30,4 +30,8 @@ public class OpenshiftV4IdentityProviderFactory extends AbstractIdentityProvider
         return PROVIDER_ID;
     }
 
+    @Override
+    public OpenshiftV4IdentityProviderConfig createConfig() {
+        return new OpenshiftV4IdentityProviderConfig();
+    }
 }

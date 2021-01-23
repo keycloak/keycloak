@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.federation.ldap.noimport;
 
+import java.util.Collections;
+
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
 import org.junit.Assert;
@@ -24,6 +27,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.ComponentResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -33,11 +38,13 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
@@ -90,19 +97,19 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
 
             // search by username
-            UserModel user = session.users().searchForUser("username1", appRealm).get(0);
+            UserModel user = session.users().searchForUserStream(appRealm, "username1").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
-            user = session.users().searchForUser("user2@email.org", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "user2@email.org").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
-            user = session.users().searchForUser("Doel3", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "Doel3").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
-            user = session.users().searchForUser("John4 Doel4", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "John4 Doel4").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username4", "John4", "Doel4", "user4@email.org", "124");
         });
     }
@@ -137,14 +144,14 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
 
             // search by email
-            UserModel user = session.users().searchForUser("user5@email.org", appRealm).get(0);
+            UserModel user = session.users().searchForUserStream(appRealm, "user5@email.org").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username5", "John5", "Doel5", "user5@email.org", "125");
 
-            user = session.users().searchForUser("John6 Doel6", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "John6 Doel6").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username6", "John6", "Doel6", "user6@email.org", "126");
 
-            Assert.assertTrue(session.users().searchForUser("user7@email.org", appRealm).isEmpty());
-            Assert.assertTrue(session.users().searchForUser("John7 Doel7", appRealm).isEmpty());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "user7@email.org").count());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John7 Doel7").count());
 
             // Remove custom filter
             ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
@@ -155,8 +162,25 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
     @Test
     @Override
-    @Ignore // Unsynced mode doesn't have much sense in no-import
+    // Unsynced mode doesn't have much sense in no-import. So it is not allowed at the configuration level
     public void testUnsynced() throws Exception {
+        ComponentResource ldapProviderResource = testRealm().components().component(ldapModelId);
+        ComponentRepresentation ldapProviderRep = ldapProviderResource.toRepresentation();
+        String currentEditMode = ldapProviderRep.getConfig().getFirst(LDAPConstants.EDIT_MODE);
+        Assert.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(), currentEditMode);
+
+        // Try update editMode to UNSYNCED. It should not work as UNSYNCED with no-import is not allowed
+        ldapProviderRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.toString());
+        try {
+            ldapProviderResource.update(ldapProviderRep);
+            Assert.fail("Not expected to successfully update provider");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Try to set editMode to WRITABLE should work
+        ldapProviderRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, currentEditMode);
+        ldapProviderResource.update(ldapProviderRep);
     }
 
 
@@ -174,10 +198,10 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             RealmModel appRealm = ctx.getRealm();
 
             // assert that user "fullnameUser" is not in local DB
-            Assert.assertNull(session.users().getUserByUsername("fullname", appRealm));
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "fullname"));
 
             // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
-            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, appRealm);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", null, "4578");
 
@@ -214,11 +238,10 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             fullnameUser.setFirstName("James2");
             fullnameUser.setLastName("Dee2");
         });
-
 
         // Assert changed user available in Keycloak, but his firstName is null (due the fullnameMapper is write-only and firstName mapper is removed)
         testingClient.server().run(session -> {
@@ -229,7 +252,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", null, "Dee2", "fullname@email.org", "4578");
 
             // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             session.users().removeUser(appRealm, fullnameUser);
 
             // Revert mappers
@@ -241,6 +264,74 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         Response response = testRealm().components().add(firstNameMapperRep);
         Assert.assertEquals(201, response.getStatus());
         response.close();
+    }
+
+    // Tests that attempt to change some user attributes, which are not mapped to LDAP, will fail
+    @Test
+    public void testImpossibleToChangeNonLDAPMappedAttributes() {
+        UserResource john = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+
+        UserRepresentation johnRep = john.toRepresentation();
+        String firstNameOrig = johnRep.getFirstName();
+        String lastNameOrig = johnRep.getLastName();
+        String emailOrig = johnRep.getEmail();
+        String postalCodeOrig = johnRep.getAttributes().get("postal_code").get(0);
+
+        try {
+            // Attempt to disable user should fail
+            try {
+                johnRep.setFirstName("John2");
+                johnRep.setLastName("Doe2");
+                johnRep.setEnabled(false);
+
+                john.update(johnRep);
+                Assert.fail("Not supposed to successfully update 'enabled' state of the user");
+            } catch (BadRequestException bre) {
+                // Expected
+            }
+
+            // Attempt to set requiredAction to the user should fail
+            try {
+                johnRep = john.toRepresentation();
+                johnRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
+                john.update(johnRep);
+                Assert.fail("Not supposed to successfully add requiredAction to the user");
+            } catch (BadRequestException bre) {
+                // Expected
+            }
+
+            // Attempt to add some new attribute should fail
+            try {
+                johnRep = john.toRepresentation();
+                johnRep.singleAttribute("foo", "bar");
+                john.update(johnRep);
+                Assert.fail("Not supposed to successfully add attribute to the user");
+            } catch (BadRequestException bre) {
+                // Expected
+            }
+
+            // Attempt to update firstName, lastName and postal_code should be successful. All those attributes are mapped to LDAP
+            johnRep = john.toRepresentation();
+            johnRep.setFirstName("John2");
+            johnRep.setLastName("Doe2");
+            johnRep.singleAttribute("postal_code", "654321");
+            john.update(johnRep);
+
+            johnRep = john.toRepresentation();
+            Assert.assertEquals("John2", johnRep.getFirstName());
+            Assert.assertEquals("Doe2", johnRep.getLastName());
+            Assert.assertEquals("654321", johnRep.getAttributes().get("postal_code").get(0));
+        } finally {
+            // Revert
+            johnRep.setFirstName(firstNameOrig);
+            johnRep.setLastName(lastNameOrig);
+            johnRep.singleAttribute("postal_code", postalCodeOrig);
+            john.update(johnRep);
+            Assert.assertEquals(firstNameOrig, johnRep.getFirstName());
+            Assert.assertEquals(lastNameOrig, johnRep.getLastName());
+            Assert.assertEquals(emailOrig, johnRep.getEmail());
+            Assert.assertEquals(postalCodeOrig, johnRep.getAttributes().get("postal_code").get(0));
+        }
     }
 
 }

@@ -24,16 +24,14 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.utils.ServicesUtils;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,6 +41,8 @@ public class ClientStorageManager implements ClientProvider {
     private static final Logger logger = Logger.getLogger(ClientStorageManager.class);
 
     protected KeycloakSession session;
+
+    private long clientStorageProviderTimeout;
 
     public static boolean isStorageProviderEnabled(RealmModel realm, String providerId) {
         ClientStorageProviderModel model = getStorageProviderModel(realm, providerId);
@@ -67,8 +67,18 @@ public class ClientStorageManager implements ClientProvider {
     }
 
 
-    public static List<ClientStorageProviderModel> getStorageProviders(RealmModel realm) {
-        return realm.getClientStorageProviders();
+    private static <T> Stream<ClientStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
+        return realm.getClientStorageProvidersStream()
+                .filter(model -> {
+                    ClientStorageProviderFactory factory = getClientStorageProviderFactory(model, session);
+                    if (factory == null) {
+                        logger.warnv("Configured ClientStorageProvider {0} of provider id {1} does not exist in realm {2}",
+                                model.getName(), model.getProviderId(), realm.getName());
+                        return false;
+                    } else {
+                        return Types.supports(type, factory, ClientStorageProviderFactory.class);
+                    }
+                });
     }
 
     public static ClientStorageProvider getStorageProviderInstance(KeycloakSession session, ClientStorageProviderModel model, ClientStorageProviderFactory factory) {
@@ -84,83 +94,70 @@ public class ClientStorageManager implements ClientProvider {
     }
 
 
-    public static <T> List<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<>();
-        for (ClientStorageProviderModel model : getStorageProviders(realm)) {
-            ClientStorageProviderFactory factory = (ClientStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientStorageProvider.class, model.getProviderId());
-            if (factory == null) {
-                logger.warnv("Configured ClientStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
-                continue;
-            }
-            if (Types.supports(type, factory, ClientStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
-            }
+    public static <T> Stream<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
+        return getStorageProviders(realm, session, type)
+                .map(model -> type.cast(getStorageProviderInstance(session, model, getClientStorageProviderFactory(model, session))));
+    }
 
-
-        }
-        return list;
+    private static ClientStorageProviderFactory getClientStorageProviderFactory(ClientStorageProviderModel model, KeycloakSession session) {
+        return (ClientStorageProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(ClientStorageProvider.class, model.getProviderId());
     }
 
 
-    public static <T> List<T> getEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<>();
-        for (ClientStorageProviderModel model : getStorageProviders(realm)) {
-            if (!model.isEnabled()) continue;
-            ClientStorageProviderFactory factory = (ClientStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientStorageProvider.class, model.getProviderId());
-            if (factory == null) {
-                logger.warnv("Configured ClientStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
-                continue;
-            }
-            if (Types.supports(type, factory, ClientStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
-            }
-
-
-        }
-        return list;
+    public static <T> Stream<T> getEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
+        return getStorageProviders(realm, session, type)
+                .filter(ClientStorageProviderModel::isEnabled)
+                .map(model -> type.cast(getStorageProviderInstance(session, model, getClientStorageProviderFactory(model, session))));
     }
 
 
-    public ClientStorageManager(KeycloakSession session) {
+    public ClientStorageManager(KeycloakSession session, long clientStorageProviderTimeout) {
         this.session = session;
+        this.clientStorageProviderTimeout = clientStorageProviderTimeout;
     }
 
     @Override
-    public ClientModel getClientById(String id, RealmModel realm) {
+    public ClientModel getClientById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            return session.clientLocalStorage().getClientById(id, realm);
+            return session.clientLocalStorage().getClientById(realm, id);
         }
         ClientLookupProvider provider = (ClientLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
         if (provider == null) return null;
         if (!isStorageProviderEnabled(realm, storageId.getProviderId())) return null;
-        return provider.getClientById(id, realm);
+        return provider.getClientById(realm, id);
     }
 
     @Override
-    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
-        ClientModel client = session.clientLocalStorage().getClientByClientId(clientId, realm);
+    public ClientModel getClientByClientId(RealmModel realm, String clientId) {
+        ClientModel client = session.clientLocalStorage().getClientByClientId(realm, clientId);
         if (client != null) {
             return client;
         }
-        for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            client = provider.getClientByClientId(clientId, realm);
-            if (client != null) return client;
-        }
-        return null;
+        return getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
+                .map(provider -> provider.getClientByClientId(realm, clientId))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
+    /**
+     * Obtaining clients from an external client storage is time-bounded. In case the external client storage
+     * isn't available at least clients from a local storage are returned. For this purpose
+     * the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getClientStorageProviderTimeout()} property is used.
+     * Default value is 3000 milliseconds and it's configurable.
+     * See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
+     */
     @Override
-    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
-        List<ClientModel> clients = session.clientLocalStorage().searchClientsByClientId(clientId,  firstResult, maxResults, realm);
-        if (clients != null) {
-            return clients;
-        }
-        for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            clients = provider.searchClientsByClientId(clientId, firstResult, maxResults, realm);
-            if (clients != null) return clients;
-        }
-        return null;
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+        Stream<ClientModel> local = session.clientLocalStorage().searchClientsByClientIdStream(realm, clientId,  firstResult, maxResults);
+        Stream<ClientModel> ext = getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
+                .flatMap(ServicesUtils.timeBound(session,
+                        clientStorageProviderTimeout,
+                        p -> ((ClientLookupProvider) p).searchClientsByClientIdStream(realm, clientId, firstResult, maxResults)));
+
+        return Stream.concat(local, ext);
     }
 
     @Override
@@ -173,51 +170,29 @@ public class ClientStorageManager implements ClientProvider {
         return session.clientLocalStorage().addClient(realm, id, clientId);
     }
 
-
-
-
     @Override
-    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
-       return session.clientLocalStorage().getClients(realm, firstResult, maxResults);
+    public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+       return session.clientLocalStorage().getClientsStream(realm, firstResult, maxResults);
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm) {
-        return session.clientLocalStorage().getClients(realm);
+    public Stream<ClientModel> getClientsStream(RealmModel realm) {
+        return session.clientLocalStorage().getClientsStream(realm);
     }
 
     @Override
-    public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            throw new RuntimeException("Federated clients do not support this operation");
-        }
-        return session.clientLocalStorage().addClientRole(realm, client, name);
+    public long getClientsCount(RealmModel realm) {
+        return session.clientLocalStorage().getClientsCount(realm);
     }
 
     @Override
-    public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            throw new RuntimeException("Federated clients do not support this operation");
-        }
-        return session.clientLocalStorage().addClientRole(realm, client, id, name);
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
+        return session.clientLocalStorage().getAlwaysDisplayInConsoleClientsStream(realm);
     }
 
     @Override
-    public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            //throw new RuntimeException("Federated clients do not support this operation");
-            return null;
-        }
-        return session.clientLocalStorage().getClientRole(realm, client, name);
-    }
-
-    @Override
-    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            //throw new RuntimeException("Federated clients do not support this operation");
-            return Collections.EMPTY_SET;
-        }
-        return session.clientLocalStorage().getClientRoles(realm, client);
+    public void removeClients(RealmModel realm) {
+        session.clientLocalStorage().removeClients(realm);
     }
 
     @Override
@@ -226,11 +201,11 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
-    public boolean removeClient(String id, RealmModel realm) {
+    public boolean removeClient(RealmModel realm, String id) {
         if (!StorageId.isLocalStorage(id)) {
             throw new RuntimeException("Federated clients do not support this operation");
         }
-        return session.clientLocalStorage().removeClient(id, realm);
+        return session.clientLocalStorage().removeClient(realm, id);
     }
 
 

@@ -25,8 +25,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
 public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
 
@@ -51,8 +50,8 @@ public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
     protected abstract KeyWrapper loadKey(RealmModel realm, ComponentModel model);
 
     @Override
-    public List<KeyWrapper> getKeys() {
-        return Collections.singletonList(key);
+    public Stream<KeyWrapper> getKeysStream() {
+        return Stream.of(key);
     }
 
     protected KeyWrapper createKeyWrapper(KeyPair keyPair, String ecInNistRep) {

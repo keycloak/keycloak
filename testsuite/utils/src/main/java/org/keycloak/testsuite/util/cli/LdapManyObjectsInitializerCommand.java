@@ -17,14 +17,15 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -73,7 +74,8 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
         int countGroups = getIntArg(5);
 
         RealmModel realm = session.realms().getRealmByName(realmName);
-        List<ComponentModel> components = realm.getComponents(realm.getId(), UserStorageProvider.class.getName());
+        List<ComponentModel> components = realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .collect(Collectors.toList());
         if (components.size() != 1) {
             log.errorf("Expected 1 LDAP Provider, but found: %d providers", components.size());
             throw new HandledException();
@@ -130,17 +132,16 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
 
 
     private ComponentModel getMapperModel(RealmModel realm, ComponentModel ldapModel, String mapperName) {
-        List<ComponentModel> ldapMappers = realm.getComponents(ldapModel.getId(), LDAPStorageMapper.class.getName());
-        Optional<ComponentModel> optional = ldapMappers.stream().filter((ComponentModel mapper) -> {
-            return mapper.getName().equals(mapperName);
-        }).findFirst();
+        Optional<ComponentModel> first = realm.getComponentsStream(ldapModel.getId(), LDAPStorageMapper.class.getName())
+                .filter(component -> Objects.equals(component.getName(), mapperName))
+                .findFirst();
 
-        if (!optional.isPresent()) {
+        if (first.isPresent()) {
+            return first.get();
+        } else {
             log.errorf("Not present LDAP mapper called '%s'", mapperName);
-            throw new HandledException();
+            throw new RuntimeException();
         }
-
-        return optional.get();
     }
 
 
@@ -148,14 +149,6 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
     private static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
                                          final String firstName, final String lastName, final String email,
                                          String groupsDN, int startOffsetGroups, int countGroups) {
-//        LDAPObject ldapUser = new LDAPObject();
-//        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-//        ldapUser.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
-//        ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
-//        LDAPUtils.computeAndSetDn(ldapConfig, ldapUser);
-//
-//        ldapUser.setSingleAttribute("uid", )
-//        ldapProvider.getLdapIdentityStore().add(ldapUser);
 
         UserModel helperUser = new UserModelDelegate(null) {
 
@@ -180,20 +173,26 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
             }
 
             @Override
-            public List<String> getAttribute(String name) {
-                if ("street".equals(name)) {
-
-                    List<String> groupNamesList = new ArrayList<>();
-                    for (int i=startOffsetGroups ; i<startOffsetGroups + countGroups ; i++) {
+            public Stream<String> getAttributeStream(String name) {
+                if (UserModel.FIRST_NAME.equals(name)) {
+                    return Stream.of(firstName);
+                } else if (UserModel.LAST_NAME.equals(name)) {
+                    return Stream.of(lastName);
+                } else if (UserModel.EMAIL.equals(name)) {
+                    return Stream.of(email);
+                } else if (UserModel.USERNAME.equals(name)) {
+                    return Stream.of(username);
+                } else if ("street".equals(name)) {
+                    Stream.Builder<String> builder = Stream.builder();
+                    for (int i = startOffsetGroups; i < startOffsetGroups + countGroups; i++) {
                         String groupName = "group" + i;
                         LDAPDn groupDn = LDAPDn.fromString(groupsDN);
                         groupDn.addFirst("cn", groupName);
-                        groupNamesList.add(groupDn.toString());
+                        builder.add(groupDn.toString());
                     }
-                    return groupNamesList;
-
+                    return builder.build();
                 } else {
-                    return Collections.emptyList();
+                    return Stream.empty();
                 }
             }
         };

@@ -82,18 +82,14 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
             removeAllModelGroups(appRealm);
 
             GroupModel group1 = appRealm.createGroup("group1");
-            appRealm.moveGroup(group1, null);
             group1.setSingleAttribute(descriptionAttrName, "group1 - description1");
 
-            GroupModel group11 = appRealm.createGroup("group11");
-            appRealm.moveGroup(group11, group1);
+            GroupModel group11 = appRealm.createGroup("group11", group1);
 
-            GroupModel group12 = appRealm.createGroup("group12");
-            appRealm.moveGroup(group12, group1);
+            GroupModel group12 = appRealm.createGroup("group12", group1);
             group12.setSingleAttribute(descriptionAttrName, "group12 - description12");
 
             GroupModel group2 = appRealm.createGroup("group2");
-            appRealm.moveGroup(group2, null);
 
         });
     }
@@ -154,7 +150,7 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
             GroupModel kcGroup12 = KeycloakModelUtils.findGroupByPath(realm, "/group12");
             GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(realm, "/group2");
 
-            Assert.assertEquals(0, kcGroup1.getSubGroups().size());
+            Assert.assertEquals(0, kcGroup1.getSubGroupsStream().count());
 
             Assert.assertEquals("group1 - description1", kcGroup1.getFirstAttribute(descriptionAttrName));
             Assert.assertNull(kcGroup11.getFirstAttribute(descriptionAttrName));
@@ -216,7 +212,7 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
             GroupModel kcGroup12 = KeycloakModelUtils.findGroupByPath(realm, "/group1/group12");
             GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(realm, "/group2");
 
-            Assert.assertEquals(2, kcGroup1.getSubGroups().size());
+            Assert.assertEquals(2, kcGroup1.getSubGroupsStream().count());
 
             Assert.assertEquals("group1 - description1", kcGroup1.getFirstAttribute(descriptionAttrName));
             Assert.assertNull(kcGroup11.getFirstAttribute(descriptionAttrName));
@@ -230,9 +226,7 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
 
 
     private static void removeAllModelGroups(RealmModel appRealm) {
-        for (GroupModel group : appRealm.getTopLevelGroups()) {
-            appRealm.removeGroup(group);
-        }
+        appRealm.getTopLevelGroupsStream().forEach(appRealm::removeGroup);
     }
 
     private static void testDropNonExisting(KeycloakSession session, LDAPTestContext ctx, ComponentModel mapperModel) {

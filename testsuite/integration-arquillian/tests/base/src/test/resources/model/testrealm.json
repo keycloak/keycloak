@@ -24,6 +24,7 @@
             "alias" : "google1",
             "enabled": true,
             "config": {
+                "syncMode": "IMPORT",
                 "clientId": "googleId",
                 "clientSecret": "googleSecret"
             }
@@ -33,6 +34,7 @@
             "alias" : "facebook1",
             "enabled": true,
             "config": {
+                "syncMode": "IMPORT",
                 "clientId": "facebookId",
                 "clientSecret": "facebookSecret"
             }
@@ -42,6 +44,7 @@
             "alias" : "twitter1",
             "enabled": true,
             "config": {
+                "syncMode": "IMPORT",
                 "clientId": "twitterId",
                 "clientSecret": "twitterSecret"
             }
@@ -126,7 +129,7 @@
             "createdTimestamp" : 123654,
             "notBefore": 159,
             "attributes": {
-                "email": "bburke@redhat.com"
+                "old-email": "bburke@redhat.com"
             },
             "credentials": [
                 {
@@ -147,6 +150,20 @@
                 {
                     "type": "password",
                     "value": "clientpassword"
+                }
+            ]
+        },
+        {
+            "username": "hashedpassworduser",
+            "createdTimestamp" : "123655",
+            "enabled": true,
+            "credentials": [
+                {
+                    "id": "b0c22f34-f6fb-4165-8fd3-54d3cb4599d1",
+                    "type": "password",
+                    "createdDate": 1576751136227,
+                    "secretData": "{\"value\":\"pass\",\"salt\":\"__SALT__\"}",
+                    "credentialData": "{\"hashIterations\":1234,\"algorithm\":\"pbkdf2-sha256\"}"
                 }
             ]
         },
@@ -213,9 +230,13 @@
             ]
         },
         {
-            "username": "my-service-user",
+            "username": "service-account-otherapp",
             "enabled": true,
-            "serviceAccountClientId": "OtherApp"
+            "serviceAccountClientId": "OtherApp",
+            "realmRoles" : [ "user" ],
+            "applicationRoles": {
+                "OtherApp": [  "otherapp-user", "otherapp-admin" ]
+            }
         }
     ],
     "clients": [
@@ -239,6 +260,7 @@
             "standardFlowEnabled": false,
             "directAccessGrantsEnabled": false,
             "serviceAccountsEnabled": true,
+            "authorizationServicesEnabled" : true,
             "clientAuthenticatorType": "client-jwt",
             "authenticationFlowBindingOverrides": {
                 "browser": "73dcb1e4-2c7c-4494-825d-f2677cbc114c"
@@ -257,7 +279,68 @@
                         "Claim JSON Type" : "String"
                     }
                 }
-            ]
+            ],
+            "authorizationSettings" : {
+                "allowRemoteResourceManagement": true,
+                "policyEnforcementMode": "ENFORCING",
+                "resources": [
+                    {
+                        "name": "Default Resource",
+                        "type": "urn:test:resources:default",
+                        "ownerManagedAccess": false,
+                        "attributes": {},
+                        "uris": [
+                            "/*"
+                        ]
+                    },
+                    {
+                        "name": "test",
+                        "type": "test",
+                        "ownerManagedAccess": true,
+                        "displayName": "test",
+                        "attributes": {},
+                        "uris": [
+                            "/test"
+                        ]
+                    }
+                ],
+                "policies": [
+                    {
+                        "name": "User Policy",
+                        "description": "User policy test",
+                        "type": "user",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "users": "[\"wburke\"]"
+                        }
+                    },
+                    {
+                        "name": "Default Permission",
+                        "description": "A permission that applies to the default resource type",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "defaultResourceType": "urn:test:resources:default",
+                            "applyPolicies": "[\"User Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "test-permission",
+                        "description": "test-permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"test\"]",
+                            "applyPolicies": "[\"User Policy\"]"
+                        }
+                    }
+                ],
+                "scopes": [],
+                "decisionStrategy": "UNANIMOUS"
+            }
         },
         {
             "clientId": "test-app-authz",

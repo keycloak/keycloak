@@ -18,6 +18,7 @@ package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
@@ -33,6 +34,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -45,10 +48,12 @@ import java.security.spec.KeySpec;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Page
@@ -120,6 +125,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5282
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testPasswordNotRehasedUnchangedIterations() {
         setPasswordPolicy("");
 
@@ -235,8 +241,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     private CredentialModel fetchCredentials(String username) {
         return testingClient.server("test").fetch(session -> {
             RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserByUsername(username, realm);
-            return session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialRepresentation.PASSWORD).get(0);
+            UserModel user = session.users().getUserByUsername(realm, username);
+            return session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, CredentialRepresentation.PASSWORD)
+                    .findFirst().orElse(null);
         }, CredentialModel.class);
     }
 

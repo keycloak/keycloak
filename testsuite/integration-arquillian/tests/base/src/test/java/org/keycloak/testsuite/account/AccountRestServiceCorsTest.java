@@ -20,29 +20,29 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.WebDriverLogDumper;
-import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.JavascriptExecutor;
 
 import java.io.IOException;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180/auth";
@@ -72,6 +72,7 @@ public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setEditUsernameAllowed(false);
     }
 
     @Rule
@@ -81,69 +82,84 @@ public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
     public void testGetProfile() throws IOException, InterruptedException {
         driver.navigate().to(VALID_CORS_URL);
 
-        doJsGet(executor, getAccountUrl(), tokenUtil.getToken(), true);
+        doXhr(executor, getAccountUrl(), tokenUtil.getToken(), null, true);
     }
 
     @Test
     public void testGetProfileInvalidOrigin() throws IOException, InterruptedException {
         driver.navigate().to(INVALID_CORS_URL);
 
-        doJsGet(executor, getAccountUrl(), tokenUtil.getToken(), false);
+        doXhr(executor, getAccountUrl(), tokenUtil.getToken(), null, false);
     }
 
     @Test
     public void testUpdateProfile() throws IOException {
         driver.navigate().to(VALID_CORS_URL);
 
-        doJsPost(executor, getAccountUrl(), tokenUtil.getToken(), "{ \"firstName\" : \"Bob\" }", true);
+        doXhr(executor, getAccountUrl(), tokenUtil.getToken(), "{ \"firstName\" : \"Bob\" }", true);
     }
 
     @Test
     public void testUpdateProfileInvalidOrigin() throws IOException {
         driver.navigate().to(INVALID_CORS_URL);
 
-        doJsPost(executor, getAccountUrl(), tokenUtil.getToken(), "{ \"firstName\" : \"Bob\" }", false);
+        doXhr(executor, getAccountUrl(), tokenUtil.getToken(), "{ \"firstName\" : \"Bob\" }", false);
+    }
+
+    @Test
+    public void testErrorResponse() {
+        driver.navigate().to(VALID_CORS_URL);
+
+        Result result = doXhr(executor, getAccountUrl(), tokenUtil.getToken(), "{ \"username\" : \"vmuzikar\" }", true);
+        assertEquals(400, result.getStatus());
+        assertThat(result.getResult(), containsString("readOnlyUsernameMessage"));
+    }
+
+    @Test
+    public void testErrorResponseInvalidOrigin() {
+        driver.navigate().to(INVALID_CORS_URL);
+
+        doXhr(executor, getAccountUrl(), tokenUtil.getToken(), "{ \"username\" : \"vmuzikar\" }", false);
+    }
+
+    @Test
+    public void testGetVersionedApi() {
+        driver.navigate().to(VALID_CORS_URL);
+
+        doXhr(executor, getAccountUrl() + "/" + AccountRestApiVersion.DEFAULT.getStrVersion(), tokenUtil.getToken(), null, true);
+    }
+
+    @Test
+    public void testGetVersionedApiInvalidOrigin() {
+        driver.navigate().to(INVALID_CORS_URL);
+
+        doXhr(executor, getAccountUrl() + "/" + AccountRestApiVersion.DEFAULT.getStrVersion(), tokenUtil.getToken(), null, false);
     }
 
     private String getAccountUrl() {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account";
     }
 
-    private Result doJsGet(JavascriptExecutor executor, String url, String token, boolean expectAllowed) {
+    private Result doXhr(JavascriptExecutor executor, String url, String token, String postData, boolean expectAllowed) {
         String js = "var r = new XMLHttpRequest();" +
-                "var r = new XMLHttpRequest();" +
-                "r.open('GET', '" + url + "', false);" +
-                "r.setRequestHeader('Accept','application/json');" +
-                "r.setRequestHeader('Authorization','bearer " + token + "');" +
-                "r.send();" +
-                "return r.status + ':::' + r.responseText";
-        return doXhr(executor, js, expectAllowed);
-    }
-
-    private Result doJsPost(JavascriptExecutor executor, String url, String token, String data, boolean expectAllowed) {
-        String js = "var r = new XMLHttpRequest();" +
-                "var r = new XMLHttpRequest();" +
-                "r.open('POST', '" + url + "', false);" +
+                "r.open('" + (postData == null ? "GET" : "POST") + "', '" + url + "', false);" +
                 "r.setRequestHeader('Accept','application/json');" +
                 "r.setRequestHeader('Content-Type','application/json');" +
                 "r.setRequestHeader('Authorization','bearer " + token + "');" +
-                "r.send('" + data + "');" +
+                "r.send(" + (postData == null ? "" : "'" + postData + "'") + ");" +
                 "return r.status + ':::' + r.responseText";
-        return doXhr(executor, js, expectAllowed);
-    }
 
-    private Result doXhr(JavascriptExecutor executor, String js, boolean expectAllowed) {
         Result result = null;
         Throwable error = null;
         try {
             String response = (String) executor.executeScript(js);
-            String r[] = response.split(":::");
+            String[] r = response.split(":::");
             result = new Result(Integer.parseInt(r[0]), r.length == 2 ? r[1] : null);
         } catch (Throwable t ) {
             error = t;
         }
 
-        if (result == null || result.getStatus() != 200 || error != null) {
+        if (error != null) {
             if (expectAllowed) {
                 throw new AssertionError("Cors request failed: " + WebDriverLogDumper.dumpBrowserLogs(driver));
             } else {

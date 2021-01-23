@@ -36,7 +36,7 @@ public class OIDCLogin extends Login {
     }
 
     public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
+        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
     }
 
 }

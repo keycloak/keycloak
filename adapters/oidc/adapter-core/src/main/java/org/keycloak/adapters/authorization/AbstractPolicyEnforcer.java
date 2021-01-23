@@ -59,14 +59,17 @@ public abstract class AbstractPolicyEnforcer {
 
     public AuthorizationContext authorize(OIDCHttpFacade httpFacade) {
         EnforcementMode enforcementMode = getEnforcerConfig().getEnforcementMode();
+        KeycloakSecurityContext securityContext = httpFacade.getSecurityContext();
 
         if (EnforcementMode.DISABLED.equals(enforcementMode)) {
+            if (securityContext == null) {
+                httpFacade.getResponse().sendError(401, "Invalid bearer");
+            }
             return createEmptyAuthorizationContext(true);
         }
 
         Request request = httpFacade.getRequest();
         PathConfig pathConfig = getPathConfig(request);
-        KeycloakSecurityContext securityContext = httpFacade.getSecurityContext();
 
         if (securityContext == null) {
             if (!isDefaultAccessDeniedUri(request)) {

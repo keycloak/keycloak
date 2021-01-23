@@ -29,11 +29,11 @@ import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
 public class GroupOperations {
 
     public static String getIdFromName(String rootUrl, String realm, String auth, String groupname) {
-        return getIdForType(rootUrl, realm, auth, "groups", "name", groupname);
+        return getIdForType(rootUrl, realm, auth, "groups", "name", groupname, "name");
     }
 
     public static String getIdFromPath(String rootUrl, String realm, String auth, String path) {
-        return getIdForType(rootUrl, realm, auth, "groups", "path", path);
+        return getIdForType(rootUrl, realm, auth, "groups", "path", path, "path");
     }
 
     public static void addRealmRoles(String rootUrl, String realm, String auth, String groupid, List<?> roles) {

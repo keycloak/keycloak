@@ -21,12 +21,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.List;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class TransactionsTest extends AbstractKeycloakTest {
 
     @Test

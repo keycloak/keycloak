@@ -48,8 +48,8 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
         configProperties.add(attr);
     }
 
-    protected Map<String, String> userPasswords = new ConcurrentHashMap<>();
-    protected ConcurrentMap<String, Set<String>> userGroups = new ConcurrentHashMap<>();
+    private final Map<String, String> userPasswords = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<String>> userGroups = new ConcurrentHashMap<>();
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -79,5 +79,10 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
     @Override
     public void close() {
 
+    }
+
+    public void clear() {
+        userPasswords.clear();
+        userGroups.clear();
     }
 }

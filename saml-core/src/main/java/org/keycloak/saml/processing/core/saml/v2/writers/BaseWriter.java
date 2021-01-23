@@ -48,6 +48,8 @@ import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
@@ -79,10 +81,12 @@ public class BaseWriter {
      *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
-    public void write(NameIDType nameIDType, QName tag) throws ProcessingException {
+    public void write(NameIDType nameIDType, QName tag, boolean writeNamespace) throws ProcessingException {
         StaxUtil.writeStartElement(writer, tag.getPrefix(), tag.getLocalPart(), tag.getNamespaceURI());
 
-        StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+        if (writeNamespace) {
+            StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+        }
 
         URI format = nameIDType.getFormat();
         if (format != null) {
@@ -111,6 +115,13 @@ public class BaseWriter {
 
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
+    }
+
+    /**
+     * Write {@code NameIDType} to stream without writing a namespace
+     */
+    public void write(NameIDType nameIDType, QName tag) throws ProcessingException {
+        this.write(nameIDType, tag, false);
     }
 
     /**
@@ -172,11 +183,24 @@ public class BaseWriter {
                         writeStringAttributeValue((String) attributeValue);
                     } else if (attributeValue instanceof NameIDType) {
                     	writeNameIDTypeAttributeValue((NameIDType) attributeValue);
+                    } else if (attributeValue instanceof XMLGregorianCalendar) {
+                        writeDateAttributeValue((XMLGregorianCalendar) attributeValue);
+                    } else if (attributeValue instanceof Element) {
+                        writeElementAttributeValue((Element) attributeValue);
                     } else
                         throw logger.writerUnsupportedAttributeValueError(attributeValue.getClass().getName());
+                } else {
+                    writeStringAttributeValue(null);
                 }
             }
         }
+    }
+
+    private void writeElementAttributeValue(Element attributeValue) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ATTRIBUTE_VALUE.get(),
+                ASSERTION_NSURI.get());
+        StaxUtil.writeDOMElement(writer, attributeValue);
+        StaxUtil.writeEndElement(writer);
     }
 
     public void writeNameIDTypeAttributeValue(NameIDType attributeValue) throws ProcessingException {
@@ -191,7 +215,29 @@ public class BaseWriter {
         StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
         StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
         StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:string");
-        StaxUtil.writeCharacters(writer, attributeValue);
+
+        if (attributeValue == null) {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
+        } else {
+            StaxUtil.writeCharacters(writer, attributeValue);
+        }
+
+        StaxUtil.writeEndElement(writer);
+    }
+
+    public void writeDateAttributeValue(XMLGregorianCalendar attributeValue) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ATTRIBUTE_VALUE.get(), ASSERTION_NSURI.get());
+
+        StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
+        StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
+        StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
+
+        if (attributeValue == null) {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
+        } else {
+            StaxUtil.writeCharacters(writer, attributeValue.toString());
+        }
+
         StaxUtil.writeEndElement(writer);
     }
 

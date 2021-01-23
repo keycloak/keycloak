@@ -27,6 +27,8 @@ public final class OIDCConfigAttributes {
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST = "request only";
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST_URI = "request_uri only";
 
+    public static final String REQUEST_URIS = "request.uris";
+
     public static final String JWKS_URL = "jwks.url";
 
     public static final String USE_JWKS_URL = "use.jwks.url";
@@ -44,8 +46,21 @@ public final class OIDCConfigAttributes {
     public static final String ACCESS_TOKEN_SIGNED_RESPONSE_ALG = "access.token.signed.response.alg";
 
     public static final String ACCESS_TOKEN_LIFESPAN = "access.token.lifespan";
-
+    public static final String CLIENT_SESSION_IDLE_TIMEOUT = "client.session.idle.timeout";
+    public static final String CLIENT_SESSION_MAX_LIFESPAN = "client.session.max.lifespan";
+    public static final String CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT = "client.offline.session.idle.timeout";
+    public static final String CLIENT_OFFLINE_SESSION_MAX_LIFESPAN = "client.offline.session.max.lifespan";
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";
+
+    public static final String TOKEN_ENDPOINT_AUTH_SIGNING_ALG = "token.endpoint.auth.signing.alg";
+
+    public static final String BACKCHANNEL_LOGOUT_URL = "backchannel.logout.url";
+
+    public static final String BACKCHANNEL_LOGOUT_SESSION_REQUIRED = "backchannel.logout.session.required";
+    
+    public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
+
+    public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
 
     private OIDCConfigAttributes() {
     }

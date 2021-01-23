@@ -136,7 +136,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         return new DefaultUserIdentity(theSubject, principal, theRoles);
     }
 
-    private class DummyLoginService implements LoginService {
+    private static class DummyLoginService implements LoginService {
         @Override
         public String getName() {
             return null;

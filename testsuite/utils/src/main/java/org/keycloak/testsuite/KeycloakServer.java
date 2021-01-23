@@ -22,9 +22,8 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
-import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.Version;
@@ -33,7 +32,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -139,7 +137,9 @@ public class KeycloakServer {
         File f = new File(System.getProperty("user.home"), ".keycloak-server.properties");
         if (f.isFile()) {
             Properties p = new Properties();
-            p.load(new FileInputStream(f));
+            try (FileInputStream is = new FileInputStream(f)) {
+                p.load(is);
+            }
             System.getProperties().putAll(p);
         }
 
@@ -376,6 +376,7 @@ public class KeycloakServer {
         long start = System.currentTimeMillis();
 
         ResteasyDeployment deployment = new ResteasyDeployment();
+
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()
@@ -401,15 +402,11 @@ public class KeycloakServer {
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
-            ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
+            // Note that the ResteasyServlet is configured via server.undertowDeployment(...);
+            // KEYCLOAK-14178
+            deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
-            restEasyDispatcher.addInitParam("resteasy.servlet.mapping.prefix", "/");
-            restEasyDispatcher.setAsyncSupported(true);
-
-            di.addServlet(restEasyDispatcher);
-
-            FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
-
+            FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class);
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);
@@ -417,7 +414,7 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
+            sessionFactory = KeycloakApplication.getSessionFactory();
 
             setupDevConfig();
 

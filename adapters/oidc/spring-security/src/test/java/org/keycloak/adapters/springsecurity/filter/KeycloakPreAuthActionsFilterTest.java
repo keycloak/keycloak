@@ -59,6 +59,7 @@ public class KeycloakPreAuthActionsFilterTest {
         when(applicationContext.getBean(AdapterDeploymentContext.class)).thenReturn(deploymentContext);
         when(deploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(deployment);
         when(preAuthActionsHandlerFactory.createPreAuthActionsHandler(any(HttpFacade.class))).thenReturn(preAuthActionsHandler);
+        when(deployment.isConfigured()).thenReturn(true);
         filter.initFilterBean();
     }
     

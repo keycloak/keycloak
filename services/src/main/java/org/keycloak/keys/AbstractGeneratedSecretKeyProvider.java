@@ -26,8 +26,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 
 import javax.crypto.SecretKey;
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -59,7 +58,7 @@ public abstract class AbstractGeneratedSecretKeyProvider implements KeyProvider 
     }
 
     @Override
-    public List<KeyWrapper> getKeys() {
+    public Stream<KeyWrapper> getKeysStream() {
         KeyWrapper key = new KeyWrapper();
 
         key.setProviderId(model.getId());
@@ -72,7 +71,7 @@ public abstract class AbstractGeneratedSecretKeyProvider implements KeyProvider 
         key.setStatus(status);
         key.setSecretKey(secretKey);
 
-        return Collections.singletonList(key);
+        return Stream.of(key);
     }
 
     @Override

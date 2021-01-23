@@ -17,6 +17,10 @@
 
 package org.keycloak;
 
+import org.keycloak.common.util.DelegatingSerializationFilter;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.security.Principal;
 
@@ -62,5 +66,15 @@ public class KeycloakPrincipal<T extends KeycloakSecurityContext> implements Pri
     @Override
     public String toString() {
         return name;
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        DelegatingSerializationFilter.builder()
+                .addAllowedClass(KeycloakPrincipal.class)
+                .addAllowedClass(KeycloakSecurityContext.class)
+                .addAllowedPattern("org.keycloak.adapters.RefreshableKeycloakSecurityContext")
+                .setFilter(in);
+
+        in.defaultReadObject();
     }
 }

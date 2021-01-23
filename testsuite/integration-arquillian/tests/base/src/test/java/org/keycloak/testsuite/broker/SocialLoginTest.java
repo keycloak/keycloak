@@ -8,15 +8,19 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -26,6 +30,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -52,7 +57,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -64,9 +68,15 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeTrue;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+import org.keycloak.testsuite.util.AdminClientUtil;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK_INCLUDE_BIRTHDAY;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB_PRIVATE_EMAIL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
@@ -82,10 +92,14 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
 
+import com.google.common.collect.ImmutableMap;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static final String SOCIAL_CONFIG = "social.config";
@@ -105,6 +119,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         GOOGLE_HOSTED_DOMAIN("google", "google-hosted-domain", GoogleLoginPage.class),
         GOOGLE_NON_MATCHING_HOSTED_DOMAIN("google", "google-hosted-domain", GoogleLoginPage.class),
         FACEBOOK("facebook", FacebookLoginPage.class),
+        FACEBOOK_INCLUDE_BIRTHDAY("facebook", FacebookLoginPage.class),
         GITHUB("github", GitHubLoginPage.class),
         GITHUB_PRIVATE_EMAIL("github", "github-private-email", GitHubLoginPage.class),
         TWITTER("twitter", TwitterLoginPage.class),
@@ -195,7 +210,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static void setupClientExchangePermissions(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(REALM);
-        ClientModel client = session.realms().getClientByClientId(EXCHANGE_CLIENT, realm);
+        ClientModel client = session.clients().getClientByClientId(realm, EXCHANGE_CLIENT);
         // lazy init
         if (client != null) return;
         client = realm.addClient(EXCHANGE_CLIENT);
@@ -214,11 +229,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientPolicyRep, server);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientPolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        for (IdentityProviderModel idp : realm.getIdentityProviders()) {
+        realm.getIdentityProvidersStream().forEach(idp -> {
             management.idps().setPermissionsEnabled(idp, true);
             management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
-        }
-
+        });
     }
 
     @Test
@@ -305,10 +319,21 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @UncaughtServerErrorExpected
+    public void facebookLoginWithEnhancedScope() throws InterruptedException {
+        setTestProvider(FACEBOOK_INCLUDE_BIRTHDAY);
+        addBirthdayMapper();
+        performLogin();
+        assertAccount();
+        assertBirthdayAttribute();
+        testTokenExchange();
+    }
+
+    @Test
     public void instagramLogin() throws InterruptedException {
         setTestProvider(INSTAGRAM);
         performLogin();
-        assertUpdateProfile(false, false, true);
+        assertUpdateProfile(true, true, true);
         assertAccount();
     }
 
@@ -367,7 +392,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     public IdentityProviderRepresentation buildIdp(Provider provider) {
-        IdentityProviderRepresentation idp = IdentityProviderBuilder.create().alias(provider.id()).providerId(provider.id()).build();
+        IdentityProviderRepresentation idp = IdentityProviderBuilder.create()
+                .alias(provider.id())
+                .providerId(provider.id())
+                .build();
         idp.setEnabled(true);
         idp.setStoreToken(true);
         idp.getConfig().put("clientId", getConfig(provider, "clientId"));
@@ -394,7 +422,27 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == PAYPAL) {
             idp.getConfig().put("sandbox", getConfig(provider, "sandbox"));
         }
+        if (provider == FACEBOOK_INCLUDE_BIRTHDAY) {
+            idp.getConfig().put("defaultScope", "public_profile,email,user_birthday");
+            idp.getConfig().put("fetchedFields", "birthday");
+        }
         return idp;
+    }
+
+    private void addBirthdayMapper() {
+        IdentityProviderResource identityProvider = adminClient.realm(REALM).identityProviders().get(currentTestProvider.id);
+        IdentityProviderRepresentation identityProviderRepresentation = identityProvider.toRepresentation();
+        //Add birthday mapper
+        IdentityProviderMapperRepresentation mapperRepresentation = new IdentityProviderMapperRepresentation();
+        mapperRepresentation.setName(currentTestProvider.id + "-birthday-mapper");
+        mapperRepresentation.setIdentityProviderAlias(identityProviderRepresentation.getAlias());
+        mapperRepresentation.setIdentityProviderMapper(currentTestProvider.id + "-user-attribute-mapper");
+        mapperRepresentation.setConfig(ImmutableMap.<String, String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.IMPORT.toString())
+                .put(AbstractJsonUserAttributeMapper.CONF_JSON_FIELD, "birthday")
+                .put(AbstractJsonUserAttributeMapper.CONF_USER_ATTRIBUTE, currentTestProvider.id + "_birthday")
+                .build());
+        identityProvider.addMapper(mapperRepresentation).close();
     }
 
     private String getConfig(Provider provider, String key) {
@@ -442,6 +490,15 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(getConfig("profile.email"), accountPage.getEmail());
     }
 
+    private void assertBirthdayAttribute() {
+        List<UserRepresentation> users = adminClient.realm(REALM).users().search(null, null, null);
+        assertEquals(1, users.size());
+        assertNotNull(users.get(0).getAttributes());
+        final String birthdayAttributeKey = currentTestProvider.id + "_birthday";
+        assertNotNull(users.get(0).getAttributes().get(birthdayAttributeKey));
+        assertEquals(getConfig("profile.birthday"), users.get(0).getAttributes().get(birthdayAttributeKey).get(0));
+    }
+
     private void assertUpdateProfile(boolean firstName, boolean lastName, boolean email) {
         assertTrue(URLUtils.currentUrlDoesntStartWith(accountPage.toString()));
 
@@ -480,7 +537,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private AccessTokenResponse checkFeature(int expectedStatusCode, String username) {
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         Response response = null;
         try {
             testingClient.server().run(SocialLoginTest::setupClientExchangePermissions);
@@ -518,7 +575,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(200, tokenResp.getStatus());
 
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse tokenResponse = checkFeature(200, username);

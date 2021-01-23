@@ -227,7 +227,7 @@ public class ScopeService {
         Scope model = storeFactory.getScopeStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
-            return Response.status(Status.OK).build();
+            return Response.status(Status.NO_CONTENT).build();
         }
 
         return Response.ok(toRepresentation(model)).build();

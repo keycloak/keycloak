@@ -148,7 +148,7 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
             return false;
         }
 
-        if (! idMapper.hasSession(session.getID())) {
+        if (! idMapper.hasSession(session.getID()) && ! idMapperUpdater.refreshMapping(idMapper, session.getID())) {
             log.debugf("Session %s has expired on some other node", session.getID());
             session.setAttachment(SamlSession.class.getName(), null);
             return false;

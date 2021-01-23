@@ -5,7 +5,9 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -22,7 +24,8 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldObtainSecret() throws Exception {
         //given
-        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.REALM_UNDERSCORE_KEY.getVaultKeyResolver()));
 
         //when
         VaultRawSecret secret1 = provider.obtainSecret("key1");
@@ -36,8 +39,8 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldReplaceUnderscoreWithTwoUnderscores() throws Exception {
         //given
-        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test_realm");
-
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test_realm",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.REALM_UNDERSCORE_KEY.getVaultKeyResolver()));
         //when
         VaultRawSecret secret1 = provider.obtainSecret("underscore_key1");
 
@@ -50,7 +53,9 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldReturnEmptyOptionalOnMissingSecret() throws Exception {
         //given
-        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.REALM_UNDERSCORE_KEY.getVaultKeyResolver()));
+
 
         //when
         VaultRawSecret secret = provider.obtainSecret("non-existing-key");
@@ -63,7 +68,8 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldOperateOnNonExistingVaultDirectory() throws Exception {
         //given
-        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.NON_EXISTING.getPath(), "test");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.NON_EXISTING.getPath(), "test",
+            Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.REALM_UNDERSCORE_KEY.getVaultKeyResolver()));
 
         //when
         VaultRawSecret secret = provider.obtainSecret("non-existing-key");
@@ -74,18 +80,45 @@ public class PlainTextVaultProviderTest {
     }
 
     @Test
+    public void shouldOperateOnRealmDirectory() throws Exception {
+        //given
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.REALM_FILESEPARATOR_KEY.getVaultKeyResolver()));
+
+        //when
+        VaultRawSecret secret = provider.obtainSecret("key2");
+
+        //then
+        assertNotNull(secret);
+        assertNotNull(secret.get().get());
+        assertThat(secret, secretContains("secret2"));
+    }
+
+    @Test
+    public void shouldObtainSecretWithMultipleResolvers() throws Exception {
+        //given
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.REALM_UNDERSCORE_KEY.getVaultKeyResolver(),
+                        AbstractVaultProviderFactory.AvailableResolvers.REALM_FILESEPARATOR_KEY.getVaultKeyResolver()));
+
+        //when (there's no test_key2 file matching the realm_underscore_key resolver, but we have a test/key2 file that matches the realm_fileseparator_key resolver)
+        VaultRawSecret secret = provider.obtainSecret("key2");
+
+        //then
+        assertNotNull(secret);
+        assertNotNull(secret.get().get());
+        assertThat(secret, secretContains("secret2"));
+    }
+
+    @Test
     public void shouldReflectChangesInASecretFile() throws Exception {
         //given
         Path temporarySecretFile = Files.createTempFile("vault", null);
         Path vaultDirectory = temporarySecretFile.getParent();
         String secretName = temporarySecretFile.getFileName().toString();
 
-        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(vaultDirectory, "ignored") {
-            @Override
-            protected Path resolveSecretPath(String vaultSecretId) {
-                return vaultDirectory.resolve(vaultSecretId);
-            }
-        };
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(vaultDirectory, "ignored",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.KEY_ONLY.getVaultKeyResolver()));
 
         //when
         String secret1AsString = null;
@@ -113,22 +146,19 @@ public class PlainTextVaultProviderTest {
         Path vaultDirectory = temporarySecretFile.getParent();
         String secretName = temporarySecretFile.getFileName().toString();
 
-        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(vaultDirectory, "ignored") {
-            @Override
-            protected Path resolveSecretPath(String vaultSecretId) {
-                return vaultDirectory.resolve(vaultSecretId);
-            }
-        };
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(vaultDirectory, "ignored",
+                Arrays.asList(AbstractVaultProviderFactory.AvailableResolvers.KEY_ONLY.getVaultKeyResolver()));
 
         Files.write(temporarySecretFile, "secret".getBytes());
 
         //when
         VaultRawSecret secretAfterFirstRead = provider.obtainSecret(secretName);
+        assertThat(secretAfterFirstRead, secretContains("secret"));
         secretAfterFirstRead.close();
         VaultRawSecret secretAfterSecondRead = provider.obtainSecret(secretName);
 
         //then
-        assertThat(secretAfterFirstRead, secretContains("secret"));
+        assertThat(secretAfterFirstRead, not(secretContains("secret")));
         assertThat(secretAfterSecondRead, secretContains("secret"));
     }
 }

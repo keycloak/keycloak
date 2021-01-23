@@ -23,6 +23,7 @@
 
 <div>
     <button onclick="keycloak.login()">Login</button>
+    <button onclick="keycloak.login({ action: 'UPDATE_PASSWORD' })">Update Password</button>
     <button onclick="keycloak.logout()">Logout</button>
     <button onclick="keycloak.register()">Register</button>
     <button onclick="keycloak.accountManagement()">Account</button>
@@ -89,13 +90,13 @@
     }
 
     function refreshToken(minValidity) {
-        keycloak.updateToken(minValidity).success(function(refreshed) {
+        keycloak.updateToken(minValidity).then(function(refreshed) {
             if (refreshed) {
                 output(keycloak.tokenParsed);
             } else {
                 output('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
             }
-        }).error(function() {
+        }).catch(function() {
             output('Failed to refresh token');
         });
     }
@@ -155,15 +156,26 @@
         event('Access token expired.');
     };
 
+    keycloak.onActionUpdate = function (status) {
+        switch (status) {
+            case 'success':
+                event('Action completed successfully'); break;
+            case 'cancelled':
+                event('Action cancelled by user'); break;
+            case 'error':
+                event('Action failed'); break;
+        }
+    };
+
     // Flow can be changed to 'implicit' or 'hybrid', but then client must enable implicit flow in admin console too 
     var initOptions = {
         responseMode: 'fragment',
         flow: 'standard'
     };
 
-    keycloak.init(initOptions).success(function(authenticated) {
+    keycloak.init(initOptions).then(function(authenticated) {
         output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
-    }).error(function() {
+    }).catch(function() {
         output('Init Error');
     });
 

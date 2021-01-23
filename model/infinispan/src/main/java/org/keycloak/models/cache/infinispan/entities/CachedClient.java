@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -42,6 +43,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String realm;
     protected Set<String> redirectUris = new HashSet<>();
     protected boolean enabled;
+    protected boolean alwaysDisplayInConsole;
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationToken;
@@ -59,7 +61,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String managementUrl;
     protected String rootUrl;
     protected String baseUrl;
-    protected List<String> defaultRoles = new LinkedList<>();
     protected boolean bearerOnly;
     protected boolean consentRequired;
     protected boolean standardFlowEnabled;
@@ -81,6 +82,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         this.realm = realm.getId();
         enabled = model.isEnabled();
+        alwaysDisplayInConsole = model.isAlwaysDisplayInConsole();
         protocol = model.getProtocol();
         attributes.putAll(model.getAttributes());
         authFlowBindings.putAll(model.getAuthenticationFlowBindingOverrides());
@@ -90,17 +92,12 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         fullScopeAllowed = model.isFullScopeAllowed();
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
-        for (RoleModel role : model.getScopeMappings())  {
-            scope.add(role.getId());
-        }
-        for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
-            this.protocolMappers.add(mapper);
-        }
+        scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
+        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();
         baseUrl = model.getBaseUrl();
-        defaultRoles.addAll(model.getDefaultRoles());
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
         standardFlowEnabled = model.isStandardFlowEnabled();
@@ -143,6 +140,10 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
     }
 
     public String getClientAuthenticatorType() {
@@ -207,10 +208,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public String getBaseUrl() {
         return baseUrl;
-    }
-
-    public List<String> getDefaultRoles() {
-        return defaultRoles;
     }
 
     public boolean isBearerOnly() {

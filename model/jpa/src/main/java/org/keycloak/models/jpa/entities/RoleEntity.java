@@ -38,9 +38,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -55,14 +54,16 @@ import java.util.Set;
         @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
-        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.client = :client"),
-        @NamedQuery(name="getClientRoleIds", query="select role.id from RoleEntity role where role.client.id = :client"),
-        @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.client = :client"),
-        @NamedQuery(name="getClientRoleIdByName", query="select role.id from RoleEntity role where role.name = :name and role.client.id = :client"),
-        @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm = :realm"),
+        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.clientId = :client order by role.name"),
+        @NamedQuery(name="getClientRoleIds", query="select role.id from RoleEntity role where role.clientId = :client"),
+        @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.clientId = :client"),
+        @NamedQuery(name="getClientRoleIdByName", query="select role.id from RoleEntity role where role.name = :name and role.clientId = :client"),
+        @NamedQuery(name="searchForClientRoles", query="select role from RoleEntity role where role.clientId = :client and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
+        @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm.id = :realm order by role.name"),
         @NamedQuery(name="getRealmRoleIds", query="select role.id from RoleEntity role where role.clientRole = false and role.realm.id = :realm"),
         @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm"),
-        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm")
+        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm"),
+        @NamedQuery(name="searchForRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm.id = :realm and ( lower(role.name) like :search or lower(role.description) like :search ) order by role.name"),
 })
 
 public class RoleEntity {
@@ -89,9 +90,8 @@ public class RoleEntity {
     @Column(name="CLIENT_ROLE")
     private boolean clientRole;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CLIENT")
-    private ClientEntity client;
+    @Column(name="CLIENT")
+    private String clientId;
 
     // Hack to ensure that either name+client or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
     @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
@@ -99,12 +99,12 @@ public class RoleEntity {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
-    private Set<RoleEntity> compositeRoles = new HashSet<>();
+    private Set<RoleEntity> compositeRoles;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected List<RoleAttributeEntity> attributes = new ArrayList<>();
+    protected List<RoleAttributeEntity> attributes;
 
     public String getId() {
         return id;
@@ -122,7 +122,10 @@ public class RoleEntity {
         this.realmId = realmId;
     }
 
-    public Collection<RoleAttributeEntity> getAttributes() {
+    public List<RoleAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
@@ -147,6 +150,9 @@ public class RoleEntity {
     }
 
     public Set<RoleEntity> getCompositeRoles() {
+        if (compositeRoles == null) {
+            compositeRoles = new HashSet<>();
+        }
         return compositeRoles;
     }
 
@@ -171,15 +177,13 @@ public class RoleEntity {
         this.clientRealmConstraint = realm.getId();
     }
 
-    public ClientEntity getClient() {
-        return client;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setClient(ClientEntity client) {
-        this.client = client;
-        if (client != null) {
-            this.clientRealmConstraint = client.getId();
-        }
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+        this.clientRealmConstraint = clientId;
     }
 
     public String getClientRealmConstraint() {

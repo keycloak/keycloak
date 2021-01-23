@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,7 +38,9 @@
         <cache.server.jboss.jdg-transactions-enabled>false</cache.server.jboss.jdg-transactions-enabled>
         <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
         <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
-        <cache.server.jboss.version>${infinispan.version}</cache.server.jboss.version>
+        <!-- This version is here temporarily. It should be updated to use the ${infinispan.version}, however latest infinispan-server
+             is not based on Wildfly (and does not work with Arquillian ManagedDeployableContainer) -->
+        <cache.server.jboss.version>9.4.18.Final</cache.server.jboss.version>
         <cache.server.jboss.unpacked.folder.name>${cache.server.jboss.artifactId}-${cache.server.jboss.version}</cache.server.jboss.unpacked.folder.name>
         
         <cache.server.worker.io-threads>${cache.default.worker.io-threads}</cache.server.worker.io-threads>

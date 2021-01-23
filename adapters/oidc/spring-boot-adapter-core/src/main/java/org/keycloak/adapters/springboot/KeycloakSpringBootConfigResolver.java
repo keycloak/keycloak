@@ -21,6 +21,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -28,6 +29,7 @@ public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.K
 
     private KeycloakDeployment keycloakDeployment;
 
+    @Autowired(required=false)
     private AdapterConfig adapterConfig;
 
     @Override

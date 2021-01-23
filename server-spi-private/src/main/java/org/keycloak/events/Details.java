@@ -50,8 +50,6 @@ public interface Details {
     String SCOPE = "scope";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
-    String CLIENT_SESSION_STATE = "client_session_state";
-    String CLIENT_SESSION_HOST = "client_session_host";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
 
     String CONSENT = "consent";
@@ -73,4 +71,7 @@ public interface Details {
     String X509_CERTIFICATE_SERIAL_NUMBER = "x509_cert_serial_number";
     String X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME = "x509_cert_subject_distinguished_name";
     String X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME = "x509_cert_issuer_distinguished_name";
+
+    String CREDENTIAL_TYPE = "credential_type";
+    String SELECTED_CREDENTIAL_ID = "selected_credential_id";
 }

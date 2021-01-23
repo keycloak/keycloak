@@ -116,10 +116,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                         filters.put(PermissionTicket.REQUESTER, identity.getId());
                         filters.put(PermissionTicket.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer(), -1, -1);
 
                         if (tickets.isEmpty()) {
-                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resource.getResourceServer());
+                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resourceServer);
                         }
                     } else {
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
@@ -137,10 +137,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                             filters.put(PermissionTicket.REQUESTER, identity.getId());
                             filters.put(PermissionTicket.SCOPE, scope.getId());
 
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer(), -1, -1);
 
                             if (tickets.isEmpty()) {
-                                authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resource.getResourceServer());
+                                authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resourceServer);
                             }
                         }
                     }

@@ -1772,7 +1772,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
     }
 });
 
-module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route, realm, client, Client, Groups, Group, PolicyController) {
+module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route, realm, client, Client, Groups, Group, PolicyController, Notifications, $translate) {
     PolicyController.onInit({
         getPolicyType : function() {
             return "group";
@@ -1784,7 +1784,7 @@ module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route
             Groups.query({realm: $route.current.params.realm}, function(groups) {
                 $scope.groups = groups;
                 $scope.groupList = [
-                    {"id" : "realm", "name": "Groups",
+                    {"id" : "realm", "name": $translate.instant('groups'),
                                 "subGroups" : groups}
                 ];
             });
@@ -1820,6 +1820,10 @@ module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route
                     if ($scope.selectedGroups[i].id == group.id) {
                         return
                     }
+                }
+                if (group.id == "realm") {
+                    Notifications.error("You must choose a group");
+                    return;
                 }
                 $scope.selectedGroups.push({id: group.id, path: group.path});
                 $scope.changed = true;

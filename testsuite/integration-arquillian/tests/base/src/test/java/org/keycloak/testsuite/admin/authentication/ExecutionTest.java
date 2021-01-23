@@ -24,6 +24,7 @@ import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.challenge.NoCookieFlowRedirectAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -31,6 +32,9 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 
@@ -282,9 +286,9 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         }
 
         // Update execution with not-existent ID - SHOULD FAIL
+        AuthenticationExecutionInfoRepresentation executionRep2 = new AuthenticationExecutionInfoRepresentation();
+        executionRep2.setId("not-existent");
         try {
-            AuthenticationExecutionInfoRepresentation executionRep2 = new AuthenticationExecutionInfoRepresentation();
-            executionRep2.setId("not-existent");
             authMgmtResource.updateExecutions("new-client-flow", executionRep2);
             Assert.fail("Not expected to update not-existent execution");
         } catch (NotFoundException nfe) {
@@ -318,6 +322,8 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRequirementsInExecution() {
         HashMap<String, String> params = new HashMap<>();
         String newBrowserFlow = "new-exec-flow";

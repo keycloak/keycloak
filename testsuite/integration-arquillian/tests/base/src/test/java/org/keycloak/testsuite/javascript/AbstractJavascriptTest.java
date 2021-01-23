@@ -3,6 +3,7 @@ package org.keycloak.testsuite.javascript;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -13,6 +14,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -31,6 +33,8 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -45,6 +49,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         void apply(T a, U b, V c, W d);
     }
 
+    public static final String JS_APP_HOST = AUTH_SERVER_HOST2;
     public static final String CLIENT_ID = "js-console";
     public static final String REALM_NAME = "test";
     public static final String SPACE_REALM_NAME = "Example realm";
@@ -52,6 +57,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public static final String JAVASCRIPT_ENCODED_SPACE_URL = "/auth/realms/Example%20realm/testing/javascript";
     public static final String JAVASCRIPT_SPACE_URL = "/auth/realms/Example realm/testing/javascript";
     public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
+    public static final String USER_PASSWORD = "password";
 
 
     protected JavascriptExecutor jsExecutor;
@@ -77,10 +83,14 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public static final UserRepresentation unauthorizedUser;
 
     static {
-        testUser = UserBuilder.create().username("test-user@localhost").password("password").build();
-        unauthorizedUser = UserBuilder.create().username("unauthorized").password("password").build();
+        testUser = UserBuilder.create().username("test-user@localhost").password(USER_PASSWORD).build();
+        unauthorizedUser = UserBuilder.create().username("unauthorized").password(USER_PASSWORD).build();
     }
 
+    @BeforeClass
+    public static void enabledOnlyWithSSL() {
+        ContainerAssume.assumeAuthServerSSL();
+    }
 
     @Before
     public void beforeJavascriptTest() {
@@ -112,7 +122,8 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
                 .client(
                         ClientBuilder.create()
                                 .clientId(CLIENT_ID)
-                                .redirectUris(oauth.SERVER_ROOT + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
+                                .redirectUris(oauth.SERVER_ROOT.replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
+                                .addWebOrigin(oauth.SERVER_ROOT.replace(AUTH_SERVER_HOST, JS_APP_HOST))
                                 .publicClient()
                 )
                 .accessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY)
@@ -142,7 +153,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
     protected abstract RealmRepresentation updateRealm(RealmBuilder builder);
 
-    protected void assertSuccessfullyLoggedIn(WebDriver driver1, Object output, WebElement events) {
+    protected void assertInitAuth(WebDriver driver1, Object output, WebElement events) {
         buildFunction(this::assertOutputContains, "Init Success (Authenticated)").validate(driver1, output, events);
         waitUntilElement(events).text().contains("Auth Success");
     }
@@ -184,6 +195,10 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         waitUntilElement(events).text().contains(value);
     }
 
+    public void assertEventsWebElementDoesntContain(String value, WebDriver driver1, Object output, WebElement events) {
+        waitUntilElement(events).text().not().contains(value);
+    }
+
     public ResponseValidator assertResponseStatus(long status) {
         return output -> Assert.assertThat(output, hasEntry("status", status));
     }
@@ -194,5 +209,9 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
     public JavascriptStateValidator assertEventsContains(String text) {
         return buildFunction(this::assertEventsWebElementContains, text);
+    }
+
+    public JavascriptStateValidator assertEventsDoesntContain(String text) {
+        return buildFunction(this::assertEventsWebElementDoesntContain, text);
     }
 }

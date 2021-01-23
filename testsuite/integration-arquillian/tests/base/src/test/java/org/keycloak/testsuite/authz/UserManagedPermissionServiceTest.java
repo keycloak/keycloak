@@ -46,8 +46,9 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -58,6 +59,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserManagedPermissionServiceTest extends AbstractResourceServerTest {
 
     @Override
@@ -655,6 +657,58 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         } catch (Exception e) {
             assertTrue(HttpResponseException.class.cast(e.getCause()).toString().contains("Only resources with owner managed accessed can have policies"));
         }
+    }
+
+    @Test
+    public void testOwnerAccess() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(UUID.randomUUID().toString());
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+        resource.setOwnerManagedAccess(true);
+
+        ProtectionResource protection = getAuthzClient().protection();
+
+        resource = protection.resource().create(resource);
+
+        UmaPermissionRepresentation rep = null;
+        
+        try {
+            rep = new UmaPermissionRepresentation();
+            
+            rep.setName("test");
+            rep.addRole("role_b");
+            
+            rep = getAuthzClient().protection("marta", "password").policy(resource.getId()).create(rep);
+        } catch (Exception e) {
+            assertTrue(HttpResponseException.class.cast(e.getCause()).toString().contains("Only resources with owner managed accessed can have policies"));
+        }
+
+        AuthorizationResource authorization = getAuthzClient().authorization("marta", "password");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        
+        request.addPermission(resource.getId(), "Scope A");
+
+        AuthorizationResponse authorize = authorization.authorize(request);
+        
+        assertNotNull(authorize);
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("User should not have permission");
+        } catch (Exception e) {
+            assertTrue(AuthorizationDeniedException.class.isInstance(e));
+        }
+
+        rep.addRole("role_a");
+        
+        getAuthzClient().protection("marta", "password").policy(resource.getId()).update(rep);
+
+        authorization = getAuthzClient().authorization("kolo", "password");
+
+        assertNotNull(authorization.authorize(request));
     }
 
     @Test

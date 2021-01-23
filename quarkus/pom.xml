@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Quarkus Parent</name>
@@ -31,16 +31,19 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.0.1.Final</quarkus.version>
-        <resteasy.version>4.3.1.Final</resteasy.version>
-
-        <surefire-plugin.version>2.22.0</surefire-plugin.version>
-
-        <wildfly.common.format.version>1.5.0.Final-format-001</wildfly.common.format.version>
+        <quarkus.version>1.10.0.CR1</quarkus.version>
+        <resteasy.version>4.5.8.Final</resteasy.version>
+        <jackson.version>2.11.3</jackson.version>
+        <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <hibernate.version>5.4.23.Final</hibernate.version>
+        <mysql-connector-java.version>8.0.22</mysql-connector-java.version>
+        <picocli.version>4.5.2</picocli.version>
+        <snakeyaml.version>1.27</snakeyaml.version>
+        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+        <wildfly.common.format.version>1.5.4.Final-format-001</wildfly.common.format.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.test.skip>true</maven.test.skip>
         <noDeps>true</noDeps>
     </properties>
 
@@ -53,10 +56,27 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            
+            <!-- Override the dependencies below to use the versions used by Quarkus -->
             <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-quarkus-extensions</artifactId>
-                <version>${project.version}</version>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>${hibernate.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-commons</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-client-hotrod</artifactId>
+                <version>${infinispan.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.common</groupId>
@@ -72,14 +92,20 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.20</version>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-connector-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    
     <modules>
-        <module>extensions</module>
+        <module>deployment</module>
+        <module>runtime</module>
         <module>server</module>
     </modules>
-
+    
 </project>

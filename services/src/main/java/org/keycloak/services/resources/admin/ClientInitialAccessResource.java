@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -27,7 +28,6 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,8 +39,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @resource Client Initial Access
@@ -71,7 +70,7 @@ public class ClientInitialAccessResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config, @Context final HttpServletResponse response) {
+    public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config, @Context final HttpResponse response) {
         auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
@@ -87,23 +86,17 @@ public class ClientInitialAccessResource {
         rep.setToken(token);
 
         response.setStatus(Response.Status.CREATED.getStatusCode());
-        response.setHeader(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
+        response.getOutputHeaders().add(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
 
         return rep;
     }
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientInitialAccessPresentation> list() {
+    public Stream<ClientInitialAccessPresentation> list() {
         auth.clients().requireView();
 
-        List<ClientInitialAccessModel> models = session.realms().listClientInitialAccess(realm);
-        List<ClientInitialAccessPresentation> reps = new LinkedList<>();
-        for (ClientInitialAccessModel m : models) {
-            ClientInitialAccessPresentation r = wrap(m);
-            reps.add(r);
-        }
-        return reps;
+        return session.realms().listClientInitialAccessStream(realm).map(this::wrap);
     }
 
     @DELETE

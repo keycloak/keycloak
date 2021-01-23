@@ -17,22 +17,29 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.Nationalized;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
-import java.util.Collection;
+
+import org.hibernate.annotations.Nationalized;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,7 +59,7 @@ public class ClientScopeEntity {
     @Column(name = "DESCRIPTION")
     private String description;
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
+    Collection<ProtocolMapperEntity> protocolMappers;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
@@ -62,7 +69,12 @@ public class ClientScopeEntity {
 
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    protected Collection<ClientScopeAttributeEntity> attributes = new ArrayList<>();
+    protected Collection<ClientScopeAttributeEntity> attributes;
+
+    @ElementCollection
+    @Column(name="ROLE_ID")
+    @CollectionTable(name="CLIENT_SCOPE_ROLE_MAPPING", joinColumns = { @JoinColumn(name="SCOPE_ID")})
+    private Set<String> scopeMappingIds = new HashSet<>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -97,6 +109,9 @@ public class ClientScopeEntity {
     }
 
     public Collection<ProtocolMapperEntity> getProtocolMappers() {
+        if (protocolMappers == null) {
+            protocolMappers = new LinkedList<>();
+        }
         return protocolMappers;
     }
 
@@ -113,11 +128,22 @@ public class ClientScopeEntity {
     }
 
     public Collection<ClientScopeAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
     public void setAttributes(Collection<ClientScopeAttributeEntity> attributes) {
         this.attributes = attributes;
+    }
+
+    public Set<String> getScopeMappingIds() {
+        return scopeMappingIds;
+    }
+
+    public void setScopeMappingIds(Set<String> scopeMappingIds) {
+        this.scopeMappingIds = scopeMappingIds;
     }
 
     @Override

@@ -17,7 +17,11 @@
 package org.keycloak.saml;
 
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
+import org.keycloak.saml.SAML2NameIDBuilder;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
@@ -26,7 +30,6 @@ import org.w3c.dom.Document;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 /**
  * @author pedroigor
@@ -35,7 +38,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
     private final AuthnRequestType authnRequestType;
     protected String destination;
-    protected String issuer;
+    protected NameIDType issuer;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2AuthnRequestBuilder destination(String destination) {
@@ -43,9 +46,13 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
-    public SAML2AuthnRequestBuilder issuer(String issuer) {
+    public SAML2AuthnRequestBuilder issuer(NameIDType issuer) {
         this.issuer = issuer;
         return this;
+    }
+
+    public SAML2AuthnRequestBuilder issuer(String issuer) {
+        return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
     @Override
@@ -88,6 +95,36 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
+    public SAML2AuthnRequestBuilder subject(String subject) {
+        String sanitizedSubject = subject != null ? subject.trim() : null;
+        if (sanitizedSubject != null && !sanitizedSubject.isEmpty()) {
+            this.authnRequestType.setSubject(createSubject(sanitizedSubject));
+        }
+        return this;
+    }
+
+    private SubjectType createSubject(String value) {
+        NameIDType nameId = new NameIDType();
+        nameId.setValue(value);
+        nameId.setFormat(this.authnRequestType.getNameIDPolicy() != null ? this.authnRequestType.getNameIDPolicy().getFormat() : null);
+        SubjectType subject = new SubjectType();
+        SubjectType.STSubType subType = new SubjectType.STSubType();
+        subType.addBaseID(nameId);
+        subject.setSubType(subType);
+        return subject;
+    }
+
+    public SAML2AuthnRequestBuilder requestedAuthnContext(SAML2RequestedAuthnContextBuilder requestedAuthnContextBuilder) {
+        RequestedAuthnContextType requestedAuthnContext = requestedAuthnContextBuilder.build();
+
+        // Only emit the RequestedAuthnContext element if at least a ClassRef or a DeclRef is present
+        if (!requestedAuthnContext.getAuthnContextClassRef().isEmpty() ||
+            !requestedAuthnContext.getAuthnContextDeclRef().isEmpty())
+            this.authnRequestType.setRequestedAuthnContext(requestedAuthnContext);
+
+        return this;
+    }
+
     public Document toDocument() {
         try {
             AuthnRequestType authnRequestType = createAuthnRequest();
@@ -100,11 +137,8 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
     public AuthnRequestType createAuthnRequest() {
         AuthnRequestType res = this.authnRequestType;
-        NameIDType nameIDType = new NameIDType();
-        nameIDType.setValue(this.issuer);
 
-        res.setIssuer(nameIDType);
-
+        res.setIssuer(issuer);
         res.setDestination(URI.create(this.destination));
 
         if (! this.extensions.isEmpty()) {

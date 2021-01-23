@@ -40,7 +40,10 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserGroupMembershipByRealm", query="delete from  UserGroupMembershipEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteUserGroupMembershipsByRealmAndLink", query="delete from  UserGroupMembershipEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
         @NamedQuery(name="deleteUserGroupMembershipsByGroup", query="delete from UserGroupMembershipEntity m where m.groupId = :groupId"),
-        @NamedQuery(name="deleteUserGroupMembershipsByUser", query="delete from UserGroupMembershipEntity m where m.user = :user")
+        @NamedQuery(name="deleteUserGroupMembershipsByUser", query="delete from UserGroupMembershipEntity m where m.user = :user"),
+        @NamedQuery(name="searchForUserCountInGroups", query="select count(m.user) from UserGroupMembershipEntity m where m.user.realmId = :realmId and (m.user.serviceAccountClientLink is null) and " +
+                "( lower(m.user.username) like :search or lower(concat(m.user.firstName, ' ', m.user.lastName)) like :search or m.user.email like :search ) and m.groupId in :groupIds"),
+        @NamedQuery(name="userCountInGroups", query="select count(m.user) from UserGroupMembershipEntity m where m.user.realmId = :realmId and m.groupId in :groupIds")
 })
 @Table(name="USER_GROUP_MEMBERSHIP")
 @Entity
@@ -51,11 +54,6 @@ public class UserGroupMembershipEntity {
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name="USER_ID")
     protected UserEntity user;
-
-    @Id
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="GROUP_ID", insertable=false, updatable=false)
-    protected GroupEntity group;
 
     @Id
     @Column(name = "GROUP_ID")

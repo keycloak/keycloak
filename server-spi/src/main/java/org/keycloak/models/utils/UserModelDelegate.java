@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Delegation pattern.  Used to proxy UserModel implementations.
@@ -32,7 +33,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserModelDelegate implements UserModel {
+public class UserModelDelegate implements UserModel.Streams {
     protected UserModel delegate;
 
     public UserModelDelegate(UserModel delegate) {
@@ -85,8 +86,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        return delegate.getAttribute(name);
+    public Stream<String> getAttributeStream(String name) {
+        return delegate.getAttributeStream(name);
     }
 
     @Override
@@ -95,8 +96,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return delegate.getRequiredActions();
+    public Stream<String> getRequiredActionsStream() {
+        return delegate.getRequiredActionsStream();
     }
 
     @Override
@@ -160,13 +161,13 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        return delegate.getRealmRoleMappings();
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return delegate.getRealmRoleMappingsStream();
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        return delegate.getClientRoleMappings(app);
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return delegate.getClientRoleMappingsStream(app);
     }
 
     @Override
@@ -180,8 +181,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        return delegate.getRoleMappings();
+    public Stream<RoleModel> getRoleMappingsStream() {
+        return delegate.getRoleMappingsStream();
     }
 
     @Override
@@ -224,8 +225,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        return delegate.getGroups();
+    public Stream<GroupModel> getGroupsStream() {
+        return delegate.getGroupsStream();
     }
 
     @Override

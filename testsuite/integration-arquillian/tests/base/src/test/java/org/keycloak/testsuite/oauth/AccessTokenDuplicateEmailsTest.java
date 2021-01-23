@@ -30,7 +30,8 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
 import org.openqa.selenium.By;
 
 /**
@@ -62,7 +63,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
     @Test
     public void loginFormUsernameLabel() throws Exception {
         oauth.openLoginForm();
-        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/does/not/matter/");
+        oauth.redirectUri(getAuthServerContextRoot() + "/does/not/matter/");
         
         assertEquals("Username", driver.findElement(By.xpath("//label[@for='username']")).getText());
     }
@@ -116,13 +117,13 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
     public void loginWithNonDuplicateEmail() throws Exception {
         oauth.doLogin("non-duplicate-email-user@localhost", "password");
 
-        assertEquals("Invalid username or password.", driver.findElement(By.xpath("//span[@class='kc-feedback-text']")).getText());
+        assertEquals("Invalid username or password.", driver.findElement(By.className("kc-feedback-text")).getText());
     }
     
     @Test
     public void loginWithDuplicateEmail() throws Exception {
         oauth.doLogin("duplicate-email-user@localhost", "password");
 
-        assertEquals("Invalid username or password.", driver.findElement(By.xpath("//span[@class='kc-feedback-text']")).getText());
+        assertEquals("Invalid username or password.", driver.findElement(By.className("kc-feedback-text")).getText());
     }
 }

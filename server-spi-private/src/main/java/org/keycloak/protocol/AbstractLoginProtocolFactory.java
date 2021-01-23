@@ -25,6 +25,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -40,8 +46,8 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
         factory.register(new ProviderEventListener() {
             @Override
             public void onEvent(ProviderEvent event) {
-                if (event instanceof RealmModel.ClientCreationEvent) {
-                    ClientModel client = ((RealmModel.ClientCreationEvent)event).getCreatedClient();
+                if (event instanceof ClientModel.ClientCreationEvent) {
+                    ClientModel client = ((ClientModel.ClientCreationEvent)event).getCreatedClient();
                     addDefaultClientScopes(client.getRealm(), client);
                     addDefaults(client);
                 }
@@ -56,9 +62,7 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
         // Create default client scopes for realm built-in clients too
         if (addScopesToExistingClients) {
-            for (ClientModel client : newRealm.getClients()) {
-                addDefaultClientScopes(newRealm, client);
-            }
+            addDefaultClientScopes(newRealm, newRealm.getClientsStream());
         }
     }
 
@@ -69,16 +73,27 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
 
     protected void addDefaultClientScopes(RealmModel realm, ClientModel newClient) {
-        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(true)) {
-            if (getId().equals(clientScope.getProtocol())) {
-                newClient.addClientScope(clientScope, true);
-            }
-        }
-        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(false)) {
-            if (getId().equals(clientScope.getProtocol())) {
-                newClient.addClientScope(clientScope, false);
-            }
-        }
+        addDefaultClientScopes(realm, Stream.of(newClient));
+    }
+
+    protected void addDefaultClientScopes(RealmModel realm, Stream<ClientModel> newClients) {
+        Set<ClientScopeModel> defaultClientScopes = realm.getDefaultClientScopesStream(true)
+                .filter(clientScope -> Objects.equals(getId(), clientScope.getProtocol()))
+                .collect(Collectors.toSet());
+
+        Set<ClientScopeModel> nonDefaultClientScopes = realm.getDefaultClientScopesStream(false)
+                .filter(clientScope -> Objects.equals(getId(), clientScope.getProtocol()))
+                .collect(Collectors.toSet());
+
+        Consumer<ClientModel> addDefault = c -> c.addClientScopes(defaultClientScopes, true);
+        Consumer<ClientModel> addNonDefault = c -> c.addClientScopes(nonDefaultClientScopes, false);
+
+        if (!defaultClientScopes.isEmpty() && !nonDefaultClientScopes.isEmpty())
+            newClients.forEach(addDefault.andThen(addNonDefault));
+        else if (!defaultClientScopes.isEmpty())
+            newClients.forEach(addDefault);
+        else if (!nonDefaultClientScopes.isEmpty())
+            newClients.forEach(addNonDefault);
     }
 
     protected abstract void addDefaults(ClientModel realm);

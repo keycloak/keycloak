@@ -31,18 +31,21 @@ public class WebAuthnCredentialData {
     private long counter;
     private String attestationStatement;
     private String credentialPublicKey;
+    private String attestationStatementFormat;
 
     @JsonCreator
     public WebAuthnCredentialData(@JsonProperty("aaguid") String aaguid,
                                   @JsonProperty("credentialId") String credentialId,
                                   @JsonProperty("counter") long counter,
                                   @JsonProperty("attestationStatement") String attestationStatement,
-                                  @JsonProperty("credentialPublicKey") String credentialPublicKey                                  ) {
+                                  @JsonProperty("credentialPublicKey") String credentialPublicKey,
+                                  @JsonProperty("attestationStatementFormat") String attestationStatementFormat) {
         this.aaguid = aaguid;
         this.credentialId = credentialId;
         this.counter = counter;
         this.attestationStatement = attestationStatement;
         this.credentialPublicKey = credentialPublicKey;
+        this.attestationStatementFormat = attestationStatementFormat;
     }
 
     public String getAaguid() {
@@ -69,6 +72,14 @@ public class WebAuthnCredentialData {
         this.counter = counter;
     }
 
+    public String getAttestationStatementFormat() {
+        return attestationStatementFormat;
+    }
+
+    public void setAttestationStatementFormat(String attestationStatementFormat) {
+        this.attestationStatementFormat = attestationStatementFormat;
+    }
+
     @Override
     public String toString() {
         return "WebAuthnCredentialData { " +
@@ -78,6 +89,7 @@ public class WebAuthnCredentialData {
                 ", credentialPublicKey=" + credentialPublicKey +
                 ", attestationStatement='" + attestationStatement + '\'' +
                 ", credentialPublicKey='" + credentialPublicKey + '\'' +
+                ", attestationStatementFormat='" + attestationStatementFormat + '\'' +
                 " }";
     }
 }

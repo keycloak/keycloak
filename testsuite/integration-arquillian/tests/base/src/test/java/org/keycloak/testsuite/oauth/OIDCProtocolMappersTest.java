@@ -46,9 +46,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
@@ -69,6 +71,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -78,6 +81,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
@@ -130,7 +134,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
+    @EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true) // This requires also SCRIPTS feature, therefore we need to restart container
     public void testTokenScriptMapping() {
         {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
@@ -152,6 +156,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testTokenMapping() throws Exception {
         {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -324,6 +329,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testNullOrEmptyTokenMapping() throws Exception {
         {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -381,6 +387,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserRoleToAttributeMappers() throws Exception {
         // Add mapper for realm roles
         ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
@@ -413,6 +420,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
     // Test to update protocolMappers to not have roles on the default position (realm_access and resource_access properties)
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserRolesMovedFromAccessTokenProperties() throws Exception {
         RealmResource realm = adminClient.realm("test");
         ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE);
@@ -634,6 +642,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testUserGroupRoleToAttributeMappers() throws Exception {
         // Add mapper for realm roles
         String clientId = "test-app";
@@ -776,6 +785,43 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Revert
         deleteMappers(protocolMappers);
+    }
+
+    @Test
+    public void testUserGroupRoleToAttributeMappersScopedWithDifferentClient() throws Exception {
+        final String clientId = "test-app-scope";
+        final String diffClient = "test-app";
+        final String realmName = "test";
+
+        final ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
+        final ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(diffClient, null, "Client roles mapper", "roles-custom.test-app", true, true);
+
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, realmName, clientId).setDirectAccessGrantsEnabled(true);
+             ProtocolMappersUpdater protocolMappers = new ProtocolMappersUpdater(cau.getResource().getProtocolMappers())) {
+
+            protocolMappers.add(realmMapper, clientMapper).update();
+
+            // Login user
+            oauth.clientId(clientId);
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+            // Verify attribute is filled
+            Map<String, Object> roleMappings = (Map<String, Object>) idToken.getOtherClaims().get("roles-custom");
+            assertNotNull(roleMappings);
+            assertThat(roleMappings.keySet(), containsInAnyOrder("realm", diffClient));
+            String realmRoleMappings = (String) roleMappings.get("realm");
+            String testAppScopeMappings = (String) roleMappings.get(diffClient);
+            assertRolesString(realmRoleMappings,
+                    "pref.admin",
+                    "pref.user",
+                    "pref.customer-user-premium"
+            );
+            assertRolesString(testAppScopeMappings,
+                    "customer-admin-composite-role",
+                    "customer-admin"
+            );
+        }
     }
 
     @Test

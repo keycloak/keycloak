@@ -2,7 +2,7 @@
 
 ## Requirements:
 - Bash 2.05+
-- Maven 3.1.1+
+- Maven 3.5.4+
 - Keycloak server distribution installed in the local Maven repository. To do this run `mvn install -Pdistribution` from the root of the Keycloak project.
 
 ### Docker Compose Provisioner

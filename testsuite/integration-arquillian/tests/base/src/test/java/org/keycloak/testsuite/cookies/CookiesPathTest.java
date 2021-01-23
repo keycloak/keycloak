@@ -19,13 +19,16 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.URLUtils;
@@ -33,6 +36,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,11 +44,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
+
 import org.junit.After;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Page
@@ -60,6 +67,8 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     private CloseableHttpClient httpClient = null;
 
+    private static final List<String> KEYCLOAK_COOKIE_NAMES = Arrays.asList("KC_RESTART", "AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION");
+
     @After
     public void closeHttpClient() throws IOException {
         if (httpClient != null) httpClient.close();
@@ -67,10 +76,11 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Test
     public void testCookiesPath() {
-        // navigate to "/realms/foo/account" and remove cookies in the browser for the current path
+        // navigate to "/realms/foo/account" and them remove cookies in the browser for the current path
         // first access to the path means there are no cookies being sent
         // we are redirected to login page and Keycloak sets cookie's path to "/auth/realms/foo/"
-        deleteAllCookiesForRealm("foo");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account");
+        driver.manage().deleteAllCookies();
 
         Assert.assertTrue("There shouldn't be any cookies sent!", driver.manage().getCookies().isEmpty());
 
@@ -80,30 +90,37 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         Set<Cookie> cookies = driver.manage().getCookies();
         Assert.assertTrue("There should be cookies sent!", cookies.size() > 0);
         // check cookie's path, for some reason IE adds extra slash to the beginning of the path
-        cookies.stream().forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foo/")));
+        cookies.stream()
+                .filter(cookie -> KEYCLOAK_COOKIE_NAMES.contains(cookie.getName()))
+                .forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foo/")));
 
         // now navigate to realm which name overlaps the first realm and delete cookies for that realm (foobar)
-        deleteAllCookiesForRealm("foobar");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foobar/account");
+        driver.manage().deleteAllCookies();
 
         // cookies shouldn't be sent for the first access to /realms/foobar/account
         // At this moment IE would sent cookies for /auth/realms/foo without the fix
         cookies = driver.manage().getCookies();
         Assert.assertTrue("There shouldn't be any cookies sent!", cookies.isEmpty());
 
-        // refresh the page and check if correct cookies were sent
-        driver.navigate().refresh();
+        // navigate to account and check if correct cookies were sent
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foobar/account");
         cookies = driver.manage().getCookies();
 
         Assert.assertTrue("There should be cookies sent!", cookies.size() > 0);
         // check cookie's path, for some reason IE adds extra slash to the beginning of the path
-        cookies.stream().forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foobar/")));
+        cookies.stream()
+                .filter(cookie -> KEYCLOAK_COOKIE_NAMES.contains(cookie.getName()))
+                .forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foobar/")));
 
         // lets back to "/realms/foo/account" to test the cookies for "foo" realm are still there and haven't been (correctly) sent to "foobar"
         URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account");
 
         cookies = driver.manage().getCookies();
         Assert.assertTrue("There should be cookies sent!", cookies.size() > 0);
-        cookies.stream().forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foo/")));
+        cookies.stream()
+                .filter(cookie -> KEYCLOAK_COOKIE_NAMES.contains(cookie.getName()))
+                .forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foo/")));
     }
 
     @Test
@@ -114,7 +131,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
         // create old cookie with wrong path
         BasicClientCookie wrongCookie = new BasicClientCookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE);
-        wrongCookie.setDomain("localhost");
+        wrongCookie.setDomain(AUTH_SERVER_HOST);
         wrongCookie.setPath(OLD_COOKIE_PATH);
         wrongCookie.setExpiryDate(calendar.getTime());
 
@@ -129,7 +146,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         // old cookie has been removed
         // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION
         Assert.assertThat(cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getName).collect(Collectors.toList()), 
-                Matchers.containsInAnyOrder("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION", "OAuth_Token_Request_State"));
+                Matchers.hasItems("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION"));
 
         // does each cookie's path end with "/"
         cookieStore.getCookies().stream().filter(c -> !"OAuth_Token_Request_State".equals(c.getName())).map(org.apache.http.cookie.Cookie::getPath).forEach(path ->Assert.assertThat(path, Matchers.endsWith("/")));
@@ -143,10 +160,13 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Test
     public void testOldCookieWithWrongPath() {
+        ContainerAssume.assumeAuthServerSSL();
+
         Cookie wrongCookie = new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE,
                 null, OLD_COOKIE_PATH, null, false, true);
 
-        deleteAllCookiesForRealm("foo");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account");
+        driver.manage().deleteAllCookies();
 
         // add old cookie with wrong path
         driver.manage().addCookie(wrongCookie);
@@ -158,7 +178,9 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         loginPage.login("foo", "password");
 
         // old cookie has been removed and new cookies have been added
-        cookies = driver.manage().getCookies();
+        cookies = driver.manage().getCookies().stream()
+                .filter(cookie -> KEYCLOAK_COOKIE_NAMES.contains(cookie.getName()))
+                .collect(Collectors.toSet());
         Assert.assertThat(cookies, Matchers.hasSize(3));
 
         // does each cookie's path end with "/"
@@ -179,7 +201,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
         // create old cookie with wrong path
         BasicClientCookie wrongCookie = new BasicClientCookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE_NODE);
-        wrongCookie.setDomain("localhost");
+        wrongCookie.setDomain(AUTH_SERVER_HOST);
         wrongCookie.setPath(OLD_COOKIE_PATH);
         wrongCookie.setExpiryDate(calendar.getTime());
 
@@ -194,7 +216,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         // old cookie has been removed
         // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION, OAuth_Token_Request_State
         Assert.assertThat(cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getName).collect(Collectors.toList()), 
-                Matchers.containsInAnyOrder("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION", "OAuth_Token_Request_State"));
+                Matchers.hasItems("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION"));
 
         // does each cookie's path end with "/"
         cookieStore.getCookies().stream().filter(c -> !"OAuth_Token_Request_State".equals(c.getName())).map(org.apache.http.cookie.Cookie::getPath).forEach(path ->Assert.assertThat(path, Matchers.endsWith("/")));
@@ -268,7 +290,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
         BasicClientCookie c = new BasicClientCookie(name, value);
         c.setExpiryDate(calendar.getTime());
-        c.setDomain("localhost");
+        c.setDomain(AUTH_SERVER_HOST);
         c.setPath(path);
 
         return c;

@@ -58,7 +58,6 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -83,8 +82,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.CLIENT;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import org.keycloak.testsuite.utils.tls.TLSUtils;
+import org.jgroups.util.UUID;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -196,31 +198,31 @@ public class PermissionsTest extends AbstractKeycloakTest {
         super.beforeAbstractKeycloakTest();
 
         clients.put(AdminRoles.REALM_ADMIN,
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client",
+                Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client",
                         "secret", TLSUtils.initializeTLS()));
 
         clients.put("none",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret", TLSUtils.initializeTLS()));
+                Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret", TLSUtils.initializeTLS()));
 
         clients.put("multi",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "multi", "password", "test-client", "secret", TLSUtils.initializeTLS()));
+                Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM_NAME, "multi", "password", "test-client", "secret", TLSUtils.initializeTLS()));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client", TLSUtils.initializeTLS()));
+            clients.put(role, Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client", TLSUtils.initializeTLS()));
         }
 
-        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client", TLSUtils.initializeTLS()));
+        clients.put("REALM2", Keycloak.getInstance(getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client", TLSUtils.initializeTLS()));
 
         clients.put("master-admin", adminClient);
 
         clients.put("master-none",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-none", "password",
+                Keycloak.getInstance(getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-none", "password",
                         Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS()));
 
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
             clients.put("master-" + role,
-                    Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-" + role, "password",
+                    Keycloak.getInstance(getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-" + role, "password",
                             Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS()));
         }
     }
@@ -712,7 +714,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.clients().get("nosuch").roles().list();
+                realm.clients().get(UUID.randomUUID().toString()).roles().list();
             }
         }, Resource.CLIENT, false, true);
         invoke(new Invocation() {
@@ -1070,7 +1072,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.roles().get("sample-role").getClientRoleComposites("nosuch");
+                realm.roles().get("sample-role").getClientRoleComposites(KeycloakModelUtils.generateId());
             }
         }, Resource.REALM, false);
         adminClient.realms().realm(REALM_NAME).roles().deleteRole("sample-role");
@@ -1297,7 +1299,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, false, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.rolesById().getClientRoleComposites(role.getId(), "nosuch");
+                realm.rolesById().getClientRoleComposites(role.getId(), KeycloakModelUtils.generateId());
             }
         }, Resource.REALM, false, true);
 
@@ -1457,7 +1459,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.users().get(user.getId()).getOfflineSessions("nosuch");
+                realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId());
             }
         }, Resource.USER, false);
         invoke(new Invocation() {
@@ -1658,8 +1660,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.IDENTITY_PROVIDER, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.identityProviders().create(IdentityProviderBuilder.create().providerId("nosuch")
-                        .displayName("nosuch-foo").alias("foo").build()));
+                response.set(realm.identityProviders().create(IdentityProviderBuilder.create().providerId("oidc")
+                        .displayName("nosuch-foo").alias("foo").setAttribute("clientId", "foo").setAttribute("clientSecret", "foo").build()));
             }
         }, Resource.IDENTITY_PROVIDER, true);
 

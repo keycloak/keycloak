@@ -12,12 +12,15 @@ import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcRegUpdateTokenTest extends AbstractRegCliTest {
 
     @Test

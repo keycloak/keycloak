@@ -25,6 +25,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -68,7 +69,7 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            UserModel john = session.users().getUserByUsername("johndow", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johndow");
             Assert.assertNotNull(john);
             Assert.assertNotNull(john.getFederationLink());
             Assert.assertEquals("johndow", john.getUsername());
@@ -77,13 +78,14 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
             Assert.assertEquals("johndow", john.getLastName());
             LDAPObject johnLdap = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johndow");
             Assert.assertNotNull(johnLdap);
-            Assert.assertEquals("johndow", johnLdap.getDn().getFirstRdnAttrValue());
+            LDAPDn.RDN firstRdnEntry = johnLdap.getDn().getFirstRdn();
+            Assert.assertEquals("johndow", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
         });
         // rename to johndow2
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            UserModel john = session.users().getUserByUsername("johndow", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johndow");
             john.setUsername("johndow2");
             john.setEmail("johndow2@email.cz");
             john.setFirstName("johndow2");
@@ -93,8 +95,8 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            Assert.assertNull(session.users().getUserByUsername("johndow", appRealm));
-            UserModel john2 = session.users().getUserByUsername("johndow2", appRealm);
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow"));
+            UserModel john2 = session.users().getUserByUsername(appRealm, "johndow2");
             Assert.assertNotNull(john2);
             Assert.assertNotNull(john2.getFederationLink());
             Assert.assertEquals("johndow2", john2.getUsername());
@@ -103,10 +105,11 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
             Assert.assertEquals("johndow2", john2.getLastName());
             LDAPObject johnLdap2 = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johndow2");
             Assert.assertNotNull(johnLdap2);
-            Assert.assertEquals("johndow2", johnLdap2.getDn().getFirstRdnAttrValue());
+            LDAPDn.RDN firstRdnEntry = johnLdap2.getDn().getFirstRdn();
+            Assert.assertEquals("johndow2", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
 
             session.users().removeUser(appRealm, john2);
-            Assert.assertNull(session.users().getUserByUsername("johndow2", appRealm));
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow2"));
         });
     }
 
@@ -129,10 +132,10 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            UserModel john = session.users().getUserByUsername("johndow", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johndow");
             Assert.assertNotNull(john);
             Assert.assertNotNull(john.getFederationLink());
-            UserModel john2 = session.users().getUserByUsername("johndow2", appRealm);
+            UserModel john2 = session.users().getUserByUsername(appRealm, "johndow2");
             Assert.assertNotNull(john2);
             Assert.assertNotNull(john2.getFederationLink());
         });
@@ -141,7 +144,7 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
              testingClient.server().run(session -> {
                  LDAPTestContext ctx = LDAPTestContext.init(session);
                  RealmModel appRealm = ctx.getRealm();
-                 UserModel john = session.users().getUserByUsername("johndow", appRealm);
+                 UserModel john = session.users().getUserByUsername(appRealm, "johndow");
                  john.setUsername("johndow2");
              });
              Assert.assertFalse("Model exception is expected here, so it should not reach this point", true);
@@ -153,14 +156,14 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            UserModel john = session.users().getUserByUsername("johndow", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johndow");
             Assert.assertNotNull(john);
-            UserModel john2 = session.users().getUserByUsername("johndow2", appRealm);
+            UserModel john2 = session.users().getUserByUsername(appRealm, "johndow2");
             Assert.assertNotNull(john2);
             session.users().removeUser(appRealm, john);
             session.users().removeUser(appRealm, john2);
-            Assert.assertNull(session.users().getUserByUsername("johndow", appRealm));
-            Assert.assertNull(session.users().getUserByUsername("johndow2", appRealm));
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow"));
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow2"));
         });
     }
 }

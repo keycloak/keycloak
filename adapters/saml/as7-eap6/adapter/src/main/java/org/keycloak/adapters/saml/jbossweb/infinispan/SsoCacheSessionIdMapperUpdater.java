@@ -47,6 +47,16 @@ public class SsoCacheSessionIdMapperUpdater implements SessionIdMapperUpdater {
     }
 
     @Override
+    public boolean refreshMapping(SessionIdMapper idMapper, String httpSessionId) {
+        String[] ssoAndPrincipal = httpSessionToSsoCache.get(httpSessionId);
+        if (ssoAndPrincipal != null) {
+            this.delegate.map(idMapper, ssoAndPrincipal[0], ssoAndPrincipal[1], httpSessionId);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void map(SessionIdMapper idMapper, String sso, String principal, String httpSessionId) {
         httpSessionToSsoCache.put(httpSessionId, new String[] {sso, principal});
         this.delegate.map(idMapper, sso, principal, httpSessionId);

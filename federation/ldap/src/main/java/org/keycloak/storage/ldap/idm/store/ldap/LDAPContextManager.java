@@ -4,14 +4,18 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.vault.VaultCharSecret;
 
+import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.SSLSocketFactory;
+
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.HashMap;
@@ -75,10 +79,21 @@ public final class LDAPContextManager implements AutoCloseable {
 
         ldapContext = new InitialLdapContext(connProp, null);
         if (ldapConfig.isStartTls()) {
-            tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
-                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()));
-        }
+            SSLSocketFactory sslSocketFactory = null;
+            String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+            if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+                TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
+                sslSocketFactory = provider.getSSLSocketFactory();
+            }
 
+            tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
+                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()), sslSocketFactory);
+
+            // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
+            if (tlsResponse == null) {
+                throw new NamingException("Wasn't able to establish LDAP connection through StartTLS");
+            }
+        }
     }
 
     public LdapContext getLdapContext() throws NamingException {
@@ -93,10 +108,12 @@ public final class LDAPContextManager implements AutoCloseable {
                 : session.vault().getCharSecret(ldapConfig.getBindCredential());
     }
 
-    public static StartTlsResponse startTLS(LdapContext ldapContext, String authType, String bindDN, char[] bindCredential) throws NamingException {
+    public static StartTlsResponse startTLS(LdapContext ldapContext, String authType, String bindDN, char[] bindCredential, SSLSocketFactory sslSocketFactory) throws NamingException {
+        StartTlsResponse tls = null;
+
         try {
-            StartTlsResponse tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
-            tls.negotiate();
+            tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
+            tls.negotiate(sslSocketFactory);
 
             ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
 
@@ -104,21 +121,20 @@ public final class LDAPContextManager implements AutoCloseable {
                 ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
                 ldapContext.addToEnvironment(Context.SECURITY_CREDENTIALS, bindCredential);
             }
-
-            ldapContext.lookup("");
-
-            return tls;
         } catch (Exception e) {
             logger.error("Could not negotiate TLS", e);
+            throw new AuthenticationException("Could not negotiate TLS");
         }
 
-        return null;
+        // throws AuthenticationException when authentication fails
+        ldapContext.lookup("");
+
+        return tls;
     }
 
-    public static Hashtable<Object, Object> getConnectionProperties(LDAPConfig ldapConfig) {
-        HashMap<String, Object> env = new HashMap<>();
-
-        env.put(Context.INITIAL_CONTEXT_FACTORY, ldapConfig.getFactoryName());
+    // Get connection properties of admin connection
+    private Hashtable<Object, Object> getConnectionProperties(LDAPConfig ldapConfig) {
+        Hashtable<Object, Object> env = getNonAuthConnectionProperties(ldapConfig);
 
         if(!ldapConfig.isStartTls()) {
             String authType = ldapConfig.getAuthType();
@@ -138,6 +154,32 @@ public final class LDAPContextManager implements AutoCloseable {
                 env.put(Context.SECURITY_CREDENTIALS, bindCredential);
             }
         }
+
+        if (logger.isDebugEnabled()) {
+            Map<Object, Object> copyEnv = new Hashtable<>(env);
+            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
+                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
+            }
+            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
+        }
+
+        return env;
+    }
+
+
+    /**
+     * This method is used for admin connection and user authentication. Hence it returns just connection properties NOT related to
+     * authentication (properties like bindType, bindDn, bindPassword). Caller of this method needs to fill auth-related connection properties
+     * based on the fact whether he does admin connection or user authentication
+     *
+     * @param ldapConfig
+     * @return
+     */
+    public static Hashtable<Object, Object> getNonAuthConnectionProperties(LDAPConfig ldapConfig) {
+        HashMap<String, Object> env = new HashMap<>();
+
+        env.put(Context.INITIAL_CONTEXT_FACTORY, ldapConfig.getFactoryName());
+
         String url = ldapConfig.getConnectionUrl();
 
         if (url != null) {
@@ -146,8 +188,12 @@ public final class LDAPContextManager implements AutoCloseable {
             logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");
         }
 
-        String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
-        LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
+        // when using Start TLS, use default socket factory for LDAP client but pass the TrustStore SSL socket factory later
+        // when calling StartTlsResponse.negotiate(trustStoreSSLSocketFactory)
+        if (!ldapConfig.isStartTls()) {
+            String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+            LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
+        }
 
         String connectionPooling = ldapConfig.getConnectionPooling();
         if (connectionPooling != null) {
@@ -186,14 +232,6 @@ public final class LDAPContextManager implements AutoCloseable {
         String binaryAttrs = binaryAttrsBuilder.toString().trim();
         if (!binaryAttrs.isEmpty()) {
             env.put("java.naming.ldap.attributes.binary", binaryAttrs);
-        }
-
-        if (logger.isDebugEnabled()) {
-            Map<String, Object> copyEnv = new HashMap<>(env);
-            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
-                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
-            }
-            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
         }
 
         return new Hashtable<>(env);

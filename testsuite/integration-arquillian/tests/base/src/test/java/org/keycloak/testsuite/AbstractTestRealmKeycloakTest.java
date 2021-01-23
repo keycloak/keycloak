@@ -19,8 +19,11 @@ package org.keycloak.testsuite;
 
 import org.junit.After;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -92,6 +95,13 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
 
     protected IDToken sendTokenRequestAndGetIDToken(EventRepresentation loginEvent) {
+
+        OAuthClient.AccessTokenResponse response = sendTokenRequestAndGetResponse(loginEvent);
+        return oauth.verifyIDToken(response.getIdToken());
+    }
+
+    protected OAuthClient.AccessTokenResponse sendTokenRequestAndGetResponse(EventRepresentation loginEvent) {
+
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
@@ -99,14 +109,20 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
 
         Field eventsField = Reflections.findDeclaredField(this.getClass(), "events");
         if (eventsField != null) {
             AssertEvents events = Reflections.getFieldValue(eventsField, this, AssertEvents.class);
             events.expectCodeToToken(codeId, sessionId).assertEvent();
         }
-        return idToken;
+
+        return response;
     }
 
+    /** KEYCLOAK-12065 Inherit Client Connection from parent session **/
+    public static KeycloakSession inheritClientConnection(KeycloakSession parentSession, KeycloakSession currentSession) {
+        Resteasy.pushContext(ClientConnection.class, parentSession.getContext().getConnection());
+        return currentSession;
+    }
 }

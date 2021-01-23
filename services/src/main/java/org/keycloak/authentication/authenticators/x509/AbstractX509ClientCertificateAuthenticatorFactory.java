@@ -18,6 +18,7 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -89,9 +90,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     protected static final List<ProviderConfigProperty> configProperties;
     static {
         List<String> mappingSourceTypes = new LinkedList<>();
-        for (String s : mappingSources) {
-            mappingSourceTypes.add(s);
-        }
+        Collections.addAll(mappingSourceTypes, mappingSources);
         ProviderConfigProperty mappingMethodList = new ProviderConfigProperty();
         mappingMethodList.setType(ProviderConfigProperty.LIST_TYPE);
         mappingMethodList.setName(MAPPING_SOURCE_SELECTION);
@@ -104,14 +103,14 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         canonicalDn.setType(BOOLEAN_TYPE);
         canonicalDn.setName(CANONICAL_DN);
         canonicalDn.setLabel("Canonical DN representation enabled");
-        canonicalDn.setDefaultValue(false);
+        canonicalDn.setDefaultValue(Boolean.toString(false));
         canonicalDn.setHelpText("Use the canonical format to determine the distinguished name. This option is relevant for authenticators using a distinguished name.");
 
         ProviderConfigProperty serialnumberHex = new ProviderConfigProperty();
         serialnumberHex.setType(BOOLEAN_TYPE);
         serialnumberHex.setName(SERIALNUMBER_HEX);
         serialnumberHex.setLabel("Enable Serial Number hexadecimal representation");
-        serialnumberHex.setDefaultValue(false);
+        serialnumberHex.setDefaultValue(Boolean.toString(false));
         serialnumberHex.setHelpText("Use the hex representation of the serial number. This option is relevant for authenticators using serial number.");
 
         
@@ -123,9 +122,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         regExp.setHelpText("The regular expression to extract a user identity. The expression must contain a single group. For example, 'uniqueId=(.*?)(?:,|$)' will match 'uniqueId=somebody@company.org, CN=somebody' and give somebody@company.org");
 
         List<String> mapperTypes = new LinkedList<>();
-        for (String m : userModelMappers) {
-            mapperTypes.add(m);
-        }
+        Collections.addAll(mapperTypes, userModelMappers);
 
         ProviderConfigProperty userMapperList = new ProviderConfigProperty();
         userMapperList.setType(ProviderConfigProperty.LIST_TYPE);
@@ -143,6 +140,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         attributeOrPropertyValue.setHelpText("A name of user attribute to map the extracted user identity to existing user. The name must be a valid, existing user attribute if User Mapping Method is set to Custom Attribute Mapper. " +
                 "Multiple values are relevant when attribute mapping is related to multiple values, e.g. 'Certificate Serial Number and IssuerDN'");
 
+        ProviderConfigProperty timestampValidationValue = new ProviderConfigProperty();
+        timestampValidationValue.setType(BOOLEAN_TYPE);
+        timestampValidationValue.setName(TIMESTAMP_VALIDATION);
+        timestampValidationValue.setLabel("Check certificate validity");
+        timestampValidationValue.setDefaultValue(Boolean.toString(true));
+        timestampValidationValue.setHelpText("Will verify that the certificate has not expired yet and is already valid by checking the attributes 'notBefore' and 'notAfter'.");
+
         ProviderConfigProperty crlCheckingEnabled = new ProviderConfigProperty();
         crlCheckingEnabled.setType(BOOLEAN_TYPE);
         crlCheckingEnabled.setName(ENABLE_CRL);
@@ -152,7 +156,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         ProviderConfigProperty crlDPEnabled = new ProviderConfigProperty();
         crlDPEnabled.setType(BOOLEAN_TYPE);
         crlDPEnabled.setName(ENABLE_CRLDP);
-        crlDPEnabled.setDefaultValue(false);
+        crlDPEnabled.setDefaultValue(Boolean.toString(false));
         crlDPEnabled.setLabel("Enable CRL Distribution Point to check certificate revocation status");
         crlDPEnabled.setHelpText("CRL Distribution Point is a starting point for CRL. If this is ON, then CRL checking will be done based on the CRL distribution points included" +
                 " in the checked certificates. CDP is optional, but most PKI authorities include CDP in their certificates.");
@@ -209,6 +213,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 regExp,
                 userMapperList,
                 attributeOrPropertyValue,
+                timestampValidationValue,
                 crlCheckingEnabled,
                 crlDPEnabled,
                 cRLRelativePath,

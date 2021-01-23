@@ -32,7 +32,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -49,10 +48,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DefaultHttpClientFactoryTest {
 	private static final String DISABLE_TRUST_MANAGER_PROPERTY = "disable-trust-manager";
-	private static final String TEST_DOMAIN = "www.google.com";
+	private static final String TEST_DOMAIN = "keycloak.org";
 
 	@Test
-	public void createHttpClientProviderWithDisableTrustManager() throws ClientProtocolException, IOException{
+	public void createHttpClientProviderWithDisableTrustManager() throws IOException{
 		Map<String, String> values = new HashMap<>();
 		values.put(DISABLE_TRUST_MANAGER_PROPERTY, "true");
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
@@ -65,11 +64,11 @@ public class DefaultHttpClientFactoryTest {
 			Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
 			response = httpClient.execute(new HttpGet(testURL.get()));
 		}
-		assertEquals(HttpStatus.SC_OK,response.getStatusLine().getStatusCode());
+		assertEquals(HttpStatus.SC_NOT_FOUND,response.getStatusLine().getStatusCode());
 	}
 
 	@Test(expected = SSLPeerUnverifiedException.class)
-	public void createHttpClientProviderWithUnvailableURL() throws ClientProtocolException, IOException {
+	public void createHttpClientProviderWithUnvailableURL() throws IOException {
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
 		factory.init(scope(new HashMap<>()));
 		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());

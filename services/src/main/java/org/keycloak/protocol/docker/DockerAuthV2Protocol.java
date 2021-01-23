@@ -10,12 +10,10 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.docker.mapper.DockerAuthV2AttributeMapper;
 import org.keycloak.representations.docker.DockerResponse;
@@ -30,7 +28,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DockerAuthV2Protocol implements LoginProtocol {
     protected static final Logger logger = Logger.getLogger(DockerEndpoint.class);
@@ -111,17 +109,13 @@ public class DockerAuthV2Protocol implements LoginProtocol {
 
         // Next, allow mappers to decorate the token to add/remove scopes as appropriate
 
-        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
-            ProtocolMapperModel mapping = entry.getKey();
-            ProtocolMapper mapper = entry.getValue();
-
-            if (mapper instanceof DockerAuthV2AttributeMapper) {
-                final DockerAuthV2AttributeMapper dockerAttributeMapper = (DockerAuthV2AttributeMapper) mapper;
-                if (dockerAttributeMapper.appliesTo(responseToken)) {
-                    responseToken = dockerAttributeMapper.transformDockerResponseToken(responseToken, mapping, session, userSession, clientSession);
-                }
-            }
-        }
+        AtomicReference<DockerResponseToken> finalResponseToken = new AtomicReference<>(responseToken);
+        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
+                .filter(mapper -> mapper.getValue() instanceof DockerAuthV2AttributeMapper)
+                .filter(mapper -> ((DockerAuthV2AttributeMapper) mapper.getValue()).appliesTo(finalResponseToken.get()))
+                .forEach(mapper -> finalResponseToken.set(((DockerAuthV2AttributeMapper) mapper.getValue())
+                            .transformDockerResponseToken(finalResponseToken.get(), mapper.getKey(), session, userSession, clientSession)));
+        responseToken = finalResponseToken.get();
 
         try {
             // Finally, construct the response to the docker client with the token + metadata
@@ -156,9 +150,8 @@ public class DockerAuthV2Protocol implements LoginProtocol {
     }
 
     @Override
-    public void backchannelLogout(final UserSessionModel userSession, final AuthenticatedClientSessionModel clientSession) {
-        errorResponse(userSession, "backchannelLogout");
-
+    public Response backchannelLogout(final UserSessionModel userSession, final AuthenticatedClientSessionModel clientSession) {
+        return errorResponse(userSession, "backchannelLogout");
     }
 
     @Override

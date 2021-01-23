@@ -19,6 +19,8 @@ package org.keycloak.authentication.requiredactions.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Abstraction, which allows to display updateProfile page in various contexts (Required action of already existing user, or first identity provider
@@ -54,6 +56,19 @@ public interface UpdateProfileContext {
 
     String getFirstAttribute(String name);
 
-    List<String> getAttribute(String key);
+    /**
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
+     */
+    @Deprecated
+    default List<String> getAttribute(String key) {
+        return this.getAttributeStream(key).collect(Collectors.toList());
+    }
 
+    /**
+     * Obtains all values associated with the specified attribute name.
+     *
+     * @param name the name of the attribute.
+     * @return a non-null {@link Stream} of attribute values.
+     */
+    Stream<String> getAttributeStream(String name);
 }

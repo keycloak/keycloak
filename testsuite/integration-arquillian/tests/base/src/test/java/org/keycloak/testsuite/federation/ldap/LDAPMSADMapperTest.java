@@ -131,7 +131,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+            UserModel user = session.users().getUserByUsername(appRealm, "registerUserSuccess2");
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ctx.getLdapModel().getId());
@@ -139,7 +139,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
             Assert.assertEquals("firstName", user.getFirstName());
             Assert.assertEquals("lastName", user.getLastName());
             Assert.assertTrue(user.isEnabled());
-            Assert.assertEquals(0, user.getRequiredActions().size());
+            Assert.assertEquals(0, user.getRequiredActionsStream().count());
         });
     }
 }

@@ -18,12 +18,12 @@
 
 package org.keycloak.authorization;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -126,11 +126,11 @@ public final class AuthorizationProvider implements Provider {
     /**
      * Returns the registered {@link PolicyProviderFactory}.
      *
-     * @return a {@link List} containing all registered {@link PolicyProviderFactory}
+     * @return a {@link Stream} containing all registered {@link PolicyProviderFactory}
      */
-    public Collection<PolicyProviderFactory> getProviderFactories() {
-        return keycloakSession.getKeycloakSessionFactory().getProviderFactories(PolicyProvider.class).stream().map(
-                PolicyProviderFactory.class::cast).collect(Collectors.toList());
+    public Stream<PolicyProviderFactory> getProviderFactoriesStream() {
+        return keycloakSession.getKeycloakSessionFactory().getProviderFactoriesStream(PolicyProvider.class)
+                .map(PolicyProviderFactory.class::cast);
     }
 
     /**
@@ -455,14 +455,14 @@ public final class AuthorizationProvider implements Provider {
                 Resource resource = findById(id, null);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
-                List<PermissionTicket> permissions = ticketStore.findByResource(id, resource.getResourceServer().getId());
+                List<PermissionTicket> permissions = ticketStore.findByResource(id, resource.getResourceServer());
 
                 for (PermissionTicket permission : permissions) {
                     ticketStore.delete(permission.getId());
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
-                List<Policy> policies = policyStore.findByResource(id, resource.getResourceServer().getId());
+                List<Policy> policies = policyStore.findByResource(id, resource.getResourceServer());
 
                 for (Policy policyModel : policies) {
                     if (policyModel.getResources().size() == 1) {

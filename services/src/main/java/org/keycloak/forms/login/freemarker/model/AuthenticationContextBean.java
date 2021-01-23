@@ -18,13 +18,13 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationSelectionOption;
-import org.keycloak.services.util.AuthenticationFlowHistoryHelper;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.forms.login.LoginFormsPages;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,27 +32,41 @@ import org.keycloak.services.util.AuthenticationFlowHistoryHelper;
 public class AuthenticationContextBean {
 
     private final AuthenticationFlowContext context;
-    private final URI actionUri;
+    private final LoginFormsPages page;
 
-    public AuthenticationContextBean(AuthenticationFlowContext context, URI actionUri) {
+    public AuthenticationContextBean(AuthenticationFlowContext context, LoginFormsPages page) {
         this.context = context;
-        this.actionUri = actionUri;
+        this.page = page;
     }
-
 
     public List<AuthenticationSelectionOption> getAuthenticationSelections() {
         return context==null ? Collections.emptyList() : context.getAuthenticationSelections();
     }
 
-    public String getSelectedCredential() {
-        return context==null ? null : context.getSelectedCredentialId();
+    public boolean showTryAnotherWayLink() {
+        return getAuthenticationSelections().size() > 1 && page != LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR;
     }
 
-    public boolean showBackButton() {
-        if (context == null) {
-            return false;
+
+    public boolean showUsername() {
+        return context != null && context.getUser() != null && context.getAuthenticationSession() != null && page!=LoginFormsPages.ERROR;
+    }
+
+    public boolean showResetCredentials() {
+        return showUsername() && page == LoginFormsPages.LOGIN_RESET_PASSWORD;
+    }
+
+
+    // NOTE: This is called "attemptedUsername" as we won't necessarily display the username of the user, but the "attempted username", which he
+    // used on the login screen (which could be eventually email or something else)
+    public String getAttemptedUsername() {
+        String username = context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+
+        // Fallback to real username of the user just if attemptedUsername doesn't exists
+        if (username == null) {
+            username = context.getUser().getUsername();
         }
 
-        return actionUri != null && new AuthenticationFlowHistoryHelper(context.getAuthenticationSession(), context.getFlowPath()).hasAnyExecution();
+        return username;
     }
 }

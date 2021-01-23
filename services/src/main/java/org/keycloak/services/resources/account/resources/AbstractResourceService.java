@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.account.resources;
 
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,19 +28,18 @@ import java.util.stream.Collectors;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.managers.Auth;
-import org.keycloak.services.resources.Cors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -53,6 +51,7 @@ public abstract class AbstractResourceService {
     protected final PermissionTicketStore ticketStore;
     protected final ResourceStore resourceStore;
     protected final ScopeStore scopeStore;
+    protected final KeycloakUriInfo uriInfo;
     protected HttpRequest request;
     protected Auth auth;
 
@@ -64,10 +63,7 @@ public abstract class AbstractResourceService {
         ticketStore = provider.getStoreFactory().getPermissionTicketStore();
         resourceStore = provider.getStoreFactory().getResourceStore();
         scopeStore = provider.getStoreFactory().getScopeStore();
-    }
-
-    protected Response cors(Response.ResponseBuilder response) {
-        return Cors.add(request, response).auth().allowedOrigins(auth.getToken()).build();
+        uriInfo = session.getContext().getUri();
     }
 
     public static class Resource extends ResourceRepresentation {
@@ -86,8 +82,7 @@ public abstract class AbstractResourceService {
 
             setScopes(resource.getScopes().stream().map(Scope::new).collect(Collectors.toSet()));
 
-            ResourceServer resourceServer = resource.getResourceServer();
-            this.client = new Client(provider.getRealm().getClientById(resourceServer.getId()));
+            this.client = new Client(provider.getRealm().getClientById(resource.getResourceServer()));
         }
 
         Resource(org.keycloak.authorization.model.Resource resource, AuthorizationProvider provider) {
@@ -154,7 +149,7 @@ public abstract class AbstractResourceService {
         }
 
         Permission(String userId, AuthorizationProvider provider) {
-            UserModel user = provider.getKeycloakSession().users().getUserById(userId, provider.getRealm());
+            UserModel user = provider.getKeycloakSession().users().getUserById(provider.getRealm(), userId);
 
             setUsername(user.getUsername());
             setFirstName(user.getFirstName());

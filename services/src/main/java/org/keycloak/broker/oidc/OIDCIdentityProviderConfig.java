@@ -16,7 +16,14 @@
  */
 package org.keycloak.broker.oidc;
 
+import static org.keycloak.common.util.UriUtils.checkUrl;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
+
+import java.util.Arrays;
 
 /**
  * @author Pedro Igor
@@ -28,9 +35,12 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
 
-
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
+    }
+
+    public OIDCIdentityProviderConfig() {
+        super();
     }
 
     public String getPrompt() {
@@ -103,7 +113,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public boolean isDisableUserInfoService() {
         String disableUserInfo = getConfig().get("disableUserInfo");
-        return disableUserInfo == null ? false : Boolean.valueOf(disableUserInfo);
+        return Boolean.parseBoolean(disableUserInfo);
     }
 
     public void setDisableUserInfoService(boolean disable) {
@@ -111,15 +121,23 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     }
 
     public int getAllowedClockSkew() {
-        String allowedClockSkew = getConfig().get("allowedClockSkew");
+        String allowedClockSkew = getConfig().get(ALLOWED_CLOCK_SKEW);
         if (allowedClockSkew == null || allowedClockSkew.isEmpty()) {
             return 0;
         }
         try {
-            return Integer.parseInt(getConfig().get("allowedClockSkew"));
+            return Integer.parseInt(getConfig().get(ALLOWED_CLOCK_SKEW));
         } catch (NumberFormatException e) {
             // ignore it and use default
             return 0;
         }
+    }
+
+    @Override
+    public void validate(RealmModel realm) {
+        super.validate(realm);
+        SslRequired sslRequired = realm.getSslRequired();
+        checkUrl(sslRequired, getJwksUrl(), "jwks_url");
+        checkUrl(sslRequired, getLogoutUrl(), "logout_url");
     }
 }

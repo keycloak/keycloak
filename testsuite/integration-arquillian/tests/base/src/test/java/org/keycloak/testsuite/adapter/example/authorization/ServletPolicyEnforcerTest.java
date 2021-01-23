@@ -47,6 +47,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
@@ -591,7 +592,7 @@ public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
 
     private URL getResourceServerUrl() {
         try {
-            return new URL(this.appServerContextRootPage + "/" + RESOURCE_SERVER_ID);
+            return new URL(ServerURLs.getAppServerContextRoot() + "/" + RESOURCE_SERVER_ID);
         } catch (MalformedURLException e) {
             throw new RuntimeException("Could not obtain resource server url.", e);
         }

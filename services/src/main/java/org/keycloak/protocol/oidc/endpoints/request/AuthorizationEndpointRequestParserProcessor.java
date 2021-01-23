@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
@@ -33,6 +34,8 @@ import org.keycloak.services.messages.Messages;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,7 +46,13 @@ public class AuthorizationEndpointRequestParserProcessor {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
 
-            new AuthzEndpointQueryStringParser(requestParams).parseRequest(request);
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams);
+            parser.parseRequest(request);
+
+            if (parser.getInvalidRequestMessage() != null) {
+                request.invalidRequestMessage = parser.getInvalidRequestMessage();
+                return request;
+            }
 
             String requestParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_PARAM);
             String requestUriParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
@@ -68,9 +77,15 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (requestParam != null) {
                 new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             } else if (requestUriParam != null) {
-                try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUriParam)) {
-                    String retrievedRequest = StreamUtil.readString(is);
+                // Validate "requestUriParam" with allowed requestUris
+                List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();
+                String requestUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), requestUriParam, new HashSet<>(requestUris), false);
+                if (requestUri == null) {
+                    throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
+                }
 
+                try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUri)) {
+                    String retrievedRequest = StreamUtil.readString(is);
                     new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
                 }
             }
@@ -83,4 +98,15 @@ public class AuthorizationEndpointRequestParserProcessor {
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
     }
+
+    public static String getClientId(EventBuilder event, KeycloakSession session, MultivaluedMap<String, String> requestParams) {
+        List<String> clientParam = requestParams.get(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        if (clientParam != null && clientParam.size() == 1) {
+            return clientParam.get(0);
+        } else {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
+    }
+
 }

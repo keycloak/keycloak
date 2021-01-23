@@ -22,17 +22,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.idp.CreateIdentityProvider;
+import org.keycloak.testsuite.console.page.idp.CreateIdentityProviderMapper;
 import org.keycloak.testsuite.console.page.idp.IdentityProvider;
 import org.keycloak.testsuite.console.page.idp.IdentityProviders;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *
  * @author Petr Mensik
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
+ * @author Martin Idel <external.Martin.Idel@bosch.io>
  */
 public class IdentityProviderTest extends AbstractConsoleTest {
     @Page
@@ -43,6 +48,9 @@ public class IdentityProviderTest extends AbstractConsoleTest {
 
     @Page
     private CreateIdentityProvider createIdentityProviderPage;
+
+    @Page
+    private CreateIdentityProviderMapper createIdentityProviderMapperPage;
 
     @Before
     public void beforeIdentityProviderTest() {
@@ -65,7 +73,7 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertPasswordIsUnmasked();
         createIdentityProviderPage.form().save();
         assertAlertSuccess();
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
         assertCurrentUrlEquals(identityProviderPage);
 
         assertEyeButtonIsDisabled();
@@ -78,7 +86,7 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertPasswordIsUnmasked();
         identityProviderPage.form().save();
         assertAlertSuccess();
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
         assertCurrentUrlEquals(identityProviderPage);
 
         assertEyeButtonIsDisabled();
@@ -88,6 +96,44 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertPasswordIsUnmasked();
         identityProviderPage.form().clientSecret().clickEyeButton();
         assertPasswordIsMasked();
+    }
+
+    @Test
+    public void settingAndSavingSyncMode() {
+        createIdentityProviderPage.setProviderId("google");
+        identityProviderPage.setIds("google", "google");
+
+        identityProvidersPage.addProvider("google");
+        assertCurrentUrlEquals(createIdentityProviderPage);
+        identityProviderPage.form().setSyncMode("force");
+
+        createIdentityProviderPage.form().setClientId("test-google");
+        createIdentityProviderPage.form().setClientSecret("secret");
+
+        createIdentityProviderPage.form().save();
+        assertAlertSuccess();
+        refreshPageAndWaitForLoad();
+        assertCurrentUrlEquals(identityProviderPage);
+        assertSyncModeIsSetToForce();
+
+        identityProviderPage.form().createMapper();
+        createIdentityProviderMapperPage.setIdp("google");
+        assertCurrentUrlEquals(createIdentityProviderMapperPage);
+        createIdentityProviderMapperPage.form().setName("TestMapper");
+        createIdentityProviderMapperPage.form().setSyncMode("import");
+
+        createIdentityProviderMapperPage.form().save();
+        assertAlertSuccess();
+        refreshPageAndWaitForLoad();
+        assertMapperSyncModeIsSetToImport();
+    }
+
+    private void assertMapperSyncModeIsSetToImport() {
+        assertEquals("import", createIdentityProviderMapperPage.form().syncMode());
+    }
+
+    private void assertSyncModeIsSetToForce() {
+        assertEquals("force", identityProviderPage.form().syncMode());
     }
 
     private void assertEyeButtonIsDisabled() {

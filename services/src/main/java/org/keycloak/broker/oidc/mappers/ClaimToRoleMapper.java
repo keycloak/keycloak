@@ -23,6 +23,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -31,7 +32,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -42,6 +46,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -61,13 +66,17 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
         property = new ProviderConfigProperty();
         property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
-        property.setHelpText("Role to grant to user if claim is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setHelpText("Role to grant to user if claim is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "oidc-role-idp-mapper";
 
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -105,7 +114,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     }
 
     @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (!hasClaimValue(mapperModel, context)) {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
@@ -116,8 +125,22 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     }
 
     @Override
+    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        if (role == null) {
+            throw new IdentityBrokerException("Unable to find role: " + roleName);
+        }
+        if (!hasClaimValue(mapperModel, context)) {
+            user.deleteRoleMapping(role);
+        } else {
+            user.grantRole(role);
+        }
+    }
+
+    @Override
     public String getHelpText() {
-        return "If a claim exists, grant the user the specified realm or application role.";
+        return "If a claim exists, grant the user the specified realm or client role.";
     }
 
 }

@@ -17,10 +17,16 @@
 
 package org.keycloak.models;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,13 +49,102 @@ public interface RoleContainerModel {
 
     boolean removeRole(RoleModel role);
 
-    Set<RoleModel> getRoles();
+    /**
+     * @deprecated Use {@link #getRolesStream() getRolesStream} instead.
+     */
+    @Deprecated
+    default Set<RoleModel> getRoles() {
+        return getRolesStream().collect(Collectors.toSet());
+    }
 
-    List<String> getDefaultRoles();
+    /**
+     * Returns available roles as a stream.
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
+     */
+    Stream<RoleModel> getRolesStream();
 
+    /**
+     * @deprecated Use {@link #getRolesStream(Integer, Integer) getRolesStream} instead.
+     */
+    @Deprecated
+    default Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
+        return getRolesStream(firstResult, maxResults).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns available roles as a stream.
+     * @param firstResult {@code Integer} Index of the first desired role. Ignored if negative or {@code null}.
+     * @param maxResults {@code Integer} Maximum number of returned roles. Ignored if negative or {@code null}.
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
+     */
+    Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults);
+
+    /**
+     * @deprecated Use {@link #searchForRolesStream(String, Integer, Integer) searchForRolesStream} instead.
+     */
+    @Deprecated
+    default Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return searchForRolesStream(search, first, max).collect(Collectors.toSet());
+    }
+
+    /**
+     * Searches roles by the given name. Returns all roles that match the given filter.
+     * @param search {@code String} Name of the role to be used as a filter.
+     * @param first {@code Integer} Index of the first desired role. Ignored if negative or {@code null}.
+     * @param max {@code Integer} Maximum number of returned roles. Ignored if negative or {@code null}.
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
+     */
+    Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max);
+
+    /**
+     * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     */
+    @Deprecated
+    default List<String> getDefaultRoles() {
+        return getDefaultRolesStream().collect(Collectors.toList());
+    }
+
+    /**
+     * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     */
+    @Deprecated
+    Stream<String> getDefaultRolesStream();
+
+    /**
+     * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     */
+    @Deprecated
     void addDefaultRole(String name);
 
-    void updateDefaultRoles(String... defaultRoles);
+    /**
+     * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     */
+    @Deprecated
+    default void updateDefaultRoles(String... defaultRoles) {
+        List<String> defaultRolesArray = Arrays.asList(defaultRoles);
+        Collection<String> entities = getDefaultRolesStream().collect(Collectors.toList());
+        Set<String> already = new HashSet<>();
+        ArrayList<String> remove = new ArrayList<>();
+        for (String rel : entities) {
+            if (! defaultRolesArray.contains(rel)) {
+                remove.add(rel);
+            } else {
+                already.add(rel);
+            }
+        }
+        removeDefaultRoles(remove.toArray(new String[] {}));
 
+        for (String roleName : defaultRoles) {
+            if (!already.contains(roleName)) {
+                addDefaultRole(roleName);
+            }
+        }
+    }
+
+    /**
+     * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     */
+    @Deprecated
     void removeDefaultRoles(String... defaultRoles);
+
 }

@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.ui.account2;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 
@@ -29,8 +28,8 @@ import static org.junit.Assert.assertTrue;
 public abstract class BaseAccountPageTest extends AbstractAccountTest {
     protected abstract AbstractLoggedInPage getAccountPage();
 
-    @Before
-    public void beforeBaseAccountPageTest() {
+    @Override
+    public void navigateBeforeTest() {
         getAccountPage().navigateTo();
         loginToAccount();
         getAccountPage().assertCurrent();
@@ -48,5 +47,16 @@ public abstract class BaseAccountPageTest extends AbstractAccountTest {
             assertTrue("Nav bar subsection should be expanded after clicking nav item",
                     getAccountPage().sidebar().isNavSubsectionExpanded(getAccountPage().getParentPageId()));
         }
+    }
+
+    protected void testModalDialog(Runnable triggerModal, Runnable onCancel) {
+        triggerModal.run();
+        getAccountPage().modal().assertIsDisplayed();
+        getAccountPage().modal().clickCancel();
+        getAccountPage().modal().assertIsNotDisplayed();
+        onCancel.run();
+        triggerModal.run();
+        getAccountPage().modal().clickConfirm();
+        getAccountPage().modal().assertIsNotDisplayed();
     }
 }

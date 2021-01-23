@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -20,6 +21,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -32,6 +35,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     public static final String ROLE_MANAGER = "manager";
     public static final String ROLE_FRIENDLY_MANAGER = "friendly-manager";
     public static final String ROLE_USER_DOT_GUIDE = "user.guide";
+    public static final String EMPTY_ATTRIBUTE_ROLE = "empty.attribute.role";
 
     @Page
     ConsentPage consentPage;
@@ -44,7 +48,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     }
 
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         logInWithBroker(bc);
 
@@ -82,7 +86,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
@@ -93,15 +97,15 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     protected void testSingleLogout() {
         log.debug("Testing single log out");
 
-        driver.navigate().to(getAccountUrl(bc.providerRealmName()));
+        driver.navigate().to(getAccountUrl(getProviderRoot(), bc.providerRealmName()));
 
         Assert.assertTrue("Should be logged in the account page", driver.getTitle().endsWith("Account Management"));
 
-        logoutFromRealm(bc.providerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
 
         Assert.assertTrue("Should be on " + bc.providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName()));
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
@@ -112,11 +116,13 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         RoleRepresentation friendlyManagerRole = new RoleRepresentation(ROLE_FRIENDLY_MANAGER,null, false);
         RoleRepresentation userRole = new RoleRepresentation(ROLE_USER,null, false);
         RoleRepresentation userGuideRole = new RoleRepresentation(ROLE_USER_DOT_GUIDE,null, false);
+        RoleRepresentation emptyAttributeRole = new RoleRepresentation(EMPTY_ATTRIBUTE_ROLE, null, false);
 
         adminClient.realm(realm).roles().create(managerRole);
         adminClient.realm(realm).roles().create(friendlyManagerRole);
         adminClient.realm(realm).roles().create(userRole);
         adminClient.realm(realm).roles().create(userGuideRole);
+        adminClient.realm(realm).roles().create(emptyAttributeRole);
     }
 
     static void enableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
@@ -168,6 +174,13 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
             AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
             config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_OFF);
             flows.updateAuthenticatorConfig(config.getId(), config);
+        }
+    }
+
+    static void disableExistingUser(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
+        if (execution.getProviderId() != null && (execution.getProviderId().equals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID) || execution.getProviderId().equals(IdpConfirmLinkAuthenticatorFactory.PROVIDER_ID))) {
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.name());
+            flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
         }
     }
 }

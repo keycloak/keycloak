@@ -40,8 +40,6 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final String realm;
     private final String username;
     private final Long createdTimestamp;
-    private final String firstName;
-    private final String lastName;
     private final String email;
     private final boolean emailVerified;
     private final boolean enabled;
@@ -58,18 +56,16 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.realm = realm.getId();
         this.username = user.getUsername();
         this.createdTimestamp = user.getCreatedTimestamp();
-        this.firstName = user.getFirstName();
-        this.lastName = user.getLastName();
         this.email = user.getEmail();
         this.emailVerified = user.isEmailVerified();
         this.enabled = user.isEnabled();
         this.federationLink = user.getFederationLink();
         this.serviceAccountClientLink = user.getServiceAccountClientLink();
         this.notBefore = notBefore;
-        this.requiredActions = new DefaultLazyLoader<>(UserModel::getRequiredActions, Collections::emptySet);
+        this.requiredActions = new DefaultLazyLoader<>(userModel -> userModel.getRequiredActionsStream().collect(Collectors.toSet()), Collections::emptySet);
         this.attributes = new DefaultLazyLoader<>(userModel -> new MultivaluedHashMap<>(userModel.getAttributes()), MultivaluedHashMap::new);
-        this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappings().stream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
-        this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroups().stream().map(GroupModel::getId).collect(Collectors.toCollection(LinkedHashSet::new)), LinkedHashSet::new);
+        this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroupsStream().map(GroupModel::getId).collect(Collectors.toCollection(LinkedHashSet::new)), LinkedHashSet::new);
     }
 
     public String getRealm() {
@@ -82,14 +78,6 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public Long getCreatedTimestamp() {
         return createdTimestamp;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
     }
 
     public String getEmail() {

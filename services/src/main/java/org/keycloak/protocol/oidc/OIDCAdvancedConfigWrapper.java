@@ -17,11 +17,16 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -78,6 +83,14 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED, requestObjectRequired);
     }
 
+    public List<String> getRequestUris() {
+        return getAttributeMultivalued(OIDCConfigAttributes.REQUEST_URIS);
+    }
+
+    public void setRequestUris(List<String> requestUris) {
+        setAttributeMultivalued(OIDCConfigAttributes.REQUEST_URIS, requestUris);
+    }
+
     public boolean isUseJwksUrl() {
         String useJwksUrl = getAttribute(OIDCConfigAttributes.USE_JWKS_URL);
         return Boolean.parseBoolean(useJwksUrl);
@@ -118,6 +131,28 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
     }
 
+    /**
+     * If true, then Client Credentials Grant generates refresh token and creates user session. This is not per specs, so it is false by default
+     * For the details @see https://tools.ietf.org/html/rfc6749#section-4.4.3
+     */
+    public boolean isUseRefreshTokenForClientCredentialsGrant() {
+        String val = getAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setUseRefreshTokenForClientCredentialsGrant(boolean enable) {
+        String val =  String.valueOf(enable);
+        setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, val);
+    }
+
+    public String getTlsClientAuthSubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
+        setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
+    }
+
     public String getPkceCodeChallengeMethod() {
         return getAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD);
     }
@@ -149,12 +184,56 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
     }
 
+    public String getTokenEndpointAuthSigningAlg() {
+        return getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+    }
+
+    public void setTokenEndpointAuthSigningAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
+    }
+
+    public String getBackchannelLogoutUrl() {
+        return getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
+    }
+
+    public void setBackchannelLogoutUrl(String backchannelLogoutUrl) {
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, backchannelLogoutUrl);
+    }
+
+    public boolean isBackchannelLogoutSessionRequired() {
+        String backchannelLogoutSessionRequired = getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED);
+        return Boolean.parseBoolean(backchannelLogoutSessionRequired);
+    }
+
+    public void setBackchannelLogoutSessionRequired(boolean backchannelLogoutSessionRequired) {
+        String val = String.valueOf(backchannelLogoutSessionRequired);
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, val);
+    }
+
+    public boolean getBackchannelLogoutRevokeOfflineTokens() {
+        String backchannelLogoutRevokeOfflineTokens = getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS);
+        return Boolean.parseBoolean(backchannelLogoutRevokeOfflineTokens);
+    }
+
+    public void setBackchannelLogoutRevokeOfflineTokens(boolean backchannelLogoutRevokeOfflineTokens) {
+        String val = String.valueOf(backchannelLogoutRevokeOfflineTokens);
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
+    }
+
     private String getAttribute(String attrKey) {
         if (clientModel != null) {
             return clientModel.getAttribute(attrKey);
         } else {
             return clientRep.getAttributes()==null ? null : clientRep.getAttributes().get(attrKey);
         }
+    }
+
+    private String getAttribute(String attrKey, String defaultValue) {
+        String value = getAttribute(attrKey);
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
     }
 
     private void setAttribute(String attrKey, String attrValue) {
@@ -175,6 +254,22 @@ public class OIDCAdvancedConfigWrapper {
                     clientRep.getAttributes().put(attrKey, null);
                 }
             }
+        }
+    }
+
+    private List<String> getAttributeMultivalued(String attrKey) {
+        String attrValue = getAttribute(attrKey);
+        if (attrValue == null) return Collections.emptyList();
+        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+    }
+
+    private void setAttributeMultivalued(String attrKey, List<String> attrValues) {
+        if (attrValues == null || attrValues.size() == 0) {
+            // Remove attribute
+            setAttribute(attrKey, null);
+        } else {
+            String attrValueFull = String.join(Constants.CFG_DELIMITER, attrValues);
+            setAttribute(attrKey, attrValueFull);
         }
     }
 }

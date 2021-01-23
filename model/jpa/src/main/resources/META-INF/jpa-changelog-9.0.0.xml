@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="9.0.0-always-display-client">
+        <addColumn tableName="CLIENT">
+            <column name="ALWAYS_DISPLAY_IN_CONSOLE" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="9.0.0-drop-constraints-for-column-increase">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <dbms type="mssql"/>
+        </preConditions>
+
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_PERM_TICKET" constraintName="UK_FRSR6T700S9V50BU18WS5PMT"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_RESOURCE" constraintName="UK_FRSR6T700S9V50BU18WS5HA6"/>
+
+        <dropPrimaryKey tableName="OFFLINE_CLIENT_SESSION" constraintName="CONSTRAINT_OFFL_CL_SES_PK3"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="9.0.0-increase-column-size-federated-fk">
+        <modifyDataType newDataType="VARCHAR(255)" tableName="FED_USER_CONSENT" columnName="CLIENT_ID"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="KEYCLOAK_ROLE" columnName="CLIENT_REALM_CONSTRAINT"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_POLICY" columnName="OWNER"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="USER_CONSENT" columnName="CLIENT_ID"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="USER_ENTITY" columnName="SERVICE_ACCOUNT_CLIENT_LINK"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="OFFLINE_CLIENT_SESSION" columnName="CLIENT_ID"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_PERM_TICKET" columnName="OWNER"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_PERM_TICKET" columnName="REQUESTER"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_RESOURCE" columnName="OWNER"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="9.0.0-recreate-constraints-after-column-increase">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <dbms type="mssql"/>
+        </preConditions>
+
+        <addNotNullConstraint columnDataType="VARCHAR(255)" tableName="OFFLINE_CLIENT_SESSION" columnName="CLIENT_ID" />
+        <addNotNullConstraint columnDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_PERM_TICKET" columnName="OWNER" />
+        <addNotNullConstraint columnDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_PERM_TICKET" columnName="REQUESTER" />
+        <addNotNullConstraint columnDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_RESOURCE" columnName="OWNER" />
+
+        <addUniqueConstraint tableName="RESOURCE_SERVER_PERM_TICKET" columnNames="OWNER, REQUESTER, RESOURCE_SERVER_ID, RESOURCE_ID, SCOPE_ID" constraintName="UK_FRSR6T700S9V50BU18WS5PMT"/>
+        <addUniqueConstraint tableName="RESOURCE_SERVER_RESOURCE" columnNames="NAME, OWNER, RESOURCE_SERVER_ID" constraintName="UK_FRSR6T700S9V50BU18WS5HA6"/>
+
+        <addPrimaryKey columnNames="USER_SESSION_ID, CLIENT_ID, CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK3" tableName="OFFLINE_CLIENT_SESSION"/>
+    </changeSet>
+
+</databaseChangeLog>

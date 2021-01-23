@@ -36,8 +36,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
  */
 public class ReferrerTest extends AbstractAccountTest {
     public static final String FAKE_CLIENT_ID = "fake-client-name";
-    public static final String FAKE_CLIENT_NAME_LOCALIZE = "Referrer Test Client";
-    public static final String REFERRER_LINK_TEXT = "Back to " + FAKE_CLIENT_NAME_LOCALIZE;
+    public static final String REFERRER_LINK_TEXT = "Back to " + LOCALE_CLIENT_NAME_LOCALIZED;
 
     @Page
     private WelcomeScreen welcomeScreen;
@@ -52,12 +51,12 @@ public class ReferrerTest extends AbstractAccountTest {
 
         ClientRepresentation testClient = new ClientRepresentation();
         testClient.setClientId(FAKE_CLIENT_ID);
-        testClient.setName("${client_" + FAKE_CLIENT_ID + "}");
+        testClient.setName(LOCALE_CLIENT_NAME);
         testClient.setRedirectUris(Collections.singletonList(getFakeClientUrl()));
         testClient.setEnabled(true);
 
         testRealm.setClients(Collections.singletonList(testClient));
-        testRealm.setAccountTheme(LOCALIZED_THEME); // using localized custom theme for the fake client localized name
+        testRealm.setAccountTheme(LOCALIZED_THEME_PREVIEW); // using localized custom theme for the fake client localized name
     }
 
     @Test
@@ -123,30 +122,6 @@ public class ReferrerTest extends AbstractAccountTest {
         testReferrer(personalInfoPage.header(), false);
     }
 
-    /**
-     * Test that i18n and referrer work well together
-     */
-    @Test
-    public void i18nTest() {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        configureInternationalizationForRealm(realm);
-        testRealmResource().update(realm);
-        testContext.setTestRealmReps(Collections.emptyList()); // a small hack; we want realm re-import after this test
-
-        welcomeScreen.navigateTo(FAKE_CLIENT_ID, getFakeClientUrl());
-        welcomeScreen.header().assertReferrerLinkVisible(true);
-        welcomeScreen.header().selectLocale(CUSTOM_LOCALE);
-        welcomeScreen.header().assertReferrerLinkVisible(true);
-
-        welcomeScreen.clickPersonalInfoLink();
-        assertEquals(CUSTOM_LOCALE_NAME, loginPage.localeDropdown().getSelected());
-        loginToAccount();
-        personalInfoPage.header().assertReferrerLinkVisible(true);
-        personalInfoPage.header().selectLocale(DEFAULT_LOCALE);
-        assertEquals(DEFAULT_LOCALE_NAME, personalInfoPage.header().getCurrentLocaleName());
-        testReferrer(personalInfoPage.header(), true);
-    }
-
     private void testReferrer(AbstractHeader header, boolean expectReferrerVisible) {
         if (expectReferrerVisible) {
             assertEquals(REFERRER_LINK_TEXT, header.getReferrerLinkText());
@@ -162,8 +137,6 @@ public class ReferrerTest extends AbstractAccountTest {
         // we need to use some page which host exists – Firefox is throwing exceptions like crazy if we try to load
         // a page on a non-existing host, like e.g. http://non-existing-server/
         // also we need to do this here as getAuthServerRoot is not ready when firing this class' constructor
-        return getAuthServerRoot() + "auth/non-existing-page/?foo=bar";
-        // TODO replace ^^ with the following once KEYCLOAK-12173 and KEYCLOAK-12189 are resolved
-        // return getAuthServerRoot() + "auth/non-existing-page/?foo=bar&bar=foo#anchor";
+         return getAuthServerRoot() + "auth/non-existing-page/?foo=bar&bar=foo#anchor";
     }
 }

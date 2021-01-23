@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-abstract class AuthzEndpointRequestParser {
+public abstract class AuthzEndpointRequestParser {
 
     private static final Logger logger = Logger.getLogger(AuthzEndpointRequestParser.class);
 
@@ -46,8 +46,10 @@ abstract class AuthzEndpointRequestParser {
      */
     public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 200;
 
+    public static final String AUTHZ_REQUEST_OBJECT = "ParsedRequestObject";
+
     /** Set of known protocol GET params not to be stored into additionalReqParams} */
-    private static final Set<String> KNOWN_REQ_PARAMS = new HashSet<>();
+    public static final Set<String> KNOWN_REQ_PARAMS = new HashSet<>();
     static {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLIENT_ID_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
@@ -70,9 +72,7 @@ abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
-
     }
-
 
     public void parseRequest(AuthorizationEndpointRequest request) {
         String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
@@ -96,6 +96,7 @@ abstract class AuthzEndpointRequestParser {
         request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
         request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
         request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
+        request.uiLocales = replaceIfNotNull(request.uiLocales, getParameter(OAuth2Constants.UI_LOCALES_PARAM));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
         request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
@@ -103,7 +104,6 @@ abstract class AuthzEndpointRequestParser {
 
         extractAdditionalReqParams(request.additionalReqParams);
     }
-
 
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
         for (String paramName : keySet()) {
@@ -129,7 +129,6 @@ abstract class AuthzEndpointRequestParser {
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
         return newVal==null ? previousVal : newVal;
     }
-
 
     protected abstract String getParameter(String paramName);
 

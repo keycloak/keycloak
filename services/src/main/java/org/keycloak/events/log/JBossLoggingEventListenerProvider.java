@@ -17,9 +17,11 @@
 
 package org.keycloak.events.log;
 
+import org.keycloak.common.util.StackUtil;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -39,16 +41,28 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger logger;
     private final Logger.Level successLevel;
     private final Logger.Level errorLevel;
+    private final EventListenerTransaction tx = new EventListenerTransaction(this::logAdminEvent, this::logEvent);
 
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
         this.session = session;
         this.logger = logger;
         this.successLevel = successLevel;
         this.errorLevel = errorLevel;
+
+        this.session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
     @Override
     public void onEvent(Event event) {
+        tx.addEvent(event);
+    }
+
+    @Override
+    public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+        tx.addAdminEvent(adminEvent, includeRepresentation);
+    }
+
+    private void logEvent(Event event) {
         Logger.Level level = event.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
@@ -84,25 +98,28 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                     }
                 }
             }
-            
-            AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession(); 
+
+            AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
             if(authSession!=null) {
                 sb.append(", authSessionParentId=");
                 sb.append(authSession.getParentSession().getId());
                 sb.append(", authSessionTabId=");
                 sb.append(authSession.getTabId());
             }
-            
+
             if(logger.isTraceEnabled()) {
                 setKeycloakContext(sb);
+
+                if (StackUtil.isShortStackTraceEnabled()) {
+                    sb.append(", stackTrace=").append(StackUtil.getShortStackTrace());
+                }
             }
 
             logger.log(logger.isTraceEnabled() ? Logger.Level.TRACE : level, sb.toString());
         }
     }
 
-    @Override
-    public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    private void logAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         Logger.Level level = adminEvent.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
@@ -127,7 +144,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                 sb.append(", error=");
                 sb.append(adminEvent.getError());
             }
-            
+
             if(logger.isTraceEnabled()) {
                 setKeycloakContext(sb);
             }

@@ -18,7 +18,9 @@
 package org.keycloak.saml;
 
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.saml.SAML2NameIDBuilder;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -29,7 +31,6 @@ import org.w3c.dom.Document;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,7 +41,7 @@ public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBui
     protected String sessionIndex;
     protected long assertionExpiration;
     protected String destination;
-    protected String issuer;
+    protected NameIDType issuer;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2LogoutRequestBuilder destination(String destination) {
@@ -48,9 +49,13 @@ public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBui
         return this;
     }
 
-    public SAML2LogoutRequestBuilder issuer(String issuer) {
+    public SAML2LogoutRequestBuilder issuer(NameIDType issuer) {
         this.issuer = issuer;
         return this;
+    }
+
+    public SAML2LogoutRequestBuilder issuer(String issuer) {
+        return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
     @Override
@@ -108,17 +113,15 @@ public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBui
         LogoutRequestType lort = SAML2Request.createLogoutRequest(issuer);
 
         lort.setNameID(nameId);
+        lort.setIssuer(issuer);
 
-        if (issuer != null) {
-            NameIDType issuerID = new NameIDType();
-            issuerID.setValue(issuer);
-            lort.setIssuer(issuerID);
-        }
         if (sessionIndex != null) lort.addSessionIndex(sessionIndex);
 
 
         if (assertionExpiration > 0) lort.setNotOnOrAfter(XMLTimeUtil.add(lort.getIssueInstant(), assertionExpiration * 1000));
-        lort.setDestination(URI.create(destination));
+        if (destination != null) {
+            lort.setDestination(URI.create(destination));
+        }
 
         if (! this.extensions.isEmpty()) {
             ExtensionsType extensionsType = new ExtensionsType();

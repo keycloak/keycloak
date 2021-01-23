@@ -23,12 +23,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
@@ -137,7 +135,7 @@ public class Cors {
 
     public Response build() {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null) {
+        if (origin == null || origin.equals("null")) {
             logger.trace("No origin header ignoring");
             return builder.build();
         }
@@ -184,7 +182,7 @@ public class Cors {
 
     public void build(HttpResponse response) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null) {
+        if (origin == null || origin.equals("null")) {
             logger.trace("No origin header ignoring");
             return;
         }

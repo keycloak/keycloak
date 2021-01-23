@@ -169,6 +169,20 @@ public class GroupPolicyManagementTest extends AbstractAuthorizationSettingsTest
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testSaveWithInInvalidGroup() throws InterruptedException {
+        authorizationPage.navigateTo();
+        GroupPolicyRepresentation expected = new GroupPolicyRepresentation();
+
+        expected.setName("Test Invalid Group Policy");
+        expected.setDescription("description");
+        expected.addGroupPath("/Groups", true);
+
+        authorizationPage.authorizationTabs().policies().create(expected, false);
+        
+        alert.assertDanger("Error! You must choose a group");
+    }
+
     private GroupPolicyRepresentation createPolicy(GroupPolicyRepresentation expected) {
         GroupPolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();

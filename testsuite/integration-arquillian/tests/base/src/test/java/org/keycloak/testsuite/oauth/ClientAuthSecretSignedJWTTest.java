@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.testsuite.oauth;
 
 import static org.junit.Assert.assertEquals;
@@ -17,42 +33,117 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
 
-/**
- * @author Takashi Norimatsu <takashi.norimatsu.ws@hitachi.com>
- */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
-	private static final Logger logger = Logger.getLogger(ClientAuthSecretSignedJWTTest.class);
-	
+
+    private static final Logger logger = Logger.getLogger(ClientAuthSecretSignedJWTTest.class);
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
-    
+
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
     }
-    
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/client-auth-test/testrealm-jwt-client-secret.json"), RealmRepresentation.class);
         testRealms.add(realm);
     }
-       
+
     // TEST SUCCESS
-    
+
     @Test
-    public void testCodeToTokenRequestSuccess() throws Exception {   	
+    public void testCodeToTokenRequestSuccess() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.HS256);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessHS384() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.HS384);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessHS512() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.HS512);
+    }
+
+    @Test
+    public void testCodeToTokenRequestFailureHS384Enforced() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        final String realmName = "test";
+        final String clientId = "test-app";
+        try {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS384);
+            clientResource.update(clientRep);
+
+            testCodeToTokenRequestSuccess(Algorithm.HS384);
+        } catch (Exception e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testCodeToTokenRequestFailureHS512Enforced() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        final String realmName = "test";
+        final String clientId = "test-app";
+        final String clientSecret = "password";
+        try {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS512);
+            clientResource.update(clientRep);
+
+            oauth.clientId(clientId);
+            oauth.doLogin("test-user@localhost", clientSecret);
+            events.expectLogin().client(clientId).assertEvent();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(clientSecret, 20, Algorithm.HS256));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_client", response.getError());
+        } catch (Exception e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRep);
+        }
+    }
+ 
+    private void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
         oauth.clientId("test-app");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin()
@@ -60,8 +151,8 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("password", 20));
-        
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("password", 20, algorithm));
+
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
         oauth.parseRefreshToken(response.getRefreshToken());
@@ -70,9 +161,9 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
                 .assertEvent();
     }
-    
+
     // TEST ERRORS
-    
+
     @Test
     public void testAssertionInvalidSignature() throws Exception {
         oauth.clientId("test-app");
@@ -88,7 +179,6 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("unauthorized_client", response.getError());
     }
-
 
     @Test
     public void testAssertionReuse() throws Exception {
@@ -129,18 +219,21 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         assertEquals("unauthorized_client", response.getError());
     }
 
-
     private String getClientSignedJWT(String secret, int timeout) {
-        JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
-        jwtProvider.setClientSecret(secret);
-        return jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl());
+        return getClientSignedJWT(secret, timeout, Algorithm.HS256);
     }
-    
+
+    private String getClientSignedJWT(String secret, int timeout, String algorithm) {
+        JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
+        jwtProvider.setClientSecret(secret, algorithm);
+        return jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
+    }
+
     private String getRealmInfoUrl() {
         String authServerBaseUrl = UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth";
         return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build("test").toString();
     }
-    
+
     private OAuthClient.AccessTokenResponse doAccessTokenRequest(String code, String signedJwt) throws Exception {
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
@@ -148,11 +241,11 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-       
+
         CloseableHttpResponse response = sendRequest(oauth.getAccessTokenUrl(), parameters);
         return new OAuthClient.AccessTokenResponse(response);
     }
-    
+
     private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters) throws Exception {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
@@ -164,4 +257,5 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             oauth.closeClient(client);
         }
     }
+
 }

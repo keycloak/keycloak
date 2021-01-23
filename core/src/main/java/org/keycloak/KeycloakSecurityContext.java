@@ -18,6 +18,7 @@
 package org.keycloak;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.DelegatingSerializationFilter;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
@@ -28,7 +29,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * Available in secured requests under HttpServlerRequest.getAttribute()
+ * Available in secured requests under HttpServletRequest.getAttribute()
  * Also available in HttpSession.getAttribute under the classname of this class
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -85,6 +86,9 @@ public class KeycloakSecurityContext implements Serializable {
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        DelegatingSerializationFilter.builder()
+                .addAllowedClass(KeycloakSecurityContext.class)
+                .setFilter(in);
         in.defaultReadObject();
 
         token = parseToken(tokenString, AccessToken.class);

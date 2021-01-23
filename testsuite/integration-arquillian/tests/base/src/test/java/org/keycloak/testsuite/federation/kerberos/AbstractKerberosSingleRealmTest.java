@@ -17,15 +17,20 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.net.URI;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.ietf.jgss.GSSCredential;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.events.Details;
@@ -37,8 +42,10 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
@@ -47,6 +54,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
 
     @Test
@@ -60,6 +68,43 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Assert.assertEquals(KerberosConstants.NEGOTIATE, response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
         String responseText = response.readEntity(String.class);
         response.close();
+    }
+
+
+    // KEYCLOAK-12424
+    @Test
+    public void spnegoWithInvalidTokenTest() throws Exception {
+        initHttpClient(true);
+
+        // Update kerberos configuration with some invalid location of keytab file
+        AtomicReference<String> origKeytab = new AtomicReference<>();
+        updateUserStorageProvider(kerberosProviderRep -> {
+            String keytab = kerberosProviderRep.getConfig().getFirst(KerberosConstants.KEYTAB);
+            origKeytab.set(keytab);
+
+            kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB, keytab + "-invalid");
+        });
+
+        try {
+            /*
+            To do this we do a valid kerberos login on client side.  The authenticator will obtain a valid token, but user
+            storage provider is incorrectly configured, so SPNEGO login will fail on server side. However the server should continue to
+            the login page (username/password) and return status 200. It should not return 401 with "Kerberos unsupported" page as that
+            would display some strange dialogs in the web browser on windows - see KEYCLOAK-12424
+            */
+            Response spnegoResponse = spnegoLogin("hnelson", "secret");
+
+            Assert.assertEquals(200, spnegoResponse.getStatus());
+            String context = spnegoResponse.readEntity(String.class);
+            spnegoResponse.close();
+
+            org.junit.Assert.assertTrue(context.contains("Sign in to test"));
+
+            events.clear();
+        } finally {
+            // Revert keytab configuration
+            updateUserStorageProvider(kerberosProviderRep -> kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB, origKeytab.get()));
+        }
     }
 
     // KEYCLOAK-7823

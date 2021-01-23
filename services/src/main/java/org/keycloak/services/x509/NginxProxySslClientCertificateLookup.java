@@ -45,7 +45,7 @@ import org.keycloak.truststore.TruststoreProviderFactory;
  *    ...
  *    location / {
  *    ...
- *      sproxy_set_header ssl-client-cert        $ssl_client_escaped_cert;
+ *      proxy_set_header ssl-client-cert        $ssl_client_escaped_cert;
  *    ...
  *  }
  * </code>
@@ -123,10 +123,10 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 
         // Get the client certificate
         X509Certificate clientCert = getCertificateFromHttpHeader(httpRequest, sslClientCertHttpHeader);
-        log.debugf("End user certificate found : Subject DN=[%s]  SerialNumber=[%s]", clientCert.getSubjectDN().toString(), clientCert.getSerialNumber().toString() );
-        
+
         if (clientCert != null) {
-            
+            log.debugf("End user certificate found : Subject DN=[%s]  SerialNumber=[%s]", clientCert.getSubjectDN(), clientCert.getSerialNumber());
+
         	// Rebuilding the end user certificate chain using Keycloak Truststore
             X509Certificate[] certChain = buildChain(clientCert);
             if ( certChain == null || certChain.length == 0 ) {

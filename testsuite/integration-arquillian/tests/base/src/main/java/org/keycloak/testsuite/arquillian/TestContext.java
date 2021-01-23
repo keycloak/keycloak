@@ -89,7 +89,7 @@ public final class TestContext {
         this.appServerBackendsInfo.addAll(appServerBackendsInfo);
     }
 
-    public Class getTestClass() {
+    public Class<?> getTestClass() {
         return testClass;
     }
 

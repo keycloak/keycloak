@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.broker;
 
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
 
 public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest {
 
@@ -15,12 +16,13 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
     }
 
     @Override
-    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers() {
+    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {
         IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
         attrMapper1.setName("attribute-mapper");
         attrMapper1.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         attrMapper1.setConfig(ImmutableMap.<String,String>builder()
-          .put(UserAttributeMapper.CLAIM, ATTRIBUTE_TO_MAP_NAME)
+          .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+          .put(UserAttributeMapper.CLAIM, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME)
           .put(UserAttributeMapper.USER_ATTRIBUTE, MAPPED_ATTRIBUTE_NAME)
           .build());
 
@@ -28,6 +30,7 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
         emailAttrMapper.setName("attribute-mapper-email");
         emailAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         emailAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+          .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
           .put(UserAttributeMapper.CLAIM, "email")
           .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
           .build());
@@ -36,6 +39,7 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
         nestedEmailAttrMapper.setName("nested-attribute-mapper-email");
         nestedEmailAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         nestedEmailAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+          .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
           .put(UserAttributeMapper.CLAIM, "nested.email")
           .put(UserAttributeMapper.USER_ATTRIBUTE, "nested.email")
           .build());
@@ -44,6 +48,7 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
         dottedEmailAttrMapper.setName("dotted-attribute-mapper-email");
         dottedEmailAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         dottedEmailAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+          .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
           .put(UserAttributeMapper.CLAIM, "dotted\\.email")
           .put(UserAttributeMapper.USER_ATTRIBUTE, "dotted.email")
           .build());

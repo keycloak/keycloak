@@ -23,13 +23,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HeaderIterator;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -65,14 +69,23 @@ import java.util.zip.GZIPInputStream;
 public class SimpleHttp {
 
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static final int UNDEFINED_TIMEOUT = -1;
 
-    private HttpClient client;
+    private final HttpClient client;
 
-    private String url;
-    private String method;
+    private final String url;
+    private final String method;
     private Map<String, String> headers;
     private Map<String, String> params;
     private Object entity;
+
+    private int socketTimeOutMillis = UNDEFINED_TIMEOUT;
+
+    private int connectTimeoutMillis = UNDEFINED_TIMEOUT;
+
+    private int connectionRequestTimeoutMillis = UNDEFINED_TIMEOUT;
+
+    private RequestConfig.Builder requestConfigBuilder;
 
     protected SimpleHttp(String url, String method, HttpClient client) {
         this.client = client;
@@ -108,6 +121,14 @@ public class SimpleHttp {
         return new SimpleHttp(url, "PUT", client);
     }
 
+    public static SimpleHttp doHead(String url, HttpClient client) {
+        return new SimpleHttp(url, "HEAD", client);
+    }
+
+    public static SimpleHttp doPatch(String url, HttpClient client) {
+        return new SimpleHttp(url, "PATCH", client);
+    }
+
     public SimpleHttp header(String name, String value) {
         if (headers == null) {
             headers = new HashMap<>();
@@ -126,6 +147,21 @@ public class SimpleHttp {
             params = new HashMap<>();
         }
         params.put(name, value);
+        return this;
+    }
+
+    public SimpleHttp socketTimeOutMillis(int timeout) {
+        this.socketTimeOutMillis = timeout;
+        return this;
+    }
+
+    public SimpleHttp connectTimeoutMillis(int timeout) {
+        this.connectTimeoutMillis = timeout;
+        return this;
+    }
+
+    public SimpleHttp connectionRequestTimeoutMillis(int timeout) {
+        this.connectionRequestTimeoutMillis = timeout;
         return this;
     }
 
@@ -180,32 +216,35 @@ public class SimpleHttp {
         return makeRequest();
     }
 
+    private HttpRequestBase createHttpRequest() {
+        switch(method) {
+            case "GET":
+                return new HttpGet(appendParameterToUrl(url));
+            case "DELETE":
+                return new HttpDelete(appendParameterToUrl(url));
+            case "HEAD":
+                return new HttpHead(appendParameterToUrl(url));
+            case "PUT":
+                return new HttpPut(appendParameterToUrl(url));
+            case "PATCH":
+                return new HttpPatch(appendParameterToUrl(url));
+            case "POST":
+                // explicit fall through as we want POST to be the default HTTP method
+            default:
+                return new HttpPost(url);
+        }
+    }
+
     private Response makeRequest() throws IOException {
-        boolean get = method.equals("GET");
-        boolean post = method.equals("POST");
-        boolean put = method.equals("PUT");
-        boolean delete = method.equals("DELETE");
 
-        HttpRequestBase httpRequest = new HttpPost(url);
+        HttpRequestBase httpRequest = createHttpRequest();
 
-        if (get) {
-            httpRequest = new HttpGet(appendParameterToUrl(url));
-        }
-
-        if (delete) {
-            httpRequest = new HttpDelete(appendParameterToUrl(url));
-        }
-
-        if (put) {
-            httpRequest = new HttpPut(appendParameterToUrl(url));
-        }
-
-        if (post || put) {
+        if (httpRequest instanceof HttpPost || httpRequest instanceof  HttpPut || httpRequest instanceof HttpPatch) {
             if (params != null) {
                 ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getFormEntityFromParameter());
             } else if (entity != null) {
-                if (headers == null || !headers.containsKey("Content-Type")) {
-                    header("Content-Type", "application/json");
+                if (headers == null || !headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+                    header(HttpHeaders.CONTENT_TYPE, "application/json");
                 }
                 ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getJsonEntity());
             } else {
@@ -219,12 +258,33 @@ public class SimpleHttp {
             }
         }
 
+        if (socketTimeOutMillis != UNDEFINED_TIMEOUT) {
+            requestConfigBuilder().setSocketTimeout(socketTimeOutMillis);
+        }
+
+        if (connectTimeoutMillis != UNDEFINED_TIMEOUT) {
+            requestConfigBuilder().setConnectTimeout(connectTimeoutMillis);
+        }
+
+        if (connectionRequestTimeoutMillis != UNDEFINED_TIMEOUT) {
+            requestConfigBuilder().setConnectionRequestTimeout(connectionRequestTimeoutMillis);
+        }
+
+        if (requestConfigBuilder != null) {
+            httpRequest.setConfig(requestConfigBuilder.build());
+        }
+
         return new Response(client.execute(httpRequest));
     }
 
-    private URI appendParameterToUrl(String url) throws IOException {
-        URI uri = null;
+    private RequestConfig.Builder requestConfigBuilder() {
+        if (requestConfigBuilder == null) {
+            requestConfigBuilder = RequestConfig.custom();
+        }
+        return requestConfigBuilder;
+    }
 
+    private URI appendParameterToUrl(String url) {
         try {
             URIBuilder uriBuilder = new URIBuilder(url);
 
@@ -234,15 +294,14 @@ public class SimpleHttp {
                 }
             }
 
-            uri = uriBuilder.build();
-        } catch (URISyntaxException e) {
+            return uriBuilder.build();
+        } catch (URISyntaxException ignored) {
+            return null;
         }
-
-        return uri;
     }
 
     private StringEntity getJsonEntity() throws IOException {
-        return new StringEntity(JsonSerialization.writeValueAsString(entity));
+        return new StringEntity(JsonSerialization.writeValueAsString(entity), ContentType.getByMimeType(headers.get(HttpHeaders.CONTENT_TYPE)));
     }
 
     private UrlEncodedFormEntity getFormEntityFromParameter() throws IOException{
@@ -259,7 +318,7 @@ public class SimpleHttp {
 
     public static class Response {
 
-        private HttpResponse response;
+        private final HttpResponse response;
         private int statusCode = -1;
         private String responseString;
 
@@ -286,17 +345,18 @@ public class SimpleHttp {
                             }
                         }
 
-                        InputStreamReader reader = charset == null ? new InputStreamReader(is) :
-                                new InputStreamReader(is, charset);
+                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is) :
+                                new InputStreamReader(is, charset)) {
 
-                        StringWriter writer = new StringWriter();
+                            StringWriter writer = new StringWriter();
 
-                        char[] buffer = new char[1024 * 4];
-                        for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                            writer.write(buffer, 0, n);
+                            char[] buffer = new char[1024 * 4];
+                            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                                writer.write(buffer, 0, n);
+                            }
+
+                            responseString = writer.toString();
                         }
-
-                        responseString = writer.toString();
                     } finally {
                         if (is != null) {
                             is.close();

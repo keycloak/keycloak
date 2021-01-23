@@ -119,7 +119,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
             UserProvider userProvider = authorizationProvider.getKeycloakSession().users();
             RealmModel realm = authorizationProvider.getRealm();
 
-            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(id, realm).getUsername()).collect(Collectors.toList())));
+            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(realm, id).getUsername()).collect(Collectors.toList())));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
         }
@@ -142,12 +142,12 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 UserModel user = null;
 
                 try {
-                    user = userProvider.getUserByUsername(userId, realm);
+                    user = userProvider.getUserByUsername(realm, userId);
                 } catch (Exception ignore) {
                 }
 
                 if (user == null) {
-                    user = userProvider.getUserById(userId, realm);
+                    user = userProvider.getUserById(realm, userId);
                 }
 
                 if (user == null) {
@@ -182,7 +182,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 UserModel removedUser = ((UserRemovedEvent) event).getUser();
                 RealmModel realm = ((UserRemovedEvent) event).getRealm();
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                realm.getClients().forEach(clientModel -> {
+                realm.getClientsStream().forEach(clientModel -> {
                     ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
                     if (resourceServer != null) {
@@ -196,9 +196,8 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                             }
 
                             try {
-                                if (users.isEmpty()) {
-                                    policyStore.delete(policy.getId());
-                                } else {
+                                // just update the policy, let the UserSynchronizer to actually remove the policy if necessary
+                                if (!users.isEmpty()) {
                                     policy.putConfig("users", JsonSerialization.writeValueAsString(users));
                                 }
                             } catch (IOException e) {

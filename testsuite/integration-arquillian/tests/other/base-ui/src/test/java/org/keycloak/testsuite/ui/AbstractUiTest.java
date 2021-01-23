@@ -35,10 +35,13 @@ import static org.junit.Assume.assumeFalse;
  */
 public abstract class AbstractUiTest extends AbstractAuthTest {
     public static final String LOCALIZED_THEME = "localized-theme";
+    public static final String LOCALIZED_THEME_PREVIEW = "localized-theme-preview";
     public static final String CUSTOM_LOCALE = "test";
     public static final String CUSTOM_LOCALE_NAME = "Přísný jazyk";
     public static final String DEFAULT_LOCALE="en";
     public static final String DEFAULT_LOCALE_NAME = "English";
+    public static final String LOCALE_CLIENT_NAME = "${client_localized-client}";
+    public static final String LOCALE_CLIENT_NAME_LOCALIZED = "Přespříliš lokalizovaný klient";
 
     @BeforeClass
     public static void assumeSupportedBrowser() {
@@ -51,7 +54,13 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
         createTestUserWithAdminClient(false);
     }
 
+    protected boolean isAccountPreviewTheme() {
+        return false;
+    }
+
     protected void configureInternationalizationForRealm(RealmRepresentation realm) {
+        final String localizedTheme = isAccountPreviewTheme() ? LOCALIZED_THEME_PREVIEW : LOCALIZED_THEME;
+
         // fetch the supported locales for the special test theme that includes some fake test locales
         Set<String> supportedLocales = adminClient.serverInfo().getInfo().getThemes().get("login").stream()
                 .filter(x -> x.getName().equals(LOCALIZED_THEME))
@@ -62,7 +71,7 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
         realm.setSupportedLocales(supportedLocales);
         realm.setLoginTheme(LOCALIZED_THEME);
         realm.setAdminTheme(LOCALIZED_THEME);
-        realm.setAccountTheme(LOCALIZED_THEME);
+        realm.setAccountTheme(localizedTheme);
         realm.setEmailTheme(LOCALIZED_THEME);
     }
 

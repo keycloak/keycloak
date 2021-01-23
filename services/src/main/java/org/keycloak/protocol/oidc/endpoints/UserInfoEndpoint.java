@@ -35,6 +35,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -42,8 +43,11 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.UserInfoRequestContext;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
@@ -59,8 +63,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author pedroigor
@@ -99,7 +106,7 @@ public class UserInfoEndpoint {
     @GET
     @NoCache
     public Response issueUserInfoGet(@Context final HttpHeaders headers) {
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
         return issueUserInfo(accessToken);
     }
 
@@ -109,7 +116,7 @@ public class UserInfoEndpoint {
     public Response issueUserInfoPost() {
         // Try header first
         HttpHeaders headers = request.getHttpHeaders();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
 
         // Fallback to form parameter
         if (accessToken == null) {
@@ -119,7 +126,20 @@ public class UserInfoEndpoint {
         return issueUserInfo(accessToken);
     }
 
+    private ErrorResponseException newUnauthorizedErrorResponseException(String oauthError, String errorMessage) {
+        // See: https://openid.net/specs/openid-connect-core-1_0.html#UserInfoError
+        response.getOutputHeaders().put(HttpHeaders.WWW_AUTHENTICATE, Collections.singletonList(String.format("Bearer realm=\"%s\", error=\"%s\", error_description=\"%s\"", realm.getName(), oauthError, errorMessage)));
+        return new ErrorResponseException(oauthError, errorMessage, Response.Status.UNAUTHORIZED);
+    }
+
     private Response issueUserInfo(String tokenString) {
+
+        try {
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenString));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+        }
+
         EventBuilder event = new EventBuilder(realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
@@ -130,6 +150,7 @@ public class UserInfoEndpoint {
         }
 
         AccessToken token;
+        ClientModel clientModel;
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
@@ -138,15 +159,19 @@ public class UserInfoEndpoint {
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
+
+            clientModel = realm.getClientByClientId(token.getIssuedFor());
+            if (clientModel == null) {
+                event.error(Errors.CLIENT_NOT_FOUND);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+            }
+
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(clientModel))
+                    .verify();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
-        }
-
-        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
-        if (clientModel == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token verification failed");
         }
 
 	    if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
@@ -179,7 +204,7 @@ public class UserInfoEndpoint {
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
                 event.error(Errors.NOT_ALLOWED);
-                throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client certificate missing, or its thumbprint and one in the refresh token did NOT match", Response.Status.UNAUTHORIZED);
+                throw newUnauthorizedErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client certificate missing, or its thumbprint and one in the refresh token did NOT match");
             }
         }
 
@@ -187,14 +212,33 @@ public class UserInfoEndpoint {
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
 
         // Retrieve by latest scope parameter
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
 
         AccessToken userInfo = new AccessToken();
+        
         tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
 
-        Map<String, Object> claims = new HashMap<String, Object>();
+        Map<String, Object> claims = new HashMap<>();
         claims.put("sub", userModel.getId());
         claims.putAll(userInfo.getOtherClaims());
+
+        if (userInfo.getRealmAccess() != null) {
+            Map<String, Set<String>> realmAccess = new HashMap<>();
+            realmAccess.put("roles", userInfo.getRealmAccess().getRoles());
+            claims.put("realm_access", realmAccess);
+        }
+
+        if (userInfo.getResourceAccess() != null && !userInfo.getResourceAccess().isEmpty()) {
+            Map<String, Map<String, Set<String>>> resourceAccessMap = new HashMap<>();
+
+            for (Map.Entry<String, AccessToken.Access> resourceAccessMapEntry : userInfo.getResourceAccess()
+                    .entrySet()) {
+                Map<String, Set<String>> resourceAccess = new HashMap<>();
+                resourceAccess.put("roles", resourceAccessMapEntry.getValue().getRoles());
+                resourceAccessMap.put(resourceAccessMapEntry.getKey(), resourceAccess);
+            }
+            claims.put("resource_access", resourceAccessMap);
+        }
 
         Response.ResponseBuilder responseBuilder;
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
@@ -224,7 +268,7 @@ public class UserInfoEndpoint {
 
         event.success();
 
-        return Cors.add(request, responseBuilder).auth().allowedOrigins(token).build();
+        return Cors.add(request, responseBuilder).auth().allowedOrigins(session, clientModel).build();
     }
 
 
@@ -246,7 +290,7 @@ public class UserInfoEndpoint {
 
         if (userSession == null && offlineUserSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found or doesn't have client attached on it", Response.Status.UNAUTHORIZED);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found or doesn't have client attached on it");
         }
 
         if (userSession != null) {
@@ -256,13 +300,13 @@ public class UserInfoEndpoint {
         }
 
         event.error(Errors.SESSION_EXPIRED);
-        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
+        throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired");
     }
 
     private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event) throws ErrorResponseException {
         if (token.getIssuedAt() + 1 < userSession.getStarted()) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token", Response.Status.UNAUTHORIZED);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token");
         }
     }
 }

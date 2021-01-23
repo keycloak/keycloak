@@ -466,7 +466,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access", "uma_authorization" ],
+  "defaultRoles" : [ "offline_access", "uma_authorization", "master-test-realm-role" ],
   "requiredCredentials" : [ "password" ],
   "passwordPolicy" : "hashIterations(20000)",
   "otpPolicyType" : "totp",
@@ -1181,6 +1181,7 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "4f427905-9843-4986-9d6c-97a304055f92",
+    "defaultRoles" : [ "master-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -2076,7 +2077,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access", "uma_authorization" ],
+  "defaultRoles" : [ "offline_access", "uma_authorization", "migration-test-realm-role" ],
   "requiredCredentials" : [ "password" ],
   "passwordPolicy" : "hashIterations(20000)",
   "otpPolicyType" : "totp",
@@ -2121,7 +2122,34 @@
       "account" : [ "view-profile", "manage-account" ]
     },
     "groups" : [ ]
-  } ],
+  },
+  {
+    "id" : "556eb430-d574-4956-908a-83527a77932a",
+    "createdTimestamp" : 1489756947105,
+    "username" : "offline-test-user",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "D3F6cEj0pNv1UvkPq2XhnH5TTg2BaR2qKQd+vMoT8Pj+cHEGvISbBujjD9+889LIhWUSbQS8nkZH0yEnrTKBAA==",
+      "salt" : "C2vKhAsajS53Xu816IcKIw==",
+      "hashIterations" : 20000,
+      "counter" : 0,
+      "algorithm" : "pbkdf2",
+      "digits" : 0,
+      "period" : 0,
+      "createdDate" : 1582099686822,
+      "config" : { }
+    } ],
+    "disableableCredentialTypes" : [ "password" ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "uma_authorization", "offline_access" ],
+    "clientRoles" : {
+      "account" : [ "view-profile", "manage-account" ]
+    },
+    "groups" : [ ]
+  }  ],
   "clientScopeMappings" : {
     "realm-management" : [ {
       "client" : "admin-cli",
@@ -2471,7 +2499,8 @@
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
-    "secret" : "75da9358-22e0-4ab5-9609-5c74c40dd70f",
+    "secret" : "secret",
+    "defaultRoles" : [ "migration-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -2481,7 +2510,7 @@
     "implicitFlowEnabled" : false,
     "directAccessGrantsEnabled" : true,
     "serviceAccountsEnabled" : false,
-    "publicClient" : true,
+    "publicClient" : false,
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
     "attributes" : { },
@@ -3407,6 +3436,12 @@
       "composite" : false,
       "clientRole" : false,
       "containerId" : "Migration2"
+    }, {
+      "id" : "a495da40-f44c-4e28-8f82-75bb5677e597",
+      "name" : "default-roles-migration2",
+      "description" : "${role_default-roles}",
+      "scopeParamRequired" : true,
+      "composite" : false
     } ],
     "client" : {
       "realm-management" : [ {

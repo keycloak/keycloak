@@ -17,12 +17,15 @@
 
 package org.keycloak.testsuite.exportimport;
 
+import org.apache.commons.io.FileUtils;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
@@ -35,10 +38,13 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,6 +60,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  *
@@ -61,6 +68,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ExportImportTest extends AbstractKeycloakTest {
 
     @Override
@@ -146,6 +154,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         testFullExportImport();
 
+        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
+
         // There should be 6 files in target directory (3 realm, 3 user)
         assertEquals(6, new File(targetDirPath).listFiles().length);
     }
@@ -161,6 +172,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().setUsersPerFile(5);
 
         testRealmExportImport();
+
+        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
 
         // There should be 4 files in target directory (1 realm, 12 users, 5 users per file)
         // (+ additional user service-account-test-app-authz that should not be there ???)
@@ -224,17 +238,62 @@ public class ExportImportTest extends AbstractKeycloakTest {
         addTestRealmToTestRealmReps("import-without-clients");
     }
 
+    @Test
+    public void testImportIgnoreExistingMissingClientId() {
+        TestingExportImportResource resource = testingClient.testing().exportImport();
+
+        resource.setStrategy(Strategy.IGNORE_EXISTING);
+        resource.setProvider(DirExportProviderFactory.PROVIDER_ID);
+
+        String targetDirPath = resource.getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        File dest = new File(targetDirPath);
+        try {
+            DirExportProvider.recursiveDeleteDir(dest);
+            resource.setDir(targetDirPath);
+
+            resource.setAction(ExportImportConfig.ACTION_EXPORT);
+
+            URL url = ExportImportTest.class.getResource("/model/testrealm.json");
+            File testRealm = new File(url.getFile());
+            assertThat(testRealm, Matchers.notNullValue());
+
+            File newFile = new File("test-new-realm.json");
+
+            try {
+                FileUtils.copyFile(testRealm, newFile);
+                FileUtils.copyFileToDirectory(newFile, dest);
+            } catch (IOException e) {
+                Assert.fail("Cannot copy file. Details: " + e.getMessage());
+            }
+
+            File existingFile = FileUtils.getFile(dest, newFile.getName());
+            assertThat(existingFile, Matchers.notNullValue());
+
+            resource.runExport();
+            resource.setAction(ExportImportConfig.ACTION_IMPORT);
+
+            try {
+                resource.runImport();
+                resource.runImport();
+            } catch (Exception e) {
+                Assert.fail("Error with realm importing twice. Details: " + e.getMessage());
+            }
+        } finally {
+            DirExportProvider.recursiveDeleteDir(dest);
+        }
+    }
+
     private boolean isRealmPresent(String realmId) {
-        return adminClient.realms().findAll().stream().filter(realm -> realmId.equals(realm.getId())).findFirst().isPresent();
+        return adminClient.realms().findAll().stream().anyMatch(realm -> realmId.equals(realm.getId()));
     }
 
     /*
      * non-JavaDoc
      *
      * Adds a testTealm to TestContext.testRealmReps (which are after testClass removed)
-     * 
+     *
      * It prevents from affecting other tests. (auth-server-undertow)
-     * 
+     *
      */
     private void addTestRealmToTestRealmReps(String realm) {
         testContext.addTestRealmToTestRealmReps(adminClient.realms().realm(realm).toRepresentation());
@@ -312,6 +371,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         Map<String, List<String>> roleAttributes = adminClient.realm("test").roles().get("attribute-role").toRepresentation().getAttributes();
         String testAppId = adminClient.realm("test").clients().findByClientId("test-app").get(0).getId();
         String sampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
+        String sampleClientRoleAttribute = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getAttributes().get("sample-client-role-attribute").get(0);
 
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
@@ -361,6 +421,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         String importedSampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
         assertEquals(sampleClientRoleId, importedSampleClientRoleId);
+
+        String importedSampleClientRoleAttribute = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getAttributes().get("sample-client-role-attribute").get(0);
+        assertEquals(sampleClientRoleAttribute, importedSampleClientRoleAttribute);
 
         checkEventsConfig(adminClient.realm("test").getRealmEventsConfig());
     }

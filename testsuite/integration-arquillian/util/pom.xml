@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -43,6 +43,11 @@
             <artifactId>keycloak-servlet-filter-adapter</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-testsuite-providers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-api-maven</artifactId>
         </dependency>
@@ -50,6 +55,11 @@
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-karaf-managed</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-api</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-osgi</artifactId>

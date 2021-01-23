@@ -34,9 +34,10 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ContentAlert {
-    private static final String ROOT_ID = "content-alert";
+    private static final String ROOT_ID = "//ul[@class='pf-c-alert-group pf-m-toast']/li[1]";
 
-    @FindBy(id = ROOT_ID)
+    //The first alert from the alert group is what we are interested in.
+    @FindBy(xpath = ROOT_ID + "//div")
     private AlertElement alertElement;
 
     public boolean isDisplayed() {
@@ -54,9 +55,8 @@ public class ContentAlert {
 
     public void assertIsNotDisplayed() {
         try {
-            waitUntilElementIsNotPresent(By.id(ROOT_ID));
-        }
-        catch (TimeoutException e) {
+            waitUntilElementIsNotPresent(By.xpath(ROOT_ID));
+        } catch (TimeoutException e) {
             throw new AssertionError("Alert is still displayed", e);
         }
     }
@@ -122,10 +122,10 @@ public class ContentAlert {
         @Root
         private WebElement root;
 
-        @FindBy(className = "pf-c-alert__description")
+        @FindBy(className = "pf-c-alert__title")
         private WebElement messageElement;
 
-        @FindBy(id = "content-alert-close")
+        @FindBy(className = "pf-c-alert__action")
         private WebElement closeBtn;
 
         public WebElement getRoot() {

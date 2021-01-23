@@ -16,15 +16,6 @@
  */
 package org.keycloak.testsuite.cookies;
 
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.RealmBuilder;
-import java.util.List;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -35,16 +26,42 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.openqa.selenium.Cookie;
+
+import java.util.List;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE;
+import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_SESSION_COOKIE;
+import static org.keycloak.services.managers.AuthenticationSessionManager.AUTH_SESSION_ID;
+import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *
  * @author hmlnarik
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CookieTest extends AbstractKeycloakTest {
 
     @Page
@@ -58,10 +75,23 @@ public class CookieTest extends AbstractKeycloakTest {
         testRealms.add(testRealm);
     }
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        accountPage.setAuthRealm(AuthRealm.TEST);
+    }
+
     @Test
     public void testCookieValue() throws Exception {
-        accountPage.setAuthRealm(AuthRealm.TEST);
+        testCookieValue(KEYCLOAK_IDENTITY_COOKIE);
+    }
 
+    @Test
+    public void testLegacyCookieValue() throws Exception {
+        testCookieValue(KEYCLOAK_IDENTITY_COOKIE + LEGACY_COOKIE);
+    }
+
+    private void testCookieValue(String cookieName) throws Exception {
         final String accountClientId = realmsResouce().realm("test").clients().findByClientId("account").get(0).getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
@@ -74,7 +104,7 @@ public class CookieTest extends AbstractKeycloakTest {
 
         try (CloseableHttpClient hc = OAuthClient.newCloseableHttpClient()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
-            BasicClientCookie cookie = new BasicClientCookie(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE, accessToken);
+            BasicClientCookie cookie = new BasicClientCookie(cookieName, accessToken);
             cookie.setDomain("localhost");
             cookie.setPath("/");
             cookieStore.addCookie(cookie);
@@ -85,13 +115,13 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpGet get = new HttpGet(oauth.clientId("account").redirectUri(accountPage.buildUri().toString()).getLoginFormUrl());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
-                
+
                 // Ensure that we did not get to the account page ...
                 assertThat(pageContent, not(containsString("First name")));
                 assertThat(pageContent, not(containsString("Last name")));
 
                 // ... but were redirected to login page
-                assertThat(pageContent, containsString("Log In"));
+                assertThat(pageContent, containsString("Sign In"));
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }
@@ -99,8 +129,6 @@ public class CookieTest extends AbstractKeycloakTest {
 
     @Test
     public void testCookieValueLoggedOut() throws Exception {
-        accountPage.setAuthRealm(AuthRealm.TEST);
-
         final String accountClientId = realmsResouce().realm("test").clients().findByClientId("account").get(0).getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
@@ -114,7 +142,7 @@ public class CookieTest extends AbstractKeycloakTest {
 
         try (CloseableHttpClient hc = OAuthClient.newCloseableHttpClient()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
-            BasicClientCookie cookie = new BasicClientCookie(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE, accessToken);
+            BasicClientCookie cookie = new BasicClientCookie(KEYCLOAK_IDENTITY_COOKIE, accessToken);
             cookie.setDomain("localhost");
             cookie.setPath("/");
             cookieStore.addCookie(cookie);
@@ -131,10 +159,45 @@ public class CookieTest extends AbstractKeycloakTest {
                 assertThat(pageContent, not(containsString("Last name")));
 
                 // ... but were redirected to login page
-                assertThat(pageContent, containsString("Log In"));
+                assertThat(pageContent, containsString("Sign In"));
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }
+    }
+
+    @Test
+    public void legacyCookiesTest() {
+        ContainerAssume.assumeAuthServerSSL();
+
+        accountPage.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(accountPage);
+
+        loginPage.login("test-user@localhost", "password");
+
+        Cookie sameSiteIdentityCookie = driver.manage().getCookieNamed(KEYCLOAK_IDENTITY_COOKIE);
+        Cookie legacyIdentityCookie = driver.manage().getCookieNamed(KEYCLOAK_IDENTITY_COOKIE + LEGACY_COOKIE);
+        Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
+        Cookie legacySessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE + LEGACY_COOKIE);
+        Cookie sameSiteAuthSessionIdCookie = driver.manage().getCookieNamed(AUTH_SESSION_ID);
+        Cookie legacyAuthSessionIdCookie = driver.manage().getCookieNamed(AUTH_SESSION_ID + LEGACY_COOKIE);
+
+        assertSameSiteCookies(sameSiteIdentityCookie, legacyIdentityCookie);
+        assertSameSiteCookies(sameSiteSessionCookie, legacySessionCookie);
+        assertSameSiteCookies(sameSiteAuthSessionIdCookie, legacyAuthSessionIdCookie);
+    }
+
+    private void assertSameSiteCookies(Cookie sameSiteCookie, Cookie legacyCookie) {
+        assertNotNull("SameSite cookie shouldn't be null", sameSiteCookie);
+        assertNotNull("Legacy cookie shouldn't be null", legacyCookie);
+
+        assertEquals(sameSiteCookie.getValue(), legacyCookie.getValue());
+        assertEquals(sameSiteCookie.getDomain(), legacyCookie.getDomain());
+        assertEquals(sameSiteCookie.getPath(), legacyCookie.getPath());
+        assertEquals(sameSiteCookie.getExpiry(), legacyCookie.getExpiry());
+        assertTrue("SameSite cookie should always have Secure attribute", sameSiteCookie.isSecure());
+        assertFalse("Legacy cookie shouldn't have Secure attribute", legacyCookie.isSecure()); // this relies on test realm config
+        assertEquals(sameSiteCookie.isHttpOnly(), legacyCookie.isHttpOnly());
+        // WebDriver currently doesn't support SameSite attribute therefore we cannot check it's present in the cookie
     }
 
 }

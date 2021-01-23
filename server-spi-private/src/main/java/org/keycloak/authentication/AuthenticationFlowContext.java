@@ -50,19 +50,6 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
      */
     void setUser(UserModel user);
 
-    /**
-     * Gets the credential currently selected in this flow
-     *
-     * @return
-     */
-    String getSelectedCredentialId();
-
-    /**
-     * Sets a selected credential for this flow
-     * @param credentialModel
-     */
-    void setSelectedCredentialId(String credentialModel);
-
     List<AuthenticationSelectionOption> getAuthenticationSelections();
 
     void setAuthenticationSelections(List<AuthenticationSelectionOption>  credentialAuthExecMap);

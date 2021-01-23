@@ -20,19 +20,19 @@ package org.keycloak.testsuite.federation;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,13 +41,19 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class DummyUserFederationProvider implements UserStorageProvider,
-        UserLookupProvider,
+        UserLookupProvider.Streams,
         UserRegistrationProvider,
         CredentialInputValidator {
 
     private final Map<String, UserModel> users;
     private KeycloakSession session;
     private ComponentModel component;
+
+    // Hardcoded password of test-user
+    public static final String HARDCODED_PASSWORD = "secret";
+
+    // Hardcoded otp code, which will be always considered valid for the test-user
+    public static final String HARDCODED_OTP = "123456";
 
 
 
@@ -74,17 +80,17 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         return null;
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         return users.get(username);
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         return null;
     }
 
@@ -104,7 +110,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     public Set<String> getSupportedCredentialTypes() {
-        return Collections.singleton(PasswordCredentialModel.TYPE);
+        return new HashSet<>(Arrays.asList(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE));
     }
 
     @Override
@@ -114,7 +120,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        if (!PasswordCredentialModel.TYPE.equals(credentialType)) return false;
+        if (!supportsCredentialType(credentialType)) return false;
 
         if (user.getUsername().equals("test-user")) {
             return true;
@@ -126,7 +132,11 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
         if (user.getUsername().equals("test-user")) {
-            return "secret".equals(credentialInput.getChallengeResponse());
+            if (PasswordCredentialModel.TYPE.equals(credentialInput.getType())) {
+                return HARDCODED_PASSWORD.equals(credentialInput.getChallengeResponse());
+            } else if (OTPCredentialModel.TYPE.equals(credentialInput.getType())) {
+                return HARDCODED_OTP.equals(credentialInput.getChallengeResponse());
+            }
         }
         return false;
     }

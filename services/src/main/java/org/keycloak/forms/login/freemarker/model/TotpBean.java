@@ -16,6 +16,7 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
@@ -25,8 +26,13 @@ import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
 
 import javax.ws.rs.core.UriBuilder;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
+ * Used for UpdateTotp required action
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TotpBean {
@@ -37,11 +43,18 @@ public class TotpBean {
     private final String totpSecretQrCode;
     private final boolean enabled;
     private UriBuilder uriBuilder;
+    private final List<CredentialModel> otpCredentials;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
         this.realm = realm;
         this.uriBuilder = uriBuilder;
         this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE);
+        if (enabled) {
+            otpCredentials = session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, OTPCredentialModel.TYPE)
+                    .collect(Collectors.toList());
+        } else {
+            otpCredentials = Collections.EMPTY_LIST;
+        }
         this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
@@ -75,6 +88,8 @@ public class TotpBean {
         return realm.getOTPPolicy();
     }
 
+    public List<CredentialModel> getOtpCredentials() {
+        return otpCredentials;
+    }
 
 }
-

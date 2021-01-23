@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String ROLE_CONFIG = "role";
     public static String NEW_ROLE_NAME = "new.role.name";
@@ -51,7 +51,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         property = new ProviderConfigProperty();
         property.setName(ROLE_CONFIG);
         property.setLabel("Role");
-        property.setHelpText("Role name you want changed.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setHelpText("Role name you want changed.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
         property = new ProviderConfigProperty();
@@ -136,7 +136,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         config.put(ROLE_CONFIG, role);
         config.put(NEW_ROLE_NAME, newName);
         mapper.setConfig(config);

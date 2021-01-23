@@ -35,6 +35,9 @@ public class LDAPConstants {
     public static final String VENDOR_TIVOLI = "tivoli";
     public static final String VENDOR_NOVELL_EDIRECTORY="edirectory" ;
 
+    // Could be discovered by rootDse supportedExtension: 1.3.6.1.4.1.4203.1.11.1
+    public static final String USE_PASSWORD_MODIFY_EXTENDED_OP = "usePasswordModifyExtendedOp";
+
     public static final String USERNAME_LDAP_ATTRIBUTE = "usernameLDAPAttribute";
     public static final String RDN_LDAP_ATTRIBUTE = "rdnLDAPAttribute";
     public static final String UUID_LDAP_ATTRIBUTE = "uuidLDAPAttribute";
@@ -66,6 +69,7 @@ public class LDAPConstants {
     public static final String CONNECTION_POOLING_TIMEOUT = "connectionPoolingTimeout";
     public static final String CONNECTION_TIMEOUT = "connectionTimeout";
     public static final String READ_TIMEOUT = "readTimeout";
+    // Could be discovered by rootDse supportedControl: 1.2.840.113556.1.4.319
     public static final String PAGINATION = "pagination";
 
     public static final String EDIT_MODE = "editMode";
@@ -84,6 +88,7 @@ public class LDAPConstants {
     // Custom user search filter
     public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
 
+    // Could be discovered by rootDse supportedExtension: 1.3.6.1.4.1.1466.20037
     public static final String START_TLS = "startTls";
 
     // Custom attributes on UserModel, which is mapped to LDAP
@@ -119,7 +124,9 @@ public class LDAPConstants {
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
     public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "cn=empty-membership-placeholder";
 
-    public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
+    public static final String ENABLED = "enabled";
+
+
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";
     public static final String CUSTOM_ATTRIBUTE_EXPIRY_DATE = "expiryDate";
     public static final String ENTRY_UUID = "entryUUID";

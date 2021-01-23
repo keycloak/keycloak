@@ -58,10 +58,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
-import org.keycloak.testsuite.events.EventsListenerProvider;
+import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
@@ -73,6 +74,7 @@ import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -98,12 +100,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -138,7 +141,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         session.sessions().removeUserSession(realm, sessionModel);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @POST
@@ -148,7 +151,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
 
         session.sessions().removeUserSessions(realm);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -175,7 +178,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         session.authenticationSessions().removeExpired(realm);
         session.realms().removeExpiredClientInitialAccess();
 
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -224,7 +227,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public EventRepresentation getEvent() {
-        Event event = EventsListenerProvider.poll();
+        Event event = TestEventsListenerProvider.poll();
         if (event != null) {
             return ModelToRepresentation.toRepresentation(event);
         } else {
@@ -236,7 +239,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public AdminEventRepresentation getAdminEvent() {
-        AdminEvent adminEvent = EventsListenerProvider.pollAdminEvent();
+        AdminEvent adminEvent = TestEventsListenerProvider.pollAdminEvent();
         if (adminEvent != null) {
             return ModelToRepresentation.toRepresentation(adminEvent);
         } else {
@@ -248,16 +251,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventQueue() {
-        EventsListenerProvider.clear();
-        return Response.ok().build();
+        TestEventsListenerProvider.clear();
+        return Response.noContent().build();
     }
 
     @POST
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventQueue() {
-        EventsListenerProvider.clearAdminEvents();
-        return Response.ok().build();
+        TestEventsListenerProvider.clearAdminEvents();
+        return Response.noContent().build();
     }
 
     @GET
@@ -266,7 +269,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -275,7 +278,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realmId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -284,7 +287,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realmId, olderThan);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -307,10 +310,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-                                                 @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-                                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-                                                 @QueryParam("max") Integer maxResults) {
+    public Stream<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
+                                                   @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                                   @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                                   @QueryParam("max") Integer maxResults) {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
@@ -356,15 +359,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.maxResults(maxResults);
         }
 
-        return toEventListRep(query.getResultList());
-    }
-
-    private List<EventRepresentation> toEventListRep(List<Event> events) {
-        List<EventRepresentation> reps = new ArrayList<>();
-        for (Event event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-        return reps;
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     @PUT
@@ -396,7 +391,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -405,7 +400,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realmId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -414,7 +409,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realmId, olderThan);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -439,7 +434,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+    public Stream<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
                                                          @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
                                                          @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
                                                          @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
@@ -501,7 +496,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.maxResults(maxResults);
         }
 
-        return toAdminEventRep(query.getResultList());
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     private Date formatDate(String date, String paramName) {
@@ -511,15 +506,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         } catch (ParseException e) {
             throw new BadRequestException("Invalid value for '" + paramName + "', expected format is yyyy-MM-dd");
         }
-    }
-
-    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
-        List<AdminEventRepresentation> reps = new ArrayList<>();
-        for (AdminEvent event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-
-        return reps;
     }
 
     @POST
@@ -559,7 +545,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
         Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        Cookie cookie = cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        Cookie cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null) return null;
         return cookie.getValue();
     }
@@ -606,7 +592,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = session.realms().getRealm(realmName);
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
-        UserModel user = userProvider.getUserByUsername(userName, realm);
+        UserModel user = userProvider.getUserByUsername(realm, userName);
         return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
     }
 
@@ -618,7 +604,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                                                          @QueryParam("userId") String userId,
                                                          @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
-        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(new FederatedIdentityModel(identityProvider, userId, userName), realm);
+        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(realm, new FederatedIdentityModel(identityProvider, userId, userName));
         if (foundFederatedUser == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, foundFederatedUser);
     }
@@ -630,7 +616,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                                                                       @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
         DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
-        UserModel user = factory.create(session, null).getUserByUsername(userName, realm);
+        UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
@@ -675,17 +661,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/test-component")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails() {
-        Map<String, TestProvider.DetailsRepresentation> reps = new HashMap<>();
-
         RealmModel realm = session.getContext().getRealm();
-        for (ComponentModel c : realm.getComponents(realm.getId(), TestProvider.class.getName())) {
-            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory().getProviderFactory(TestProvider.class, c.getProviderId());
-            TestProviderFactory factory = (TestProviderFactory) f;
-            TestProvider p = (TestProvider) factory.create(session, c);
-            reps.put(c.getName(), p.getDetails());
-        }
-
-        return reps;
+        return realm.getComponentsStream(realm.getId(), TestProvider.class.getName())
+                .collect(Collectors.toMap(ComponentModel::getName,
+                        componentModel -> {
+                            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory()
+                                .getProviderFactory(TestProvider.class, componentModel.getProviderId());
+                        TestProviderFactory factory = (TestProviderFactory) f;
+                        TestProvider p = (TestProvider) factory.create(session, componentModel);
+                        return p.getDetails();
+                        }));
     }
 
 
@@ -828,7 +813,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     @Path("/javascript")
     public TestJavascriptResource getJavascriptResource() {
-        return new TestJavascriptResource();
+        return new TestJavascriptResource(session);
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
@@ -864,7 +849,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if (Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
+
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
 
         System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
 
@@ -876,8 +863,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         Profile.init();
 
+        FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(featureProfile);
+
         if (Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -896,9 +885,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
 
-        System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+
+        disableFeatureProperties(featureProfile);
 
         String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
         // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
@@ -908,12 +899,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         Profile.init();
 
+        FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(featureProfile);
+
         if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    /**
+     * KEYCLOAK-12958
+     */
+    private void disableFeatureProperties(Profile.Feature feature) {
+        Profile.Type type = Profile.getName().equals("product") ? feature.getTypeProduct() : feature.getTypeProject();
+        if (type.equals(Profile.Type.DEFAULT)) {
+            System.setProperty("keycloak.profile.feature." + feature.toString().toLowerCase(), "disabled");
+        } else {
+            System.getProperties().remove("keycloak.profile.feature." + feature.toString().toLowerCase());
+        }
+    }
 
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST

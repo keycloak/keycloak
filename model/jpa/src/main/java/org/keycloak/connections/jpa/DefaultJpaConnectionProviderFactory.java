@@ -243,7 +243,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
 
-            logger.debugf("Database info: %s", operationalInfo.toString());
+            logger.infof("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
         }
@@ -275,6 +275,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         logger.debugf("Manually override hibernate dialect to %s", sql2012Dialect);
                         return sql2012Dialect;
                     }
+                }
+                // For Oracle19c, we may need to set dialect explicitly to workaround https://hibernate.atlassian.net/browse/HHH-13184
+                if (dbProductName.equals("Oracle") && connection.getMetaData().getDatabaseMajorVersion() > 12) {
+                    logger.debugf("Manually specify dialect for Oracle to org.hibernate.dialect.Oracle12cDialect");
+                    return "org.hibernate.dialect.Oracle12cDialect";
                 }
             } catch (SQLException e) {
                 logger.warnf("Unable to detect hibernate dialect due database exception : %s", e.getMessage());

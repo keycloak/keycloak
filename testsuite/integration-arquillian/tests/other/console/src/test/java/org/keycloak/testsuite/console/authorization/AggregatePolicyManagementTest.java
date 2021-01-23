@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 import java.util.UUID;
 
@@ -90,7 +91,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         policyC.setName("Policy C");
         policyC.addUser("test");
 
-        policies.user().create(policyC);
+        policies.user().create(policyC).close();
     }
 
     @Test
@@ -185,7 +186,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
 
     @Test
     public void testCreateWithChildAndSelectedPolicy() {
-        authorizationPage.getDriver().navigate().refresh();
+        refreshPageAndWaitForLoad();
         AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
 
         expected.setName("Test Child Create And Select Aggregate Policy");

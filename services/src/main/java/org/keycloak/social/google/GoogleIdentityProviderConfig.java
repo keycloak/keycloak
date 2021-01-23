@@ -28,6 +28,10 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
         super(model);
     }
 
+    public GoogleIdentityProviderConfig() {
+        
+    }
+
     public boolean isUserIp() {
         String userIp = getConfig().get("userIp");
         return userIp == null ? false : Boolean.valueOf(userIp);

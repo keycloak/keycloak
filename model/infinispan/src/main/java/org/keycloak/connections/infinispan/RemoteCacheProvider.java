@@ -95,6 +95,10 @@ public class RemoteCacheProvider {
     protected synchronized RemoteCache loadRemoteCache(String cacheName) {
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cacheManager.getCache(cacheName));
 
+        if (remoteCache != null) {
+            logger.infof("Hotrod version for remoteCache %s: %s", remoteCache.getName(), remoteCache.getRemoteCacheManager().getConfiguration().version());
+        }
+
         Boolean remoteStoreSecurity = config.getBoolean("remoteStoreSecurityEnabled");
         if (remoteStoreSecurity == null) {
             try {

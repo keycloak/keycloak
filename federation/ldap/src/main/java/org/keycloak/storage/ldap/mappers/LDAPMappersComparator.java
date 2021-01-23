@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.mappers;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 
@@ -34,20 +35,18 @@ import java.util.List;
  */
 public class LDAPMappersComparator {
 
-    public static List<ComponentModel> sortAsc(LDAPConfig ldapConfig, Collection<ComponentModel> mappers) {
-        Comparator<ComponentModel> comparator = new ImportantFirstComparator(ldapConfig);
+    private LDAPConfig ldapConfig;
 
-        List<ComponentModel> result = new ArrayList<>(mappers);
-        Collections.sort(result, comparator);
-        return result;
+    public LDAPMappersComparator(LDAPConfig ldapConfig) {
+        this.ldapConfig = ldapConfig;
     }
 
-    public static List<ComponentModel> sortDesc(LDAPConfig ldapConfig, Collection<ComponentModel> mappers) {
-        Comparator<ComponentModel> comparator = new ImportantFirstComparator(ldapConfig).reversed();
+    public Comparator<ComponentModel> sortAsc() {
+        return new ImportantFirstComparator(ldapConfig);
+    }
 
-        List<ComponentModel> result = new ArrayList<>(mappers);
-        Collections.sort(result, comparator);
-        return result;
+    public Comparator<ComponentModel> sortDesc() {
+        return new ImportantFirstComparator(ldapConfig).reversed();
     }
 
 

@@ -25,6 +25,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -109,6 +110,9 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                 }
 
             }
+
+            // TODO Empty content with ok makes no sense. Should it display a page? Or use noContent?
+            session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
             return Response.ok().build();
         }
 
@@ -135,9 +139,6 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
 
         }
-
-
-
     }
 
     @Override

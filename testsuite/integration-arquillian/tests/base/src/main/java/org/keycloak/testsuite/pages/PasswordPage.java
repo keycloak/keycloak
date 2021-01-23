@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -13,13 +13,16 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PasswordPage extends CredentialsComboboxPage {
+public class PasswordPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;
 
     @FindBy(id = "password")
     private WebElement passwordInput;
+
+    @FindBy(id = "input-error-password")
+    private WebElement passwordError;
 
     @FindBy(name = "login")
     private WebElement submitButton;
@@ -46,8 +49,20 @@ public class PasswordPage extends CredentialsComboboxPage {
         return passwordInput.getAttribute("value");
     }
 
+    public String getPasswordError() {
+        try {
+            return UIUtils.getTextFromElement(passwordError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
     public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+        try {
+            return UIUtils.getTextFromElement(loginErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
 
@@ -57,11 +72,6 @@ public class PasswordPage extends CredentialsComboboxPage {
     }
 
     public boolean isCurrent(String realm) {
-        // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) && !DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm)) {
-            return false;
-        }
-
         // Check there is NO username field
         try {
             driver.findElement(By.id("username"));
@@ -72,6 +82,7 @@ public class PasswordPage extends CredentialsComboboxPage {
 
         // Check there is password field
         try {
+            driver.findElement(By.id("kc-attempted-username"));
             driver.findElement(By.id("password"));
         } catch (NoSuchElementException nfe) {
             return false;

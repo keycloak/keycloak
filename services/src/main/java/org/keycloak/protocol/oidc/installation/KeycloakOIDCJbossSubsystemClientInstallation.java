@@ -73,7 +73,7 @@ public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInsta
                 }
             }
         }
-        if (client.getRoles().size() > 0) {
+        if (client.getRolesStream().count() > 0) {
             buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
         }
         buffer.append("</secure-deployment>\n");

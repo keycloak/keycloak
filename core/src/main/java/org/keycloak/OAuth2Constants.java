@@ -50,10 +50,14 @@ public interface OAuth2Constants {
 
     String REFRESH_TOKEN = "refresh_token";
 
+    String LOGOUT_TOKEN = "logout_token";
+
     String AUTHORIZATION_CODE = "authorization_code";
 
 
     String IMPLICIT = "implicit";
+
+    String USERNAME="username";
 
     String PASSWORD = "password";
 
@@ -112,6 +116,7 @@ public interface OAuth2Constants {
     String REFRESH_TOKEN_TYPE="urn:ietf:params:oauth:token-type:refresh_token";
     String JWT_TOKEN_TYPE="urn:ietf:params:oauth:token-type:jwt";
     String ID_TOKEN_TYPE="urn:ietf:params:oauth:token-type:id_token";
+    String SAML2_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:saml2";
 
     String UMA_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:uma-ticket";
 

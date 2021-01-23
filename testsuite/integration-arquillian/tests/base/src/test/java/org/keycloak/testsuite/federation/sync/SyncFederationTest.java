@@ -30,13 +30,17 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Test with Dummy providers
@@ -44,6 +48,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class SyncFederationTest extends AbstractAuthTest {
 
     private static final Logger log = Logger.getLogger(SyncFederationTest.class);
@@ -133,13 +138,11 @@ public class SyncFederationTest extends AbstractAuthTest {
 
 
     private static final UserStorageProviderModel findDummyProviderModel(RealmModel realm) {
-        for (ComponentModel component : realm.getComponents()) {
-            if ("test-sync-dummy".equals(component.getName())) {
-                return new UserStorageProviderModel(component);
-            }
-        }
-
-        return null;
+        return realm.getComponentsStream()
+                .filter(component -> Objects.equals(component.getName(), "test-sync-dummy"))
+                .map(UserStorageProviderModel::new)
+                .findFirst()
+                .orElse(null);
     }
 
     /**

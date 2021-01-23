@@ -21,7 +21,10 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -42,14 +45,25 @@ public class UserCredentialModel implements CredentialInput {
     @Deprecated /**  Use OTPCredentialModel.TOTP instead **/
     public static final String HOTP = OTPCredentialModel.HOTP;
 
+    @Deprecated /** Legacy stuff. Not used in Keycloak anymore **/
+    public static final String PASSWORD_TOKEN = CredentialModel.PASSWORD_TOKEN;
+
     public static final String SECRET = CredentialModel.SECRET;
     public static final String KERBEROS = CredentialModel.KERBEROS;
     public static final String CLIENT_CERT = CredentialModel.CLIENT_CERT;
 
-    private final String credentialId;
-    private final String type;
-    private final String challengeResponse;
-    private final boolean adminRequest;
+    private String credentialId;
+    private String type;
+    private String challengeResponse;
+    private String device;
+    private String algorithm;
+    private boolean adminRequest;
+
+    // Additional context informations
+    protected Map<String, Object> notes = new HashMap<>();
+
+    public UserCredentialModel() {
+    }
 
     public UserCredentialModel(String credentialId, String type, String challengeResponse) {
         this.credentialId = credentialId;
@@ -65,12 +79,39 @@ public class UserCredentialModel implements CredentialInput {
         this.adminRequest = adminRequest;
     }
 
-    public static UserCredentialModel password(String password) {
+    public static PasswordUserCredentialModel password(String password) {
         return password(password, false);
     }
 
-    public static UserCredentialModel password(String password, boolean adminRequest) {
-        return new UserCredentialModel("", PasswordCredentialModel.TYPE, password, adminRequest);
+    public static PasswordUserCredentialModel password(String password, boolean adminRequest) {
+        // It uses PasswordUserCredentialModel for backwards compatibility. Some UserStorage providers can check for that type
+        return new PasswordUserCredentialModel("", PasswordCredentialModel.TYPE, password, adminRequest);
+    }
+
+    @Deprecated /** passwordToken is legacy stuff. Not used in Keycloak anymore **/
+    public static UserCredentialModel passwordToken(String passwordToken) {
+        return new UserCredentialModel("", PASSWORD_TOKEN, passwordToken);
+    }
+
+    /**
+     * @param type must be "totp" or "hotp"
+     * @param key
+     * @return
+     */
+    public static UserCredentialModel otp(String type, String key) {
+        if (type.equals(HOTP)) return hotp(key);
+        if (type.equals(TOTP)) return totp(key);
+        throw new RuntimeException("Unknown OTP type");
+    }
+
+
+    public static UserCredentialModel totp(String key) {
+        return new UserCredentialModel("", TOTP, key);
+    }
+
+    
+    public static UserCredentialModel hotp(String key) {
+        return new UserCredentialModel("", HOTP, key);
     }
 
     public static UserCredentialModel secret(String password) {
@@ -95,6 +136,10 @@ public class UserCredentialModel implements CredentialInput {
         return type;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
     @Override
     public String getChallengeResponse() {
         return challengeResponse;
@@ -103,6 +148,54 @@ public class UserCredentialModel implements CredentialInput {
     public boolean isAdminRequest() {
         return adminRequest;
     }
+
+    /**
+     * This method exists only because of the backwards compatibility
+     */
+    @Deprecated
+    public static boolean isOtp(String type) {
+        return TOTP.equals(type) || HOTP.equals(type);
+    }
+
+    /**
+     * This method exists only because of the backwards compatibility. It is recommended to use {@link #getChallengeResponse()} instead
+     */
+    public String getValue() {
+        return getChallengeResponse();
+    }
+
+    public void setValue(String value) {
+        this.challengeResponse = value;
+    }
+
+    public String getDevice() {
+        return device;
+    }
+
+    public void setDevice(String device) {
+        this.device = device;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public void setNote(String key, String value) {
+        this.notes.put(key, value);
+    }
+
+    public void removeNote(String key) {
+        this.notes.remove(key);
+    }
+
+    public Object getNote(String key) {
+        return this.notes.get(key);
+    }
+
 }
 
 

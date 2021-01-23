@@ -44,6 +44,7 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -249,26 +250,42 @@ public class SendUsernameServlet {
         return output + "</body></html>";
     }
 
-    private String getAttributes() {
-        SamlPrincipal principal = (SamlPrincipal) sentPrincipal;
-        String output = "attribute email: " + principal.getAttribute(X500SAMLProfileConstants.EMAIL.get());
-        output += "<br /> topAttribute: " + principal.getAttribute("topAttribute");
-        output += "<br /> boolean-attribute: " + principal.getAttribute("boolean-attribute");
-        output += "<br /> level2Attribute: " + principal.getAttribute("level2Attribute");
-        output += "<br /> group: " + principal.getAttributes("group").toString();
-        output += "<br /> friendlyAttribute email: " + principal.getFriendlyAttribute("email");
-        output += "<br /> phone: " + principal.getAttribute("phone");
-        output += "<br /> friendlyAttribute phone: " + principal.getFriendlyAttribute("phone");
-        output += "<br /> hardcoded-attribute: ";
-        for (String attr : principal.getAttributes("hardcoded-attribute")) {
-            output += attr + ",";
-        }
-        output += "<br /> group-attribute: ";
-        for (String attr : principal.getAttributes("group-attribute")) {
-            output += attr + ",";
+    private static String joinList(String delimeter, List<String> list) {
+        if (list == null || list.size() <= 0) return "";
+
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < list.size(); i++) {
+
+            sb.append(list.get(i));
+
+            // if not the last item
+            if (i != list.size() - 1) {
+                sb.append(delimeter);
+            }
+
         }
 
-        return output;
+        return sb.toString();
+    }
+
+    private String getAttributes() {
+        SamlPrincipal principal = (SamlPrincipal) sentPrincipal;
+
+        StringBuilder b = new StringBuilder();
+        for (Entry<String, List<String>> e : principal.getAttributes().entrySet()) {
+            b.append(e.getKey()).append(": ").append(joinList(",", e.getValue())).append("<br />");
+        }
+
+        for (String friendlyAttributeName : principal.getFriendlyNames()) {
+            b.append("friendly ")
+                    .append(friendlyAttributeName)
+                    .append(": ")
+                    .append(joinList(",", principal.getFriendlyAttributes(friendlyAttributeName)))
+                    .append("<br />");
+        }
+
+        return b.toString();
     }
 
     @GET

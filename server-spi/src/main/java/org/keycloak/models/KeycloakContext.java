@@ -65,8 +65,6 @@ public interface KeycloakContext {
 
     ClientConnection getConnection();
 
-    void setConnection(ClientConnection connection);
-
     Locale resolveLocale(UserModel user);
     
     /**

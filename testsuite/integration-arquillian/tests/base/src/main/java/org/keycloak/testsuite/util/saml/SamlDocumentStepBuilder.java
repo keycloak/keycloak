@@ -26,6 +26,7 @@ import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
@@ -35,6 +36,8 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.function.Consumer;
+import java.util.logging.Level;
 import javax.xml.stream.XMLStreamWriter;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
@@ -71,6 +74,13 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
         this.clientBuilder = clientBuilder;
     }
 
+    public This transformObject(Consumer<T> tr) {
+        return transformObject(so -> {
+            tr.accept(so);
+            return so;
+        });
+    }
+
     @SuppressWarnings("unchecked")
     public This transformObject(Saml2ObjectTransformer<T> tr) {
         final StringTransformer original = this.transformer;
@@ -89,9 +99,18 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
                 return null;
             }
 
+            String res = saml2Object2String(transformed);
+            LOG.debugf("  ---> %s", res);
+            return res;
+        };
+        return (This) this;
+    }
+
+    public static String saml2Object2String(final SAML2Object transformed) {
+        try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             XMLStreamWriter xmlStreamWriter = StaxUtil.getXMLStreamWriter(bos);
-
+            
             if (transformed instanceof AuthnRequestType) {
                 new SAMLRequestWriter(xmlStreamWriter).write((AuthnRequestType) transformed);
             } else if (transformed instanceof LogoutRequestType) {
@@ -110,11 +129,17 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
                 Assert.assertNotNull("Unknown type: <null>", transformed);
                 Assert.fail("Unknown type: " + transformed.getClass().getName());
             }
-            String res = new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
-            LOG.debugf("  ---> %s", res);
-            return res;
-        };
-        return (This) this;
+            return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
+        } catch (ProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public This transformDocument(Consumer<Document> tr) {
+        return transformDocument(so -> {
+            tr.accept(so);
+            return so;
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -133,6 +158,13 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
         return (This) this;
     }
 
+    public This transformString(Consumer<String> tr) {
+        return transformString(s -> {
+            tr.accept(s);
+            return s;
+        });
+    }
+
     @SuppressWarnings("unchecked")
     public This transformString(StringTransformer tr) {
         final StringTransformer original = this.transformer;
@@ -145,6 +177,12 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
 
             return tr.transform(originalTransformed);
         };
+        return (This) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public This apply(Consumer<This> updaterOfThis) {
+        updaterOfThis.accept((This) this);
         return (This) this;
     }
 

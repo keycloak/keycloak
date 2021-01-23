@@ -26,27 +26,30 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.util.ScopeMappedUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Base class for managing the scope mappings of a specific client.
@@ -94,33 +97,21 @@ public class ScopeMappedResource {
         }
 
         MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
-        if (realmMappings.size() > 0) {
-            List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
-            for (RoleModel roleModel : realmMappings) {
-                realmRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-            }
+        List<RoleRepresentation> realmRep = scopeContainer.getRealmScopeMappingsStream()
+                .map(ModelToRepresentation::toBriefRepresentation)
+                .collect(Collectors.toList());
+        if (!realmRep.isEmpty()) {
             all.setRealmMappings(realmRep);
         }
 
-        List<ClientModel> clients = realm.getClients();
-        if (clients.size() > 0) {
-            Map<String, ClientMappingsRepresentation> clientMappings = new HashMap<String, ClientMappingsRepresentation>();
-            for (ClientModel client : clients) {
-                Set<RoleModel> roleMappings = KeycloakModelUtils.getClientScopeMappings(client, this.scopeContainer); //client.getClientScopeMappings(this.client);
-                if (roleMappings.size() > 0) {
-                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
-                    mappings.setId(client.getId());
-                    mappings.setClient(client.getClientId());
-                    List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
-                    mappings.setMappings(roles);
-                    for (RoleModel role : roleMappings) {
-                        roles.add(ModelToRepresentation.toBriefRepresentation(role));
-                    }
-                    clientMappings.put(client.getClientId(), mappings);
-                    all.setClientMappings(clientMappings);
-                }
-            }
+        Stream<ClientModel> clients = realm.getClientsStream();
+        Map<String, ClientMappingsRepresentation> clientMappings = clients
+                .map(c -> ScopeMappedUtil.toClientMappingsRepresentation(c, scopeContainer))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(ClientMappingsRepresentation::getClient, Function.identity()));
+
+        if (!clientMappings.isEmpty()) {
+            all.setClientMappings(clientMappings);
         }
         return all;
     }
@@ -134,19 +125,15 @@ public class ScopeMappedResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getRealmScopeMappings() {
+    public Stream<RoleRepresentation> getRealmScopeMappings() {
         viewPermission.require();
 
         if (scopeContainer == null) {
             throw new NotFoundException("Could not find client");
         }
 
-        Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
-        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-        }
-        return realmMappingsRep;
+        return scopeContainer.getRealmScopeMappingsStream()
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -158,25 +145,17 @@ public class ScopeMappedResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getAvailableRealmScopeMappings() {
+    public Stream<RoleRepresentation> getAvailableRealmScopeMappings() {
         viewPermission.require();
 
         if (scopeContainer == null) {
             throw new NotFoundException("Could not find client");
         }
 
-        Set<RoleModel> roles = realm.getRoles();
-        return getAvailable(auth, scopeContainer, roles);
-    }
-
-    public static List<RoleRepresentation> getAvailable(AdminPermissionEvaluator auth, ScopeContainerModel client, Set<RoleModel> roles) {
-        List<RoleRepresentation> available = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : roles) {
-            if (client.hasScope(roleModel)) continue;
-            if (!auth.roles().canMapClientScope(roleModel)) continue;
-            available.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-        }
-        return available;
+        return realm.getRolesStream()
+                .filter(((Predicate<RoleModel>) scopeContainer::hasScope).negate())
+                .filter(auth.roles()::canMapClientScope)
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -186,29 +165,26 @@ public class ScopeMappedResource {
      * any composite roles associated with the client's scope and adds the roles to this lists.  The method is really
      * to show a comprehensive total view of realm-level roles associated with the client.
      *
+     * @param briefRepresentation if false, return roles with their attributes
+     * 
      * @return
      */
     @Path("realm/composite")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeRealmScopeMappings() {
+    public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         if (scopeContainer == null) {
             throw new NotFoundException("Could not find client");
         }
 
-        Set<RoleModel> roles = realm.getRoles();
-        return getComposite(scopeContainer, roles);
-    }
-
-    public static List<RoleRepresentation> getComposite(ScopeContainerModel client, Set<RoleModel> roles) {
-        List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : roles) {
-            if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-        }
-        return composite;
+        Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
+                ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
+        return realm.getRolesStream()
+                .filter(scopeContainer::hasScope)
+                .map(toBriefRepresentation);
     }
 
     /**
@@ -253,19 +229,15 @@ public class ScopeMappedResource {
         }
 
         if (roles == null) {
-            Set<RoleModel> roleModels = scopeContainer.getRealmScopeMappings();
-            roles = new LinkedList<>();
-
-            for (RoleModel roleModel : roleModels) {
-                scopeContainer.deleteScopeMapping(roleModel);
-                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-            }
-
+            roles = scopeContainer.getRealmScopeMappingsStream()
+                    .peek(scopeContainer::deleteScopeMapping)
+                    .map(ModelToRepresentation::toBriefRepresentation)
+                    .collect(Collectors.toList());
        } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
-                    throw new NotFoundException("Client not found");
+                    throw new NotFoundException("Role not found");
                 }
                 scopeContainer.deleteScopeMapping(roleModel);
             }

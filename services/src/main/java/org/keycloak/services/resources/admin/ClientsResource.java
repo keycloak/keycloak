@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -33,12 +34,12 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.validation.ClientValidator;
-import org.keycloak.services.validation.PairwiseClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -52,12 +53,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -96,59 +96,52 @@ public class ClientsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
+    public Stream<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
                                                  @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
                                                  @QueryParam("search") @DefaultValue("false") boolean search,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults) {
-        List<ClientRepresentation> rep = new ArrayList<>();
+        boolean canView = auth.clients().canView();
+        Stream<ClientModel> clientModels = Stream.empty();
 
         if (clientId == null || clientId.trim().equals("")) {
-            List<ClientModel> clientModels = realm.getClients(firstResult, maxResults);
+            clientModels = canView
+                    ? realm.getClientsStream(firstResult, maxResults)
+                    : realm.getClientsStream();
             auth.clients().requireList();
-            boolean view = auth.clients().canView();
-            for (ClientModel clientModel : clientModels) {
-                if (view || auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
-                    rep.add(representation);
-                    representation.setAccess(auth.clients().getAccess(clientModel));
-                } else if (!viewableOnly && auth.clients().canView(clientModel)) {
-                    ClientRepresentation client = new ClientRepresentation();
-                    client.setId(clientModel.getId());
-                    client.setClientId(clientModel.getClientId());
-                    client.setDescription(clientModel.getDescription());
-                    rep.add(client);
-                }
-            }
+        } else if (search) {
+            clientModels = canView
+                    ? realm.searchClientByClientIdStream(clientId, firstResult, maxResults)
+                    : realm.searchClientByClientIdStream(clientId, -1, -1);
         } else {
-            List<ClientModel> clientModels = Collections.emptyList();
-            if(search) {
-                clientModels = realm.searchClientByClientId(clientId, firstResult, maxResults);
-            } else {
-                ClientModel client = realm.getClientByClientId(clientId);
-                if(client != null) {
-                    clientModels = Collections.singletonList(client);
-                }
-            }
-            if (clientModels != null) {
-                for(ClientModel clientModel : clientModels) {
-                    if (auth.clients().canView(clientModel)) {
-                        ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
-                        representation.setAccess(auth.clients().getAccess(clientModel));
-                        rep.add(representation);
-                    } else if (!viewableOnly && auth.clients().canView(clientModel)){
-                        ClientRepresentation client = new ClientRepresentation();
-                        client.setId(clientModel.getId());
-                        client.setClientId(clientModel.getClientId());
-                        client.setDescription(clientModel.getDescription());
-                        rep.add(client);
-                    } else {
-                        throw new ForbiddenException();
-                    }
-                }
+            ClientModel client = realm.getClientByClientId(clientId);
+            if (client != null) {
+                clientModels = Stream.of(client);
             }
         }
-        return rep;
+
+        Stream<ClientRepresentation> s = clientModels
+                .map(c -> {
+                    ClientRepresentation representation = null;
+                    if (canView || auth.clients().canView(c)) {
+                        representation = ModelToRepresentation.toRepresentation(c, session);
+                        representation.setAccess(auth.clients().getAccess(c));
+                    } else if (!viewableOnly && auth.clients().canView(c)) {
+                        representation = new ClientRepresentation();
+                        representation.setId(c.getId());
+                        representation.setClientId(c.getClientId());
+                        representation.setDescription(c.getDescription());
+                    }
+
+                    return representation;
+                })
+                .filter(Objects::nonNull);
+
+        if (!canView) {
+            s = paginatedStream(s, firstResult, maxResults);
+        }
+
+        return s;
     }
 
     private AuthorizationService getAuthorizationService(ClientModel clientModel) {
@@ -168,18 +161,14 @@ public class ClientsResource {
     public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
-        ValidationMessages validationMessages = new ValidationMessages();
-        if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(
-                    validationMessages.getStringMessages(),
-                    validationMessages.getStringMessages(messages),
-                    Response.Status.BAD_REQUEST
-            );
+        try {
+            session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         try {
-            ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
                 UserModel serviceAccount = session.users().getServiceAccount(clientModel);
@@ -202,6 +191,14 @@ public class ClientsResource {
                     authorizationService.resourceServer().importSettings(authorizationSettings);
                 }
             }
+
+            ValidationUtil.validateClient(session, clientModel, true, r -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw new ErrorResponseException(
+                        Errors.INVALID_INPUT,
+                        r.getAllLocalizedErrorsAsString(AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale())),
+                        Response.Status.BAD_REQUEST);
+            });
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {

@@ -59,10 +59,10 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
         String userName = user.getUsername();
         if (userName != null) {
-            return session.users().getUserByUsername(userName, realm).getId();
+            return session.users().getUserByUsername(realm, userName).getId();
         } else if (!realm.isDuplicateEmailsAllowed()) {
             String email = user.getEmail();
-            return session.users().getUserByEmail(email, realm).getId();
+            return session.users().getUserByEmail(realm, email).getId();
         }
         
         return null;
@@ -74,12 +74,12 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     }
 
     private boolean userNameExists(RealmModel realm, KeycloakSession session, UserRepresentation user) {
-        return session.users().getUserByUsername(user.getUsername(), realm) != null;
+        return session.users().getUserByUsername(realm, user.getUsername()) != null;
     }
 
     private boolean userEmailExists(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         return (user.getEmail() != null) && !realm.isDuplicateEmailsAllowed() &&
-               (session.users().getUserByEmail(user.getEmail(), realm) != null);
+               (session.users().getUserByEmail(realm, user.getEmail()) != null);
     }
 
     @Override
@@ -98,9 +98,9 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
     @Override
     public void remove(RealmModel realm, KeycloakSession session, UserRepresentation user) {
-        UserModel userModel = session.users().getUserByUsername(user.getUsername(), realm);
+        UserModel userModel = session.users().getUserByUsername(realm, user.getUsername());
         if (userModel == null && !realm.isDuplicateEmailsAllowed()) {
-            userModel = session.users().getUserByEmail(user.getEmail(), realm);
+            userModel = session.users().getUserByEmail(realm, user.getEmail());
         }
         if (userModel != null) {
             boolean success = new UserManager(session).removeUser(realm, userModel);

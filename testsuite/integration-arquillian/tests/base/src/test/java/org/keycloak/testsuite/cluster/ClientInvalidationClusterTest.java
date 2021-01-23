@@ -4,6 +4,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
@@ -58,24 +59,38 @@ public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTe
 
     @Override
     protected ClientRepresentation readEntity(ClientRepresentation client, ContainerInfo node) {
-        ClientRepresentation u = null;
-        try {
-            u = entityResource(client, node).toRepresentation();
-        } catch (NotFoundException nfe) {
-            // expected when client doesn't exist
-        }
+        ClientRepresentation u = Retry.call(new Retry.Supplier<ClientRepresentation>() {
+            @Override
+            public ClientRepresentation get(int iteration) {
+                try {
+                    return entityResource(client, node).toRepresentation();
+                } catch (NotFoundException nfe) {
+                    return null;
+                }
+            }
+        }, 3, 5000);
         return u;
     }
 
     @Override
     protected ClientRepresentation updateEntity(ClientRepresentation client, ContainerInfo node) {
-        entityResource(client, node).update(client);
+        Retry.execute(new Runnable() {
+            @Override
+            public void run() {
+                entityResource(client, node).update(client);
+            }
+        }, 3, 5000);
         return readEntity(client, node);
     }
 
     @Override
     protected void deleteEntity(ClientRepresentation client, ContainerInfo node) {
-        entityResource(client, node).remove();
+        Retry.execute(new Runnable() {
+            @Override
+            public void run() {
+                entityResource(client, node).remove();
+            }
+        }, 3, 5000);
         assertNull(readEntity(client, node));
     }
 

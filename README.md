@@ -14,7 +14,7 @@ This repository contains the source code for the Keycloak Server, Java adapters 
 
 ## Reporting Security Vulnerabilities
 
-If you've found a security vulnerability, please look at the [instructions on how to properly report it](http://www.keycloak.org/security.html)
+If you've found a security vulnerability, please look at the [instructions on how to properly report it](SECURITY.md)
 
 
 ## Reporting an issue
@@ -62,7 +62,6 @@ Before contributing to Keycloak please read our [contributing guidelines](CONTRI
 * [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentation for Keycloak
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
 * [Keycloak Containers](https://github.com/keycloak/keycloak-containers) - Container images for Keycloak
-* [Keycloak Gatekeeper](https://github.com/keycloak/keycloak-gatekeeper) - Proxy service to secure apps and services with Keycloak
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 * [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Node.js library for Keycloak Admin REST API
 

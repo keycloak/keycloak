@@ -18,7 +18,6 @@
 package org.keycloak.services.scheduled;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.timer.ScheduledTask;
@@ -33,11 +32,11 @@ public class ClearExpiredUserSessions implements ScheduledTask {
     @Override
     public void run(KeycloakSession session) {
         UserSessionProvider sessions = session.sessions();
-        for (RealmModel realm : session.realms().getRealms()) {
+        session.realms().getRealmsStream().forEach(realm -> {
             sessions.removeExpired(realm);
             session.authenticationSessions().removeExpired(realm);
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
-        }
+        });
     }
 
 }

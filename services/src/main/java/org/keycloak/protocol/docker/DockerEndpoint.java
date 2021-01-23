@@ -7,11 +7,13 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
@@ -78,6 +80,9 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     private void updateAuthenticationSession() {
         authenticationSession.setProtocol(DockerAuthV2Protocol.LOGIN_PROTOCOL);
         authenticationSession.setAction(CommonClientSessionModel.Action.AUTHENTICATE.name());
+
+        // Use transient userSession for the docker protocol. There is no need to persist session as there is no endpoint for "refresh token" or "introspection"
+        authenticationSession.setClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString());
 
         // Docker specific stuff
         authenticationSession.setClientNote(DockerAuthV2Protocol.ACCOUNT_PARAM, account);

@@ -17,27 +17,23 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.keycloak.common.Version;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
-import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.P3PHelper;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.io.InputStream;
 import java.util.Set;
+
+import static org.keycloak.services.util.IframeUtil.returnIframeFromResources;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,23 +46,7 @@ public class LoginStatusIframeEndpoint {
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getLoginStatusIframe(@QueryParam("version") String version) {
-        CacheControl cacheControl;
-        if (version != null) {
-            if (!version.equals(Version.RESOURCES_VERSION)) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            cacheControl = CacheControlUtil.getDefaultCacheControl();
-        } else {
-            cacheControl = CacheControlUtil.noCache();
-        }
-
-        InputStream resource = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
-        if (resource != null) {
-            P3PHelper.addP3PHeader();
-            return Response.ok(resource).cacheControl(cacheControl).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
+        return returnIframeFromResources("login-status-iframe.html", version, session);
     }
 
     @GET
@@ -75,7 +55,7 @@ public class LoginStatusIframeEndpoint {
         try {
             UriInfo uriInfo = session.getContext().getUri();
             RealmModel realm = session.getContext().getRealm();
-            ClientModel client = session.realms().getClientByClientId(clientId, realm);
+            ClientModel client = session.clients().getClientByClientId(realm, clientId);
             if (client != null && client.isEnabled()) {
                 Set<String> validWebOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
                 validWebOrigins.add(UriUtils.getOrigin(uriInfo.getRequestUri()));

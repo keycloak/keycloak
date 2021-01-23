@@ -18,13 +18,10 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
@@ -52,7 +49,7 @@ public class DefaultEvaluation implements Evaluation {
     private Policy policy;
     private final Policy parentPolicy;
     private final AuthorizationProvider authorizationProvider;
-    private Map<Policy, Map<Object, Effect>> decisionCache;
+    private final Map<Policy, Map<Object, Effect>> decisionCache;
     private final Realm realm;
     private Effect effect;
 
@@ -160,7 +157,7 @@ public class DefaultEvaluation implements Evaluation {
                 }
 
                 if (checkParent) {
-                    return RoleUtils.isMember(user.getGroups(), group);
+                    return RoleUtils.isMember(user.getGroupsStream(), group);
                 }
 
                 return user.isMemberOf(group);
@@ -168,13 +165,13 @@ public class DefaultEvaluation implements Evaluation {
 
             private UserModel getUser(String id, KeycloakSession session) {
                 RealmModel realm = session.getContext().getRealm();
-                UserModel user = session.users().getUserById(id, realm);
+                UserModel user = session.users().getUserById(realm, id);
 
                 if (Objects.isNull(user)) {
-                    user = session.users().getUserByUsername(id, realm);
+                    user = session.users().getUserByUsername(realm ,id);
                 }
                 if (Objects.isNull(user)) {
-                    user = session.users().getUserByEmail(id, realm);
+                    user = session.users().getUserByEmail(realm, id);
                 }
                 if (Objects.isNull(user)) {
                     user = session.users().getServiceAccount(realm.getClientById(id));
@@ -192,9 +189,7 @@ public class DefaultEvaluation implements Evaluation {
                     return false;
                 }
 
-                Set<RoleModel> roleMappings = user.getRoleMappings().stream()
-                        .filter(role -> !role.isClientRole())
-                        .collect(Collectors.toSet());
+                Stream<RoleModel> roleMappings = user.getRoleMappingsStream().filter(isNotClientRole);
 
                 return RoleUtils.hasRole(roleMappings, session.getContext().getRealm().getRole(roleName));
             }
@@ -209,15 +204,16 @@ public class DefaultEvaluation implements Evaluation {
                     return false;
                 }
 
-                Set<RoleModel> roleMappings = user.getRoleMappings().stream()
-                        .filter(role -> role.isClientRole() && ClientModel.class.cast(role.getContainer()).getClientId().equals(clientId))
+                Set<RoleModel> roleMappings = user.getRoleMappingsStream()
+                        .filter(RoleModel::isClientRole)
+                        .filter(role -> Objects.equals(((ClientModel) role.getContainer()).getClientId(), clientId))
                         .collect(Collectors.toSet());
 
                 if (roleMappings.isEmpty()) {
                     return false;
                 }
 
-                RoleModel role = realm.getClientById(ClientModel.class.cast(roleMappings.iterator().next().getContainer()).getId()).getRole(roleName);
+                RoleModel role = realm.getClientById(roleMappings.iterator().next().getContainer().getId()).getRole(roleName);
 
                 if (Objects.isNull(role)) {
                     return false;
@@ -237,23 +233,23 @@ public class DefaultEvaluation implements Evaluation {
 
             @Override
             public List<String> getUserRealmRoles(String id) {
-                return getUser(id, authorizationProvider.getKeycloakSession()).getRoleMappings().stream()
-                        .filter(role -> !role.isClientRole())
+                return getUser(id, authorizationProvider.getKeycloakSession()).getRoleMappingsStream()
+                        .filter(isNotClientRole)
                         .map(RoleModel::getName)
                         .collect(Collectors.toList());
             }
 
             @Override
             public List<String> getUserClientRoles(String id, String clientId) {
-                return getUser(id, authorizationProvider.getKeycloakSession()).getRoleMappings().stream()
-                        .filter(role -> role.isClientRole())
+                return getUser(id, authorizationProvider.getKeycloakSession()).getRoleMappingsStream()
+                        .filter(RoleModel::isClientRole)
                         .map(RoleModel::getName)
                         .collect(Collectors.toList());
             }
 
             @Override
             public List<String> getUserGroups(String id) {
-                return getUser(id, authorizationProvider.getKeycloakSession()).getGroups().stream()
+                return getUser(id, authorizationProvider.getKeycloakSession()).getGroupsStream()
                         .map(ModelToRepresentation::buildGroupPath)
                         .collect(Collectors.toList());
             }
@@ -274,4 +270,6 @@ public class DefaultEvaluation implements Evaluation {
         this.effect = effect;
         this.decision.onDecision(this);
     }
+
+    private Predicate<RoleModel> isNotClientRole = ((Predicate<RoleModel>) RoleModel::isClientRole).negate();
 }

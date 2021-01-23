@@ -1,5 +1,6 @@
 package org.keycloak.services.error;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -9,6 +10,7 @@ import org.keycloak.common.util.Resteasy;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -36,7 +38,6 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Provider
 public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static final Logger logger = Logger.getLogger(KeycloakErrorHandler.class);
@@ -46,9 +47,6 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
 
     @Context
-    private KeycloakSession session;
-
-    @Context
     private HttpHeaders headers;
 
     @Context
@@ -56,7 +54,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable throwable) {
-        KeycloakTransaction tx = Resteasy.getContextData(KeycloakTransaction.class);
+        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakTransaction tx = session.getTransactionManager();
         tx.setRollbackOnly();
 
         int statusCode = getStatusCode(throwable);
@@ -77,14 +76,14 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         }
 
         try {
-            RealmModel realm = resolveRealm();
+            RealmModel realm = resolveRealm(session);
 
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
 
             Locale locale = session.getContext().resolveLocale(null);
 
             FreeMarkerUtil freeMarker = new FreeMarkerUtil();
-            Map<String, Object> attributes = initAttributes(realm, theme, locale, statusCode);
+            Map<String, Object> attributes = initAttributes(session, realm, theme, locale, statusCode);
 
             String templateName = "error.ftl";
 
@@ -106,20 +105,26 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             Failure f = (Failure) throwable;
             status = f.getErrorCode();
         }
+        if (throwable instanceof JsonParseException) {
+            status = Response.Status.BAD_REQUEST.getStatusCode();
+        }
+        
+        if (throwable instanceof ModelDuplicateException) {
+            status = Response.Status.CONFLICT.getStatusCode();
+        }
+        
         return status;
     }
 
     private String getErrorCode(Throwable throwable) {
-        String error = throwable.getMessage();
-
-        if (error == null) {
-            return "unknown_error";
+        if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {
+            return throwable.getMessage();
         }
 
-        return error;
+        return "unknown_error";
     }
 
-    private RealmModel resolveRealm() {
+    private RealmModel resolveRealm(KeycloakSession session) {
         String path = session.getContext().getUri().getPath();
         Matcher m = realmNamePattern.matcher(path);
         String realmName;
@@ -140,7 +145,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         return realm;
     }
 
-    private Map<String, Object> initAttributes(RealmModel realm, Theme theme, Locale locale, int statusCode) throws IOException {
+    private Map<String, Object> initAttributes(KeycloakSession session, RealmModel realm, Theme theme, Locale locale, int statusCode) throws IOException {
         Map<String, Object> attributes = new HashMap<>();
         Properties messagesBundle = theme.getMessages(locale);
 

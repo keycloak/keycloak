@@ -28,6 +28,8 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -39,6 +41,7 @@ import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -58,6 +61,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -72,6 +76,8 @@ import java.util.stream.Collectors;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.keycloak.util.JsonSerialization;
+
 import static org.junit.Assert.assertThat;
 
 /**
@@ -82,7 +88,7 @@ public class ExportImportUtil {
 
     // In the old testsuite, this method exists as a public method of ImportTest from the model package.
     // However, model package is not ready to be migrated yet.
-    public static void assertDataImportedInRealm(Keycloak adminClient, KeycloakTestingClient testingClient, RealmRepresentation realm) {
+    public static void assertDataImportedInRealm(Keycloak adminClient, KeycloakTestingClient testingClient, RealmRepresentation realm) throws IOException {
         Assert.assertTrue(realm.isVerifyEmail());
         Assert.assertEquals((Integer)3600000, realm.getOfflineSessionIdleTimeout());
         Assert.assertEquals((Integer)1500, realm.getAccessTokenLifespanForImplicitFlow());
@@ -95,10 +101,6 @@ public class ExportImportUtil {
         Assert.assertEquals(1, creds.size());
         String cred = (String)creds.iterator().next();
         Assert.assertEquals("password", cred);
-        Assert.assertEquals(4, realm.getDefaultRoles().size());
-
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "foo"));
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "bar"));
 
         RealmResource realmRsc = adminClient.realm(realm.getRealm());
 
@@ -116,6 +118,7 @@ public class ExportImportUtil {
         ClientRepresentation application = ApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
         ClientRepresentation otherApp = ApiUtil.findClientByClientId(realmRsc, "OtherApp").toRepresentation();
         ClientRepresentation accountApp = ApiUtil.findClientByClientId(realmRsc, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation testAppAuthzApp = ApiUtil.findClientByClientId(realmRsc, "test-app-authz").toRepresentation();
         ClientResource nonExisting = ApiUtil.findClientByClientId(realmRsc, "NonExisting");
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
@@ -179,6 +182,13 @@ public class ExportImportUtil {
         // user with creation timestamp as string in import
         Assert.assertEquals(new Long(123655), loginclient.getCreatedTimestamp());
 
+        UserRepresentation hashedPasswordUser = findByUsername(realmRsc, "hashedpassworduser");
+        CredentialRepresentation password = realmRsc.users().get(hashedPasswordUser.getId()).credentials().stream()
+                .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                .findFirst().get();
+        PasswordCredentialData credentialData = JsonSerialization.readValue(password.getCredentialData(), PasswordCredentialData.class);
+        Assert.assertEquals(1234, credentialData.getHashIterations());
+
         List<RoleRepresentation> realmRoles = realmRolesForUser(realmRsc, admin);
         Assert.assertEquals(1, realmRoles.size());
         Assert.assertEquals("admin", realmRoles.iterator().next().getName());
@@ -190,7 +200,7 @@ public class ExportImportUtil {
         // Test attributes
         Map<String, List<String>> attrs = wburke.getAttributes();
         Assert.assertEquals(1, attrs.size());
-        List<String> attrVals = attrs.get("email");
+        List<String> attrVals = attrs.get("old-email");
         Assert.assertEquals(1, attrVals.size());
         Assert.assertEquals("bburke@redhat.com", attrVals.get(0));
 
@@ -333,7 +343,7 @@ public class ExportImportUtil {
         Assert.assertNull(findMapperByName(applicationMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "given name"));
         Assert.assertNull(findMapperByName(applicationMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
 
-        Assert.assertEquals(4, otherApp.getProtocolMappers().size());
+        Assert.assertEquals(1, otherApp.getProtocolMappers().size());
         List<ProtocolMapperRepresentation> otherAppMappers = otherApp.getProtocolMappers();
         Assert.assertNull(findMapperByName(otherAppMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));
         ProtocolMapperRepresentation gssCredentialMapper = findMapperByName(otherAppMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
@@ -397,12 +407,24 @@ public class ExportImportUtil {
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
+        Assert.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
         Assert.assertNull(testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
-        UserRepresentation linked = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
-        Assert.assertNotNull(linked);
-        Assert.assertEquals("my-service-user", linked.getUsername());
-        
-        assertAuthorizationSettings(realmRsc);
+        UserRepresentation otherAppSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
+        Assert.assertNotNull(otherAppSA);
+        Assert.assertEquals("service-account-otherapp", otherAppSA.getUsername());
+        UserRepresentation testAppAuthzSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
+        Assert.assertNotNull(testAppAuthzSA);
+        Assert.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
+
+        // test service account maintains the roles in OtherApp
+        allRoles = allRoles(realmRsc, otherAppSA);
+        Assert.assertEquals(3, allRoles.size());
+        Assert.assertTrue(containsRole(allRoles, findRealmRole(realmRsc, "user")));
+        Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-user")));
+        Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-admin")));
+
+        assertAuthorizationSettingsOtherApp(realmRsc);
+        assertAuthorizationSettingsTestAppAuthz(realmRsc);
     }
 
 
@@ -452,7 +474,7 @@ public class ExportImportUtil {
 
     // Workaround for KEYCLOAK-3104.  For this realm, search() only works if username is null.
     private static UserRepresentation findByUsername(RealmResource realmRsc, String username) {
-        for (UserRepresentation user : realmRsc.users().search(null, 0, Integer.MAX_VALUE)) {
+        for (UserRepresentation user : realmRsc.users().search(null, 0, -1)) {
             if (user.getUsername().equalsIgnoreCase(username)) return user;
         }
         return null;
@@ -558,7 +580,20 @@ public class ExportImportUtil {
         return false;
     }
 
-    private static void assertAuthorizationSettings(RealmResource realmRsc) {
+    private static void assertAuthorizationSettingsOtherApp(RealmResource realmRsc) {
+        AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "OtherApp");
+        Assert.assertNotNull(authzResource);
+
+        List<ResourceRepresentation> resources = authzResource.resources().resources();
+        Assert.assertThat(resources.stream().map(ResourceRepresentation::getName).collect(Collectors.toList()),
+                Matchers.containsInAnyOrder("Default Resource", "test"));
+
+        List<PolicyRepresentation> policies = authzResource.policies().policies();
+        Assert.assertThat(policies.stream().map(PolicyRepresentation::getName).collect(Collectors.toList()),
+                Matchers.containsInAnyOrder("User Policy", "Default Permission", "test-permission"));
+    }
+
+    private static void assertAuthorizationSettingsTestAppAuthz(RealmResource realmRsc) {
         AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "test-app-authz");
 
         Assert.assertNotNull(authzResource);

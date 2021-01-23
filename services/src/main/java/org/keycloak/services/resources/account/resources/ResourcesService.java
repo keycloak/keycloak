@@ -111,6 +111,30 @@ public class ResourcesService extends AbstractResourceService {
                         .stream(), first, max);
     }
 
+    /**
+     */
+    @GET
+    @Path("pending-requests")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPendingRequests() {
+        Map<String, String> filters = new HashMap<>();
+
+        filters.put(PermissionTicket.REQUESTER, user.getId());
+        filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+
+        final List<PermissionTicket> permissionTickets = ticketStore.find(filters, null, -1, -1);
+
+        final List<ResourcePermission> resourceList = new ArrayList<>(permissionTickets.size());
+        for (PermissionTicket ticket : permissionTickets) {
+            ResourcePermission resourcePermission = new ResourcePermission(ticket.getResource(), provider);
+            resourcePermission.addScope(new Scope(ticket.getScope()));
+            resourceList.add(resourcePermission);
+        }
+
+        return queryResponse(
+                (f, m) -> resourceList.stream(), -1, resourceList.size());
+    }
+
     @Path("{id}")
     public Object getResource(@PathParam("id") String id) {
         org.keycloak.authorization.model.Resource resource = resourceStore.findById(id, null);
@@ -179,10 +203,10 @@ public class ResourcesService extends AbstractResourceService {
                 result = result.subList(0, size - 1);
             }
 
-            return cors(Response.ok().entity(result).links(createPageLinks(first, max, size)));
+            return Response.ok().entity(result).links(createPageLinks(first, max, size)).build();
         }
 
-        return cors(Response.ok().entity(query.apply(-1, -1).collect(Collectors.toList())));
+        return Response.ok().entity(query.apply(-1, -1).collect(Collectors.toList())).build();
     }
 
     private Link[] createPageLinks(Integer first, Integer max, int resultSize) {
@@ -195,15 +219,15 @@ public class ResourcesService extends AbstractResourceService {
 
         if (nextPage) {
             links.add(Link.fromUri(
-                    KeycloakUriBuilder.fromUri(request.getUri().getRequestUri()).replaceQuery("first={first}&max={max}")
+                    KeycloakUriBuilder.fromUri(uriInfo.getRequestUri()).replaceQuery("first={first}&max={max}")
                             .build(first + max, max))
                     .rel("next").build());
         }
 
         if (first > 0) {
             links.add(Link.fromUri(
-                    KeycloakUriBuilder.fromUri(request.getUri().getRequestUri()).replaceQuery("first={first}&max={max}")
-                            .build(nextPage ? first : first - max, max))
+                    KeycloakUriBuilder.fromUri(uriInfo.getRequestUri()).replaceQuery("first={first}&max={max}")
+                            .build(Math.max(first - max, 0), max))
                     .rel("prev").build());
         }
 

@@ -18,34 +18,29 @@
 package org.keycloak.social.facebook;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.OAuthErrorException;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ErrorResponseException;
-
-import javax.ws.rs.core.Response;
-import java.io.IOException;
+import org.keycloak.saml.common.util.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
+public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<FacebookIdentityProviderConfig> implements SocialIdentityProvider<FacebookIdentityProviderConfig> {
 
 	public static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
 	public static final String TOKEN_URL = "https://graph.facebook.com/oauth/access_token";
 	public static final String PROFILE_URL = "https://graph.facebook.com/me?fields=id,name,email,first_name,last_name";
 	public static final String DEFAULT_SCOPE = "email";
+	protected static final String PROFILE_URL_FIELDS_SEPARATOR = ",";
 
-	public FacebookIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+	public FacebookIdentityProvider(KeycloakSession session, FacebookIdentityProviderConfig config) {
 		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
@@ -54,8 +49,11 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
-
+			final String fetchedFields = getConfig().getFetchedFields();
+			final String url = StringUtil.isNotNull(fetchedFields)
+					? String.join(PROFILE_URL_FIELDS_SEPARATOR, PROFILE_URL, fetchedFields)
+					: PROFILE_URL;
+			JsonNode profile = SimpleHttp.doGet(url, session).header("Authorization", "Bearer " + accessToken).asJson();
 			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from facebook.", e);
@@ -98,12 +96,11 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
 		String lastName = getJsonProperty(profile, "last_name");
 
 		if (lastName == null) {
-            lastName = "";
-        } else {
-            lastName = " " + lastName;
-        }
+		    lastName = "";
+		}
 
-		user.setName(firstName + lastName);
+		user.setFirstName(firstName);
+		user.setLastName(lastName);
 		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 

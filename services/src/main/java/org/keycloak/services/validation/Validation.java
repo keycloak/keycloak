@@ -26,11 +26,14 @@ import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.userprofile.validation.AttributeValidationResult;
+import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Validation {
 
@@ -40,7 +43,9 @@ public class Validation {
     public static final String FIELD_FIRST_NAME = "firstName";
     public static final String FIELD_PASSWORD = "password";
     public static final String FIELD_USERNAME = "username";
-    
+    public static final String FIELD_OTP_CODE = "totp";
+    public static final String FIELD_OTP_LABEL = "userLabel";
+
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
@@ -87,9 +92,13 @@ public class Validation {
     }
 
     public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData) {
+        return validateUpdateProfileForm(realm, formData, realm.isEditUsernameAllowed());
+    }
+    
+    public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData, boolean userNameRequired) {
         List<FormMessage> errors = new ArrayList<>();
         
-        if (!realm.isRegistrationEmailAsUsername() && realm.isEditUsernameAllowed() && isBlank(formData.getFirst(FIELD_USERNAME))) {
+        if (!realm.isRegistrationEmailAsUsername() && userNameRequired && isBlank(formData.getFirst(FIELD_USERNAME))) {
             addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
         }
 
@@ -146,4 +155,12 @@ public class Validation {
     }
 
 
+    public static List<FormMessage> getFormErrorsFromValidation(UserProfileValidationResult results) {
+        List<FormMessage> errors = new ArrayList<>();
+        for (AttributeValidationResult result : results.getErrors()) {
+            result.getFailedValidations().forEach(o -> addError(errors, result.getField(), o.getErrorType()));
+        }
+        return errors;
+
+    }
 }

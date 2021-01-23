@@ -66,10 +66,9 @@ public class VaultTranscriberTest {
      * the try-wih-resources block. For the latter, the tests checks if an empty {@link Optional} has been returned by the
      * transcriber.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetRawSecretUsingValidExpressions() throws Exception {
+    public void testGetRawSecretUsingValidExpressions() {
         ByteBuffer secretBuffer = null;
         byte[] secretArray = null;
 
@@ -107,10 +106,9 @@ public class VaultTranscriberTest {
      * checks if the returned secret matches the specified values (using both the buffer and array representation of the value)
      * and then checks if the secrets have been overridden/destroyed after the try-wih-resources block.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetRawSecretUsingInvalidExpressions() throws Exception {
+    public void testGetRawSecretUsingInvalidExpressions() {
         ByteBuffer secretBuffer;
         byte[] secretArray;
 
@@ -137,10 +135,9 @@ public class VaultTranscriberTest {
     /**
      * Tests that a null vault expression always returns an empty secret.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetRawSecretUsingNullExpression() throws Exception {
+    public void testGetRawSecretUsingNullExpression() {
         // check that a null expression results in an empty optional instance.
         try (VaultRawSecret secret = transcriber.getRawSecret(null)) {
             Assert.assertFalse(secret.get().isPresent());
@@ -158,10 +155,9 @@ public class VaultTranscriberTest {
      * the try-wih-resources block. For the latter, the tests checks if an empty {@link Optional} has been returned by the
      * transcriber.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetCharSecretUsingValidExpressions() throws Exception {
+    public void testGetCharSecretUsingValidExpressions() {
         CharBuffer secretBuffer = null;
         char[] secretArray = null;
 
@@ -199,10 +195,9 @@ public class VaultTranscriberTest {
      * checks if the returned secret matches the specified values (using both the buffer and array representation of the value)
      * and then checks if the secrets have been overridden/destroyed after the try-wih-resources block.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetCharSecretUsingInvalidExpressions() throws Exception {
+    public void testGetCharSecretUsingInvalidExpressions() {
         CharBuffer secretBuffer;
         char[] secretArray;
 
@@ -229,10 +224,9 @@ public class VaultTranscriberTest {
     /**
      * Tests that a null vault expression always returns an empty secret.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetCharSecretUsingNullExpression() throws Exception {
+    public void testGetCharSecretUsingNullExpression() {
         // check that a null expression results in an empty optional instance.
         try (VaultCharSecret secret = transcriber.getCharSecret(null)) {
             Assert.assertFalse(secret.get().isPresent());
@@ -249,10 +243,9 @@ public class VaultTranscriberTest {
      * the tests checks if an empty {@link Optional} has been returned by the transcriber. Because strings are immutable,
      * this test doesn't verify if the secrets have been destroyed after the try-with-resources block.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetStringSecretUsingValidExpressions() throws Exception {
+    public void testGetStringSecretUsingValidExpressions() {
 
         // attempt to obtain a secret using a proper vault expressions. The key may or may not exist in the vault, so we
         // check both cases using the returned optional and comparing against the expected secret.
@@ -278,10 +271,9 @@ public class VaultTranscriberTest {
      * checks if the returned secret matches the specified values. Again, due to the fact that strings are immutable, this test
      * doesn't verify if the secrets have been destroyed after the try-with-resources block.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetStringSecretUsingInvalidExpressions() throws Exception {
+    public void testGetStringSecretUsingInvalidExpressions() {
 
         // attempt to obtain a secret using invalid vault expressions - the value itself should be returned as a byte buffer.
         for (String value : invalidExpressions) {
@@ -297,10 +289,9 @@ public class VaultTranscriberTest {
     /**
      * Tests that a null vault expression always returns an empty secret.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testGetStringSecretUsingNullExpression() throws Exception {
+    public void testGetStringSecretUsingNullExpression() {
         // check that a null expression results in an empty optional instance.
         try (VaultStringSecret secret = transcriber.getStringSecret(null)) {
             Assert.assertFalse(secret.get().isPresent());
@@ -311,10 +302,9 @@ public class VaultTranscriberTest {
      * Tests that when no {@link VaultProvider} is supplied to the transcriber it uses a default implementation that
      * always returns empty secrets.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testTranscriberWithNullProvider() throws Exception {
+    public void testTranscriberWithNullProvider() {
         VaultTranscriber transcriber = new DefaultVaultTranscriber(null);
         // none of the valid expressions identify a key in the default vault as it always returns empty secrets.
         for (String key : validExpressions.keySet()) {

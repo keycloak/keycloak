@@ -74,12 +74,11 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             UserModel federatedUser = session.users().addUser(realm, username);
             federatedUser.setEnabled(true);
-            federatedUser.setEmail(brokerContext.getEmail());
-            federatedUser.setFirstName(brokerContext.getFirstName());
-            federatedUser.setLastName(brokerContext.getLastName());
 
             for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
-                federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
+                    federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                }
             }
 
             AuthenticatorConfigModel config = context.getAuthenticatorConfig();
@@ -121,13 +120,13 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
         if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
-            UserModel existingUser = context.getSession().users().getUserByEmail(brokerContext.getEmail(), context.getRealm());
+            UserModel existingUser = context.getSession().users().getUserByEmail(context.getRealm(), brokerContext.getEmail());
             if (existingUser != null) {
                 return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
             }
         }
 
-        UserModel existingUser = context.getSession().users().getUserByUsername(username, context.getRealm());
+        UserModel existingUser = context.getSession().users().getUserByUsername(context.getRealm(), username);
         if (existingUser != null) {
             return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
         }

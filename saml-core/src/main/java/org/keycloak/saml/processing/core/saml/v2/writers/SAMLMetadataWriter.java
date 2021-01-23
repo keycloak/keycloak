@@ -187,8 +187,7 @@ public class SAMLMetadataWriter extends BaseWriter {
 
     public void write(SPSSODescriptorType spSSODescriptor) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.SP_SSO_DESCRIPTOR.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
-        StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.PROTOCOL_SUPPORT_ENUMERATION.get()), spSSODescriptor
-                .getProtocolSupportEnumeration().get(0));
+        writeProtocolSupportEnumeration(spSSODescriptor.getProtocolSupportEnumeration());
 
         // Write the attributes
         Boolean authnSigned = spSSODescriptor.isAuthnRequestsSigned();
@@ -250,6 +249,12 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
         writeProtocolSupportEnumeration(idpSSODescriptor.getProtocolSupportEnumeration());
 
+        // Get the key descriptors
+        List<KeyDescriptorType> keyDescriptors = idpSSODescriptor.getKeyDescriptor();
+        for (KeyDescriptorType keyDescriptor : keyDescriptors) {
+            writeKeyDescriptor(keyDescriptor);
+        }
+
         List<IndexedEndpointType> artifactResolutionServices = idpSSODescriptor.getArtifactResolutionService();
         for (IndexedEndpointType indexedEndpoint : artifactResolutionServices) {
             writeArtifactResolutionService(indexedEndpoint);
@@ -260,14 +265,14 @@ public class SAMLMetadataWriter extends BaseWriter {
             writeSingleLogoutService(endpoint);
         }
 
-        List<EndpointType> ssoServices = idpSSODescriptor.getSingleSignOnService();
-        for (EndpointType endpoint : ssoServices) {
-            writeSingleSignOnService(endpoint);
-        }
-
         List<String> nameIDFormats = idpSSODescriptor.getNameIDFormat();
         for (String nameIDFormat : nameIDFormats) {
             writeNameIDFormat(nameIDFormat);
+        }
+
+        List<EndpointType> ssoServices = idpSSODescriptor.getSingleSignOnService();
+        for (EndpointType endpoint : ssoServices) {
+            writeSingleSignOnService(endpoint);
         }
 
         List<AttributeType> attributes = idpSSODescriptor.getAttribute();
@@ -346,7 +351,9 @@ public class SAMLMetadataWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ATTRIBUTE_CONSUMING_SERVICE.get(),
                 JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        StaxUtil.writeAttribute(writer, JBossSAMLConstants.ISDEFAULT.get(), "" + attributeConsumer.isIsDefault());
+        if (attributeConsumer.isIsDefault() != null)
+           StaxUtil.writeAttribute(writer, JBossSAMLConstants.ISDEFAULT.get(), "" + attributeConsumer.isIsDefault());
+
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.INDEX.get(), "" + attributeConsumer.getIndex());
 
         // Service Name
@@ -550,7 +557,10 @@ public class SAMLMetadataWriter extends BaseWriter {
     private void writeNameIDFormat(String nameIDFormat) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.NAMEID_FORMAT.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        StaxUtil.writeCharacters(writer, nameIDFormat);
+        if (nameIDFormat != null) {
+            StaxUtil.writeCharacters(writer, nameIDFormat);
+        }
+
         StaxUtil.writeEndElement(writer);
     }
 }

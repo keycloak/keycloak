@@ -55,6 +55,14 @@ public interface TestingLDAPResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void prepareGroupsLDAPTest();
 
+    /**
+     * Prepare groups LDAP tests. Creates some LDAP mappers as well as some built-in GRoups and users in LDAP
+     */
+    @POST
+    @Path("/configure-roles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    void prepareRolesLDAPTest();
 
     /**
      * Remove specified user directly just from the LDAP server

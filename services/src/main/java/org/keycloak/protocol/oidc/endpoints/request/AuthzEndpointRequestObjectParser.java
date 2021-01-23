@@ -57,9 +57,10 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
         } else {
             this.requestParams = session.tokens().decodeClientJWT(requestObject, client, JsonNode.class);
             if (this.requestParams == null) {
-            	throw new RuntimeException("Failed to verify signature on 'request' object");
+                throw new RuntimeException("Failed to verify signature on 'request' object");
             }
         }
+        session.setAttribute(AuthzEndpointRequestParser.AUTHZ_REQUEST_OBJECT, requestParams);
     }
 
     @Override

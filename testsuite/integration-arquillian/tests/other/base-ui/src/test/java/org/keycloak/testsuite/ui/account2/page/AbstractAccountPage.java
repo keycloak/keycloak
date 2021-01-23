@@ -41,7 +41,6 @@ public abstract class AbstractAccountPage extends AuthRealm {
     public UriBuilder createUriBuilder() {
         String fragment = null;
         if (hashPath != null) {
-            hashPath.add(0, "app"); // TODO remove this once KEYCLOAK-11268 is resolved
             fragment = "/" + String.join("/", hashPath);
         }
 

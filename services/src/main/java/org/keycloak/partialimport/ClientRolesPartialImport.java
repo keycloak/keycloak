@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -68,11 +69,7 @@ public class ClientRolesPartialImport {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) return false;
 
-        for (RoleModel role : client.getRoles()) {
-            if (getName(roleRep).equals(role.getName())) return true;
-        }
-
-        return false;
+        return client.getRolesStream().anyMatch(role -> Objects.equals(getName(roleRep), role.getName()));
     }
 
     // check if client currently exists or will exists as a result of this partial import
@@ -120,8 +117,8 @@ public class ClientRolesPartialImport {
                 throw noClientFound(clientId);
             }
 
-            toOverwrite.put(clientId, new HashSet<RoleRepresentation>());
-            toSkip.put(clientId, new HashSet<RoleRepresentation>());
+            toOverwrite.put(clientId, new HashSet<>());
+            toSkip.put(clientId, new HashSet<>());
             for (RoleRepresentation roleRep : repList.get(clientId)) {
                 if (exists(realm, session, clientId, roleRep)) {
                     switch (partialImportRep.getPolicy()) {

@@ -79,19 +79,14 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory<Reso
 
     private void updateResourceType(Policy policy, ResourcePermissionRepresentation representation) {
         if (representation != null) {
-            //TODO: remove this check once we migrate to new API
-            if (ResourcePermissionRepresentation.class.equals(representation.getClass())) {
-                ResourcePermissionRepresentation resourcePermission = ResourcePermissionRepresentation.class.cast(representation);
-                Map<String, String> config = new HashMap(policy.getConfig());
+            Map<String, String> config = new HashMap(policy.getConfig());
 
-                config.compute("defaultResourceType", (key, value) -> {
-                    String resourceType = resourcePermission.getResourceType();
-                    return resourceType != null ? resourcePermission.getResourceType() : null;
-                });
+            config.compute("defaultResourceType", (key, value) -> {
+                String resourceType = representation.getResourceType();
+                return resourceType != null ? representation.getResourceType() : null;
+            });
 
-                policy.setConfig(config);
-
-            }
+            policy.setConfig(config);
         }
     }
 

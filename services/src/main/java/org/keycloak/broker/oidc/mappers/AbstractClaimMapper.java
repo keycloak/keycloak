@@ -39,6 +39,14 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
     public static final String CLAIM_VALUE = "claim.value";
 
     public static Object getClaimValue(JsonWebToken token, String claim) {
+
+        switch (claim) {
+            case "sub":
+                return token.getSubject();
+            default:
+                // found no match, try other claims
+        }
+
         List<String> split = OIDCAttributeMapperHelper.splitClaimPath(claim);
         Map<String, Object> jsonObject = token.getOtherClaims();
         final int length = split.size();
@@ -118,7 +126,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         } else if (value instanceof List) {
             List list = (List)value;
             for (Object val : list) {
-            	if (valueEquals(desiredValue, val)) return true;
+                if (valueEquals(desiredValue, val)) return true;
             }
         } else if (value instanceof JsonNode) {
             try {

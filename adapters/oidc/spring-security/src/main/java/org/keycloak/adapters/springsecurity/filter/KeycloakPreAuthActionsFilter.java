@@ -18,6 +18,7 @@
 package org.keycloak.adapters.springsecurity.filter;
 
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -78,7 +79,16 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
             throws IOException, ServletException {
 
         HttpFacade facade = new SimpleHttpFacade((HttpServletRequest)request, (HttpServletResponse)response);
-        nodesRegistrationManagement.tryRegister(deploymentContext.resolveDeployment(facade));
+        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+        
+        if (deployment == null) {
+            return;
+        }
+
+        if (deployment.isConfigured()) {
+            nodesRegistrationManagement.tryRegister(deploymentContext.resolveDeployment(facade));
+        }
+
         PreAuthActionsHandler handler = preAuthActionsHandlerFactory.createPreAuthActionsHandler(facade);
         if (handler.handleRequest()) {
             log.debug("Pre-auth filter handled request: {}", ((HttpServletRequest) request).getRequestURI());

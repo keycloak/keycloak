@@ -355,8 +355,9 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
 
     public URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
-        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri)
-                .queryParam(samlParameterName, base64Encoded(document));
+        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri);
+        int pos = builder.getQuery() == null? 0 : builder.getQuery().length();
+        builder.queryParam(samlParameterName, base64Encoded(document));
         if (relayState != null) {
             builder.queryParam("RelayState", relayState);
         }
@@ -365,6 +366,10 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
             URI uri = builder.build();
             String rawQuery = uri.getRawQuery();
+            if (pos > 0) {
+                // just set in the signature the added SAML parameters
+                rawQuery = rawQuery.substring(pos + 1);
+            }
             Signature signature = signatureAlgorithm.createSignature();
             byte[] sig = new byte[0];
             try {

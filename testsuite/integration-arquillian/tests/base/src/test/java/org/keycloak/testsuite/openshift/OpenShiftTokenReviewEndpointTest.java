@@ -7,7 +7,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -19,6 +18,7 @@ import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.openshift.OpenShiftTokenReviewRequestRepresentation;
@@ -32,11 +32,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -53,8 +51,12 @@ import java.util.Map;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.*;
 import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-@EnableFeature(OPENSHIFT_INTEGRATION)
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
+@EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean flowConfigured;
@@ -83,12 +85,19 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
         client.setPublicClient(false);
         client.setClientAuthenticatorType("testsuite-client-dummy");
 
-        testRealm.getUsers().add(UserBuilder.create().username("groups-user").password("password").addGroups("/topGroup", "/topGroup/level2group").build());
-    }
+        testRealm.getUsers().add(
+                UserBuilder.create()
+                        .username("groups-user")
+                        .password("password")
+                        .addGroups("/topGroup", "/topGroup/level2group")
+                        .role("account", "view-profile")
+                        .build());
 
-    @BeforeClass
-    public static void enabled() {
-        ContainerAssume.assumeNotAuthServerRemote();
+        testRealm.getUsers().add(
+                UserBuilder.create()
+                        .username("empty-audience")
+                        .password("password")
+                        .build());
     }
 
     @Before
@@ -210,14 +219,16 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
     public void customScopes() {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setProtocol("openid-connect");
-        clientScope.setId("user:info");
         clientScope.setName("user:info");
 
-        testRealm().clientScopes().create(clientScope);
+        String id;
+        try (Response r = testRealm().clientScopes().create(clientScope)) {
+            id = ApiUtil.getCreatedId(r);
+        }
 
         ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
 
-        testRealm().clients().get(clientRep.getId()).addOptionalClientScope("user:info");
+        testRealm().clients().get(clientRep.getId()).addOptionalClientScope(id);
 
         try {
             oauth.scope("user:info");
@@ -225,34 +236,15 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     .invoke()
                     .assertSuccess().assertScope("openid", "user:info", "profile", "email");
         } finally {
-            testRealm().clients().get(clientRep.getId()).removeOptionalClientScope("user:info");
+            testRealm().clients().get(clientRep.getId()).removeOptionalClientScope(id);
         }
     }
 
     @Test
-    public void emptyScope() throws Exception {
-        ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
-        List<ClientScopeRepresentation> scopesBefore = testRealm().clients().get(clientRep.getId()).getDefaultClientScopes();
-
-        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, "test", clientRep.getClientId())
-                .setConsentRequired(false)
-                .setFullScopeAllowed(false)
-                .setDefaultClientScopes(Collections.EMPTY_LIST)
-                .update()) {
-
-            oauth.openid(false);
-            try {
-                new Review()
-                        .invoke()
-                        .assertSuccess()
-                        .assertEmptyScope();
-            } finally {
-                oauth.openid(true);
-            }
-        }
-        // The default client scopes should be same like before.
-        int scopesAfterSize = testRealm().clients().get(clientRep.getId()).getDefaultClientScopes().size();
-        assertEquals(scopesBefore.size(), scopesAfterSize);
+    public void emptyAudience() {
+        new Review().username("empty-audience")
+                .invoke()
+                .assertError(401, "Token verification failure");
     }
 
     @Test
@@ -379,11 +371,12 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                 }
 
                 try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-                    String url = AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/" + realm + "/protocol/openid-connect/ext/openshift-token-review/" + clientId;
+                    String url = getAuthServerContextRoot() + "/auth/realms/" + realm + "/protocol/openid-connect/ext/openshift-token-review/" + clientId;
 
                     OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
                     OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
                     spec.setToken(token);
+                    spec.setAudiences(new String[]{"account"});
                     request.setSpec(spec);
 
                     HttpPost post = new HttpPost(url);

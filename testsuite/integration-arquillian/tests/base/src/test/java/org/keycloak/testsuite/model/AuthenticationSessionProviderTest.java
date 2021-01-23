@@ -35,6 +35,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,10 +44,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RoleModel;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(REMOTE)
 public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Before
@@ -65,8 +70,8 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             RealmModel realm = session.realms().getRealm("test");
             session.sessions().removeUserSessions(realm);
 
-            UserModel user1 = session.users().getUserByUsername("user1", realm);
-            UserModel user2 = session.users().getUserByUsername("user2", realm);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            UserModel user2 = session.users().getUserByUsername(realm, "user2");
 
             UserManager um = new UserManager(session);
             if (user1 != null) {
@@ -116,13 +121,13 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             // Update and commit
             authSession.setAction("foo-updated");
             rootAuthSession.setTimestamp(200);
-            authSession.setAuthenticatedUser(currentSession.users().getUserByUsername("user1", realm));
+            authSession.setAuthenticatedUser(currentSession.users().getUserByUsername(realm, "user1"));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD3) -> {
             KeycloakSession currentSession = sessionCRUD3;
             RealmModel realm = currentSession.realms().getRealm("test");
-            UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
+            UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
             // Ensure currentSession was updated
             RootAuthenticationSessionModel rootAuthSession = currentSession.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionID.get());
@@ -157,7 +162,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             RealmModel realm = currentSession.realms().getRealm("test");
 
             ClientModel client1 = realm.getClientByClientId("test-app");
-            UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
+            UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
             AuthenticationSessionModel authSession = currentSession.authenticationSessions().createRootAuthenticationSession(realm)
                     .createAuthenticationSession(client1);
@@ -245,6 +250,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             KeycloakSession currentSession = sesRealmRemoved1;
             RealmModel realm = currentSession.realms().getRealm("test");
             RealmModel fooRealm = currentSession.realms().createRealm("foo-realm");
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX  + "-" + fooRealm.getName()));
 
             fooRealm.addClient("foo-client");
 

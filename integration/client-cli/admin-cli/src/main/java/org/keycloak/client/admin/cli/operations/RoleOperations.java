@@ -38,7 +38,7 @@ public class RoleOperations {
     public static class LIST_OF_NODES extends ArrayList<ObjectNode>{};
 
     public static String getIdFromRoleName(String adminRoot, String realm, String auth, String rname) {
-        return getIdForType(adminRoot, realm, auth, "roles", "name", rname);
+        return getIdForType(adminRoot, realm, auth, "roles", "search", rname, "name");
     }
 
     public static void addRealmRoles(String rootUrl, String realm, String auth, String roleid, List<?> roles) {
@@ -60,11 +60,11 @@ public class RoleOperations {
     }
 
     public static String getRoleNameFromId(String adminRoot, String realm, String auth, String rid) {
-        return getAttrForType(adminRoot, realm, auth, "roles", "id", rid, "name");
+        return getAttrForType(adminRoot, realm, auth, "roles", "id", rid, "id","name");
     }
 
     public static String getClientRoleNameFromId(String adminRoot, String realm, String auth, String cid, String rid) {
-        return getAttrForType(adminRoot, realm, auth, "clients/" + cid + "/roles", "id", rid, "name");
+        return getAttrForType(adminRoot, realm, auth, "clients/" + cid + "/roles", "id", rid, "id", "name");
     }
 
     public static List<RoleRepresentation> getRealmRoles(String rootUrl, String realm, String auth) {

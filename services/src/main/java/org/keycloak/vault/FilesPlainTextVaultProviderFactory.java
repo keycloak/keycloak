@@ -15,7 +15,7 @@ import java.nio.file.Paths;
  *
  * @author Sebastian Łaskawiec
  */
-public class FilesPlainTextVaultProviderFactory implements VaultProviderFactory {
+public class FilesPlainTextVaultProviderFactory extends AbstractVaultProviderFactory {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -27,14 +27,16 @@ public class FilesPlainTextVaultProviderFactory implements VaultProviderFactory 
     @Override
     public VaultProvider create(KeycloakSession session) {
         if (vaultDirectory == null) {
-            logger.debug("Can not create a vault since it's disabled or not initialized correctly");
+            logger.debug("Can not create a vault since it's not initialized correctly");
             return null;
         }
-        return new FilesPlainTextVaultProvider(vaultPath, getRealmName(session));
+        return new FilesPlainTextVaultProvider(vaultPath, getRealmName(session), super.keyResolvers);
     }
 
     @Override
     public void init(Config.Scope config) {
+        super.init(config);
+
         vaultDirectory = config.get("dir");
         if (vaultDirectory == null) {
             logger.debug("PlainTextVaultProviderFactory not configured");
@@ -61,7 +63,4 @@ public class FilesPlainTextVaultProviderFactory implements VaultProviderFactory 
         return PROVIDER_ID;
     }
 
-    protected String getRealmName(KeycloakSession session) {
-        return session.getContext().getRealm().getName();
-    }
 }

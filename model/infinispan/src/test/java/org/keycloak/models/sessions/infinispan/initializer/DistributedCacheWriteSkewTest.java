@@ -162,53 +162,43 @@ public class DistributedCacheWriteSkewTest {
     public static EmbeddedCacheManager createManager(String nodeName) {
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("jgroups.tcp.port", "53715");
+
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = true;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-            gcb.transport().nodeName(nodeName);
-        }
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
+        gcb = gcb.clusteredDefault();
+        gcb.transport().clusterName("test-clustering");
+        gcb.transport().nodeName(nodeName);
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
-
         ConfigurationBuilder distConfigBuilder = new ConfigurationBuilder();
-        if (clustered) {
-            distConfigBuilder.clustering().cacheMode(async ? CacheMode.DIST_ASYNC : CacheMode.DIST_SYNC);
-            distConfigBuilder.clustering().hash().numOwners(1);
+        distConfigBuilder.clustering().cacheMode(CacheMode.DIST_SYNC);
+        distConfigBuilder.clustering().hash().numOwners(1);
 
-            // Disable L1 cache
-            distConfigBuilder.clustering().hash().l1().enabled(false);
+        // Disable L1 cache
+        distConfigBuilder.clustering().hash().l1().enabled(false);
 
-            //distConfigBuilder.storeAsBinary().enable().storeKeysAsBinary(false).storeValuesAsBinary(true);
+        //distConfigBuilder.storeAsBinary().enable().storeKeysAsBinary(false).storeValuesAsBinary(true);
 
-            distConfigBuilder.versioning().enabled(true);
-            distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
+        // KEYCLOAK-13692 - Per ISPN-7613 Infinispan:
+        // * Automatically enables versioning when needed,
+        // * writeSkewCheck automatically enabled for OPTIMISTIC and REPEATABLE_READ transactions
+        // so the following explicit settings of these are not needed anymore
+        // distConfigBuilder.versioning().enabled(true);
+        // distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
+        // distConfigBuilder.locking().writeSkewCheck(true);
 
-            distConfigBuilder.locking().writeSkewCheck(true);
-            distConfigBuilder.locking().isolationLevel(IsolationLevel.REPEATABLE_READ);
-            distConfigBuilder.locking().concurrencyLevel(32);
-            distConfigBuilder.locking().lockAcquisitionTimeout(1000, TimeUnit.SECONDS);
+        distConfigBuilder.locking().isolationLevel(IsolationLevel.REPEATABLE_READ);
+        distConfigBuilder.locking().concurrencyLevel(32);
+        distConfigBuilder.locking().lockAcquisitionTimeout(1000, TimeUnit.SECONDS);
 
-            distConfigBuilder.versioning().enabled(true);
-            distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
+        // distConfigBuilder.invocationBatching().enable();
+        //distConfigBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+        distConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
+        distConfigBuilder.transaction().lockingMode(LockingMode.OPTIMISTIC);
 
-
-           // distConfigBuilder.invocationBatching().enable();
-            //distConfigBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-            distConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
-            distConfigBuilder.transaction().lockingMode(LockingMode.OPTIMISTIC);
-        }
         Configuration distConfig = distConfigBuilder.build();
-
         cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, distConfig);
-        return cacheManager;
 
+        return cacheManager;
     }
 }

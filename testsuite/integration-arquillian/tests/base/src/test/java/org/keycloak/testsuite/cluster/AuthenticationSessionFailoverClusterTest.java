@@ -17,30 +17,20 @@
 
 package org.keycloak.testsuite.cluster;
 
-import java.io.IOException;
-
-import javax.mail.MessagingException;
-
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
@@ -48,50 +38,12 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
  */
 public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
-    private String userId;
-
-    @Page
-    protected LoginPage loginPage;
-
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
 
     @Page
     protected LoginUpdateProfilePage updateProfilePage;
-
-    @Page
-    protected AppPage appPage;
-
-
-    @Before
-    public void setup() {
-        try {
-            adminClient.realm("test").remove();
-        } catch (Exception ignore) {
-        }
-
-        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        adminClient.realms().create(testRealm);
-
-        UserRepresentation user = UserBuilder.create()
-                .username("login-test")
-                .email("login@test.com")
-                .enabled(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
-                .build();
-
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), user, "password");
-        getCleanup().addUserId(userId);
-
-        oauth.clientId("test-app");
-    }
-
-    @After
-    public void after() {
-        adminClient.realm("test").remove();
-    }
 
 
     @Test
@@ -163,6 +115,9 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
 
     public static String getAuthSessionCookieValue(WebDriver driver) {
         Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
+        if (authSessionCookie == null) {
+            authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE);
+        }
         Assert.assertNotNull(authSessionCookie);
         return authSessionCookie.getValue();
     }

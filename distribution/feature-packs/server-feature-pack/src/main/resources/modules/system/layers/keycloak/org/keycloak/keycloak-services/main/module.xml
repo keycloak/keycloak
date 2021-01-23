@@ -59,6 +59,7 @@
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.datatype.jackson-datatype-jdk8"/>
         <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
         <module name="com.google.zxing.core"/>
         <module name="com.google.zxing.javase"/>
@@ -67,6 +68,7 @@
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
         <module name="javax.json.api"/>
+        <module name="org.apache.commons.io"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.twitter4j"/>
         <module name="javax.transaction.api"/>

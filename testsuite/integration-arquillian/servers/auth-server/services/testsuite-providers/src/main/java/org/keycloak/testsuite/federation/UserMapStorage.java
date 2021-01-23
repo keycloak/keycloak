@@ -27,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
@@ -38,30 +39,28 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater, CredentialInputValidator,
-  UserGroupMembershipFederatedStorage, UserQueryProvider, ImportedUserValidation {
+public class UserMapStorage implements UserLookupProvider.Streams, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater.Streams,
+        CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider.Streams, ImportedUserValidation {
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
     
-    protected Map<String, String> userPasswords;
-    protected ConcurrentMap<String, Set<String>> userGroups;
+    protected final Map<String, String> userPasswords;
+    protected final ConcurrentMap<String, Set<String>> userGroups;
     protected ComponentModel model;
     protected KeycloakSession session;
     protected EditMode editMode;
@@ -93,10 +92,10 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         final String username = storageId.getExternalId();
-        if (!userPasswords.containsKey(username)) {
+        if (!userPasswords.containsKey(translateUserName(username))) {
             return null;
         }
 
@@ -114,7 +113,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             user.setEnabled(true);
             user.setFederationLink(model.getId());
         } else {
-            user = new AbstractUserAdapterFederatedStorage(session, realm, model) {
+            user = new AbstractUserAdapterFederatedStorage.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
                     return username;
@@ -161,7 +160,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             return false;
         }
         if (input.getType().equals(PasswordCredentialModel.TYPE)) {
-            userPasswords.put(user.getUsername(), input.getChallengeResponse());
+            userPasswords.put(translateUserName(user.getUsername()), input.getChallengeResponse());
             return true;
 
         } else {
@@ -175,8 +174,8 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return Collections.EMPTY_SET;
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        return Stream.empty();
     }
 
     @Override
@@ -186,20 +185,23 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof UserCredentialModel)) {
+        // Test "instanceof PasswordUserCredentialModel" on purpose. We want to test that the backwards compatibility
+        if (!(input instanceof PasswordUserCredentialModel)) {
             return false;
         }
         if (input.getType().equals(PasswordCredentialModel.TYPE)) {
-            String pw = userPasswords.get(user.getUsername());
-            return pw != null && pw.equals(input.getChallengeResponse());
+            String pw = userPasswords.get(translateUserName(user.getUsername()));
+
+            // Using "getValue" on purpose here, to test that backwards compatibility works as expected
+            return pw != null && pw.equals(((UserCredentialModel) input).getValue());
         } else {
             return false;
         }
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
-        if (!userPasswords.containsKey(username)) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
+        if (!userPasswords.containsKey(translateUserName(username))) {
             return null;
         }
 
@@ -207,7 +209,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         return null;
     }
 
@@ -217,7 +219,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             throw new ReadOnlyException("Federated storage is not writable");
         }
 
-        userPasswords.put(username, "");
+        userPasswords.put(translateUserName(username), "");
         return createUser(realm, username);
     }
 
@@ -225,21 +227,21 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     public boolean removeUser(RealmModel realm, UserModel user) {
         if (editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED) {
             log.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", user.getUsername(), editMode.toString());
-            userPasswords.remove(user.getUsername());
+            userPasswords.remove(translateUserName(user.getUsername()));
             return true;
         }
 
-        return userPasswords.remove(user.getUsername()) != null;
+        return userPasswords.remove(translateUserName(user.getUsername())) != null;
     }
 
     public boolean removeUserByName(String userName) {
         if (editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED) {
             log.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", userName, editMode.toString());
-            userPasswords.remove(userName);
+            userPasswords.remove(translateUserName(userName));
             return true;
         }
 
-        return userPasswords.remove(userName) != null;
+        return userPasswords.remove(translateUserName(userName)) != null;
     }
 
     public boolean isImportEnabled() {
@@ -289,49 +291,39 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
         return userPasswords.keySet().stream()
-          .map(userName -> createUser(realm, userName))
-          .collect(Collectors.toList());
+          .map(userName -> createUser(realm, userName));
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return userPasswords.keySet().stream()
-          .sorted()
-          .skip(firstResult)
-          .limit(maxResults)
-          .map(userName -> createUser(realm, userName))
-          .collect(Collectors.toList());
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        Stream<String> userStream = userPasswords.keySet().stream().sorted();
+
+        return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
+        String tSearch = translateUserName(search);
         return userPasswords.keySet().stream()
           .sorted()
-          .filter(userName -> userName.contains(search))
-          .map(userName -> createUser(realm, userName))
-          .collect(Collectors.toList());
+          .filter(userName -> translateUserName(userName).contains(tSearch))
+          .map(userName -> createUser(realm, userName));
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        return userPasswords.keySet().stream()
-          .sorted()
-          .filter(userName -> userName.contains(search))
-          .skip(firstResult)
-          .limit(maxResults)
-          .map(userName -> createUser(realm, userName))
-          .collect(Collectors.toList());
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        String tSearch = translateUserName(search);
+        Stream<String> userStream = userPasswords.keySet().stream()
+                .sorted()
+                .filter(userName -> translateUserName(userName).contains(search));
+
+        return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm, 0, Integer.MAX_VALUE - 1);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
         Stream<String> userStream = userPasswords.keySet().stream()
           .sorted();
 
@@ -345,49 +337,41 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
             switch (key) {
                 case UserModel.USERNAME:
-                    userStream = userStream.filter(s -> s.toLowerCase().contains(value.toLowerCase()));
+                case UserModel.SEARCH:
+                    if (Boolean.valueOf(params.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        userStream = userStream.filter(s -> s.toLowerCase().equals(value.toLowerCase()));           
+                    } else {
+                        userStream = userStream.filter(s -> s.toLowerCase().contains(value.toLowerCase()));
+                    }
             }
         }
 
-        return userStream
-          .skip(firstResult)
-          .limit(maxResults)
-          .map(userName -> createUser(realm, userName))
-          .collect(Collectors.toList());
+        return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return getMembership(realm, group, firstResult, maxResults).stream()
-          .map(userName -> createUser(realm, userName))
-          .collect(Collectors.toList());
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+        return getMembershipStream(realm, group, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults)
+          .map(userName -> createUser(realm, userName));
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return getGroupMembers(realm, group, 0, Integer.MAX_VALUE - 1);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         if (isImportEnabled()) {
-            return session.userLocalStorage().searchForUserByUserAttribute(attrName, attrValue, realm);
+            return session.userLocalStorage().searchForUserByUserAttributeStream(realm, attrName, attrValue);
         } else {
-            return session.userFederatedStorage().getUsersByUserAttribute(realm, attrName, attrValue).stream()
-              .map(userName -> createUser(realm, userName))
-              .collect(Collectors.toList());
+            return session.userFederatedStorage().getUsersByUserAttributeStream(realm, attrName, attrValue)
+              .map(userName -> createUser(realm, userName));
         }
     }
 
     @Override
-    public Set<GroupModel> getGroups(RealmModel realm, String userId) {
+    public Stream<GroupModel> getGroupsStream(RealmModel realm, String userId) {
         Set<String> set = userGroups.get(getUserIdInMap(realm, userId));
         if (set == null) {
-            return Collections.EMPTY_SET;
+            return Stream.empty();
         }
-        return set.stream()
-          .map(realm::getGroupById)
-          .collect(Collectors.toSet());
+        return set.stream().map(realm::getGroupById);
     }
 
     @Override
@@ -405,24 +389,27 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max) {
-        return userGroups.entrySet().stream()
+    public Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max) {
+        Stream<String> userStream = paginatedStream(userGroups.entrySet().stream(), firstResult, max)
           .filter(me -> me.getValue().contains(group.getId()))
           .map(Map.Entry::getKey)
           .filter(realmUser -> realmUser.startsWith(realm.getId()))
-          .map(realmUser -> realmUser.substring(realmUser.indexOf("/") + 1))
-          .skip(firstResult)
-          .limit(max)
-          .collect(Collectors.toList());
+          .map(realmUser -> realmUser.substring(realmUser.indexOf("/") + 1));
+
+        return userStream;
     }
 
     @Override
     public UserModel validate(RealmModel realm, UserModel local) {
-        final boolean userExists = userPasswords.containsKey(local.getUsername());
+        final boolean userExists = userPasswords.containsKey(translateUserName(local.getUsername()));
         if (! userExists) {
             userGroups.remove(getUserIdInMap(realm, local.getUsername()));
         }
         return userExists ? local : null;
+    }
+
+    private static String translateUserName(String userName) {
+        return userName == null ? null : userName.toLowerCase();
     }
 
 }

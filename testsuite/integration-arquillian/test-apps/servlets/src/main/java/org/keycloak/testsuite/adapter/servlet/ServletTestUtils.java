@@ -17,40 +17,32 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.keycloak.common.util.UriUtils;
+import static java.lang.Integer.parseInt;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ServletTestUtils {
 
-    // TODO: Couldn't just always read urlBase from req.getRequestURI() ?
-    public static String getUrlBase(HttpServletRequest req) {
-        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
-            return System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
-        }
+    public static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "true"));
+    public static final String AUTH_SERVER_PORT = AUTH_SERVER_SSL_REQUIRED ? System.getProperty("auth.server.https.port", "8543") : System.getProperty("auth.server.http.port", "8180");
+    public static final String AUTH_SERVER_SCHEME = AUTH_SERVER_SSL_REQUIRED ? "https" : "http";
+    public static final String AUTH_SERVER_HOST = System.getProperty("auth.server.host", "localhost");
 
-        String urlBase = System.getProperty("app.server.base.url");
+    public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
+    public static final String APP_SERVER_PORT = APP_SERVER_SSL_REQUIRED ? System.getProperty("app.server.https.port", "8643") : System.getProperty("app.server.http.port", "8280");
+    public static final String APP_SERVER_SCHEME = APP_SERVER_SSL_REQUIRED ? "https" : "http";
+    public static final String APP_SERVER_HOST = System.getProperty("app.server.host", "localhost");
 
-        if (urlBase == null) {
-            String authServer = System.getProperty("auth.server.container", "auth-server-undertow");
-            if (authServer.contains("undertow")) {
-                urlBase = UriUtils.getOrigin(req.getRequestURL().toString());
-            } else {
-                urlBase = "http://localhost:8280";
-            }
-        }
-
-        return urlBase;
+    public static String getUrlBase() {
+        return removeDefaultPorts(String.format("%s://%s:%s", APP_SERVER_SCHEME, APP_SERVER_HOST, parseInt(APP_SERVER_PORT)));
     }
 
     public static String getAuthServerUrlBase() {
-        if (System.getProperty("auth.server.ssl.required", "false").equals("true")) {
-            return System.getProperty("auth.server.ssl.base.url", "https://localhost:8543");
-        }
+        return removeDefaultPorts(String.format("%s://%s:%s", AUTH_SERVER_SCHEME, AUTH_SERVER_HOST, parseInt(AUTH_SERVER_PORT)));
+    }
 
-        return System.getProperty("auth.server.base.url", "http://localhost:8180");
+    public static String removeDefaultPorts(String url) {
+        return url != null ? url.replaceFirst("(.*)(:80)(\\/.*)?$", "$1$3").replaceFirst("(.*)(:443)(\\/.*)?$", "$1$3") : null;
     }
 }

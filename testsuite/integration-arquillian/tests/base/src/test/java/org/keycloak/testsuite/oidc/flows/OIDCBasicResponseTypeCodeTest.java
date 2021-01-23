@@ -57,9 +57,13 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
         Assert.assertNull(authzResponse.getAccessToken());
         Assert.assertNull(authzResponse.getIdToken());
 
-        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        OAuthClient.AccessTokenResponse authzResponse2 = sendTokenRequestAndGetResponse(loginEvent);
+        IDToken idToken2 = oauth.verifyIDToken(authzResponse2.getIdToken());
 
-        return Collections.singletonList(idToken);
+        // Validate "at_hash"
+        assertValidAccessTokenHash(idToken2.getAccessTokenHash(), authzResponse2.getAccessToken());
+
+        return Collections.singletonList(idToken2);
     }
 
 

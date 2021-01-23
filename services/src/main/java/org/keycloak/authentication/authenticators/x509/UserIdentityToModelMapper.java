@@ -20,7 +20,9 @@ package org.keycloak.authentication.authenticators.x509;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.Constants;
@@ -61,18 +63,18 @@ public abstract class UserIdentityToModelMapper {
             if (_customAttributes.isEmpty() || userIdentityValues.isEmpty() || (_customAttributes.size() != userIdentityValues.size())) {
                 return null;
             }
-            List<UserModel> users = session.users().searchForUserByUserAttribute(_customAttributes.get(0), userIdentityValues.get(0), context.getRealm());
+            Stream<UserModel> usersStream = session.users().searchForUserByUserAttributeStream(context.getRealm(), _customAttributes.get(0), userIdentityValues.get(0));
             
             for (int i = 1; i <_customAttributes.size(); ++i) {
                 String customAttribute = _customAttributes.get(i);
                 String userIdentityValue = userIdentityValues.get(i);
-                
-                users = users.stream().filter(user -> user.getFirstAttribute(customAttribute).equals(userIdentityValue)).collect(Collectors.toList());
+                usersStream = usersStream.filter(user -> Objects.equals(user.getFirstAttribute(customAttribute), userIdentityValue));
             }
-            if (users != null && users.size() > 1) {
+            List<UserModel> users = usersStream.collect(Collectors.toList());
+            if (users.size() > 1) {
                 throw new ModelDuplicateException();
             }
-            return users != null && users.size() == 1 ? users.get(0) : null;
+            return users.size() == 1 ? users.get(0) : null;
         }
     }
 

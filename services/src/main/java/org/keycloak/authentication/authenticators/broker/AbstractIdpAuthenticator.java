@@ -56,6 +56,8 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // Set after firstBrokerLogin is successfully finished and contains the providerId of the provider, whose 'first-broker-login' flow was just finished
     public static final String FIRST_BROKER_LOGIN_SUCCESS = "FIRST_BROKER_LOGIN_SUCCESS";
 
+    // Set if nested firstBrokerLogin is detected, allowing to report a detailed error
+    public static final String NESTED_FIRST_BROKER_CONTEXT = "NESTED_FIRST_BROKER_CONTEXT";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -121,7 +123,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
         ExistingUserInfo duplication = ExistingUserInfo.deserialize(existingUserId);
 
-        UserModel existingUser = session.users().getUserById(duplication.getExistingUserId(), realm);
+        UserModel existingUser = session.users().getUserById(realm, duplication.getExistingUserId());
         if (existingUser == null) {
             throw new AuthenticationFlowException("User with ID '" + existingUserId + "' not found.", AuthenticationFlowError.INVALID_USER);
         }

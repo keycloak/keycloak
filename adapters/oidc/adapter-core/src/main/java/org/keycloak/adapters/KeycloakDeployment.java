@@ -20,6 +20,7 @@ package org.keycloak.adapters;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
@@ -169,27 +170,36 @@ public class KeycloakDeployment {
     protected void resolveUrls() {
         if (realmInfoUrl == null) {
             synchronized (this) {
-                KeycloakUriBuilder authUrlBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
+                if (realmInfoUrl == null) {
+                    KeycloakUriBuilder authUrlBuilder = KeycloakUriBuilder
+                        .fromUri(authServerBaseUrl);
 
-                String discoveryUrl = authUrlBuilder.clone().path(ServiceUrlConstants.DISCOVERY_URL).build(getRealm()).toString();
-                try {
-                    log.debugv("Resolving URLs from {0}", discoveryUrl);
+                    String discoveryUrl = authUrlBuilder.clone()
+                        .path(ServiceUrlConstants.DISCOVERY_URL).build(getRealm()).toString();
+                    try {
+                        log.debugv("Resolving URLs from {0}", discoveryUrl);
 
-                    OIDCConfigurationRepresentation config = getOidcConfiguration(discoveryUrl);
+                        OIDCConfigurationRepresentation config = getOidcConfiguration(discoveryUrl);
 
-                    authUrl = KeycloakUriBuilder.fromUri(config.getAuthorizationEndpoint());
-                    realmInfoUrl = config.getIssuer();
+                        authUrl = KeycloakUriBuilder.fromUri(config.getAuthorizationEndpoint());
+                        realmInfoUrl = config.getIssuer();
 
-                    tokenUrl = config.getTokenEndpoint();
-                    logoutUrl = KeycloakUriBuilder.fromUri(config.getLogoutEndpoint());
-                    accountUrl = KeycloakUriBuilder.fromUri(config.getIssuer()).path("/account").build().toString();
-                    registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
-                    unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
-                    jwksUrl = config.getJwksUri();
+                        tokenUrl = config.getTokenEndpoint();
+                        logoutUrl = KeycloakUriBuilder.fromUri(config.getLogoutEndpoint());
+                        accountUrl = KeycloakUriBuilder.fromUri(config.getIssuer()).path("/account")
+                            .build().toString();
+                        registerNodeUrl = authUrlBuilder.clone()
+                            .path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH)
+                            .build(getRealm()).toString();
+                        unregisterNodeUrl = authUrlBuilder.clone()
+                            .path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH)
+                            .build(getRealm()).toString();
+                        jwksUrl = config.getJwksUri();
 
-                    log.infov("Loaded URLs from {0}", discoveryUrl);
-                } catch (Exception e) {
-                    log.warnv(e, "Failed to load URLs from {0}", discoveryUrl);
+                        log.infov("Loaded URLs from {0}", discoveryUrl);
+                    } catch (Exception e) {
+                        log.warnv(e, "Failed to load URLs from {0}", discoveryUrl);
+                    }
                 }
             }
         }
@@ -216,12 +226,16 @@ public class KeycloakDeployment {
         HttpGet request = new HttpGet(discoveryUrl);
         request.addHeader("accept", "application/json");
 
-        HttpResponse response = getClient().execute(request);
-        if (response.getStatusLine().getStatusCode() != 200) {
-            throw new Exception(response.getStatusLine().getReasonPhrase());
+        try {
+            HttpResponse response = getClient().execute(request);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                throw new Exception(response.getStatusLine().getReasonPhrase());
+            }
+            return JsonSerialization.readValue(response.getEntity().getContent(), OIDCConfigurationRepresentation.class);
+        } finally {
+            request.releaseConnection();
         }
-
-        return JsonSerialization.readValue(response.getEntity().getContent(), OIDCConfigurationRepresentation.class);
     }
 
     public RelativeUrlsUsed getRelativeUrls() {

@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import java.util.List;
-
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
@@ -32,7 +30,6 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
@@ -46,6 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -79,34 +77,14 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        Response resp = realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        Response resp = realm.identityProviders().create(bc.setUpIdentityProvider());
         resp.close();
     }
 
 
     @Before
     public void addClients() {
-        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
-        if (clients != null) {
-            RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
-
-                Response resp = providerRealm.clients().create(client);
-                resp.close();
-            }
-        }
-
-        clients = bc.createConsumerClients(suiteContext);
-        if (clients != null) {
-            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
-
-                Response resp = consumerRealm.clients().create(client);
-                resp.close();
-            }
-        }
+        addClientsToProviderAndConsumer();
     }
 
 
@@ -119,7 +97,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Rotate public keys on the parent broker
         rotateKeys();
@@ -128,7 +106,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDP();
         assertErrorPage("Unexpected error when authenticating with identity provider");
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Set time offset. New keys can be downloaded. Check that user is able to login.
         setTimeOffset(20);
@@ -167,7 +145,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Rotate public keys on the parent broker
         rotateKeys();
@@ -176,7 +154,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDP();
         assertErrorPage("Unexpected error when authenticating with identity provider");
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Even after time offset is user not able to login, because it uses old key hardcoded in identityProvider config
         setTimeOffset(20);
@@ -203,7 +181,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Set key id to an invalid one
         cfg.setPublicKeySignatureVerifierKeyId("invalid-key-id");
@@ -217,21 +195,21 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         updateIdentityProvider(idpRep);
         logInAsUserInIDP();
         assertLoggedInAccountManagement();
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Set key id to empty
         cfg.setPublicKeySignatureVerifierKeyId("");
         updateIdentityProvider(idpRep);
         logInAsUserInIDP();
         assertLoggedInAccountManagement();
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Unset key id
         cfg.setPublicKeySignatureVerifierKeyId(null);
         updateIdentityProvider(idpRep);
         logInAsUserInIDP();
         assertLoggedInAccountManagement();
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
     }
 
 
@@ -244,7 +222,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Check that key is cached
         IdentityProviderRepresentation idpRep = getIdentityProvider();
@@ -269,7 +247,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // Check that key is cached
         IdentityProviderRepresentation idpRep = getIdentityProvider();
@@ -279,7 +257,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Update identityProvider to some bad JWKS_URL
         OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
-        cfg.setJwksUrl("http://localhost:43214/non-existent");
+        cfg.setJwksUrl("https://localhost:43214/non-existent");
         updateIdentityProvider(idpRep);
 
         // Check that key is not cached anymore

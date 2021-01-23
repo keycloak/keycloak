@@ -19,16 +19,18 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -103,16 +105,16 @@ public class RealmBuilder {
             rep.setEventsListeners(new LinkedList<String>());
         }
 
-        if (!rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
-            rep.getEventsListeners().add(EventsListenerProviderFactory.PROVIDER_ID);
+        if (!rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
+            rep.getEventsListeners().add(TestEventsListenerProviderFactory.PROVIDER_ID);
         }
 
         return this;
     }
 
     public RealmBuilder removeTestEventListener() {
-        if (rep.getEventsListeners() != null && rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
-            rep.getEventsListeners().remove(EventsListenerProviderFactory.PROVIDER_ID);
+        if (rep.getEventsListeners() != null && rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
+            rep.getEventsListeners().remove(TestEventsListenerProviderFactory.PROVIDER_ID);
         }
 
         return this;
@@ -124,9 +126,21 @@ public class RealmBuilder {
 
     public RealmBuilder client(ClientRepresentation client) {
         if (rep.getClients() == null) {
-            rep.setClients(new LinkedList<ClientRepresentation>());
+            rep.setClients(new LinkedList<>());
         }
         rep.getClients().add(client);
+        return this;
+    }
+
+    public RealmBuilder identityProvider(IdentityProviderBuilder identityProvider) {
+        return identityProvider(identityProvider.build());
+    }
+
+    public RealmBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
+        if (rep.getIdentityProviders()== null) {
+            rep.setIdentityProviders(new LinkedList<>());
+        }
+        rep.getIdentityProviders().add(identityProvider);
         return this;
     }
 
@@ -136,7 +150,7 @@ public class RealmBuilder {
 
     public RealmBuilder user(UserRepresentation user) {
         if (rep.getUsers() == null) {
-            rep.setUsers(new LinkedList<UserRepresentation>());
+            rep.setUsers(new LinkedList<>());
         }
         rep.getUsers().add(user);
         return this;
@@ -257,6 +271,41 @@ public class RealmBuilder {
 
     public RealmBuilder offlineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
         rep.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+        return this;
+    }
+
+    public RealmBuilder clientSessionIdleTimeout(int clientSessionIdleTimeout) {
+        rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder clientSessionMaxLifespan(int clientSessionMaxLifespan) {
+        rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder clientOfflineSessionIdleTimeout(int clientOfflineSessionIdleTimeout) {
+        rep.setClientOfflineSessionIdleTimeout(clientOfflineSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder clientOfflineSessionMaxLifespan(int clientOfflineSessionMaxLifespan) {
+        rep.setClientOfflineSessionMaxLifespan(clientOfflineSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder internationalizationEnabled(boolean internationalizationEnabled) {
+        rep.setInternationalizationEnabled(internationalizationEnabled);
+        return this;
+    }
+
+    public RealmBuilder supportedLocales(Set<String> supportedLocales) {
+        rep.setSupportedLocales(supportedLocales);
+        return this;
+    }
+
+    public RealmBuilder defaultLocale(String defaultLocale) {
+        rep.setDefaultLocale(defaultLocale);
         return this;
     }
 }

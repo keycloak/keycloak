@@ -64,6 +64,10 @@
     {
       "name": "Multiple URL resource",
       "uris": ["/keycloak-7269/sub-resource1/*", "/keycloak-7269/sub-resource2/{whatever-pattern}/page.jsp"]
+    },
+    {
+      "name": "Resource Protected With Body Claim",
+      "uri": "/protected/filter/body"
     }
   ],
   "policies": [
@@ -220,6 +224,16 @@
       "decisionStrategy": "UNANIMOUS",
       "config": {
         "code": "var context = $evaluation.getContext();\nvar attributes = context.getAttributes();\nvar claim = attributes.getValue('request-claim');\n\nif (claim && claim.asString(0) == 'expected-value') {\n   $evaluation.grant();\n}"
+      }
+    },
+    {
+      "name": "Resource Protected With Body Claim Permission",
+      "type": "resource",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Resource Protected With Body Claim\"]",
+        "applyPolicies": "[\"Any User Policy\"]"
       }
     }
   ]

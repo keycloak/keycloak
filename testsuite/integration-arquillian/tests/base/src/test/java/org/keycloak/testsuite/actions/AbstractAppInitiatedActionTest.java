@@ -34,6 +34,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
 /**
  * @author Stan Silvert
  */
@@ -60,7 +62,7 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
                             .queryParam("response_type", "code")
                             .queryParam("client_id", "test-app")
                             .queryParam("scope", "openid")
-                            .queryParam("redirect_uri", "http://localhost:8180/auth/realms/master/app/auth")
+                            .queryParam("redirect_uri", getAuthServerContextRoot() + "/auth/realms/master/app/auth")
                             .build(TEST_REALM_NAME).toString();
         driver.navigate().to(uri);
         WaitUtils.waitForPageToLoad();

@@ -35,7 +35,7 @@ import org.keycloak.representations.IDToken;
  */
 public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String INCLUDED_CLIENT_AUDIENCE = "included.client.audience";
     private static final String INCLUDED_CLIENT_AUDIENCE_LABEL = "included.client.audience.label";
@@ -121,7 +121,7 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
         mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         if (includedClientAudience != null) {
             config.put(INCLUDED_CLIENT_AUDIENCE, includedClientAudience);
         }

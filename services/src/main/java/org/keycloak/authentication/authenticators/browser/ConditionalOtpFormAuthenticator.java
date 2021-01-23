@@ -18,7 +18,6 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -27,6 +26,7 @@ import org.keycloak.models.UserModel;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.ABSTAIN;
@@ -190,15 +190,12 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return ABSTAIN;
         }
 
-        List<String> values = user.getAttribute(attributeName);
-
-        if (values.isEmpty()) {
+        Optional<String> value = user.getAttributeStream(attributeName).findFirst();
+        if (!value.isPresent()) {
             return ABSTAIN;
         }
 
-        String value = values.get(0).trim();
-
-        switch (value) {
+        switch (value.get().trim()) {
             case SKIP:
                 return SKIP_OTP;
             case FORCE:
@@ -234,7 +231,9 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
         //TODO cache RequestHeader Patterns
         //TODO how to deal with pattern syntax exceptions?
-        Pattern pattern = Pattern.compile(headerPattern, Pattern.DOTALL);
+        // need CASE_INSENSITIVE flag so that we also have matches when the underlying container use a different case than what
+        // is usually expected (e.g.: vertx)
+        Pattern pattern = Pattern.compile(headerPattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
         for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
 
@@ -285,8 +284,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     private boolean isOTPRequired(KeycloakSession session, RealmModel realm, UserModel user) {
         MultivaluedMap<String, String> requestHeaders = session.getContext().getRequestHeaders().getRequestHeaders();
-        for (AuthenticatorConfigModel configModel : realm.getAuthenticatorConfigs()) {
-
+        return realm.getAuthenticatorConfigsStream().anyMatch(configModel -> {
             if (tryConcludeBasedOn(voteForUserOtpControlAttribute(user, configModel.getConfig()))) {
                 return true;
             }
@@ -309,8 +307,8 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                     || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
                 return true;
             }
-        }
-        return false;
+            return false;
+        });
     }
 
     private boolean containsConditionalOtpConfig(Map config) {
@@ -326,7 +324,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
         if (!isOTPRequired(session, realm, user)) {
             user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        } else if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
+        } else if (user.getRequiredActionsStream().noneMatch(UserModel.RequiredAction.CONFIGURE_TOTP.name()::equals)) {
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
         }
     }

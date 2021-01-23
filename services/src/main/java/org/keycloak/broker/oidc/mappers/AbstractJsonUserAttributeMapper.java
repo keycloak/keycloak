@@ -23,6 +23,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -30,7 +31,10 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract class for Social Provider mappers which allow mapping of JSON user profile field into Keycloak user
@@ -41,6 +45,7 @@ import java.util.List;
  */
 public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityProviderMapper {
 
+	private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
 	protected static final Logger logger = Logger.getLogger(AbstractJsonUserAttributeMapper.class);
 
@@ -98,6 +103,11 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	@Override
+	public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+		return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+	}
+
+	@Override
 	public List<ProviderConfigProperty> getConfigProperties() {
 		return configProperties;
 	}
@@ -119,12 +129,10 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 	@Override
 	public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-		String attribute = mapperModel.getConfig().get(CONF_USER_ATTRIBUTE);
-		if (attribute == null || attribute.trim().isEmpty()) {
-			logger.warnf("Attribute is not configured for mapper %s", mapperModel.getName());
+		String attribute = getAttribute(mapperModel);
+		if (attribute == null) {
 			return;
 		}
-		attribute = attribute.trim();
 
 		Object value = getJsonValue(mapperModel, context);
 		if (value != null) {
@@ -137,8 +145,35 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	@Override
-	public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+	public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 		// we do not update user profile from social provider
+	}
+
+	@Override
+	public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+		String attribute = getAttribute(mapperModel);
+		if (attribute == null) {
+			return;
+		}
+
+		Object value = getJsonValue(mapperModel, context);
+		if (value == null) {
+			user.removeAttribute(attribute);
+		} else if (value instanceof List) {
+			user.setAttribute(attribute, (List<String>) value);
+		} else {
+			user.setSingleAttribute(attribute, value.toString());
+		}
+	}
+
+	private String getAttribute(IdentityProviderMapperModel mapperModel) {
+		String attribute = mapperModel.getConfig().get(CONF_USER_ATTRIBUTE);
+		if (attribute == null || attribute.trim().isEmpty()) {
+			logger.warnf("Attribute is not configured for mapper %s", mapperModel.getName());
+			return null;
+		}
+		attribute = attribute.trim();
+		return attribute;
 	}
 
 	protected static Object getJsonValue(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
@@ -223,7 +258,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 					if (values.isEmpty()) {
 						return null;
 					}
-					return values ; 
+					return values ;
 				} else if (currentNode.isNull()) {
 
 					logger.debug("JsonNode is null node for name " + currentFieldName);

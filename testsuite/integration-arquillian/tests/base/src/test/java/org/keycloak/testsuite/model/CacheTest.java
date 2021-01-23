@@ -26,21 +26,24 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class CacheTest extends AbstractTestRealmKeycloakTest {
 
 	private ClientModel testApp = null;
@@ -70,19 +73,15 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 	        
 	       
 	            // update realm, then get an AppModel and change it.  The AppModel would not be a cache adapter
-	     
 
-	            // KEYCLOAK-1240 - obtain the realm via session.realms().getRealms()
-	            realm = null;
-	            List<RealmModel> realms = session.realms().getRealms();
+	            realm = session.realms().getRealmsStream().filter(r -> {
+					assertTrue(r instanceof RealmAdapter);
+					if ("test".equals(r.getName()))
+						return true;
+					return false;
+				}).findFirst().orElse(null);
 
-	            for (RealmModel current : realms) {
-	                assertTrue(current instanceof RealmAdapter);
-	                if ("test".equals(current.getName())) {
-	                    realm = current;
-	                    break;
-	                }
-	            }
+	            assertNotNull(realm);
 
 	            realm.setAccessCodeLifespanLogin(200);
 	            testApp = realm.getClientByClientId("test-app");
@@ -96,7 +95,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 	       
 	            realm = session.realms().getRealmByName("test");
 	            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
-	            testApp = session.realms().getClientById(appId, realm);
+	            testApp = session.clients().getClientById(realm, appId);
 	            Assert.assertFalse(testApp.isEnabled());
 	        
 	        }
@@ -112,7 +111,8 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
     	
-            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache", "127.0.0.1", "auth", false, null, null);
+            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache",
+					"127.0.0.1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             user = userSession.getUser();
 
             user.setLastName("lastName");
@@ -125,8 +125,6 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-1842
     @Test
     public void testRoleMappingsInvalidatedWhenClientRemoved() {
- 
-    
       	testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             
@@ -134,27 +132,20 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             ClientModel client = realm.addClient("foo");
             RoleModel fooRole = client.addRole("foo-role");
             user.grantRole(fooRole);
-       }); 
-
-       
-      	int gRolesCount=0;
+       });
 
         testingClient.server().run(session -> {  
         	RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("joel", realm);
-            int grantedRolesCount = user.getRoleMappings().size();
+            UserModel user = session.users().getUserByUsername(realm, "joel");
+            long grantedRolesCount = user.getRoleMappingsStream().count();
 
             ClientModel client = realm.getClientByClientId("foo");
             realm.removeClient(client.getId());
-        
-        
 
-
-        
             realm = session.realms().getRealmByName("test");
-            user = session.users().getUserByUsername("joel", realm);
+            user = session.users().getUserByUsername(realm, "joel");
         
-            Set<RoleModel> roles = user.getRoleMappings();
+            Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             for (RoleModel role : roles) {
                 Assert.assertNotNull(role.getContainer());
             }

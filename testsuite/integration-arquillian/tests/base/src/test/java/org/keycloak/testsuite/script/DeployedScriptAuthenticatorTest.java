@@ -18,7 +18,6 @@ package org.keycloak.testsuite.script;
 
 import static org.junit.Assert.assertFalse;
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 import java.io.IOException;
@@ -35,7 +34,6 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,7 +49,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.AbstractFlowTest;
@@ -66,7 +63,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(SCRIPTS)
+@EnableFeature(value = SCRIPTS, skipRestart = true)
 public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
     public static final String EXECUTION_ID = "scriptAuth";
@@ -88,6 +85,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @Rule
@@ -210,7 +208,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     @Test
-    @DisableFeature(SCRIPTS)
+    @DisableFeature(value = SCRIPTS, executeAsLast = false, skipRestart = true)
     public void testScriptAuthenticatorNotAvailable() {
         assertFalse(testRealm().flows().getAuthenticatorProviders().stream().anyMatch(
                 provider -> ScriptBasedAuthenticatorFactory.PROVIDER_ID.equals(provider.get("id"))));

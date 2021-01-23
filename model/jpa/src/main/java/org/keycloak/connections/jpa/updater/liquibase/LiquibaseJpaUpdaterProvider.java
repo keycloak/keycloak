@@ -113,6 +113,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                 }
             }
         } catch (LiquibaseException | IOException | SQLException e) {
+            logger.error("Error has occurred while updating the database", e);
             throw new RuntimeException("Failed to update database", e);
         } finally {
             ThreadLocalSessionContext.removeCurrentSession();

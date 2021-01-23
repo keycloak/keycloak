@@ -74,7 +74,7 @@ public class FreeMarkerUtil {
 
     private Template getTemplate(String templateName, Theme theme) throws IOException {
         Configuration cfg = new Configuration();
-        
+
         // Assume *.ftl files are html.  This lets freemarker know how to
         // sanitize and prevent XSS attacks.
         if (templateName.toLowerCase().endsWith(".ftl")) {
@@ -85,7 +85,7 @@ public class FreeMarkerUtil {
         return cfg.getTemplate(templateName, "UTF-8");
     }
 
-    class ThemeTemplateLoader extends URLTemplateLoader {
+    static class ThemeTemplateLoader extends URLTemplateLoader {
 
         private Theme theme;
 

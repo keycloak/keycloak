@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-services</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-testsuite-providers</artifactId>
@@ -33,7 +33,6 @@
     <properties>
         <js-adapter.version>${project.version}</js-adapter.version>
         <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
-        <js-adapter.auth-server-url>https://localhost:8543/auth</js-adapter.auth-server-url>
     </properties>
 
     <dependencies>
@@ -60,21 +59,6 @@
         </dependency>
 
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>no-ssl</id>
-            <activation>
-                <property>
-                    <name>auth.server.ssl.required</name>
-                    <value>false</value>
-                </property>
-            </activation>
-            <properties>
-                <js-adapter.auth-server-url>http://localhost:8180/auth</js-adapter.auth-server-url>
-            </properties>
-        </profile>
-    </profiles>
 
     <build>
         <pluginManagement>

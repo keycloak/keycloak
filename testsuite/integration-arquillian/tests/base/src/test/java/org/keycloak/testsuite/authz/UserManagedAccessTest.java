@@ -27,15 +27,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.resource.PermissionResource;
-import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -47,10 +44,13 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resource;
@@ -255,6 +255,21 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertNotNull(permissions);
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
+
+
+        for (PermissionTicketRepresentation ticket : tickets) {
+            getAuthzClient().protection().permission().delete(ticket.getId());
+        }
+
+        tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, null, null, null);
+
+        assertEquals(0, tickets.size());
+        try {
+            response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
+            fail("User should not have access to resource from another user");
+        } catch (AuthorizationDeniedException ade) {
+
+        }
     }
 
     @Test
@@ -513,6 +528,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         for (PermissionTicketRepresentation ticket : permissionTickets) {
             assertTrue(ticket.isGranted());
         }
+
+        for (PermissionTicketRepresentation ticket : permissionTickets) {
+            permissionResource.delete(ticket.getId());
+        }
+
+        permissionTickets = permissionResource.findByResource(resource.getId());
+
+        assertEquals(0, permissionTickets.size());
     }
 
     @Test
@@ -588,9 +611,11 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         for (PermissionTicketRepresentation representation : new ArrayList<>(permissionTickets)) {
             if (representation.isGranted()) {
-                permissionTickets.remove(representation);
+                permissionResource.delete(representation.getId());
             }
         }
+
+        permissionTickets = permissionResource.findByResource(resource.getId());
 
         assertEquals(1, permissionTickets.size());
     }

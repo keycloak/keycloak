@@ -21,8 +21,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -38,15 +36,15 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
 
     CredentialModel createCredential(RealmModel realm, UserModel user, T credentialModel);
 
-    void deleteCredential(RealmModel realm, UserModel user, String credentialId);
+    boolean deleteCredential(RealmModel realm, UserModel user, String credentialId);
 
     T getCredentialFromModel(CredentialModel model);
 
     default T getDefaultCredential(KeycloakSession session, RealmModel realm, UserModel user) {
-        List<CredentialModel> models = session.userCredentialManager().getStoredCredentialsByType(realm, user, getType());
-        if (models.isEmpty()) {
-            return null;
-        }
-        return getCredentialFromModel(models.get(0));
+        CredentialModel model = session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, getType())
+                .findFirst().orElse(null);
+        return model != null ? getCredentialFromModel(model) : null;
     }
+
+    CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext);
 }

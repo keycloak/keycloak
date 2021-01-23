@@ -60,9 +60,9 @@ public class OIDCImplicitResponseTypeIDTokenTokenTest extends AbstractOIDCRespon
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
 
         // Validate "at_hash"
-        Assert.assertNotNull(idToken.getAccessTokenHash());
+        assertValidAccessTokenHash(idToken.getAccessTokenHash(), authzResponse.getAccessToken());
 
-        Assert.assertEquals(idToken.getAccessTokenHash(), HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), authzResponse.getAccessToken()));
+        // Validate "c_hash"
         Assert.assertNull(idToken.getCodeHash());
 
         return Collections.singletonList(idToken);

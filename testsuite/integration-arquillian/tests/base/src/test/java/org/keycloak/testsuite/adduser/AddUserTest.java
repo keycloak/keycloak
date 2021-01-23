@@ -44,11 +44,14 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.text.IsEmptyString.isEmptyOrNullString;
 import static org.junit.Assert.*;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AddUserTest extends AbstractKeycloakTest {
 
     @ArquillianResource
@@ -61,6 +64,9 @@ public class AddUserTest extends AbstractKeycloakTest {
 
         // container auth-server-remote cannot be restarted
         ContainerAssume.assumeNotAuthServerRemote();
+
+        // don't run with auth-server-quarkus for now
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @Test
@@ -116,9 +122,9 @@ public class AddUserTest extends AbstractKeycloakTest {
 
         //--------------Roles-----------------------//
         try {
-            List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listAll();
-
-            assertRoles(realmRoles, "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+            assertRoles(userResource.roles().realmLevel().listAll(), "admin", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" +  realmName);
+            assertRoles(userResource.roles().realmLevel().listEffective(), "create-realm", Constants.AUTHZ_UMA_AUTHORIZATION,
+                    Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realmName, Constants.OFFLINE_ACCESS_ROLE, "admin");
 
             List<ClientRepresentation> clients = realmResource.clients().findAll();
             String accountId = null;
@@ -128,8 +134,9 @@ public class AddUserTest extends AbstractKeycloakTest {
                 }
             }
 
-            List<RoleRepresentation> accountRoles = userResource.roles().clientLevel(accountId).listAll();
-            assertRoles(accountRoles, "view-profile", "manage-account");
+            assertTrue(userResource.roles().clientLevel(accountId).listAll().isEmpty());
+            List<RoleRepresentation> accountRoles = userResource.roles().clientLevel(accountId).listEffective();
+            assertRoles(accountRoles, "view-profile", "manage-account", "manage-account-links");
         } finally {
             userResource.remove();
         }

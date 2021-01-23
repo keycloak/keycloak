@@ -23,6 +23,7 @@ import io.undertow.server.handlers.form.FormData;
 import io.undertow.server.handlers.form.FormData.FormValue;
 import io.undertow.server.handlers.form.FormDataParser;
 import io.undertow.server.handlers.form.FormParserFactory;
+import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
@@ -32,6 +33,10 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.security.cert.X509Certificate;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -186,7 +191,24 @@ public class UndertowHttpFacade implements HttpFacade {
             }
 
             if (buffered) {
-                return inputStream = new BufferedInputStream(exchange.getInputStream());
+                ServletRequestContext context = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+                ServletRequest servletRequest = context.getServletRequest();
+
+                inputStream = new BufferedInputStream(exchange.getInputStream());
+                
+                context.setServletRequest(new HttpServletRequestWrapper((HttpServletRequest) servletRequest) {
+                    @Override
+                    public ServletInputStream getInputStream() {
+                        inputStream.mark(0);
+                        return new ServletInputStream() {
+                            @Override
+                            public int read() throws IOException {
+                                return inputStream.read();
+                            }
+                        };
+                    }
+                });
+                return inputStream;
             }
 
             return exchange.getInputStream();

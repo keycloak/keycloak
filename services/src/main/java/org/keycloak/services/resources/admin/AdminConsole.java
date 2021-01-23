@@ -25,7 +25,8 @@ import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
-import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -34,13 +35,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -54,19 +53,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,18 +87,17 @@ public class AdminConsole {
     @Context
     protected Providers providers;
 
-    protected AppAuthManager authManager;
     protected RealmModel realm;
 
     public AdminConsole(RealmModel realm) {
         this.realm = realm;
-        this.authManager = new AppAuthManager();
     }
 
     public static class WhoAmI {
         protected String userId;
         protected String realm;
         protected String displayName;
+        protected Locale locale;
 
         @JsonProperty("createRealm")
         protected boolean createRealm;
@@ -111,12 +107,13 @@ public class AdminConsole {
         public WhoAmI() {
         }
 
-        public WhoAmI(String userId, String realm, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess) {
+        public WhoAmI(String userId, String realm, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess, Locale locale) {
             this.userId = userId;
             this.realm = realm;
             this.displayName = displayName;
             this.createRealm = createRealm;
             this.realmAccess = realmAccess;
+            this.locale = locale;
         }
 
         public String getUserId() {
@@ -158,6 +155,14 @@ public class AdminConsole {
         public void setRealmAccess(Map<String, Set<String>> realmAccess) {
             this.realmAccess = realmAccess;
         }
+
+        public Locale getLocale() {
+            return locale;
+        }
+
+        public void setLocale(Locale locale) {
+            this.locale = locale;
+        }
     }
 
     /**
@@ -188,7 +193,12 @@ public class AdminConsole {
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, session.getContext().getUri(), clientConnection, headers);
+        AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+                .setRealm(realm)
+                .setConnection(clientConnection)
+                .setHeaders(headers)
+                .authenticate();
+
         if (authResult == null) {
             return Response.status(401).build();
         }
@@ -211,42 +221,54 @@ public class AdminConsole {
         if (realm.equals(masterRealm)) {
             logger.debug("setting up realm access for a master realm user");
             createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
-            addMasterRealmAccess(realm, user, realmAccess);
+            addMasterRealmAccess(user, realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
         }
 
-        return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess)).build();
+        Locale locale = session.getContext().resolveLocale(user);
+
+        return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale)).build();
     }
 
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         RealmManager realmManager = new RealmManager(session);
         ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminClientId(realm));
-        Set<RoleModel> roles = realmAdminApp.getRoles();
-        for (RoleModel role : roles) {
-            if (!user.hasRole(role)) continue;
-            if (!realmAdminAccess.containsKey(realm.getName())) {
-                realmAdminAccess.put(realm.getName(), new HashSet<String>());
-            }
-            realmAdminAccess.get(realm.getName()).add(role.getName());
-        }
-
+        getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
     }
 
-    private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        List<RealmModel> realms = session.realms().getRealms();
-        for (RealmModel realm : realms) {
+    private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
+        session.realms().getRealmsStream().forEach(realm -> {
             ClientModel realmAdminApp = realm.getMasterAdminClient();
-            Set<RoleModel> roles = realmAdminApp.getRoles();
-            for (RoleModel role : roles) {
-                if (!user.hasRole(role)) continue;
-                if (!realmAdminAccess.containsKey(realm.getName())) {
-                    realmAdminAccess.put(realm.getName(), new HashSet<String>());
-                }
-                realmAdminAccess.get(realm.getName()).add(role.getName());
-            }
+            getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
+        });
+    }
+
+
+    private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
+        if (set1 == null && set2 == null) {
+            return null;
         }
+        HashSet<T> res;
+        if (set1 instanceof HashSet) {
+            res = (HashSet <T>) set1;
+        } else {
+            res = set1 == null ? new HashSet<>() : new HashSet<>(set1);
+        }
+        if (set2 != null) {
+            res.addAll(set2);
+        }
+        return res;
+    }
+
+    private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
+        Set<String> realmRoles = client.getRolesStream()
+          .filter(user::hasRole)
+          .map(RoleModel::getName)
+          .collect(Collectors.toSet());
+
+        realmAdminAccess.merge(realm.getName(), realmRoles, AdminConsole::union);
     }
 
     /**
@@ -301,6 +323,7 @@ public class AdminConsole {
             map.put("authUrl", adminBaseUrl);
             map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
             map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
+            map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("properties", theme.getProperties());
@@ -309,14 +332,10 @@ public class AdminConsole {
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
             Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
 
-            BrowserSecurityHeaderSetup.Options headerOptions = null;
-
             // Replace CSP if admin is hosted on different URL
             if (!adminBaseUri.equals(authServerBaseUri)) {
-                headerOptions = BrowserSecurityHeaderSetup.Options.create().allowFrameSrc(UriBuilder.fromUri(authServerBaseUri).replacePath("").build().toString()).build();
+                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriUtils.getOrigin(authServerBaseUri));
             }
-
-            BrowserSecurityHeaderSetup.headers(builder, realm, headerOptions);
 
             return builder.build();
         }

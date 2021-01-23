@@ -48,6 +48,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.Hawtio2Page;
@@ -57,6 +58,7 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -70,6 +72,7 @@ import org.openqa.selenium.WebDriver;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
     @Drone
@@ -144,19 +147,14 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome");
-        hawtioPage.logout();
+        hawtioPage.logout(jsDriver);
         assertCurrentUrlStartsWith(testRealmLoginPageFuse);
 
         hawtioPage.navigateTo();
         log.debug("logging in as mary");
         testRealmLoginPageFuse.form().login("mary", "password");
         log.debug("Previous WARN waitForPageToLoad time exceeded! is expected");
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), 
-                allOf(
-                    containsString("Unauthorized User"),
-                    not(containsString("welcome"))
-                )
-        );
+        assertThat(DroneUtils.getCurrentDriver().getCurrentUrl(), not(containsString("welcome")));
     }
 
     @Test
@@ -227,7 +225,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void sshLoginTestFuse7() throws Exception {
         assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
-        assertCommand("john", "password", "shell:info", Result.NOT_FOUND);
+        assertCommand("john", "password", "shell:info", Result.OK);
         assertCommand("john", "password", "shell:date", Result.OK);
         assertRoles("root", 
           "ssh",

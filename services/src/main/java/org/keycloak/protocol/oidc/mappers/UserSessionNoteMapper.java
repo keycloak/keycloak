@@ -17,12 +17,15 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionNoteDescriptor;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
@@ -35,9 +38,9 @@ import java.util.Map;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, OIDCAccessTokenResponseMapper {
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty property;
@@ -85,6 +88,16 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, noteValue);
     }
 
+    @Override
+    protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession,
+            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
+
+        String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
+        String noteValue = userSession.getNote(noteName);
+        if (noteValue == null) return;
+        OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, noteValue);
+    }
+
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userSessionNote,
                                                         String tokenClaimName, String jsonType,
@@ -93,7 +106,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         config.put(ProtocolMapperUtils.USER_SESSION_NOTE, userSessionNote);
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, tokenClaimName);
         config.put(OIDCAttributeMapperHelper.JSON_TYPE, jsonType);

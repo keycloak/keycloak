@@ -21,6 +21,7 @@ package org.keycloak.authorization.admin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,13 +47,13 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.permission.Permissions;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -104,11 +105,8 @@ public class PolicyEvaluationService {
             if (givenAttributes != null) {
                 givenAttributes.forEach((key, entryValue) -> {
                     if (entryValue != null) {
-                        List<String> values = new ArrayList();
-
-                        for (String value : entryValue.split(",")) {
-                            values.add(value);
-                        }
+                        List<String> values = new ArrayList<>();
+                        Collections.addAll(values, entryValue.split(","));
 
                         claims.put(key, values);
                     }
@@ -127,7 +125,13 @@ public class PolicyEvaluationService {
     }
 
     private EvaluationDecisionCollector evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext, AuthorizationRequest request) {
-        return authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization, request), evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
+        List<ResourcePermission> permissions = createPermissions(evaluationRequest, evaluationContext, authorization, request);
+        
+        if (permissions.isEmpty()) {
+            return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
+        }
+        
+        return authorization.evaluators().from(permissions, evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
     }
 
     private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
@@ -140,11 +144,8 @@ public class PolicyEvaluationService {
                 if (givenAttributes != null) {
                     givenAttributes.forEach((key, entryValue) -> {
                         if (entryValue != null) {
-                            List<String> values = new ArrayList();
-
-                            for (String value : entryValue.split(",")) {
-                                values.add(value);
-                            }
+                            List<String> values = new ArrayList<>();
+                            Collections.addAll(values, entryValue.split(","));
 
                             attributes.put(key, values);
                         }
@@ -166,7 +167,7 @@ public class PolicyEvaluationService {
             Set<ScopeRepresentation> givenScopes = resource.getScopes();
 
             if (givenScopes == null) {
-                givenScopes = new HashSet();
+                givenScopes = new HashSet<>();
             }
 
             ScopeStore scopeStore = storeFactory.getScopeStore();
@@ -175,12 +176,14 @@ public class PolicyEvaluationService {
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
-                return new ArrayList<>(Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopes, authorization, request))).stream();
+                return new ArrayList<>(Arrays.asList(
+                        Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopes, authorization, request));
+                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
+                        resourceServer, scopes, authorization, request));
             } else {
                 if (scopes.isEmpty()) {
-                    return Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization, request).stream();
+                    return Stream.empty();
                 }
 
                 List<Resource> resources = storeFactory.getResourceStore().findByScope(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
@@ -190,7 +193,8 @@ public class PolicyEvaluationService {
                 }
 
 
-                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, scopes, authorization, request));
+                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, resourceServer,
+                        scopes, authorization, request));
             }
         }).collect(Collectors.toList());
     }
@@ -240,7 +244,11 @@ public class PolicyEvaluationService {
 
         UserSessionModel userSession = null;
         if (subject != null) {
-            UserModel userModel = keycloakSession.users().getUserById(subject, realm);
+            UserModel userModel = keycloakSession.users().getUserById(realm, subject);
+            
+            if (userModel == null) {
+                userModel = keycloakSession.users().getUserByUsername(realm, subject);
+            }
 
             if (userModel != null) {
                 String clientId = representation.getClientId();
@@ -256,7 +264,8 @@ public class PolicyEvaluationService {
                             .createAuthenticationSession(clientModel);
                     authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
                     authSession.setAuthenticatedUser(userModel);
-                    userSession = keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(), realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+                    userSession = keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(), realm, userModel,
+                            userModel.getUsername(), "127.0.0.1", "passwd", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
                     AuthenticationManager.setClientScopesInSession(authSession);
                     ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
@@ -285,7 +294,6 @@ public class PolicyEvaluationService {
             accessToken.audience(client.getId());
             accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
             accessToken.setRealmAccess(new AccessToken.Access());
-
         }
 
         if (representation.getRoleIds() != null && !representation.getRoleIds().isEmpty()) {
@@ -300,7 +308,7 @@ public class PolicyEvaluationService {
         return new CloseableKeycloakIdentity(accessToken, keycloakSession, userSession);
     }
 
-    public class EvaluationDecisionCollector extends DecisionPermissionCollector {
+    public static class EvaluationDecisionCollector extends DecisionPermissionCollector {
 
         public EvaluationDecisionCollector(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, AuthorizationRequest request) {
             super(authorizationProvider, resourceServer, request);
@@ -316,7 +324,7 @@ public class PolicyEvaluationService {
         }
 
         @Override
-        protected void grantPermission(AuthorizationProvider authorizationProvider, List<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
+        protected void grantPermission(AuthorizationProvider authorizationProvider, Set<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
             result.setStatus(Effect.PERMIT);
             result.getPermission().getScopes().retainAll(grantedScopes);
             super.grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);

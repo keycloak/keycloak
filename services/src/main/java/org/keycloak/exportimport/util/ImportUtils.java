@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
@@ -69,12 +68,12 @@ public class ImportUtils {
 
         // If master was imported, we may need to re-create realm management clients
         if (masterImported) {
-            for (RealmModel realm : session.realms().getRealms()) {
-                if (realm.getMasterAdminClient() == null) {
-                    logger.infof("Re-created management client in master realm for realm '%s'", realm.getName());
-                    new RealmManager(session).setupMasterAdminManagement(realm);
-                }
-            }
+            session.realms().getRealmsStream()
+                    .filter(realm -> realm.getMasterAdminClient() == null)
+                    .forEach(realm -> {
+                        logger.infof("Re-created management client in master realm for realm '%s'", realm.getName());
+                        new RealmManager(session).setupMasterAdminManagement(realm);
+            });
         }
     }
 
@@ -100,9 +99,7 @@ public class ImportUtils {
                 logger.infof("Realm '%s' already exists. Removing it before import", realmName);
                 if (Config.getAdminRealm().equals(realm.getId())) {
                     // Delete all masterAdmin apps due to foreign key constraints
-                    for (RealmModel currRealm : model.getRealms()) {
-                        currRealm.setMasterAdminClient(null);
-                    }
+                   model.getRealmsStream().forEach(r -> r.setMasterAdminClient(null));
                 }
                 // TODO: For migration between versions, it should be possible to delete just realm but keep it's users
                 model.removeRealm(realm.getId());
@@ -261,12 +258,9 @@ public class ImportUtils {
     private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
         for (UserRepresentation user : userReps) {
-            if (!user.getUsername().startsWith(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX)) {
-                RepresentationToModel.createUser(session, realm, user);
-            }
+            RepresentationToModel.createUser(session, realm, user);
         }
     }
-
 
     private static void importFederatedUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);

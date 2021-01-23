@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -39,6 +39,7 @@
         <module>adapters</module>
         <module>saml-adapters</module>
         <module>feature-packs</module>
+        <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>
         <module>server-dist</module>
@@ -59,17 +60,22 @@
 
     <profiles>
         <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>server-x-dist</module>
+            </modules>
+        </profile>
+        <profile>
             <id>distribution-downloads</id>
             <modules>
                 <module>api-docs-dist</module>
                 <module>examples-dist</module>
                 <module>downloads</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>quarkus</id>
-            <modules>
-                <module>server-x</module>
             </modules>
         </profile>
     </profiles>

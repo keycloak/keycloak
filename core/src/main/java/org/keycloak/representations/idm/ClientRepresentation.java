@@ -36,9 +36,11 @@ public class ClientRepresentation {
     protected String baseUrl;
     protected Boolean surrogateAuthRequired;
     protected Boolean enabled;
+    protected Boolean alwaysDisplayInConsole;
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationAccessToken;
+    @Deprecated
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
@@ -119,6 +121,14 @@ public class ClientRepresentation {
         this.enabled = enabled;
     }
 
+    public Boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
+    }
+
+    public void setAlwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
+        this.alwaysDisplayInConsole = alwaysDisplayInConsole;
+    }
+
     public Boolean isSurrogateAuthRequired() {
         return surrogateAuthRequired;
     }
@@ -191,10 +201,12 @@ public class ClientRepresentation {
         this.webOrigins = webOrigins;
     }
 
+    @Deprecated
     public String[] getDefaultRoles() {
         return defaultRoles;
     }
 
+    @Deprecated
     public void setDefaultRoles(String[] defaultRoles) {
         this.defaultRoles = defaultRoles;
     }

@@ -17,7 +17,6 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +28,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -51,10 +52,7 @@ public class ClientRemovedEvent extends InvalidationEvent implements RealmCacheI
         event.realmId = client.getRealm().getId();
         event.clientUuid = client.getId();
         event.clientId = client.getClientId();
-        event.clientRoles = new HashMap<>();
-        for (RoleModel clientRole : client.getRoles()) {
-            event.clientRoles.put(clientRole.getId(), clientRole.getName());
-        }
+        event.clientRoles = client.getRolesStream().collect(Collectors.toMap(RoleModel::getId, RoleModel::getName));
 
         return event;
     }

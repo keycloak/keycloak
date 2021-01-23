@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayInfo=true; section>
+<@layout.registrationLayout displayInfo=true displayMessage=!messagesPerField.existsError('username'); section>
     <#if section = "header">
         ${msg("emailForgotTitle")}
     <#elseif section = "form">
@@ -9,10 +9,19 @@
                     <label for="username" class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus/>
+                    <#if auth?has_content && auth.showUsername()>
+                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus value="${auth.attemptedUsername}" aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
+                    <#else>
+                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
+                    </#if>
+
+                    <#if messagesPerField.existsError('username')>
+                        <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+                                    ${kcSanitize(messagesPerField.get('username'))?no_esc}
+                        </span>
+                    </#if>
                 </div>
             </div>
-
             <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
                     <div class="${properties.kcFormOptionsWrapperClass!}">

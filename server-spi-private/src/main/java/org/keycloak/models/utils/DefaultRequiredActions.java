@@ -83,6 +83,33 @@ public class DefaultRequiredActions {
             realm.addRequiredActionProvider(termsAndConditions);
         }
 
+        addUpdateLocaleAction(realm);
+        addDeleteAccountAction(realm);
+    }
 
+    public static void addDeleteAccountAction(RealmModel realm) {
+        if (realm.getRequiredActionProviderByAlias("delete_account") == null) {
+            RequiredActionProviderModel deleteAccount = new RequiredActionProviderModel();
+            deleteAccount.setEnabled(false);
+            deleteAccount.setAlias("delete_account");
+            deleteAccount.setName("Delete Account");
+            deleteAccount.setProviderId("delete_account");
+            deleteAccount.setDefaultAction(false);
+            deleteAccount.setPriority(60);
+            realm.addRequiredActionProvider(deleteAccount);
+        }
+    }
+
+    public static void addUpdateLocaleAction(RealmModel realm) {
+        if (realm.getRequiredActionProviderByAlias("update_user_locale") == null) {
+            RequiredActionProviderModel updateUserLocale = new RequiredActionProviderModel();
+            updateUserLocale.setEnabled(true);
+            updateUserLocale.setAlias("update_user_locale");
+            updateUserLocale.setName("Update User Locale");
+            updateUserLocale.setProviderId("update_user_locale");
+            updateUserLocale.setDefaultAction(false);
+            updateUserLocale.setPriority(1000);
+            realm.addRequiredActionProvider(updateUserLocale);
+        }
     }
 }

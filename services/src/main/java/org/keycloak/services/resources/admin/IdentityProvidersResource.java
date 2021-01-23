@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import com.google.common.collect.Streams;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
@@ -50,11 +51,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Identity Providers
@@ -134,6 +137,9 @@ public class IdentityProvidersResource {
         if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
+        
+        ReservedCharValidator.validate((String)data.get("alias"));
+        
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
@@ -159,15 +165,11 @@ public class IdentityProvidersResource {
     @Path("instances")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<IdentityProviderRepresentation> getIdentityProviders() {
+    public Stream<IdentityProviderRepresentation> getIdentityProviders() {
         this.auth.realm().requireViewIdentityProviders();
 
-        List<IdentityProviderRepresentation> representations = new ArrayList<IdentityProviderRepresentation>();
-
-        for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
-            representations.add(StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, identityProviderModel)));
-        }
-        return representations;
+        return realm.getIdentityProvidersStream()
+                .map(provider -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, provider)));
     }
 
     /**
@@ -182,8 +184,10 @@ public class IdentityProvidersResource {
     public Response create(IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
+        ReservedCharValidator.validate(representation.getAlias());
+        
         try {
-            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
+            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             this.realm.addIdentityProvider(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
@@ -191,6 +195,14 @@ public class IdentityProvidersResource {
                     .representation(StripSecretsUtils.strip(representation)).success();
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            
+            if (message == null) {
+                message = "Invalid request";
+            }
+            
+            return ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
@@ -199,14 +211,9 @@ public class IdentityProvidersResource {
     @Path("instances/{alias}")
     public IdentityProviderResource getIdentityProvider(@PathParam("alias") String alias) {
         this.auth.realm().requireViewIdentityProviders();
-        IdentityProviderModel identityProviderModel = null;
-
-        for (IdentityProviderModel storedIdentityProvider : this.realm.getIdentityProviders()) {
-            if (storedIdentityProvider.getAlias().equals(alias)
-                    || storedIdentityProvider.getInternalId().equals(alias)) {
-                identityProviderModel = storedIdentityProvider;
-            }
-        }
+        IdentityProviderModel identityProviderModel =  this.realm.getIdentityProvidersStream()
+                .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
+                .findFirst().orElse(null);
 
         IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
@@ -215,23 +222,15 @@ public class IdentityProvidersResource {
     }
 
     private IdentityProviderFactory getProviderFactorytById(String providerId) {
-        List<ProviderFactory> allProviders = getProviderFactories();
-
-        for (ProviderFactory providerFactory : allProviders) {
-            if (providerFactory.getId().equals(providerId)) {
-                return (IdentityProviderFactory) providerFactory;
-            }
-        }
-
-        return null;
+        return getProviderFactories()
+                .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
+                .map(IdentityProviderFactory.class::cast)
+                .findFirst()
+                .orElse(null);
     }
 
-    private List<ProviderFactory> getProviderFactories() {
-        List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
-
-        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class));
-        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class));
-
-        return allProviders;
+    private Stream<ProviderFactory> getProviderFactories() {
+        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class));
     }
 }

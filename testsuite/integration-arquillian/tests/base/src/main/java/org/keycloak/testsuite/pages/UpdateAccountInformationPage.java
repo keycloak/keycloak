@@ -3,6 +3,8 @@ package org.keycloak.testsuite.pages;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "username")
@@ -36,7 +38,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
 
-        submitButton.click();
+        clickLink(submitButton);
     }
 
     public void updateAccountInformation(String email,
@@ -51,7 +53,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
 
-        submitButton.click();
+        clickLink(submitButton);
     }
 
     public void updateAccountInformation(String firstName,
@@ -62,7 +64,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
 
-        submitButton.click();
+        clickLink(submitButton);
     }
 
     @Override

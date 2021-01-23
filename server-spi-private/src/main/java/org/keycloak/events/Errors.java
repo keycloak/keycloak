@@ -38,6 +38,7 @@ public interface Errors {
     String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
     String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
+    String USER_DELETE_ERROR = "user_delete_error";
 
     String USERNAME_MISSING = "username_missing";
     String USERNAME_IN_USE = "username_in_use";
@@ -58,6 +59,7 @@ public interface Errors {
     String INVALID_FORM = "invalid_form";
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
+    String INVALID_INPUT = "invalid_input";
 
     String REGISTRATION_DISABLED = "registration_disabled";
     String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";
@@ -92,5 +94,10 @@ public interface Errors {
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
     String ILLEGAL_ORIGIN = "illegal_origin";
     String DISPLAY_UNSUPPORTED = "display_unsupported";
+    String LOGOUT_FAILED = "logout_failed";
+    String INVALID_DESTINATION = "invalid_destination";
+    String MISSING_REQUIRED_DESTINATION = "missing_required_destination";
+    String INVALID_SAML_DOCUMENT = "invalid_saml_document";
+    String UNSUPPORTED_NAMEID_FORMAT = "unsupported_nameid_format";
 
 }

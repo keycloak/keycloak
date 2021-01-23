@@ -28,7 +28,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -40,6 +39,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -70,7 +72,7 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         entity.setName(name);
-        entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
+        entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer).getId());
         entity.setOwner(owner);
 
         this.entityManager.persist(entity);
@@ -145,15 +147,7 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-        List<ResourceEntity> result = query.getResultList();
-
-        for (ResourceEntity entity : result) {
-            Resource cached = resourceStore.findById(entity.getId(), resourceServerId);
-            
-            if (cached != null) {
-                consumer.accept(cached);
-            }
-        }
+        closing(query.getResultStream().map(id -> resourceStore.findById(id.getId(), resourceServerId))).forEach(consumer);
     }
 
     @Override
@@ -209,7 +203,7 @@ public class JPAResourceStore implements ResourceStore {
         List<Predicate> predicates = new ArrayList();
 
         if (resourceServerId != null) {
-            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+            predicates.add(builder.equal(root.get("resourceServer"), resourceServerId));
         }
 
         attributes.forEach((name, value) -> {
@@ -217,9 +211,9 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(root.get(name).in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
-            } else if ("ownerManagedAccess".equals(name)) {
+            } else if ("ownerManagedAccess".equals(name) && value.length > 0) {
                 predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
-            } else if ("uri".equals(name)) {
+            } else if ("uri".equals(name) && value.length > 0 && value[0] != null) {
                 predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
             } else if ("uri_not_null".equals(name)) {
                 // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
@@ -228,23 +222,21 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(builder.notEqual(urisSize, 0));
             } else if ("owner".equals(name)) {
                 predicates.add(root.get(name).in(value));
-            } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+            } else if (!Resource.EXACT_NAME.equals(name)) {
+                if ("name".equals(name) && attributes.containsKey(Resource.EXACT_NAME) && Boolean.valueOf(attributes.get(Resource.EXACT_NAME)[0]) 
+                        && value.length > 0 && value[0] != null) {
+                    predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+                } else if (value.length > 0 &&  value[0] != null) {
+                    predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+                }
             }
         });
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
 
-        Query query = entityManager.createQuery(querybuilder);
+        TypedQuery query = entityManager.createQuery(querybuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResult != -1) {
-            query.setMaxResults(maxResult);
-        }
-
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 

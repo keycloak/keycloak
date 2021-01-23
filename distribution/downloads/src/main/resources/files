@@ -1,27 +1,26 @@
 ./
     keycloak-server-dist:keycloak
+    keycloak-server-x-dist:keycloak.x-preview
     keycloak-server-overlay:keycloak-overlay
     keycloak-api-docs-dist:keycloak-api-docs
     keycloak-examples-dist:keycloak-examples
 
-./adapters/keycloak-oidc
-    keycloak-as7-adapter-dist
-    keycloak-eap6-adapter-dist
-    keycloak-jetty92-adapter-dist
-    keycloak-jetty93-adapter-dist
-    keycloak-jetty94-adapter-dist
-    keycloak-js-adapter-dist
-    keycloak-tomcat-adapter-dist
-    keycloak-tomcat7-adapter-dist
-    keycloak-wildfly-adapter-dist
-    keycloak-fuse-adapter-dist
+    keycloak-as7-adapter-dist:keycloak-oidc-as7-adapter
+    keycloak-eap6-adapter-dist:keycloak-oidc-eap6-adapter
+    keycloak-jetty92-adapter-dist:keycloak-oidc-jetty92-adapter
+    keycloak-jetty93-adapter-dist:keycloak-oidc-jetty93-adapter
+    keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
+    keycloak-js-adapter-dist:keycloak-oidc-js-adapter
+    keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
+    keycloak-tomcat7-adapter-dist:keycloak-oidc-tomcat7-adapter
+    keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
+    keycloak-fuse-adapter-dist:keycloak-oidc-fuse-adapter
 
-./adapters/saml
-    keycloak-saml-as7-adapter-dist
-    keycloak-saml-eap6-adapter-dist
-    keycloak-saml-jetty92-adapter-dist
-    keycloak-saml-jetty93-adapter-dist
-    keycloak-saml-jetty94-adapter-dist
-    keycloak-saml-tomcat-adapter-dist
-    keycloak-saml-tomcat7-adapter-dist
-    keycloak-saml-wildfly-adapter-dist
+    keycloak-saml-as7-adapter-dist:keycloak-saml-as7-adapter
+    keycloak-saml-eap6-adapter-dist:keycloak-saml-eap6-adapter
+    keycloak-saml-jetty92-adapter-dist:keycloak-saml-jetty92-adapter
+    keycloak-saml-jetty93-adapter-dist:keycloak-saml-jetty93-adapter
+    keycloak-saml-jetty94-adapter-dist:keycloak-saml-jetty94-adapter
+    keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
+    keycloak-saml-tomcat7-adapter-dist:keycloak-saml-tomcat7-adapter
+    keycloak-saml-wildfly-adapter-dist:keycloak-saml-wildfly-adapter

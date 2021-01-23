@@ -1,6 +1,6 @@
 ## Building from source
 
-Ensure you have JDK 8 (or newer), Maven 3.1.1 (or newer) and Git installed
+Ensure you have JDK 8 (or newer), Maven 3.5.4 (or newer) and Git installed
 
     java -version
     mvn -version
@@ -13,13 +13,13 @@ First clone the Keycloak repository:
     
 To build Keycloak run:
 
-    mvn install
+    mvn clean install
     
 This will build all modules and run the testsuite. 
 
 To build the ZIP distribution run:
 
-    mvn install -Pdistribution
+    mvn clean install -Pdistribution
     
 Once completed you will find distribution archives in `distribution`.
 
@@ -27,6 +27,12 @@ To build only the server run:
 
     mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
 
+---
+**NOTE**
+
+Classes from `org.keycloak.testsuite.*` packages aren't suitable to be used in production.
+
+---
 
 ## Starting Keycloak
 

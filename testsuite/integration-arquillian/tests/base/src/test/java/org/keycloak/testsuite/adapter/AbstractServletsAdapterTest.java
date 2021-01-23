@@ -24,10 +24,8 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
-import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -80,6 +78,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .addClasses(servletClasses)
                 .addAsWebInfResource(webXML, "web.xml")
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+        addSameSiteUndertowHandlers(deployment);
 
         URL keystore = AbstractServletsAdapterTest.class.getResource(webInfPath + "keystore.jks");
         if (keystore != null) {
@@ -120,6 +119,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, customArchiveName + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+        addSameSiteUndertowHandlers(deployment);
 
         // if a role-mappings.properties file exist in WEB-INF, include it in the deployment.
         URL roleMappingsConfig = AbstractServletsAdapterTest.class.getResource(webInfPath + "role-mappings.properties");
@@ -134,7 +134,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
             if (clockSkewSec != null) {
                 String keycloakSamlXMLContent = IOUtils.toString(keycloakSAMLConfig.openStream(), Charset.forName("UTF-8"))
-                    .replace("%CLOCK_SKEW%", String.valueOf(clockSkewSec));
+                    .replace("%CLOCK_SKEW%", "${allowed.clock.skew:" + String.valueOf(clockSkewSec) + "}");
                 deployment.addAsWebInfResource(new StringAsset(keycloakSamlXMLContent), "keycloak-saml.xml");
             } else {
                 deployment.addAsWebInfResource(keycloakSAMLConfig, "keycloak-saml.xml");
@@ -167,6 +167,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+        addSameSiteUndertowHandlers(deployment);
 
         String webXMLContent;
         try {

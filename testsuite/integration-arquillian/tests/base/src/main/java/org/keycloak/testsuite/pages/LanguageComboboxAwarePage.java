@@ -22,10 +22,13 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
+ * Provides some generic utils available on most of login pages (Language combobox, Link "Try another way" etc)
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class LanguageComboboxAwarePage extends AbstractPage {
@@ -36,8 +39,14 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(id = "kc-locale-dropdown")
     private WebElement localeDropdown;
 
-    @FindBy(id = "kc-back")
-    private WebElement backButton;
+    @FindBy(id = "try-another-way")
+    private WebElement tryAnotherWayLink;
+
+    @FindBy(id = "kc-attempted-username")
+    private WebElement attemptedUsernameLabel;
+
+    @FindBy(id = "reset-login")
+    private WebElement resetLoginLink;
 
     public String getLanguageDropdownText() {
         return languageText.getText();
@@ -50,19 +59,41 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
         WaitUtils.waitForPageToLoad();
     }
 
-
-    // If false, we don't expect form "Back" button available on the page. If true, we expect that it is available on the page
-    public void assertBackButtonAvailability(boolean expectedAvailability) {
+    // If false, we don't expect form "Try another way" link available on the page. If true, we expect that it is available on the page
+    public void assertTryAnotherWayLinkAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.id("kc-back"));
+            driver.findElement(By.id("try-another-way"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
         }
     }
 
+    public void clickTryAnotherWayLink() {
+        tryAnotherWayLink.click();
+    }
 
-    public void clickBackButton() {
-        backButton.click();
+
+    // If false, we don't expect "attempted username" link available on the page. If true, we expect that it is available on the page
+    public void assertAttemptedUsernameAvailability(boolean expectedAvailability) {
+        assertAttemptedUsernameAvailability(driver, expectedAvailability);
+    }
+
+    public static void assertAttemptedUsernameAvailability(WebDriver driver, boolean expectedAvailability) {
+        try {
+            driver.findElement(By.id("kc-attempted-username"));
+            Assert.assertTrue(expectedAvailability);
+        } catch (NoSuchElementException nse) {
+            Assert.assertFalse(expectedAvailability);
+        }
+    }
+
+    public String getAttemptedUsername() {
+        return attemptedUsernameLabel.getText();
+    }
+
+
+    public void clickResetLogin() {
+        resetLoginLink.click();
     }
 }

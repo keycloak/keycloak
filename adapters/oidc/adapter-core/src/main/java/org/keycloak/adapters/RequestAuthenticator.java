@@ -76,9 +76,9 @@ public abstract class RequestAuthenticator {
             return AuthOutcome.AUTHENTICATED;
         }
 
-        QueryParamterTokenRequestAuthenticator queryParamAuth = createQueryParamterTokenRequestAuthenticator();
+        QueryParameterTokenRequestAuthenticator queryParamAuth = createQueryParameterTokenRequestAuthenticator();
         if (log.isTraceEnabled()) {
-            log.trace("try query paramter auth");
+            log.trace("try query parameter auth");
         }
 
         outcome = queryParamAuth.authenticate(facade);
@@ -207,8 +207,8 @@ public abstract class RequestAuthenticator {
         return new BasicAuthRequestAuthenticator(deployment);
     }
 
-    protected QueryParamterTokenRequestAuthenticator createQueryParamterTokenRequestAuthenticator() {
-        return new QueryParamterTokenRequestAuthenticator(deployment);
+    protected QueryParameterTokenRequestAuthenticator createQueryParameterTokenRequestAuthenticator() {
+        return new QueryParameterTokenRequestAuthenticator(deployment);
     }
 
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {

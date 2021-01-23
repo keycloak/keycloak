@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-model-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -52,8 +52,27 @@
             <artifactId>infinispan-cachestore-remote</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-jboss-marshalling</artifactId>
+        </dependency>
+
+        <!-- Needed for externalizers in package "org.keycloak.models.sessions.infinispan.entities.wildfly" .
+             Hopefully can be removed once we start to use the protobuf marshalling -->
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Needed for infinispan statistics -->
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

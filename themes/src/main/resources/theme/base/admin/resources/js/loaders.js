@@ -57,6 +57,24 @@ module.factory('RealmKeysLoader', function(Loader, RealmKeys, $route, $q) {
     });
 });
 
+module.factory('RealmSpecificLocalesLoader', function(Loader, RealmSpecificLocales, $route, $q) {
+    return Loader.get(RealmSpecificLocales, function() {
+        return {
+            id : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('RealmSpecificlocalizationTextLoader', function(Loader, RealmSpecificLocalizationText, $route, $q) {
+    return Loader.get(RealmSpecificLocalizationText, function() {
+        return {
+            realm : $route.current.params.realm,
+            locale : $route.current.params.locale,
+            key:  $route.current.params.key
+        }
+    });
+});
+
 module.factory('RealmEventsConfigLoader', function(Loader, RealmEventsConfig, $route, $q) {
     return Loader.get(RealmEventsConfig, function() {
         return {
@@ -303,17 +321,6 @@ module.factory('ClientOptionalClientScopesLoader', function(Loader, ClientOption
         }
     });
 });
-
-module.factory('ClientRoleListLoader', function(Loader, ClientRole, $route, $q) {
-    return Loader.query(ClientRole, function() {
-        return {
-            realm : $route.current.params.realm,
-            client : $route.current.params.client
-        }
-    });
-});
-
-
 
 module.factory('ClientLoader', function(Loader, Client, $route, $q) {
     return Loader.get(Client, function() {

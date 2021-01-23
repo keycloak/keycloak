@@ -49,6 +49,7 @@ import org.keycloak.services.util.ResolveRelative;
  */
 public class AuthorizationBean {
 
+    private final KeycloakSession session;
     private final UserModel user;
     private final AuthorizationProvider authorization;
     private final UriInfo uriInfo;
@@ -59,6 +60,7 @@ public class AuthorizationBean {
     private Collection<ResourceBean> resourcesWaitingOthersApproval;
 
     public AuthorizationBean(KeycloakSession session, UserModel user, UriInfo uriInfo) {
+        this.session = session;
         this.user = user;
         this.uriInfo = uriInfo;
         authorization = session.getProvider(AuthorizationProvider.class);
@@ -148,7 +150,7 @@ public class AuthorizationBean {
         private boolean granted;
 
         public RequesterBean(PermissionTicket ticket, AuthorizationProvider authorization) {
-            this.requester = authorization.getKeycloakSession().users().getUserById(ticket.getRequester(), authorization.getRealm());
+            this.requester = authorization.getKeycloakSession().users().getUserById(authorization.getRealm(), ticket.getRequester());
             granted = ticket.isGranted();
             createdTimestamp = ticket.getCreatedTimestamp();
             grantedTimestamp = ticket.getGrantedTimestamp();
@@ -223,16 +225,26 @@ public class AuthorizationBean {
     public class ResourceBean {
 
         private final ResourceServerBean resourceServer;
-        private final UserModel owner;
+        private final String ownerName;
+        private final UserModel userOwner;
+        private ClientModel clientOwner;
         private Resource resource;
         private Map<String, RequesterBean> permissions = new HashMap<>();
         private Collection<RequesterBean> shares;
 
         public ResourceBean(Resource resource) {
             RealmModel realm = authorization.getRealm();
-            resourceServer = new ResourceServerBean(realm.getClientById(resource.getResourceServer().getId()));
+            resourceServer = new ResourceServerBean(realm.getClientById(resource.getResourceServer()));
             this.resource = resource;
-            owner = authorization.getKeycloakSession().users().getUserById(resource.getOwner(), realm);
+            userOwner = authorization.getKeycloakSession().users().getUserById(realm, resource.getOwner());
+            if (userOwner == null) {
+                clientOwner = realm.getClientById(resource.getOwner());
+                ownerName = clientOwner.getClientId();
+            } else if (userOwner.getEmail() != null) {
+                ownerName = userOwner.getEmail();
+            } else {
+                ownerName = userOwner.getUsername();
+            }
         }
 
         public String getId() {
@@ -251,8 +263,16 @@ public class AuthorizationBean {
             return resource.getIconUri();
         }
 
-        public UserModel getOwner() {
-            return owner;
+        public String getOwnerName() {
+            return ownerName;
+        }
+
+        public UserModel getUserOwner() {
+            return userOwner;
+        }
+
+        public ClientModel getClientOwner() {
+            return clientOwner;
         }
 
         public List<ScopeRepresentation> getScopes() {
@@ -277,7 +297,11 @@ public class AuthorizationBean {
 
             filters.put("type", new String[] {"uma"});
             filters.put("resource", new String[] {this.resource.getId()});
-            filters.put("owner", new String[] {getOwner().getId()});
+            if (getUserOwner() != null) {
+                filters.put("owner", new String[] {getUserOwner().getId()});
+            } else {
+                filters.put("owner", new String[] {getClientOwner().getId()});
+            }
 
             List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(filters, getResourceServer().getId(), -1, -1);
 
@@ -383,7 +407,7 @@ public class AuthorizationBean {
         }
 
         public String getBaseUri() {
-            return ResolveRelative.resolveRelativeUri(null, clientModel.getRootUrl(), clientModel.getBaseUrl());
+            return ResolveRelative.resolveRelativeUri(session, clientModel.getRootUrl(), clientModel.getBaseUrl());
         }
     }
 

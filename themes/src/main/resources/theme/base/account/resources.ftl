@@ -262,10 +262,14 @@
                                         <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
                                     </td>
                                     <td>
-                                        <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
+                                        ${resource.ownerName}
                                     </td>
                                     <td>
-                                        <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
+                                        <#if resource.resourceServer.baseUri??>
+                                            <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
+                                        <#else>
+                                            ${resource.resourceServer.name}
+                                        </#if>
                                     </td>
                                     <td>
                                         <#if resource.permissions?size != 0>
@@ -358,7 +362,7 @@
                                                 <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
                                             </td>
                                             <td>
-                                                <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
+                                                ${resource.ownerName}
                                             </td>
                                             <td>
                                                 <ul>

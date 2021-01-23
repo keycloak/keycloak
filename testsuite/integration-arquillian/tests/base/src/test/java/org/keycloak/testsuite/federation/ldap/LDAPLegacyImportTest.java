@@ -23,12 +23,14 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -78,7 +80,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            ComponentModel ldapModel = appRealm.getComponents(appRealm.getId(), UserStorageProvider.class.getName()).get(0);
+            ComponentModel ldapModel = appRealm.getComponentsStream(appRealm.getId(), UserStorageProvider.class.getName()).findFirst().get();
 
             LDAPTestUtils.addLocalUser(session, appRealm, "marykeycloak", "mary@test.com", "password-app");
 
@@ -95,14 +97,6 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         });
     }
 
-
-    //@Test
-    public void runit() throws Exception {
-        Thread.sleep(10000000);
-
-    }
-
-
     @Test
     public void loginClassic() {
         loginPage.open();
@@ -114,6 +108,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginLdap() {
         loginPage.open();
         loginPage.login("johnkeycloak", "Password1");

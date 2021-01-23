@@ -3,6 +3,7 @@ package org.keycloak.testsuite.broker;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.List;
 
@@ -45,10 +46,10 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredClientSession() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
@@ -72,7 +73,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredAndClearedClientSession() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         // Set time offset
@@ -101,7 +102,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         loginPage.login("consumer", "password");
 
         accountPage.federatedIdentity();
@@ -147,14 +148,14 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     @Test
     public void testLoginCancelConsent() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         // User rejected consent
         grantPage.assertCurrent();
         grantPage.cancel();
 
-        assertEquals("Log in to " + bc.consumerRealmName(), driver.getTitle());
+        assertEquals("Sign in to " + bc.consumerRealmName(), driver.getTitle());
     }
 
     /**
@@ -165,7 +166,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         loginPage.login("consumer", "password");
 
         accountPage.federatedIdentity();

@@ -17,30 +17,21 @@
 
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
+
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Supplier;
-
-import javax.crypto.SecretKey;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.Time;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.jose.jwe.JWEException;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.CodeToTokenStoreProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.util.TokenUtil;
 
 /**
  * TODO: Remove this and probably also ClientSessionParser. It's uneccessary genericity and abstraction, which is not needed anymore when clientSessionModel was fully removed.
@@ -110,6 +101,18 @@ class CodeGenerateUtil {
             if (nextCode == null) {
                 String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
                 authSession.setAuthNote(ACTIVE_CODE, actionId);
+
+                // We need to set the active code to the authSession in the separate sub-transaction as well
+                // to make sure the change is committed if the main transaction is rolled back later.
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+                    final RootAuthenticationSessionModel rootAuthenticationSession = currentSession.authenticationSessions()
+                            .getRootAuthenticationSession(authSession.getRealm(), authSession.getParentSession().getId());
+                    AuthenticationSessionModel authenticationSession = rootAuthenticationSession == null ? null : rootAuthenticationSession
+                            .getAuthenticationSession(authSession.getClient(), authSession.getTabId());
+                    if (authenticationSession != null) {
+                        authenticationSession.setAuthNote(ACTIVE_CODE, actionId);
+                    }
+                });
                 nextCode = actionId;
             } else {
                 logger.debug("Code already generated for authentication session, using same code");
@@ -134,6 +137,15 @@ class CodeGenerateUtil {
             }
 
             authSession.removeAuthNote(ACTIVE_CODE);
+
+            // We need to remove the active code from the authSession in the separate sub-transaction as well
+            // to make sure the change is committed if the main transaction is rolled back later.
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+                AuthenticationSessionModel authenticationSession = currentSession.authenticationSessions()
+                        .getRootAuthenticationSession(authSession.getRealm(), authSession.getParentSession().getId())
+                        .getAuthenticationSession(authSession.getClient(), authSession.getTabId());
+                authenticationSession.removeAuthNote(ACTIVE_CODE);
+            });
 
             return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
         }

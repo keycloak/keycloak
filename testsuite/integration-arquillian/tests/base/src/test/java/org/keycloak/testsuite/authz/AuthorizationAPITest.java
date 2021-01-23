@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -42,6 +43,9 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -53,6 +57,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AuthorizationAPITest extends AbstractAuthzTest {
 
     private static final String RESOURCE_SERVER_TEST = "resource-server-test";
@@ -80,7 +85,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrants()
-                    .pairwise("http://pairwise.com"))
+                    .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri()))
                 .client(ClientBuilder.create().clientId(TEST_CLIENT)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
@@ -92,6 +97,8 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                         .redirectUris("http://localhost/test-client")
                         .directAccessGrants())
                 .build());
+
+        testingClient.testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Collections.singletonList("http://localhost/resource-server-test"));
     }
 
     @Before

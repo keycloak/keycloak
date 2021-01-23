@@ -46,9 +46,11 @@ import org.keycloak.util.JWKSUtils;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -62,6 +64,9 @@ public class DescriptionConverter {
         client.setName(clientOIDC.getClientName());
         client.setRedirectUris(clientOIDC.getRedirectUris());
         client.setBaseUrl(clientOIDC.getClientUri());
+
+        String scopeParam = clientOIDC.getScope();
+        if (scopeParam != null) client.setOptionalClientScopes(new ArrayList<>(Arrays.asList(scopeParam.split(" "))));
 
         List<String> oidcResponseTypes = clientOIDC.getResponseTypes();
         if (oidcResponseTypes == null || oidcResponseTypes.isEmpty()) {
@@ -121,6 +126,10 @@ public class DescriptionConverter {
             else configWrapper.setUseMtlsHoKToken(false);
         }
 
+        if (clientOIDC.getTlsClientAuthSubjectDn() != null) {
+            configWrapper.setTlsClientAuthSubjectDn(clientOIDC.getTlsClientAuthSubjectDn());
+        }
+
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
             configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
         }
@@ -131,6 +140,26 @@ public class DescriptionConverter {
 
         if (clientOIDC.getIdTokenEncryptedResponseEnc() != null) {
             configWrapper.setIdTokenEncryptedResponseEnc(clientOIDC.getIdTokenEncryptedResponseEnc());
+        }
+
+        if (clientOIDC.getRequestUris() != null) {
+            configWrapper.setRequestUris(clientOIDC.getRequestUris());
+        }
+
+        configWrapper.setTokenEndpointAuthSigningAlg(clientOIDC.getTokenEndpointAuthSigningAlg());
+
+        configWrapper.setBackchannelLogoutUrl(clientOIDC.getBackchannelLogoutUri());
+
+        if (clientOIDC.getBackchannelLogoutSessionRequired() == null) {
+            configWrapper.setBackchannelLogoutSessionRequired(true);
+        } else {
+            configWrapper.setBackchannelLogoutSessionRequired(clientOIDC.getBackchannelLogoutSessionRequired());
+        }
+
+        if (clientOIDC.getBackchannelLogoutRevokeOfflineTokens() == null) {
+            configWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
+        } else {
+            configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
         return client;
@@ -196,6 +225,9 @@ public class DescriptionConverter {
         response.setResponseTypes(getOIDCResponseTypes(client));
         response.setGrantTypes(getOIDCGrantTypes(client));
 
+        List<String> scopes = client.getOptionalClientScopes();
+        if (scopes != null) response.setScope(scopes.stream().collect(Collectors.joining(" ")));
+
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
             response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
@@ -213,6 +245,9 @@ public class DescriptionConverter {
         } else {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
         }
+        if (config.getTlsClientAuthSubjectDn() != null) {
+            response.setTlsClientAuthSubjectDn(config.getTlsClientAuthSubjectDn());
+        }
         if (config.getIdTokenSignedResponseAlg() != null) {
             response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
         }
@@ -222,6 +257,15 @@ public class DescriptionConverter {
         if (config.getIdTokenEncryptedResponseEnc() != null) {
             response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
         }
+        if (config.getRequestUris() != null) {
+            response.setRequestUris(config.getRequestUris());
+        }
+        if (config.getTokenEndpointAuthSigningAlg() != null) {
+            response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
+        }
+        response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
+        response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
+        response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;

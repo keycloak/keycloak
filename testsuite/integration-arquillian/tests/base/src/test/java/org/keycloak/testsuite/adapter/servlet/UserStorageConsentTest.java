@@ -51,10 +51,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -102,18 +104,18 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
 
     public static void setupConsent(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("demo");
-        ClientModel product = session.realms().getClientByClientId("product-portal", realm);
+        ClientModel product = session.clients().getClientByClientId(realm, "product-portal");
         product.setConsentRequired(true);
         ClientScopeModel clientScope = realm.addClientScope("clientScope");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        System.err.println("client scope protocol mappers size: " + clientScope.getProtocolMappers().size());
+        System.err.println("client scope protocol mappers size: " + clientScope.getProtocolMappersStream().count());
 
-        for (ProtocolMapperModel mapper : product.getProtocolMappers()) {
+        for (ProtocolMapperModel mapper : product.getProtocolMappersStream().collect(Collectors.toList())) {
             if (mapper.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
                 if (mapper.getName().equals(OIDCLoginProtocolFactory.USERNAME)
                         || mapper.getName().equals(OIDCLoginProtocolFactory.EMAIL)
                         || mapper.getName().equals(OIDCLoginProtocolFactory.GIVEN_NAME)
-                        ) {
+                ) {
                     ProtocolMapperModel copy = new ProtocolMapperModel();
                     copy.setName(mapper.getName());
                     copy.setProtocol(mapper.getProtocol());
@@ -129,6 +131,12 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         product.addClientScope(clientScope, true);
     }
 
+    public static void setupDisplayClientOnConsentScreen(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("demo");
+        ClientModel product = session.clients().getClientByClientId(realm, "product-portal");
+        product.setDisplayOnConsentScreen(true);
+    }
+
     /**
      * KEYCLOAK-5273
      *
@@ -136,6 +144,16 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
      */
     @Test
     public void testLogin() throws Exception {
+        assertLogin();
+    }
+
+    @Test
+    public void testLoginDisplayClientOnConsentScreen() throws Exception {
+        testingClient.server().run(UserStorageConsentTest::setupDisplayClientOnConsentScreen);
+        assertLogin();
+    }
+
+    private void assertLogin() throws InterruptedException {
         testingClient.server().run(UserStorageConsentTest::setupConsent);
         UserRepresentation memuser = new UserRepresentation();
         memuser.setUsername("memuser");
@@ -159,13 +177,15 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
                 .build("demo").toString();
 
         driver.navigate().to(logoutUri);
+        waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("memuser", "password");
         assertCurrentUrlEquals(productPortal.toString());
         Assert.assertTrue(driver.getPageSource().contains("iPhone"));
-        
+
+        driver.navigate().to(logoutUri);
         adminClient.realm("demo").users().delete(uid).close();
     }
 }

@@ -50,8 +50,9 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
     protected Authentication createAuthentication(UserIdentity userIdentity, final Request request) {
         return new KeycloakAuthentication(getAuthMethod(), userIdentity) {
             @Override
-            public void logout() {
-                logoutCurrent(request);
+            public Authentication logout(ServletRequest servletRequest) {
+                logoutCurrent((Request) servletRequest);
+                return super.logout(servletRequest);
             }
         };
     }

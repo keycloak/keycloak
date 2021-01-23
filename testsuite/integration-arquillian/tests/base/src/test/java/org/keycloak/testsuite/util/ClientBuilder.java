@@ -73,6 +73,7 @@ public class ClientBuilder {
         return this;
     }
 
+    @Deprecated
     public ClientBuilder defaultRoles(String... roles) {
         rep.setDefaultRoles(roles);
         return this;
@@ -183,6 +184,11 @@ public class ClientBuilder {
 
     public ClientBuilder enabled(Boolean enabled) {
         rep.setEnabled(enabled);
+        return this;
+    }
+
+    public ClientBuilder alwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
+        rep.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
         return this;
     }
 

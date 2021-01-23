@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
@@ -146,7 +147,7 @@ public class PolicyService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response findByName(@QueryParam("name") String name) {
+    public Response findByName(@QueryParam("name") String name, @QueryParam("fields") String fields) {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
         }
@@ -160,10 +161,10 @@ public class PolicyService {
         Policy model = storeFactory.getPolicyStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
-            return Response.status(Status.OK).build();
+            return Response.noContent().build();
         }
 
-        return Response.ok(toRepresentation(model, authorization)).build();
+        return Response.ok(toRepresentation(model, fields, authorization)).build();
     }
 
     @GET
@@ -176,6 +177,7 @@ public class PolicyService {
                             @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
                             @QueryParam("owner") String owner,
+                            @QueryParam("fields") String fields,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
         if (auth != null) {
@@ -218,7 +220,7 @@ public class PolicyService {
                 Set<String> resources = resourceStore.findByResourceServer(resourceFilters, resourceServer.getId(), -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
 
                 if (resources.isEmpty()) {
-                    return Response.ok().build();
+                    return Response.noContent().build();
                 }
 
                 search.put("resource", resources.toArray(new String[resources.size()]));
@@ -239,7 +241,7 @@ public class PolicyService {
                 Set<String> scopes = scopeStore.findByResourceServer(scopeFilters, resourceServer.getId(), -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
 
                 if (scopes.isEmpty()) {
-                    return Response.ok().build();
+                    return Response.noContent().build();
                 }
 
                 search.put("scope", scopes.toArray(new String[scopes.size()]));
@@ -253,18 +255,18 @@ public class PolicyService {
         }
 
         return Response.ok(
-                doSearch(firstResult, maxResult, search))
+                doSearch(firstResult, maxResult, fields, search))
                 .build();
     }
 
-    protected AbstractPolicyRepresentation toRepresentation(Policy model, AuthorizationProvider authorization) {
-        return ModelToRepresentation.toRepresentation(model, authorization, true, false);
+    protected AbstractPolicyRepresentation toRepresentation(Policy model, String fields, AuthorizationProvider authorization) {
+        return ModelToRepresentation.toRepresentation(model, authorization, true, false, fields != null && fields.equals("*"));
     }
 
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         return policyStore.findByResourceServer(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
-                .map(policy -> toRepresentation(policy, authorization))
+                .map(policy -> toRepresentation(policy, fields, authorization))
                 .collect(Collectors.toList());
     }
 
@@ -278,8 +280,8 @@ public class PolicyService {
         }
 
         return Response.ok(
-                authorization.getProviderFactories().stream()
-                        .filter(factory -> !factory.isInternal())
+                authorization.getProviderFactoriesStream()
+                        .filter(((Predicate<PolicyProviderFactory>) PolicyProviderFactory::isInternal).negate())
                         .map(factory -> {
                             PolicyProviderRepresentation representation = new PolicyProviderRepresentation();
 

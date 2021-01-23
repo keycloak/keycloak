@@ -21,15 +21,20 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
+import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.configuration.Builder;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.configuration.global.TransportConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
+import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
@@ -101,7 +106,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             synchronized (this) {
                 if (cacheManager == null) {
                     EmbeddedCacheManager managedCacheManager = null;
-                    Iterator<ManagedCacheManagerProvider> providers = ServiceLoader.load(ManagedCacheManagerProvider.class)
+                    Iterator<ManagedCacheManagerProvider> providers = ServiceLoader.load(ManagedCacheManagerProvider.class, DefaultInfinispanConnectionProvider.class.getClassLoader())
                             .iterator();
 
                     if (providers.hasNext()) {
@@ -115,6 +120,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     }
                     
                     if (managedCacheManager == null) {
+                        if (!config.getBoolean("embedded", false)) {
+                            throw new RuntimeException("No " + ManagedCacheManagerProvider.class.getName() + " found. If running in embedded mode set the [embedded] property to this provider.");
+                        }
                         initEmbedded();
                     } else {
                         initContainerManaged(managedCacheManager);
@@ -166,27 +174,26 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     protected void initEmbedded() {
-
-
-        
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", false);
-        boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, true);
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
             configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr);
-            gcb.globalJmxStatistics()
+            gcb.jmx()
               .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName());
         }
 
-        gcb.globalJmxStatistics()
-          .allowDuplicateDomains(allowDuplicateJMXDomains)
-          .enable();
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
+
+        // For Infinispan 10, we go with the JBoss marshalling.
+        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
+        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
+        gcb.serialization().marshaller(new JBossUserMarshaller());
 
         cacheManager = new DefaultCacheManager(gcb.build());
         containerManaged = false;
@@ -424,6 +431,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
 
         cb.expiration().maxIdle(InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
+
         return cb.build();
     }
 
@@ -458,18 +466,24 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 }
                 try {
                     // Compatibility with Wildfly
-                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()));
+                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
                     channel.setName(nodeName);
                     JGroupsTransport transport = new JGroupsTransport(channel);
 
-                    gcb.transport()
+                    TransportConfigurationBuilder transportBuilder = gcb.transport()
                       .nodeName(nodeName)
                       .siteId(siteName)
-                      .transport(transport)
-                      .globalJmxStatistics()
+                      .transport(transport);
+
+                    // Use the cluster corresponding to current site. This is needed as the nodes in different DCs should not share same cluster
+                    if (siteName != null) {
+                        transportBuilder.clusterName(siteName);
+                    }
+
+
+                    transportBuilder.jmx()
                         .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
-                        .enable()
-                      ;
+                        .enable();
 
                     logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
                 } catch (Exception e) {

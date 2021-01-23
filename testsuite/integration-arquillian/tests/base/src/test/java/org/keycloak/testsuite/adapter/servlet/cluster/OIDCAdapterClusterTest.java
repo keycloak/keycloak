@@ -26,6 +26,8 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
@@ -38,11 +40,14 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Retry;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.page.SessionPortalDistributable;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -84,6 +89,25 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         addAdapterTestRealms(testRealms);
+
+        if (!"localhost".equals(ServerURLs.APP_SERVER_HOST)) {
+            for (RealmRepresentation realm : testRealms) {
+                Optional<ClientRepresentation> clientRepresentation = realm.getClients().stream()
+                        .filter(c -> c.getClientId().equals("session-portal-distributable"))
+                        .findFirst();
+
+                clientRepresentation.ifPresent(cr -> {
+                    cr.setAdminUrl(cr.getAdminUrl().replace("localhost", ServerURLs.APP_SERVER_HOST));
+                    cr.setBaseUrl(cr.getBaseUrl().replace("localhost", ServerURLs.APP_SERVER_HOST));
+                    cr.setRedirectUris(cr.getRedirectUris()
+                            .stream()
+                            .map(url -> url.replace("localhost", ServerURLs.APP_SERVER_HOST))
+                            .collect(Collectors.toList())
+                    );
+                });
+            }
+
+        }
     }
 
     @Override
@@ -150,7 +174,7 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
                     driver.navigate().to(appUrl + "/donotincrease");
                     waitForPageToLoad();
 
-                    return driver.getPageSource().contains("Counter=" + expectedCount);
+                    return driver.getPageSource().contains("Counter=" + expectedCount) && driver.getPageSource().contains("CounterWrapper=" + expectedCount);
                 });
     }
 
@@ -163,7 +187,9 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
         driver.navigate().to(appUrl);
         waitForPageToLoad();
 
-        assertThat(driver.getPageSource(), containsString("Counter=" + expectedCount));
-        assertThat(driver.getPageSource(), containsString("Node name=" + hostToPointToName));
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("Counter=" + expectedCount));
+        assertThat(pageSource, containsString("CounterWrapper=" + expectedCount));
+        assertThat(pageSource, containsString("Node name=" + hostToPointToName));
     }
 }

@@ -22,7 +22,10 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventsStore.provider:jpa}"
+        "provider": "${keycloak.eventsStore.provider:jpa}",
+        "jpa": {
+            "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        }
     },
 
     "eventsListener": {
@@ -39,6 +42,29 @@
 
     "user": {
         "provider": "${keycloak.user.provider:jpa}"
+    },
+
+    "client": {
+        "provider": "${keycloak.client.provider:jpa}"
+    },
+
+    "group": {
+        "provider": "${keycloak.group.provider:jpa}"
+    },
+
+    "role": {
+        "provider": "${keycloak.role.provider:jpa}"
+    },
+
+    "authenticationSessions": {
+        "provider": "${keycloak.authSession.provider:infinispan}"
+    },
+
+    "mapStorage": {
+        "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
+        "concurrenthashmap": {
+            "dir": "${project.build.directory:target}"
+        }
     },
 
     "userFederatedStorage": {
@@ -137,7 +163,8 @@
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
             "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
-            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}"
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
         }
     },
 
@@ -165,6 +192,13 @@
                 "https=${auth.server.https.port}"
             ]
 	}
+    },
+
+    "userProfile": {
+        "legacy-user-profile": {
+            "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
+            "admin-read-only-attributes": [ "deniedSomeAdmin" ]
+        }
     },
 
     "x509cert-lookup": {
@@ -195,7 +229,7 @@
     "vault": {
         "files-plaintext": {
             "dir": "target/dependency/vault",
-            "enabled": "${keycloak.vault.plaintext.provider.enabled:false}"
+            "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
         }
     }
 }

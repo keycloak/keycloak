@@ -32,14 +32,14 @@ public class OneTimeCode extends Authenticate {
     @FindBy(id = "otp")
     private WebElement otpInputField;
 
-    @FindBy(id = "authenticators-choice")
-    private WebElement authenticatorSelector;
-
     @FindBy(xpath = ".//label[@for='otp']")
     private WebElement otpInputLabel;
 
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
+
+    @FindBy(id = "input-error-otp-code")
+    private WebElement totpInputCodeError;
 
     public String getOtpLabel() {
         return getTextFromElement(otpInputLabel);
@@ -58,13 +58,20 @@ public class OneTimeCode extends Authenticate {
         submit();
     }
 
-    public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+    public String getAlertError() {
+        try {
+            return UIUtils.getTextFromElement(loginErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
-    public void selectFactor(String name) {
-        Select select = new Select(authenticatorSelector);
-        select.selectByVisibleText(name);
+    public String getInputError() {
+        try {
+            return UIUtils.getTextFromElement(totpInputCodeError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     @Override

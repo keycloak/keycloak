@@ -20,13 +20,21 @@ package org.keycloak.testsuite.ui.account2;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
+import org.keycloak.testsuite.util.UserBuilder;
 
-import static org.junit.Assert.assertTrue;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 /**
@@ -59,17 +67,19 @@ public class PersonalInfoTest extends BaseAccountPageTest {
 
         assertTrue(personalInfoPage.valuesEqual(testUser));
         personalInfoPage.assertUsernameDisabled(false);
-        personalInfoPage.assertSaveDisabled(true);
+        personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.setValues(testUser2, true);
+        assertEquals("test user", personalInfoPage.header().getToolbarLoggedInUser());
         assertTrue(personalInfoPage.valuesEqual(testUser2));
         personalInfoPage.assertSaveDisabled(false);
         personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
-        personalInfoPage.assertSaveDisabled(true);
+        personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
+        assertEquals("Václav Muzikář", personalInfoPage.header().getToolbarLoggedInUser());
 
         // change just first and last name
         testUser2.setFirstName("Another");
@@ -79,6 +89,7 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.alert().assertSuccess();
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
+        assertEquals("Another Name", personalInfoPage.header().getToolbarLoggedInUser());
     }
 
     @Test
@@ -87,17 +98,18 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         
         // clear username
         personalInfoPage.setUsername("");
-        personalInfoPage.assertSaveDisabled(false);
+        personalInfoPage.assertSaveDisabled(true);
         personalInfoPage.assertUsernameValid(false);
         personalInfoPage.setUsername("hsimpson");
         personalInfoPage.assertUsernameValid(true);
 
         // clear email
+        personalInfoPage.setEmail("edewit@");
+        personalInfoPage.assertEmailValid(false);
         personalInfoPage.setEmail("");
         personalInfoPage.assertEmailValid(false);
         personalInfoPage.setEmail("hsimpson@springfield.com");
         personalInfoPage.assertEmailValid(true);
-        // TODO test email validation (blocked by KEYCLOAK-8098)
 
         // clear first name
         personalInfoPage.setFirstName("");
@@ -130,6 +142,16 @@ public class PersonalInfoTest extends BaseAccountPageTest {
     }
 
     @Test
+    public void cancelForm() {
+        setEditUsernameAllowed(false);
+
+        personalInfoPage.setValues(testUser2, false);
+        personalInfoPage.setEmail("hsimpson@springfield.com");
+        personalInfoPage.clickCancel();
+        personalInfoPage.valuesEqual(testUser2);
+    }
+
+    @Test
     public void disabledEditUsername() {
         setEditUsernameAllowed(false);
 
@@ -142,11 +164,90 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
     }
+    
+    @Test
+    public void clickLogoTest() {
+        personalInfoPage.clickBrandLink();
+        accountWelcomeScreen.assertCurrent();
+    }
+
+    @Test
+    public void testNameInToolbar() {
+        assertEquals("test user", personalInfoPage.header().getToolbarLoggedInUser());
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("edewit");
+        user.setEnabled(true);
+        setPasswordFor(user, "password");
+        try {
+            ApiUtil.removeUserByUsername(testRealmResource(), testUser.getUsername());
+            personalInfoPage.navigateTo();
+            ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+            loginPage.form().login(user);
+
+            assertEquals("edewit", personalInfoPage.header().getToolbarLoggedInUser());
+        } finally {
+            ApiUtil.removeUserByUsername(testRealmResource(), user.getUsername());
+        }
+    }
 
     private void setEditUsernameAllowed(boolean value) {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEditUsernameAllowed(value);
         testRealmResource().update(realm);
         refreshPageAndWaitForLoad();
+    }
+
+    private void addUser(String username, String email) {
+        UserRepresentation user = UserBuilder.create()
+                .username(username)
+                .enabled(true)
+                .email(email)
+                .firstName("first")
+                .lastName("last")
+                .build();
+        RealmResource testRealm = adminClient.realm("test");
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm, user, "password");
+    }
+
+    // KEYCLOAK-15634
+    @Test
+    public void updateProfileWithAttributePresent() {
+
+        RealmResource testRealm = adminClient.realm("test");
+        assertEquals("keycloak.v2", testRealm.toRepresentation().getAccountTheme());
+
+        // Add a user and set a test attribute
+        addUser("keycloak-15634","keycloak-15634@test.local");
+        UserRepresentation userRepBefore = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
+        Map<String, List<String>> userAttributes = new HashMap<>();
+        userAttributes.put("testAttribute", Collections.singletonList("testValue"));
+        userRepBefore.setAttributes(userAttributes);
+        testRealm.users().get(userRepBefore.getId()).update(userRepBefore);
+
+        // Check our test user is ok before updating profile with account v2
+        UserRepresentation updatedUserRep = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
+        assertEquals("keycloak-15634@test.local", updatedUserRep.getEmail());
+        assertEquals("testAttribute should be set", "testValue", updatedUserRep.getAttributes().get("testAttribute").get(0));
+        assertFalse("locale attribute should not be set", updatedUserRep.getAttributes().containsKey("locale"));
+
+        personalInfoPage.assertCurrent();
+        personalInfoPage.header().clickLogoutBtn();
+        personalInfoPage.navigateTo();
+        loginPage.assertCurrent();
+        loginPage.form().login("keycloak-15634","password");
+        personalInfoPage.assertCurrent();
+
+        // Trigger the JS involved in KEYCLOAK-15634
+        assertEquals("keycloak-15634@test.local", personalInfoPage.getEmail());
+        personalInfoPage.setEmail("keycloak-15634@domain.local");
+        personalInfoPage.clickSave();
+
+        // Check if updateProfile went well and if testAttribute is still there
+        UserRepresentation userRepAfter = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
+        assertEquals("keycloak-15634@domain.local", userRepAfter.getEmail());
+        assertEquals("testAttribute should still be there","testValue", userRepAfter.getAttributes().get("testAttribute").get(0));
+
+        ApiUtil.removeUserByUsername(testRealm, "keycloak-15634");
     }
 }

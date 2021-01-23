@@ -38,7 +38,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.util.ldap.KerberosEmbeddedServer;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 
 /**
  * Test for the KerberosFederationProvider (kerberos without LDAP integration)
@@ -129,7 +129,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         String context = spnegoResponse.readEntity(String.class);
         spnegoResponse.close();
 
-        Assert.assertTrue(context.contains("Log in to test"));
+        Assert.assertTrue(context.contains("Sign in to test"));
 
         String url = ActionURIUtils.getActionURIFromPageSource(context);
 

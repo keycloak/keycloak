@@ -23,16 +23,27 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import org.keycloak.testsuite.admin.ApiUtil;
 
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Ignore;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -50,6 +61,39 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
         long end = System.currentTimeMillis() - start;
         System.out.println("took " + end + " ms");
     }
+
+    // KEYCLOAK-8141 Verify that no attribute values are duplicated, and there are no locking exceptions when adding attributes in parallell
+    @Test
+    @Ignore
+    public void createUserAttributes() throws Throwable {
+        AtomicInteger c = new AtomicInteger();
+
+        UsersResource users = testRealm().users();
+
+        UserRepresentation u = UserBuilder.create().username("attributes").build();
+        Response response = users.create(u);
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        UserResource user = users.get(userId);
+
+        concurrentTest((threadIndex, keycloak, realm) -> {
+            UserRepresentation rep = user.toRepresentation();
+            rep.singleAttribute("a-" + c.getAndIncrement(), "value");
+            user.update(rep);
+        });
+
+        UserRepresentation rep = user.toRepresentation();
+
+        // Number of attributes should be equal to created attributes, or less (concurrent requests may drop attributes added by other threads)
+        assertTrue(rep.getAttributes().size() <= c.get());
+
+        // All attributes should have a single value
+        for (Map.Entry<String, List<String>> e : rep.getAttributes().entrySet()) {
+            assertEquals(1, e.getValue().size());
+        }
+    }
+
 
     @Test
     public void testAllConcurrently() throws Throwable {
@@ -189,7 +233,7 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
             c = realm.groups().group(id).toRepresentation();
             assertNotNull(c);
-            assertTrue("Group " + name + " not found in group list",
+            assertTrue("Group " + name + " [" + id + "] " + " not found in group list",
               realm.groups().groups().stream()
                 .map(GroupRepresentation::getName)
                 .filter(Objects::nonNull)

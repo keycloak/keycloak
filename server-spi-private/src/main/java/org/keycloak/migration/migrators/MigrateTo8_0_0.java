@@ -46,11 +46,9 @@ public class MigrateTo8_0_0  implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         // Perform basic realm migration first (non multi-factor authentication)
-        session.realms().getRealms().stream().forEach(realm -> migrateRealmCommon(realm));
+        session.realms().getRealmsStream().forEach(this::migrateRealmCommon);
         // Moreover, for multi-factor authentication migrate optional execution of realm flows to subflows
-        session.realms().getRealms().stream().forEach(r -> {
-            migrateRealmMFA(session, r, false);
-        });
+        session.realms().getRealmsStream().forEach(realm -> migrateRealmMFA(realm));
     }
 
     @Override
@@ -62,28 +60,29 @@ public class MigrateTo8_0_0  implements Migration {
 
     protected void migrateRealmCommon(RealmModel realm) {
         ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        adminConsoleClient.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
-        String adminConsoleBaseUrl = "/admin/" + realm.getName() + "/console/";
-        adminConsoleClient.setBaseUrl(adminConsoleBaseUrl);
-        adminConsoleClient.setRedirectUris(Collections.singleton(adminConsoleBaseUrl + "*"));
-        adminConsoleClient.setWebOrigins(Collections.singleton("+"));
+        if (adminConsoleClient != null) {
+            adminConsoleClient.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
+            String adminConsoleBaseUrl = "/admin/" + realm.getName() + "/console/";
+            adminConsoleClient.setBaseUrl(adminConsoleBaseUrl);
+            adminConsoleClient.setRedirectUris(Collections.singleton(adminConsoleBaseUrl + "*"));
+            adminConsoleClient.setWebOrigins(Collections.singleton("+"));
+        }
 
         ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
-        String accountClientBaseUrl = "/realms/" + realm.getName() + "/account/";
-        accountClient.setBaseUrl(accountClientBaseUrl);
-        accountClient.setRedirectUris(Collections.singleton(accountClientBaseUrl + "*"));
+        if (accountClient != null) {
+            accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
+            String accountClientBaseUrl = "/realms/" + realm.getName() + "/account/";
+            accountClient.setBaseUrl(accountClientBaseUrl);
+            accountClient.setRedirectUris(Collections.singleton(accountClientBaseUrl + "*"));
+        }
     }
 
-    protected void migrateRealmMFA(KeycloakSession session, RealmModel realm, boolean jsn) {
-        for (AuthenticationFlowModel authFlow : realm.getAuthenticationFlows()) {
-            for (AuthenticationExecutionModel authExecution : realm.getAuthenticationExecutions(authFlow.getId())) {
-                // Those were OPTIONAL executions in previous version
-                if (authExecution.getRequirement() == AuthenticationExecutionModel.Requirement.CONDITIONAL) {
-                    migrateOptionalAuthenticationExecution(realm, authFlow, authExecution, true);
-                }
-            }
-        }
+    protected void migrateRealmMFA(RealmModel realm) {
+        realm.getAuthenticationFlowsStream()
+                .forEach(authFlow ->
+                        realm.getAuthenticationExecutionsStream(authFlow.getId())
+                            .filter(exe -> exe.getRequirement() == AuthenticationExecutionModel.Requirement.CONDITIONAL)
+                            .forEachOrdered(exe -> migrateOptionalAuthenticationExecution(realm, authFlow, exe, true)));
     }
 
     public static void migrateOptionalAuthenticationExecution(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionModel optionalExecution, boolean updateOptionalExecution) {

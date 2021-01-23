@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -40,6 +41,8 @@ import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -60,18 +63,26 @@ import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -89,7 +100,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
-    protected String providerId;
+    private String providerId;
 
     protected String addComponent(ComponentRepresentation component) {
         Response resp = adminClient.realm("test").components().add(component);
@@ -108,6 +119,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         provider.setConfig(new MultivaluedHashMap<>());
         provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.CLIENT_ID, "hardcoded-client");
         provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.REDIRECT_URI, oauth.getRedirectUri());
+        provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.DELAYED_SEARCH, Boolean.toString(false));
 
         providerId = addComponent(provider);
     }
@@ -120,9 +132,43 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId("hardcoded-client");
     }
 
+    @Test(timeout = 4000)
+    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
+    public void testSearchTimeout() {
+        String hardcodedClient = HardcodedClientStorageProviderFactory.PROVIDER_ID;
+        String delayedSearch = HardcodedClientStorageProviderFactory.DELAYED_SEARCH;
+        String providerId = this.providerId;
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+            
+            assertThat(session.clientStorageManager()
+                        .searchClientsByClientIdStream(realm, "client", null, null)
+                        .map(ClientModel::getClientId)
+                        .collect(Collectors.toList()), 
+                    allOf(
+                        hasItem(hardcodedClient),
+                        hasItem("root-url-client"))
+                    );
+            
+            //update the provider to simulate delay during the search
+            ComponentModel memoryProvider = realm.getComponent(providerId);
+            memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));
+            realm.updateComponent(memoryProvider);
 
-
-
+        });
+        
+        testingClient.server().run(session -> {
+            // search for clients and check hardcoded-client is not present
+            assertThat(session.clientStorageManager()
+                    .searchClientsByClientIdStream(session.realms().getRealmByName(AuthRealm.TEST), "client", null, null)
+                    .map(ClientModel::getClientId)
+                    .collect(Collectors.toList()),
+                allOf(
+                    not(hasItem(hardcodedClient)), 
+                    hasItem("root-url-client")
+                ));
+        });
+    }
 
     @Test
     public void testClientStats() throws Exception {
@@ -187,7 +233,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testDirectGrant(String clientId) {
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -239,7 +285,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             Calendar eviction = Calendar.getInstance();
             eviction.add(Calendar.HOUR, 1);
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
@@ -262,7 +308,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findAny().get();
             Calendar eviction = Calendar.getInstance();
             eviction.add(Calendar.HOUR, 4 * 24);
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY);
@@ -288,7 +334,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
             model.setMaxLifespan(1 * 60 * 60 * 1000);
             realm.updateComponent(model);
@@ -336,7 +382,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
             realm.updateComponent(model);
         });
@@ -356,7 +402,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     private void setDefaultCachePolicy() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
             realm.updateComponent(model);
         });

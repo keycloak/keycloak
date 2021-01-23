@@ -157,9 +157,12 @@ public class LoginForm extends Form {
         return getTextFromElement(rememberMeLabel);
     }
 
-    public class TotpSetupForm extends Form {
+    public static class TotpSetupForm extends Form {
         @FindBy(id = "totp")
         private WebElement totpInputField;
+
+        @FindBy(id = "userLabel")
+        private WebElement userLabelInputField;
 
         @FindBy(id = "totpSecret")
         private WebElement totpSecret;
@@ -169,6 +172,10 @@ public class LoginForm extends Form {
 
         public void setTotp(String value) {
             UIUtils.setTextInputValue(totpInputField, value);
+        }
+
+        public void setUserLabel(String value) {
+            UIUtils.setTextInputValue(userLabelInputField, value);
         }
         
         public String getTotpSecret() {

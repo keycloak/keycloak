@@ -19,11 +19,14 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.ApplicationsPage;
 import org.keycloak.testsuite.ui.account2.page.DeviceActivityPage;
 import org.keycloak.testsuite.ui.account2.page.LinkedAccountsPage;
+import org.keycloak.testsuite.ui.account2.page.MyResourcesPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
@@ -38,18 +41,21 @@ public class WelcomeScreenTest extends AbstractAccountTest {
     private LinkedAccountsPage linkedAccountsPage;
     @Page
     private ApplicationsPage applicationsPage;
+    @Page
+    private MyResourcesPage myResourcesPage;
 
     @Test
     public void loginLogoutTest() {
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLogoutBtnVisible(false);
-        accountWelcomeScreen.header().assertLocaleVisible(false);
+        assertEquals("", accountWelcomeScreen.header().getToolbarLoggedInUser());
 
         // login
         accountWelcomeScreen.header().clickLoginBtn();
         loginToAccount();
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLoginBtnVisible(false);
+        assertEquals("test user", accountWelcomeScreen.header().getToolbarLoggedInUser());
 
         // try if we're really logged in
         personalInfoPage.navigateTo();
@@ -63,6 +69,7 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLogoutBtnVisible(false);
         accountWelcomeScreen.header().assertLoginBtnVisible(true);
+        assertEquals("", accountWelcomeScreen.header().getToolbarLoggedInUser());
         personalInfoPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(personalInfoPage);
     }
@@ -72,6 +79,12 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         accountWelcomeScreen.clickPersonalInfoLink();
         loginToAccount();
         personalInfoPage.assertCurrent();
+    }
+
+    @Test
+    public void clickLogoTest() {
+        accountWelcomeScreen.clickLogoImage();
+        accountWelcomeScreen.assertCurrent();
     }
 
     @Test
@@ -87,17 +100,22 @@ public class WelcomeScreenTest extends AbstractAccountTest {
 //        accountWelcomeScreen.accountSecurityCard().clickAuthenticator();
 //        authenticatorPage.assertCurrent();
 
+        assertEquals("", accountWelcomeScreen.header().getToolbarLoggedInUser());
         // device activity link
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.clickDeviceActivityLink();
         loginToAccount();
         deviceActivityPage.assertCurrent();
 
+        // linked accounts nav item (this doesn't test welcome page directly but the sidebar after login)
+        personalInfoPage.navigateTo();
+        personalInfoPage.sidebar().assertNavNotPresent(LinkedAccountsPage.LINKED_ACCOUNTS_ID);
+
         // linked accounts link
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.assertLinkedAccountsLinkVisible(false);
         // add simple IdP
-        testRealmResource().identityProviders().create(createIdentityProviderRepresentation("test-idp", "test-provider"));
+        testRealmResource().identityProviders().create(createIdentityProviderRepresentation("test-idp", "google"));
         // test link appeared
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.clickLinkedAccountsLink();
@@ -112,21 +130,21 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         applicationsPage.assertCurrent();
     }
 
-//    @Test
-//    public void resourcesTest() {
-//        assertFalse(accountWelcomeScreen.myResourcesCard().isVisible());
-//
-//        // set user managed access
-//        RealmRepresentation testRealm = testRealmResource().toRepresentation();
-//        testRealm.setUserManagedAccessAllowed(true);
-//        testRealmResource().update(testRealm);
-//
-//        // test my resources appeared
-//        accountWelcomeScreen.navigateTo();
-//        assertTrue(accountWelcomeScreen.myResourcesCard().isVisible());
-//        accountWelcomeScreen.myResourcesCard().clickMyResources();
-//        loginToAccount();
-//        resourcesPage.assertCurrent();
-//        // no need to disable user managed access
-//    }
+    @Test
+    public void resourcesTest() {
+        accountWelcomeScreen.assertMyResourcesCardVisible(false);
+
+        // set user managed access
+        RealmRepresentation testRealm = testRealmResource().toRepresentation();
+        testRealm.setUserManagedAccessAllowed(true);
+        testRealmResource().update(testRealm);
+
+        // test my resources appeared
+        accountWelcomeScreen.navigateTo();
+        accountWelcomeScreen.assertMyResourcesCardVisible(true);
+        accountWelcomeScreen.clickMyResourcesLink();
+        loginToAccount();
+        myResourcesPage.assertCurrent();
+        // no need to disable user managed access
+    }
 }

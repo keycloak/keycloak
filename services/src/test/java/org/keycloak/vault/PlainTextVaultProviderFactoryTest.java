@@ -82,7 +82,7 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public String get(String key) {
-            return vaultDirectory;
+            return "dir".equals(key) ? vaultDirectory : null;
         }
 
         @Override

@@ -34,6 +34,7 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Account;
@@ -75,11 +76,10 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";
-    public static final String AUTH_SERVER_HOST = "localhost-auth-127.0.0.1.nip.io";
-    private static final String hostBackup;
 
     @ArquillianResource
     private Deployer deployer;
@@ -130,10 +130,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         deployer.undeploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }
 
-    static{
-        hostBackup = System.getProperty("auth.server.host", "localhost");
-        System.setProperty("auth.server.host", AUTH_SERVER_HOST);
-    }
 
     @Override
     public void setDefaultPageUriParameters() {
@@ -190,7 +186,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
                 "/auth/admin/master/console/#/server-info");
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
 
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
         Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
                 "\\s+<td [^>]+>([^<]+)</td>");
         Matcher matcher = pattern.matcher(DroneUtils.getCurrentDriver().getPageSource());
@@ -200,10 +195,5 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         }
 
         return null;
-    }
-
-    @AfterClass
-    public static void afterCorsTest() {
-        System.setProperty("auth.server.host", hostBackup);
     }
 }

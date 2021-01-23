@@ -217,64 +217,35 @@ public class LoginPageTest extends AbstractLoginTest {
 
     private void assertRegistrationFields(String firstName, String lastName, String email, String username, boolean password, boolean passwordConfirm) {
         assertTrue(registrationPage.feedbackMessage().isError());
-        final String errorMsg = registrationPage.feedbackMessage().getText();
 
-        if (firstName != null) {
-            assertEquals(firstName, registrationPage.accountFields().getFirstName());
-            assertFalse(registrationPage.accountFields().hasFirstNameError());
-            assertFalse(errorMsg.contains("first name"));
-        }
-        else {
-            assertTrue(registrationPage.accountFields().hasFirstNameError());
-            assertTrue(errorMsg.contains("first name"));
-        }
+        assertRegistrationAvailability(firstName != null, registrationPage.accountFields().hasFirstNameError(),
+                firstName, registrationPage.accountFields().getFirstName());
 
-        if (lastName != null) {
-            assertEquals(lastName, registrationPage.accountFields().getLastName());
-            assertFalse(registrationPage.accountFields().hasLastNameError());
-            assertFalse(errorMsg.contains("last name"));
-        }
-        else {
-            assertTrue(registrationPage.accountFields().hasLastNameError());
-            assertTrue(errorMsg.contains("last name"));
-        }
+        assertRegistrationAvailability(lastName != null, registrationPage.accountFields().hasLastNameError(),
+                lastName, registrationPage.accountFields().getLastName());
 
-        if (email != null) {
-            assertEquals(email, registrationPage.accountFields().getEmail());
-            assertFalse(registrationPage.accountFields().hasEmailError());
-            assertFalse(errorMsg.contains("email"));
-        }
-        else {
-            assertTrue(registrationPage.accountFields().hasEmailError());
-            assertTrue(errorMsg.contains("email"));
-        }
+        assertRegistrationAvailability(email != null, registrationPage.accountFields().hasEmailError(),
+                email, registrationPage.accountFields().getEmail());
 
-        if (username != null) {
-            assertEquals(username, registrationPage.accountFields().getUsername());
-            assertFalse(registrationPage.accountFields().hasUsernameError());
-            assertFalse(errorMsg.contains("username"));
-        }
-        else {
-            assertTrue(registrationPage.accountFields().hasUsernameError());
-            assertTrue(errorMsg.contains("username"));
-        }
+        assertRegistrationAvailability(username != null, registrationPage.accountFields().hasUsernameError(),
+                username, registrationPage.accountFields().getUsername());
 
-        if (password) {
-            assertFalse(registrationPage.passwordFields().hasPasswordError());
-            assertFalse(errorMsg.contains("Please specify password."));
-        }
-        else {
-            assertTrue(registrationPage.passwordFields().hasPasswordError());
-            assertTrue(errorMsg.contains("Please specify password."));
-        }
+        assertRegistrationAvailability(password, registrationPage.passwordFields().hasPasswordError());
+        assertRegistrationAvailability(passwordConfirm, registrationPage.passwordFields().hasConfirmPasswordError());
+    }
 
-        if (passwordConfirm) {
-            assertFalse(registrationPage.passwordFields().hasConfirmPasswordError());
-            assertFalse(registrationPage.feedbackMessage().getText().contains("Password confirmation doesn't match."));
-        }
-        else {
-            assertTrue(registrationPage.passwordFields().hasConfirmPasswordError());
-            assertTrue(registrationPage.feedbackMessage().getText().contains("Password confirmation doesn't match."));
+    private void assertRegistrationAvailability(boolean isAvailable, boolean state) {
+        assertRegistrationAvailability(isAvailable, state, null, null);
+    }
+
+    private void assertRegistrationAvailability(boolean isAvailable, boolean state, String expected, String actual) {
+        if (isAvailable) {
+            assertFalse(state);
+            if (expected != null && actual != null) {
+                assertEquals(expected, actual);
+            }
+        } else {
+            assertTrue(state);
         }
     }
 

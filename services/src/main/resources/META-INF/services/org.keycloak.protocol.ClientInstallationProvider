@@ -16,10 +16,12 @@
 #
 
 org.keycloak.protocol.oidc.installation.KeycloakOIDCClientInstallation
+org.keycloak.protocol.oidc.installation.KeycloakOIDCJbossSubsystemClientCliInstallation
 org.keycloak.protocol.oidc.installation.KeycloakOIDCJbossSubsystemClientInstallation
 org.keycloak.protocol.saml.installation.KeycloakSamlClientInstallation
 org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation
 org.keycloak.protocol.saml.installation.ModAuthMellonClientInstallation
+org.keycloak.protocol.saml.installation.KeycloakSamlSubsystemCliInstallation
 org.keycloak.protocol.saml.installation.KeycloakSamlSubsystemInstallation
 org.keycloak.protocol.docker.installation.DockerVariableOverrideInstallationProvider
 org.keycloak.protocol.docker.installation.DockerRegistryConfigFileInstallationProvider

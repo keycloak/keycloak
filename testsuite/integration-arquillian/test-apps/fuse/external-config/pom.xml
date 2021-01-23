@@ -21,7 +21,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - External Config</name>
@@ -36,16 +36,16 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.apache.http.auth.*;version=${apache.httpcomponents.version},
-            org.apache.http.client.*;version=${apache.httpcomponents.version},
-            org.apache.http.conn.*;version=${apache.httpcomponents.version},
-            org.apache.http.cookie.*;version=${apache.httpcomponents.version},
-            org.apache.http.impl.auth.*;version=${apache.httpcomponents.version},
-            org.apache.http.impl.client.*;version=${apache.httpcomponents.version},
-            org.apache.http.impl.conn.*;version=${apache.httpcomponents.version},
-            org.apache.http.impl.cookie.*;version=${apache.httpcomponents.version},
-            org.apache.http.impl.execchain.*;version=${apache.httpcomponents.version},
-            org.apache.http.*;version=${apache.httpcomponents.httpcore.version},
+            org.apache.http.auth.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.client.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.conn.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.cookie.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.impl.auth.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.impl.client.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.impl.conn.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.impl.cookie.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.impl.execchain.*;version=${apache.httpcomponents.fuse.version},
+            org.apache.http.*;version=${apache.httpcomponents.httpcore.fuse.version},
             javax.servlet.*;version="[3.1,5)",
             org.keycloak.adapters.jetty;version="${project.version}";resolution:=optional,
             org.keycloak.adapters;version="${project.version}",

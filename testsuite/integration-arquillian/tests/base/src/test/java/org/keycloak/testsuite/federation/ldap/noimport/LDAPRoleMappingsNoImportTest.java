@@ -41,6 +41,7 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -142,9 +143,9 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
             // make sure we are in no-import mode!
-            Assert.assertNull(session.userLocalStorage().getUserByUsername("marykeycloak", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak"));
 
             // This role should already exists as it was imported from LDAP
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
@@ -152,7 +153,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             // This role should already exists as it was imported from LDAP
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
 
-            Set<RoleModel> maryRoles = mary.getRealmRoleMappings();
+            Set<RoleModel> maryRoles = mary.getRealmRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertTrue(maryRoles.contains(realmRole1));
             Assert.assertTrue(maryRoles.contains(realmRole2));
 
@@ -171,14 +172,14 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
             // This role should already exists as it was imported from LDAP
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
 
             // This role should already exists as it was imported from LDAP
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
 
-            Set<RoleModel> maryRoles = mary.getRealmRoleMappings();
+            Set<RoleModel> maryRoles = mary.getRealmRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertFalse(maryRoles.contains(realmRole1));
             Assert.assertFalse(maryRoles.contains(realmRole2));
         });
@@ -194,12 +195,12 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
 
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY);
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             // make sure we are in no-import mode
-            Assert.assertNull(session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm));
-            Assert.assertNull(session.userLocalStorage().getUserByUsername("marykeycloak", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak"));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak"));
 
             // 1 - Grant some roles in LDAP
 
@@ -234,40 +235,34 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             // make sure we are in no-import mode
-            Assert.assertNull(session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm));
-            Assert.assertNull(session.userLocalStorage().getUserByUsername("marykeycloak", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak"));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak"));
 
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
             RoleModel realmRole3 = appRealm.getRole("realmRole3");
             ClientModel accountApp = appRealm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             ClientModel financeApp = appRealm.getClientByClientId("finance");
-            RoleModel manageAccountRole = accountApp.getRole(AccountRoles.MANAGE_ACCOUNT);
             RoleModel financeRole1 = financeApp.getRole("financeRole1");
 
             // 3 - Check that role mappings are in LDAP and hence available through federation
 
-            Set<RoleModel> johnRoles = john.getRoleMappings();
+            Set<RoleModel> johnRoles = john.getRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertTrue(johnRoles.contains(realmRole1));
             Assert.assertFalse(johnRoles.contains(realmRole2));
             Assert.assertTrue(johnRoles.contains(realmRole3));
             Assert.assertTrue(johnRoles.contains(financeRole1));
-            Assert.assertTrue(johnRoles.contains(manageAccountRole));
 
-            Set<RoleModel> johnRealmRoles = john.getRealmRoleMappings();
+            Set<RoleModel> johnRealmRoles = john.getRealmRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertEquals(2, johnRealmRoles.size());
             Assert.assertTrue(johnRealmRoles.contains(realmRole1));
             Assert.assertTrue(johnRealmRoles.contains(realmRole3));
 
-            // account roles are not mapped in LDAP. Those are in Keycloak DB
-            Set<RoleModel> johnAccountRoles = john.getClientRoleMappings(accountApp);
-            Assert.assertTrue(johnAccountRoles.contains(manageAccountRole));
-
-            Set<RoleModel> johnFinanceRoles = john.getClientRoleMappings(financeApp);
+            Set<RoleModel> johnFinanceRoles = john.getClientRoleMappingsStream(financeApp).collect(Collectors.toSet());
             Assert.assertEquals(1, johnFinanceRoles.size());
             Assert.assertTrue(johnFinanceRoles.contains(financeRole1));
 
@@ -277,7 +272,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             john.deleteRoleMapping(realmRole1);
             john.deleteRoleMapping(financeRole1);
 
-            johnRoles = john.getRoleMappings();
+            johnRoles = john.getRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertFalse(johnRoles.contains(realmRole1));
             Assert.assertFalse(johnRoles.contains(realmRole2));
             Assert.assertFalse(johnRoles.contains(realmRole3));
@@ -302,13 +297,10 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
 
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY);
 
-            // Set a default role on the realm
-            appRealm.addDefaultRole("realmRole1");
-
             UserModel david = session.users().addUser(appRealm, "davidkeycloak");
 
             // make sure we are in no-import mode
-            Assert.assertNull(session.userLocalStorage().getUserByUsername("davidkeycloak", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "davidkeycloak"));
 
             RoleModel defaultRole = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
@@ -316,16 +308,23 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             Assert.assertNotNull(defaultRole);
             Assert.assertNotNull(realmRole2);
 
-            Set<RoleModel> davidRoles = david.getRealmRoleMappings();
+            // Set a default role on the realm
+            appRealm.addToDefaultRoles(defaultRole);
 
-            Assert.assertTrue(davidRoles.contains(defaultRole));
+            Set<RoleModel> davidRoles = david.getRealmRoleMappingsStream().collect(Collectors.toSet());
+
+            // default role is not assigned directly
+            Assert.assertFalse(davidRoles.contains(defaultRole));
             Assert.assertFalse(davidRoles.contains(realmRole2));
 
-            // Make sure john has not received the default role
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
-            Set<RoleModel> johnRoles = john.getRealmRoleMappings();
+            // but david should have the role as effective
+            Assert.assertTrue(david.hasRole(defaultRole));
+            Assert.assertFalse(david.hasRole(realmRole2));
 
-            Assert.assertFalse(johnRoles.contains(defaultRole));
+            // Make sure john has not received the default role
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+
+            Assert.assertFalse(john.hasRole(defaultRole));
         });
     }
 

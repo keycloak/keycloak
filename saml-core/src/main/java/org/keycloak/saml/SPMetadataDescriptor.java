@@ -17,59 +17,113 @@
 
 package org.keycloak.saml;
 
+import org.keycloak.dom.saml.v2.metadata.EndpointType;
+import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
+
+import java.io.StringWriter;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class SPMetadataDescriptor {
 
-    public static String getSPDescriptor(String binding, String assertionEndpoint, String logoutEndpoint,
-      boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
-      String entityId, String nameIDPolicyFormat, String signingCerts, String encryptionCerts) {
-        String descriptor =
-                "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + entityId + "\">\n" +
-                "    <SPSSODescriptor AuthnRequestsSigned=\"" + wantAuthnRequestsSigned + "\" WantAssertionsSigned=\"" + wantAssertionsSigned + "\"\n" +
-                "            protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext\">\n";
+    public static String getSPDescriptor(URI binding, URI assertionEndpoint, URI logoutEndpoint,
+        boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+        String entityId, String nameIDPolicyFormat, List<Element> signingCerts, List<Element> encryptionCerts) 
+        throws XMLStreamException, ProcessingException, ParserConfigurationException
+    {
+      
+        StringWriter sw = new StringWriter();
+        XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
+        SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
+
+        EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
+        entityDescriptor.setID(IDGenerator.create("ID_"));
+
+        SPSSODescriptorType spSSODescriptor = new SPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
+        spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);
+        spSSODescriptor.setWantAssertionsSigned(wantAssertionsSigned);
+        spSSODescriptor.addNameIDFormat(nameIDPolicyFormat);
+        spSSODescriptor.addSingleLogoutService(new EndpointType(binding, logoutEndpoint));
+
         if (wantAuthnRequestsSigned && signingCerts != null) {
-            descriptor += signingCerts;
+            for (Element key: signingCerts)
+            {
+                KeyDescriptorType keyDescriptor = new KeyDescriptorType();
+                keyDescriptor.setUse(KeyTypes.SIGNING);
+                keyDescriptor.setKeyInfo(key);
+                spSSODescriptor.addKeyDescriptor(keyDescriptor);
+            }
         }
+
         if (wantAssertionsEncrypted && encryptionCerts != null) {
-            descriptor += encryptionCerts;
+            for (Element key: encryptionCerts)
+            {
+                KeyDescriptorType keyDescriptor = new KeyDescriptorType();
+                keyDescriptor.setUse(KeyTypes.ENCRYPTION);
+                keyDescriptor.setKeyInfo(key);
+                spSSODescriptor.addKeyDescriptor(keyDescriptor);
+            }
         }
-        descriptor +=
-                "        <SingleLogoutService Binding=\"" + binding + "\" Location=\"" + logoutEndpoint + "\"/>\n" +
-                "        <NameIDFormat>" + nameIDPolicyFormat + "\n" +
-                "        </NameIDFormat>\n" +
-                "        <AssertionConsumerService\n" +
-                "                Binding=\"" + binding + "\" Location=\"" + assertionEndpoint + "\"\n" +
-                "                index=\"1\" isDefault=\"true\" />\n" +
-                "    </SPSSODescriptor>\n" +
-                "</EntityDescriptor>\n";
-        return descriptor;
+
+        IndexedEndpointType assertionConsumerEndpoint = new IndexedEndpointType(binding, assertionEndpoint);
+        assertionConsumerEndpoint.setIsDefault(true);
+        assertionConsumerEndpoint.setIndex(1);
+        spSSODescriptor.addAssertionConsumerService(assertionConsumerEndpoint);
+
+        entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spSSODescriptor))));
+        metadataWriter.writeEntityDescriptor(entityDescriptor);
+
+        return sw.toString();
     }
 
-    public static String xmlKeyInfo(String indentation, String keyId, String pemEncodedCertificate, String purpose, boolean declareDSigNamespace) {
-        if (pemEncodedCertificate == null) {
-            return "";
+    public static Element buildKeyInfoElement(String keyName, String pemEncodedCertificate)
+        throws javax.xml.parsers.ParserConfigurationException
+    {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.newDocument();
+
+        Element keyInfo = doc.createElementNS(XMLDSIG_NSURI.get(), "ds:KeyInfo");
+
+        if (keyName != null) {
+            Element keyNameElement = doc.createElementNS(XMLDSIG_NSURI.get(), "ds:KeyName");
+            keyNameElement.setTextContent(keyName);
+            keyInfo.appendChild(keyNameElement);
         }
 
-        StringBuilder target = new StringBuilder()
-          .append(indentation).append("<KeyDescriptor use=\"").append(purpose).append("\">\n")
-          .append(indentation).append("  <dsig:KeyInfo").append(declareDSigNamespace ? " xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" : ">\n");
+        Element x509Data = doc.createElementNS(XMLDSIG_NSURI.get(), "ds:X509Data");
 
-        if (keyId != null) {
-            target.append(indentation).append("    <dsig:KeyName>").append(keyId).append("</dsig:KeyName>\n");
-        }
+        Element x509Certificate = doc.createElementNS(XMLDSIG_NSURI.get(), "ds:X509Certificate");
+        x509Certificate.setTextContent(pemEncodedCertificate);
+      
+        x509Data.appendChild(x509Certificate);
 
-        target
-          .append(indentation).append("    <dsig:X509Data>\n")
-          .append(indentation).append("      <dsig:X509Certificate>").append(pemEncodedCertificate).append("</dsig:X509Certificate>\n")
-          .append(indentation).append("    </dsig:X509Data>\n")
-          .append(indentation).append("  </dsig:KeyInfo>\n")
-          .append(indentation).append("</KeyDescriptor>\n")
-        ;
+        keyInfo.appendChild(x509Data);
 
-        return target.toString();
+        return keyInfo;
     }
-
 }

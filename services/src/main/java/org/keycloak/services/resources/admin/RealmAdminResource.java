@@ -16,71 +16,27 @@
  */
 package org.keycloak.services.resources.admin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.Config;
-import org.keycloak.KeyPairVerifier;
-import org.keycloak.authentication.CredentialRegistrator;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.credential.CredentialProvider;
-import org.keycloak.email.EmailTemplateProvider;
-import org.keycloak.events.Event;
-import org.keycloak.events.EventQuery;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.exportimport.ClientDescriptionConverter;
-import org.keycloak.exportimport.ClientDescriptionConverterFactory;
-import org.keycloak.exportimport.util.ExportOptions;
-import org.keycloak.exportimport.util.ExportUtils;
-import org.keycloak.keys.PublicKeyStorageProvider;
-import org.keycloak.models.*;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.UserCache;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.partialimport.PartialImportManager;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.adapters.action.GlobalRequestResult;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.PartialImportRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.LDAPConnectionTestManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.managers.UserStorageSyncManager;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.storage.UserStorageProviderModel;
+import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
+import static org.keycloak.util.JsonSerialization.readValue;
 
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -92,19 +48,75 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
-import static org.keycloak.util.JsonSerialization.readValue;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
+import org.keycloak.KeyPairVerifier;
+import org.keycloak.authentication.CredentialRegistrator;
+import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.exportimport.ClientDescriptionConverter;
+import org.keycloak.exportimport.ClientDescriptionConverterFactory;
+import org.keycloak.exportimport.util.ExportOptions;
+import org.keycloak.exportimport.util.ExportUtils;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.partialimport.PartialImportManager;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.utils.ReservedCharValidator;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.keycloak.utils.ServicesUtils;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -152,13 +164,12 @@ public class RealmAdminResource {
             throw new NotFoundException("Realm not found.");
         }
 
-        for (ProviderFactory<ClientDescriptionConverter> factory : session.getKeycloakSessionFactory().getProviderFactories(ClientDescriptionConverter.class)) {
-            if (((ClientDescriptionConverterFactory) factory).isSupported(description)) {
-                return factory.create(session).convertToInternal(description);
-            }
-        }
-
-        throw new BadRequestException("Unsupported format");
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientDescriptionConverter.class)
+                .map(ClientDescriptionConverterFactory.class::cast)
+                .filter(factory -> factory.isSupported(description))
+                .map(factory -> factory.create(session).convertToInternal(description))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Unsupported format"));
     }
 
     /**
@@ -208,6 +219,15 @@ public class RealmAdminResource {
         return clientScopesResource;
     }
 
+    /**
+     * Base path for managing localization under this realm.
+     */
+    @Path("localization")
+    public RealmLocalizationResource getLocalization() {
+        RealmLocalizationResource resource = new RealmLocalizationResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
 
     /**
      * Get realm default client scopes.  Only name and ids are returned.
@@ -218,21 +238,19 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-default-client-scopes")
-    public List<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
+    public Stream<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
         return getDefaultClientScopes(true);
     }
 
-    private List<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
+    private Stream<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
         auth.clients().requireViewClientScopes();
 
-        List<ClientScopeRepresentation> defaults = new LinkedList<>();
-        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(defaultScope)) {
+        return realm.getDefaultClientScopesStream(defaultScope).map(clientScope -> {
             ClientScopeRepresentation rep = new ClientScopeRepresentation();
             rep.setId(clientScope.getId());
             rep.setName(clientScope.getName());
-            defaults.add(rep);
-        }
-        return defaults;
+            return rep;
+        });
     }
 
 
@@ -281,7 +299,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-optional-client-scopes")
-    public List<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
+    public Stream<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
         return getDefaultClientScopes(false);
     }
 
@@ -388,6 +406,9 @@ public class RealmAdminResource {
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             return ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
+        
+        ReservedCharValidator.validate(rep.getRealm());
+        ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
@@ -413,11 +434,9 @@ public class RealmAdminResource {
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            List<UserStorageProviderModel> federationProviders = realm.getUserStorageProviders();
             UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            for (final UserStorageProviderModel fedProvider : federationProviders) {
-                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
-            }
+            realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
+                    usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false));
 
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
             
@@ -597,7 +616,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getClientSessionStats() {
+    public Stream<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
         Map<String, Map<String, String>> data = new HashMap<>();
@@ -632,10 +651,8 @@ public class RealmAdminResource {
                 map.put("offline", entry.getValue().toString());
             }
         }
-        List<Map<String, String>> result = new LinkedList<>();
-        for (Map<String, String> item : data.values())
-            result.add(item);
-        return result;
+
+        return data.values().stream();
     }
 
     /**
@@ -654,12 +671,11 @@ public class RealmAdminResource {
 
         RealmEventsConfigRepresentation config = ModelToRepresentation.toEventsConfigReprensetation(realm);
         if (config.getEnabledEventTypes() == null || config.getEnabledEventTypes().isEmpty()) {
-            config.setEnabledEventTypes(new LinkedList<String>());
-            for (EventType e : EventType.values()) {
-                if (e.isSaveByDefault()) {
-                    config.getEnabledEventTypes().add(e.name());
-                }
-            }
+            List<String> eventTypes = Arrays.stream(EventType.values())
+                    .filter(EventType::isSaveByDefault)
+                    .map(EventType::name)
+                    .collect(Collectors.toList());
+            config.setEnabledEventTypes(eventTypes);
         }
         return config;
     }
@@ -705,7 +721,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+    public Stream<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
                                                @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
                                                @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
@@ -764,15 +780,7 @@ public class RealmAdminResource {
             query.maxResults(Constants.DEFAULT_MAX_RESULTS);
         }
 
-        return toEventListRep(query.getResultList());
-    }
-
-    private List<EventRepresentation> toEventListRep(List<Event> events) {
-        List<EventRepresentation> reps = new ArrayList<>();
-        for (Event event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-        return reps;
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -796,7 +804,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+    public Stream<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
                                                     @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
                                                     @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
                                                     @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
@@ -876,16 +884,7 @@ public class RealmAdminResource {
             query.maxResults(Constants.DEFAULT_MAX_RESULTS);
         }
 
-        return toAdminEventRep(query.getResultList());
-    }
-
-    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
-        List<AdminEventRepresentation> reps = new ArrayList<>();
-        for (AdminEvent event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-
-        return reps;
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -926,18 +925,51 @@ public class RealmAdminResource {
     @Path("testLDAPConnection")
     @POST
     @NoCache
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Deprecated
     public Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
                                        @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
                                        @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout,
                                        @FormParam("componentId") String componentId, @FormParam("startTls") String startTls) {
         auth.realm().requireManageRealm();
 
-        if (componentId != null && bindCredential.equals(ComponentRepresentation.SECRET_VALUE)) {
-            bindCredential = realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
-        }
-
-        boolean result = LDAPConnectionTestManager.testLDAP(session, action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls);
+        TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
+        config.setComponentId(componentId);
+        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+    }
+
+    /**
+     * Test LDAP connection
+     * @return
+     */
+    @Path("testLDAPConnection")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
+        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
+        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+    }
+
+    /**
+     * Get LDAP supported extensions.
+     * @param config LDAP configuration
+     * @return
+     */
+    @POST
+    @Path("ldap-server-capabilities")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
+        auth.realm().requireManageRealm();
+        try {
+            Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
+            return Response.ok().entity(ldapCapabilities).build();
+        } catch (Exception e) {
+            return ErrorResponse.error("ldapServerCapabilities error", Status.BAD_REQUEST);
+        }
     }
 
     /**
@@ -947,13 +979,22 @@ public class RealmAdminResource {
      * @return
      * @throws Exception
      */
-    @Path("testSMTPConnection/{config}")
+    @Path("testSMTPConnection")
     @POST
     @NoCache
-    public Response testSMTPConnection(final @PathParam("config") String config) throws Exception {
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Deprecated
+    public Response testSMTPConnection(final @FormParam("config") String config) throws Exception {
         Map<String, String> settings = readValue(config, new TypeReference<Map<String, String>>() {
         });
+        return testSMTPConnection(settings);
+    }
 
+    @Path("testSMTPConnection")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response testSMTPConnection(Map<String, String> settings) throws Exception {
         try {
             UserModel user = auth.adminAuth().getUser();
             if (user.getEmail() == null) {
@@ -986,14 +1027,10 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
-    public List<GroupRepresentation> getDefaultGroups() {
+    public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        List<GroupRepresentation> defaults = new LinkedList<>();
-        for (GroupModel group : realm.getDefaultGroups()) {
-            defaults.add(ModelToRepresentation.toRepresentation(group, false));
-        }
-        return defaults;
+        return realm.getDefaultGroupsStream().map(ServicesUtils::groupToBriefRepresentation);
     }
     @PUT
     @NoCache
@@ -1088,7 +1125,10 @@ public class RealmAdminResource {
             auth.clients().requireView();
         }
 
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported);
+        // service accounts are exported if the clients are exported
+        // this means that if clients is true but groups/roles is false the service account is exported without roles
+        // the other option is just include service accounts if clientsExported && groupsAndRolesExported
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
     }
@@ -1155,13 +1195,12 @@ public class RealmAdminResource {
     @Path("credential-registrators")
     @NoCache
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public List<String> getCredentialRegistrators(){
+    public Stream<String> getCredentialRegistrators(){
         auth.realm().requireViewRealm();
-        return session.getContext().getRealm().getRequiredActionProviders().stream()
-                .filter(ra -> ra.isEnabled())
+        return session.getContext().getRealm().getRequiredActionProvidersStream()
+                .filter(RequiredActionProviderModel::isEnabled)
                 .map(RequiredActionProviderModel::getProviderId)
-                .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator)
-                .collect(Collectors.toList());
+                .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator);
     }
 
 }

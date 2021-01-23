@@ -3,6 +3,7 @@ language: java
 cache:
   directories:
     - $HOME/.m2
+    - $HOME/.npm
 
 before_cache:
   - rm -rf $HOME/.m2/repository/org/keycloak

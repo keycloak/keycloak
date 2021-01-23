@@ -14,6 +14,8 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -28,15 +30,17 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.PageFactory;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 
@@ -59,7 +63,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testErrorExistingUserWithUpdateProfile() {
         createUser("consumer");
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
@@ -83,7 +87,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         String existingUser = createUser("consumer");
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
@@ -91,7 +95,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        assertEquals("Authenticate as consumer to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -106,12 +110,149 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         }
 
         loginPage.login("password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         assertNumFederatedIdentities(existingUser, 1);
     }
 
+    /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationWithUsernameAndPassword() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        String existingUser = createUser("consumer");
+        String anotherUser = createUser("foobar", "foo@bar.baz");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        waitForPage(driver, "account already exists", false);
+        assertTrue(idpConfirmLinkPage.isCurrent());
+        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.login("foobar", "password");
+        waitForAccountManagementTitle();
+        accountUpdateProfilePage.assertCurrent();
+
+        assertNumFederatedIdentities(existingUser, 0);
+        assertNumFederatedIdentities(anotherUser, 1);
+    }
+
+    /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationNoExistingUser() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+        String existingUser = createUser("consumer");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.login("consumer", "password");
+        waitForAccountManagementTitle();
+        accountUpdateProfilePage.assertCurrent();
+
+        assertNumFederatedIdentities(existingUser, 1);
+    }
+
+    /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationResetPassword() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        String existingUser = createUser("consumer");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        waitForPage(driver, "account already exists", false);
+        assertTrue(idpConfirmLinkPage.isCurrent());
+        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.resetPassword();
+        loginPasswordResetPage.assertCurrent();
+        assertEquals("consumer", loginPasswordResetPage.getUsername());
+    }
+
+    /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationResetPasswordNoExistingUser() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+        String existingUser = createUser("consumer");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.resetPassword();
+        loginPasswordResetPage.assertCurrent();
+        assertTrue(loginPasswordResetPage.getUsername().isEmpty());
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword_browserButtons
@@ -129,11 +270,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
@@ -147,7 +288,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         // Click browser 'back' and then 'forward' and then continue
         driver.navigate().back();
         assertTrue(driver.getPageSource().contains("You are already logged in."));
-        driver.navigate().forward();
+        driver.navigate().forward(); // here a new execution ID is added to the URL using JS, see below
         idpConfirmLinkPage.assertCurrent();
 
         // Click browser 'back' on review profile page
@@ -155,6 +296,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         driver.navigate().back();
+        // JS-capable browsers (i.e. all except HtmlUnit) add a new execution ID to the URL which then causes the login expire page to appear (because the old ID and new ID don't match)
+        if (!(driver instanceof HtmlUnitDriver)) {
+            loginExpiredPage.assertCurrent();
+            loginExpiredPage.clickLoginContinueLink();
+        }
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "FirstName", "LastName");
@@ -163,11 +309,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         idpConfirmLinkPage.assertCurrent();
         idpConfirmLinkPage.clickLinkAccount();
 
-        // Login screen shown. Username is prefilled and disabled. Registration link and social buttons are not shown
+        // Login screen shown. Username is prefilled. Registration link and social buttons are not shown
         assertEquals("consumer", loginPage.getUsername());
-        assertFalse(loginPage.isUsernameInputEnabled());
+        assertTrue(loginPage.isUsernameInputEnabled());
 
-        assertEquals("Authenticate as consumer to link your account with " + bc.getIDPAlias(), this.loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), this.loginPage.getInfoMessage());
 
         try {
             loginPage.findSocialButton(bc.getIDPAlias());
@@ -177,7 +323,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Use correct password now
         loginPage.login("password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         assertNumFederatedIdentities(userId, 1);
     }
@@ -206,7 +352,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         logInWithBroker(bc);
 
@@ -217,6 +363,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         this.loginPage.resetPassword();
+        this.loginPasswordResetPage.assertCurrent();
+        this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
         assertEquals(1, MailServer.getReceivedMessages().length);
         MimeMessage message = MailServer.getLastReceivedMessage();
@@ -229,7 +377,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.passwordUpdatePage.assertCurrent();
         this.passwordUpdatePage.changePassword("password", "password");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         assertNumFederatedIdentities(existingUser, 1);
     }
@@ -258,7 +406,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
@@ -268,6 +416,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         this.loginPage.resetPassword();
+        this.loginPasswordResetPage.assertCurrent();
+        this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
         assertEquals(1, MailServer.getReceivedMessages().length);
         MimeMessage message = MailServer.getLastReceivedMessage();
@@ -306,10 +456,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testFirstBrokerLoginFlowUpdateProfileOff() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -327,7 +477,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "account already exists", false);
@@ -344,7 +494,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
@@ -366,7 +516,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testRequiredUpdatedPassword() {
         updateExecutions(AbstractBrokerTest::enableRequirePassword);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
@@ -378,7 +528,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForPage(driver, "update password", false);
         updatePasswordPage.updatePasswords("password", "password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -396,7 +546,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         consumerUser.setEmail(bc.getUserEmail());
         userResource.update(consumerUser);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
@@ -420,7 +570,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
         updateAccountInformationPage.updateAccountInformation("test", "test@localhost.com", "FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -441,6 +591,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         hardCodedSessionNoteMapper.setIdentityProviderAlias(bc.getIDPAlias());
         hardCodedSessionNoteMapper.setIdentityProviderMapper(HardcodedUserSessionAttributeMapper.PROVIDER_ID);
         hardCodedSessionNoteMapper.setConfig(ImmutableMap.<String, String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderSyncMode.IMPORT.toString())
                 .put(HardcodedUserSessionAttributeMapper.ATTRIBUTE_VALUE, "sessionvalue")
                 .put(HardcodedUserSessionAttributeMapper.ATTRIBUTE, "user-session-attr")
                 .build());
@@ -448,7 +599,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         Response response = idpResource.addMapper(hardCodedSessionNoteMapper);
         response.close();
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         logInWithBroker(bc);
 
@@ -456,7 +607,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         testingClient.server().run(assertHardCodedSessionNote());
     }
@@ -475,7 +626,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         realmRep.setRegistrationEmailAsUsername(true);
         realm.update(realmRep);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
@@ -490,7 +641,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         }
 
         updateAccountInformationPage.updateAccountInformation("test@redhat.com", "FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         assertEquals(1, realm.users().search("test@redhat.com").size());
@@ -508,7 +659,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String linkedUserId = createUser("consumer");
 
         //test
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
@@ -557,7 +708,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         configureSMTPServer();
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
@@ -570,7 +721,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 "verify your email address", false);
 
         driver.navigate().to(verificationUrl.trim());
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -591,16 +742,16 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.providerRealmName(), "no-email", "password", "FirstName", "LastName", null);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
         loginPage.login("no-email", "password");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         List<UserRepresentation> users = realm.users().search("no-email");
@@ -630,14 +781,14 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         identityProviderResource.update(idpRep);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         List<UserRepresentation> users = realm.users().search(bc.getUserLogin());
@@ -667,7 +818,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         configureSMTPServer();
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
@@ -680,7 +831,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 "verify your email address", false);
 
         driver.navigate().to(verificationUrl.trim());
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         List<UserRepresentation> users = realm.users().search(bc.getUserLogin());
@@ -704,7 +855,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         userResource.update(consumerUser);
         configureSMTPServer();
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         //link account by email
@@ -726,7 +877,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         driver.navigate().to(url);
         waitForPage(driver, "you are already logged in.", false);
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         driver.navigate().to(url);
         waitForPage(driver, "confirm linking the account testuser of identity provider " + bc.getIDPAlias() + " with your account.", false);
@@ -749,7 +900,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         userResource.update(consumerUser);
         configureSMTPServer();
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         //link account by email
@@ -779,7 +930,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         //create user on consumer's site who should be linked later
         String linkedUserId = createUser("consumer");
 
-        driver.navigate().to(getLoginUrl(bc.consumerRealmName(), "broker-app"));
+        driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
@@ -826,10 +977,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
 
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
@@ -838,16 +989,16 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
-        logoutFromRealm(bc.providerRealmName());
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
         createUser(bc.providerRealmName(), "no-last-name", "password", "FirstName", null, "no-last-name@localhost.com");
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
@@ -856,16 +1007,16 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
-        logoutFromRealm(bc.providerRealmName());
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
         createUser(bc.providerRealmName(), "no-email", "password", "FirstName", "LastName", null);
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
@@ -875,7 +1026,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("no-email@localhost.com", "FirstName", "LastName");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -888,16 +1039,16 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
         createUser(bc.providerRealmName(), "all-info-set", "password", "FirstName", "LastName", "all-info-set@localhost.com");
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
         loginPage.login("all-info-set", "password");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -909,9 +1060,9 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testWithoutUpdateProfile() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -924,86 +1075,12 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testAutoLinkAccountWithBroker() {
         testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
     }
-
-
-    @Test
-    public void testFormBackButton() {
-        updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-
-        String existingUser = createUser("consumer");
-
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-
-        // Assert "back" button not available
-        updateAccountInformationPage.assertBackButtonAvailability(false);
-
-        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-
-        waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
-        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
-
-        // Assert "back" button available. Click it.
-        idpConfirmLinkPage.assertBackButtonAvailability(true);
-        idpConfirmLinkPage.clickBackButton();
-
-        // Assert on "update profile" page. "Back" button shouldn't still be available
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        updateAccountInformationPage.assertBackButtonAvailability(false);
-
-        // Update profile and click "Confirm link"
-        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-
-        waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
-        idpConfirmLinkPage.clickLinkAccount();
-
-        assertEquals("Authenticate as consumer to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
-        loginPage.assertBackButtonAvailability(true);
-
-        // Click "Back" button two times. Should be on "Review profile" page
-        loginPage.clickBackButton();
-        waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
-        idpConfirmLinkPage.assertBackButtonAvailability(true);
-        idpConfirmLinkPage.clickBackButton();
-
-        // Assert on "update profile" page. "Back" button shouldn't still be available
-        waitForPage(driver, "update account information", false);
-        updateAccountInformationPage.assertCurrent();
-        updateAccountInformationPage.assertBackButtonAvailability(false);
-
-        // Finally authenticate
-        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-
-        waitForPage(driver, "account already exists", false);
-        assertTrue(idpConfirmLinkPage.isCurrent());
-        idpConfirmLinkPage.clickLinkAccount();
-
-        loginPage.login("password");
-        waitForPage(driver, "keycloak account management", true);
-        accountUpdateProfilePage.assertCurrent();
-
-        assertNumFederatedIdentities(existingUser, 1);
-    }
-
 
 }

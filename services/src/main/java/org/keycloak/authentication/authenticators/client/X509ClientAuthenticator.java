@@ -53,7 +53,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
 
             MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
-            MultivaluedMap<String, String> queryParams = context.getHttpRequest().getUri().getQueryParameters();
+            MultivaluedMap<String, String> queryParams = context.getSession().getContext().getUri().getQueryParameters();
 
             if (formData != null) {
                 client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);

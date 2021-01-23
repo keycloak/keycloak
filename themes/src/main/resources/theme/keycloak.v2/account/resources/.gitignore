@@ -1,0 +1,14 @@
+# ignore typescript-generated files
+*.js
+*.js.map
+
+# ignore log files
+*.log
+
+# Don't ignore these
+!WelcomePageScripts.js
+!content.json
+
+public/app.css
+public/base.css
+public/assets/

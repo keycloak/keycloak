@@ -26,6 +26,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -33,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
@@ -42,6 +44,10 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
@@ -111,7 +117,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response process(MultivaluedMap<String, String> params) {
-        String clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        String clientId = AuthorizationEndpointRequestParserProcessor.getClientId(event, session, params);
 
         checkSsl();
         checkRealm();
@@ -125,8 +131,19 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return errorResponse;
         }
 
+        if (request.getInvalidRequestMessage() != null) {
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, Errors.INVALID_REQUEST, request.getInvalidRequestMessage());
+        }
+
         if (!TokenUtil.isOIDCRequest(request.getScope())) {
             ServicesLogger.LOGGER.oidcScopeMissing();
+        }
+
+        if (!TokenManager.isValidScope(request.getScope(), client)) {
+            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + request.getScope());
         }
 
         errorResponse = checkOIDCParams();
@@ -138,6 +155,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         errorResponse = checkPKCEParams();
         if (errorResponse != null) {
             return errorResponse;
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params));
+        } catch (ClientPolicyException cpe) {
+            return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
         }
 
         authenticationSession = createAuthenticationSession(client, request.getState());
@@ -233,7 +256,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 action = Action.CODE;
             }
         } catch (IllegalArgumentException iae) {
-            logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
@@ -321,7 +343,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return false;
         }
         Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(codeChallenge);
-        return m.matches() ? true : false;
+        return m.matches();
     }
 
     private Response checkParamsForPkceEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) {
@@ -438,6 +460,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (request.getClaims()!= null) authenticationSession.setClientNote(OIDCLoginProtocol.CLAIMS_PARAM, request.getClaims());
         if (request.getAcr() != null) authenticationSession.setClientNote(OIDCLoginProtocol.ACR_PARAM, request.getAcr());
         if (request.getDisplay() != null) authenticationSession.setAuthNote(OAuth2Constants.DISPLAY, request.getDisplay());
+        if (request.getUiLocales() != null) authenticationSession.setAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
 
         // https://tools.ietf.org/html/rfc7636#section-4
         if (request.getCodeChallenge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());

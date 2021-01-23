@@ -1,8 +1,11 @@
 package org.keycloak.testsuite.oauth;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -12,7 +15,13 @@ import javax.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -49,12 +58,12 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     }
     
     @Test
-    public void specifySingleNotExistingScopeTest() throws Exception {
+    public void specifyEmptyScopeTest() throws Exception {
         String loginUser = "john-doh@localhost";
         String loginPassword = "password";
         String clientSecret = "password";
         
-    	String requestedScope = "user";
+    	String requestedScope = "";
     	String expectedScope = "openid profile email";
     	
     	oauth.scope(requestedScope);
@@ -64,6 +73,92 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
     }
+
+    @Test
+    public void failCodeNotExistingScope() throws Exception {
+        String loginUser = "john-doh@localhost";
+        String loginPassword = "password";
+        String clientSecret = "password";
+
+        ClientsResource clients = realmsResouce().realm("test").clients();
+        ClientRepresentation clientRep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientResource client = clients.get(clientRep.getId());
+        List<ClientScopeRepresentation> scopes = client.getDefaultClientScopes();
+
+        for (ClientScopeRepresentation scope : scopes) {
+            client.removeDefaultClientScope(scope.getId());                        
+        }
+
+        oauth.openid(false);
+        
+        oauth.scope("user openid phone");
+        oauth.openLoginForm();
+        MultivaluedHashMap<String, String> queryParams = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
+        assertEquals("invalid_scope", queryParams.getFirst("error"));
+        assertTrue(queryParams.getFirst("error_description").startsWith("Invalid scopes"));
+
+        oauth.scope("user");
+        oauth.openLoginForm();
+        queryParams = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
+        assertEquals("invalid_scope", queryParams.getFirst("error"));
+        assertTrue(queryParams.getFirst("error_description").startsWith("Invalid scopes"));
+
+        oauth.scope("phone");
+        oauth.doLogin(loginUser, loginPassword);
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        expectSuccessfulResponseFromTokenEndpoint(code, "phone", clientSecret);
+
+        oauth.openLogout();
+        oauth.scope(null);
+        oauth.doLogin(loginUser, loginPassword);
+        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        expectSuccessfulResponseFromTokenEndpoint(code, "", clientSecret);
+
+        for (ClientScopeRepresentation scope : scopes) {
+            client.addDefaultClientScope(scope.getId());
+        }
+    }
+
+    @Test
+    public void failTokenNotExistingScope() throws Exception {
+        String loginUser = "john-doh@localhost";
+        String loginPassword = "password";
+        String clientSecret = "password";
+
+        ClientsResource clients = realmsResouce().realm("test").clients();
+        ClientRepresentation clientRep = clients.findByClientId(oauth.getClientId()).get(0);
+        clientRep.setDirectAccessGrantsEnabled(true);
+        ClientResource client = clients.get(clientRep.getId());
+        client.update(clientRep);
+
+        List<ClientScopeRepresentation> scopes = client.getDefaultClientScopes();
+
+        for (ClientScopeRepresentation scope : scopes) {
+            client.removeDefaultClientScope(scope.getId());
+        }
+
+        oauth.openid(false);
+        oauth.scope("user phone");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        
+        assertNotNull(response.getError());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+
+        oauth.scope("user");
+        response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+
+        assertNotNull(response.getError());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+
+        oauth.scope(null);
+        response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+
+        assertNotNull(response.getAccessToken());
+
+        for (ClientScopeRepresentation scope : scopes) {
+            client.addDefaultClientScope(scope.getId());
+        }
+    }
     
     @Test
     public void specifyMultipleScopeTest() throws Exception {
@@ -71,7 +166,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String loginPassword = "password";
         String clientSecret = "password";
         
-    	String requestedScope = "user address";
+    	String requestedScope = "address";
     	String expectedScope = "openid profile email address";
     	
     	oauth.scope(requestedScope);

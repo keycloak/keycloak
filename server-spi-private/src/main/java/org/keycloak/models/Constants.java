@@ -44,9 +44,12 @@ public final class Constants {
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     public static final String INSTALLED_APP_URL = "http://localhost";
+    public static final String INSTALLED_APP_LOOPBACK = "http://127.0.0.1";
+
     public static final String READ_TOKEN_ROLE = "read-token";
     public static final String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
     public static final String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
+    public static final String DEFAULT_ROLES_ROLE_PREFIX = "default-roles";
 
     public static final String AUTHZ_UMA_PROTECTION = "uma_protection";
     public static final String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
@@ -64,6 +67,9 @@ public final class Constants {
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
+
+    // Prefix used for the realm attributes and other places
+    public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
 
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
