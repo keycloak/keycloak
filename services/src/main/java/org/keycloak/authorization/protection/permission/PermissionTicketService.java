@@ -81,23 +81,23 @@ public class PermissionTicketService {
             throw new ErrorResponseException("invalid_permission", "created permissions should have scope or scopeName", Response.Status.BAD_REQUEST);
         if (representation.getRequester() == null && representation.getRequesterName() == null)
             throw new ErrorResponseException("invalid_permission", "created permissions should have requester or requesterName", Response.Status.BAD_REQUEST);
-         
+
         ResourceStore rstore = this.authorization.getStoreFactory().getResourceStore();
         Resource resource = rstore.findById(representation.getResource(), resourceServer.getId());
         if (resource == null ) throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not exists in this server.", Response.Status.BAD_REQUEST);
-        
+
         if (!resource.getOwner().equals(this.identity.getId()))
             throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be only created by the owner", Response.Status.FORBIDDEN);
-        
+
         UserModel user = null;
         if(representation.getRequester() != null)
             user = this.authorization.getKeycloakSession().userStorageManager().getUserById(this.authorization.getRealm(), representation.getRequester());
-        else 
+        else
             user = this.authorization.getKeycloakSession().userStorageManager().getUserByUsername(this.authorization.getRealm(), representation.getRequesterName());
-        
+
         if (user == null)
             throw new ErrorResponseException("invalid_permission", "Requester does not exists in this server as user.", Response.Status.BAD_REQUEST);
-        
+
         Scope scope = null;
         ScopeStore sstore = this.authorization.getStoreFactory().getScopeStore();
 
@@ -114,16 +114,16 @@ public class PermissionTicketService {
         boolean match = resource.getScopes().contains(scope);
 
         if (!match)
-           throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not have Scope [" + scope.getName() + "]", Response.Status.BAD_REQUEST);     
-        
+           throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not have Scope [" + scope.getName() + "]", Response.Status.BAD_REQUEST);
+
         Map<String, String> attributes = new HashMap<>();
         attributes.put(PermissionTicket.RESOURCE, resource.getId());
         attributes.put(PermissionTicket.SCOPE, scope.getId());
         attributes.put(PermissionTicket.REQUESTER, user.getId());
-        
+
         if (!ticketStore.find(attributes, resourceServer.getId(), -1, -1).isEmpty())
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
-        
+
         PermissionTicket ticket = ticketStore.create(resource.getId(), scope.getId(), user.getId(), resourceServer);
         if(representation.isGranted())
                 ticket.setGrantedTimestamp(java.lang.System.currentTimeMillis());
@@ -144,7 +144,7 @@ public class PermissionTicketService {
         if (ticket == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
         }
-        
+
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer())
             throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be updated only by the owner or by the resource server", Response.Status.FORBIDDEN);
 
@@ -153,7 +153,7 @@ public class PermissionTicketService {
         return Response.noContent().build();
     }
 
-    
+
     @Path("{id}")
     @DELETE
     @Consumes("application/json")
@@ -168,7 +168,7 @@ public class PermissionTicketService {
         if (ticket == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
         }
-        
+
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer() && !ticket.getRequester().equals(this.identity.getId()))
             throw new ErrorResponseException("not_authorised", "permissions for [" + ticket.getResource() + "] can be deleted only by the owner, the requester, or the resource server", Response.Status.FORBIDDEN);
 
@@ -224,6 +224,51 @@ public class PermissionTicketService {
                         .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
                         .collect(Collectors.toList()))
                 .build();
+    }
+
+    @Path("/count")
+    @GET
+    public Response getResourceCount(@QueryParam("scopeId") String scopeId,
+                                       @QueryParam("resourceId") String resourceId,
+                                       @QueryParam("owner") String owner,
+                                       @QueryParam("requester") String requester,
+                                       @QueryParam("granted") Boolean granted,
+                                       @QueryParam("returnNames") Boolean returnNames) {
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        PermissionTicketStore permissionTicketStore = storeFactory.getPermissionTicketStore();
+        Map<String, String> filters = new HashMap<>();
+
+        if (resourceId != null) {
+            filters.put(PermissionTicket.RESOURCE, resourceId);
+        }
+
+        if (scopeId != null) {
+            ScopeStore scopeStore = storeFactory.getScopeStore();
+            Scope scope = scopeStore.findById(scopeId, resourceServer.getId());
+
+            if (scope == null) {
+                scope = scopeStore.findByName(scopeId, resourceServer.getId());
+            }
+
+            filters.put(PermissionTicket.SCOPE, scope != null ? scope.getId() : scopeId);
+        }
+
+        if (owner != null) {
+            filters.put(PermissionTicket.OWNER, getUserId(owner));
+        }
+
+        if (requester != null) {
+            filters.put(PermissionTicket.REQUESTER, getUserId(requester));
+        }
+
+        if (granted != null) {
+            filters.put(PermissionTicket.GRANTED, granted.toString());
+        }
+        long count = permissionTicketStore.count(filters, resourceServer.getId());
+
+        Map<String, Long> map = new HashMap<>();
+        map.put("count", count);
+        return Response.ok().entity(map).build();
     }
 
     private String getUserId(String userIdOrName) {

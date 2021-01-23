@@ -32,6 +32,15 @@ import org.keycloak.authorization.model.ResourceServer;
 public interface PermissionTicketStore {
 
     /**
+     * Returns a list of {@link PermissionTicket}, filtered by the given attributes.
+     *
+     * @param attributes permission tickets that do not match the attributes are not included with the count.
+     * @param resourceServerId the resource server id
+     * @return an integer indicating the amount of permission tickets
+     */
+    long count(Map<String, String> attributes, String resourceServerId);
+
+    /**
      * Creates a new {@link PermissionTicket} instance.
      *
      * @param permission the policy representation
@@ -113,7 +122,7 @@ public interface PermissionTicketStore {
 
     /**
      * Returns a list of {@link Resource} granted to the given {@code requester}
-     * 
+     *
      * @param requester the requester
      * @param name the keyword to query resources by name or null if any resource
      * @param first first  result
