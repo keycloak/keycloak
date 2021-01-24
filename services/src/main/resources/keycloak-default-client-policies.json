@@ -1,0 +1,18 @@
+{
+  "policies": [
+    {
+      "name": "builtin-default-policy",
+      "description": "The built-in default policy applied to all clients.",
+      "builtin": true,
+      "enable": false,
+      "conditions": [
+        {
+          "anyclient-condition": {}
+        }
+      ],
+      "profiles": [
+        "builtin-default-profile"
+      ]
+    }
+  ]
+}

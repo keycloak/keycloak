@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -34,26 +33,34 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider {
 
     private static final Logger logger = Logger.getLogger(SecureRedirectUriEnforceExecutor.class);
+    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
+    private String logMsgPrefix() {
+        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
+    }
 
     private final KeycloakSession session;
-    private final ComponentModel componentModel;
 
-    public SecureRedirectUriEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public SecureRedirectUriEnforceExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public void setupConfiguration(Object config) {
+        // no setup configuration item
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration {
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -87,10 +94,11 @@ public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorPro
         }
 
         for(String redirectUri : redirectUris) {
-            ClientPolicyLogger.log(logger, "Redirect URI = " + redirectUri);
+            ClientPolicyLogger.logv(logger, "{0} :: Redirect URI = {1}", logMsgPrefix(), redirectUri);
             if (redirectUri.startsWith("http://") || redirectUri.contains("*")) {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: redirect_uris");
             }
         }
     }
+
 }

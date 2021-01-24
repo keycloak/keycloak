@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,6 @@ package org.keycloak.services.clientpolicy.executor;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -29,26 +28,34 @@ import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.util.TokenUtil;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider {
 
     private static final Logger logger = Logger.getLogger(SecureSessionEnforceExecutor.class);
+    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
+    private String logMsgPrefix() {
+        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
+    }
 
     private final KeycloakSession session;
-    private final ComponentModel componentModel;
 
-    public SecureSessionEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public SecureSessionEnforceExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public void setupConfiguration(Object config) {
+        // no setup configuration item
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration {
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return SecureSessionEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -69,19 +76,19 @@ public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvide
             OIDCResponseType parsedResponseType,
             AuthorizationEndpointRequest request,
             String redirectUri) throws ClientPolicyException {
-        ClientPolicyLogger.log(logger, "Authz Endpoint - authz request");
+        ClientPolicyLogger.logv(logger, "{0} :: Authz Endpoint - authz request", logMsgPrefix());
         if (TokenUtil.isOIDCRequest(request.getScope())) {
             if(request.getNonce() == null) {
-                ClientPolicyLogger.log(logger, "Missing parameter: nonce");
+                ClientPolicyLogger.logv(logger, "{0} :: Missing parameter: nonce", logMsgPrefix());
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
             }
         } else {
             if(request.getState() == null) {
-                ClientPolicyLogger.log(logger, "Missing parameter: state");
+                ClientPolicyLogger.logv(logger, "{0} :: Missing parameter: state", logMsgPrefix());
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: state");
             }
         }
-        ClientPolicyLogger.log(logger, "Passed.");
+        ClientPolicyLogger.logv(logger, "{0} :: Passed.", logMsgPrefix());
     }
 
 }

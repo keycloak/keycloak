@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,8 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import org.keycloak.component.ComponentFactory;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderFactory;
 
-public interface ClientPolicyExecutorProviderFactory extends ComponentFactory<ClientPolicyExecutorProvider, ClientPolicyExecutorProvider> {
+public interface ClientPolicyExecutorProviderFactory extends ProviderFactory<ClientPolicyExecutorProvider>, ConfiguredProvider {
 }

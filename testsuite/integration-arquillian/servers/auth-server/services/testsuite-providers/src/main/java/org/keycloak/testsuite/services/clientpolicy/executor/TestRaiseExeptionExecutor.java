@@ -17,10 +17,7 @@
 
 package org.keycloak.testsuite.services.clientpolicy.executor;
 
-import java.util.List;
-
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -31,23 +28,25 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider {
 
     private static final Logger logger = Logger.getLogger(TestRaiseExeptionExecutor.class);
+    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
+    private String logMsgPrefix() {
+        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
+    }
 
     protected final KeycloakSession session;
-    protected final ComponentModel componentModel;
 
-    public TestRaiseExeptionExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public TestRaiseExeptionExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public void setupConfiguration(Object config) {
+        // no setup configuration item
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return TestRaiseExeptionExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -56,8 +55,16 @@ public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider {
     }
 
     private boolean isThrowExceptionNeeded(ClientPolicyEvent event) {
-        ClientPolicyLogger.log(logger, "Client Policy Trigger Event = " + event);
-        List<String> l = componentModel.getConfig().get(TestRaiseExeptionExecutorFactory.TARGET_CP_EVENTS);
-        return l != null && l.stream().anyMatch(i->i.equals(event.toString()));
+        ClientPolicyLogger.logv(logger, "{0} Client Policy Trigger Event = {1}", logMsgPrefix(), event);
+        switch (event) {
+            case REGISTERED:
+            case UPDATED:
+            //case VIEW:
+            case UNREGISTER:
+                return true;
+            default :
+                return false;
+        }
+
     }
 }

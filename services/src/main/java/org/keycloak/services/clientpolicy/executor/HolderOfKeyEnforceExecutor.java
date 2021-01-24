@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,11 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -29,57 +30,76 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.ClientPolicyLogger;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-public class HolderOfKeyEnforceExecutor extends AbstractAugumentingClientRegistrationPolicyExecutor {
+public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider {
+
+    private static final Logger logger = Logger.getLogger(HolderOfKeyEnforceExecutor.class);
+    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
+    private String logMsgPrefix() {
+        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
+    }
 
     private final KeycloakSession session;
-    private final ComponentModel componentModel;
+    private Configuration configuration;
 
-    public HolderOfKeyEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    public HolderOfKeyEnforceExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public void setupConfiguration(Object config) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            configuration = mapper.convertValue(config, Configuration.class);
+        } catch (IllegalArgumentException iae) {
+            ClientPolicyLogger.logv(logger, "{0} :: failed for Configuration Setup :: error = {1}", logMsgPrefix(), iae.getMessage());
+            return;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration {
+        @JsonProperty("is-augment")
+        protected Boolean augment;
+
+        public Boolean isAugment() {
+            return augment;
+        }
+
+        public void setAugment(Boolean augment) {
+            this.augment = augment;
+        }
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
-    }
-
-    @Override
-    protected void augment(ClientRepresentation rep) {
-        if (Boolean.parseBoolean(componentModel.getConfig().getFirst(AbstractAugumentingClientRegistrationPolicyExecutor.IS_AUGMENT))) {
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setUseMtlsHoKToken(true);
-        }
-    }
-
-    @Override
-    protected void validate(ClientRepresentation rep) throws ClientPolicyException {
-        boolean useMtlsHokToken = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).isUseMtlsHokToken();
-        if (!useMtlsHokToken) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: MTLS token in disabled");
-        }
+        return HolderOfKeyEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        super.executeOnEvent(context);
         HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
-
         switch (context.getEvent()) {
+            case REGISTER:
+            case UPDATE:
+                ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
+                augment(clientUpdateContext.getProposedClientRepresentation());
+                validate(clientUpdateContext.getProposedClientRepresentation());
+                break;
             case TOKEN_REQUEST:
                 AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
                 if (certConf == null) {
@@ -100,6 +120,19 @@ public class HolderOfKeyEnforceExecutor extends AbstractAugumentingClientRegistr
                 break;
             default:
                 return;
+        }
+    }
+
+    private void augment(ClientRepresentation rep) {
+        if (configuration.isAugment()) {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setUseMtlsHoKToken(true);
+        }
+    }
+
+    private void validate(ClientRepresentation rep) throws ClientPolicyException {
+        boolean useMtlsHokToken = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).isUseMtlsHokToken();
+        if (!useMtlsHokToken) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: MTLS token in disabled");
         }
     }
 
@@ -161,4 +194,5 @@ public class HolderOfKeyEnforceExecutor extends AbstractAugumentingClientRegistr
             throw new ClientPolicyException(Errors.NOT_ALLOWED, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.UNAUTHORIZED);
         }
     }
+
 }

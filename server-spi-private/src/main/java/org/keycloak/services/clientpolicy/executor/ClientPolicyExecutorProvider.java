@@ -23,7 +23,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
- * This executor specifies what action is executed on the client to which {@link ClientPolicyProvider} is adopted.
+ * This executor specifies what action is executed on the client to which a client policy is adopted.
  * The executor can be executed on the events defined in {@link ClientPolicyEvent}.
  * It is sufficient for the implementer of this executor to implement methods in which they are interested
  * and {@link isEvaluatedOnEvent} method.
@@ -35,6 +35,14 @@ public interface ClientPolicyExecutorProvider extends Provider {
     }
 
     /**
+     * setup this executor's configuration.
+     *
+     * @param config
+     */
+    default void setupConfiguration(Object config) {
+    }
+
+    /**
      * execute actions against the client on the event defined in {@link ClientPolicyEvent}.
      * 
      * @param context - the context of the event.
@@ -43,7 +51,9 @@ public interface ClientPolicyExecutorProvider extends Provider {
     default void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
     }
 
-    String getName();
+    default String getName() {
+        return getClass().toString();
+    }
 
     String getProviderId();
 }

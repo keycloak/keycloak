@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -31,8 +30,8 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
     public static final String PROVIDER_ID = "secure-reqobj-executor";
 
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new SecureRequestObjectExecutor(session, model);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureRequestObjectExecutor(session);
     }
 
     @Override

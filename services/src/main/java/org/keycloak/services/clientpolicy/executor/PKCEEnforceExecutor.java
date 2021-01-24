@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,36 +39,72 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
-import org.keycloak.services.clientpolicy.executor.AbstractAugumentingClientRegistrationPolicyExecutor;
 
-public class PKCEEnforceExecutor extends AbstractAugumentingClientRegistrationPolicyExecutor {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider {
 
     private static final Logger logger = Logger.getLogger(PKCEEnforceExecutor.class);
+    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
+    private String logMsgPrefix() {
+        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
+    }
 
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
     private static final Pattern VALID_CODE_VERIFIER_PATTERN  = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
-    public PKCEEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    private final KeycloakSession session;
+    private Configuration configuration;
+
+    public PKCEEnforceExecutor(KeycloakSession session) {
+        this.session = session;
     }
 
-    protected void augment(ClientRepresentation rep) {
-        if (Boolean.valueOf(componentModel.getConfig().getFirst(AbstractAugumentingClientRegistrationPolicyExecutor.IS_AUGMENT)))
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+    @Override
+    public void setupConfiguration(Object config) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            configuration = mapper.convertValue(config, Configuration.class);
+        } catch (IllegalArgumentException iae) {
+            ClientPolicyLogger.logv(logger, "{0} :: failed for Configuration Setup :: error = {1}", logMsgPrefix(), iae.getMessage());
+            return;
+        }
     }
 
-    protected void validate(ClientRepresentation rep) throws ClientPolicyException {
-        String pkceMethod = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).getPkceCodeChallengeMethod();
-        if (pkceMethod != null && pkceMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) return;
-        throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: code_challenge_method");
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration {
+        @JsonProperty("is-augment")
+        protected Boolean augment;
+
+        public Boolean isAugment() {
+            return augment;
+        }
+
+        public void setAugment(Boolean augment) {
+            this.augment = augment;
+        }
+    }
+
+    @Override
+    public String getProviderId() {
+        return PKCEEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        super.executeOnEvent(context);
         switch (context.getEvent()) {
+            case REGISTER:
+            case UPDATE:
+                ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
+                augment(clientUpdateContext.getProposedClientRepresentation());
+                validate(clientUpdateContext.getProposedClientRepresentation());
+                break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
                 executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
@@ -83,6 +118,17 @@ public class PKCEEnforceExecutor extends AbstractAugumentingClientRegistrationPo
             default:
                 return;
         }
+    }
+
+    private void augment(ClientRepresentation rep) {
+        if (configuration.isAugment())
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+    }
+
+    private void validate(ClientRepresentation rep) throws ClientPolicyException {
+        String pkceMethod = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).getPkceCodeChallengeMethod();
+        if (pkceMethod != null && pkceMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) return;
+        throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: code_challenge_method");
     }
 
     private void executeOnAuthorizationRequest(
@@ -195,5 +241,6 @@ public class PKCEEnforceExecutor extends AbstractAugumentingClientRegistrationPo
         String codeVerifierEncoded = Base64Url.encode(digestBytes);
         return codeVerifierEncoded;
     }
+
 
 }

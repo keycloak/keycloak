@@ -15,10 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.condition;
+package org.keycloak.representations.idm;
 
-import org.keycloak.provider.ConfiguredProvider;
-import org.keycloak.provider.ProviderFactory;
+import java.util.List;
 
-public interface ClientPolicyConditionProviderFactory extends ProviderFactory<ClientPolicyConditionProvider>, ConfiguredProvider { 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ClientPoliciesRepresentation {
+    protected List<ClientPolicyRepresentation> policies;
+
+    public List<ClientPolicyRepresentation> getPolicies() {
+        return policies;
+    }
+
+    public void setPolicies(List<ClientPolicyRepresentation> policies) {
+        this.policies = policies;
+    }
+
 }

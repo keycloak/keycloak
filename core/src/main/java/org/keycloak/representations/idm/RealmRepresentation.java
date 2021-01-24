@@ -141,6 +141,11 @@ public class RealmRepresentation {
     protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
 
+    // Client Policies/Profiles
+
+    protected ClientProfilesRepresentation clientProfiles;
+    protected ClientPoliciesRepresentation clientPolicies;
+
     protected List<UserRepresentation> users;
     protected List<UserRepresentation> federatedUsers;
     protected List<ScopeMappingRepresentation> scopeMappings;
@@ -1171,6 +1176,24 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessAcceptableAaguids(List<String> webAuthnPolicyPasswordlessAcceptableAaguids) {
         this.webAuthnPolicyPasswordlessAcceptableAaguids = webAuthnPolicyPasswordlessAcceptableAaguids;
+    }
+
+    // Client Policies/Profiles
+
+    public ClientProfilesRepresentation getClientProfiles() {
+        return clientProfiles;
+    }
+
+    public void setClientProfiles(ClientProfilesRepresentation clientProfiles) {
+        this.clientProfiles = clientProfiles;
+    }
+
+    public ClientPoliciesRepresentation getClientPolicies() {
+        return clientPolicies;
+    }
+
+    public void setClientPolicies(ClientPoliciesRepresentation clientPolicies) {
+        this.clientPolicies = clientPolicies;
     }
 
     public String getBrowserFlow() {

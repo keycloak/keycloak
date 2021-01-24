@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,31 +17,34 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
-public class SecureClientAuthEnforceExecutorFactory extends AbstractAugumentingClientRegistrationPolicyExecutorFactory {
+public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "secure-client-authn-executor";
 
+    public static final String IS_AUGMENT = "is-augment";
     public static final String CLIENT_AUTHNS = "client-authns";
     public static final String CLIENT_AUTHNS_AUGMENT = "client-authns-augment";
 
+    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
+            IS_AUGMENT, null, null, ProviderConfigProperty.BOOLEAN_TYPE, false);
     private static final ProviderConfigProperty CLIENTAUTHNS_PROPERTY = new ProviderConfigProperty(
             CLIENT_AUTHNS, null, null, ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
     private static final ProviderConfigProperty CLIENTAUTHNS_AUGMENT = new ProviderConfigProperty(
             CLIENT_AUTHNS_AUGMENT, null, null, ProviderConfigProperty.STRING_TYPE, JWTClientAuthenticator.PROVIDER_ID);
 
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new SecureClientAuthEnforceExecutor(session, model);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureClientAuthEnforceExecutor(session);
     }
 
     @Override
@@ -68,10 +71,7 @@ public class SecureClientAuthEnforceExecutorFactory extends AbstractAugumentingC
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        List<ProviderConfigProperty> l = super.getConfigProperties();
-        l.add(CLIENTAUTHNS_PROPERTY);
-        l.add(CLIENTAUTHNS_AUGMENT);
-        return l;
+        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY, CLIENTAUTHNS_PROPERTY, CLIENTAUTHNS_AUGMENT));
     }
 
 }

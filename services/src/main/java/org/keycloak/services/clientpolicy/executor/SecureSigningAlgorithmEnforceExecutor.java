@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,6 @@ import java.util.List;
 import org.jboss.logging.Logger;
 
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -36,12 +35,17 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
+    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
+    private String logMsgPrefix() {
+        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
+    }
 
     private final KeycloakSession session;
-    private final ComponentModel componentModel;
 
     private static final List<String> sigTargets = Arrays.asList(
             OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG,
@@ -52,19 +56,22 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
     private static final List<String> sigTargetsAdminRestApiOnly = Arrays.asList(
             OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
 
-    public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public void setupConfiguration(Object config) {
+        // no setup configuration item
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration {
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -112,7 +119,7 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
 
     private void verifySecureSigningAlgorithm(String sigTarget, String sigAlg) throws ClientPolicyException {
         if (sigAlg == null) {
-            ClientPolicyLogger.logv(logger, "Signing algorithm not specified explicitly. signature target = {0}", sigTarget);
+            ClientPolicyLogger.logv(logger, "{0} :: Signing algorithm not specified explicitly. signature target = {1}", logMsgPrefix(), sigTarget);
             return;
         }
         switch (sigAlg) {
@@ -122,10 +129,10 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
         case Algorithm.ES256:
         case Algorithm.ES384:
         case Algorithm.ES512:
-            ClientPolicyLogger.logv(logger, "Passed. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
+            ClientPolicyLogger.logv(logger, "{0} :: Passed. signature target = {1}, signature algorithm = {2}", logMsgPrefix(),sigTarget, sigAlg);
             return;
         }
-        ClientPolicyLogger.logv(logger, "NOT allowed signatureAlgorithm. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
+        ClientPolicyLogger.logv(logger, "{0} :: NOT allowed signatureAlgorithm. signature target = {1}, signature algorithm = {2}", logMsgPrefix(), sigTarget, sigAlg);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
     }
 

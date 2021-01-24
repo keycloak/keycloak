@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.representations.idm;
 
-import org.keycloak.component.ComponentFactory;
+import java.util.List;
 
-public interface ClientPolicyProviderFactory extends ComponentFactory<ClientPolicyProvider, ClientPolicyProvider> {
+public class ClientProfilesRepresentation {
+    protected List<ClientProfileRepresentation> profiles;
+
+    public List<ClientProfileRepresentation> getProfiles() {
+        return profiles;
+    }
+
+    public void setProfiles(List<ClientProfileRepresentation> profiles) {
+        this.profiles = profiles;
+    }
+
 }

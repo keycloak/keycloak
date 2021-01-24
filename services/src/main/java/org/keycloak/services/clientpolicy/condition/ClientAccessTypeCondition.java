@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,9 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -29,12 +29,46 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProvider {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+public class ClientAccessTypeCondition extends AbstractClientCondition {
 
     private static final Logger logger = Logger.getLogger(ClientAccessTypeCondition.class);
 
-    public ClientAccessTypeCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+    private Configuration configuration = new Configuration();
+
+    public ClientAccessTypeCondition(KeycloakSession session) {
+        super(session);
+    }
+
+    @Override
+    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
+        return (T) configuration;
+    }
+ 
+    @Override
+    public void setupConfiguration(Object config) {
+        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends AbstractClientCondition.Configuration {
+        protected List<String> type;
+
+        public List<String> getType() {
+            return type;
+        }
+
+        public void setType(List<String> type) {
+            this.type = type;
+        }
+    }
+
+    @Override
+    public String getProviderId() {
+        return ClientAccessTypeConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -65,22 +99,16 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
 
     private boolean isClientAccessTypeMatched() {
         final String accessType = getClientAccessType();
+        if (accessType == null) return false;
 
-        List<String> expectedAccessTypes = componentModel.getConfig().get(ClientAccessTypeConditionFactory.TYPE);
-        if (expectedAccessTypes == null) expectedAccessTypes = Collections.emptyList();
+        List<String> expectedAccessTypes = Optional.ofNullable(configuration.getType()).orElse(Collections.emptyList());
 
         if (logger.isTraceEnabled()) {
-            ClientPolicyLogger.log(logger, "client access type = " + accessType);
-            expectedAccessTypes.stream().forEach(i -> ClientPolicyLogger.log(logger, "client access type expected = " + i));
+            ClientPolicyLogger.logv(logger, "{0} :: accessType = {1}", logMsgPrefix(), accessType);
+            expectedAccessTypes.stream().forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: expected accessType = {1}", logMsgPrefix(), i));
         }
 
-        boolean isMatched = expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
-        if (isMatched) {
-            ClientPolicyLogger.log(logger, "client access type matched.");
-        } else {
-            ClientPolicyLogger.log(logger, "client access type unmatched.");
-        }
-        return isMatched;
+        return expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
     }
 
 }

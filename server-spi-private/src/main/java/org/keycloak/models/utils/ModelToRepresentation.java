@@ -93,6 +93,9 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("client-policies.profiles");
+        REALM_EXCLUDED_ATTRIBUTES.add("client-policies.policies");
     }
 
 
