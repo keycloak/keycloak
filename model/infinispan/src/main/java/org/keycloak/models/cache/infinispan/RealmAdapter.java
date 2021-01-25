@@ -1457,7 +1457,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
         return cached.getClientScopes().stream().map(scope -> {
-            ClientScopeModel model = cacheSession.getClientScopeById(scope, this);
+            ClientScopeModel model = cacheSession.getClientScopeById(this, scope);
             if (model == null) {
                 throw new IllegalStateException("Cached clientScope not found: " + scope);
             }
@@ -1467,31 +1467,31 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientScopeModel addClientScope(String name) {
-        getDelegateForUpdate();
-        ClientScopeModel app = updated.addClientScope(name);
-        cacheSession.registerClientScopeInvalidation(app.getId());
-        return app;
+        RealmModel realm = getDelegateForUpdate();
+        ClientScopeModel clientScope = updated.addClientScope(name);
+        cacheSession.registerClientScopeInvalidation(clientScope.getId(), realm.getId());
+        return clientScope;
     }
 
     @Override
     public ClientScopeModel addClientScope(String id, String name) {
-        getDelegateForUpdate();
-        ClientScopeModel app =  updated.addClientScope(id, name);
-        cacheSession.registerClientScopeInvalidation(app.getId());
-        return app;
+        RealmModel realm = getDelegateForUpdate();
+        ClientScopeModel clientScope =  updated.addClientScope(id, name);
+        cacheSession.registerClientScopeInvalidation(clientScope.getId(), realm.getId());
+        return clientScope;
     }
 
     @Override
     public boolean removeClientScope(String id) {
-        cacheSession.registerClientScopeInvalidation(id);
-        getDelegateForUpdate();
+        RealmModel realm = getDelegateForUpdate();
+        cacheSession.registerClientScopeInvalidation(id, realm.getId());
         return updated.removeClientScope(id);
     }
 
     @Override
     public ClientScopeModel getClientScopeById(String id) {
         if (isUpdated()) return updated.getClientScopeById(id);
-        return cacheSession.getClientScopeById(id, this);
+        return cacheSession.getClientScopeById(this, id);
     }
 
     @Override
@@ -1511,7 +1511,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
         List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
         return clientScopeIds.stream()
-                .map(scope -> cacheSession.getClientScopeById(scope, this))
+                .map(scope -> cacheSession.getClientScopeById(this, scope))
                 .filter(Objects::nonNull);
     }
 

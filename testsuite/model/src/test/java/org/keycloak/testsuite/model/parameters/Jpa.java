@@ -28,6 +28,7 @@ import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
+import org.keycloak.models.jpa.JpaClientScopeProviderFactory;
 import org.keycloak.models.jpa.JpaGroupProviderFactory;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.models.jpa.JpaRoleProviderFactory;
@@ -57,6 +58,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(DefaultJpaConnectionProviderFactory.class)
       .add(JPAAuthorizationStoreFactory.class)
       .add(JpaClientProviderFactory.class)
+      .add(JpaClientScopeProviderFactory.class)
       .add(JpaEventStoreProviderFactory.class)
       .add(JpaGroupProviderFactory.class)
       .add(JpaRealmProviderFactory.class)
