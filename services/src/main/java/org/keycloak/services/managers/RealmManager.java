@@ -33,7 +33,6 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultClientScopes;
 import org.keycloak.models.utils.DefaultRequiredActions;
@@ -263,11 +262,6 @@ public class RealmManager {
             UserSessionProvider sessions = session.sessions();
             if (sessions != null) {
                 sessions.onRealmRemoved(realm);
-            }
-
-            UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
-            if (sessionsPersister != null) {
-                sessionsPersister.onRealmRemoved(realm);
             }
 
             AuthenticationSessionProvider authSessions = session.authenticationSessions();

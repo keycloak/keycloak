@@ -138,8 +138,15 @@ public interface UserSessionProvider extends Provider {
     void removeUserSession(RealmModel realm, UserSessionModel session);
     void removeUserSessions(RealmModel realm, UserModel user);
 
-    /** Implementation doesn't need to propagate removal of expired userSessions to userSessionPersister. Cleanup on persister will be called separately **/
+    /**
+     * Removes expired user sessions owned by this realm from this provider.
+     * If this `UserSessionProvider` uses `UserSessionPersister`, the removal of the expired
+     * {@link UserSessionModel user sessions} is also propagated to relevant `UserSessionPersister`.
+     *
+     * @param realm {@link RealmModel} Realm where all the expired user sessions to be removed from.
+     */
     void removeExpired(RealmModel realm);
+
     void removeUserSessions(RealmModel realm);
 
     UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId);
