@@ -1958,72 +1958,33 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
-        return realm.getClientScopes().stream().map(ClientScopeEntity::getId).map(this::getClientScopeById);
+        return session.clientScopes().getClientScopesStream(this);
     }
 
     @Override
     public ClientScopeModel addClientScope(String name) {
-        return this.addClientScope(KeycloakModelUtils.generateId(), name);
+        return session.clientScopes().addClientScope(this, name);
     }
 
     @Override
     public ClientScopeModel addClientScope(String id, String name) {
-        ClientScopeEntity entity = new ClientScopeEntity();
-        entity.setId(id);
-        name = KeycloakModelUtils.convertClientScopeName(name);
-        entity.setName(name);
-        entity.setRealm(realm);
-        realm.getClientScopes().add(entity);
-        em.persist(entity);
-        em.flush();
-        final ClientScopeModel resource = new ClientScopeAdapter(this, em, session, entity);
-        em.flush();
-        return resource;
+        return session.clientScopes().addClientScope(this, id, name);
     }
 
     @Override
     public boolean removeClientScope(String id) {
-        if (id == null) return false;
-        ClientScopeModel clientScope = getClientScopeById(id);
-        if (clientScope == null) return false;
-        if (KeycloakModelUtils.isClientScopeUsed(this, clientScope)) {
-            throw new ModelException("Cannot remove client scope, it is currently in use");
-        }
-
-        ClientScopeEntity clientScopeEntity = null;
-        Iterator<ClientScopeEntity> it = realm.getClientScopes().iterator();
-        while (it.hasNext()) {
-            ClientScopeEntity ae = it.next();
-            if (ae.getId().equals(id)) {
-                clientScopeEntity = ae;
-                it.remove();
-                break;
-            }
-        }
-        if (clientScope == null) {
-            return false;
-        }
-
-        session.users().preRemove(clientScope);
-
-        em.createNamedQuery("deleteClientScopeRoleMappingByClientScope").setParameter("clientScope", clientScopeEntity).executeUpdate();
-        em.flush();
-        em.remove(clientScopeEntity);
-        em.flush();
-
-
-        return true;
+        return session.clientScopes().removeClientScope(this, id);
     }
 
     @Override
     public ClientScopeModel getClientScopeById(String id) {
-        return session.realms().getClientScopeById(id, this);
+        return session.clientScopes().getClientScopeById(this, id);
     }
 
     @Override
     public void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         DefaultClientScopeRealmMappingEntity entity = new DefaultClientScopeRealmMappingEntity();
-        entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
+        entity.setClientScopeId(clientScope.getId());
         entity.setRealm(getEntity());
         entity.setDefaultScope(defaultScope);
         em.persist(entity);
@@ -2034,7 +1995,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void removeDefaultClientScope(ClientScopeModel clientScope) {
         int numRemoved = em.createNamedQuery("deleteDefaultClientScopeRealmMapping")
-                .setParameter("clientScope", ClientScopeAdapter.toClientScopeEntity(clientScope, em))
+                .setParameter("clientScopeId", clientScope.getId())
                 .setParameter("realm", getEntity())
                 .executeUpdate();
         em.flush();
