@@ -25,6 +25,7 @@ import org.keycloak.events.EventStoreSpi;
 import org.keycloak.executors.DefaultExecutorsProviderFactory;
 import org.keycloak.executors.ExecutorsSpi;
 import org.keycloak.models.AbstractKeycloakTransaction;
+import org.keycloak.models.ClientScopeSpi;
 import org.keycloak.models.ClientSpi;
 import org.keycloak.models.GroupSpi;
 import org.keycloak.models.KeycloakSession;
@@ -141,6 +142,7 @@ public abstract class KeycloakModelTest {
 
     private static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(AuthorizationSpi.class)
+      .add(ClientScopeSpi.class)
       .add(ClientSpi.class)
       .add(ClusterSpi.class)
       .add(EventStoreSpi.class)

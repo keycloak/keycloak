@@ -72,6 +72,19 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(HasRolePredicate.create().role(id), invalidations);
     }
 
+    public void clientScopeAdded(String realmId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getClientScopesCacheKey(realmId));
+    }
+
+    public void clientScopeUpdated(String realmId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getClientScopesCacheKey(realmId));
+    }
+
+    public void clientScopeRemoval(String realmId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getClientScopesCacheKey(realmId));
+        addInvalidations(InRealmPredicate.create().realm(realmId), invalidations);
+    }
+
     public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
         invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));

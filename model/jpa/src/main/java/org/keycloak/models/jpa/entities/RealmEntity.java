@@ -148,6 +148,7 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers;
 
+    @Deprecated
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientScopeEntity> clientScopes;
 
@@ -813,6 +814,7 @@ public class RealmEntity {
         return this;
     }
 
+    @Deprecated
     public Collection<ClientScopeEntity> getClientScopes() {
         if (clientScopes == null) {
             clientScopes = new LinkedList<>();
@@ -820,6 +822,7 @@ public class RealmEntity {
         return clientScopes;
     }
 
+    @Deprecated
     public void setClientScopes(Collection<ClientScopeEntity> clientScopes) {
         this.clientScopes = clientScopes;
     }

@@ -19,6 +19,7 @@ org.keycloak.provider.ExceptionConverterSpi
 org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.ClientSpi
+org.keycloak.models.ClientScopeSpi
 org.keycloak.models.GroupSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.RoleSpi
@@ -76,6 +77,7 @@ org.keycloak.credential.CredentialSpi
 org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.client.ClientStorageProviderSpi
+org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
 org.keycloak.storage.role.RoleStorageProviderSpi
 org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.crypto.SignatureSpi

@@ -17,6 +17,22 @@
 
 package org.keycloak.models.jpa;
 
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.utils.StreamsUtil.closing;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.Root;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -25,10 +41,12 @@ import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
@@ -43,33 +61,11 @@ import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.Root;
-
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.keycloak.models.ModelException;
-
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
-
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupProvider, RoleProvider {
+public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider {
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
@@ -168,10 +164,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         num = em.createNamedQuery("deleteDefaultClientScopeRealmMappingByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
-        for (ClientScopeEntity a : new LinkedList<>(realm.getClientScopes())) {
-            adapter.removeClientScope(a.getId());
-        }
-
+        session.clientScopes().removeClientScopes(adapter);
         session.roles().removeRoles(adapter);
 
         adapter.getTopLevelGroupsStream().forEach(adapter::removeGroup);
@@ -737,13 +730,64 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     @Override
-    public ClientScopeModel getClientScopeById(String id, RealmModel realm) {
-        ClientScopeEntity app = em.find(ClientScopeEntity.class, id);
+    public ClientScopeModel getClientScopeById(RealmModel realm, String id) {
+        ClientScopeEntity clientScope = em.find(ClientScopeEntity.class, id);
 
-        // Check if application belongs to this realm
-        if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
-        ClientScopeAdapter adapter = new ClientScopeAdapter(realm, em, session, app);
+        // Check if client scope belongs to this realm
+        if (clientScope == null || !realm.getId().equals(clientScope.getRealm().getId())) return null;
+        ClientScopeAdapter adapter = new ClientScopeAdapter(realm, em, session, clientScope);
         return adapter;
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
+        TypedQuery<String> query = em.createNamedQuery("getClientScopeIds", String.class);
+        query.setParameter("realm", realm.getId());
+        Stream<String> scopes = query.getResultStream();
+
+        return closing(scopes.map(realm::getClientScopeById));
+    }
+
+    @Override
+    public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
+        if (id == null) {
+            id = KeycloakModelUtils.generateId();
+        }
+        ClientScopeEntity entity = new ClientScopeEntity();
+        entity.setId(id);
+        name = KeycloakModelUtils.convertClientScopeName(name);
+        entity.setName(name);
+        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
+        entity.setRealm(ref);
+        em.persist(entity);
+        em.flush();
+        return new ClientScopeAdapter(realm, em, session, entity);
+    }
+
+    @Override
+    public boolean removeClientScope(RealmModel realm, String id) {
+        if (id == null) return false;
+        ClientScopeModel clientScope = getClientScopeById(realm, id);
+        if (clientScope == null) return false;
+
+        if (KeycloakModelUtils.isClientScopeUsed(realm, clientScope)) {
+            throw new ModelException("Cannot remove client scope, it is currently in use");
+        }
+
+        session.users().preRemove(clientScope);
+        realm.removeDefaultClientScope(clientScope);
+        ClientScopeEntity clientScopeEntity = em.find(ClientScopeEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+
+        em.createNamedQuery("deleteClientScopeRoleMappingByClientScope").setParameter("clientScope", clientScopeEntity).executeUpdate();
+        em.remove(clientScopeEntity);
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public void removeClientScopes(RealmModel realm) {
+        // No need to go through cache. Client scopes were already invalidated
+        realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(id -> this.removeClientScope(realm, id));
     }
 
     @Override

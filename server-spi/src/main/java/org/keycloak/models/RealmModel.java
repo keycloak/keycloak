@@ -885,15 +885,51 @@ public interface RealmModel extends RoleContainerModel {
      */
     Stream<ClientScopeModel> getClientScopesStream();
 
+    /**
+     * Creates new client scope with the given name. Internal ID is created automatically.
+     * If given name contains spaces, those are replaced by underscores.
+     * @param name {@code String} name of the client scope.
+     * @return Model of the created client scope.
+     * @throws ModelDuplicateException if client scope with same id or name already exists.
+     */
     ClientScopeModel addClientScope(String name);
 
+    /**
+     * Creates new client scope with the given internal ID and name. 
+     * If given name contains spaces, those are replaced by underscores.
+     * @param id {@code String} id of the client scope.
+     * @param name {@code String} name of the client scope.
+     * @return Model of the created client scope.
+     * @throws ModelDuplicateException if client scope with same id or name already exists.
+     */
     ClientScopeModel addClientScope(String id, String name);
 
+    /**
+     * Removes client scope with given {@code id} from this realm.
+     * @param id of the client scope
+     * @return true if the realm contained the scope and the removal was successful, false otherwise
+     */
     boolean removeClientScope(String id);
 
+    /**
+     * @param id of the client scope
+     * @return Client scope with the given {@code id}, or {@code null} when the scope does not exist.
+     */
     ClientScopeModel getClientScopeById(String id);
 
+    /**
+     * Adds given client scopes among default/optional client scopes of this realm. 
+     * The scope will be assigned to each new client.
+     * @param clientScope to be added
+     * @param defaultScope if {@code true} the scope will be added among default client scopes, 
+     * if {@code false} it will be added among optional client scopes
+     */
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
+
+    /**
+     * Removes given client scope from default or optional client scopes of this realm.
+     * @param clientScope to be removed
+     */
     void removeDefaultClientScope(ClientScopeModel clientScope);
 
     /**

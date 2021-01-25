@@ -257,7 +257,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
             File testRealm = new File(url.getFile());
             assertThat(testRealm, Matchers.notNullValue());
 
-            File newFile = new File("test-new-realm.json");
+            File newFile = new File("target", "test-new-realm.json");
 
             try {
                 FileUtils.copyFile(testRealm, newFile);

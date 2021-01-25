@@ -38,4 +38,8 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="map-remove-ri-13.0.0">
+        <dropForeignKeyConstraint baseTableName="DEFAULT_CLIENT_SCOPE" constraintName="FK_R_DEF_CLI_SCOPE_SCOPE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_SCOPE"/>
+    </changeSet>
 </databaseChangeLog>

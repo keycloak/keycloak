@@ -30,7 +30,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, GroupProvider, RoleProvider /* up to here */ {
+public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider /* up to here */ {
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
     MigrationModel getMigrationModel();
@@ -39,7 +39,16 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
 
-    ClientScopeModel getClientScopeById(String id, RealmModel realm);
+    /**
+     * @deprecated Use the corresponding method from {@link ClientScopeProvider}. */
+    default ClientScopeModel getClientScopeById(String id, RealmModel realm) {
+        return getClientScopeById(realm, id);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientScopeProvider}. */
+    @Override
+    ClientScopeModel getClientScopeById(RealmModel realm, String id);
 
     /**
      * @deprecated Use {@link #getRealmsStream() getRealmsStream} instead.
