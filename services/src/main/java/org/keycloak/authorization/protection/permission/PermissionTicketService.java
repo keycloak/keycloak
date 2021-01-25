@@ -114,7 +114,7 @@ public class PermissionTicketService {
         boolean match = resource.getScopes().contains(scope);
 
         if (!match)
-           throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not have Scope [" + scope.getName() + "]", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not have Scope [" + scope.getName() + "]", Response.Status.BAD_REQUEST);
 
         Map<String, String> attributes = new HashMap<>();
         attributes.put(PermissionTicket.RESOURCE, resource.getId());
@@ -126,7 +126,7 @@ public class PermissionTicketService {
 
         PermissionTicket ticket = ticketStore.create(resource.getId(), scope.getId(), user.getId(), resourceServer);
         if(representation.isGranted())
-                ticket.setGrantedTimestamp(java.lang.System.currentTimeMillis());
+            ticket.setGrantedTimestamp(java.lang.System.currentTimeMillis());
         representation = ModelToRepresentation.toRepresentation(ticket, authorization);
         return Response.ok(representation).build();
     }
@@ -220,9 +220,9 @@ public class PermissionTicketService {
         }
 
         return Response.ok().entity(permissionTicketStore.find(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
-                    .stream()
-                        .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
-                        .collect(Collectors.toList()))
+                .stream()
+                .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
+                .collect(Collectors.toList()))
                 .build();
     }
 
@@ -230,11 +230,11 @@ public class PermissionTicketService {
     @GET
     @Produces("application/json")
     public Response getResourceCount(@QueryParam("scopeId") String scopeId,
-                                       @QueryParam("resourceId") String resourceId,
-                                       @QueryParam("owner") String owner,
-                                       @QueryParam("requester") String requester,
-                                       @QueryParam("granted") Boolean granted,
-                                       @QueryParam("returnNames") Boolean returnNames) {
+                                     @QueryParam("resourceId") String resourceId,
+                                     @QueryParam("owner") String owner,
+                                     @QueryParam("requester") String requester,
+                                     @QueryParam("granted") Boolean granted,
+                                     @QueryParam("returnNames") Boolean returnNames) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         PermissionTicketStore permissionTicketStore = storeFactory.getPermissionTicketStore();
         Map<String, String> filters = new HashMap<>();
