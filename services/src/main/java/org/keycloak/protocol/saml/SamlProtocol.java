@@ -18,9 +18,7 @@
 package org.keycloak.protocol.saml;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
@@ -89,6 +87,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -694,7 +695,7 @@ public class SamlProtocol implements LoginProtocol {
             return Response.serverError().build();
         }
 
-        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         for (int i = 0; i < 2; i++) { // follow redirects once
             try {
                 List<NameValuePair> formparams = new ArrayList<NameValuePair>();
@@ -705,25 +706,20 @@ public class SamlProtocol implements LoginProtocol {
                 UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
                 HttpPost post = new HttpPost(logoutUrl);
                 post.setEntity(form);
-                HttpResponse response = httpClient.execute(post);
-                try {
-                    int status = response.getStatusLine().getStatusCode();
-                    if (status == 302 && !logoutUrl.endsWith("/")) {
-                        String redirect = response.getFirstHeader(HttpHeaders.LOCATION).getValue();
-                        String withSlash = logoutUrl + "/";
-                        if (withSlash.equals(redirect)) {
-                            logoutUrl = withSlash;
-                            continue;
+                try (CloseableHttpResponse response = httpClient.execute(post)) {
+                    try {
+                        int status = response.getStatusLine().getStatusCode();
+                        if (status == 302 && !logoutUrl.endsWith("/")) {
+                            String redirect = response.getFirstHeader(HttpHeaders.LOCATION).getValue();
+                            String withSlash = logoutUrl + "/";
+                            if (withSlash.equals(redirect)) {
+                                logoutUrl = withSlash;
+                                continue;
+                            }
                         }
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
                     }
-                } finally {
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        InputStream is = entity.getContent();
-                        if (is != null)
-                            is.close();
-                    }
-
                 }
             } catch (IOException e) {
                 logger.warn("failed to send saml logout", e);
