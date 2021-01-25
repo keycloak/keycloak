@@ -54,12 +54,12 @@ const KerberosSettingsHeader = ({
             {t("deleteProvider")}
           </DropdownItem>,
         ]}
-        isEnabled={value}
+        isEnabled={value === "true"}
         onToggle={(value) => {
           if (!value) {
             toggleDisableDialog();
           } else {
-            onChange(value);
+            onChange("" + value);
           }
         }}
       />
@@ -109,7 +109,6 @@ export const UserFederationKerberosSettings = () => {
       addAlert(`${t("saveError")} '${error}'`, AlertVariant.danger);
     }
   };
-  // const form = useForm();
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDeleteConfirmTitle",
@@ -118,7 +117,7 @@ export const UserFederationKerberosSettings = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.clients.del({ id });
+        await adminClient.components.del({ id });
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addAlert(`${t("userFedDeleteError")} ${error}`, AlertVariant.danger);
@@ -130,13 +129,13 @@ export const UserFederationKerberosSettings = () => {
     <>
       <DeleteConfirm />
       <Controller
-        name="enabled"
+        name="config.enabled[0]"
+        defaultValue={["true"]}
         control={form.control}
-        defaultValue={true}
         render={({ onChange, value }) => (
           <KerberosSettingsHeader
             value={value}
-            onChange={onChange}
+            onChange={(value) => onChange("" + value)}
             toggleDeleteDialog={toggleDeleteDialog}
           />
         )}
