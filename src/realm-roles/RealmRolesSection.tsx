@@ -71,7 +71,6 @@ export const RealmRolesSection = () => {
     },
   });
 
-
   const goToCreate = () => history.push(`${url}/add-role`);
   return (
     <>
@@ -96,7 +95,7 @@ export const RealmRolesSection = () => {
                 setSelectedRole(role);
                 toggleDeleteDialog();
               },
-            }
+            },
           ]}
           columns={[
             {
