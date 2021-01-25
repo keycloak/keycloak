@@ -31,7 +31,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
             <Button
               id="modal-cancel"
               onClick={[Function]}
-              variant="secondary"
+              variant="link"
             >
               cancel
             </Button>,
@@ -132,8 +132,8 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                       </button>
                       <button
                         aria-disabled="false"
-                        class="pf-c-button pf-m-secondary"
-                        data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+                        class="pf-c-button pf-m-link"
+                        data-ouia-component-id="OUIA-Generated-Button-link-1"
                         data-ouia-component-type="PF4/Button"
                         data-ouia-safe="true"
                         id="modal-cancel"
@@ -161,7 +161,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                 <Button
                   id="modal-cancel"
                   onClick={[Function]}
-                  variant="secondary"
+                  variant="link"
                 >
                   cancel
                 </Button>,
@@ -341,13 +341,13 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                               id="modal-cancel"
                               key="cancel"
                               onClick={[Function]}
-                              variant="secondary"
+                              variant="link"
                             >
                               <button
                                 aria-disabled={false}
                                 aria-label={null}
-                                className="pf-c-button pf-m-secondary"
-                                data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+                                className="pf-c-button pf-m-link"
+                                data-ouia-component-id="OUIA-Generated-Button-link-1"
                                 data-ouia-component-type="PF4/Button"
                                 data-ouia-safe={true}
                                 disabled={false}
