@@ -6,7 +6,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage.js";
 
 describe("Realm roles test", function () {
-  const itemId = "realm_role_1";
+  let itemId = "realm_role_crud";
   const loginPage = new LoginPage();
   const masthead = new Masthead();
   const modalUtils = new ModalUtils();
@@ -16,14 +16,13 @@ describe("Realm roles test", function () {
 
   describe("Realm roles creation", function () {
     beforeEach(function () {
+      cy.clearCookies();
       cy.visit("");
+      loginPage.logIn();
+      sidebarPage.goToRealmRoles();
     });
 
     it("should fail creating realm role", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToRealmRoles();
-
       listingPage.goToCreateItem();
 
       createRealmRolePage.save().checkRealmRoleNameRequiredMessage();
@@ -36,12 +35,13 @@ describe("Realm roles test", function () {
       );
     });
 
-    it("should create realm role", function () {
-      loginPage.logIn();
+    it("Realm role CRUD test", function () {
+      itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
-      sidebarPage.goToRealmRoles();
-
-      listingPage.itemExist(itemId, false).goToCreateItem();
+      // Create
+      listingPage
+        .itemExist(itemId, false)
+        .goToCreateItem();
 
       createRealmRolePage.fillRealmRoleData(itemId).save();
 
@@ -49,21 +49,15 @@ describe("Realm roles test", function () {
 
       sidebarPage.goToRealmRoles();
 
-      listingPage.itemExist(itemId).searchItem(itemId).itemExist(itemId);
-    });
-  });
+      listingPage
+        .searchItem(itemId)
+        .itemExist(itemId);
 
-  describe("Realm roles elimination", function () {
-    beforeEach(function () {
-      cy.visit("");
-    });
-
-    it("should delete realm role", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToRealmRoles();
-
-      listingPage.itemExist(itemId).deleteItem(itemId);
+      // Update
+      
+      // Delete
+      listingPage
+        .deleteItem(itemId);
 
       modalUtils.checkModalTitle("Delete role?").confirmModal();
 

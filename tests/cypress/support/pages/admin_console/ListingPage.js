@@ -2,7 +2,7 @@ export default class ListingPage {
 
     constructor() {
         this.searchInput = '.pf-c-toolbar__item [type="search"]';
-        this.itemsRows = '.pf-c-page__main-section tbody > tr';
+        this.itemsRows = '.pf-c-page__main-section table';
         this.itemRowDrpDwn = '.pf-c-dropdown > button';
         this.exportBtn = '[role="menuitem"]:nth-child(1)';
         this.deleteBtn = '[role="menuitem"]:nth-child(2)';

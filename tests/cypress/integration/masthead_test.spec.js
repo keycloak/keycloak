@@ -24,6 +24,7 @@ const goToAcctMgtTest = () => {
 
 describe("Masthead tests in desktop mode", () => {
   beforeEach(() => {
+    cy.clearCookies();
     cy.visit("");
     loginPage.logIn();
   });
@@ -51,6 +52,7 @@ describe("Masthead tests in desktop mode", () => {
 
 describe("Masthead tests with kebab menu", () => {
   beforeEach(() => {
+    cy.clearCookies();
     cy.visit("");
     loginPage.logIn();
     masthead.setMobileMode(true);

@@ -5,7 +5,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
 import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage.js";
 
 describe("Clients test", function () {
-  const itemId = "client_1";
+  let itemId = "client_crud";
   const loginPage = new LoginPage();
   const masthead = new Masthead();
   const sidebarPage = new SidebarPage();
@@ -14,14 +14,13 @@ describe("Clients test", function () {
 
   describe("Client creation", function () {
     beforeEach(function () {
+      cy.clearCookies();
       cy.visit("");
+      loginPage.logIn();
+      sidebarPage.goToClients();
     });
 
     it("should fail creating client", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToClients();
-
       listingPage.goToCreateItem();
 
       createClientPage
@@ -50,11 +49,10 @@ describe("Clients test", function () {
       );
     });
 
-    it("should create client", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToClients();
-
+    it("Client CRUD test", function () {
+      itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+      
+      // Create
       listingPage.itemExist(itemId, false).goToCreateItem();
 
       createClientPage
@@ -67,21 +65,13 @@ describe("Clients test", function () {
 
       sidebarPage.goToClients();
 
-      listingPage.itemExist(itemId).searchItem(itemId).itemExist(itemId);
-    });
-  });
+      listingPage
+        .searchItem(itemId)
+        .itemExist(itemId);
 
-  describe("Client elimination", function () {
-    beforeEach(function () {
-      cy.visit("");
-    });
-
-    it("should delete client", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToClients();
-
-      listingPage.itemExist(itemId).deleteItem(itemId); // There should be a confirmation pop-up
+      // Delete
+      listingPage
+        .deleteItem(itemId); // There should be a confirmation pop-up
 
       masthead.checkNotificationMessage("The client has been deleted");
 

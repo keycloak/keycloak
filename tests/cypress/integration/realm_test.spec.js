@@ -11,12 +11,12 @@ describe("Realms test", function () {
 
   describe("Realm creation", function () {
     beforeEach(function () {
+      cy.clearCookies();
       cy.visit("");
+      loginPage.logIn();
     });
 
     it("should fail creating Master realm", function () {
-      loginPage.logIn();
-
       sidebarPage.goToCreateRealm();
       createRealmPage.fillRealmName("master").createRealm();
 
@@ -26,8 +26,6 @@ describe("Realms test", function () {
     });
 
     it("should create Test realm", function () {
-      loginPage.logIn();
-
       sidebarPage.goToCreateRealm();
       createRealmPage.fillRealmName("Test").createRealm();
 
@@ -35,8 +33,6 @@ describe("Realms test", function () {
     });
 
     it("should change to Test realm", function () {
-      loginPage.logIn();
-
       sidebarPage.getCurrentRealm().should("eq", "Master");
 
       sidebarPage.goToRealm("Test").getCurrentRealm().should("eq", "Test");

@@ -5,7 +5,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
 import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage.js";
 
 describe("Client Scopes test", function () {
-  const itemId = "client_scope_1";
+  let itemId = "client_scope_crud";
   const loginPage = new LoginPage();
   const masthead = new Masthead();
   const sidebarPage = new SidebarPage();
@@ -14,14 +14,13 @@ describe("Client Scopes test", function () {
 
   describe("Client Scope creation", function () {
     beforeEach(function () {
+      cy.clearCookies();
       cy.visit("");
+      loginPage.logIn();
+      sidebarPage.goToClientScopes();
     });
 
     it("should fail creating client scope", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToClientScopes();
-
       listingPage.goToCreateItem();
 
       createClientScopePage.save().checkClientNameRequiredMessage();
@@ -37,38 +36,31 @@ describe("Client Scopes test", function () {
       );
     });
 
-    it("should create client scope", function () {
-      loginPage.logIn();
+    it('Client scope CRUD test',async function () {
+      itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+
+      // Create
+      listingPage
+        .itemExist(itemId, false)
+        .goToCreateItem();
+
+      createClientScopePage
+        .fillClientScopeData(itemId)
+        .save();
+
+        masthead.checkNotificationMessage('Client scope created');
 
       sidebarPage.goToClientScopes();
 
-      listingPage.itemExist(itemId, false).goToCreateItem();
+      // Delete
+      listingPage
+        .itemExist(itemId)
+        .deleteItem(itemId); // There should be a confirmation pop-up
 
-      createClientScopePage.fillClientScopeData(itemId).save();
+        masthead.checkNotificationMessage('The client scope has been deleted');
 
-      masthead.checkNotificationMessage("Client scope created");
-
-      sidebarPage.goToClientScopes();
-
-      listingPage.itemExist(itemId).searchItem(itemId).itemExist(itemId);
+      listingPage // It is not refreshing after delete
+        .itemExist(itemId, false);
     });
   });
-
-  describe("Client scope elimination", function () {
-    beforeEach(function () {
-      cy.visit("");
-    });
-
-    it("should delete client scope", function () {
-      loginPage.logIn();
-
-      sidebarPage.goToClientScopes();
-
-      listingPage.itemExist(itemId).deleteItem(itemId); // There should be a confirmation pop-up
-
-      masthead.checkNotificationMessage("The client scope has been deleted");
-
-      listingPage.itemExist(itemId, false);
-    });
-  });
-});
+})
