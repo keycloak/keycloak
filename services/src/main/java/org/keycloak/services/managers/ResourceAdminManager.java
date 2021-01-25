@@ -16,9 +16,7 @@
  */
 package org.keycloak.services.managers;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
@@ -60,6 +58,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -212,22 +212,27 @@ public class ResourceAdminManager {
             if (logoutToken != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, token));
             }
-            HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+            CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
             UrlEncodedFormEntity formEntity;
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             post.setEntity(formEntity);
-            HttpResponse response = httpClient.execute(post);
-            int status = response.getStatusLine().getStatusCode();
-            EntityUtils.consumeQuietly(response.getEntity());
-            boolean success = status == 204 || status == 200;
-            logger.debugf("logout success for %s: %s", managementUrl, success);
-            return Response.status(status).build();
+            try (CloseableHttpResponse response = httpClient.execute(post)) {
+                try {
+                    int status = response.getStatusLine().getStatusCode();
+                    EntityUtils.consumeQuietly(response.getEntity());
+                    boolean success = status == 204 || status == 200;
+                    logger.debugf("logout success for %s: %s", managementUrl, success);
+                    return Response.status(status).build();
+                } finally {
+                    EntityUtils.consumeQuietly(response.getEntity());
+                }
+            }
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return Response.serverError().build();
         } finally {
             if (post != null) {
-                post.releaseConnection();
+                post.reset();
             }
         }
     }

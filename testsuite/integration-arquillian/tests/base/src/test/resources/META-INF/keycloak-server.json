@@ -124,7 +124,7 @@
 
     "connectionsHttpClient": {
         "default": {
-            "max-connection-idle-time-millis": 1000
+            "max-connection-idle-time-millis": 100
         }
     },
 

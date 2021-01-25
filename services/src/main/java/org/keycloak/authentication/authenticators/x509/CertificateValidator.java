@@ -19,7 +19,6 @@
 package org.keycloak.authentication.authenticators.x509;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 
 import org.keycloak.common.util.Time;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.cert.CRLException;
 import java.security.cert.CertPathValidatorException;
@@ -65,6 +63,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -297,17 +298,18 @@ public class CertificateValidator {
             try {
                 logger.debugf("Loading CRL from %s", remoteURI.toString());
 
-                HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+                CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
                 HttpGet get = new HttpGet(remoteURI);
                 get.setHeader("Pragma", "no-cache");
                 get.setHeader("Cache-Control", "no-cache, no-store");
-                HttpResponse response = httpClient.execute(get);
-                InputStream content = response.getEntity().getContent();
-                try {
-                    X509CRL crl = loadFromStream(cf, content);
-                    return Collections.singleton(crl);
-                } finally {
-                    content.close();
+                try (CloseableHttpResponse response = httpClient.execute(get)) {
+                    try {
+                        InputStream content = response.getEntity().getContent();
+                        X509CRL crl = loadFromStream(cf, content);
+                        return Collections.singleton(crl);
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
+                    }
                 }
             }
             catch(IOException ex) {

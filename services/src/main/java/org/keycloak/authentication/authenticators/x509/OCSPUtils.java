@@ -19,8 +19,6 @@
 package org.keycloak.authentication.authenticators.x509;
 
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -69,6 +67,8 @@ import java.security.cert.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -163,7 +163,7 @@ public final class OCSPUtils {
     }
 
     private static OCSPResp getResponse(KeycloakSession session, OCSPReq ocspReq, URI responderUri) throws IOException {
-        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         HttpPost post = new HttpPost(responderUri);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
 
@@ -176,16 +176,20 @@ public final class OCSPUtils {
         post.setEntity(new ByteArrayEntity(ocspReq.getEncoded()));
 
         //Get Response
-        HttpResponse response = httpClient.execute(post);
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            try {
+                if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                    String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
+                        responderUri.toString(), response.getStatusLine().getStatusCode());
+                    throw new IOException(errorMessage);
+                }
 
-        if (response.getStatusLine().getStatusCode() / 100 != 2) {
-            String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
-                responderUri.toString(), response.getStatusLine().getStatusCode());
-            throw new IOException(errorMessage);
+                byte[] data = EntityUtils.toByteArray(response.getEntity());
+                return new OCSPResp(data);
+            } finally {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
         }
-
-        byte[] data = EntityUtils.toByteArray(response.getEntity());
-        return new OCSPResp(data);
     }
 
     /**

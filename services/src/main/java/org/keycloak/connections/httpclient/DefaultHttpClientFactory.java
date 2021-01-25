@@ -19,7 +19,6 @@ package org.keycloak.connections.httpclient;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -37,6 +36,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
 
 /**
  * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
@@ -70,7 +71,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
         return new HttpClientProvider() {
             @Override
-            public HttpClient getHttpClient() {
+            public CloseableHttpClient getHttpClient() {
                 return httpClient;
             }
 
@@ -83,16 +84,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             public int postText(String uri, String text) throws IOException {
                 HttpPost request = new HttpPost(uri);
                 request.setEntity(EntityBuilder.create().setText(text).setContentType(ContentType.TEXT_PLAIN).build());
-                HttpResponse response = httpClient.execute(request);
-                try {
-                    return response.getStatusLine().getStatusCode();
-                } finally {
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        InputStream is = entity.getContent();
-                        if (is != null) is.close();
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    try {
+                        return response.getStatusLine().getStatusCode();
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
                     }
-
+                } catch (Throwable t) {
+                    logger.warn(t.getMessage(), t);
+                    throw t;
                 }
             }
 
