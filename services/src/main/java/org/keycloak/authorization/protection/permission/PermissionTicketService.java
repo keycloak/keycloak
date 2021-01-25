@@ -228,6 +228,7 @@ public class PermissionTicketService {
 
     @Path("/count")
     @GET
+    @Produces("application/json")
     public Response getResourceCount(@QueryParam("scopeId") String scopeId,
                                        @QueryParam("resourceId") String resourceId,
                                        @QueryParam("owner") String owner,

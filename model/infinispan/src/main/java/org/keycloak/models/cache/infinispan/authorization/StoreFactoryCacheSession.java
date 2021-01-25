@@ -1115,6 +1115,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
     protected class PermissionTicketCache implements PermissionTicketStore {
         @Override
+        public long count(Map<String, String> attributes, String resourceServerId) {
+            return getPermissionTicketStoreDelegate().count(attributes, resourceServerId);
+        }
+
+        @Override
         public PermissionTicket create(String resourceId, String scopeId, String requester, ResourceServer resourceServer) {
             PermissionTicket created = getPermissionTicketStoreDelegate().create(resourceId, scopeId, requester, resourceServer);
             registerPermissionTicketInvalidation(created.getId(), created.getOwner(), created.getRequester(), created.getResource().getId(), created.getResource().getName(), scopeId, created.getResourceServer().getId());
