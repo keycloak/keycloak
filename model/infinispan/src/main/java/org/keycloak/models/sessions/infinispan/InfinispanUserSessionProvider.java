@@ -36,6 +36,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
@@ -467,6 +468,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         log.debugf("Removing expired sessions");
         removeExpiredUserSessions(realm);
         removeExpiredOfflineUserSessions(realm);
+        session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
     }
 
     private void removeExpiredUserSessions(RealmModel realm) {
@@ -613,7 +615,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         removeLocalUserSessions(realmId, false);
     }
 
-    private void removeLocalUserSessions(String realmId, boolean offline) {
+    // public for usage in the testsuite
+    public void removeLocalUserSessions(String realmId, boolean offline) {
         FuturesHelper futures = new FuturesHelper();
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -725,6 +728,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         clusterEventsSenderTx.addEvent(
                 RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanUserSessionProviderFactory.REALM_REMOVED_SESSION_EVENT, session, realm.getId(), true),
                 ClusterProvider.DCNotify.LOCAL_DC_ONLY);
+
+        UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
+        if (sessionsPersister != null) {
+            sessionsPersister.onRealmRemoved(realm);
+        }
     }
 
     protected void onRealmRemovedEvent(String realmId) {
@@ -738,6 +746,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 //        clusterEventsSenderTx.addEvent(
 //                ClientRemovedSessionEvent.createEvent(ClientRemovedSessionEvent.class, InfinispanUserSessionProviderFactory.CLIENT_REMOVED_SESSION_EVENT, session, realm.getId(), true),
 //                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
+        UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
+        if (sessionsPersister != null) {
+            sessionsPersister.onClientRemoved(realm, client);
+        }
     }
 
     protected void onClientRemovedEvent(String realmId, String clientUuid) {
@@ -750,6 +762,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         removeUserSessions(realm, user, false);
 
         removeUserLoginFailure(realm, user.getId());
+
+        UserSessionPersisterProvider persisterProvider = session.getProvider(UserSessionPersisterProvider.class);
+        if (persisterProvider != null) {
+            persisterProvider.onUserRemoved(realm, user);
+        }
     }
 
     @Override
@@ -803,6 +820,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         offlineUserSession.getEntity().setStarted(currentTime);
         offlineUserSession.setLastSessionRefresh(currentTime);
 
+        session.getProvider(UserSessionPersisterProvider.class).createUserSession(userSession, true);
+
         return offlineUserSession;
     }
 
@@ -828,6 +847,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         if (userSessionEntity != null) {
             removeUserSession(userSessionEntity, true);
         }
+        session.getProvider(UserSessionPersisterProvider.class).removeUserSession(userSession.getId(), true);
     }
 
     @Override
@@ -841,6 +861,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // update timestamp to current time
         offlineClientSession.setTimestamp(Time.currentTime());
+
+        session.getProvider(UserSessionPersisterProvider.class).createClientSession(clientSession, true);
 
         return offlineClientSession;
     }

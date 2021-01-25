@@ -32,6 +32,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -210,13 +211,13 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = inheritClientConnection(session, createSessionPersister3);
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
-            // Delete cache (persisted sessions are still kept)
-            currentSession.sessions().onRealmRemoved(realm);
+            // Delete local user cache (persisted sessions are still kept)
+            InfinispanUserSessionProvider userSessionProvider = (InfinispanUserSessionProvider) currentSession.getProvider(UserSessionProvider.class);
+            userSessionProvider.removeLocalUserSessions(realm.getId(), true);
 
             // Clear ispn cache to ensure initializerState is removed as well
             InfinispanConnectionProvider infinispan = currentSession.getProvider(InfinispanConnectionProvider.class);
             infinispan.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).clear();
-
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession createSessionPersister4) -> {

@@ -85,7 +85,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline) {
-        PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(clientSession);
+        PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(session, clientSession);
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
         PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
@@ -318,7 +318,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setUserId(userSession.getUserId());
         model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
-        return new PersistentAuthenticatedClientSessionAdapter(model, realm, client, userSession);
+        return new PersistentAuthenticatedClientSessionAdapter(session, model, realm, client, userSession);
     }
 
     @Override

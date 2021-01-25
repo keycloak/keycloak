@@ -17,32 +17,10 @@
 
 package org.keycloak.models.session;
 
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface UserSessionPersisterProviderFactory extends ProviderFactory<UserSessionPersisterProvider> {
-
-    @Override
-    default void postInit(KeycloakSessionFactory factory) {
-        factory.register(new ProviderEventListener() {
-
-            @Override
-            public void onEvent(ProviderEvent event) {
-                if (event instanceof UserModel.UserRemovedEvent) {
-                    UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
-                    UserSessionPersisterProvider provider = userRemovedEvent.getKeycloakSession().getProvider(UserSessionPersisterProvider.class, getId());
-                    provider.onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
-                }
-            }
-
-        });
-    }
-
 }

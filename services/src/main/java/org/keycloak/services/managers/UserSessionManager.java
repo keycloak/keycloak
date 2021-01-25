@@ -107,7 +107,6 @@ public class UserSessionManager {
                         }
 
                         clientSession.detachFromUserSession();
-                        persister.removeClientSession(userSession.getId(), client.getId(), true);
                         checkOfflineUserSessionHasClientSessions(realm, user, userSession);
                         anyRemoved.set(true);
                     }
@@ -121,7 +120,6 @@ public class UserSessionManager {
             logger.tracef("Removing offline user session '%s' for user '%s' ", userSession.getId(), userSession.getLoginUsername());
         }
         kcSession.sessions().removeOfflineUserSession(userSession.getRealm(), userSession);
-        persister.removeUserSession(userSession.getId(), true);
     }
 
     public boolean isOfflineTokenAllowed(ClientSessionContext clientSessionCtx) {
@@ -141,7 +139,6 @@ public class UserSessionManager {
         }
 
         UserSessionModel offlineUserSession = kcSession.sessions().createOfflineUserSession(userSession);
-        persister.createUserSession(offlineUserSession, true);
         return offlineUserSession;
     }
 
@@ -152,7 +149,6 @@ public class UserSessionManager {
         }
 
         kcSession.sessions().createOfflineClientSession(clientSession, offlineUserSession);
-        persister.createClientSession(clientSession, true);
     }
 
     // Check if userSession has any offline clientSessions attached to it. Remove userSession if not
@@ -166,6 +162,5 @@ public class UserSessionManager {
             logger.tracef("Removing offline userSession for user %s as it doesn't have any client sessions attached. UserSessionID: %s", user.getUsername(), userSession.getId());
         }
         kcSession.sessions().removeOfflineUserSession(realm, userSession);
-        persister.removeUserSession(userSession.getId(), true);
     }
 }

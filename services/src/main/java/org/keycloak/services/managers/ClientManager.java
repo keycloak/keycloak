@@ -30,7 +30,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -98,11 +97,6 @@ public class ClientManager {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
                 sessions.onClientRemoved(realm, client);
-            }
-
-            UserSessionPersisterProvider sessionsPersister = realmManager.getSession().getProvider(UserSessionPersisterProvider.class);
-            if (sessionsPersister != null) {
-                sessionsPersister.onClientRemoved(realm, client);
             }
 
             AuthenticationSessionProvider authSessions = realmManager.getSession().authenticationSessions();
