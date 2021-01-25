@@ -7,7 +7,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { boolFormatter } from "../util"
+import { boolFormatter } from "../util";
 
 export type AssociatedRolesModalProps = {
   open: boolean;
@@ -40,10 +40,10 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
 
   const loader = async () => {
     const allRoles = await adminClient.roles.find();
-    const roles = allRoles.filter(x => x.name != name)
- 
-     return roles;
-   }
+    const roles = allRoles.filter((x) => x.name != name);
+
+    return roles;
+  };
 
   useEffect(() => {
     (async () => {
