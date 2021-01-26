@@ -198,6 +198,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                     }
                   }
                   paused={false}
+                  preventScrollOnDeactivate={false}
                 >
                   <div
                     className="pf-l-bullseye"
