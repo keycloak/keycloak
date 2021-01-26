@@ -176,7 +176,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         expected.setFlowAlias("SomeFlow");
         expected.setUserSetupAllowed(false);
         expected.setAuthenticator("registration-page-form");
-        expected.setAutheticatorFlow(true);
+        expected.setAuthenticatorFlow(true);
         expected.setRequirement("DISABLED");
         expected.setPriority(0);
         compareExecution(expected, execs.get(0));

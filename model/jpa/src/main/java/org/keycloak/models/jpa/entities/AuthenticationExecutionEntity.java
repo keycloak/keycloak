@@ -70,7 +70,7 @@ public class AuthenticationExecutionEntity {
     protected int priority;
 
     @Column(name="AUTHENTICATOR_FLOW")
-    private boolean autheticatorFlow;
+    private boolean authenticatorFlow;
 
     public String getId() {
         return id;
@@ -112,12 +112,12 @@ public class AuthenticationExecutionEntity {
         this.priority = priority;
     }
 
-    public boolean isAutheticatorFlow() {
-        return autheticatorFlow;
+    public boolean isAuthenticatorFlow() {
+        return authenticatorFlow;
     }
 
-    public void setAutheticatorFlow(boolean autheticatorFlow) {
-        this.autheticatorFlow = autheticatorFlow;
+    public void setAuthenticatorFlow(boolean authenticatorFlow) {
+        this.authenticatorFlow = authenticatorFlow;
     }
 
     public AuthenticationFlowEntity getParentFlow() {

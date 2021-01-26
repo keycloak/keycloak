@@ -1525,19 +1525,19 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "idp-email-verification",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "Verify Existing Account by Re-authentication",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "b345033e-74d5-4e40-b17b-cdef469f7b80",
@@ -1551,13 +1551,13 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-otp-form",
       "requirement" : "OPTIONAL",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "3b6b1de8-5e70-4ec9-aae3-d2ba8e52c270",
@@ -1571,25 +1571,25 @@
       "requirement" : "ALTERNATIVE",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-spnego",
       "requirement" : "DISABLED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "identity-provider-redirector",
       "requirement" : "ALTERNATIVE",
       "priority" : 25,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "forms",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "ae8d0df6-8b13-4ea8-9c0d-0825c07aa964",
@@ -1603,13 +1603,13 @@
       "requirement" : "ALTERNATIVE",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "client-jwt",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "8c19d745-b49c-47ac-8d50-68d1e1f7518c",
@@ -1623,19 +1623,19 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "direct-grant-validate-password",
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "direct-grant-validate-otp",
       "requirement" : "OPTIONAL",
       "priority" : 30,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "b8e0c30c-214d-4e54-b4e2-44b021093e6b",
@@ -1650,20 +1650,20 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticatorConfig" : "create unique user config",
       "authenticator" : "idp-create-user-if-unique",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "Handle Existing Account",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "d6030c45-c50f-498b-a08e-1caaf3fcd7ac",
@@ -1677,13 +1677,13 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-otp-form",
       "requirement" : "OPTIONAL",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "7c95a872-2b24-4efc-b97e-1a8c63e822e1",
@@ -1698,7 +1698,7 @@
       "priority" : 10,
       "flowAlias" : "registration form",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "22532bcc-4537-4b3d-9b68-b434d6ebbe99",
@@ -1712,25 +1712,25 @@
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-profile-action",
       "requirement" : "REQUIRED",
       "priority" : 40,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-password-action",
       "requirement" : "REQUIRED",
       "priority" : 50,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-recaptcha-action",
       "requirement" : "DISABLED",
       "priority" : 60,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "29fb380e-6428-4ee7-8295-6ddf54b7dc66",
@@ -1744,25 +1744,25 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-credential-email",
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-password",
       "requirement" : "REQUIRED",
       "priority" : 30,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-otp",
       "requirement" : "OPTIONAL",
       "priority" : 40,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "b4b2903b-e1e3-4a7c-9458-aef65f3252ad",
@@ -1776,7 +1776,7 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   } ],
   "authenticatorConfig" : [ {
@@ -3068,19 +3068,19 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "idp-email-verification",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "Verify Existing Account by Re-authentication",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "00b46bc9-ab8a-4403-bec6-9fd7f3a3f14d",
@@ -3094,13 +3094,13 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-otp-form",
       "requirement" : "OPTIONAL",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "7ee834ed-414b-4b34-a480-7d7cb158482a",
@@ -3114,25 +3114,25 @@
       "requirement" : "ALTERNATIVE",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-spnego",
       "requirement" : "DISABLED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "identity-provider-redirector",
       "requirement" : "ALTERNATIVE",
       "priority" : 25,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "forms",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "cbcf873c-a965-4c42-90cf-0bca617803fe",
@@ -3146,13 +3146,13 @@
       "requirement" : "ALTERNATIVE",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "client-jwt",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "59bc4c61-ce2b-4f80-8538-6ec4bd4e93d0",
@@ -3166,19 +3166,19 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "direct-grant-validate-password",
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "direct-grant-validate-otp",
       "requirement" : "OPTIONAL",
       "priority" : 30,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "8ebafdee-ed12-43ed-979f-6bc5e0c3a6b6",
@@ -3193,20 +3193,20 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticatorConfig" : "create unique user config",
       "authenticator" : "idp-create-user-if-unique",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "Handle Existing Account",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "13dff5d3-3f43-4d8d-a605-dd46751cb4cd",
@@ -3220,13 +3220,13 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-otp-form",
       "requirement" : "OPTIONAL",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "912947ec-29a1-4f82-838f-3e6f0cb92544",
@@ -3241,7 +3241,7 @@
       "priority" : 10,
       "flowAlias" : "registration form",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "e312ae45-7a9a-4ecd-a29a-938797798207",
@@ -3255,25 +3255,25 @@
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-profile-action",
       "requirement" : "REQUIRED",
       "priority" : 40,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-password-action",
       "requirement" : "REQUIRED",
       "priority" : 50,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-recaptcha-action",
       "requirement" : "DISABLED",
       "priority" : 60,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "3c8d1428-d801-4f27-a96a-6835a40377d5",
@@ -3287,25 +3287,25 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-credential-email",
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-password",
       "requirement" : "REQUIRED",
       "priority" : 30,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-otp",
       "requirement" : "OPTIONAL",
       "priority" : 40,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "e76a5616-d4d1-4b1d-98cb-0b45cfb8d361",
@@ -3319,7 +3319,7 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   } ],
   "authenticatorConfig" : [ {
@@ -4295,19 +4295,19 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "idp-email-verification",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "Verify Existing Account by Re-authentication",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "44495202-5330-461d-b05f-0ca97c27c06c",
@@ -4321,13 +4321,13 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-otp-form",
       "requirement" : "OPTIONAL",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "8fcb72b6-5936-418c-b2db-a766de6c95dd",
@@ -4341,25 +4341,25 @@
       "requirement" : "ALTERNATIVE",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-spnego",
       "requirement" : "DISABLED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "identity-provider-redirector",
       "requirement" : "ALTERNATIVE",
       "priority" : 25,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "forms",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "0cca7264-b861-464a-a7a2-3e9528075005",
@@ -4373,13 +4373,13 @@
       "requirement" : "ALTERNATIVE",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "client-jwt",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "a7c6cffc-e45c-4310-99b9-d372d385b15f",
@@ -4393,19 +4393,19 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "direct-grant-validate-password",
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "direct-grant-validate-otp",
       "requirement" : "OPTIONAL",
       "priority" : 30,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "6aeb0c6e-7f76-4d9d-b028-2d9bbf878a73",
@@ -4420,20 +4420,20 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticatorConfig" : "create unique user config",
       "authenticator" : "idp-create-user-if-unique",
       "requirement" : "ALTERNATIVE",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "flowAlias" : "Handle Existing Account",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "5a2cb584-2b10-4cc9-820e-b40ea8c7d4ee",
@@ -4447,13 +4447,13 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "auth-otp-form",
       "requirement" : "OPTIONAL",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "d6f55560-23a4-4952-9967-58a409e7f1ac",
@@ -4468,7 +4468,7 @@
       "priority" : 10,
       "flowAlias" : "registration form",
       "userSetupAllowed" : false,
-      "autheticatorFlow" : true
+      "authenticatorFlow" : true
     } ]
   }, {
     "id" : "2f9827b8-589e-4ea7-ac2b-8ddb2d6dbf40",
@@ -4482,25 +4482,25 @@
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-profile-action",
       "requirement" : "REQUIRED",
       "priority" : 40,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-password-action",
       "requirement" : "REQUIRED",
       "priority" : 50,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "registration-recaptcha-action",
       "requirement" : "DISABLED",
       "priority" : 60,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "3cf05239-7f60-4303-a98b-9a09efda49a9",
@@ -4514,25 +4514,25 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-credential-email",
       "requirement" : "REQUIRED",
       "priority" : 20,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-password",
       "requirement" : "REQUIRED",
       "priority" : 30,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     }, {
       "authenticator" : "reset-otp",
       "requirement" : "OPTIONAL",
       "priority" : 40,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   }, {
     "id" : "8aef44c6-44b0-4aae-9754-100cfb6f9283",
@@ -4546,7 +4546,7 @@
       "requirement" : "REQUIRED",
       "priority" : 10,
       "userSetupAllowed" : false,
-      "autheticatorFlow" : false
+      "authenticatorFlow" : false
     } ]
   } ],
   "authenticatorConfig" : [ {

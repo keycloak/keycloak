@@ -67,11 +67,11 @@ public class AbstractAuthenticationExecutionRepresentation implements Serializab
      *
      * @return
      */
-    public boolean isAutheticatorFlow() {
+    public boolean isAuthenticatorFlow() {
         return authenticatorFlow;
     }
 
-    public void setAutheticatorFlow(boolean autheticatorFlow) {
-        this.authenticatorFlow = autheticatorFlow;
+    public void setAuthenticatorFlow(boolean authenticatorFlow) {
+        this.authenticatorFlow = authenticatorFlow;
     }
 }

@@ -1660,7 +1660,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         model.setAuthenticator(entity.getAuthenticator());
         model.setFlowId(entity.getFlowId());
         model.setParentFlow(entity.getParentFlow().getId());
-        model.setAuthenticatorFlow(entity.isAutheticatorFlow());
+        model.setAuthenticatorFlow(entity.isAuthenticatorFlow());
         model.setAuthenticatorConfig(entity.getAuthenticatorConfig());
         return model;
     }
@@ -1696,7 +1696,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setParentFlow(flow);
         flow.getExecutions().add(entity);
         entity.setRealm(realm);
-        entity.setAutheticatorFlow(model.isAuthenticatorFlow());
+        entity.setAuthenticatorFlow(model.isAuthenticatorFlow());
         em.persist(entity);
         model.setId(entity.getId());
         return model;
@@ -1707,7 +1707,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void updateAuthenticatorExecution(AuthenticationExecutionModel model) {
         AuthenticationExecutionEntity entity = getAuthenticationExecution(model.getId(), false);
         if (entity == null) return;
-        entity.setAutheticatorFlow(model.isAuthenticatorFlow());
+        entity.setAuthenticatorFlow(model.isAuthenticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
         entity.setRequirement(model.getRequirement());

@@ -251,7 +251,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         rep.setFlowAlias(flowAlias);
         rep.setUserSetupAllowed(userSetupAllowed);
         rep.setAuthenticator(authenticator);
-        rep.setAutheticatorFlow(authenticatorFlow);
+        rep.setAuthenticatorFlow(authenticatorFlow);
         rep.setAuthenticatorConfig(authenticatorConfig);
         rep.setRequirement(requirement);
         rep.setPriority(priority);
