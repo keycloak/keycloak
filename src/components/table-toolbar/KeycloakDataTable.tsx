@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   IAction,
   IActions,
+  IActionsResolver,
   IFormatter,
   Table,
   TableBody,
@@ -27,6 +28,7 @@ type DataTableProps<T> = {
   columns: Field<T>[];
   rows: Row<T>[];
   actions?: IActions;
+  actionResolver?: IActionsResolver;
   onSelect?: (isSelected: boolean, rowIndex: number) => void;
   canSelectAll: boolean;
 };
@@ -35,6 +37,7 @@ function DataTable<T>({
   columns,
   rows,
   actions,
+  actionResolver,
   ariaLabelKey,
   onSelect,
   canSelectAll,
@@ -54,6 +57,7 @@ function DataTable<T>({
       })}
       rows={rows}
       actions={actions}
+      actionResolver={actionResolver}
       aria-label={t(ariaLabelKey)}
     >
       <TableHeader />
@@ -82,6 +86,7 @@ export type DataListProps<T> = {
   searchPlaceholderKey: string;
   columns: Field<T>[];
   actions?: Action<T>[];
+  actionResolver?: IActionsResolver;
   toolbarItem?: ReactNode;
   emptyState?: ReactNode;
 };
@@ -104,6 +109,7 @@ export type DataListProps<T> = {
  * @param {(first?: number, max?: number, search?: string) => Promise<T[]>} props.loader - loader function that will fetch the data to display first, max and search are only applicable when isPaginated = true
  * @param {Field<T>} props.columns - definition of the columns
  * @param {Action[]} props.actions - the actions that appear on the row
+ * @param {IActionsResolver} props.actionResolver Resolver for the given action
  * @param {ReactNode} props.toolbarItem - Toolbar items that appear on the top of the table {@link ToolbarItem}
  * @param {ReactNode} props.emptyState - ReactNode show when the list is empty could be any component but best to use {@link ListEmptyState}
  */
@@ -116,6 +122,7 @@ export function KeycloakDataTable<T>({
   loader,
   columns,
   actions,
+  actionResolver,
   toolbarItem,
   emptyState,
 }: DataListProps<T>) {
@@ -250,6 +257,7 @@ export function KeycloakDataTable<T>({
               canSelectAll={canSelectAll}
               onSelect={onSelect ? _onSelect : undefined}
               actions={convertAction()}
+              actionResolver={actionResolver}
               rows={rows}
               columns={columns}
               ariaLabelKey={ariaLabelKey}
@@ -272,6 +280,7 @@ export function KeycloakDataTable<T>({
               canSelectAll={canSelectAll}
               onSelect={onSelect ? _onSelect : undefined}
               actions={convertAction()}
+              actionResolver={actionResolver}
               rows={filteredData || rows}
               columns={columns}
               ariaLabelKey={ariaLabelKey}
