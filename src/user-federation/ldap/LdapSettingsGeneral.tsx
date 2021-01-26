@@ -3,77 +3,30 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  Text,
-  TextContent,
   TextInput,
-  Title,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useForm, Controller } from "react-hook-form";
-import { convertToFormValues } from "../../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsGeneralProps = {
+  form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
 export const LdapSettingsGeneral = ({
+  form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-  const adminClient = useAdminClient();
-  const { register, control, setValue } = useForm<ComponentRepresentation>();
-  const { id } = useParams<{ id: string }>();
+
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
-
-  const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", setValue);
-        if (entry[1].vendor) {
-          setValue("config.vendor", convertVendorNames(entry[1].vendor[0]));
-        }
-      } else {
-        setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.components.findOne({ id }),
-      (fetchedComponent) => setupForm(fetchedComponent)
-    );
-  }, []);
-
-  const convertVendorNames = (vendorName: string) => {
-    switch (vendorName) {
-      case "ad":
-        return "Active Directory";
-      case "rhds":
-        return "Red Hat Directory Server";
-      case "tivoli":
-        return "Tivoli";
-      case "edirectory":
-        return "Novell eDirectory";
-      case "other":
-        return "Other";
-      default:
-        return t("common:choose");
-    }
-  };
 
   return (
     <>
@@ -84,7 +37,6 @@ export const LdapSettingsGeneral = ({
           showDescription={showSectionDescription}
         />
       )}
-
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("consoleDisplayName")}
@@ -98,13 +50,50 @@ export const LdapSettingsGeneral = ({
           fieldId="kc-console-display-name"
           isRequired
         >
+          {/* These hidden fields are required so data object written back matches data retrieved */}
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-id"
+            name="id"
+            ref={form.register}
+          />
           <TextInput
             isRequired
             type="text"
             id="kc-console-display-name"
             name="name"
-            ref={register}
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateName")}`,
+              },
+            })}
           />
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-provider-id"
+            name="providerId"
+            ref={form.register}
+          />
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-provider-type"
+            name="providerType"
+            ref={form.register}
+          />
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-parentId"
+            name="parentId"
+            ref={form.register}
+          />
+          {form.errors.name && (
+            <div className="error">{form.errors.name.message}</div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("vendor")}
@@ -119,9 +108,9 @@ export const LdapSettingsGeneral = ({
           isRequired
         >
           <Controller
-            name="config.vendor"
+            name="config.vendor[0]"
             defaultValue=""
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-vendor"
@@ -135,16 +124,21 @@ export const LdapSettingsGeneral = ({
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption
-                  key={0}
-                  value={t("common:choose")}
-                  isPlaceholder
-                />
-                <SelectOption key={1} value="Active Directory" />
-                <SelectOption key={2} value="Red Hat Directory Server" />
-                <SelectOption key={3} value="Tivoli" />
-                <SelectOption key={4} value="Novell eDirectory" />
-                <SelectOption key={5} value="Other" />
+                <SelectOption key={0} value="ad" isPlaceholder>
+                  Active Directory
+                </SelectOption>
+                <SelectOption key={1} value="rhds">
+                  Red Hat Directory Server
+                </SelectOption>
+                <SelectOption key={2} value="tivoli">
+                  Tivoli
+                </SelectOption>
+                <SelectOption key={3} value="edirectory">
+                  Novell eDirectory
+                </SelectOption>
+                <SelectOption key={4} value="other">
+                  Other
+                </SelectOption>
               </Select>
             )}
           ></Controller>

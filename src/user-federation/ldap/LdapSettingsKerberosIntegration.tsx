@@ -1,50 +1,24 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useEffect } from "react";
+import React from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useForm, Controller } from "react-hook-form";
-import { convertToFormValues } from "../../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsKerberosIntegrationProps = {
+  form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
 export const LdapSettingsKerberosIntegration = ({
+  form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsKerberosIntegrationProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-
-  const adminClient = useAdminClient();
-  const { control, setValue } = useForm<ComponentRepresentation>();
-  const { id } = useParams<{ id: string }>();
-
-  const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", setValue);
-      } else {
-        setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.components.findOne({ id }),
-      (fetchedComponent) => setupForm(fetchedComponent)
-    );
-  }, []);
 
   return (
     <>
@@ -72,12 +46,12 @@ export const LdapSettingsKerberosIntegration = ({
           <Controller
             name="config.allowKerberosAuthentication"
             defaultValue={false}
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-allow-kerberos-authentication"}
                 isDisabled={false}
-                onChange={onChange}
+                onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -100,12 +74,12 @@ export const LdapSettingsKerberosIntegration = ({
           <Controller
             name="config.useKerberosForPasswordAuthentication"
             defaultValue={false}
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-use-kerberos-password-authentication"}
                 isDisabled={false}
-                onChange={onChange}
+                onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}

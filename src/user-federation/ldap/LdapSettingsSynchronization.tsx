@@ -1,49 +1,24 @@
 import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useEffect } from "react";
+import React from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useForm, Controller } from "react-hook-form";
-import { convertToFormValues } from "../../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsSynchronizationProps = {
+  form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
 export const LdapSettingsSynchronization = ({
+  form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsSynchronizationProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-  const adminClient = useAdminClient();
-  const { register, control, setValue } = useForm<ComponentRepresentation>();
-  const { id } = useParams<{ id: string }>();
-
-  const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", setValue);
-      } else {
-        setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.components.findOne({ id }),
-      (fetchedComponent) => setupForm(fetchedComponent)
-    );
-  }, []);
 
   return (
     <>
@@ -54,7 +29,6 @@ export const LdapSettingsSynchronization = ({
           showDescription={showSectionDescription}
         />
       )}
-
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           hasNoPaddingTop
@@ -71,16 +45,16 @@ export const LdapSettingsSynchronization = ({
           <Controller
             name="config.importEnabled"
             defaultValue={false}
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-import-users"}
                 name="importEnabled"
                 label={t("common:on")}
                 labelOff={t("common:off")}
+                onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
                 isDisabled={false}
-                onChange={onChange}
               />
             )}
           ></Controller>
@@ -99,46 +73,50 @@ export const LdapSettingsSynchronization = ({
           <TextInput
             type="text"
             id="kc-batch-size"
-            name="config.batchSizeForSync"
-            ref={register}
+            name="config.batchSizeForSync[0]"
+            ref={form.register}
           />
         </FormGroup>
+
+        {/* Enter -1 to switch off, otherwise enter value */}
         <FormGroup
           hasNoPaddingTop
-          label={t("periodicFullSync")}
+          label={t("fullSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText={helpText("periodicFullSyncHelp")}
-              forLabel={t("periodicFullSync")}
-              forID="kc-periodic-full-sync"
+              helpText={helpText("fullSyncPeriodHelp")}
+              forLabel={t("fullSyncPeriod")}
+              forID="kc-full-sync-period"
             />
           }
-          fieldId="kc-periodic-full-sync"
+          fieldId="kc-full-sync-period"
         >
           <TextInput
             type="text"
-            id="kc-batch-size"
-            name="config.fullSyncPeriod"
-            ref={register}
+            id="kc-full-sync-period"
+            name="config.fullSyncPeriod[0]"
+            ref={form.register}
           />
         </FormGroup>
+
+        {/* Enter -1 to switch off, otherwise enter value */}
         <FormGroup
-          label={t("periodicChangedUsersSync")}
+          label={t("changedUsersSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText={helpText("periodicChangedUsersSyncHelp")}
-              forLabel={t("periodicChangedUsersSync")}
-              forID="kc-periodic-changed-users-sync"
+              helpText={helpText("changedUsersSyncHelp")}
+              forLabel={t("changedUsersSyncPeriod")}
+              forID="kc-changed-users-sync-period"
             />
           }
-          fieldId="kc-periodic-changed-users-sync"
+          fieldId="kc-changed-users-sync-period"
           hasNoPaddingTop
         >
           <TextInput
             type="text"
-            id="kc-batch-size"
-            name="config.changedSyncPeriod"
-            ref={register}
+            id="kc-changed-users-sync-period"
+            name="config.changedSyncPeriod[0]"
+            ref={form.register}
           />
         </FormGroup>
       </FormAccess>

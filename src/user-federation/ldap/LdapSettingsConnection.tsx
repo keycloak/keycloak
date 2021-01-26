@@ -9,46 +9,26 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { Controller, useForm } from "react-hook-form";
-import { convertToFormValues } from "../../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { Controller, UseFormMethods } from "react-hook-form";
 import { EyeIcon } from "@patternfly/react-icons";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsConnectionProps = {
+  form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
 export const LdapSettingsConnection = ({
+  form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-  const adminClient = useAdminClient();
-  const { register, control, setValue } = useForm<ComponentRepresentation>();
-  const { id } = useParams<{ id: string }>();
-
-  const convertTruststoreSpiValues = (truststoreValue: string) => {
-    switch (truststoreValue) {
-      case "always":
-        return `${t("always")}`;
-      case "never":
-        return `${t("never")}`;
-      case "ldapsOnly":
-      default:
-        return `${t("onlyLdaps")}`;
-    }
-  };
 
   const [
     isTruststoreSpiDropdownOpen,
@@ -56,29 +36,6 @@ export const LdapSettingsConnection = ({
   ] = useState(false);
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
-
-  const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", setValue);
-        if (entry[1].useTruststoreSpi) {
-          setValue(
-            "config.useTruststoreSpi",
-            convertTruststoreSpiValues(entry[1].useTruststoreSpi[0])
-          );
-        }
-      } else {
-        setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.components.findOne({ id }),
-      (fetchedComponent) => setupForm(fetchedComponent)
-    );
-  }, []);
 
   return (
     <>
@@ -91,7 +48,6 @@ export const LdapSettingsConnection = ({
           showDescription={showSectionDescription}
         />
       )}
-
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("connectionURL")}
@@ -109,9 +65,21 @@ export const LdapSettingsConnection = ({
             isRequired
             type="text"
             id="kc-console-connection-url"
-            name="config.connectionUrl"
-            ref={register}
+            name="config.connectionUrl[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateConnectionUrl")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.connectionUrl &&
+            form.errors.config.connectionUrl[0] && (
+              <div className="error">
+                {form.errors.config.connectionUrl[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("enableStartTls")}
@@ -127,14 +95,14 @@ export const LdapSettingsConnection = ({
         >
           <Controller
             name="config.startTls"
-            defaultValue={false}
-            control={control}
+            defaultValue={["false"]}
+            control={form.control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-enable-start-tls"}
-                isChecked={value[0] === "true"}
                 isDisabled={false}
-                onChange={onChange}
+                onChange={(value) => onChange([`${value}`])}
+                isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
@@ -154,9 +122,9 @@ export const LdapSettingsConnection = ({
           fieldId="kc-use-truststore-spi"
         >
           <Controller
-            name="config.useTruststoreSpi"
+            name="config.useTruststoreSpi[0]"
             defaultValue=""
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-use-truststore-spi"
@@ -171,9 +139,15 @@ export const LdapSettingsConnection = ({
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption key={0} value={t("always")} />
-                <SelectOption key={1} value={t("onlyLdaps")} />
-                <SelectOption key={2} value={t("never")} />
+                <SelectOption key={0} value="always">
+                  {t("always")}
+                </SelectOption>
+                <SelectOption key={1} value="ldapsOnly">
+                  {t("onlyLdaps")}
+                </SelectOption>
+                <SelectOption key={2} value="never">
+                  {t("never")}
+                </SelectOption>
               </Select>
             )}
           ></Controller>
@@ -193,12 +167,12 @@ export const LdapSettingsConnection = ({
           <Controller
             name="config.connectionPooling"
             defaultValue={false}
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-connection-pooling"}
                 isDisabled={false}
-                onChange={onChange}
+                onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -220,8 +194,8 @@ export const LdapSettingsConnection = ({
           <TextInput
             type="text"
             id="kc-console-connection-timeout"
-            name="config.connectionTimeout"
-            ref={register}
+            name="config.connectionTimeout[0]"
+            ref={form.register}
           />
         </FormGroup>
         <FormGroup
@@ -237,9 +211,9 @@ export const LdapSettingsConnection = ({
           isRequired
         >
           <Controller
-            name="config.authType"
+            name="config.authType[0]"
             defaultValue=""
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-bind-type"
@@ -275,8 +249,8 @@ export const LdapSettingsConnection = ({
           <TextInput
             type="text"
             id="kc-console-bind-dn"
-            name="config.bindDn"
-            ref={register}
+            name="config.bindDn[0]"
+            ref={form.register}
           />
         </FormGroup>
         <FormGroup
@@ -291,14 +265,18 @@ export const LdapSettingsConnection = ({
           fieldId="kc-console-bind-credentials"
           isRequired
         >
-          {/* TODO: MF The input group below throws a 'React does not recognize the `isDisabled` prop on a DOM element' error */}
           <InputGroup>
             <TextInput // TODO: Make password field switch to type=text with button
               isRequired
               type="password"
               id="kc-console-bind-credentials"
-              name="config.bindCredential"
-              ref={register}
+              name="config.bindCredential[0]"
+              ref={form.register({
+                required: {
+                  value: true,
+                  message: `${t("validateBindCredentials")}`,
+                },
+              })}
             />
             <Button
               variant="control"
@@ -307,6 +285,13 @@ export const LdapSettingsConnection = ({
               <EyeIcon />
             </Button>
           </InputGroup>
+          {form.errors.config &&
+            form.errors.config.bindCredential &&
+            form.errors.config.bindCredential[0] && (
+              <div className="error">
+                {form.errors.config.bindCredential[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup fieldId="kc-test-button">
           {" "}

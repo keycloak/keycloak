@@ -13,8 +13,12 @@ import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosInte
 import { LdapSettingsCache } from "./ldap/LdapSettingsCache";
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
 import { useTranslation } from "react-i18next";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+
+import { useForm } from "react-hook-form";
 
 export const UserFederationLdapWizard = () => {
+  const form = useForm<ComponentRepresentation>();
   const { t } = useTranslation("user-federation");
 
   const steps = [
@@ -22,21 +26,33 @@ export const UserFederationLdapWizard = () => {
       name: t("requiredSettings"),
       id: "ldapRequiredSettingsStep",
       component: (
-        <LdapSettingsGeneral showSectionHeading showSectionDescription />
+        <LdapSettingsGeneral
+          form={form}
+          showSectionHeading
+          showSectionDescription
+        />
       ),
     },
     {
       name: t("connectionAndAuthenticationSettings"),
       id: "ldapConnectionSettingsStep",
       component: (
-        <LdapSettingsConnection showSectionHeading showSectionDescription />
+        <LdapSettingsConnection
+          form={form}
+          showSectionHeading
+          showSectionDescription
+        />
       ),
     },
     {
       name: t("ldapSearchingAndUpdatingSettings"),
       id: "ldapSearchingSettingsStep",
       component: (
-        <LdapSettingsSearching showSectionHeading showSectionDescription />
+        <LdapSettingsSearching
+          form={form}
+          showSectionHeading
+          showSectionDescription
+        />
       ),
     },
     {
@@ -44,6 +60,7 @@ export const UserFederationLdapWizard = () => {
       id: "ldapSynchronizationSettingsStep",
       component: (
         <LdapSettingsSynchronization
+          form={form}
           showSectionHeading
           showSectionDescription
         />
@@ -54,6 +71,7 @@ export const UserFederationLdapWizard = () => {
       id: "ldapKerberosIntegrationSettingsStep",
       component: (
         <LdapSettingsKerberosIntegration
+          form={form}
           showSectionHeading
           showSectionDescription
         />
@@ -63,14 +81,22 @@ export const UserFederationLdapWizard = () => {
       name: t("cacheSettings"),
       id: "ldapCacheSettingsStep",
       component: (
-        <LdapSettingsCache showSectionHeading showSectionDescription />
+        <LdapSettingsCache
+          form={form}
+          showSectionHeading
+          showSectionDescription
+        />
       ),
     },
     {
       name: t("advancedSettings"),
       id: "ldapAdvancedSettingsStep",
       component: (
-        <LdapSettingsAdvanced showSectionHeading showSectionDescription />
+        <LdapSettingsAdvanced
+          form={form}
+          showSectionHeading
+          showSectionDescription
+        />
       ),
     },
   ];

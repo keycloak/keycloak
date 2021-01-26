@@ -7,70 +7,30 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useForm, Controller } from "react-hook-form";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
-import { useParams } from "react-router-dom";
-import { convertToFormValues } from "../../util";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsSearchingProps = {
+  form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
 export const LdapSettingsSearching = ({
+  form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsSearchingProps) => {
   const { t } = useTranslation("user-federation");
-  const adminClient = useAdminClient();
   const helpText = useTranslation("user-federation-help").t;
-  const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
-  const { id } = useParams<{ id: string }>();
+
   const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] = useState(
     false
   );
-  const { register, control, setValue } = useForm<ComponentRepresentation>();
-
-  const convertSearchScopes = (scope: string) => {
-    switch (scope) {
-      case "1":
-      default:
-        return `${t("oneLevel")}`;
-      case "2":
-        return `${t("subtree")}`;
-    }
-  };
-
-  const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", setValue);
-        if (entry[1].searchScope) {
-          setValue(
-            "config.searchScope",
-            convertSearchScopes(entry[1].searchScope[0])
-          );
-        }
-      } else {
-        setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.components.findOne({ id }),
-      (fetchedComponent) => setupForm(fetchedComponent)
-    );
-  }, []);
+  const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
 
   return (
     <>
@@ -95,9 +55,9 @@ export const LdapSettingsSearching = ({
           fieldId="kc-edit-mode"
         >
           <Controller
-            name="config.editMode"
+            name="config.editMode[0]"
             defaultValue=""
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-edit-mode"
@@ -113,12 +73,8 @@ export const LdapSettingsSearching = ({
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption
-                  key={0}
-                  value={t("common:choose")}
-                  isPlaceholder
-                />
-                <SelectOption key={1} value="RACT_ONLY" />
+                <SelectOption key={0} value="" isPlaceholder />
+                <SelectOption key={1} value="READ_ONLY" />
                 <SelectOption key={2} value="WRITABLE" />
                 <SelectOption key={3} value="UNSYNCED" />
               </Select>
@@ -141,9 +97,21 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-console-users-dn"
-            name="config.usersDn"
-            ref={register}
+            name="config.usersDn[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateUsersDn")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.usersDn &&
+            form.errors.config.usersDn[0] && (
+              <div className="error">
+                {form.errors.config.usersDn[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("usernameLdapAttribute")}
@@ -161,9 +129,21 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-username-ldap-attribute"
-            name="config.usernameLDAPAttribute"
-            ref={register}
+            name="config.usernameLDAPAttribute[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateUsernameLDAPAttribute")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.usernameLDAPAttribute &&
+            form.errors.config.usernameLDAPAttribute[0] && (
+              <div className="error">
+                {form.errors.config.usernameLDAPAttribute[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("rdnLdapAttribute")}
@@ -181,9 +161,21 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-rdn-ldap-attribute"
-            name="config.rdnLDAPAttribute"
-            ref={register}
+            name="config.rdnLDAPAttribute[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateRdnLdapAttribute")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.rdnLDAPAttribute &&
+            form.errors.config.rdnLDAPAttribute[0] && (
+              <div className="error">
+                {form.errors.config.rdnLDAPAttribute[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("uuidLdapAttribute")}
@@ -201,9 +193,21 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-uuid-ldap-attribute"
-            name="config.uuidLDAPAttribute"
-            ref={register}
+            name="config.uuidLDAPAttribute[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateUuidLDAPAttribute")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.uuidLDAPAttribute &&
+            form.errors.config.uuidLDAPAttribute[0] && (
+              <div className="error">
+                {form.errors.config.uuidLDAPAttribute[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("userObjectClasses")}
@@ -221,9 +225,21 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-user-object-classes"
-            name="config.userObjectClasses"
-            ref={register}
+            name="config.userObjectClasses[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateUserObjectClasses")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.userObjectClasses &&
+            form.errors.config.userObjectClasses[0] && (
+              <div className="error">
+                {form.errors.config.userObjectClasses[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("userLdapFilter")}
@@ -239,10 +255,11 @@ export const LdapSettingsSearching = ({
           <TextInput
             type="text"
             id="kc-user-ldap-filter"
-            name="config.customUserSearchFilter"
-            ref={register}
+            name="config.customUserSearchFilter[0]"
+            ref={form.register}
           />
         </FormGroup>
+
         <FormGroup
           label={t("searchScope")}
           labelIcon={
@@ -255,9 +272,9 @@ export const LdapSettingsSearching = ({
           fieldId="kc-search-scope"
         >
           <Controller
-            name="config.searchScope"
+            name="config.searchScope[0]"
             defaultValue=""
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-search-scope"
@@ -273,13 +290,12 @@ export const LdapSettingsSearching = ({
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption
-                  key={0}
-                  value={t("common:choose")}
-                  isPlaceholder
-                />
-                <SelectOption key={1} value={t("oneLevel")} />
-                <SelectOption key={2} value={t("subtree")} />
+                <SelectOption key={0} value="1" isPlaceholder>
+                  {t("oneLevel")}
+                </SelectOption>
+                <SelectOption key={1} value="2">
+                  {t("subtree")}
+                </SelectOption>
               </Select>
             )}
           ></Controller>
@@ -298,8 +314,8 @@ export const LdapSettingsSearching = ({
           <TextInput
             type="text"
             id="kc-read-timeout"
-            name="config.readTimeout"
-            ref={register}
+            name="config.readTimeout[0]"
+            ref={form.register}
           />
         </FormGroup>
         <FormGroup
@@ -317,13 +333,13 @@ export const LdapSettingsSearching = ({
           <Controller
             name="config.pagination"
             defaultValue={false}
-            control={control}
+            control={form.control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-console-pagination"}
-                isChecked={value[0] === "true"}
                 isDisabled={false}
-                onChange={onChange}
+                onChange={(value) => onChange([`${value}`])}
+                isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
