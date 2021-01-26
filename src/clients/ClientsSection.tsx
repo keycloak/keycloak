@@ -22,8 +22,6 @@ export const ClientsSection = () => {
   const history = useHistory();
   const { url } = useRouteMatch();
 
-  // console.log(form.errors)
-
   const adminClient = useAdminClient();
   const baseUrl = getBaseUrl(adminClient);
 
