@@ -80,7 +80,7 @@ export const RealmRoleForm = ({
         <Button variant="primary" type="submit">
           {t("common:save")}
         </Button>
-        <Button onClick={reset} variant="link">
+        <Button onClick={() => reset()} variant="link">
           {editMode ? t("common:reload") : t("common:cancel")}
         </Button>
       </ActionGroup>

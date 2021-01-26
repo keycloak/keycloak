@@ -7,8 +7,7 @@ import {
   ButtonVariant,
   PageSection,
 } from "@patternfly/react-core";
-import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-
+import { boolFormatter } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
@@ -17,7 +16,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter, toUpperCase } from "../util";
+import { emptyFormatter } from "../util";
 
 export const RealmRolesSection = () => {
   const { t } = useTranslation("roles");
@@ -44,12 +43,6 @@ export const RealmRolesSection = () => {
       </Link>
     </>
   );
-
-  const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-    const boolVal = data?.toString();
-
-    return (boolVal ? toUpperCase(boolVal) : undefined) as string;
-  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
