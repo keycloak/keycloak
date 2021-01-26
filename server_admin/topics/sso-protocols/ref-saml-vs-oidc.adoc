@@ -1,6 +1,6 @@
 [id="ref-saml-vs-oidc_{context}"]
 
-=== OpenID Connect vs. SAML
+=== OpenID Connect compared to SAML
 [role="_abstract"]
 The following lists a number of factors to consider when choosing a protocol.
 
