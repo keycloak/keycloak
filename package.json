@@ -18,10 +18,10 @@
     "start:cypress-tests": "cd tests && npx cypress run --config ignoreTestFiles=00_set_new_admin_console.spec.js"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.65.6",
-    "@patternfly/react-core": "4.83.3",
-    "@patternfly/react-icons": "4.7.18",
-    "@patternfly/react-table": "4.19.24",
+    "@patternfly/patternfly": "^4.80.2",
+    "@patternfly/react-core": "4.90.1",
+    "@patternfly/react-icons": "4.8.3",
+    "@patternfly/react-table": "4.20.14",
     "file-saver": "^2.0.2",
     "i18next": "^19.6.2",
     "keycloak-admin": "1.14.6",
