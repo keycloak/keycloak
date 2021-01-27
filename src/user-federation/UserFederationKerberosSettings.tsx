@@ -119,6 +119,7 @@ export const UserFederationKerberosSettings = () => {
       try {
         await adminClient.components.del({ id });
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
+        history.replace(`/${realm}/user-federation`);
       } catch (error) {
         addAlert(`${t("userFedDeleteError")} ${error}`, AlertVariant.danger);
       }
