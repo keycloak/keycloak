@@ -214,7 +214,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Flow is executed only if the user attribute exists and has the expected value");
         addProviderInfo(result, "set-attribute", "Set user attribute",
                 "Set a user attribute");
-
+        addProviderInfo(result, "idp-detect-existing-broker-user", "Detect existing broker user",
+                "Detect if there is an existing Keycloak account with same email like identity provider. If no, throw an error.");
         return result;
     }
 
