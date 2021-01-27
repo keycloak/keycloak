@@ -43,47 +43,48 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SamlXMLAttacksTest extends AbstractSamlTest {
 
-    @Test(timeout = 4000)
+    @Test
     public void testXMLBombAttackResistance() throws Exception {
+        runTestWithTimeout(4000, () -> {
+            String bombDoctype = "<!DOCTYPE AuthnRequest [" +
+            " <!ENTITY lol \"lol\">" +
+                    "<!ELEMENT AuthnRequest (#PCDATA)>" +
+                    "<!ENTITY lol1 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">" +
+                    "<!ENTITY lol2 \"&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;\">" +
+                    "<!ENTITY lol3 \"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\">" +
+                    "<!ENTITY lol4 \"&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;\">" +
+                    "<!ENTITY lol5 \"&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;\">" +
+                    "<!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">" +
+                    "<!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">" +
+                    "<!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">" +
+                    "<!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">" +
+                    "]>";
 
-        String bombDoctype = "<!DOCTYPE AuthnRequest [" +
-        " <!ENTITY lol \"lol\">" +
-                "<!ELEMENT AuthnRequest (#PCDATA)>" +
-                "<!ENTITY lol1 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">" +
-                "<!ENTITY lol2 \"&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;\">" +
-                "<!ENTITY lol3 \"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\">" +
-                "<!ENTITY lol4 \"&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;\">" +
-                "<!ENTITY lol5 \"&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;\">" +
-                "<!ENTITY lol6 \"&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;\">" +
-                "<!ENTITY lol7 \"&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;\">" +
-                "<!ENTITY lol8 \"&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;\">" +
-                "<!ENTITY lol9 \"&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;\">" +
-                "]>";
-        
-        String samlAuthnRequest = "<samlp:AuthnRequest xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"a123\" Version=\"2.0\" IssueInstant=\"2014-07-16T23:52:45Z\" >" +
-                "<saml:Issuer>" + SAML_CLIENT_ID_SALES_POST + "&lol9;</saml:Issuer>" +
-                "</samlp:AuthnRequest>";
+            String samlAuthnRequest = "<samlp:AuthnRequest xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"a123\" Version=\"2.0\" IssueInstant=\"2014-07-16T23:52:45Z\" >" +
+                    "<saml:Issuer>" + SAML_CLIENT_ID_SALES_POST + "&lol9;</saml:Issuer>" +
+                    "</samlp:AuthnRequest>";
 
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(getAuthServerSamlEndpoint(REALM_NAME));
+            try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+                HttpPost post = new HttpPost(getAuthServerSamlEndpoint(REALM_NAME));
 
-            List<NameValuePair> parameters = new LinkedList<>();
-            String encoded = PostBindingUtil.base64Encode(bombDoctype + samlAuthnRequest);
-            parameters.add(new BasicNameValuePair(GeneralConstants.SAML_REQUEST_KEY, encoded));
+                List<NameValuePair> parameters = new LinkedList<>();
+                String encoded = PostBindingUtil.base64Encode(bombDoctype + samlAuthnRequest);
+                parameters.add(new BasicNameValuePair(GeneralConstants.SAML_REQUEST_KEY, encoded));
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
+                UrlEncodedFormEntity formEntity;
+                try {
+                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+
+                post.setEntity(formEntity);
+
+                try (CloseableHttpResponse response = client.execute(post)) {
+                    assertThat(response, bodyHC(containsString("Invalid Request")));
+                }
             }
-
-            post.setEntity(formEntity);
-            
-            try (CloseableHttpResponse response = client.execute(post)) {
-                assertThat(response, bodyHC(containsString("Invalid Request")));
-            }
-        }
+        });
     }
 
     @Deployment(name = "DTD")

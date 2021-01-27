@@ -132,41 +132,42 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId("hardcoded-client");
     }
 
-    @Test(timeout = 4000)
-    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
-    public void testSearchTimeout() {
-        String hardcodedClient = HardcodedClientStorageProviderFactory.PROVIDER_ID;
-        String delayedSearch = HardcodedClientStorageProviderFactory.DELAYED_SEARCH;
-        String providerId = this.providerId;
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
-            
-            assertThat(session.clientStorageManager()
-                        .searchClientsByClientIdStream(realm, "client", null, null)
-                        .map(ClientModel::getClientId)
-                        .collect(Collectors.toList()), 
-                    allOf(
-                        hasItem(hardcodedClient),
-                        hasItem("root-url-client"))
-                    );
-            
-            //update the provider to simulate delay during the search
-            ComponentModel memoryProvider = realm.getComponent(providerId);
-            memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));
-            realm.updateComponent(memoryProvider);
+    @Test
+    public void testSearchTimeout() throws Exception{
+        runTestWithTimeout(4000, () -> {
+            String hardcodedClient = HardcodedClientStorageProviderFactory.PROVIDER_ID;
+            String delayedSearch = HardcodedClientStorageProviderFactory.DELAYED_SEARCH;
+            String providerId = this.providerId;
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-        });
-        
-        testingClient.server().run(session -> {
-            // search for clients and check hardcoded-client is not present
-            assertThat(session.clientStorageManager()
-                    .searchClientsByClientIdStream(session.realms().getRealmByName(AuthRealm.TEST), "client", null, null)
-                    .map(ClientModel::getClientId)
-                    .collect(Collectors.toList()),
-                allOf(
-                    not(hasItem(hardcodedClient)), 
-                    hasItem("root-url-client")
-                ));
+                assertThat(session.clientStorageManager()
+                            .searchClientsByClientIdStream(realm, "client", null, null)
+                            .map(ClientModel::getClientId)
+                            .collect(Collectors.toList()),
+                        allOf(
+                            hasItem(hardcodedClient),
+                            hasItem("root-url-client"))
+                        );
+
+                //update the provider to simulate delay during the search
+                ComponentModel memoryProvider = realm.getComponent(providerId);
+                memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));
+                realm.updateComponent(memoryProvider);
+
+            });
+
+            testingClient.server().run(session -> {
+                // search for clients and check hardcoded-client is not present
+                assertThat(session.clientStorageManager()
+                        .searchClientsByClientIdStream(session.realms().getRealmByName(AuthRealm.TEST), "client", null, null)
+                        .map(ClientModel::getClientId)
+                        .collect(Collectors.toList()),
+                    allOf(
+                        not(hasItem(hardcodedClient)),
+                        hasItem("root-url-client")
+                    ));
+            });
         });
     }
 

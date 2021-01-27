@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.TestTimedOutException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmsResource;
@@ -78,6 +79,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -401,6 +403,34 @@ public abstract class AbstractKeycloakTest {
               .replace("http", "https")
               .replace("8080", "8543")
               .replace("8180", "8543");
+    }
+
+    protected interface ExecutableTestMethod {
+        void execute() throws Exception;
+    }
+
+    protected void runTestWithTimeout(long timeout, ExecutableTestMethod executableTestMethod) throws Exception {
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        Callable<Object> callable = new Callable<Object>() {
+            public Object call() throws Exception {
+                executableTestMethod.execute();
+                return null;
+            }
+        };
+        Future<Object> result = service.submit(callable);
+        service.shutdown();
+        try {
+            boolean terminated = service.awaitTermination(timeout,
+                    TimeUnit.MILLISECONDS);
+            if (!terminated) {
+                service.shutdownNow();
+            }
+            result.get(0, TimeUnit.MILLISECONDS); // throws the exception if one occurred during the invocation
+        } catch (TimeoutException e) {
+            throw new TestTimedOutException(timeout, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
     }
 
     /**
