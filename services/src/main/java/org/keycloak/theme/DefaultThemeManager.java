@@ -123,6 +123,10 @@ public class DefaultThemeManager implements ThemeManager {
 
     private Theme loadTheme(String name, Theme.Type type) {
         Theme theme = findTheme(name, type);
+        if (theme == null) {
+            return null;
+        }
+
         List<Theme> themes = new LinkedList<>();
         themes.add(theme);
 
