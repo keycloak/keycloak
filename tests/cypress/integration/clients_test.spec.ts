@@ -1,8 +1,8 @@
-import LoginPage from "../support/pages/LoginPage.js";
-import Masthead from "../support/pages/admin_console/Masthead.js";
-import ListingPage from "../support/pages/admin_console/ListingPage.js";
-import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
-import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage.js";
+import LoginPage from "../support/pages/LoginPage";
+import Masthead from "../support/pages/admin_console/Masthead";
+import ListingPage from "../support/pages/admin_console/ListingPage";
+import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -51,7 +51,7 @@ describe("Clients test", function () {
 
     it("Client CRUD test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
-      
+
       // Create
       listingPage.itemExist(itemId, false).goToCreateItem();
 
@@ -65,13 +65,10 @@ describe("Clients test", function () {
 
       sidebarPage.goToClients();
 
-      listingPage
-        .searchItem(itemId)
-        .itemExist(itemId);
+      listingPage.searchItem(itemId).itemExist(itemId);
 
       // Delete
-      listingPage
-        .deleteItem(itemId); // There should be a confirmation pop-up
+      listingPage.deleteItem(itemId); // There should be a confirmation pop-up
 
       masthead.checkNotificationMessage("The client has been deleted");
 

@@ -1,4 +1,9 @@
 export default class Masthead {
+  menuBtn: string;
+  logoBtn: string;
+  helpBtn: string;
+  userDrpDwn: string;
+  userDrpDwnKebab: string;
   constructor() {
     this.menuBtn = "#nav-toggle";
     this.logoBtn = "#masthead-logo";
@@ -23,7 +28,7 @@ export default class Masthead {
     if (isMobileMode) {
       cy.viewport("iphone-6");
     } else {
-      cy.viewport();
+      cy.viewport(1024, 768);
     }
   }
 

@@ -1,7 +1,7 @@
-import ListingPage from "../support/pages/admin_console/ListingPage.js";
-import LoginPage from "../support/pages/LoginPage.js";
-import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
-import Masthead from "../support/pages/admin_console/Masthead.js";
+import ListingPage from "../support/pages/admin_console/ListingPage";
+import LoginPage from "../support/pages/LoginPage";
+import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import Masthead from "../support/pages/admin_console/Masthead";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();

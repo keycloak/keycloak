@@ -1,4 +1,9 @@
 export default class ModalUtils {
+  modalTitle: string;
+  modalMessage: string;
+  confirmModalBtn: string;
+  cancelModalBtn: string;
+  closeModalBtn: string;
   constructor() {
     this.modalTitle = ".pf-c-modal-box .pf-c-modal-box__title-text";
     this.modalMessage = ".pf-c-modal-box .pf-c-modal-box__body";
