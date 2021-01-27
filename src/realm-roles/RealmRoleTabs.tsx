@@ -147,14 +147,14 @@ export const RealmRoleTabs = () => {
           id
             ? [
                 <DropdownItem
-                  key="action"
+                  key="delete-role"
                   component="button"
                   onClick={() => toggleDeleteDialog()}
                 >
                   {t("deleteRole")}
                 </DropdownItem>,
                 <DropdownItem
-                  key="action"
+                  key="toggle-modal"
                   component="button"
                   onClick={() => toggleModal()}
                 >
