@@ -4,17 +4,17 @@ import ListingPage from "../support/pages/admin_console/ListingPage.js";
 import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
 import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage.js";
 
+let itemId = "client_scope_crud";
+const loginPage = new LoginPage();
+const masthead = new Masthead();
+const sidebarPage = new SidebarPage();
+const listingPage = new ListingPage();
+const createClientScopePage = new CreateClientScopePage();
+
 describe("Client Scopes test", function () {
-  let itemId = "client_scope_crud";
-  const loginPage = new LoginPage();
-  const masthead = new Masthead();
-  const sidebarPage = new SidebarPage();
-  const listingPage = new ListingPage();
-  const createClientScopePage = new CreateClientScopePage();
 
   describe("Client Scope creation", function () {
     beforeEach(function () {
-      cy.clearCookies();
       cy.visit("");
       loginPage.logIn();
       sidebarPage.goToClientScopes();
@@ -48,7 +48,7 @@ describe("Client Scopes test", function () {
         .fillClientScopeData(itemId)
         .save();
 
-        masthead.checkNotificationMessage('Client scope created');
+        masthead.checkNotificationMessage("Client scope created");
 
       sidebarPage.goToClientScopes();
 
@@ -57,7 +57,7 @@ describe("Client Scopes test", function () {
         .itemExist(itemId)
         .deleteItem(itemId); // There should be a confirmation pop-up
 
-        masthead.checkNotificationMessage('The client scope has been deleted');
+        masthead.checkNotificationMessage("The client scope has been deleted");
 
       listingPage // It is not refreshing after delete
         .itemExist(itemId, false);

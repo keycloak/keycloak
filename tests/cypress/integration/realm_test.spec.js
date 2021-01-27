@@ -3,15 +3,15 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
 import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage.js";
 import Masthead from "../support/pages/admin_console/Masthead.js";
 
+const masthead = new Masthead();
+const loginPage = new LoginPage();
+const sidebarPage = new SidebarPage();
+const createRealmPage = new CreateRealmPage();
+
 describe("Realms test", function () {
-  const loginPage = new LoginPage();
-  const sidebarPage = new SidebarPage();
-  const createRealmPage = new CreateRealmPage();
-  const masthead = new Masthead();
 
   describe("Realm creation", function () {
     beforeEach(function () {
-      cy.clearCookies();
       cy.visit("");
       loginPage.logIn();
     });

@@ -5,18 +5,18 @@ import ListingPage from "../support/pages/admin_console/ListingPage.js";
 import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage.js";
 
+let itemId = "realm_role_crud";
+const loginPage = new LoginPage();
+const masthead = new Masthead();
+const modalUtils = new ModalUtils();
+const sidebarPage = new SidebarPage();
+const listingPage = new ListingPage();
+const createRealmRolePage = new CreateRealmRolePage();
+
 describe("Realm roles test", function () {
-  let itemId = "realm_role_crud";
-  const loginPage = new LoginPage();
-  const masthead = new Masthead();
-  const modalUtils = new ModalUtils();
-  const sidebarPage = new SidebarPage();
-  const listingPage = new ListingPage();
-  const createRealmRolePage = new CreateRealmRolePage();
 
   describe("Realm roles creation", function () {
     beforeEach(function () {
-      cy.clearCookies();
       cy.visit("");
       loginPage.logIn();
       sidebarPage.goToRealmRoles();
