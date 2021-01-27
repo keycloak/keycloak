@@ -3,7 +3,7 @@
 == Extending the Server
 
 The {project_name} SPI framework offers the possibility to implement or override particular built-in providers. However {project_name}
-also provides capabilities to extend it's core functionalities and domain. This includes possibilities to:
+also provides capabilities to extend its core functionalities and domain. This includes possibilities to:
 
 * Add custom REST endpoints to the {project_name} server
 * Add your own custom SPI
