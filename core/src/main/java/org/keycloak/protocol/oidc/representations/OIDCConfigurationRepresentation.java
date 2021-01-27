@@ -91,6 +91,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
     private List<String> tokenEndpointAuthSigningAlgValuesSupported;
 
+    @JsonProperty("introspection_endpoint_auth_methods_supported")
+    private List<String> introspectionEndpointAuthMethodsSupported;
+
+    @JsonProperty("introspection_endpoint_auth_signing_alg_values_supported")
+    private List<String> introspectionEndpointAuthSigningAlgValuesSupported;
+
     @JsonProperty("claims_supported")
     private List<String> claimsSupported;
 
@@ -296,6 +302,23 @@ public class OIDCConfigurationRepresentation {
 
     public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
         this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public List<String> getIntrospectionEndpointAuthMethodsSupported() {
+        return introspectionEndpointAuthMethodsSupported;
+    }
+
+    public void setIntrospectionEndpointAuthMethodsSupported(List<String> introspectionEndpointAuthMethodsSupported) {
+        this.introspectionEndpointAuthMethodsSupported = introspectionEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getIntrospectionEndpointAuthSigningAlgValuesSupported() {
+        return introspectionEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setIntrospectionEndpointAuthSigningAlgValuesSupported(
+        List<String> introspectionEndpointAuthSigningAlgValuesSupported) {
+        this.introspectionEndpointAuthSigningAlgValuesSupported = introspectionEndpointAuthSigningAlgValuesSupported;
     }
 
     public List<String> getClaimsSupported() {
