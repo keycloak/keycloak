@@ -78,6 +78,8 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_EXISTS = "federatedIdentityExistsMessage";
 
+    public static final String FEDERATED_IDENTITY_UNAVAILABLE = "federatedIdentityUnavailableMessage";
+
     public static final String FEDERATED_IDENTITY_CONFIRM_LINK_MESSAGE = "federatedIdentityConfirmLinkMessage";
 
     public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
