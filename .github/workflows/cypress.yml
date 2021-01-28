@@ -33,10 +33,10 @@ jobs:
       run:  npx http-server ./build -P http://localhost:8180/auth/ & sleep 30
 
     - name: Create admin user and add Admin Console client
-      run: cd tests && npx cypress run --headless --browser chrome --spec cypress/integration/00_set_new_admin_console.spec.js && cd ..
+      run: cd tests && npx cypress run --headless --browser chrome --spec cypress/integration/00_set_new_admin_console.spec.ts && cd ..
 
     - name: Cypress run
-      run: cd tests && npx cypress run --headless --browser chrome --config ignoreTestFiles=00_set_new_admin_console.spec.js && cd ..
+      run: cd tests && npx cypress run --headless --browser chrome --config ignoreTestFiles=00_set_new_admin_console.spec.ts && cd ..
 
     - name: Add Cypress videos artifacts
       uses: actions/upload-artifact@v2

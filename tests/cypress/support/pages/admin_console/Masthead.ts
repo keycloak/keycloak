@@ -1,4 +1,10 @@
 export default class Masthead {
+  menuBtn: string;
+  logoBtn: string;
+  helpBtn: string;
+  userDrpDwn: string;
+  userDrpDwnKebab: string;
+  isMobile: boolean;
   constructor() {
     this.menuBtn = "#nav-toggle";
     this.logoBtn = "#masthead-logo";
@@ -6,6 +12,7 @@ export default class Masthead {
 
     this.userDrpDwn = "#user-dropdown";
     this.userDrpDwnKebab = "#user-dropdown-kebab";
+    this.isMobile = false;
   }
 
   isAdminConsole() {
@@ -15,15 +22,16 @@ export default class Masthead {
     return this;
   }
 
-  isMobileMode() {
-    return cy.window().specWindow.parent[0].innerWidth < 768;
+  get isMobileMode() {
+    return this.isMobile;
   }
 
-  setMobileMode(isMobileMode) {
+  setMobileMode(isMobileMode: boolean) {
+    this.isMobile = isMobileMode;
     if (isMobileMode) {
       cy.viewport("iphone-6");
     } else {
-      cy.viewport();
+      cy.viewport(1024, 768);
     }
   }
 
@@ -33,7 +41,7 @@ export default class Masthead {
   }
 
   userDropdown() {
-    if (this.isMobileMode()) {
+    if (this.isMobileMode) {
       return cy.get(this.userDrpDwnKebab);
     } else {
       return cy.get(this.userDrpDwn);
@@ -50,7 +58,7 @@ export default class Masthead {
     cy.get("#manage-account").click();
   }
 
-  checkNotificationMessage(message) {
+  checkNotificationMessage(message: string) {
     cy.contains(message).should("exist");
 
     return this;

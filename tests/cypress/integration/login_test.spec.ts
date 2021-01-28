@@ -1,5 +1,5 @@
-import LoginPage from "./../support/pages/LoginPage.js";
-import Masthead from "./../support/pages/admin_console/Masthead.js";
+import LoginPage from "../support/pages/LoginPage";
+import Masthead from "../support/pages/admin_console/Masthead";
 
 const username = "admin";
 const password = "admin";

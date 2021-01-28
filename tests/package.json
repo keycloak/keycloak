@@ -4,6 +4,7 @@
   "description": "UI tests for Keycloak using Cypress.",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "test": "cypress open"
   },
   "author": "",

@@ -1,7 +1,7 @@
-import LoginPage from "../support/pages/LoginPage.js";
-import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
-import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage.js";
-import Masthead from "../support/pages/admin_console/Masthead.js";
+import LoginPage from "../support/pages/LoginPage";
+import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage";
+import Masthead from "../support/pages/admin_console/Masthead";
 
 const masthead = new Masthead();
 const loginPage = new LoginPage();

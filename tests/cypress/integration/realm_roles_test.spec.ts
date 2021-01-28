@@ -1,9 +1,9 @@
-import LoginPage from "../support/pages/LoginPage.js";
-import Masthead from "../support/pages/admin_console/Masthead.js";
-import ModalUtils from "../support/util/ModalUtils.js";
-import ListingPage from "../support/pages/admin_console/ListingPage.js";
-import SidebarPage from "../support/pages/admin_console/SidebarPage.js";
-import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage.js";
+import LoginPage from "../support/pages/LoginPage";
+import Masthead from "../support/pages/admin_console/Masthead";
+import ModalUtils from "../support/util/ModalUtils";
+import ListingPage from "../support/pages/admin_console/ListingPage";
+import SidebarPage from "../support/pages/admin_console/SidebarPage";
+import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
 
 let itemId = "realm_role_crud";
 const loginPage = new LoginPage();
@@ -39,9 +39,7 @@ describe("Realm roles test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
-      listingPage
-        .itemExist(itemId, false)
-        .goToCreateItem();
+      listingPage.itemExist(itemId, false).goToCreateItem();
 
       createRealmRolePage.fillRealmRoleData(itemId).save();
 
@@ -49,15 +47,12 @@ describe("Realm roles test", function () {
 
       sidebarPage.goToRealmRoles();
 
-      listingPage
-        .searchItem(itemId)
-        .itemExist(itemId);
+      listingPage.searchItem(itemId).itemExist(itemId);
 
       // Update
-      
+
       // Delete
-      listingPage
-        .deleteItem(itemId);
+      listingPage.deleteItem(itemId);
 
       modalUtils.checkModalTitle("Delete role?").confirmModal();
 
