@@ -518,7 +518,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String accessToken = tokenResponse.getToken();
 
         if (accessToken == null) {
-            throw new IdentityBrokerException("No access_token from server.");
+            throw new IdentityBrokerException("No access_token from server. error='" + tokenResponse.getError() +
+                    "', error_description='" + tokenResponse.getErrorDescription() +
+                    "', error_uri='" + tokenResponse.getErrorUri() + "'");
         }
         return accessToken;
     }
