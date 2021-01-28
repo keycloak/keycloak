@@ -198,7 +198,7 @@ Under Windows, the approach above with Chrome, IE and Edge problably won't work,
   - network.negotiate-auth.using-native-gsslib: false
   - network.negotiate-auth.gsslib: C:\Program Files\MIT\Kerberos\bin\gssapi64.dll
     - these two settings above will force Firefox to use the GGSAPI with the MIT Kerberos client
-- Now when you access `http://localhost:8081/auth/realms/master/account` you should be logged in automatically as user `hnelson` .
+- Now when you access `http://localhost:8081/auth/realms/master/account` you should be logged in automatically as user `hnelson`
 - Note: Make sure to turn back these settings if you want Firefox to use proper Windows Active Directory-based SSO again
 
 
