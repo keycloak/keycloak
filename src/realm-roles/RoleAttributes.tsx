@@ -34,7 +34,7 @@ type RoleAttributesProps = {
 };
 
 export const RoleAttributes = ({
-  form: { handleSubmit, register, formState, errors },
+  form: { handleSubmit, register, formState, errors, watch },
   save,
   array: { fields, append, remove },
   reset,
@@ -42,6 +42,7 @@ export const RoleAttributes = ({
   const { t } = useTranslation("roles");
 
   const columns = ["Key", "Value"];
+  const watchFirstKey = watch("attributes[0].key");
 
   return (
     <>
@@ -141,11 +142,7 @@ export const RoleAttributes = ({
           </Tbody>
         </TableComposable>
         <ActionGroup className="kc-role-attributes__action-group">
-          <Button
-            variant="primary"
-            type="submit"
-            isDisabled={!formState.isValid}
-          >
+          <Button variant="primary" type="submit" isDisabled={!watchFirstKey}>
             {t("common:save")}
           </Button>
           <Button onClick={reset} variant="link">
