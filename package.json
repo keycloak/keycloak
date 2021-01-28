@@ -17,7 +17,7 @@
     "storybook": "start-storybook -p 6006 -s public",
     "test": "jest",
     "start:cypress": "cd tests && npx cypress open",
-    "start:cypress-tests": "cd tests && npx cypress run --config ignoreTestFiles=00_set_new_admin_console.spec.ts"
+    "start:cypress-tests": "cd tests && npx cypress run"
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.80.2",

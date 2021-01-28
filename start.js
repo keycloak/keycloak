@@ -28,11 +28,17 @@ const decompressKeycloak = () =>
     })
     .catch((e) => console.error(e));
 const run = () => {
-  const proc = spawn(path.join(serverPath, "bin", `standalone${extension}`), [
-    "-Djboss.socket.binding.port-offset=100",
+  const addProc = spawn(path.join(serverPath, "bin", `add-user-keycloak${extension}`), [
+    "--user", "admin",
+    "--password", "admin"
   ]);
-  proc.stdout.on("data", (data) => {
-    console.log(data.toString());
+  addProc.on("exit", () => {
+    const proc = spawn(path.join(serverPath, "bin", `standalone${extension}`), [
+      "-Djboss.socket.binding.port-offset=100",
+    ]);
+    proc.stdout.on("data", (data) => {
+      console.log(data.toString());
+    });
   });
 };
 

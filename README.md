@@ -19,6 +19,7 @@ For development on this project you will need a running Keycloak server listenin
     * like this:
     ![realm settings](./realm-settings.png "Realm Settings")
     * or click on the "Select file" button and import `security-admin-console-v2.json`
+    * or run `$> ./import.js`
 
 1. Install dependencies and run:
     ```bash
