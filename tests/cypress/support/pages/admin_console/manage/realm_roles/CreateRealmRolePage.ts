@@ -15,7 +15,7 @@ export default class CreateRealmRolePage {
   }
 
   //#region General Settings
-  fillRealmRoleData(name, description = "") {
+  fillRealmRoleData(name: string, description = "") {
     cy.get(this.realmRoleNameInput).clear();
 
     if (name) {

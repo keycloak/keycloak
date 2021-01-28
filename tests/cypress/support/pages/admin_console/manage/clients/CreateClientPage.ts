@@ -39,14 +39,14 @@ export default class CreateClientPage {
   }
 
   //#region General Settings
-  selectClientType(clientType) {
+  selectClientType(clientType: string) {
     cy.get(this.clientTypeDrpDwn).click();
     cy.get(this.clientTypeList).contains(clientType).click();
 
     return this;
   }
 
-  fillClientData(id, name = "", description = "") {
+  fillClientData(id: string, name = "", description = "") {
     cy.get(this.clientIdInput).clear();
 
     if (id) {

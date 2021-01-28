@@ -34,14 +34,14 @@ export default class ListingPage {
     return this;
   }
 
-  searchItem(searchValue) {
+  searchItem(searchValue: string) {
     cy.get(this.searchInput).type(searchValue);
     cy.get(this.searchBtn).click();
 
     return this;
   }
 
-  itemExist(itemName, exist = true) {
+  itemExist(itemName: string, exist = true) {
     cy.get(this.itemsRows)
       .contains(itemName)
       .should((!exist ? "not." : "") + "exist");
@@ -49,13 +49,13 @@ export default class ListingPage {
     return this;
   }
 
-  goToItemDetails(itemName) {
+  goToItemDetails(itemName: string) {
     cy.get(this.itemsRows).contains(itemName).click();
 
     return this;
   }
 
-  deleteItem(itemName) {
+  deleteItem(itemName: string) {
     cy.get(this.itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")
@@ -66,7 +66,7 @@ export default class ListingPage {
     return this;
   }
 
-  exportItem(itemName) {
+  exportItem(itemName: string) {
     cy.get(this.itemsRows)
       .contains(itemName)
       .parentsUntil("tbody")

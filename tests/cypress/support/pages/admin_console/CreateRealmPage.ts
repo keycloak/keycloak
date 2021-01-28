@@ -19,7 +19,7 @@ export default class CreateRealmPage {
     this.cancelBtn = '.pf-c-form__group:last-child button[type="button"]';
   }
 
-  fillRealmName(realmName) {
+  fillRealmName(realmName: string) {
     cy.get(this.realmNameInput).type(realmName);
 
     return this;

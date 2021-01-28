@@ -59,5 +59,6 @@
     /* Advanced Options */
     // "declarationDir": "lib"                /* Output directory for generated declaration files. */
     "skipLibCheck": true,
+    "types": ["jest", "cypress"]
   }
 }

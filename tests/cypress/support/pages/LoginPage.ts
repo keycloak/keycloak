@@ -4,13 +4,18 @@ export default class LoginPage {
   submitBtn: string;
   errorText: string;
   userDrpDwn: string;
+  oldLoadContainer: string;
+  loadContainer: string;
 
   constructor() {
     this.userNameInput = "#username";
     this.passwordInput = "#password";
     this.submitBtn = "#kc-login";
+    this.userDrpDwn = "#user-dropdown";
 
     this.errorText = ".kc-feedback-text";
+    this.oldLoadContainer = "#loading";
+    this.loadContainer = "div.keycloak__loading-container";
   }
 
   isLogInPage() {
@@ -21,12 +26,19 @@ export default class LoginPage {
   }
 
   logIn(userName = "admin", password = "admin") {
-    cy.get(this.userNameInput).type(userName);
-    cy.get(this.passwordInput).type(password);
+    cy.get(this.oldLoadContainer).should("not.exist");
+    cy.get(this.loadContainer).should("not.exist");
 
-    cy.get(this.submitBtn).click();
+    cy.get("body")
+      .children()
+      .then((children) => {
+        if (children.length == 1) {
+          cy.get(this.userNameInput).type(userName);
+          cy.get(this.passwordInput).type(password);
 
-    return this;
+          cy.get(this.submitBtn).click();
+        }
+      });
   }
 
   checkErrorIsDisplayed() {

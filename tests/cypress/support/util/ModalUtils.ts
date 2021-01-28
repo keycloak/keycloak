@@ -31,13 +31,13 @@ export default class ModalUtils {
     return this;
   }
 
-  checkModalTitle(title) {
+  checkModalTitle(title: string) {
     cy.get(this.modalTitle).invoke("text").should("eq", title);
 
     return this;
   }
 
-  checkModalMessage(message) {
+  checkModalMessage(message: string) {
     cy.get(this.modalMessage).invoke("text").should("eq", message);
 
     return this;

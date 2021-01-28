@@ -37,7 +37,7 @@ export default class SidebarPage {
     return cy.get(this.realmsDrpDwn).invoke("text");
   }
 
-  goToRealm(realmName) {
+  goToRealm(realmName: string) {
     cy.get(this.realmsDrpDwn).click();
     cy.get(this.realmsList).contains(realmName).click();
 

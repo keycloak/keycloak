@@ -35,7 +35,7 @@ export default class CreateClientScopePage {
 
   //#region General Settings
   fillClientScopeData(
-    name,
+    name: string,
     description = "",
     consentScreenText = "",
     displayOrder = ""
@@ -61,7 +61,7 @@ export default class CreateClientScopePage {
     return this;
   }
 
-  selectClientScopeType(clientScopeType) {
+  selectClientScopeType(clientScopeType: string) {
     cy.get(this.clientScopeTypeDrpDwn).click();
     cy.get(this.clientScopeTypeList).contains(clientScopeType).click();
 
