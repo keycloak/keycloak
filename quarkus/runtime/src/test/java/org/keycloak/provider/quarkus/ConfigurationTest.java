@@ -19,14 +19,15 @@ package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
 
+import io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect;
+import io.quarkus.runtime.configuration.ConfigUtils;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect;
-import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hibernate.dialect.MariaDBDialect;
@@ -36,9 +37,6 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.configuration.MicroProfileConfigProvider;
-
-import io.quarkus.runtime.configuration.ConfigUtils;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 public class ConfigurationTest {
 
@@ -154,7 +152,7 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://fromargs.com,--no-ssl");
         assertEquals("http://fromargs.com", initConfig("hostname", "default").get("frontendUrl"));
     }
-    
+
     @Test
     public void testSpiConfigurationUsingCommandLineArguments() {
         System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://spifull.com");
@@ -184,7 +182,8 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:~/data/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:~/data/keycloakdb;;AUTO_SERVER=TRUE",
+                config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.config.args", "--db=h2-mem");
         config = createConfig();
@@ -199,12 +198,14 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "keycloakdb;;test=test;test1=test1",
+                config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
         System.setProperty("kc.config.args", "--db=mariadb");
         config = createConfig();
-        assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1",
+                config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
 
     // KEYCLOAK-15632
@@ -212,7 +213,8 @@ public class ConfigurationTest {
     public void testNestedDatabaseProperties() {
         System.setProperty("kc.home.dir", "/tmp/kc/bin/../");
         SmallRyeConfig config = createConfig();
-        assertEquals("jdbc:h2:file:/tmp/kc/bin/..//data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+        assertEquals("jdbc:h2:file:/tmp/kc/bin/..//data/keycloakdb",
+                config.getConfigValue("quarkus.datasource.foo").getValue());
 
         Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
 

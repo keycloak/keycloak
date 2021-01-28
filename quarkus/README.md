@@ -40,6 +40,21 @@ the HTTP port, run the server in development mode as follows:
 
 ## Contributing
 
+### Code Style and Format
+
+Code style and format setting should be imported automatically to your IDE if you are using IntelliJ. Other IDEs were
+not tested.
+
+Before pushing your changes you may want to run code style and format checks by:
+
+    mvn clean compile -Dcode-check
+    
+Any violation should cause the build to fail.
+
+To automatically fix violations when building the project run:
+
+    mvn clean compile -Dcode-format
+
 ### Development Mode
 
 To run the server in development mode:

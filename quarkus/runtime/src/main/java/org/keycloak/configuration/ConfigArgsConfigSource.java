@@ -20,24 +20,26 @@ package org.keycloak.configuration;
 import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
 
+import io.smallrye.config.PropertiesConfigSource;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import org.jboss.logging.Logger;
-
-import io.smallrye.config.PropertiesConfigSource;
 import org.keycloak.util.Environment;
 
 /**
- * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
+ * <p>
+ * A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
  * when building and running the server.
  * 
- * <p>The mapping is based on the system property {@code kc.config.args}, where the value is a comma-separated list of
+ * <p>
+ * The mapping is based on the system property {@code kc.config.args}, where the value is a comma-separated list of
  * the arguments passed during build or runtime. E.g: "--http-enabled=true,--http-port=8180,--database-vendor=postgres".
  * 
- * <p>Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace. 
+ * <p>
+ * Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the
+ * {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace.
  */
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
@@ -56,19 +58,19 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     @Override
     public String getValue(String propertyName) {
         String prefix = null;
-        
+
         // we only care about runtime args passed when executing the CLI, no need to check if the property is prefixed with a profile
         if (propertyName.startsWith(NS_KEYCLOAK_PREFIX)) {
             prefix = NS_KEYCLOAK_PREFIX;
         } else if (propertyName.startsWith(NS_QUARKUS_PREFIX)) {
             prefix = NS_QUARKUS_PREFIX;
         }
-        
+
         // we only recognize properties within keycloak and quarkus namespaces
         if (prefix == null) {
             return null;
         }
-        
+
         String[] parts = DOT_SPLIT.split(propertyName.substring(propertyName.indexOf(prefix) + prefix.length()));
 
         return super.getValue(prefix + String.join("-", parts));
@@ -76,12 +78,12 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static Map<String, String> parseArgument() {
         String args = Environment.getConfigArgs();
-        
+
         if (args == null || "".equals(args.trim())) {
             log.trace("No command-line arguments provided");
             return Collections.emptyMap();
         }
-        
+
         Map<String, String> properties = new HashMap<>();
 
         for (String arg : ARG_SPLIT.split(args)) {
@@ -91,27 +93,27 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
             String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg);
             String key = keyValue[0];
-            
+
             if ("".equals(key.trim())) {
                 throw new IllegalArgumentException("Invalid argument key");
             }
-            
+
             String value;
-            
+
             if (keyValue.length == 2) {
                 // the argument has a simple value. Eg.: key=pair
                 value = keyValue[1];
             } else {
                 continue;
             }
-            
+
             key = NS_KEYCLOAK_PREFIX + key.substring(2);
-            
+
             log.tracef("Adding property [%s=%s] from command-line", key, value);
-            
+
             properties.put(key, value);
         }
-        
+
         return properties;
     }
 }

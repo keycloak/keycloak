@@ -19,7 +19,8 @@
 package org.keycloak.provider.quarkus;
 
 /**
- * Exception thrown when some error happens during initialization of Quarkus platform. Usually due the incorrect configuration of basic stuff (DB, HTTP protocol etc)
+ * Exception thrown when some error happens during initialization of Quarkus platform. Usually due the incorrect configuration
+ * of basic stuff (DB, HTTP protocol etc)
  * This exception is supposed to be thrown when Quarkus platform is started (See {@link io.quarkus.runtime.StartupEvent}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

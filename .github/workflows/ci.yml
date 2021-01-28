@@ -27,6 +27,9 @@ jobs:
            mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
            mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
 
+      - name: Validate Keycloak.X Code Format
+        run: mvn -f quarkus/pom.xml clean install -nsu -B -e -DskipTests -Dcode-check
+
       - name: Store Keycloak artifacts
         id: store-keycloak
         uses: actions/upload-artifact@v2

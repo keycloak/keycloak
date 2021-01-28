@@ -17,12 +17,11 @@
 
 package org.keycloak.configuration;
 
-import java.util.Optional;
-import java.util.function.Function;
-
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
+import java.util.Optional;
+import java.util.function.Function;
 import org.keycloak.util.Environment;
 
 /**

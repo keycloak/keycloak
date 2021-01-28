@@ -20,12 +20,14 @@ package org.keycloak.quarkus;
 import static org.keycloak.configuration.Configuration.getBuiltTimeProperty;
 import static org.keycloak.configuration.Configuration.getConfig;
 
+import io.quarkus.runtime.annotations.Recorder;
+import io.smallrye.config.ConfigValue;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
-
-import io.smallrye.config.ConfigValue;
+import liquibase.logging.LogFactory;
+import liquibase.servicelocator.ServiceLocator;
 import org.jboss.logging.Logger;
 import org.keycloak.QuarkusKeycloakSessionFactory;
 import org.keycloak.cli.ShowConfigCommand;
@@ -39,10 +41,6 @@ import org.keycloak.connections.liquibase.KeycloakLogger;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-
-import io.quarkus.runtime.annotations.Recorder;
-import liquibase.logging.LogFactory;
-import liquibase.servicelocator.ServiceLocator;
 import org.keycloak.util.Environment;
 
 @Recorder
@@ -64,13 +62,13 @@ public class KeycloakRecorder {
                 return logger;
             }
         });
-        
+
         // we set this property to avoid Liquibase to lookup resources from the classpath and access JAR files
         // we already index the packages we want so Liquibase will still be able to load these services
         // for uber-jar, this is not a problem because everything is inside the JAR, but once we move to fast-jar we'll have performance penalties
         // it seems that v4 of liquibase provides a more smart way of initialization the ServiceLocator that may allow us to remove this
         System.setProperty("liquibase.scan.packages", "org.liquibase.core");
-        
+
         ServiceLocator.setInstance(new FastServiceLocator(services));
     }
 
@@ -83,10 +81,12 @@ public class KeycloakRecorder {
     }
 
     /**
-     * <p>Validate the build time properties with any property passed during runtime in order to advertise any difference with the
+     * <p>
+     * Validate the build time properties with any property passed during runtime in order to advertise any difference with the
      * server image state.
      * 
-     * <p>This method also keep the build time properties available at runtime.
+     * <p>
+     * This method also keep the build time properties available at runtime.
      * 
      * 
      * @param buildTimeProperties the build time properties set when running the last re-augmentation
@@ -119,12 +119,14 @@ public class KeycloakRecorder {
                         String newProp = "--" + cliNameFormat.substring(3) + "=" + value.getValue();
 
                         if (configHelpText.contains(currentProp)) {
-                            LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
+                            LOGGER.warnf(
+                                    "The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
                                     value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
                             configHelpText = configHelpText.replaceAll(currentProp, newProp);
                         } else if (!configHelpText
                                 .contains("--" + cliNameFormat.substring(3))) {
-                            LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
+                            LOGGER.warnf(
+                                    "The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
                                     value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
                             configHelpText += " " + newProp;
                         }
@@ -150,7 +152,8 @@ public class KeycloakRecorder {
                             String prop = "--" + cliNameFormat.substring(3) + "=" + value.getValue();
 
                             if (!configHelpText.contains(prop)) {
-                                LOGGER.warnf("New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
+                                LOGGER.warnf(
+                                        "New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
                                         propertyName, value.getValue(), value.getConfigSourceName(), buildValue);
                                 configHelpText += " " + prop;
                             }
@@ -161,25 +164,28 @@ public class KeycloakRecorder {
         }
 
         if (configArgs != null && !configArgs.equals(configHelpText)) {
-            LOGGER.warnf("Please, run the 'config' command if you want to persist the new configuration into the server image:\n\n\t%s config %s\n", Environment.getCommand(), String.join(" ", configHelpText.split(",")));
+            LOGGER.warnf(
+                    "Please, run the 'config' command if you want to persist the new configuration into the server image:\n\n\t%s config %s\n",
+                    Environment.getCommand(), String.join(" ", configHelpText.split(",")));
         }
     }
 
     private boolean shouldValidate(String name, boolean rebuild) {
-        return rebuild && name.contains(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) 
+        return rebuild && name.contains(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
                 && (!PropertyMappers.isBuildTimeProperty(name)
-                && !"kc.version".equals(name) 
-                && !"kc.config.args".equals(name) 
-                && !"kc.home.dir".equals(name)
-                && !"kc.config.file".equals(name)
-                && !"kc.profile".equals(name)
-                && !"kc.show.config".equals(name)
-                && !"kc.show.config.runtime".equals(name)
-                && !PropertyMappers.toCLIFormat("kc.config.file").equals(name));
+                        && !"kc.version".equals(name)
+                        && !"kc.config.args".equals(name)
+                        && !"kc.home.dir".equals(name)
+                        && !"kc.config.file".equals(name)
+                        && !"kc.profile".equals(name)
+                        && !"kc.show.config".equals(name)
+                        && !"kc.show.config.runtime".equals(name)
+                        && !PropertyMappers.toCLIFormat("kc.config.file").equals(name));
     }
 
     /**
-     * This method should be executed during static init so that the configuration is printed (if demanded) based on the properties
+     * This method should be executed during static init so that the configuration is printed (if demanded) based on the
+     * properties
      * set from the previous reaugmentation
      */
     public void showConfig() {
@@ -188,10 +194,10 @@ public class KeycloakRecorder {
 
     public static Profile createProfile() {
         return new Profile(new Profile.PropertyResolver() {
-            @Override 
+            @Override
             public String resolve(String feature) {
                 if (feature.startsWith("keycloak.profile.feature")) {
-                    feature = feature.replaceAll("keycloak\\.profile\\.feature", "kc\\.features");    
+                    feature = feature.replaceAll("keycloak\\.profile\\.feature", "kc\\.features");
                 } else {
                     feature = "kc.features";
                 }
@@ -201,7 +207,7 @@ public class KeycloakRecorder {
                 if (value == null) {
                     value = getBuiltTimeProperty(feature.replaceAll("\\.features\\.", "\\.features-"));
                 }
-                
+
                 if (value != null) {
                     return value;
                 }

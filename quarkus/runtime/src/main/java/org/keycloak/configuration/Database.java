@@ -60,14 +60,14 @@ class Database {
 
         return Optional.of(vendor.driver);
     }
-    
+
     static Optional<String> getDialect(String alias) {
         Vendor vendor = DATABASES.get(alias);
-        
+
         if (vendor == null) {
             return Optional.empty();
         }
-        
+
         return Optional.of(vendor.dialect.apply(alias));
     }
 
@@ -77,7 +77,8 @@ class Database {
                     @Override
                     public String apply(String alias) {
                         if ("h2-file".equalsIgnoreCase(alias)) {
-                            return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}" + File.separator + "${kc.data.dir:data}" + File.separator + "keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
+                            return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}" + File.separator + "${kc.data.dir:data}"
+                                    + File.separator + "keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
                         }
                         return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
                     }

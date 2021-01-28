@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.IntFunction;
-
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.PropertyMapper;
@@ -46,15 +45,16 @@ final class Picocli {
         addOption(spec, "start-dev", PropertyMappers.getRuntimeMappers());
         addOption(spec, "config", PropertyMappers.getRuntimeMappers());
         addOption(spec, "config", PropertyMappers.getBuiltTimeMappers());
-        addOption(spec.subcommands().get("config").getCommandSpec(), "--features", "Enables a group of features. Possible values are: "
-                + String.join(",", Arrays.asList(Profile.Type.values()).stream().map(
-                type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)));
+        addOption(spec.subcommands().get("config").getCommandSpec(), "--features",
+                "Enables a group of features. Possible values are: "
+                        + String.join(",", Arrays.asList(Profile.Type.values()).stream().map(
+                                type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)));
 
         for (Profile.Feature feature : Profile.Feature.values()) {
             addOption(spec.subcommands().get("config").getCommandSpec(), "--features-" + feature.name().toLowerCase(),
                     "Enables the " + feature.name() + " feature. Set enabled to enable the feature or disabled otherwise.");
         }
-        
+
         CommandLine cmd = new CommandLine(spec);
 
         cmd.setExecutionExceptionHandler(new CommandLine.IExecutionExceptionHandler() {
@@ -66,7 +66,7 @@ final class Picocli {
                 return commandLine.getCommandSpec().exitCodeOnExecutionException();
             }
         });
-        
+
         return cmd;
     }
 
@@ -151,7 +151,8 @@ final class Picocli {
             }
 
             if (!verbose) {
-                logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
+                logError(errorWriter,
+                        "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
             }
         }
 
@@ -178,7 +179,7 @@ final class Picocli {
                 if (cause.getMessage() != null) {
                     logError(errorWriter, String.format("ERROR: %s", cause.getMessage()));
                 }
-            } while ((cause = cause.getCause())!= null);
+            } while ((cause = cause.getCause()) != null);
         }
     }
 

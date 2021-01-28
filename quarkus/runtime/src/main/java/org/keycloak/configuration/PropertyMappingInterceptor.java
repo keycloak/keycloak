@@ -22,13 +22,17 @@ import io.smallrye.config.ConfigValue;
 import org.keycloak.common.util.StringPropertyReplacer;
 
 /**
- * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
+ * <p>
+ * This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
  * 
- * <p>A single property in Keycloak may span a single or multiple properties on Quarkus and for each property we want to map
+ * <p>
+ * A single property in Keycloak may span a single or multiple properties on Quarkus and for each property we want to map
  * from Quarkus we should configure a {@link PropertyMapper}.
  * 
- * <p>The {@link PropertyMapper} can either perform a 1:1 mapping where the value of a property from
- * Keycloak (e.g.: https.port) is mapped to a single properties in Quarkus, or perform a 1:N mapping where the value of a property
+ * <p>
+ * The {@link PropertyMapper} can either perform a 1:1 mapping where the value of a property from
+ * Keycloak (e.g.: https.port) is mapped to a single properties in Quarkus, or perform a 1:N mapping where the value of a
+ * property
  * from Keycloak (e.g.: database) is mapped to multiple properties in Quarkus.
  */
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
@@ -36,7 +40,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         ConfigValue value = PropertyMappers.getValue(context, name);
-        
+
         if (value == null) {
             return null;
         }
@@ -44,16 +48,16 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         if (value.getValue().indexOf("${") == -1) {
             return value;
         }
-        
+
         return value.withValue(
                 StringPropertyReplacer.replaceProperties(value.getValue(),
                         property -> {
                             ConfigValue prop = context.proceed(property);
-                            
+
                             if (prop == null) {
                                 return null;
                             }
-                            
+
                             return prop.getValue();
                         }));
     }

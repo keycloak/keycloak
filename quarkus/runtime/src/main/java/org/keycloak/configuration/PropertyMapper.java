@@ -16,15 +16,12 @@
  */
 package org.keycloak.configuration;
 
-import static org.keycloak.util.Environment.getBuiltTimeProperty;
-
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
 
 public class PropertyMapper {
 
@@ -36,32 +33,44 @@ public class PropertyMapper {
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue, null, description));
     }
 
-    static PropertyMapper createWithDefault(String fromProperty, String toProperty, Supplier<String> defaultValue, String description) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue.get(), null, description));
+    static PropertyMapper createWithDefault(String fromProperty, String toProperty, Supplier<String> defaultValue,
+            String description) {
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, defaultValue.get(), null, description));
     }
 
-    static PropertyMapper createWithDefault(String fromProperty, String toProperty, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue, transformer, description));
+    static PropertyMapper createWithDefault(String fromProperty, String toProperty, String defaultValue,
+            BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, defaultValue, transformer, description));
     }
 
-    static PropertyMapper create(String fromProperty, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, null, description));
+    static PropertyMapper create(String fromProperty, String toProperty,
+            BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, null, transformer, null, description));
     }
 
     static PropertyMapper create(String fromProperty, String toProperty, String description, boolean mask) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, null, null, false, description, mask));
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, null, null, null, false, description, mask));
     }
 
-    static PropertyMapper create(String fromProperty, String mapFrom, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, mapFrom, description));
+    static PropertyMapper create(String fromProperty, String mapFrom, String toProperty,
+            BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, null, transformer, mapFrom, description));
     }
 
-    static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, null, true, description, false));
+    static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty,
+            BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, null, transformer, null, true, description, false));
     }
 
     static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty, String description) {
-        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, null, null, true, description, false));
+        return MAPPERS.computeIfAbsent(toProperty,
+                s -> new PropertyMapper(fromProperty, s, null, null, null, true, description, false));
     }
 
     static Map<String, PropertyMapper> MAPPERS = new HashMap<>();
@@ -86,15 +95,19 @@ public class PropertyMapper {
     private String description;
     private boolean mask;
 
-    PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String description) {
+    PropertyMapper(String from, String to, String defaultValue,
+            BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String description) {
         this(from, to, defaultValue, mapper, null, description);
     }
 
-    PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String mapFrom, String description) {
+    PropertyMapper(String from, String to, String defaultValue,
+            BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String mapFrom, String description) {
         this(from, to, defaultValue, mapper, mapFrom, false, description, false);
     }
-    
-    PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String mapFrom, boolean buildTime, String description, boolean mask) {
+
+    PropertyMapper(String from, String to, String defaultValue,
+            BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String mapFrom, boolean buildTime,
+            String description, boolean mask) {
         this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
         this.to = to;
         this.defaultValue = defaultValue;
@@ -110,7 +123,7 @@ public class PropertyMapper {
     }
 
     ConfigValue getOrDefault(ConfigSourceInterceptorContext context, ConfigValue current) {
-        return getOrDefault(null, context, current);        
+        return getOrDefault(null, context, current);
     }
 
     ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
@@ -141,7 +154,7 @@ public class PropertyMapper {
             if (mapper != null) {
                 return transformValue(defaultValue, context);
             }
-            
+
             return ConfigValue.builder().withName(to).withValue(defaultValue).build();
         }
 
@@ -188,7 +201,6 @@ public class PropertyMapper {
     boolean isBuildTime() {
         return buildTime;
     }
-
 
     boolean isMask() {
         return mask;

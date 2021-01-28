@@ -17,14 +17,13 @@
 
 package org.keycloak.configuration;
 
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.common.utils.ConfigSourceUtil;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
-
-import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.common.utils.ConfigSourceUtil;
 import org.keycloak.util.Environment;
 
 /**

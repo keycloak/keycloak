@@ -18,7 +18,6 @@
 package org.keycloak.util;
 
 import java.util.Optional;
-
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.configuration.Configuration;
 
@@ -44,14 +43,14 @@ public final class Environment {
         }
         return "kc.sh";
     }
-    
+
     public static String getConfigArgs() {
         return System.getProperty("kc.config.args");
     }
 
     public static String getProfile() {
         String profile = System.getProperty("kc.profile");
-        
+
         if (profile == null) {
             profile = System.getenv("KC_PROFILE");
         }
@@ -65,7 +64,7 @@ public final class Environment {
         if (profile == null) {
             profile = defaultProfile;
         }
-        
+
         return profile;
     }
 
@@ -75,7 +74,7 @@ public final class Environment {
         if (value == null) {
             return Optional.empty();
         }
-        
+
         return Optional.of(value);
     }
 

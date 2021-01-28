@@ -23,23 +23,23 @@ import static org.keycloak.cli.Picocli.getCliArgs;
 import static org.keycloak.cli.Picocli.parseConfigArgs;
 import static org.keycloak.util.Environment.getProfileOrDefault;
 
+import io.quarkus.runtime.Quarkus;
+import io.quarkus.runtime.annotations.QuarkusMain;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import io.quarkus.runtime.Quarkus;
 import org.keycloak.common.Version;
-
-import io.quarkus.runtime.annotations.QuarkusMain;
-import org.keycloak.util.Environment;
 import picocli.CommandLine;
 
 /**
- * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
+ * <p>
+ * The main entry point, responsible for initialize and run the CLI as well as start the server.
  * 
- * <p>For optimal startup of the server, the server should be configured first by running the {@link MainCommand#reAugment(Boolean)} 
+ * <p>
+ * For optimal startup of the server, the server should be configured first by running the
+ * {@link MainCommand#reAugment(Boolean)}
  * command so that subsequent server starts, without any args, do not need to build the CLI, which is costly.
  */
 @QuarkusMain(name = "keycloak")
@@ -64,11 +64,13 @@ public class KeycloakMain {
 
     private static void start(List<String> cliArgs, PrintWriter errorWriter) {
         Quarkus.run(null, (integer, throwable) -> {
-            error(cliArgs, errorWriter, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
+            error(cliArgs, errorWriter,
+                    String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")),
+                    throwable.getCause());
         });
         Quarkus.waitForExit();
     }
-    
+
     private static void parseAndRun(String[] args) {
         List<String> cliArgs = new LinkedList<>(Arrays.asList(args));
         CommandLine cmd = createCommandLine();

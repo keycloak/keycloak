@@ -24,6 +24,7 @@ import static org.keycloak.configuration.PropertyMappers.canonicalFormat;
 import static org.keycloak.configuration.PropertyMappers.formatValue;
 import static org.keycloak.util.Environment.getBuiltTimeProperty;
 
+import io.smallrye.config.ConfigValue;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -31,13 +32,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import org.keycloak.configuration.MicroProfileConfigProvider;
 import org.keycloak.configuration.PersistedConfigSource;
 import org.keycloak.configuration.PropertyMappers;
 import org.keycloak.util.Environment;
-
-import io.smallrye.config.ConfigValue;
 
 public final class ShowConfigCommand {
 
@@ -55,7 +53,7 @@ public final class ShowConfigCommand {
             properties.get(MicroProfileConfigProvider.NS_KEYCLOAK).stream().sorted()
                     .filter(name -> {
                         String canonicalFormat = canonicalFormat(name);
-                        
+
                         if (!canonicalFormat.equals(name)) {
                             return uniqueNames.add(canonicalFormat);
                         }
@@ -65,7 +63,7 @@ public final class ShowConfigCommand {
 
             if (configArgs.equalsIgnoreCase("all")) {
                 Set<String> profiles = properties.get("%");
-                
+
                 if (profiles != null) {
                     profiles.stream()
                             .sorted()
@@ -136,13 +134,13 @@ public final class ShowConfigCommand {
         if (configValue.getValue() == null) {
             configValue = getConfigValue(property);
         }
-        
-        
+
         if (configValue.getValue() == null) {
             return;
         }
 
-        System.out.printf("\t%s =  %s (%s)%n", configValue.getName(), formatValue(configValue.getName(), configValue.getValue()), configValue.getConfigSourceName());
+        System.out.printf("\t%s =  %s (%s)%n", configValue.getName(),
+                formatValue(configValue.getName(), configValue.getValue()), configValue.getConfigSourceName());
     }
 
     private static String groupProperties(String property) {

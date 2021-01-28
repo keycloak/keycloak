@@ -16,17 +16,16 @@
  */
 package test.org.keycloak.quarkus.services.health;
 
+import static io.restassured.RestAssured.given;
+
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.QuarkusUnitTest;
+import javax.inject.Inject;
 import org.hamcrest.Matchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-
-import javax.inject.Inject;
-
-import static io.restassured.RestAssured.given;
 
 public class KeycloakNegativeHealthCheckTest {
 

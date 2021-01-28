@@ -17,18 +17,15 @@
 
 package org.keycloak.provider.quarkus;
 
+import io.vertx.ext.web.RoutingContext;
 import java.security.cert.X509Certificate;
-
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
-
-import io.vertx.ext.web.RoutingContext;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -54,11 +51,11 @@ public class VertxClientCertificateLookup implements X509ClientCertificateLookup
 
             try {
                 SSLSession sslSession = context.request().sslSession();
-                
+
                 if (sslSession == null) {
                     return null;
                 }
-                
+
                 X509Certificate[] certificates = (X509Certificate[]) sslSession.getPeerCertificates();
 
                 if (logger.isTraceEnabled() && certificates != null) {
