@@ -79,7 +79,7 @@ export const ConfirmDialogModal = ({
         <Button
           id="modal-cancel"
           key="cancel"
-          variant={ButtonVariant.secondary}
+          variant={ButtonVariant.link}
           onClick={() => {
             if (onCancel) onCancel();
             toggleDialog();

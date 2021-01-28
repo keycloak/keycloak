@@ -90,7 +90,7 @@ export const RealmRolesSection = () => {
           }
           actions={[
             {
-              title: t("common:Delete"),
+              title: t("common:delete"),
               onRowClick: (role) => {
                 setSelectedRole(role);
                 toggleDeleteDialog();

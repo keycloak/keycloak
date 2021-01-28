@@ -78,6 +78,14 @@ export const emptyFormatter = (): IFormatter => (
   return data ? data : "—";
 };
 
+export const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
+  const boolVal = data?.toString();
+
+  return (boolVal
+    ? boolVal.charAt(0).toUpperCase() + boolVal.slice(1)
+    : undefined) as string;
+};
+
 export const getBaseUrl = (adminClient: KeycloakAdminClient) => {
   return adminClient.keycloak
     ? adminClient.keycloak.authServerUrl!

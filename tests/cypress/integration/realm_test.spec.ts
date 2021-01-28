@@ -27,7 +27,7 @@ describe("Realms test", function () {
 
     it("should create Test realm", function () {
       sidebarPage.goToCreateRealm();
-      createRealmPage.fillRealmName("Test").createRealm();
+      createRealmPage.fillRealmName("Test realm").createRealm();
 
       masthead.checkNotificationMessage("Realm created");
     });
@@ -35,7 +35,7 @@ describe("Realms test", function () {
     it("should change to Test realm", function () {
       sidebarPage.getCurrentRealm().should("eq", "Master");
 
-      sidebarPage.goToRealm("Test").getCurrentRealm().should("eq", "Test");
+      sidebarPage.goToRealm("Test realm").getCurrentRealm().should("eq", "Test realm");
     });
   });
 });

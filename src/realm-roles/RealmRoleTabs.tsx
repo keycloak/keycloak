@@ -19,6 +19,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RealmRoleForm } from "./RealmRoleForm";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 const arrayToAttributes = (attributeArray: KeyValueType[]) => {
@@ -56,6 +57,8 @@ export const RealmRoleTabs = () => {
   const { id } = useParams<{ id: string }>();
 
   const { addAlert } = useAlerts();
+
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -131,9 +134,12 @@ export const RealmRoleTabs = () => {
     },
   });
 
+  const toggleModal = () => setOpen(!open);
+
   return (
     <>
       <DeleteConfirm />
+      <AssociatedRolesModal open={open} toggleDialog={() => setOpen(!open)} />
       <ViewHeader
         titleKey={name}
         subKey={id ? "" : "roles:roleCreateExplain"}
@@ -141,11 +147,18 @@ export const RealmRoleTabs = () => {
           id
             ? [
                 <DropdownItem
-                  key="action"
+                  key="delete-role"
                   component="button"
                   onClick={() => toggleDeleteDialog()}
                 >
                   {t("deleteRole")}
+                </DropdownItem>,
+                <DropdownItem
+                  key="toggle-modal"
+                  component="button"
+                  onClick={() => toggleModal()}
+                >
+                  {t("addAssociatedRolesText")}
                 </DropdownItem>,
               ]
             : undefined
