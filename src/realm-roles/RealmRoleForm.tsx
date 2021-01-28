@@ -8,14 +8,14 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { SubmitHandler, UseFormMethods } from "react-hook-form";
+import { UseFormMethods } from "react-hook-form";
 
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
+import { RoleFormType } from "./RealmRoleTabs";
 
 export type RealmRoleFormProps = {
-  form: UseFormMethods;
-  save: SubmitHandler<RoleRepresentation>;
+  form: UseFormMethods<RoleFormType>;
+  save: (role: RoleFormType) => void;
   editMode: boolean;
   reset: () => void;
 };
@@ -27,7 +27,6 @@ export const RealmRoleForm = ({
   reset,
 }: RealmRoleFormProps) => {
   const { t } = useTranslation("roles");
-
   return (
     <FormAccess
       isHorizontal
@@ -81,7 +80,7 @@ export const RealmRoleForm = ({
         <Button variant="primary" type="submit">
           {t("common:save")}
         </Button>
-        <Button onClick={reset} variant="link">
+        <Button onClick={() => reset()} variant="link">
           {editMode ? t("common:reload") : t("common:cancel")}
         </Button>
       </ActionGroup>
