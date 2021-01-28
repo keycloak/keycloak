@@ -13,9 +13,9 @@ When a realm is created a key pair and a self-signed certificate is automaticall
 To view the active keys for a realm select the realm in the admin console click on `Realm settings` then `Keys`. This
 will show the currently active keys for the realm.
 
-To view passive or disabled keys select `Passive` or `Disabled`. 
-A keypair can have the status `Active`, but still not be selected as the currently active keypair for the realm. 
-The selected active pair which is used for signatures is selected based on the first key provider sorted by priority 
+To view passive or disabled keys select `Passive` or `Disabled`.
+A keypair can have the status `Active`, but still not be selected as the currently active keypair for the realm.
+The selected active pair which is used for signatures is selected based on the first key provider sorted by priority
 that is able to provide an active keypair.
 
 ==== Rotating keys
@@ -75,9 +75,20 @@ keys will no longer be active and can only be used for verifying signatures.
 
 ==== Disabling keys
 
-Locate the keypair in `Active` then click on the provider in the `Provider` column. This will take you to the
-configuration screen for the key provider for the keys. Click on `Enabled` to turn it `OFF`, then click on `Save`. The
-keys will no longer be enabled.
+.Procedure
+. Select the realm in the admin console.
+. Click Realm settings.
+. Click the *Keys* tab.
+. Click the *Active* tab.
+. Click the provider of the key you want to make passive.
+. Toggle *Enabled* to *OFF*.
+. Click *Save*.
+
+==== Compromised keys
+
+{project_name} has the signing keys stored just locally and they are never shared with the client applications, users or other
+entities. However if you think that your realm signing key was compromised, you should first generate new keypair as described above and
+then immediately remove the compromised keypair.
 
 Alternatively, you can delete the provider from the `Providers` table.
 
