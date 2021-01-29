@@ -304,4 +304,9 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
     public void deleteRoleMapping(RoleModel role) {
         entity.removeRolesMembership(role.getId());
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getId(), hashCode());
+    }
 }

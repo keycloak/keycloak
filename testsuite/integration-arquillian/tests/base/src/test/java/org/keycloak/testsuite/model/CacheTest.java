@@ -29,6 +29,7 @@ import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
@@ -111,7 +112,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
     	
-            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache",
+            UserSessionModel userSession = session.sessions().createUserSession(UUID.randomUUID().toString(), realm, user, "testAddUserNotAddedToCache",
 					"127.0.0.1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             user = userSession.getUser();
 

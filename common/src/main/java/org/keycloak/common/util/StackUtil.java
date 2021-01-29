@@ -31,7 +31,7 @@ public class StackUtil {
         return getShortStackTrace("\n    ");
     }
 
-    private static final Pattern IGNORED = Pattern.compile("sun\\.|java\\.(lang|util|stream)\\.|org\\.jboss\\.(arquillian|logging).|org.apache.maven.surefire");
+    private static final Pattern IGNORED = Pattern.compile("sun\\.|java\\.(lang|util|stream)\\.|org\\.jboss\\.(arquillian|logging).|org.apache.maven.surefire|org\\.junit\\.|org.keycloak.testsuite.model.KeycloakModelTest\\.");
     private static final StringBuilder EMPTY = new StringBuilder(0);
 
     /**

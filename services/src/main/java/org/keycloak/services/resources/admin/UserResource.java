@@ -163,7 +163,7 @@ public class UserResource {
         try {
 
             if (rep.isEnabled() != null && rep.isEnabled()) {
-                UserLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, user.getId());
+                UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
                 if (failureModel != null) {
                     failureModel.clearFailures();
                 }

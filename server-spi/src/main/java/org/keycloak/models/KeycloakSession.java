@@ -20,7 +20,6 @@ package org.keycloak.models;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.InvalidationHandler;
-import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
@@ -178,6 +177,14 @@ public interface KeycloakSession extends InvalidationHandler {
      */
     UserSessionProvider sessions();
 
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return {@link UserLoginFailureProvider}
+     * @throws IllegalStateException if transaction is not active
+     */
+    UserLoginFailureProvider loginFailures();
 
     AuthenticationSessionProvider authenticationSessions();
 
