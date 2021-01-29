@@ -20,6 +20,7 @@ import io.quarkus.test.QuarkusUnitTest;
 import org.hamcrest.Matchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -54,6 +55,7 @@ public class KeycloakReadyHealthCheckTest {
     }
 
     @Test
+    @Disabled // Temporarily disabled. See KEYCLOAK-16382 and https://github.com/quarkusio/quarkus/issues/14705
     public void testMetricsUp() {
         given()
             .when().get("/metrics")
