@@ -31,6 +31,7 @@ import {
 } from "../components/multi-line-input/MultiLineInput";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
+import { RolesList } from "../realm-roles/RolesList";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
@@ -107,6 +108,10 @@ export const ClientDetails = () => {
   const { id } = useParams<{ id: string }>();
 
   const [client, setClient] = useState<ClientRepresentation>();
+
+  const loader = async () => {
+    return await adminClient.clients.listRoles({ id });
+  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:clientDeleteConfirmTitle",
@@ -216,6 +221,12 @@ export const ClientDetails = () => {
               <Credentials clientId={id} form={form} save={save} />
             </Tab>
           )}
+          <Tab
+            eventKey="roles"
+            title={<TabTitleText>{t("roles")}</TabTitleText>}
+          >
+            <RolesList loader={loader} paginated={false} />
+          </Tab>
           <Tab
             eventKey="clientScopes"
             title={<TabTitleText>{t("clientScopes")}</TabTitleText>}

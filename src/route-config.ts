@@ -65,6 +65,24 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-clients",
   },
   {
+    path: "/:realm/clients/:clientId/roles/add-role",
+    component: RealmRoleTabs,
+    breadcrumb: t("roles:createRole"),
+    access: "manage-realm",
+  },
+  {
+    path: "/:realm/clients/:clientId/roles/:id",
+    component: RealmRoleTabs,
+    breadcrumb: t("roles:roleDetails"),
+    access: "view-realm",
+  },
+  {
+    path: "/:realm/clients/:clientId/roles/:id/:tab",
+    component: RealmRoleTabs,
+    breadcrumb: null,
+    access: "view-realm",
+  },
+  {
     path: "/:realm/clients/:id/:tab?/:subtab?",
     component: ClientDetails,
     breadcrumb: null,

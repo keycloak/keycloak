@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import {
   AlertVariant,
   ButtonVariant,
@@ -18,7 +18,6 @@ import { KeyValueType, RoleAttributes } from "./RoleAttributes";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RealmRoleForm } from "./RealmRoleForm";
-import { useRealm } from "../context/realm-context/RealmContext";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
@@ -51,10 +50,10 @@ export const RealmRoleTabs = () => {
   const form = useForm<RoleFormType>({ mode: "onChange" });
   const history = useHistory();
   const adminClient = useAdminClient();
-  const { realm } = useRealm();
   const [role, setRole] = useState<RoleFormType>();
 
-  const { id } = useParams<{ id: string }>();
+  const { id, clientId } = useParams<{ id: string; clientId: string }>();
+  const { url } = useRouteMatch();
   const { addAlert } = useAlerts();
 
   const [open, setOpen] = useState(false);
@@ -94,15 +93,40 @@ export const RealmRoleTabs = () => {
         if (attributes) {
           roleRepresentation.attributes = arrayToAttributes(attributes);
         }
-        await adminClient.roles.updateById({ id }, roleRepresentation);
+        if (!clientId) {
+          await adminClient.roles.updateById({ id }, roleRepresentation);
+        } else {
+          await adminClient.clients.updateRole(
+            { id: clientId, roleName: role.name! },
+            roleRepresentation
+          );
+        }
         setRole(role);
       } else {
-        await adminClient.roles.create(roleRepresentation);
-        const createdRole = await adminClient.roles.findOneByName({
-          name: role.name!,
-        });
+        let createdRole;
+        if (!clientId) {
+          await adminClient.roles.create(roleRepresentation);
+          createdRole = await adminClient.roles.findOneByName({
+            name: role.name!,
+          });
+        } else {
+          await adminClient.clients.createRole({
+            id: clientId,
+            name: role.name,
+          });
+          if (role.description) {
+            await adminClient.clients.updateRole(
+              { id: clientId, roleName: role.name! },
+              roleRepresentation
+            );
+          }
+          createdRole = await adminClient.clients.findRole({
+            id: clientId,
+            roleName: role.name!,
+          });
+        }
         setRole(convert(createdRole));
-        history.push(`/${realm}/roles/${createdRole.id}`);
+        history.push(url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id);
       }
       addAlert(t(id ? "roleSaveSuccess" : "roleCreated"), AlertVariant.success);
     } catch (error) {
@@ -124,9 +148,14 @@ export const RealmRoleTabs = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.roles.delById({ id });
+        if (!clientId) {
+          await adminClient.roles.delById({ id });
+        } else {
+          await adminClient.clients.delRole({ id: clientId, roleName: name });
+        }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        history.replace(`/${realm}/roles`);
+        const loc = url.replace(/\/attributes/g, "");
+        history.replace(`${loc.substr(0, loc.lastIndexOf("/"))}`);
       } catch (error) {
         addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
       }

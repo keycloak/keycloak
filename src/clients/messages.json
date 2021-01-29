@@ -9,6 +9,7 @@
     "formatOption": "Format option",
     "downloadAdaptorTitle": "Download adaptor configs",
     "credentials": "Credentials",
+    "roles": "Roles",
     "clientScopes": "Client scopes",
     "addClientScope": "Add client scope",
     "addClientScopesTo": "Add client scopes to {{clientId}}",
