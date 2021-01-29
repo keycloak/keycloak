@@ -20,7 +20,11 @@ For Cross-Datacenter replication, you start by creating remote {jdgserver_name} 
 $ bin/cli.sh user create myuser -p "qwer1234!"
 ----
 +
-Note: You specify these credentials in the Hot Rod client configuration when you create remote caches on {project_name}.
+[NOTE]
+====
+You specify these credentials in the Hot Rod client configuration when you create remote caches on {project_name}.
+====
++
 . Create an SSL keystore and truststore to secure connections between {jdgserver_name} and {project_name}, for example:
 .. Create a keystore to provide an SSL identity to your {jdgserver_name} cluster
 +
@@ -29,6 +33,7 @@ Note: You specify these credentials in the Hot Rod client configuration when you
 keytool -genkey -alias server -keyalg RSA -keystore server.jks -keysize 2048
 ----
 +
+
 .. Export an SSL certificate from the keystore.
 +
 [source,bash,options="nowrap",subs=attributes+]
@@ -36,10 +41,15 @@ keytool -genkey -alias server -keyalg RSA -keystore server.jks -keysize 2048
 keytool -exportcert -keystore server.jks -alias server -file server.crt
 ----
 +
-.. Import the SSL certificate into a truststore that {jdgserver_name} can use to verify the SSL identity for {jdgserver_name}.
+.. Import the SSL certificate into a truststore that {project_name} can use to verify the SSL identity for {jdgserver_name}.
 +
 [source,bash,options="nowrap",subs=attributes+]
 ----
 keytool -importcert -keystore truststore.jks -alias server -file server.crt
+----
+.. Remove `server.crt`.
++
+[source,bash,options="nowrap",subs=attributes+]
+----
 rm server.crt
 ----

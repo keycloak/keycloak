@@ -1,10 +1,10 @@
 [id="proc-configuring-remote-cache-{context}"]
 = Configuring Remote Cache Stores on {project_name}
-After you set up remote {jdgserver_name} clusters to back up {jdgserver_name} data, you can configure the Infinispan subsystem  to use those clusters as remote stores.
+After you set up remote {jdgserver_name} clusters, you configure the Infinispan subsystem on {project_name} to externalize data to those clusters through remote stores.
 
 .Prerequisites
 
-* Set up remote {jdgserver_name} clusters that can back up {jdgserver_name} data.
+* Set up remote {jdgserver_name} clusters for cross-site configuration.
 * Create a truststore that contains the SSL certificate with the {jdgserver_name} Server identity.
 
 .Procedure
@@ -15,8 +15,8 @@ After you set up remote {jdgserver_name} clusters to back up {jdgserver_name} da
 [source,xml,options="nowrap",subs=attributes+]
 ----
 <outbound-socket-binding name="remote-cache"> <1>
-  <remote-destination host="${remote.cache.host:server_hostname}"> <2>
-                      <port="${remote.cache.port:11222}"/> <3>
+  <remote-destination host="${remote.cache.host:server_hostname}" <2>
+                      port="${remote.cache.port:11222}"/> <3>
 </outbound-socket-binding>
 ----
 <1> Names the socket binding as `remote-cache`.
@@ -28,25 +28,11 @@ After you set up remote {jdgserver_name} clusters to back up {jdgserver_name} da
 [source,xml,options="nowrap",subs=attributes+]
 ----
 <subsystem xmlns="urn:jboss:domain:infinispan:11.0">
-    <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
-----
-+
-. Create a `hotrod-client.properties` file with the following content:
-+
-[source,xml,options="nowrap",subs=attributes+]
-----
-infinispan.client.hotrod.server_list = server1:11222
-infinispan.client.hotrod.auth_username = myuser
-infinispan.client.hotrod.auth_password = qwer1234!
-infinispan.client.hotrod.auth_realm = default
-infinispan.client.hotrod.auth_server_name = infinispan
-infinispan.client.hotrod.sasl_mechanism = SCRAM-SHA-512
-infinispan.client.hotrod.trust_store_file_name = /path/to/truststore.jks
-infinispan.client.hotrod.trust_store_type = JKS
-infinispan.client.hotrod.trust_store_password = password
+    <cache-container name="keycloak"
+                     module="org.keycloak.keycloak-model-infinispan"/>
 ----
 
-. Update a replicated cache named `work` that is in the Infinispan subsystem with the following configuration:
+. Update the `work` cache in the Infinispan subsystem so it has the following configuration:
 +
 [source,xml,options="nowrap",subs=attributes+]
 ----
@@ -60,6 +46,19 @@ infinispan.client.hotrod.trust_store_password = password
                   shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+        <property name="infinispan.client.hotrod.auth_username">myuser</property>
+        <property name="infinispan.client.hotrod.auth_password">qwer1234!</property>
+        <property name="infinispan.client.hotrod.auth_realm">default</property>
+        <property name="infinispan.client.hotrod.auth_server_name">infinispan</property>
+ifeval::[{project_product}==true]
+        <property name="infinispan.client.hotrod.sasl_mechanism">DIGEST-MD5</property>
+endif::[]
+ifeval::[{project_community}==true]
+        <property name="infinispan.client.hotrod.sasl_mechanism">SCRAM-SHA-512</property>
+endif::[]
+        <property name="infinispan.client.hotrod.trust_store_file_name">/path/to/truststore.jks</property>
+        <property name="infinispan.client.hotrod.trust_store_type">JKS</property>
+        <property name="infinispan.client.hotrod.trust_store_password">password</property>
     </remote-store>
 </replicated-cache>
 ----
@@ -103,6 +102,19 @@ For example, add a cache named `sessions` with the following configuration:
                   shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+        <property name="infinispan.client.hotrod.auth_username">myuser</property>
+        <property name="infinispan.client.hotrod.auth_password">qwer1234!</property>
+        <property name="infinispan.client.hotrod.auth_realm">default</property>
+        <property name="infinispan.client.hotrod.auth_server_name">infinispan</property>
+ifeval::[{project_product}==true]
+        <property name="infinispan.client.hotrod.sasl_mechanism">DIGEST-MD5</property>
+endif::[]
+ifeval::[{project_community}==true]
+        <property name="infinispan.client.hotrod.sasl_mechanism">SCRAM-SHA-512</property>
+endif::[]
+        <property name="infinispan.client.hotrod.trust_store_file_name">/path/to/truststore.jks</property>
+        <property name="infinispan.client.hotrod.trust_store_type">JKS</property>
+        <property name="infinispan.client.hotrod.trust_store_password">password</property>
     </remote-store>
 </distributed-cache>
 ----
@@ -111,22 +123,98 @@ For example, add a cache named `sessions` with the following configuration:
 <3> Names the corresponding cache on the remote {jdgserver_name} cluster.
 <4> Specifies the `remote-cache` socket binding.
 +
-. Start each {project_name} server with `hotrod-client.properties` on the classpath, for example:
+
+. Copy the `NODE11` to 3 other directories referred later as `NODE12`, `NODE21` and `NODE22`.
+
+. Start `NODE11` :
 +
-[source,xml,options="nowrap",subs=attributes+]
+[source,subs="+quotes"]
 ----
+cd NODE11/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node11 -Djboss.site.name=site1 \
   -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=server1 \
   -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
-  -P path/to/hotrod-client.properties
 ----
 +
-. Check server logs for the following messages:
+If you notice the following warning messages in logs, you can safely ignore them:
 +
 [source,options="nowrap",subs=attributes+]
 ----
-Received new cluster view for channel keycloak: [node11|1] (2) [node11, node12]
+WARN  [org.infinispan.CONFIG] (MSC service thread 1-5) ISPN000292: Unrecognized attribute 'infinispan.client.hotrod.auth_password'. Please check your configuration. Ignoring!
+WARN  [org.infinispan.CONFIG] (MSC service thread 1-5) ISPN000292: Unrecognized attribute 'infinispan.client.hotrod.auth_username'. Please check your configuration. Ignoring!
 ----
++
+. Start `NODE12` :
++
+[source,subs="+quotes"]
+----
+cd NODE12/bin
+./standalone.sh -c standalone-ha.xml -Djboss.node.name=node12 -Djboss.site.name=site1 \
+  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=server1 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+----
++
+The cluster nodes should be connected. Something like this should be in the log of both NODE11 and NODE12:
++
+```
+Received new cluster view for channel keycloak: [node11|1] (2) [node11, node12]
+```
+NOTE: The channel name in the log might be different.
+
+. Start `NODE21` :
++
+[source,subs="+quotes"]
+----
+cd NODE21/bin
+./standalone.sh -c standalone-ha.xml -Djboss.node.name=node21 -Djboss.site.name=site2 \
+  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=server2 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+----
++
+It shouldn't be connected to the cluster with `NODE11` and `NODE12`, but to a separate one:
++
+```
+Received new cluster view for channel keycloak: [node21|0] (1) [node21]
+```
++
+
+. Start `NODE22` :
++
+[source,subs="+quotes"]
+----
+cd NODE22/bin
+./standalone.sh -c standalone-ha.xml -Djboss.node.name=node22 -Djboss.site.name=site2 \
+  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=server2 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+----
++
+It should be in cluster with `NODE21` :
++
+```
+Received new cluster view for channel keycloak: [node21|1] (2) [node21, node22]
+```
++
+
+NOTE: The channel name in the log might be different.
+
+. Test:
+
+.. Go to `http://node11:8080/auth/` and create the initial admin user.
+
+.. Go to `http://node11:8080/auth/admin` and login as admin to admin console.
+
+.. Open a second browser and go to any of nodes `http://node12:8080/auth/admin` or `http://node21:8080/auth/admin` or `http://node22:8080/auth/admin`. After login, you should be able to see
+the same sessions in tab `Sessions` of particular user, client or realm on all 4 servers.
+
+.. After making a change in the {project_name} Admin Console, such as modifying a user or a relam, that change 
+should be immediately visible on any of the four nodes. Caches should be properly invalidated everywhere.
+
+.. Check server.logs if needed. After login or logout, the message like this should be on all the nodes `NODEXY/standalone/log/server.log` :
++
+```
+2017-08-25 17:35:17,737 DEBUG [org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener] (Client-Listener-sessions-30012a77422542f5) Received event from remote store.
+Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', skip 'false'
+```
 
 ifeval::[{project_product}==true]
 [role="_additional-resources"]

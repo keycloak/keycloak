@@ -146,6 +146,8 @@ The receiving {jdgserver_name} server notifies the {project_name} servers in its
 
 See the <<archdiagram>> for more details.
 
+include::crossdc/assembly-setting-up-crossdc.adoc[leveloffset=3]
+
 [[setup]]
 ==== Setting up Cross DC with {jdgserver_name} {jdgserver_version}
 
@@ -321,9 +323,9 @@ Issues related to authorization may exist just for some other versions of {jdgse
 .. The `backups` element like this:
 +
 ```xml
-            <backups>
-                <backup site="site1" ....
-                ...
+<backups>
+  <backup site="site1" ....
+  ...
 ```
 +
 NOTE: The _PUBLIC_IP_ADDRESS_ below refers to the IP address or hostname, which can be used for your server to bind to. Note that
@@ -390,8 +392,8 @@ In production you will likely need to have a separate database server in every d
 .. Add the attribute `site` to the JGroups UDP protocol:
 +
 ```xml
-                  <stack name="udp">
-                      <transport type="UDP" socket-binding="jgroups-udp" site="${jboss.site.name}"/>
+<stack name="udp">
+  <transport type="UDP" socket-binding="jgroups-udp" site="${jboss.site.name}"/>
 ```
 +
 
@@ -632,8 +634,6 @@ should be immediately visible on any of 4 nodes as caches should be properly inv
 Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', skip 'false'
 ```
 
-include::crossdc/assembly-setting-up-crossdc.adoc[leveloffset=3]
-
 [[administration]]
 ==== Administration of Cross DC deployment
 
@@ -672,7 +672,7 @@ There are 2 ways to take the site offline.
 This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `server1` server and take the `site2` offline.
 More details about this are available in the
 ifeval::[{project_product}==true]
-link:{jdgserver_crossdcdocs_link}#taking_a_site_offline[{jdgserver_name} documentation].
+link:{jdgserver_crossdcdocs_link}#xsite_auto_offline-xsite[{jdgserver_name} documentation].
 endif::[]
 ifeval::[{project_community}==true]
 link:{jdgserver_crossdcdocs_link}[{jdgserver_name} documentation].
@@ -715,7 +715,7 @@ A bidirectional state transfer will ensure that entities which were created *aft
 Unfortunately, there is no any universal solution to this. Split-brains and network outages are just state, which is usually impossible to be handled 100% correctly with 100% consistent data between sites. In the case of {project_name}, it typically is not a critical issue. In the worst case, users will need to re-login again to their clients, or have the improper count of loginFailures tracked for brute force protection. See the {jdgserver_name}/JGroups documentation for more tips how to deal with split-brain.
 
 The state transfer can be also done on the {jdgserver_name} server side through JMX. The operation name is `pushState`. There are few other operations to monitor status, cancel push state, and so on.
-More info about state transfer is available in the link:{jdgserver_crossdcdocs_link}#pushing_state_transfer_to_sites[{jdgserver_name} docs].
+More info about state transfer is available in the link:{jdgserver_crossdcdocs_link}#cli_xsite_push-cli-ops[{jdgserver_name} docs].
 
 
 [[clearcache]]
