@@ -1,0 +1,137 @@
+[id='configuring-infinispan-{context}']
+= Configuring {jdgserver_name} Clusters
+Configure {jdgserver_name} clusters to replicate {project_name} data across data centers.
+
+.Prerequisites
+
+* Install and set up {jdgserver_name} Server.
+
+.Procedure
+
+. Open `infinispan.xml` for editing.
++
+By default, {jdgserver_name} Server uses `server/conf/infinispan.xml` for static configuration such as cluster transport and security mechanisms.
+
+. Create a stack that uses TCPPING as the cluster discovery protocol.
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+<stack name="global-cluster" extends="tcp">
+    <!-- Remove MPING protocol from the stack and add TCPPING -->
+    <TCPPING initial_hosts="server1[7800],server2[7800]" <1>
+             stack.combine="REPLACE" stack.position="MPING"/>
+</stack>
+----
+<1> Lists the host names for `server1` and `server2`.
++
+. Configure the {jdgserver_name} cluster transport to perform Cross-Datacenter replication.
+.. Add the RELAY2 protocol to a JGroups stack.
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+<jgroups>
+   <stack name="xsite" extends="udp"> <1>
+      <relay.RELAY2 site="site1" <2>
+                    max_site_masters="1000"/> <3>
+      <remote-sites default-stack="global-cluster"> <4>
+         <remote-site name="site1"/>
+         <remote-site name="site2"/>
+      </remote-sites>
+   </stack>
+</jgroups>
+----
+<1> Creates a stack named `xsite` that extends the default UDP cluster transport.
+<2> Adds the RELAY2 protocol and names the cluster you are configuring as `site1`. The site name must be unique to each {jdgserver_name} cluster.
+<3> Sets 1000 as the number of relay nodes for the cluster. You should set a value that is equal to or greater than the maximum number of nodes in your {jdgserver_name} cluster.
+<4> Names all {jdgserver_name} clusters that backup caches with {jdgserver_name} data and uses the default TCP stack for inter-cluster transport.
++
+.. Configure the {jdgserver_name} cluster transport to use the stack.
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+<cache-container name="default" statistics="true">
+      <transport cluster="${infinispan.cluster.name:cluster}"
+                 stack="xsite"/> <1>
+</cache-container>
+----
+<1> Uses the `xsite` stack for the cluster.
++
+. Configure the keystore as an SSL identity in the server security realm.
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+<server-identities>
+  <ssl>
+    <keystore path="server.jks" <1>
+              relative-to="infinispan.server.config.path"
+              keystore-password="password" <2>
+              alias="server" /> <3>
+  </ssl>
+</server-identities>
+----
+<1> Specifies the path of the keystore that contains the SSL identity.
+<2> Specifies the password to access the keystore.
+<3> Names the alias of the certificate in the keystore.
++
+. Configure the authentication mechanism for the Hot Rod endpoint.
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+<endpoints socket-binding="default">
+   <hotrod-connector name="hotrod">
+      <authentication>
+         <sasl mechanisms="SCRAM-SHA-512" <1>
+               server-name="infinispan" /> <2>
+      </authentication>
+   </hotrod-connector>
+   <rest-connector name="rest"/>
+</endpoints>
+----
+<1> Configures the SASL authentication mechanism for the Hot Rod endpoint.  SCRAM-SHA-512 is the default SASL mechanism for Hot Rod. However you can use whatever is appropriate for your environment, such as GSSAPI.
+<2> Defines the name that {jdgserver_name} servers present to clients. You specify this name in the Hot Rod client configuration when you set up {project_name}.
++
+. Create a cache template.
++
+NOTE: Add the cache template to `infinispan.xml` on each node in the {jdgserver_name} cluster.
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+<cache-container ... >
+  <replicated-cache-configuration name="sessions-cfg" <1>
+                                  mode="SYNC"> <2>
+    <locking acquire-timeout="0" /> <3>
+    <backups>
+      <backup site="site2" strategy="SYNC" /> <4>
+    </backups>
+  </replicated-cache-configuration>
+</cache-container>
+----
+<1> Creates a cache template named `sessions-cfg`.
+<2> Defines a cache that synchronously replicates data across the cluster.
+<3> Disables timeout for lock acquisition.
+<4> Names the backup site for the {jdgserver_name} cluster you are configuring.
++
+. Start {jdgserver_name} at each site.
++
+[source,bash,options="nowrap",subs=attributes+]
+----
+$ bin/server.sh
+----
++
+. Check {jdgserver_name} server logs to verify the clusters form cross-site views.
++
+[source,options="nowrap",subs=attributes+]
+----
+INFO  [org.infinispan.XSITE] (jgroups-5,${server.hostname}) ISPN000439: Received new x-site view: [NYC]
+INFO  [org.infinispan.XSITE] (jgroups-7,${server.hostname}) ISPN000439: Received new x-site view: [NYC, LON]
+----
+
+ifeval::[{project_product}==true]
+[role="_additional-resources"]
+.Additional resources
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_server_guide/index#start_server[Getting Started with Data Grid Server] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_guide_to_cross-site_replication/index#configure_relay-xsite[Configuring Data Grid Clusters for Cross-Site Replication] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_server_guide/index#ssl_identity-server[Setting Up SSL Identities for Data Grid Server] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_server_guide/index#configuring_endpoints[Configuring Data Grid Endpoints] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_server_guide/index#configure_hotrod_authentication-server[Configuring Hot Rod Authentication Mechanisms]
+endif::[]

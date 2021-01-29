@@ -6,7 +6,7 @@
 :tech_feature_disabled: false
 include::../templates/techpreview.adoc[]
 
-Cross-Datacenter Replication mode is for when you want to run {project_name} in a cluster across multiple data centers, most typically using data center sites that are in different geographic regions. When using this mode, each data center will have its own cluster of {project_name} servers.
+Cross-Datacenter Replication mode lets you run {project_name} in a cluster across multiple data centers, most typically using data center sites that are in different geographic regions. When using this mode, each data center will have its own cluster of {project_name} servers.
 
 This documentation will refer to the following example architecture diagram to illustrate and describe a simple Cross-Datacenter Replication use case.
 
@@ -137,13 +137,16 @@ For more detail about how caches can be configured see <<tuningcache>>.
 [[communication]]
 ==== Communication details
 
-{project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external {jdgserver_name} servers for communication across data centers. This is done using the link:[Infinispan Hot Rod protocol].
+{project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external {jdgserver_name} servers for communication across data centers. This is done using the link:https://infinispan.org/docs/stable/titles/server/server.html#hot_rod[Infinispan Hot Rod protocol].
 
-The Infinispan caches on the {project_name} side must be configured with the link:https://infinispan.org/docs/stable/titles/configuring/configuring.html#remote_cache_store[remoteStore] to ensure that data are saved to the remote cache. There is separate Infinispan cluster between {jdgserver_name} servers, so the data saved on SERVER1 on `site1` are replicated to SERVER2 on `site2` .
+The Infinispan caches on the {project_name} side use link:https://infinispan.org/docs/stable/titles/configuring/configuring.html#remote_cache_store[`remoteStore`] configuration to offload data to a remote {jdgserver_name} cluster.
+{jdgserver_name} clusters in separate data centers then replicate that data to ensure it is backed up.
 
-Finally, the receiving {jdgserver_name} server notifies the {project_name} servers in its cluster through the Client Listeners, which are a feature of the Hot Rod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`.
+The receiving {jdgserver_name} server notifies the {project_name} servers in its cluster through Client Listeners, which are a feature of the Hot Rod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`.
 
 See the <<archdiagram>> for more details.
+
+include::crossdc/assembly-setting-up-crossdc.adoc[leveloffset=3]
 
 [[setup]]
 ==== Setting up Cross DC with {jdgserver_name} {jdgserver_version}
@@ -630,8 +633,6 @@ should be immediately visible on any of 4 nodes as caches should be properly inv
 2017-08-25 17:35:17,737 DEBUG [org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener] (Client-Listener-sessions-30012a77422542f5) Received event from remote store.
 Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', skip 'false'
 ```
-
-include::crossdc/assembly-setting-up-crossdc.adoc[leveloffset=3]
 
 [[administration]]
 ==== Administration of Cross DC deployment

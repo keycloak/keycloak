@@ -140,8 +140,8 @@
 :appserver_managementconsole_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_console_overview
 
 :jdgserver_name: RHDG
-:jdgserver_version: 7.3.8
-:jdgserver_version_latest: 8.1.0
+:jdgserver_version: 7.3
+:jdgserver_version_latest: 8.1
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_user_guide/x_site_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 12

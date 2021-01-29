@@ -1,11 +1,11 @@
-
-[id="assembly-setting-up-crossdc_{context}"]
-= Setting up Cross DC with {jdgserver_name} {jdgserver_version_latest}
+[id="assembly-setting-up-crossdc"]
+:context: xsite
+= Setting Up Cross DC with {jdgserver_name} {jdgserver_version_latest}
 
 [role="_abstract"]
 Use the following procedures for {jdgserver_name} {jdgserver_version_latest} to perform a basic setup of Cross-Datacenter replication.
 
 include::proc-setting-up-infinispan.adoc[leveloffset=4]
+include::proc-configuring-infinispan.adoc[leveloffset=4]
+include::proc-creating-infinispan-caches.adoc[leveloffset=4]
 include::proc-configuring-remote-cache.adoc[leveloffset=4]
-
-

@@ -1,4 +1,3 @@
-
 [id="proc-configuring-remote-cache-{context}"]
 = Configuring Remote Cache Stores on {project_name}
 After you set up remote {jdgserver_name} clusters to back up {jdgserver_name} data, you can configure the Infinispan subsystem  to use those clusters as remote stores.
@@ -16,7 +15,7 @@ After you set up remote {jdgserver_name} clusters to back up {jdgserver_name} da
 [source,xml,options="nowrap",subs=attributes+]
 ----
 <outbound-socket-binding name="remote-cache"> <1>
-  <remote-destination host="${remote.cache.host:<server_hostname>}"> <2>
+  <remote-destination host="${remote.cache.host:server_hostname}"> <2>
                       <port="${remote.cache.port:11222}"/> <3>
 </outbound-socket-binding>
 ----
@@ -45,13 +44,6 @@ infinispan.client.hotrod.sasl_mechanism = SCRAM-SHA-512
 infinispan.client.hotrod.trust_store_file_name = /path/to/truststore.jks
 infinispan.client.hotrod.trust_store_type = JKS
 infinispan.client.hotrod.trust_store_password = password
-----
-+
-. Add `hotrod-client.properties` to the classpath of your {project_name} server. For example:
-+
-[source,xml,options="nowrap",subs=attributes+]
-----
-./standalone.sh ... -P <path_to_properties_file>
 ----
 
 . Update a replicated cache named `work` that is in the Infinispan subsystem with the following configuration:
@@ -83,7 +75,7 @@ ifeval::[{project_community}==true]
 https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html#configure_clients-xsite[{jdgserver_name} documentation]
 endif::[]
 ifeval::[{project_product}==true]
-https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_guide_to_cross-site_replication/index#configure_clients-xsite[{jdgserver_name} documentation] 
+https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_guide_to_cross-site_replication/index#configure_clients-xsite[{jdgserver_name} documentation]
 endif::[]
 for descriptions of each property.
 
@@ -119,7 +111,22 @@ For example, add a cache named `sessions` with the following configuration:
 <3> Names the corresponding cache on the remote {jdgserver_name} cluster.
 <4> Specifies the `remote-cache` socket binding.
 +
-. Start {project_name}.
+. Start each {project_name} server with `hotrod-client.properties` on the classpath, for example:
++
+[source,xml,options="nowrap",subs=attributes+]
+----
+./standalone.sh -c standalone-ha.xml -Djboss.node.name=node11 -Djboss.site.name=site1 \
+  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=server1 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+  -P path/to/hotrod-client.properties
+----
++
+. Check server logs for the following messages:
++
+[source,options="nowrap",subs=attributes+]
+----
+Received new cluster view for channel keycloak: [node11|1] (2) [node11, node12]
+-----
 
 ifeval::[{project_product}==true]
 [role="_additional-resources"]

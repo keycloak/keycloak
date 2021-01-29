@@ -1,0 +1,48 @@
+[id='creating-infinispan-caches-{context}']
+= Creating Infinispan Caches
+Create the Infinispan caches that {project_name} requires.
+
+We recommend that you create caches on {jdgserver_name} clusters at runtime rather than adding caches to `infinispan.xml`.
+This strategy ensures that your caches are automatically synchronized across the cluster and permanently stored.
+
+The following procedure uses the {jdgserver_name} Command Line Interface (CLI) to create all the required caches in a single batch command.
+
+.Prerequisites
+
+* Configure your {jdgserver_name} clusters.
+
+.Procedure
+
+. Create a batch file that contains caches, for example:
++
+[source,bash,options="nowrap",subs=attributes+]
+-----
+cat > /tmp/caches.batch<<EOF
+echo "creating caches..."
+create cache work --template=sessions-cfg
+create cache sessions --template=sessions-cfg
+create cache clientSessions --template=sessions-cfg
+create cache offlineSessions --template=sessions-cfg
+create cache offlineClientSessions --template=sessions-cfg
+create cache actionTokens --template=sessions-cfg
+create cache loginFailures --template=sessions-cfg
+echo "verifying caches"
+ls caches
+EOF
+-----
++
+. Create the caches with the CLI.
++
+[source,bash,options="nowrap",subs=attributes+]
+-----
+$ bin/cli.sh -c http://localhost:11222 -f /tmp/caches.batch
+-----
+
+ifeval::[{project_product}==true]
+[role="_additional-resources"]
+.Additional resources
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_server_guide/index#start_server[Getting Started with Data Grid Server] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_server_guide/index#create_remote_cache[Remotely Creating Caches on Data Grid Clusters] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html-single/data_grid_command_line_interface/index#batch_operations[Performing Batch Operations with the CLI] +
+link:https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/data_grid_rest_api/rest_v2_api#rest_v2_cache_exists[Verifying Caches]
+endif::[]
