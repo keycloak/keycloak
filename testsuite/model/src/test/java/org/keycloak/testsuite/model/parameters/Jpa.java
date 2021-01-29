@@ -25,6 +25,8 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
+import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
+import org.keycloak.models.session.UserSessionPersisterSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
@@ -51,6 +53,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaConnectionSpi.class)
       .add(JpaUpdaterSpi.class)
       .add(LiquibaseConnectionSpi.class)
+      .add(UserSessionPersisterSpi.class)
 
       .build();
 
@@ -68,6 +71,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaUserProviderFactory.class)
       .add(LiquibaseConnectionProviderFactory.class)
       .add(LiquibaseDBLockProviderFactory.class)
+      .add(JpaUserSessionPersisterProviderFactory.class)
       .build();
 
     public Jpa() {

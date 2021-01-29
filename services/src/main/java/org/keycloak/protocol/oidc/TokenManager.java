@@ -49,7 +49,6 @@ import org.keycloak.models.TokenRevocationStoreProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -92,7 +91,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import static org.keycloak.representations.IDToken.NONCE;
-import static org.keycloak.representations.IDToken.PHONE_NUMBER;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -265,7 +263,12 @@ public class TokenManager {
             }
 
             if (valid) {
-                userSession.setLastSessionRefresh(Time.currentTime());
+                int currentTime = Time.currentTime();
+                userSession.setLastSessionRefresh(currentTime);
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                if (clientSession != null) {
+                    clientSession.setTimestamp(currentTime);
+                }
             }
         }
 

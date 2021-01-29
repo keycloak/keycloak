@@ -42,7 +42,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,6 +54,7 @@ import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -67,6 +67,9 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Page
     protected AppPage appPage;
@@ -190,9 +193,8 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
             OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             String idTokenString = tokenResponse.getIdToken();
 
-            // wait for a timeout
-            // setTimeOffset doesn't work because session cookie is not invalidated thus the logout flow would continue with browser logout
-            TimeUnit.SECONDS.sleep(3);
+            // expire online user session
+            setTimeOffset(9999);
 
             String logoutUrl = oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).idTokenHint(idTokenString).build();
             driver.navigate().to(logoutUrl);

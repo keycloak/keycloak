@@ -2,6 +2,7 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -19,6 +20,8 @@ import org.keycloak.testsuite.adapter.page.OfflineToken;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -66,6 +69,9 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
     @Page
     protected OAuthGrantPage oauthGrantPage;
 
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
+
     private final String DEFAULT_USERNAME = "test-user@localhost";
     private final String DEFAULT_PASSWORD = "password";
     private final String OFFLINE_CLIENT_ID = "offline-client";
@@ -94,6 +100,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             String servletUri = UriBuilder.fromUri(offlineTokenPage.toString())
                     .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                     .build().toString();
+            oauth.redirectUri(offlineTokenPage.toString());
+            oauth.clientId("offline-client");
 
             driver.navigate().to(servletUri);
             waitUntilElement(By.tagName("body")).is().visible();
@@ -110,17 +118,31 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             String accessTokenId = offlineTokenPage.getAccessToken().getId();
             String refreshTokenId = offlineTokenPage.getRefreshToken().getId();
 
+            // online user session will be expired and removed
             setAdapterAndServerTimeOffset(9999);
+
+            // still able to access the page using the offline token
             offlineTokenPage.navigateTo();
             assertCurrentUrlStartsWith(offlineTokenPage);
 
+            // assert successful refresh
             assertThat(offlineTokenPage.getRefreshToken().getId(), not(refreshTokenId));
             assertThat(offlineTokenPage.getAccessToken().getId(), not(accessTokenId));
 
-            // Ensure that logout works for webapp (even if offline token will be still valid in Keycloak DB)
-            offlineTokenPage.logout();
-            assertCurrentUrlDoesntStartWith(offlineTokenPage);
+            // logout doesn't make sense because online user session is gone and there is no KEYCLOAK_IDENTITY / KEYCLOAK_SESSION cookie in the browser
+            // navigate to login page which won't be possible if there's valid online session
+            driver.navigate().to(oauth.getLoginFormUrl());
+            WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
+
+            // navigate back to offlineTokenPage to verify the offline session is still valid
+            offlineTokenPage.navigateTo();
+            assertCurrentUrlStartsWith(offlineTokenPage);
+
+            // logout the offline user session using the offline refresh token
+            oauth.doLogout(offlineTokenPage.getRefreshTokenString(), "secret1");
+
+            // can't access the offlineTokenPage anymore
             offlineTokenPage.navigateTo();
             assertCurrentUrlDoesntStartWith(offlineTokenPage);
             loginPage.assertCurrent();
