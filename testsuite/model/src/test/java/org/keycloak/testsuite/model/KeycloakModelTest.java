@@ -33,8 +33,11 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleSpi;
+import org.keycloak.models.UserLoginFailureSpi;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.UserSpi;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
@@ -67,6 +70,7 @@ import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.keycloak.timer.TimerSpi;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -172,6 +176,9 @@ public abstract class KeycloakModelTest {
       .add(RealmSpi.class)
       .add(RoleSpi.class)
       .add(StoreFactorySpi.class)
+      .add(TimerSpi.class)
+      .add(UserLoginFailureSpi.class)
+      .add(UserSessionSpi.class)
       .add(UserSpi.class)
       .build();
 
@@ -228,15 +235,15 @@ public abstract class KeycloakModelTest {
             }
         };
         res.init();
+        res.publish(new PostMigrationEvent());
         return res;
     }
 
     public static void reinitializeKeycloakSessionFactory() {
-        DefaultKeycloakSessionFactory f = createKeycloakSessionFactory();
         if (FACTORY != null) {
             FACTORY.close();
         }
-        FACTORY = f;
+        FACTORY = createKeycloakSessionFactory();
     }
 
     @BeforeClass

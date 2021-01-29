@@ -33,6 +33,12 @@ import java.util.stream.Stream;
  */
 public interface UserSessionProvider extends Provider {
 
+    /**
+     * Returns currently used Keycloak session.
+     * @return {@link KeycloakSession}
+     */
+    KeycloakSession getKeycloakSession();
+
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
     AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline);
 
@@ -52,11 +58,11 @@ public interface UserSessionProvider extends Provider {
     }
 
     /**
-     * Obtains the user sessions associated with the specified user.
+     * Obtains the online user sessions associated with the specified user.
      *
      * @param realm a reference to the realm.
      * @param user the user whose sessions are being searched.
-     * @return a non-null {@link Stream} of user sessions.
+     * @return a non-null {@link Stream} of online user sessions.
      */
     Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserModel user);
 
@@ -69,11 +75,11 @@ public interface UserSessionProvider extends Provider {
     }
 
     /**
-     * Obtains the user sessions associated with the specified client.
+     * Obtains the online user sessions associated with the specified client.
      *
      * @param realm a reference to the realm.
      * @param client the client whose user sessions are being searched.
-     * @return a non-null {@link Stream} of user sessions.
+     * @return a non-null {@link Stream} of online user sessions.
      */
     Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client);
 
@@ -86,14 +92,14 @@ public interface UserSessionProvider extends Provider {
     }
 
     /**
-     * Obtains the user sessions associated with the specified client, starting from the {@code firstResult} and containing
+     * Obtains the online user sessions associated with the specified client, starting from the {@code firstResult} and containing
      * at most {@code maxResults}.
      *
      * @param realm a reference tot he realm.
      * @param client the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
-     * @return a non-null {@link Stream} of user sessions.
+     * @return a non-null {@link Stream} of online user sessions.
      */
     Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
 
@@ -107,11 +113,11 @@ public interface UserSessionProvider extends Provider {
     }
 
     /**
-     * Obtains the user sessions associated with the user that matches the specified {@code brokerUserId}.
+     * Obtains the online user sessions associated with the user that matches the specified {@code brokerUserId}.
      *
      * @param realm a reference to the realm.
      * @param brokerUserId the id of the broker user whose sessions are being searched.
-     * @return a non-null {@link Stream} of user sessions.
+     * @return a non-null {@link Stream} of online user sessions.
      */
     Stream<UserSessionModel> getUserSessionByBrokerUserIdStream(RealmModel realm, String brokerUserId);
 
@@ -154,10 +160,37 @@ public interface UserSessionProvider extends Provider {
 
     void removeUserSessions(RealmModel realm);
 
-    UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId);
-    UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId);
-    void removeUserLoginFailure(RealmModel realm, String userId);
-    void removeAllUserLoginFailures(RealmModel realm);
+    /**
+     * @deprecated Use {@link UserLoginFailureProvider#getUserLoginFailure(RealmModel, String) getUserLoginFailure} instead.
+     */
+    @Deprecated
+    default UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
+        return getKeycloakSession().loginFailures().getUserLoginFailure(realm, userId);
+    }
+
+    /**
+     * @deprecated Use {@link UserLoginFailureProvider#addUserLoginFailure(RealmModel, String) addUserLoginFailure} instead.
+     */
+    @Deprecated
+    default UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
+        return getKeycloakSession().loginFailures().addUserLoginFailure(realm, userId);
+    }
+
+    /**
+     * @deprecated Use {@link UserLoginFailureProvider#removeUserLoginFailure(RealmModel, String) removeUserLoginFailure} instead.
+     */
+    @Deprecated
+    default void removeUserLoginFailure(RealmModel realm, String userId) {
+        getKeycloakSession().loginFailures().removeUserLoginFailure(realm, userId);
+    }
+
+    /**
+     * @deprecated Use {@link UserLoginFailureProvider#removeAllUserLoginFailures(RealmModel) removeAllUserLoginFailures} instead.
+     */
+    @Deprecated
+    default void removeAllUserLoginFailures(RealmModel realm) {
+        getKeycloakSession().loginFailures().removeAllUserLoginFailures(realm);
+    }
 
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);

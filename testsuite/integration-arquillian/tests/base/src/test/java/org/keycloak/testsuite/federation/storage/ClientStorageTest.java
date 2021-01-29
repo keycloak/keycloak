@@ -28,6 +28,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.representations.AccessToken;
@@ -468,8 +469,11 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "password");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
+        String offlineUserSessionId = testingClient.server().fetch((KeycloakSession session) ->
+                session.sessions().getOfflineUserSession(session.realms().getRealmByName("test"), offlineToken.getSessionState()).getId(), String.class);
+
         Assert.assertEquals(200, response.getStatusCode());
-        Assert.assertEquals(sessionId, refreshedToken.getSessionState());
+        Assert.assertEquals(offlineUserSessionId, refreshedToken.getSessionState());
 
         // Assert new refreshToken in the response
         String newRefreshToken = response.getRefreshToken();

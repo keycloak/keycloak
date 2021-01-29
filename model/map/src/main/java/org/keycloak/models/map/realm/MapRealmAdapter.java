@@ -1547,4 +1547,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     public OAuth2DeviceConfig getOAuth2DeviceConfig() {
         return new OAuth2DeviceConfig(this);
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getId(), hashCode());
+    }
 }

@@ -106,7 +106,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
         UserLoginFailureModel userLoginFailure = getUserModel(session, event);
         if (userLoginFailure == null) {
-            userLoginFailure = session.sessions().addUserLoginFailure(realm, userId);
+            userLoginFailure = session.loginFailures().addUserLoginFailure(realm, userId);
         }
         userLoginFailure.setLastIPFailure(event.ip);
         long currentTime = Time.currentTimeMillis();
@@ -172,7 +172,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected UserLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
         RealmModel realm = getRealmModel(session, event);
         if (realm == null) return null;
-        UserLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.userId);
+        UserLoginFailureModel user = session.loginFailures().getUserLoginFailure(realm, event.userId);
         if (user == null) return null;
         return user;
     }
@@ -304,7 +304,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     @Override
     public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user) {
-        UserLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, user.getId());
+        UserLoginFailureModel failure = session.loginFailures().getUserLoginFailure(realm, user.getId());
 
         if (failure != null) {
             int currTime = (int) (Time.currentTimeMillis() / 1000);

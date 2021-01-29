@@ -17,8 +17,10 @@
 package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.Serialization;
 import com.fasterxml.jackson.databind.JavaType;
@@ -31,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
+import java.util.UUID;
 
 /**
  *
@@ -92,7 +96,14 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
     private <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> loadMap(String fileName,
       Class<V> valueType, Class<M> modelType, EnumSet<Flag> flags) {
-        ConcurrentHashMapStorage<K, V, M> store = new ConcurrentHashMapStorage<>(modelType);
+        ConcurrentHashMapStorage<K, V, M> store;
+        if (modelType == UserSessionModel.class) {
+            ConcurrentHashMapStorage clientSessionStore =
+              getStorage("clientSessions", UUID.class, MapAuthenticatedClientSessionEntity.class, AuthenticatedClientSessionModel.class);
+            store = new UserSessionConcurrentHashMapStorage<>(clientSessionStore);
+        } else {
+            store = new ConcurrentHashMapStorage<>(modelType);
+        }
 
         if (! flags.contains(Flag.INITIALIZE_EMPTY)) {
             final File f = getFile(fileName);

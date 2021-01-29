@@ -388,7 +388,7 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
             Predicate<? super K> keyFilter = ((MapModelCriteriaBuilder) mcb).getKeyFilter();
-            return v -> v != null && ! (keyFilter.test(v.getId()) && entityFilter.test(v));
+            return v -> v == null || ! (keyFilter.test(v.getId()) && entityFilter.test(v));
         }
 
         @Override

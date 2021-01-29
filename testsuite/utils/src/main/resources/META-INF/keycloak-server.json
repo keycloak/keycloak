@@ -38,6 +38,14 @@
         "provider": "${keycloak.authSession.provider:infinispan}"
     },
 
+    "userSessions": {
+        "provider": "${keycloak.userSession.provider:infinispan}"
+    },
+
+    "loginFailure": {
+        "provider": "${keycloak.loginFailure.provider:infinispan}"
+    },
+
     "mapStorage": {
         "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
         "concurrenthashmap": {

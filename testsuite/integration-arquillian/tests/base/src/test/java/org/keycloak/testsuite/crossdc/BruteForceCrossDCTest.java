@@ -265,7 +265,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
     private void addUserLoginFailure(KeycloakTestingClient testingClient) throws URISyntaxException, IOException {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-            UserLoginFailureModel loginFailure = session.sessions().addUserLoginFailure(realm, "login-test-1");
+            UserLoginFailureModel loginFailure = session.loginFailures().addUserLoginFailure(realm, "login-test-1");
             loginFailure.incrementFailures();
         });
     }
