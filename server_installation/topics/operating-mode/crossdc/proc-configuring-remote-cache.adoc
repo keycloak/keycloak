@@ -126,7 +126,7 @@ For example, add a cache named `sessions` with the following configuration:
 [source,options="nowrap",subs=attributes+]
 ----
 Received new cluster view for channel keycloak: [node11|1] (2) [node11, node12]
------
+----
 
 ifeval::[{project_product}==true]
 [role="_additional-resources"]
