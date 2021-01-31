@@ -104,6 +104,7 @@ public class KeycloakInstalled {
     private Status status;
     private Locale locale;
     private ResteasyClient resteasyClient;
+    private BrowseCallback browseCallback = url -> Desktop.getDesktop().browse(URI.create(url));
     Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
     Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
     Pattern codePattern = Pattern.compile("code=([^&]+)");
@@ -120,6 +121,10 @@ public class KeycloakInstalled {
 
     public KeycloakInstalled(KeycloakDeployment deployment) {
         this.deployment = deployment;
+    }
+
+    public void setBrowseCallback(BrowseCallback browseCallback) {
+        this.browseCallback = browseCallback;
     }
 
     public void setResteasyClient(ResteasyClient resteasyClient) {
@@ -203,7 +208,7 @@ public class KeycloakInstalled {
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
-        Desktop.getDesktop().browse(new URI(authUrl));
+        browseCallback.browse(authUrl);
 
         try {
             callback.await();
@@ -263,7 +268,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .build().toString();
 
-        Desktop.getDesktop().browse(new URI(logoutUrl));
+        browseCallback.browse(logoutUrl);
 
         try {
             callback.await();
