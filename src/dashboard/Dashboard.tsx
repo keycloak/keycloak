@@ -30,6 +30,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 import "./dashboard.css";
 import { toUpperCase } from "../util";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
@@ -97,7 +98,7 @@ const Dashboard = () => {
                     </DescriptionListDescription>
                     <DescriptionListTerm>{t("product")}</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {serverInfo.profileInfo?.name}
+                      {toUpperCase(serverInfo.profileInfo?.name!)}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                 </DescriptionList>
@@ -111,7 +112,12 @@ const Dashboard = () => {
                 <DescriptionList>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      {t("enabledFeatures")}
+                      {t("enabledFeatures")}{" "}
+                      <HelpItem
+                        forID="enabledFeatures"
+                        forLabel={t("enabledFeatures")}
+                        helpText="dashboard:infoEnabledFeatures"
+                      />
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       <List variant={ListVariant.inline}>
@@ -124,7 +130,7 @@ const Dashboard = () => {
                               <></>
                             )}
                             {isPreviewFeature(feature) ? (
-                              <Label>{t("preview")}</Label>
+                              <Label color="blue">{t("preview")}</Label>
                             ) : (
                               <></>
                             )}
@@ -135,7 +141,12 @@ const Dashboard = () => {
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      {t("disabledFeatures")}
+                      {t("disabledFeatures")}{" "}
+                      <HelpItem
+                        forID="disabledFeatures"
+                        forLabel={t("disabledFeatures")}
+                        helpText="dashboard:infoDisabledFeatures"
+                      />
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       <List variant={ListVariant.inline}>
