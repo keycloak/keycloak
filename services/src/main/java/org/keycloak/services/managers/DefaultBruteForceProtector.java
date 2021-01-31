@@ -291,13 +291,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     @Override
     public void successfulLogin(final RealmModel realm, final UserModel user, final ClientConnection clientConnection) {
-        try {
-            SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
-            queue.offer(event);
-
-            event.latch.await(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
+        SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
+        queue.offer(event);
         logger.trace("sent success event");
     }
 
