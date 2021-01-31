@@ -15,7 +15,7 @@ Or a little more verbose if you want to manually define the resources being prot
 {
   "policy-enforcer": {
     "user-managed-access" : {},
-    "enforcement-mode" : "ENFORCING"
+    "enforcement-mode" : "ENFORCING",
     "paths": [
       {
         "path" : "/someUri/*",
