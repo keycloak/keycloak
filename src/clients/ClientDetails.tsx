@@ -110,7 +110,19 @@ export const ClientDetails = () => {
   const [client, setClient] = useState<ClientRepresentation>();
 
   const loader = async () => {
-    return await adminClient.clients.listRoles({ id });
+    const roles = await adminClient.clients.listRoles({ id });
+    return roles.sort((r1, r2) => {
+      const r1Name = r1.name?.toUpperCase();
+      const r2Name = r2.name?.toUpperCase();
+      if (r1Name! < r2Name!) {
+        return -1;
+      }
+      if (r1Name! > r2Name!) {
+        return 1;
+      }
+
+      return 0;
+    });
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
