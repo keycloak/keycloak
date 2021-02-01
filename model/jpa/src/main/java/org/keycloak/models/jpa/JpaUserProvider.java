@@ -71,7 +71,6 @@ import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 
 /**
@@ -237,7 +236,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     public Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
         TypedQuery<UserConsentEntity> query = em.createNamedQuery("userConsentsByUser", UserConsentEntity.class);
         query.setParameter("userId", userId);
-        return closing(query.getResultStream().map(entity -> toConsentModel(realm, entity)));
+        return query.getResultStream().map(entity -> toConsentModel(realm, entity));
     }
 
     @Override
@@ -491,14 +490,14 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
-        return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
+        return query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity));
     }
 
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
-        return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
+        return query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity));
     }
 
     @Override
@@ -735,7 +734,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         TypedQuery<UserEntity> query = em.createNamedQuery(queryName, UserEntity.class);
         query.setParameter("realmId", realm.getId());
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
+        return paginateQuery(query, firstResult, maxResults).getResultStream().map(entity -> new UserAdapter(session, realm, em, entity));
     }
 
     @Override
@@ -743,7 +742,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+        return paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user));
     }
 
     @Override
@@ -751,7 +750,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+        return paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user));
     }
 
     @Override
@@ -871,7 +870,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 
         UserProvider users = session.users();
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+        return paginateQuery(query, firstResult, maxResults).getResultStream()
                 .map(userEntity -> users.getUserById(realm, userEntity.getId()));
     }
 
@@ -882,7 +881,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         query.setParameter("value", attrValue);
         query.setParameter("realmId", realm.getId());
 
-        return closing(query.getResultStream().map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
+        return query.getResultStream().map(userEntity -> new UserAdapter(session, realm, em, userEntity));
     }
 
     private FederatedIdentityEntity findFederatedIdentity(UserModel user, String identityProvider, LockModeType lockMode) {
@@ -902,8 +901,8 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         query.setParameter("user", userEntity);
 
-        return closing(query.getResultStream().map(entity -> new FederatedIdentityModel(entity.getIdentityProvider(),
-                entity.getUserId(), entity.getUserName(), entity.getToken())).distinct());
+        return query.getResultStream().map(entity -> new FederatedIdentityModel(entity.getIdentityProvider(),
+                entity.getUserId(), entity.getUserName(), entity.getToken())).distinct();
     }
 
     @Override

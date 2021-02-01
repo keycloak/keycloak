@@ -19,23 +19,10 @@ package org.keycloak.utils;
 
 import java.util.Iterator;
 import java.util.Spliterators;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class StreamsUtil {
-
-    /**
-     * Returns the original stream that is closed on terminating operation.
-     *
-     * It is used, for example, for closing hibernate provided streams since it is required by hibernate documentation.
-     *
-     * @param stream the stream which is expected to be closed on termination
-     * @return stream that will be closed on terminating operation
-     */
-    public static <T> Stream<T> closing(Stream<T> stream) {
-        return Stream.of(stream).flatMap(Function.identity());
-    }
 
     /**
      * Returns the original stream if the stream is not empty. Otherwise throws the provided exception.

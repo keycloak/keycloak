@@ -49,7 +49,6 @@ import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -251,8 +250,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setParameter("lastCreatedOn", lastCreatedOn);
         query.setParameter("lastSessionId", lastUserSessionId);
 
-        List<PersistentUserSessionAdapter> result = closing(paginateQuery(query, firstResult, maxResults).getResultStream()
-                .map(this::toAdapter))
+		List<PersistentUserSessionAdapter> result = paginateQuery(query, firstResult, maxResults).getResultStream()
+				.map(this::toAdapter)
                 .collect(Collectors.toList());
 
         Map<String, PersistentUserSessionAdapter> sessionsById = result.stream()
@@ -266,7 +265,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             TypedQuery<PersistentClientSessionEntity> query2 = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
             query2.setParameter("userSessionIds", userSessionIds);
             query2.setParameter("offline", offlineStr);
-            closing(query2.getResultStream()).forEach(clientSession -> {
+			query2.getResultStream().forEach(clientSession -> {
                 PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());
 
                 PersistentAuthenticatedClientSessionAdapter clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSession);

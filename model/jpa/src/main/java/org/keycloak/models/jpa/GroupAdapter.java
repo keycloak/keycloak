@@ -38,8 +38,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
-import static org.keycloak.utils.StreamsUtil.closing;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -123,8 +121,8 @@ public class GroupAdapter implements GroupModel.Streams , JpaModel<GroupEntity> 
     public Stream<GroupModel> getSubGroupsStream() {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
         query.setParameter("parent", group.getId());
-        return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
-    }
+		return query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull);
+	}
 
     @Override
     public void setSingleAttribute(String name, String value) {
@@ -247,8 +245,8 @@ public class GroupAdapter implements GroupModel.Streams , JpaModel<GroupEntity> 
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("groupRoleMappingIds", String.class);
         query.setParameter("group", getEntity());
-        return closing(query.getResultStream().map(realm::getRoleById).filter(Objects::nonNull));
-    }
+		return query.getResultStream().map(realm::getRoleById).filter(Objects::nonNull);
+	}
 
     @Override
     public void deleteRoleMapping(RoleModel role) {

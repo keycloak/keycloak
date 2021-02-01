@@ -45,7 +45,6 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
 import javax.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -210,9 +209,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
-        closing(query.getResultStream()
+        query.getResultStream()
                 .map(entity -> storeFactory.findById(entity.getId(), resourceServerId))
-                .filter(Objects::nonNull))
+                .filter(Objects::nonNull)
                 .forEach(consumer::accept);
     }
 
@@ -233,9 +232,9 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("type", resourceType);
         query.setParameter("serverId", resourceServerId);
 
-        closing(query.getResultStream()
+        query.getResultStream()
                 .map(id -> new PolicyAdapter(id, entityManager, provider.getStoreFactory()))
-                .filter(Objects::nonNull))
+                .filter(Objects::nonNull)
                 .forEach(consumer::accept);
     }
 
@@ -289,9 +288,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         StoreFactory storeFactory = provider.getStoreFactory();
 
-        closing(query.getResultStream()
+        query.getResultStream()
                 .map(id -> new PolicyAdapter(id, entityManager, storeFactory))
-                .filter(Objects::nonNull))
+                .filter(Objects::nonNull)
                 .forEach(consumer::accept);
     }
 

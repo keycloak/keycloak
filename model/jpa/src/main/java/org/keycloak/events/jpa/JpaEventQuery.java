@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -126,7 +125,7 @@ public class JpaEventQuery implements EventQuery {
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertEvent));
-    }
+		return paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertEvent);
+	}
 
 }

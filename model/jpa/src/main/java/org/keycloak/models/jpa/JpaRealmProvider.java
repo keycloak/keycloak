@@ -62,7 +62,6 @@ import org.keycloak.models.ModelException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 
 /**
@@ -132,8 +131,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     private Stream<RealmModel> getRealms(TypedQuery<String> query) {
-        return closing(query.getResultStream().map(session.realms()::getRealm).filter(Objects::nonNull));
-    }
+		return query.getResultStream().map(session.realms()::getRealm).filter(Objects::nonNull);
+	}
 
     @Override
     public RealmModel getRealmByName(String name) {
@@ -263,8 +262,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         query.setParameter("realm", realm.getId());
         Stream<String> roles = query.getResultStream();
 
-        return closing(roles.map(realm::getRoleById));
-    }
+		return roles.map(realm::getRoleById);
+	}
 
     @Override
     public RoleModel getClientRole(ClientModel client, String name) {
@@ -295,8 +294,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     protected Stream<RoleModel> getRolesStream(TypedQuery<RoleEntity> query, RealmModel realm, Integer first, Integer max) {
         Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
 
-        return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
-    }
+		return results.map(role -> new RoleAdapter(session, realm, em, role));
+	}
 
     @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
@@ -317,8 +316,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         query.setParameter("search", "%" + search.trim().toLowerCase() + "%");
         Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
 
-        return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
-    }
+		return results.map(role -> new RoleAdapter(session, realm, em, role));
+	}
 
     @Override
     public boolean removeRole(RoleModel role) {
@@ -412,9 +411,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm) {
-        return closing(em.createNamedQuery("getGroupIdsByRealm", String.class)
-                .setParameter("realm", realm.getId())
-                .getResultStream())
+		return em.createNamedQuery("getGroupIdsByRealm", String.class)
+				.setParameter("realm", realm.getId())
+				.getResultStream()
                 .map(g -> session.groups().getGroupById(realm, g));
     }
 
@@ -427,7 +426,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
                 .setParameter("search", search)
                 .setParameter("ids", ids.collect(Collectors.toList()));
 
-        return closing(paginateQuery(query, first, max).getResultStream())
+		return paginateQuery(query, first, max).getResultStream()
                 .map(g -> session.groups().getGroupById(realm, g));
     }
 
@@ -442,7 +441,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
                 .setParameter("ids", ids.collect(Collectors.toList()));
 
 
-        return closing(paginateQuery(query, first, max).getResultStream())
+		return paginateQuery(query, first, max).getResultStream()
                 .map(g -> session.groups().getGroupById(realm, g));
     }
 
@@ -500,10 +499,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
         Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
 
-        return closing(results
-        		.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
-                .sorted(GroupModel.COMPARE_BY_NAME));
-    }
+		return results
+				.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
+				.sorted(GroupModel.COMPARE_BY_NAME);
+	}
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
@@ -516,11 +515,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
                 .setParameter("realm", realm.getId())
                 .setParameter("parent", GroupEntity.TOP_PARENT_ID);
 
-        return closing(paginateQuery(groupsQuery, first, max).getResultStream()
-                .map(realm::getGroupById)
-                .sorted(GroupModel.COMPARE_BY_NAME)
-        );
-    }
+		return paginateQuery(groupsQuery, first, max).getResultStream()
+				.map(realm::getGroupById)
+				.sorted(GroupModel.COMPARE_BY_NAME);
+	}
 
     @Override
     public boolean removeGroup(RealmModel realm, GroupModel group) {
@@ -638,8 +636,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         query.setParameter("realm", realm.getId());
         Stream<String> clients = paginateQuery(query, firstResult, maxResults).getResultStream();
 
-        return closing(clients.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull));
-    }
+		return clients.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull);
+	}
 
     @Override
     public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
@@ -647,8 +645,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         query.setParameter("realm", realm.getId());
         Stream<String> clientStream = query.getResultStream();
 
-        return closing(clientStream.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull));
-    }
+		return clientStream.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull);
+	}
 
     @Override
     public ClientModel getClientById(RealmModel realm, String id) {
@@ -682,8 +680,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         query.setParameter("realm", realm.getId());
 
         Stream<String> results = paginateQuery(query, firstResult, maxResults).getResultStream();
-        return closing(results.map(c -> session.clients().getClientById(realm, c)));
-    }
+		return results.map(c -> session.clients().getClientById(realm, c));
+	}
 
     @Override
     public void removeClients(RealmModel realm) {
@@ -754,14 +752,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
         Stream<String> groups =  paginateQuery(query, first, max).getResultStream();
 
-        return closing(groups.map(id -> {
-            GroupModel groupById = session.groups().getGroupById(realm, id);
-            while (Objects.nonNull(groupById.getParentId())) {
-                groupById = session.groups().getGroupById(realm, groupById.getParentId());
-            }
-            return groupById;
-        }).sorted(GroupModel.COMPARE_BY_NAME).distinct());
-    }
+		return groups.map(id -> {
+			GroupModel groupById = session.groups().getGroupById(realm, id);
+			while (Objects.nonNull(groupById.getParentId())) {
+				groupById = session.groups().getGroupById(realm, groupById.getParentId());
+			}
+			return groupById;
+		}).sorted(GroupModel.COMPARE_BY_NAME).distinct();
+	}
 
     @Override
     public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
@@ -806,8 +804,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
         TypedQuery<ClientInitialAccessEntity> query = em.createNamedQuery("findClientInitialAccessByRealm", ClientInitialAccessEntity.class);
         query.setParameter("realm", realmEntity);
-        return closing(query.getResultStream().map(this::entityToModel));
-    }
+		return query.getResultStream().map(this::entityToModel);
+	}
 
     @Override
     public void removeExpiredClientInitialAccess() {

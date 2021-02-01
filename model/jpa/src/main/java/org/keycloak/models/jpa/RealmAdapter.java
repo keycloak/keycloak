@@ -36,7 +36,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -2045,7 +2044,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         TypedQuery<String> query = em.createNamedQuery("defaultClientScopeRealmMappingIdsByRealm", String.class);
         query.setParameter("realm", getEntity());
         query.setParameter("defaultScope", defaultScope);
-        return closing(query.getResultStream().map(this::getClientScopeById).filter(Objects::nonNull));
+        return query.getResultStream().map(this::getClientScopeById).filter(Objects::nonNull);
     }
 
     @Override

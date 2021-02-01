@@ -47,8 +47,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
-import static org.keycloak.utils.StreamsUtil.closing;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -368,7 +366,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
-        return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
+		return session.groups().getGroupsStream(realm, createGetGroupsQuery().getResultStream(), search, first, max);
     }
 
     @Override
@@ -379,7 +377,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
     @Override
     public long getGroupsCountByNameContaining(String search) {
         if (search == null) return getGroupsCount();
-        return session.groups().getGroupsCount(realm, closing(createGetGroupsQuery().getResultStream()), search);
+		return session.groups().getGroupsCount(realm, createGetGroupsQuery().getResultStream(), search);
     }
 
     @Override
@@ -467,8 +465,8 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("userRoleMappingIds", String.class);
         query.setParameter("user", getEntity());
-        return closing(query.getResultStream().map(realm::getRoleById).filter(Objects::nonNull));
-    }
+		return query.getResultStream().map(realm::getRoleById).filter(Objects::nonNull);
+	}
 
     @Override
     public void deleteRoleMapping(RoleModel role) {

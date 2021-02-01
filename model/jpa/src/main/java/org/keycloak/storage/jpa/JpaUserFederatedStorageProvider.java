@@ -64,7 +64,6 @@ import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -169,8 +168,8 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("realmId", realm.getId())
                 .setParameter("name", name)
                 .setParameter("value", value);
-        return closing(query.getResultStream());
-    }
+		return query.getResultStream();
+	}
 
     @Override
     public String getUserByFederatedIdentity(FederatedIdentityModel link, RealmModel realm) {
@@ -245,9 +244,9 @@ public class JpaUserFederatedStorageProvider implements
     public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(String userId, RealmModel realm) {
         TypedQuery<BrokerLinkEntity> query = em.createNamedQuery("findBrokerLinkByUser", BrokerLinkEntity.class)
                 .setParameter("userId", userId);
-        return closing(query.getResultStream().map(entity -> new FederatedIdentityModel(entity.getIdentityProvider(),
-                entity.getBrokerUserId(), entity.getBrokerUserName(), entity.getToken())).distinct());
-    }
+		return query.getResultStream().map(entity -> new FederatedIdentityModel(entity.getIdentityProvider(),
+				entity.getBrokerUserId(), entity.getBrokerUserName(), entity.getToken())).distinct();
+	}
 
     @Override
     public FederatedIdentityModel getFederatedIdentity(String userId, String socialProvider, RealmModel realm) {
@@ -298,8 +297,8 @@ public class JpaUserFederatedStorageProvider implements
     public Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
         TypedQuery<FederatedUserConsentEntity> query = em.createNamedQuery("userFederatedConsentsByUser", FederatedUserConsentEntity.class);
         query.setParameter("userId", userId);
-        return closing(query.getResultStream().map(entity -> toConsentModel(realm, entity)));
-    }
+		return query.getResultStream().map(entity -> toConsentModel(realm, entity));
+	}
 
     @Override
     public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
@@ -431,8 +430,8 @@ public class JpaUserFederatedStorageProvider implements
     public Stream<GroupModel> getGroupsStream(RealmModel realm, String userId) {
         TypedQuery<FederatedUserGroupMembershipEntity> query = em.createNamedQuery("feduserGroupMembership", FederatedUserGroupMembershipEntity.class);
         query.setParameter("userId", userId);
-        return closing(query.getResultStream().map(FederatedUserGroupMembershipEntity::getGroupId).map(realm::getGroupById));
-    }
+		return query.getResultStream().map(FederatedUserGroupMembershipEntity::getGroupId).map(realm::getGroupById);
+	}
 
     @Override
     public void joinGroup(RealmModel realm, String userId, GroupModel group) {
@@ -471,8 +470,8 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("realmId", realm.getId())
                 .setParameter("groupId", group.getId());
 
-        return closing(paginateQuery(query, firstResult, max).getResultStream());
-    }
+		return paginateQuery(query, firstResult, max).getResultStream();
+	}
 
     @Override
     public Stream<String> getRequiredActionsStream(RealmModel realm, String userId) {
@@ -485,8 +484,8 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", userId)
                 .setParameter("realmId", realm.getId());
         query.setLockMode(lockMode);
-        return closing(query.getResultStream());
-    }
+		return query.getResultStream();
+	}
 
     @Override
     public void addRequiredAction(RealmModel realm, String userId, String action) {
@@ -525,8 +524,8 @@ public class JpaUserFederatedStorageProvider implements
     public Stream<RoleModel> getRoleMappingsStream(RealmModel realm, String userId) {
         TypedQuery<FederatedUserRoleMappingEntity> query = em.createNamedQuery("feduserRoleMappings", FederatedUserRoleMappingEntity.class);
         query.setParameter("userId", userId);
-        return closing(query.getResultStream().map(FederatedUserRoleMappingEntity::getRoleId).map(realm::getRoleById));
-    }
+		return query.getResultStream().map(FederatedUserRoleMappingEntity::getRoleId).map(realm::getRoleById);
+	}
 
     @Override
     public void deleteRoleMapping(RealmModel realm, String userId, RoleModel role) {
@@ -632,16 +631,16 @@ public class JpaUserFederatedStorageProvider implements
     private Stream<FederatedUserCredentialEntity> getStoredCredentialEntitiesStream(String userId) {
         TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUser", FederatedUserCredentialEntity.class)
                 .setParameter("userId", userId);
-        return closing(query.getResultStream());
-    }
+		return query.getResultStream();
+	}
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, String userId, String type) {
         TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUserAndType", FederatedUserCredentialEntity.class)
                 .setParameter("type", type)
                 .setParameter("userId", userId);
-        return closing(query.getResultStream().map(this::toModel));
-    }
+		return query.getResultStream().map(this::toModel);
+	}
 
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, String userId, String name, String type) {
@@ -658,8 +657,8 @@ public class JpaUserFederatedStorageProvider implements
     public Stream<String> getStoredUsersStream(RealmModel realm, Integer first, Integer max) {
         TypedQuery<String> query = em.createNamedQuery("getFederatedUserIds", String.class)
                 .setParameter("realmId", realm.getId());
-        return closing(paginateQuery(query, first, max).getResultStream());
-    }
+		return paginateQuery(query, first, max).getResultStream();
+	}
 
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {

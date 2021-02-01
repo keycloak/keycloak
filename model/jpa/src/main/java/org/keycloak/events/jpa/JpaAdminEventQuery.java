@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -153,7 +152,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
 
         TypedQuery<AdminEventEntity> query = em.createQuery(cq);
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
-    }
+		return paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertAdminEvent);
+	}
     
 }

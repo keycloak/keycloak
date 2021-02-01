@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -147,7 +146,7 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-        closing(query.getResultStream().map(id -> resourceStore.findById(id.getId(), resourceServerId))).forEach(consumer);
+		query.getResultStream().map(id -> resourceStore.findById(id.getId(), resourceServerId)).forEach(consumer);
     }
 
     @Override

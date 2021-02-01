@@ -37,8 +37,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.utils.StreamsUtil.closing;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -118,8 +116,8 @@ public class JpaUserCredentialStore implements UserCredentialStore.Streams {
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByUser", CredentialEntity.class)
                 .setParameter("user", userEntity);
-        return closing(query.getResultStream());
-    }
+		return query.getResultStream();
+	}
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
