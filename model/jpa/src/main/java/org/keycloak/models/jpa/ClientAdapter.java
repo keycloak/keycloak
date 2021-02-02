@@ -293,11 +293,24 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void setAttribute(String name, String value) {
+        boolean valueUndefined = value == null || "".equals(value.trim());
+
         for (ClientAttributeEntity attr : entity.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
+                // clean up, so that attributes previously set with either a empty or null value are removed
+                // we should remove this in future versions so that new clients never store empty/null attributes
+                if (valueUndefined) {
+                    removeAttribute(name);
+                } else {
+                    attr.setValue(value);
+                }
                 return;
             }
+        }
+
+        // do not create attributes if empty or null
+        if (valueUndefined) {
+            return;
         }
 
         ClientAttributeEntity attr = new ClientAttributeEntity();
