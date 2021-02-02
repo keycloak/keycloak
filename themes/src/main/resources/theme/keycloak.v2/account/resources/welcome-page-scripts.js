@@ -55,7 +55,14 @@ function loggedInUserName() {
             userName = (givenName || familyName) || preferredUsername || userName;
         }
     }
-    return userName;
+
+    return sanitize(userName);
+}
+
+function sanitize(dirtyString) {
+    let element = document.createElement("div");
+    element.innerText = dirtyString;
+    return element.innerHTML;
 }
 
 var toggleMobileDropdown = function () {	
