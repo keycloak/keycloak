@@ -245,6 +245,13 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public void setAttribute(String name, String value) {
+        boolean valueUndefined = value == null || "".equals(value.trim());
+
+        if (valueUndefined) {
+            removeAttribute(name);
+            return;
+        }
+
         entity.setAttribute(name, value);
     }
 
