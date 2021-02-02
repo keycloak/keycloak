@@ -836,7 +836,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testMissingIssuerClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("issuer");
-        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+        assertError(response, null, OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
