@@ -103,6 +103,35 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
     }
 
     @Test
+    public void testUpdateUri() {
+        doCreateResource(new ResourceRepresentation("/api/v1/*", Collections.emptySet(), "/api/v1/*", null));
+
+        AuthzClient authzClient = getAuthzClient();
+
+        List<ResourceRepresentation> resources = authzClient.protection().resource().findByMatchingUri("/api/v1/servers");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/api/v1/*", resources.get(0).getUri());
+
+        resources.get(0).getUris().clear();
+        resources.get(0).getUris().add("/api/v2/*");
+
+        authzClient.protection().resource().update(resources.get(0));
+
+        resources = authzClient.protection().resource().findByMatchingUri("/api/v1/servers");
+
+        assertNotNull(resources);
+        assertEquals(0, resources.size());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/api/v2");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/api/v2/*", resources.get(0).getUri());
+    }
+
+    @Test
     public void testFindDeep() {
         ResourceRepresentation resource1 = new ResourceRepresentation("/*", new HashSet<>());
 
