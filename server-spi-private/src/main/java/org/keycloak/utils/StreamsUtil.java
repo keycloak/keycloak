@@ -19,13 +19,12 @@ package org.keycloak.utils;
 
 import java.util.Iterator;
 import java.util.Spliterators;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class StreamsUtil {
     public static <T> Stream<T> closing(Stream<T> stream) {
-        return Stream.of(stream).flatMap(Function.identity());
+        return new ClosingStream<>(stream);
     }
 
     /**
