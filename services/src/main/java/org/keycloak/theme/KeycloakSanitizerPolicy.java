@@ -19,6 +19,7 @@ package org.keycloak.theme;
 
 import java.util.regex.Pattern;
 
+import org.owasp.html.AttributePolicy;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
@@ -91,6 +92,7 @@ public class KeycloakSanitizerPolicy {
               .globally()
           .allowAttributes("title").matching(HTML_TITLE).globally()
           .allowStyling()
+          .allowUrlsInStyles(AttributePolicy.IDENTITY_ATTRIBUTE_POLICY)
           .allowAttributes("align").matching(ALIGN).onElements("p")
           .allowAttributes("for").matching(HTML_ID).onElements("label")
           .allowAttributes("color").matching(COLOR_NAME_OR_COLOR_CODE)

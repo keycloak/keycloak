@@ -58,6 +58,10 @@ public class KeycloakSanitizerTest {
         html.set(0, "");
         expectedResult = "";
         assertResult(expectedResult, html);
+
+        html.set(0, "<div style=\"background-image:url(https://exemple.org/image.png)\"></div>");
+        expectedResult = "<div style=\"background-image:url(&#39;https://exemple.org/image.png&#39;)\"></div>";
+        assertResult(expectedResult, html);
     }
     
     private void assertResult(String expectedResult, List<String> html) throws Exception {
