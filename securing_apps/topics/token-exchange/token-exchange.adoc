@@ -171,7 +171,7 @@ This parameter must be the client identifier for the target client that you conf
 ----
 curl -X POST \
     -d "client_id=starting-client" \
-    -d "client_secret=geheim" \
+    -d "client_secret=the client secret" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "subject_token=...." \
     --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:refresh_token" \
@@ -258,7 +258,7 @@ When your client is exchanging an existing internal token to an external one, yo
 ----
 curl -X POST \
     -d "client_id=starting-client" \
-    -d "client_secret=geheim" \
+    -d "client_secret=the client secret" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "subject_token=...." \
     --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
@@ -346,7 +346,7 @@ parameter.
 ----
 curl -X POST \
     -d "client_id=starting-client" \
-    -d "client_secret=geheim" \
+    -d "client_secret=the client secret" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "subject_token=...." \
     -d "subject_issuer=myOidcProvider" \
@@ -393,7 +393,7 @@ value of this parameter must be a username or user id.
 ----
 curl -X POST \
     -d "client_id=starting-client" \
-    -d "client_secret=geheim" \
+    -d "client_secret=the client secret" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "subject_token=...." \
     --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
@@ -463,7 +463,7 @@ a valid user.  You can also specify an `audience` parameter if you wish.
 ----
 curl -X POST \
     -d "client_id=starting-client" \
-    -d "client_secret=geheim" \
+    -d "client_secret=the client secret" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "requested_subject=wburke" \
     http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
