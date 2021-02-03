@@ -590,5 +590,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
     }
 
-
+    @Test
+    public void testGetUserNameExact() {
+        KcAdmExec.execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec.execute("create realms -s realm=demorealm -s enabled=true");
+        KcAdmExec.execute("create users -r demorealm -s username=testuser");
+        KcAdmExec.execute("create users -r demorealm -s username=anothertestuser");
+        KcAdmExec.execute("create users -r demorealm -s username=onemoretestuser");
+        KcAdmExec exec = execute("add-roles --uusername=testuser --rolename offline_access --target-realm=demorealm");
+        Assert.assertEquals(0, exec.exitCode());
+    }
 }
