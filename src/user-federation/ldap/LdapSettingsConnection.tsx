@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { Controller, UseFormMethods } from "react-hook-form";
-import { EyeIcon } from "@patternfly/react-icons";
+import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
@@ -36,6 +36,7 @@ export const LdapSettingsConnection = ({
   ] = useState(false);
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
     <>
@@ -266,9 +267,9 @@ export const LdapSettingsConnection = ({
           isRequired
         >
           <InputGroup>
-            <TextInput // TODO: Make password field switch to type=text with button
+            <TextInput
               isRequired
-              type="password"
+              type={isPasswordVisible ? "text" : "password"}
               id="kc-console-bind-credentials"
               name="config.bindCredential[0]"
               ref={form.register({
@@ -281,8 +282,9 @@ export const LdapSettingsConnection = ({
             <Button
               variant="control"
               aria-label="show password button for bind credentials"
+              onClick={() => setIsPasswordVisible(!isPasswordVisible)}
             >
-              <EyeIcon />
+              {!isPasswordVisible ? <EyeIcon /> : <EyeSlashIcon />}
             </Button>
           </InputGroup>
           {form.errors.config &&
