@@ -197,7 +197,7 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
+        String redirectUri = getRedirectUri(callback);
         String state = UUID.randomUUID().toString();
         Pkce pkce = deployment.isPkce() ? generatePkce() : null;
 
@@ -257,10 +257,12 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
+        String redirectUri = getRedirectUri(callback);
 
+        // pass the id_token_hint so that sessions is invalidated for this particular session
         String logoutUrl = deployment.getLogoutUrl().clone()
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam("id_token_hint", idTokenString)
                 .build().toString();
 
         Desktop.getDesktop().browse(new URI(logoutUrl));
@@ -271,6 +273,10 @@ public class KeycloakInstalled {
             callback.stop();
             throw e;
         }
+    }
+
+    private String getRedirectUri(CallbackListener callback) {
+        return String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
     }
 
     public void loginManual() throws IOException, ServerRequest.HttpFailure, VerificationException {
