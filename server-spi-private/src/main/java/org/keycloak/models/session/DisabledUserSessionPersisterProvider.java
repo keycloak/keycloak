@@ -105,6 +105,11 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
+    public void removeAllExpired() {
+
+    }
+
+    @Override
     public void removeExpired(RealmModel realm) {
 
     }
