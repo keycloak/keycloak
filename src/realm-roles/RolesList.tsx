@@ -32,7 +32,7 @@ export const RolesList = ({ loader, paginated = true }: RolesListProps) => {
 
   const RoleDetailLink = (role: RoleRepresentation) => (
     <>
-      <Link key={role.id} to={`${url}/${role.id}`}>
+      <Link key={role.id} to={`${url}/${role.id}/details`}>
         {role.name}
       </Link>
     </>

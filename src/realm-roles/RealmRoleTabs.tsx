@@ -14,12 +14,15 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import Composites from "keycloak-admin/lib/defs/roleRepresentation";
 import { KeyValueType, RoleAttributes } from "./RoleAttributes";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RealmRoleForm } from "./RealmRoleForm";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { AssociatedRolesTab } from "./AssociatedRolesTab";
 
 const arrayToAttributes = (attributeArray: KeyValueType[]) => {
   const initValue: { [index: string]: string[] } = {};
@@ -49,11 +52,25 @@ export const RealmRoleTabs = () => {
   const { t } = useTranslation("roles");
   const form = useForm<RoleFormType>({ mode: "onChange" });
   const history = useHistory();
+  // const [name, setName] = useState("");
+
   const adminClient = useAdminClient();
   const [role, setRole] = useState<RoleFormType>();
 
   const { id, clientId } = useParams<{ id: string; clientId: string }>();
   const { url } = useRouteMatch();
+
+  const { realm } = useRealm();
+
+  const [key, setKey] = useState("");
+
+  const refresh = () => {
+    setKey(`${new Date().getTime()}`);
+  };
+
+  const [additionalRoles, setAdditionalRoles] = useState<RoleRepresentation[]>(
+    []
+  );
   const { addAlert } = useAlerts();
 
   const [open, setOpen] = useState(false);
@@ -66,17 +83,23 @@ export const RealmRoleTabs = () => {
   };
 
   useEffect(() => {
-    (async () => {
+    const update = async () => {
       if (id) {
         const fetchedRole = await adminClient.roles.findOneById({ id });
+        const allAdditionalRoles = await adminClient.roles.getCompositeRoles({
+          id,
+        });
+        setAdditionalRoles(allAdditionalRoles);
+
         const convertedRole = convert(fetchedRole);
         Object.entries(convertedRole).map((entry) => {
           form.setValue(entry[0], entry[1]);
         });
         setRole(convertedRole);
       }
-    })();
-  }, []);
+    };
+    setTimeout(update, 100);
+  }, [key]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -101,6 +124,12 @@ export const RealmRoleTabs = () => {
             roleRepresentation
           );
         }
+
+        await adminClient.roles.createComposite(
+          { roleId: id, realm },
+          additionalRoles
+        );
+
         setRole(role);
       } else {
         let createdRole;
@@ -126,7 +155,9 @@ export const RealmRoleTabs = () => {
           });
         }
         setRole(convert(createdRole));
-        history.push(url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id);
+        history.push(
+          url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id + "/details"
+        );
       }
       addAlert(t(id ? "roleSaveSuccess" : "roleCreated"), AlertVariant.success);
     } catch (error) {
@@ -136,6 +167,23 @@ export const RealmRoleTabs = () => {
         }),
         AlertVariant.danger
       );
+    }
+  };
+
+  const addComposites = async (composites: Composites[]): Promise<void> => {
+    const compositeArray = composites;
+    setAdditionalRoles([...additionalRoles, ...compositeArray]);
+
+    try {
+      await adminClient.roles.createComposite(
+        { roleId: id, realm: realm },
+        compositeArray
+      );
+      history.push(url.substr(0, url.lastIndexOf("/") + 1) + "AssociatedRoles");
+      refresh();
+      addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("addAssociatedRolesError", { error }), AlertVariant.danger);
     }
   };
 
@@ -151,7 +199,10 @@ export const RealmRoleTabs = () => {
         if (!clientId) {
           await adminClient.roles.delById({ id });
         } else {
-          await adminClient.clients.delRole({ id: clientId, roleName: name });
+          await adminClient.clients.delRole({
+            id: clientId,
+            roleName: role!.name as string,
+          });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
         const loc = url.replace(/\/attributes/g, "");
@@ -167,10 +218,16 @@ export const RealmRoleTabs = () => {
   return (
     <>
       <DeleteConfirm />
-      <AssociatedRolesModal open={open} toggleDialog={() => setOpen(!open)} />
+      <AssociatedRolesModal
+        onConfirm={addComposites}
+        existingCompositeRoles={additionalRoles}
+        open={open}
+        toggleDialog={() => setOpen(!open)}
+      />
       <ViewHeader
         titleKey={role?.name || t("createRole")}
         subKey={id ? "" : "roles:roleCreateExplain"}
+        actionsDropdownId="roles-actions-dropdown"
         dropdownItems={
           id
             ? [
@@ -183,6 +240,7 @@ export const RealmRoleTabs = () => {
                 </DropdownItem>,
                 <DropdownItem
                   key="toggle-modal"
+                  id="add-roles"
                   component="button"
                   onClick={() => toggleModal()}
                 >
@@ -206,6 +264,14 @@ export const RealmRoleTabs = () => {
                 editMode={true}
               />
             </Tab>
+            {additionalRoles.length > 0 ? (
+              <Tab
+                eventKey="AssociatedRoles"
+                title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
+              >
+                <AssociatedRolesTab additionalRoles={additionalRoles} />
+              </Tab>
+            ) : null}
             <Tab
               eventKey="attributes"
               title={<TabTitleText>{t("attributes")}</TabTitleText>}

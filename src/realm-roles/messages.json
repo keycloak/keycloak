@@ -3,6 +3,7 @@
     "attributes": "Attributes",
     "addAttributeText": "Add an attribute",
     "deleteAttributeText": "Delete an attribute",
+    "associatedRolesText": "Associated roles",
     "addAssociatedRolesText": "Add associated roles",
     "addAssociatedRolesSuccess": "Associated roles have been added",
     "associatedRolesModalTitle": "Add roles to {{name}}",
@@ -19,7 +20,7 @@
     "deleteRole": "Delete this role",
     "details": "Details",
     "roleList": "Role list",
-    "searchFor": "Search for role",
+    "searchFor": "Search role by name",
     "generalSettings": "General Settings",
     "capabilityConfig": "Capability config",
     "roleImportError": "Could not import role",
@@ -27,13 +28,17 @@
     "roleCreateError": "Could not create role: {{error}}",
     "roleImportSuccess": "Role import successful",
     "roleDeleteConfirm": "Delete role?",
-    "roleDeleteConfirmDialog": "This action will permanently delete the role {{name}} and cannot be undone.",
+    "roleDeleteConfirmDialog": "This action will permanently delete the role {{selectedRoleName}} and cannot be undone.",
     "roleDeletedSuccess": "The role has been deleted",
     "roleDeleteError": "Could not delete role:",
     "roleSaveSuccess": "The role has been saved",
     "roleSaveError": "Could not save role: {{error}}",
     "noRolesInThisRealm": "No roles in this realm",
     "noRolesInThisRealmInstructions": "You haven't created any roles in this realm. Create a role to get started.",
-    "roleAuthentication": "Role authentication"
+    "roleAuthentication": "Role authentication",
+    "roleRemoveAssociatedRoleConfirm": "Remove associated role?",
+    "roleRemoveAssociatedText": "This action will remove {{role}} from {{roleName}. All the associated roles of {{role}} will also be removed."
+
+
   }
 }

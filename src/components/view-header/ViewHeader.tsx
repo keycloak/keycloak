@@ -24,6 +24,7 @@ export type ViewHeaderProps = {
   titleKey: string;
   badge?: string;
   subKey: string;
+  actionsDropdownId?: string;
   subKeyLinkProps?: ButtonProps;
   dropdownItems?: ReactElement[];
   lowerDropdownItems?: any;
@@ -33,6 +34,7 @@ export type ViewHeaderProps = {
 };
 
 export const ViewHeader = ({
+  actionsDropdownId,
   titleKey,
   badge,
   subKey,
@@ -99,7 +101,10 @@ export const ViewHeader = ({
                     <Dropdown
                       position={DropdownPosition.right}
                       toggle={
-                        <DropdownToggle onToggle={onDropdownToggle}>
+                        <DropdownToggle
+                          id={actionsDropdownId}
+                          onToggle={onDropdownToggle}
+                        >
                           {t("common:action")}
                         </DropdownToggle>
                       }

@@ -12,6 +12,8 @@ import { boolFormatter } from "../util";
 export type AssociatedRolesModalProps = {
   open: boolean;
   toggleDialog: () => void;
+  onConfirm: (newReps: RoleRepresentation[]) => void;
+  existingCompositeRoles: RoleRepresentation[];
 };
 
 const attributesToArray = (attributes: { [key: string]: string }): any => {
@@ -40,9 +42,17 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
 
   const loader = async () => {
     const allRoles = await adminClient.roles.find();
-    const roles = allRoles.filter((x) => x.name != name);
+    const existingAdditionalRoles = await adminClient.roles.getCompositeRoles({
+      id,
+    });
 
-    return roles;
+    return allRoles.filter((role: RoleRepresentation) => {
+      return (
+        existingAdditionalRoles.find(
+          (existing: RoleRepresentation) => existing.name === role.name
+        ) === undefined && role.name !== name
+      );
+    });
   };
 
   useEffect(() => {
@@ -76,10 +86,12 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
       actions={[
         <Button
           key="add"
+          id="add-associated-roles-button"
           variant="primary"
-          isDisabled={selectedRows.length === 0}
+          isDisabled={!selectedRows?.length}
           onClick={() => {
             props.toggleDialog();
+            props.onConfirm(selectedRows);
           }}
         >
           {t("common:add")}

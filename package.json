@@ -31,7 +31,7 @@
     "moment": "^2.29.1",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
-    "react-hook-form": "^6.8.2",
+    "react-hook-form": "^6.8.3",
     "react-i18next": "^11.7.0",
     "react-router-dom": "^5.2.0",
     "use-react-router-breadcrumbs": "^1.0.5"

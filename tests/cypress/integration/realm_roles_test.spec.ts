@@ -14,7 +14,6 @@ const listingPage = new ListingPage();
 const createRealmRolePage = new CreateRealmRolePage();
 
 describe("Realm roles test", function () {
-
   describe("Realm roles creation", function () {
     beforeEach(function () {
       cy.visit("");
@@ -59,6 +58,27 @@ describe("Realm roles test", function () {
       masthead.checkNotificationMessage("The role has been deleted");
 
       listingPage.itemExist(itemId, false);
+    });
+
+    it("Associated roles modal test", function () {
+      itemId += "_" + (Math.random() + 1).toString(36).substring(7);
+
+      // Create
+      listingPage.itemExist(itemId, false).goToCreateItem();
+
+      createRealmRolePage.fillRealmRoleData(itemId).save();
+
+      masthead.checkNotificationMessage("Role created");
+
+      cy.get("#roles-actions-dropdown").last().click();
+
+      cy.get("#add-roles").click();
+
+      cy.wait(100);
+
+      cy.get('[type="checkbox"]').eq(1).check();
+
+      cy.get("#add-associated-roles-button").contains("Add").click();
     });
   });
 });
