@@ -171,6 +171,7 @@
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
         <frontend.plugin.version>1.8.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
+        <verifier.plugin.version>1.1</verifier.plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -193,6 +194,21 @@
         <!-- webauthn support -->
         <webauthn4j.version>0.12.0.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
+
+        <!-- WildFly Galleon Build related properties -->
+        <ee.maven.groupId>org.wildfly</ee.maven.groupId>
+        <ee.maven.version>${wildfly.version}</ee.maven.version>
+        <org.wildfly.galleon-plugins.version>5.1.3.Final</org.wildfly.galleon-plugins.version>
+
+        <!-- Galleon -->
+        <galleon.fork.embedded>true</galleon.fork.embedded>
+        <galleon.log.time>true</galleon.log.time>
+        <galleon.offline>true</galleon.offline>
+
+        <!-- Properties that drive the names of various directories produced by and used in the build -->
+        <server.output.dir.prefix>keycloak</server.output.dir.prefix>
+        <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
+        <server.output.dir.version>${project.version}</server.output.dir.version>
 
     </properties>
 
@@ -747,6 +763,30 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-ee-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-servlet-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-web-feature-pack</artifactId>
                 <version>${wildfly.version}</version>
                 <type>zip</type>
@@ -778,6 +818,30 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-common</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-galleon-common</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-galleon-pruned</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-feature-pack</artifactId>
                 <type>pom</type>
                 <version>${wildfly.core.version}</version>
@@ -785,6 +849,18 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-feature-pack</artifactId>
+                <type>zip</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-galleon-pack</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-galleon-pack</artifactId>
                 <type>zip</type>
                 <version>${wildfly.core.version}</version>
             </dependency>
@@ -1575,6 +1651,59 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <!-- used in server-dist build while provisioning the distribution -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+            </dependency>
+
+            <!-- WildFly Galleon Plugins -->
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-galleon-plugins</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-config-gen</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>transformer</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1597,6 +1726,11 @@
                     <configuration>
                         <tarLongFileMode>posix</tarLongFileMode>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1672,6 +1806,42 @@
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                     <version>${wildfly.build-tools.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.wildfly.galleon-plugins</groupId>
+                    <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                    <version>${org.wildfly.galleon-plugins.version}</version>
+                    <dependencies>
+                        <!-- feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated wildfly-embedded version must match the pack one -->
+                        <dependency>
+                            <groupId>org.wildfly.core</groupId>
+                            <artifactId>wildfly-embedded</artifactId>
+                            <version>${wildfly.core.version}</version>
+                        </dependency>
+                        <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
+                        <dependency>
+                            <groupId>org.wildfly.common</groupId>
+                            <artifactId>wildfly-common</artifactId>
+                            <version>${wildfly.common.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-verifier-plugin</artifactId>
+                    <version>${verifier.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>main</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <verificationFile>target/verifier/verifications.xml</verificationFile>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>

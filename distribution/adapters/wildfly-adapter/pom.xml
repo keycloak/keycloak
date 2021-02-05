@@ -29,16 +29,6 @@
     <name>Keycloak Adapter Overlay Distribution</name>
     <description/>
 
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

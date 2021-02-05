@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2021 Red Hat, Inc.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<!--
+    IMPORTANT NOTE: Content of this file is based on wildfly/server-subsystem/src/main/config/default-server-subsys-config.properties
+                    !!! Both of them need to be in sync !!!
+-->
+<feature-group-spec name="keycloak-server-subsystem" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature spec="subsystem.keycloak-server">
+        <param name="web-context" value="auth"/>
+        <param name="providers" value="[classpath:${jboss.home.dir}/providers/*]"/>
+        <param name="master-realm-name" value="master"/>
+        <param name="scheduled-task-interval" value="900"/>
+        <feature spec="subsystem.keycloak-server.theme">
+            <param name="theme" value="defaults"/>
+            <param name="staticMaxAge" value="2592000"/>
+            <param name="cacheThemes" value="true"/>
+            <param name="cacheTemplates" value="true"/>
+            <param name="dir" value="${jboss.home.dir}/themes"/>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="eventsStore"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="jpa"/>
+                <param name="enabled" value="true"/>
+                <param name="properties" value="{exclude-events=&quot;[\&quot;REFRESH_TOKEN\&quot;]&quot;}"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="userCache"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="userSessionPersister"/>
+            <param name="default-provider" value="jpa"/>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="timer"/>
+            <param name="default-provider" value="basic"/>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="connectionsHttpClient"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="connectionsJpa"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+                <param name="properties" value="{[dataSource=&quot;java:jboss/datasources/KeycloakDS&quot;,initializeEmpty=&quot;true&quot;,migrationStrategy=&quot;update&quot;,migrationExport=&quot;${jboss.home.dir}/keycloak-database-update.sql&quot;]}"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="realmCache"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="connectionsInfinispan"/>
+            <param name="default-provider" value="default"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+                <param name="properties" value="{cacheContainer=&quot;java:jboss/infinispan/container/keycloak&quot;}"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="jta-lookup"/>
+            <param name="default-provider" value="${keycloak.jta.lookup.provider:jboss}"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="jboss"/>
+                <param name="enabled" value="true"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="publicKeyStorage"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="infinispan"/>
+                <param name="enabled" value="true"/>
+                <param name="properties" value="{minTimeBetweenRequests=&quot;10&quot;}"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="x509cert-lookup"/>
+            <param name="default-provider" value="${keycloak.x509cert.lookup.provider:default}"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+            </feature>
+        </feature>
+        <feature spec="subsystem.keycloak-server.spi">
+            <param name="spi" value="hostname"/>
+            <param name="default-provider" value="default"/>
+            <feature spec="subsystem.keycloak-server.spi.provider">
+                <param name="provider" value="default"/>
+                <param name="enabled" value="true"/>
+                <param name="properties" value="{[frontendUrl=&quot;${keycloak.frontendUrl:}&quot;,forceBackendUrlToFrontendUrl=&quot;false&quot;]}"/>
+            </feature>
+        </feature>
+    </feature>
+
+</feature-group-spec>

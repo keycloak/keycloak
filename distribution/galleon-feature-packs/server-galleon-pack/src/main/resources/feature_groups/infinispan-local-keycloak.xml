@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-local-keycloak" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.infinispan">
+        <feature spec="subsystem.infinispan.cache-container">
+            <param name="cache-container" value="keycloak"/>
+            <param name="modules" value="[org.keycloak.keycloak-model-infinispan]"/>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="realms"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="users"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="sessions"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="authenticationSessions"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="offlineSessions"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="clientSessions"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="offlineClientSessions"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="loginFailures"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="work"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="authorization"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="keys"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="1000"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="3600000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="actionTokens"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="-1"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="-1"/>
+                    <param name="interval" value="300000"/>
+                </feature>
+            </feature>
+        </feature>
+    </feature>
+</feature-group-spec>

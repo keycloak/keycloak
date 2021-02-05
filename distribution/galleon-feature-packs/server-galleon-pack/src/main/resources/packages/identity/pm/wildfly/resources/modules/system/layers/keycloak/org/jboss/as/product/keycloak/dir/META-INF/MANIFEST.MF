@@ -1,0 +1,3 @@
+JBoss-Product-Release-Name: ${product.name.full}
+JBoss-Product-Release-Version: ${product.version}
+JBoss-Product-Console-Slot: ${product.wildfly.console.slot}

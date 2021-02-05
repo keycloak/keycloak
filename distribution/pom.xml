@@ -56,9 +56,27 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>jboss</id>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <profiles>
+        <profile>
+            <id>legacy-dist</id>
+            <activation>
+                <property>
+                    <name>legacy-dist</name>
+                </property>
+            </activation>
+            <modules>
+                <module>server-legacy-dist</module>
+            </modules>
+        </profile>
         <profile>
             <id>community</id>
             <activation>
