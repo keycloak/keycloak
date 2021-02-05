@@ -23,7 +23,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>${galleon-adapter-group-id}</groupId>
     <artifactId>keycloak-adapter-galleon-pack</artifactId>
 
@@ -258,15 +258,6 @@
             <properties>
                 <galleon-adapter-group-id>org.keycloak</galleon-adapter-group-id>
             </properties>
-            <repositories>
-                <repository>
-                    <id>jboss</id>
-                    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>

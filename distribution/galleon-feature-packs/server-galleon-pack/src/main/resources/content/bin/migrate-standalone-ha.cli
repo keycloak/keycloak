@@ -1,0 +1,891 @@
+echo
+echo *** WARNING ***
+echo
+echo ** If the following embed-server command fails, manual intervention is needed.
+echo ** In such case, remove any <extension> and <subsystem> declarations referring
+echo ** to the removed smallrye modules from the standalone-ha.xml file and rerun this script.
+echo ** For details, see Migration Changes section in the Upgrading guide.
+echo ** We apologize for this inconvenience.
+echo
+
+embed-server --server-config=standalone-ha.xml
+
+echo *** Begin Migration ***
+echo
+
+# Migrate from 1.8.1 to 1.9.1
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/replicated-cache=work/:read-resource
+  echo Adding replicated-cache=work to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/replicated-cache=work/:add(mode=SYNC)
+  echo
+end-if
+# realmVersions cache deprecated in 2.1.0
+#if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=realmVersions/:read-resource
+#  echo Adding local-cache=realmVersions to keycloak cache container...
+#  /subsystem=infinispan/cache-container=keycloak/local-cache=realmVersions/:add(indexing=NONE,start=LAZY)
+#  /subsystem=infinispan/cache-container=keycloak/local-cache=realmVersions/component=transaction/:write-attribute(name=mode,value=BATCH)
+#  echo
+#end-if
+
+# Migrate from 1.9.1 to 1.9.2
+if (result == NONE) of /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users/component=eviction/:read-attribute(name=strategy)
+  echo Adding eviction strategy to keycloak users cache container...
+  /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users/component=eviction/:write-attribute(name=strategy,value=LRU)
+  /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users/component=eviction/:write-attribute(name=max-entries,value=10000)
+  echo
+end-if
+
+# Migrate from 1.9.2 to 2.0.0
+# NO CHANGES
+
+# Migrate from 2.0.0 to 2.1.0
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=realmVersions/:read-resource
+  echo Removing deprecated cache 'realmVersions'
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realmVersions/:remove
+  echo
+end-if
+
+# Migrate kecloak-server.json (deprecated in 2.2.0)
+if (result == []) of /subsystem=keycloak-server/:read-children-names(child-type=spi)
+  echo Migrating keycloak-server.json to server cofig xml...
+  /subsystem=keycloak-server/:migrate-json
+  echo
+end-if
+
+set persistenceProvider=jpa
+if (result == [expression "classpath:${jboss.server.config.dir}/providers/*"]) of /subsystem=keycloak-server/:read-attribute(name=providers)
+    echo Updating provider to default value
+    /subsystem=keycloak-server/:write-attribute(name=providers,value=[classpath:${jboss.home.dir}/providers/*])
+    echo
+end-if
+if (result == keycloak) of /subsystem=keycloak-server/theme=defaults:read-attribute(name=default)
+    echo Undefining default theme...
+    /subsystem=keycloak-server/theme=defaults:undefine-attribute(name=default)
+    echo
+end-if
+if (result == expression "${jboss.server.config.dir}/themes") of /subsystem=keycloak-server/theme=defaults:read-attribute(name=dir)
+    echo Updating theme dir to default value
+    /subsystem=keycloak-server/theme=defaults/:write-attribute(name=dir,value=${jboss.home.dir}/themes)
+    echo
+end-if
+
+# Migrate from 2.1.0 to 2.2.0
+if (outcome == failed) of /extension=org.jboss.as.deployment-scanner/:read-resource
+  echo Adding deployment-scanner extension...
+  /extension=org.jboss.as.deployment-scanner/:add(module=org.jboss.as.deployment-scanner)
+  echo
+end-if
+if (outcome == failed) of /subsystem=deployment-scanner/:read-resource
+  echo Adding deployment-scanner...
+  /subsystem=deployment-scanner/:add
+  echo
+end-if
+if (outcome == failed) of /subsystem=deployment-scanner/scanner=default/:read-resource
+  echo Adding scanner=default
+  /subsystem=deployment-scanner/scanner=default/:add(path=deployments,relative-to=jboss.server.base.dir,runtime-failure-causes-rollback=${jboss.deployment.scanner.rollback.on.failure:false},scan-interval=5000)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
+    # In migration from 3.0.0 to 3.2.0 there is authorization distributed-cache replaced with local-cache
+    try
+        echo
+        /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:add(mode=SYNC,owners=1)
+        echo Added distributed-cache=authorization
+    catch
+    end-try
+end-if
+
+if (result == update) of /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-get(name=properties,key=databaseSchema)
+  echo Updating connectionsJpa default properties...
+  /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-remove(name=properties,key=databaseSchema)
+  /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-put(name=properties,key=initializeEmpty,value=true)
+  /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-put(name=properties,key=migrationStrategy,value=update)
+  /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-put(name=properties,key=migrationExport,value=${jboss.home.dir}/keycloak-database-update.sql)
+  echo
+end-if
+if (outcome == failed) of /subsystem=keycloak-server/spi=userFederatedStorage/:read-resource
+  echo Adding spi=userFederatedStorage...
+  /subsystem=keycloak-server/spi=userFederatedStorage/:add(default-provider=$persistenceProvider)
+  echo
+end-if
+if (outcome == failed) of /subsystem=keycloak-server/spi=jta-lookup/:read-resource
+  echo Adding spi=jta-lookup...
+  /subsystem=keycloak-server/spi=jta-lookup/:add(default-provider=${keycloak.jta.lookup.provider:jboss})
+  /subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
+  echo
+end-if
+
+# Migrate from 2.2.0 to 2.2.1
+# NO CHANGES
+
+# Migrate from 2.2.1 to 2.3.0
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=keys/:read-resource
+  echo Adding local-cache=keys to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/:add(indexing=NONE,start=LAZY)
+  echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/local-cache=keys/component=eviction/:read-attribute(name=strategy,include-defaults=false)
+  echo Updating eviction and expiration in local-cache=keys...
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/component=eviction/:write-attribute(name=strategy,value=LRU)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/component=eviction/:write-attribute(name=max-entries,value=1000)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/component=expiration/:write-attribute(name=max-idle,value=3600000)
+  echo
+end-if
+if (outcome == failed) of /subsystem=keycloak-server/spi=publicKeyStorage/:read-resource
+  echo Adding spi=publicKeyStorage...
+  /subsystem=keycloak-server/spi=publicKeyStorage/:add
+  /subsystem=keycloak-server/spi=publicKeyStorage/provider=infinispan/:add(properties={minTimeBetweenRequests => "10"},enabled=true)
+  echo
+end-if
+
+# Migrate from 2.3.0 to 2.4.0
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users/:read-resource
+  echo Replacing invalidation-cache=users with local-cache=users
+  /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users/:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/:add
+  echo
+end-if
+if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:read-attribute(name=strategy,include-defaults=false)
+  echo Updating eviction in local-cache=users
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:write-attribute(name=strategy,value=LRU)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:write-attribute(name=max-entries,value=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/invalidation-cache=realms/:read-resource
+  echo Replacing invalidation-cache=realms with local-cache=realms
+  /subsystem=infinispan/cache-container=keycloak/invalidation-cache=realms/:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/:add
+  echo
+end-if
+
+
+# Migrate from 2.4.0 to 2.5.0
+if (result == NONE) of /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:read-attribute(name=strategy)
+  echo Adding eviction strategy to keycloak realms cache...
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:write-attribute(name=strategy,value=LRU)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:write-attribute(name=max-entries,value=10000)
+  echo
+end-if
+
+# Migrate from 2.5.0 to 2.5.1
+# NO CHANGES
+
+# Migrate 2.5.1 to 2.5.4
+if (result != REPEATABLE_READ) of /subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:read-attribute(name=isolation)
+  echo Changing ejb cache locking to REPEATABLE_READ
+  /subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:write-attribute(name=isolation,value=REPEATABLE_READ)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:read-resource
+   echo Removing Hibernate immutable-entity cache
+   /subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:remove
+end-if
+
+
+# Migrate from 2.5.4 to 3.0.0
+if (result == jpa) of /subsystem=keycloak-server/spi=eventsStore/:read-attribute(name=default-provider,include-defaults=false)
+   echo Removing default provider for eventsStore
+   /subsystem=keycloak-server/spi=eventsStore/:undefine-attribute(name=default-provider)
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /subsystem=keycloak-server/spi=realm/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for user SPI
+   /subsystem=keycloak-server/spi=realm/:remove
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /subsystem=keycloak-server/spi=user/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for user SPI
+   /subsystem=keycloak-server/spi=user/:remove
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /subsystem=keycloak-server/spi=userFederatedStorage/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for userFederatedStorage SPI
+   /subsystem=keycloak-server/spi=userFederatedStorage/:remove
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /subsystem=keycloak-server/spi=authorizationPersister/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for authorizationPersister SPI
+   /subsystem=keycloak-server/spi=authorizationPersister/:remove
+   echo
+end-if
+
+if (outcome == failed) of /subsystem=keycloak-server/spi=userCache/:read-resource
+   echo Adding userCache SPI
+   /subsystem=keycloak-server/spi=userCache/:add
+   /subsystem=keycloak-server/spi=userCache/provider=default/:add(enabled=true)
+   echo
+end-if
+
+if (outcome == failed) of /subsystem=keycloak-server/spi=realmCache/:read-resource
+   echo Adding realmCache SPI
+   /subsystem=keycloak-server/spi=realmCache/:add
+   /subsystem=keycloak-server/spi=realmCache/provider=default/:add(enabled=true)
+   echo
+end-if
+
+if ((result.default-provider == undefined) && (result.provider.default.enabled == true)) of /subsystem=keycloak-server/spi=connectionsInfinispan/:read-resource(recursive=true,include-defaults=false)
+   echo Adding 'default' as default provider for connectionsInfinispan
+   /subsystem=keycloak-server/spi=connectionsInfinispan/:write-attribute(name=default-provider,value=default)
+   echo
+end-if
+
+# Migrate from 3.0.0 to 3.2.0
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions/:read-resource
+  echo Adding distributed-cache=authenticationSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions/:add(mode=SYNC,owners=1)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/:read-resource
+  echo Adding distributed-cache=actionTokens to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/:add(indexing=NONE,mode=SYNC,owners=2)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=eviction/:write-attribute(name=strategy,value=NONE)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=eviction/:write-attribute(name=max-entries,value=-1)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=expiration/:write-attribute(name=interval,value=300000)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=expiration/:write-attribute(name=max-idle,value=-1)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
+  echo Replacing distributed-cache=authorization with local-cache=authorization
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/:add
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=strategy,value=LRU)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=max-entries,value=10000)
+  echo
+end-if
+
+# Migrate from 3.2.0 to 3.2.1
+# NO CHANGES
+
+# Migrate from 3.2.1 to 3.3.0
+if (outcome == failed) of /core-service=management/security-realm=ApplicationRealm/server-identity=ssl:read-resource
+    echo Adding keystore to ApplicationRealm...
+    /core-service=management/security-realm=ApplicationRealm/server-identity=ssl:add(keystore-path=application.keystore,keystore-relative-to=jboss.server.config.dir,keystore-password=password,alias=server,key-password=password,generate-self-signed-certificate-host=localhost)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.elytron/:read-resource
+    echo Adding elytron extension...
+    /extension=org.wildfly.extension.elytron/:add(module=org.wildfly.extension.elytron)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=elytron/:read-resource
+    echo Adding elytron subsystem
+    /subsystem=elytron:add
+    /subsystem=elytron/provider-loader=elytron/:add(module=org.wildfly.security.elytron)
+    /subsystem=elytron/provider-loader=openssl/:add(module=org.wildfly.openssl)
+    /subsystem=elytron/aggregate-providers=combined-providers/:add(providers=[elytron,openssl])
+    /subsystem=elytron/file-audit-log=local-audit/:add(path=audit.log,relative-to=jboss.server.log.dir,format=JSON)
+    /subsystem=elytron/identity-realm=local/:add(identity="$local")
+    /subsystem=elytron/properties-realm=ApplicationRealm/:add(users-properties={path=application-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ApplicationRealm},groups-properties={path=application-roles.properties,relative-to=jboss.server.config.dir})
+    /subsystem=elytron/properties-realm=ManagementRealm/:add(users-properties={path=mgmt-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ManagementRealm},groups-properties={path=mgmt-groups.properties,relative-to=jboss.server.config.dir})
+    /subsystem=elytron/simple-permission-mapper=default-permission-mapper/:add(mapping-mode=first,permission-mappings=[{principals=[anonymous],permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}]},{match-all=true,permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission},{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}]}])
+    /subsystem=elytron/constant-realm-mapper=local/:add(realm-name=local)
+    /subsystem=elytron/simple-role-decoder=groups-to-roles/:add(attribute=groups)
+    /subsystem=elytron/constant-role-mapper=super-user-mapper/:add(roles=[SuperUser])
+    /subsystem=elytron/security-domain=ApplicationDomain/:add(default-realm=ApplicationRealm,permission-mapper=default-permission-mapper,realms=[{realm=ApplicationRealm,role-decoder=groups-to-roles},{realm=local}])
+    /subsystem=elytron/security-domain=ManagementDomain/:add(default-realm=ManagementRealm,permission-mapper=default-permission-mapper,realms=[{realm=ManagementRealm,role-decoder=groups-to-roles},{realm=local,role-mapper=super-user-mapper}])
+    /subsystem=elytron/provider-http-server-mechanism-factory=global/:add
+    /subsystem=elytron/http-authentication-factory=management-http-authentication/:add(http-server-mechanism-factory=global,security-domain=ManagementDomain,mechanism-configurations=[{mechanism-name=DIGEST,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}])
+    /subsystem=elytron/http-authentication-factory=application-http-authentication/:add(http-server-mechanism-factory=global,security-domain=ApplicationDomain,mechanism-configurations=[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Application Realm}]},{mechanism-name=FORM}])
+    /subsystem=elytron/provider-sasl-server-factory=global/:add
+    /subsystem=elytron/mechanism-provider-filtering-sasl-server-factory=elytron/:add(sasl-server-factory=global,filters=[{provider-name=WildFlyElytron}])
+    /subsystem=elytron/configurable-sasl-server-factory=configured/:add(sasl-server-factory=elytron,properties={wildfly.sasl.local-user.default-user => "$local"})
+    /subsystem=elytron/sasl-authentication-factory=management-sasl-authentication/:add(sasl-server-factory=configured,security-domain=ManagementDomain,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}])
+    /subsystem=elytron/sasl-authentication-factory=application-sasl-authentication/:add(sasl-server-factory=configured,security-domain=ApplicationDomain,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ApplicationRealm}]}])
+    /subsystem=elytron/:write-attribute(name=final-providers,value=combined-providers)
+    /subsystem=elytron/:write-attribute(name=disallowed-providers,value=[OracleUcrypto])
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Adding channel-creation-options READ_TIMEOUT to ejb3 remote
+    /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:read-resource
+    echo Adding channel-creation-options MAX_OUTBOUND_MESSAGES to ejb3 remote
+    /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
+    echo
+end-if
+
+if (result == ASYNC) of /subsystem=infinispan/cache-container=web/distributed-cache=dist:read-attribute(name=mode)
+    echo Setting SYNC mode for web cache-container
+    /subsystem=infinispan/cache-container=web/distributed-cache=dist:write-attribute(name=mode,value=SYNC)
+    echo
+end-if
+
+if (result == ASYNC) of /subsystem=infinispan/cache-container=ejb/distributed-cache=dist:read-attribute(name=mode)
+    echo Setting SYNC mode for ejb cache-container
+    /subsystem=infinispan/cache-container=ejb/distributed-cache=dist:write-attribute(name=mode,value=SYNC)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/channel=ee/:read-attribute(name=cluster)
+    echo Setting cluster attribute to ejb in jgroups subsystem
+    /subsystem=jgroups/channel=ee/:write-attribute(name=cluster,value=ejb)
+    echo
+end-if
+
+if (result != undefined) of /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Unsetting socket-binding from udp FD_SOCK protocol
+    # it has to be done via remove and add, because socket-binding is not writable attribute
+    /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:remove
+    /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:add
+    echo
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=tcp/protocol=FD/:read-resource
+    echo Replacing tcp FD protocol with FD_ALL
+    /subsystem=jgroups/stack=tcp/protocol=FD/:remove
+    /subsystem=jgroups/stack=tcp/protocol=FD_ALL/:add
+    echo
+end-if
+
+if (result != undefined) of /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Unsetting socket-binding from tcp FD_SOCK protocol
+    # it has to be done via remove and add, because socket-binding is not writable attribute
+    /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:remove
+    /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:read-resource
+    echo Adding http-invoker to default-host
+    /subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:add(security-realm=ApplicationRealm)
+    echo
+end-if
+
+if (result == false) of /subsystem=undertow/server=default-server/http-listener=default/:read-attribute(name=enable-http2)
+    echo Enabling http2 for default http-listener
+    /subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=enable-http2,value=true)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=undertow/server=default-server/https-listener=https/:read-resource
+    echo Adding https-listener
+    /subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https,security-realm=ApplicationRealm,enable-http2=true)
+    echo
+end-if
+
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Removing socket-binding jgroups-tcp-fd
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:remove
+    echo
+end-if
+
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Removing socket-binding jgroups-udp-fd
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:remove
+    echo
+end-if
+
+if (result == 224.0.1.105) of /socket-binding-group=standard-sockets/socket-binding=modcluster/:read-attribute(name=multicast-address)
+    echo Adding jboss.modcluster.multicast.address property to modcluster multicast-address
+    /socket-binding-group=standard-sockets/socket-binding=modcluster/:write-attribute(name=multicast-address,value=${jboss.modcluster.multicast.address:224.0.1.105})
+    echo
+end-if
+
+# Migrate from 3.3.0 to 3.4.0
+if (outcome == success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:read-resource
+  echo Removing X-Powered-By and Server headers from Keycloak responses...
+  /subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:remove
+  /subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header/:remove
+  /subsystem=undertow/configuration=filter/response-header=x-powered-by-header/:remove
+  /subsystem=undertow/configuration=filter/response-header=server-header/:remove
+  echo
+end-if
+
+if (outcome == success) of /subsystem=jdr/:read-resource
+    echo Removing jdr subsystem and extension
+    /subsystem=jdr/:remove
+    /extension=org.jboss.as.jdr/:remove
+    echo
+end-if
+
+if (outcome == success) of /subsystem=jsf/:read-resource
+    echo Removing jsf subsystem and extension
+    /subsystem=jsf/:remove
+    /extension=org.jboss.as.jsf/:remove
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/:read-resource
+  echo Adding distributed-cache=clientSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/:add(mode=SYNC,owners=1)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/:read-resource
+  echo Adding distributed-cache=offlineClientSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/:add(mode=SYNC,owners=1)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=keycloak-server/spi=x509cert-lookup/:read-resource
+  echo Adding spi=x509cert-lookup...
+  /subsystem=keycloak-server/spi=x509cert-lookup/:add(default-provider=${keycloak.x509cert.lookup.provider:default})
+  /subsystem=keycloak-server/spi=x509cert-lookup/provider=default/:add(enabled=true)
+  echo
+end-if
+
+# Migrate from 4.2.0 to 4.3.0
+if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/:read-resource
+  echo Adding spi=hostname...
+  /subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
+  /subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
+  echo
+end-if
+
+# Migrate from 4.3.0 to 4.4.0
+if (outcome == failed) of /subsystem=elytron/permission-set=login-permission/:read-resource
+  echo Adding permission-set=login-permission to elytron
+  /subsystem=elytron/permission-set=login-permission:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}])
+  /subsystem=elytron/permission-set=default-permissions/:add(permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}])
+  /subsystem=elytron/simple-permission-mapper=default-permission-mapper/:undefine-attribute(name=permission-mappings)
+  /subsystem=elytron/simple-permission-mapper=default-permission-mapper:write-attribute(name=permission-mappings,value=[{permission-sets=[{permission-set=login-permission},{permission-set=default-permissions}],match-all=true},{permission-sets=[{permission-set=default-permissions}],principals=[anonymous]}])
+  echo
+end-if
+
+
+if (result == org.hibernate.infinispan) of /subsystem=infinispan/cache-container=hibernate:read-attribute(name=module)
+  echo Update hibernate cache module
+  /subsystem=infinispan/cache-container=hibernate:write-attribute(name=module, value=org.infinispan.hibernate-cache)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate:read-attribute(name=default-cache)
+  echo Remove default cache from hibernate cache
+  /subsystem=infinispan/cache-container=hibernate:undefine-attribute(name=default-cache)
+  echo
+end-if
+if (result == ASYNC) of /subsystem=infinispan/cache-container=hibernate/replicated-cache=timestamps:read-attribute(name=mode)
+  echo Switching mode for timestamps cache from ASYNC to SYNC
+  /subsystem=infinispan/cache-container=hibernate/replicated-cache=timestamps:write-attribute(name=mode, value=SYNC)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate entity cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=hibernate/local-cache=entity/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/distributed-cache=local-query/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate local-query cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=hibernate/local-cache=local-query/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=hibernate/local-cache=local-query/memory=object:add(size=10000)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak realms cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak users cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak authorization cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak keys cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/memory=object:add(size=1000)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=tcp/protocol=FRAG2:read-resource
+  echo Upgrade jgroups protocol from FRAG2 to FRAG3 for tcp stack
+  /subsystem=jgroups/stack=tcp/protocol=FRAG2:remove
+  /subsystem=jgroups/stack=tcp/protocol=FRAG3:add()
+  echo
+end-if
+if (outcome == success) of /subsystem=jgroups/stack=udp/protocol=FRAG2:read-resource
+  echo Upgrade jgroups protocol from FRAG2 to FRAG3 for udp stack
+  /subsystem=jgroups/stack=udp/protocol=FRAG2:remove
+  /subsystem=jgroups/stack=udp/protocol=FRAG3:add()
+  echo
+end-if
+if (outcome == success) of /subsystem=remoting/configuration=endpoint:read-resource
+  echo Remove endpoint from remoting configuration
+  /subsystem=remoting/configuration=endpoint:remove
+  echo
+end-if
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=jgroups-mping:read-attribute(name=port)
+  /socket-binding-group=standard-sockets/socket-binding=jgroups-mping:undefine-attribute(name=port)
+end-if
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=modcluster:read-attribute(name=port)
+  /socket-binding-group=standard-sockets/socket-binding=modcluster:undefine-attribute(name=port)
+end-if
+
+if (outcome == success) of /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:read-resource
+  echo Changing JNDI reference in connectionsInfinispan SPI
+  /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:undefine-attribute(name=properties)
+  /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:write-attribute(name=properties,value={cacheContainer=java:jboss/infinispan/container/keycloak})
+  echo
+end-if
+
+# Migrate from 4.4.0 to 4.5.0
+if (outcome == failed) of /subsystem=core-management/:read-resource
+    echo Adding core-management extension
+    /extension=org.wildfly.extension.core-management/:add
+    echo Adding subsystem core-management
+    /subsystem=core-management/:add
+    echo
+end-if
+
+# Migrate from 4.5.0 to 4.6.0
+if (outcome == success) of /subsystem=elytron/http-authentication-factory=application-http-authentication/:read-resource
+    echo Removing application-http-authentication from elytron subsystem
+    /subsystem=elytron/http-authentication-factory=application-http-authentication:remove
+    echo
+end-if
+
+if (result == undefined) of /subsystem=transactions/:read-attribute(name=node-identifier,include-defaults=false)
+    echo Setting node-identifier attribute of core-environment element in transactions subsystem
+    /subsystem=transactions/:write-attribute(name=node-identifier,value=expression "${jboss.tx.node.id:1}")
+    echo
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=udp/transport=UDP/property=port_range:read-attribute(name=value)
+    try
+        /subsystem=jgroups/stack=udp/transport=UDP/property=port_range:remove
+        echo Remove port_range property from UDP transport type of udp stack
+    catch
+        echo
+    end-try
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:read-attribute(name=value)
+    try
+        /subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:remove
+        echo Remove port_range property from TCP transport type of tcp stack
+    catch
+        echo
+    end-try
+end-if
+
+# Migrate from 4.8.3 to 5.0.0
+if (outcome == failed) of /subsystem=logging/logger=io.jaegertracing.Configuration/:read-resource
+    echo Adding io.jaegertracing.Configuration logger
+    /subsystem=logging/logger=io.jaegertracing.Configuration/:add(category=io.jaegertracing.Configuration,level=WARN)
+    echo
+end-if
+
+# Migrate from 5.0.0 to 6.0.0
+if (result == NON_XA) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:read-attribute(name=mode)
+    echo Removing NON_XA transaction mode from infinispan/hibernate/entity
+    /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:undefine-attribute(name=mode)
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ExampleDS datasource
+    /subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to KeycloakDS datasource
+    /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=ejb3/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ejb3 subsystem
+    /subsystem=ejb3/:write-attribute(name=statistics-enabled,value=${wildfly.ejb3.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=transactions/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to transactions subsystem
+    /subsystem=transactions/:write-attribute(name=statistics-enabled,value=${wildfly.transactions.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=undertow/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to undertow subsystem
+    /subsystem=undertow/:write-attribute(name=statistics-enabled,value=${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to webservices subsystem
+    /subsystem=webservices/:write-attribute(name=statistics-enabled,value=${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.jboss.as.weld/:read-resource
+    echo Adding weld extension
+    /extension=org.jboss.as.weld/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=weld/:read-resource
+    echo Adding weld subsystem
+    /subsystem=weld/:add
+    echo
+end-if
+
+## KEYCLOAK-16723 / KEYCLOAK-16907:
+##
+## Loading of MicroProfile SmallRye config, health, and metrics extensions & subsystems got removed
+## as part of upgrading to Wildfly 22. See [WFLY-14203], [WFLY-14151], and [WFLY-14108] for details
+
+# Migrate from 6.0.1 to 7.0.0
+if (outcome == success) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Removing READ_TIMEOUT option from remote service from ejb3 subsystem
+    /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:remove
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/distributed-cache=routing:read-resource
+    echo Adding distributed cache routing to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/distributed-cache=routing/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/replicated-cache=sso:read-resource
+    echo Adding replicated cache sso to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/:add
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/component=locking/:add(isolation=REPEATABLE_READ)
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/component=transaction/:add(mode=BATCH)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Adding jgroups-tcp-fd socket binding to socket binding group
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:add(interface=private,port=57600)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Adding jgroups-udp-fd socket binding to socket binding group
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:add(interface=private,port=54200)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for tcp stack in jgroups subsystem
+    /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-tcp-fd)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for udp stack in jgroups subsystem
+    /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-udp-fd)
+    echo
+end-if
+
+if (result == "true") of /subsystem=keycloak-server/spi=truststore/provider=file:map-get(name=properties, key=disabled)
+    echo Disabling Truststore Provider
+    /subsystem=keycloak-server/spi=truststore/provider=file:write-attribute(name=enabled, value=false)
+    echo Removing deprecated option
+    /subsystem=keycloak-server/spi=truststore/provider=file:map-remove(name=properties, key=disabled)
+    echo
+end-if
+
+# Migrate from 7.0.0 to 8.0.0
+
+if ((result.time == 100L) && (result.unit == MILLISECONDS)) of /subsystem=ejb3/thread-pool=default:read-attribute(name=keepalive-time)
+    echo Changing thread pool keepalive of ejb3 subsystem
+    /subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.time, value=60)
+    /subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.unit,value=SECONDS)
+    echo
+end-if
+
+if (result == UP) of /subsystem=microprofile-health-smallrye:read-attribute(name=empty-liveness-checks-status)
+    echo Adding empty-liveness-checks-status attribute to microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye:write-attribute(name=empty-liveness-checks-status, value=${env.MP_HEALTH_EMPTY_LIVENESS_CHECKS_STATUS:UP})
+    echo
+end-if
+
+if (result == UP) of /subsystem=microprofile-health-smallrye:read-attribute(name=empty-readiness-checks-status)
+    echo Adding empty-readiness-checks-status attribute to microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye:write-attribute(name=empty-readiness-checks-status, value=${env.MP_HEALTH_EMPTY_READINESS_CHECKS_STATUS:UP})
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/provider=default/:read-resource
+    echo Adding default hostname provider
+    /subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
+end-if
+
+if (result == request) of /subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    echo Switching from request to default hostname provider
+
+    /subsystem=keycloak-server/spi=hostname/:write-attribute(name=default-provider,value=default)
+end-if
+
+if (result != fixed) of /subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    try
+        /subsystem=keycloak-server/spi=hostname/provider=fixed:remove
+        echo Removed config for unused fixed hostname provider
+    catch
+    end-try
+end-if
+
+# Migrate from 10.0.2 to 11.0.0 (migration changes for infinispan update from 9.4.18.Final to 10.1.8.Final)
+
+if (result != org.keycloak.keycloak-model-infinispan) of /subsystem=infinispan/cache-container=keycloak:read-attribute(name=module)
+    echo Setting class loader for keycloak cache-container so JBoss Marshalling works properly with Infinispan 10.x
+    /subsystem=infinispan/cache-container=keycloak:write-attribute(name=module,value=org.keycloak.keycloak-model-infinispan)
+    echo
+end-if
+
+# Migrate from 11.0.0 to 12.0.0
+
+if (result != expression "${jboss.mail.server.host:localhost}") of /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:read-attribute(name=host)
+    echo Adding host expression to the SMTP configuration of a remote destination outbound socket binding in the mail subsystem
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:write-attribute(name=host, value=expression "${jboss.mail.server.host:localhost}")
+    echo
+end-if
+
+if (result != expression "${jboss.mail.server.port:25}") of /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:read-attribute(name=port)
+    echo Adding port expression to the SMTP configuration of a remote destination outbound socket binding in the mail subsystem
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:write-attribute(name=port, value=expression "${jboss.mail.server.port:25}")
+    echo
+end-if
+
+# Migrate from 12.0.0 to 13.0.0
+
+## KEYCLOAK-16723 / KEYCLOAK-16907:
+##
+## Based on [WFLY-14203], [WFLY-14151], and [WFLY-14108] remove MicroProfile SmallRye config, health, and metrics if present
+
+if (outcome == success) of /subsystem=microprofile-config-smallrye/:read-resource
+    echo Removing microprofile-config-smallrye subsystem...
+    /subsystem=microprofile-config-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
+    echo Removing microprofile.config-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.config-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /subsystem=microprofile-health-smallrye/:read-resource
+    echo Removing microprofile-health-smallrye subsystem...
+    /subsystem=microprofile-health-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
+    echo Removing microprofile.health-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.health-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /subsystem=microprofile-metrics-smallrye/:read-resource
+    echo Removing microprofile-metrics-smallrye subsystem...
+    /subsystem=microprofile-metrics-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
+    echo Removing microprofile.metrics-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:remove
+    echo
+end-if
+
+## Yet based on [WFLY-14203], [WFLY-14151], and [WFLY-14108] load
+## org.wildfly.extension.health/org.wildfly.extension.metrics extensions & subsystems instead
+
+if (outcome == failed) of /extension=org.wildfly.extension.health:read-resource
+    echo Adding WildFly extension for health...
+    /extension=org.wildfly.extension.health:add(module=org.wildfly.extension.health)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=health:read-resource
+    echo Adding Wildfly subsystem for health...
+    /subsystem=health:add(security-enabled=false)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.metrics:read-resource
+    echo Adding Wildfly extension for base metrics...
+    /extension=org.wildfly.extension.metrics:add(module=org.wildfly.extension.metrics)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=metrics:read-resource
+    echo Adding Wildfly subsystem for base metrics...
+    /subsystem=metrics:add(exposed-subsystems=[*],security-enabled=false)
+    echo
+end-if
+
+if (result == "Keycloak") of :read-attribute(name=product-name)
+    echo Adding base metrics subsystem prefix to Keycloak...
+    /subsystem=metrics:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
+else
+    echo Adding base metrics subsystem prefix to RH-SSO...
+    /subsystem=metrics:write-attribute(name=prefix,value=${wildfly.metrics.prefix:jboss})
+    echo
+end-if
+
+## Add ability to make use of automatically generated self-signed certificate with Elytron,
+## introduced by WFCORE-5095 in Wildfly Core 14.0.0.Final
+
+if (outcome == failed) of /subsystem=elytron/key-store=applicationKS:read-resource
+    echo Adding key store for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /subsystem=elytron/key-store=applicationKS:add(credential-reference={clear-text=password},type=JKS)
+    /subsystem=elytron/key-store=applicationKS:write-attribute(name=path,value=application.keystore)
+    /subsystem=elytron/key-store=applicationKS:write-attribute(name=relative-to,value=jboss.server.config.dir)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=elytron/key-manager=applicationKM:read-resource
+    echo Adding key manager for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /subsystem=elytron/key-manager=applicationKM:add(key-store=applicationKS, credential-reference={clear-text=password})
+    /subsystem=elytron/key-manager=applicationKM:write-attribute(name=generate-self-signed-certificate-host,value=localhost)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=elytron/server-ssl-context=applicationSSC:read-resource
+    echo Adding SSL context for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /subsystem=elytron/server-ssl-context=applicationSSC:add(key-manager=applicationKM)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-executor-service' from INT to LONG
+if (result == 0) of /subsystem=ee/managed-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed executor service to default value (0 miliseconds)
+    /subsystem=ee/managed-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-scheduled-executor-service' from INT to LONG
+if (result == 0) of /subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed scheduled executor service to default value (0 miliseconds)
+    /subsystem=ee/managed-scheduled-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Set value of JPA default-datasource from empty string to 'undefined'
+if (outcome == success) && (result == "") of /subsystem=jpa:read-attribute(name=default-datasource)
+    echo Setting value of to default-datasource attribute in JPA subsystem to 'undefined'
+    /subsystem=jpa:undefine-attribute(name=default-datasource)
+    echo
+end-if
+
+echo *** End Migration ***
