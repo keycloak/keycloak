@@ -578,13 +578,16 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(400, response.getStatus());
+            // 401 because the client is now a bearer without a secret
+            assertEquals(401, response.getStatus());
             response.close();
 
             {
                 ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
                 ClientRepresentation clientRepresentation = clientResource.toRepresentation();
                 clientRepresentation.setBearerOnly(false);
+                // reset to the old secret
+                clientRepresentation.setSecret("password");
                 clientResource.update(clientRepresentation);
             }
 

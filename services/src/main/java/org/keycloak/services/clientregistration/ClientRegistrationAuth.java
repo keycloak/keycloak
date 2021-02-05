@@ -162,6 +162,10 @@ public class ClientRegistrationAuth {
     }
 
     public void requireView(ClientModel client) {
+        requireView(client, false);
+    }
+
+    public void requireView(ClientModel client, boolean allowPublicClient) {
         RegistrationAuth authType = null;
         boolean authenticated = false;
 
@@ -182,16 +186,15 @@ public class ClientRegistrationAuth {
             }
         } else if (isRegistrationAccessToken()) {
             if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                checkClientProtocol(client);
                 authenticated = true;
                 authType = getRegistrationAuth();
             }
         } else if (isInitialAccessToken()) {
             throw unauthorized("Not initial access token allowed");
-        } else {
-            if (authenticateClient(client)) {
-                authenticated = true;
-                authType = RegistrationAuth.AUTHENTICATED;
-            }
+        } else if (allowPublicClient && authenticatePublicClient(client)) {
+            authenticated = true;
+            authType = RegistrationAuth.AUTHENTICATED;
         }
 
         if (authenticated) {
@@ -341,7 +344,7 @@ public class ClientRegistrationAuth {
         return false;
     }
 
-    private boolean authenticateClient(ClientModel client) {
+    private boolean authenticatePublicClient(ClientModel client) {
         if (client == null) {
             return false;
         }

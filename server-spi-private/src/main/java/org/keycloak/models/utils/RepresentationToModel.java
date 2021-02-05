@@ -1368,9 +1368,6 @@ public class RepresentationToModel {
         }
 
         client.setSecret(resourceRep.getSecret());
-        if (client.getSecret() == null) {
-            KeycloakModelUtils.generateSecret(client);
-        }
 
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
@@ -1564,7 +1561,18 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.getSecret() != null) resource.setSecret(rep.getSecret());
+        if (resource.isPublicClient() || resource.isBearerOnly()) {
+            resource.setSecret(null);
+        } else {
+            String currentSecret = resource.getSecret();
+            String newSecret = rep.getSecret();
+
+            if (newSecret == null && currentSecret == null) {
+                KeycloakModelUtils.generateSecret(resource);
+            } else if (newSecret != null) {
+                resource.setSecret(newSecret);
+            }
+        }
 
         resource.updateClient();
     }

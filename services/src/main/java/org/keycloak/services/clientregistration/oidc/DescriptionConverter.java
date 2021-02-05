@@ -64,6 +64,7 @@ public class DescriptionConverter {
         client.setName(clientOIDC.getClientName());
         client.setRedirectUris(clientOIDC.getRedirectUris());
         client.setBaseUrl(clientOIDC.getClientUri());
+        client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         String scopeParam = clientOIDC.getScope();
         if (scopeParam != null) client.setOptionalClientScopes(new ArrayList<>(Arrays.asList(scopeParam.split(" "))));

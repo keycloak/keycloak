@@ -163,7 +163,7 @@ public class RealmManager {
 
     protected void setupAdminConsole(RealmModel realm) {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        if (adminConsole == null) adminConsole = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (adminConsole == null) adminConsole = KeycloakModelUtils.createPublicClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
 
         adminConsole.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
@@ -196,11 +196,10 @@ public class RealmManager {
     public void setupAdminCli(RealmModel realm) {
         ClientModel adminCli = realm.getClientByClientId(Constants.ADMIN_CLI_CLIENT_ID);
         if (adminCli == null) {
-            adminCli = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CLI_CLIENT_ID);
+            adminCli = KeycloakModelUtils.createPublicClient(realm, Constants.ADMIN_CLI_CLIENT_ID);
             adminCli.setName("${client_" + Constants.ADMIN_CLI_CLIENT_ID + "}");
             adminCli.setEnabled(true);
             adminCli.setAlwaysDisplayInConsole(false);
-            adminCli.setPublicClient(true);
             adminCli.setFullScopeAllowed(false);
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
@@ -326,10 +325,9 @@ public class RealmManager {
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
 
-        ClientModel realmAdminApp = KeycloakModelUtils.createClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
+        ClientModel realmAdminApp = KeycloakModelUtils.createManagementClient(adminRealm, KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
         // No localized name for now
         realmAdminApp.setName(realm.getName() + " Realm");
-        realmAdminApp.setBearerOnly(true);
         realm.setMasterAdminClient(realmAdminApp);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
@@ -361,7 +359,7 @@ public class RealmManager {
         String realmAdminClientId = getRealmAdminClientId(realm);
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
         if (realmAdminClient == null) {
-            realmAdminClient = KeycloakModelUtils.createClient(realm, realmAdminClientId);
+            realmAdminClient = KeycloakModelUtils.createManagementClient(realm, realmAdminClientId);
             realmAdminClient.setName("${client_" + realmAdminClientId + "}");
         }
         RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
@@ -409,7 +407,7 @@ public class RealmManager {
     private void setupAccountManagement(RealmModel realm) {
         ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (accountClient == null) {
-            accountClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            accountClient = KeycloakModelUtils.createPublicClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             accountClient.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             accountClient.setEnabled(true);
             accountClient.setAlwaysDisplayInConsole(false);
@@ -443,12 +441,11 @@ public class RealmManager {
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             if (accountConsoleClient == null) {
-                accountConsoleClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+                accountConsoleClient = KeycloakModelUtils.createPublicClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
                 accountConsoleClient.setName("${client_" + Constants.ACCOUNT_CONSOLE_CLIENT_ID + "}");
                 accountConsoleClient.setEnabled(true);
                 accountConsoleClient.setAlwaysDisplayInConsole(false);
                 accountConsoleClient.setFullScopeAllowed(false);
-                accountConsoleClient.setPublicClient(true);
                 accountConsoleClient.setDirectAccessGrantsEnabled(false);
 
                 accountConsoleClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
@@ -478,7 +475,7 @@ public class RealmManager {
     public void setupBrokerService(RealmModel realm) {
         ClientModel client = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
-            client = KeycloakModelUtils.createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
+            client = KeycloakModelUtils.createManagementClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
             client.setEnabled(true);
             client.setAlwaysDisplayInConsole(false);
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");

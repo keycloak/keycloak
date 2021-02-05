@@ -164,13 +164,28 @@ public final class KeycloakModelUtils {
         return UUID.randomUUID().toString();
     }
 
-    public static ClientModel createClient(RealmModel realm, String name) {
-        ClientModel app = realm.addClient(name);
-        app.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
-        generateSecret(app);
-        app.setFullScopeAllowed(true);
+    public static ClientModel createManagementClient(RealmModel realm, String name) {
+        ClientModel client = createClient(realm, name);
 
-        return app;
+        client.setBearerOnly(true);
+
+        return client;
+    }
+
+    public static ClientModel createPublicClient(RealmModel realm, String name) {
+        ClientModel client = createClient(realm, name);
+
+        client.setPublicClient(true);
+
+        return client;
+    }
+
+    private static ClientModel createClient(RealmModel realm, String name) {
+        ClientModel client = realm.addClient(name);
+
+        client.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
+
+        return client;
     }
 
     /**
