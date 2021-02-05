@@ -84,6 +84,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 session.realms().decreaseRemainingCount(realm, initialAccessModel);
             }
 
+            client.setDirectAccessGrantsEnabled(false);
+
             event.client(client.getClientId()).success();
             return client;
         } catch (ModelDuplicateException e) {
@@ -97,7 +99,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireView(client);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
-        if (client.getSecret() != null) {
+        if (!(Boolean.TRUE.equals(rep.isBearerOnly()) || Boolean.TRUE.equals(rep.isPublicClient()))) {
             rep.setSecret(client.getSecret());
         }
 

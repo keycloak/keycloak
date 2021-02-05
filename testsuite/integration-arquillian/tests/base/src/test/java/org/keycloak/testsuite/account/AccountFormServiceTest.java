@@ -1302,7 +1302,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         applicationsPage.assertCurrent();
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Account Console", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant", "custom-audience"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant", "custom-audience"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertThat(accountEntry.getRolesAvailable(), containsInAnyOrder(
