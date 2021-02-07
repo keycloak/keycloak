@@ -112,7 +112,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
      * Returns the user id.
      * @return
      */
-    public String getUser() {
+    public String getUserId() {
         return user;
     }
 
