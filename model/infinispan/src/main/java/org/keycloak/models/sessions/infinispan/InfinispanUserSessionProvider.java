@@ -345,7 +345,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             // fetch the offline user-sessions from the persistence provider
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
-            UserModel user = session.users().getUserById(realm, predicate.getUser());
+            UserModel user = session.users().getUserById(realm, predicate.getUserId());
             if (user != null) {
                 return persister.loadUserSessionsStream(realm, user, offline, 0, null);
             }
@@ -353,13 +353,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             if (predicate.getBrokerSessionId() != null) {
                 // TODO add support for offline user-session lookup by brokerSessionId
                 // currently it is not possible to access the brokerSessionId in offline user-session in a database agnostic way
-                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerSessionId is currently not supported.");
+                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerSessionId is currently only supported for preloaded sessions.");
             }
 
             if (predicate.getBrokerUserId() != null) {
                 // TODO add support for offline user-session lookup by brokerUserId
                 // currently it is not possible to access the brokerUserId in offline user-session in a database agnostic way
-                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerUserId is currently not supported.");
+                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerUserId is currently only supported for preloaded sessions.");
             }
 
         }
