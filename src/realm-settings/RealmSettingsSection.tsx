@@ -36,7 +36,7 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 
 type RealmSettingsHeaderProps = {
-  onChange: (...event: any[]) => void;
+  onChange: (value: boolean) => void;
   value: boolean;
   save: () => void;
   realmName: string;

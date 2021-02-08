@@ -24,14 +24,16 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useHistory, useParams } from "react-router-dom";
 
 type KerberosSettingsHeaderProps = {
-  onChange: (...event: any[]) => void;
-  value: any;
+  onChange: (value: string) => void;
+  value: string;
+  save: () => void;
   toggleDeleteDialog: () => void;
 };
 
 const KerberosSettingsHeader = ({
   onChange,
   value,
+  save,
   toggleDeleteDialog,
 }: KerberosSettingsHeaderProps) => {
   const { t } = useTranslation("user-federation");
@@ -40,7 +42,8 @@ const KerberosSettingsHeader = ({
     messageKey: "user-federation:userFedDisableConfirm",
     continueButtonLabel: "common:disable",
     onConfirm: () => {
-      onChange(!value);
+      onChange("false");
+      save();
     },
   });
   return (
@@ -60,6 +63,7 @@ const KerberosSettingsHeader = ({
             toggleDisableDialog();
           } else {
             onChange("" + value);
+            save();
           }
         }}
       />
@@ -136,7 +140,8 @@ export const UserFederationKerberosSettings = () => {
         render={({ onChange, value }) => (
           <KerberosSettingsHeader
             value={value}
-            onChange={(value) => onChange("" + value)}
+            onChange={onChange}
+            save={() => save(form.getValues())}
             toggleDeleteDialog={toggleDeleteDialog}
           />
         )}

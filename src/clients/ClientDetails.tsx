@@ -36,8 +36,8 @@ import { ServiceAccount } from "./service-account/ServiceAccount";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 type ClientDetailHeaderProps = {
-  onChange: (...event: any[]) => void;
-  value: any;
+  onChange: (value: boolean) => void;
+  value: boolean;
   save: () => void;
   client: ClientRepresentation;
   toggleDownloadDialog: () => void;
