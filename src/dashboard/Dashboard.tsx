@@ -51,7 +51,7 @@ const EmptyDashboard = () => {
         </Title>
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
         <Button variant="link" onClick={() => setRealm("master")}>
-          {t("common:providerInfo")}
+          {t("common:serverInfo")}
         </Button>
       </EmptyState>
     </PageSection>
@@ -86,7 +86,7 @@ const Dashboard = () => {
       </PageSection>
       <PageSection>
         <Grid hasGutter>
-          <GridItem span={2}>
+          <GridItem lg={2} sm={12}>
             <Card className="keycloak__dashboard_card">
               <CardTitle>{t("serverInfo")}</CardTitle>
               <CardBody>
@@ -105,7 +105,7 @@ const Dashboard = () => {
               </CardBody>
             </Card>
           </GridItem>
-          <GridItem span={10}>
+          <GridItem lg={10} sm={12}>
             <Card className="keycloak__dashboard_card">
               <CardTitle>{t("profile")}</CardTitle>
               <CardBody>

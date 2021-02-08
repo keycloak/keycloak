@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
 import { WhoAmIContext } from "./context/whoami/WhoAmI";
-import { HelpHeader } from "./components/help-enabler/HelpHeader";
+import { HelpContext, HelpHeader } from "./components/help-enabler/HelpHeader";
 import { Link, useHistory } from "react-router-dom";
 import { useAdminClient } from "./context/auth/AdminClient";
 import { useRealm } from "./context/realm-context/RealmContext";
@@ -75,7 +75,12 @@ export const Header = () => {
 
   const HelpDropdownItem = () => {
     const { t } = useTranslation();
-    return <DropdownItem icon={<HelpIcon />}>{t("help")}</DropdownItem>;
+    const { enabled, toggleHelp } = useContext(HelpContext);
+    return (
+      <DropdownItem icon={<HelpIcon />} onClick={toggleHelp}>
+        {enabled ? t("helpEnabled") : t("helpDisabled")}
+      </DropdownItem>
+    );
   };
 
   const kebabDropdownItems = [

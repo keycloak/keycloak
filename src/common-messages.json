@@ -36,6 +36,8 @@
     "realmInfo": "Realm info",
     "help": "Help",
     "helpLabel": "More help for {{label}}",
+    "helpEnabled": "Help on",
+    "helpDisabled": "Help off",
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
     "learnMore": "Learn more",
