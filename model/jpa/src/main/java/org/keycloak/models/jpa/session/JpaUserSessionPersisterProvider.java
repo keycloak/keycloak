@@ -224,6 +224,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         // Fallback to model API just with different realm provider than "jpa" (This is not the case in standard Keycloak installations)
         if (KeycloakModelUtils.isRealmProviderJpa(session)) {
             int numSessionsDeleted = 0;
+            int numClientSessionsDeleted = 0;
             int currentTimeSecs = Time.currentTime();
             String offlineStr = offlineToString(true);
 
@@ -232,21 +233,23 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             for (int offlineSessionIdleTimeout : offlineSessionIdleTimeouts) {
                 int expiredOfflineSecs = currentTimeSecs - offlineSessionIdleTimeout - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
-                int us = em.createNamedQuery("deleteExpiredUserSessionsCrossRealm")
+                int cs = em.createNamedQuery("deleteExpiredClientSessionsCrossRealm")
                         .setParameter("offlineSessionIdle", offlineSessionIdleTimeout)
                         .setParameter("lastSessionRefresh", expiredOfflineSecs)
                         .setParameter("offline", offlineStr)
                         .executeUpdate();
 
-                logger.debugf("Removed %d expired user sessions for the offlineSessionIdleTimeout %d", us, offlineSessionIdleTimeout);
+                int us = em.createNamedQuery("deleteExpiredUserSessionsCrossRealm")
+                        .setParameter("offlineSessionIdle", offlineSessionIdleTimeout)
+                        .setParameter("lastSessionRefresh", expiredOfflineSecs)
+                        .setParameter("offline", offlineStr)
+                        .executeUpdate();
+                
+                logger.debugf("Removed %d expired user sessions and %d expired client sessions for the offlineSessionIdleTimeout %d", us, cs, offlineSessionIdleTimeout);
 
                 numSessionsDeleted += us;
+                numClientSessionsDeleted += cs;
             }
-
-            // Delete detached client sessions. Typically those, where their userSession was deleted by "deleteExpiredUserSessionsCrossRealm"
-            int numClientSessionsDeleted = em.createNamedQuery("deleteDetachedClientSessionsCrossRealm")
-                    .setParameter("offline", offlineStr)
-                    .executeUpdate();
 
             logger.debugf("Removed %d expired user sessions and %d expired client sessions in all realms", numSessionsDeleted, numClientSessionsDeleted);
         } else {
