@@ -24,6 +24,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
 
 public class MapRealmProviderFactory extends AbstractMapProviderFactory<RealmProvider> implements RealmProviderFactory {
 
@@ -32,7 +33,7 @@ public class MapRealmProviderFactory extends AbstractMapProviderFactory<RealmPro
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
+        MapStorageProviderFactory sp = (MapStorageProviderFactory) factory.getProviderFactory(MapStorageProvider.class);
         this.store = sp.getStorage("realm", String.class, MapRealmEntity.class, RealmModel.class);
     }
 

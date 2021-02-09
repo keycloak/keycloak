@@ -35,7 +35,7 @@ import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
-
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import java.util.UUID;
 
 /**
@@ -71,7 +71,7 @@ public class MapAuthorizationStoreFactory implements AuthorizationStoreFactory {
     public void postInit(KeycloakSessionFactory factory) {
         AuthorizationStoreFactory.super.postInit(factory);
         
-        MapStorageProvider mapStorageProvider = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
+        MapStorageProviderFactory mapStorageProvider = (MapStorageProviderFactory) factory.getProviderFactory(MapStorageProvider.class);
         permissionTicketStore = mapStorageProvider.getStorage("authzPermissionTickets", UUID.class, MapPermissionTicketEntity.class, PermissionTicket.class);
         policyStore = mapStorageProvider.getStorage("authzPolicies", UUID.class, MapPolicyEntity.class, Policy.class);
         resourceServerStore = mapStorageProvider.getStorage("authzResourceServers", String.class, MapResourceServerEntity.class, ResourceServer.class);
