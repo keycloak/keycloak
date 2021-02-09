@@ -26,11 +26,12 @@ import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.user.MapUserProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
@@ -53,7 +54,7 @@ public class Map extends KeycloakModelParameters {
       .add(MapRealmProviderFactory.class)
       .add(MapRoleProviderFactory.class)
       .add(MapUserProviderFactory.class)
-      .add(MapStorageProvider.class)
+      .add(MapStorageProviderFactory.class)
       .add(MapUserSessionProviderFactory.class)
       .add(MapUserLoginFailureProviderFactory.class)
       .build();
@@ -64,7 +65,8 @@ public class Map extends KeycloakModelParameters {
 
     @Override
     public void updateConfig(Config cf) {
-        cf.spi("client").defaultProvider(MapClientProviderFactory.PROVIDER_ID)
+        cf.spi(AuthenticationSessionSpi.PROVIDER_ID).defaultProvider(MapClientProviderFactory.PROVIDER_ID)
+          .spi("client").defaultProvider(MapClientProviderFactory.PROVIDER_ID)
           .spi("clientScope").defaultProvider(MapClientScopeProviderFactory.PROVIDER_ID)
           .spi("group").defaultProvider(MapGroupProviderFactory.PROVIDER_ID)
           .spi("realm").defaultProvider(MapRealmProviderFactory.PROVIDER_ID)
