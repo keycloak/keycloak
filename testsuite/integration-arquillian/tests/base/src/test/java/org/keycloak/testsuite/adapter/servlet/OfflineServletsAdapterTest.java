@@ -149,7 +149,7 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
                 .client("account").detail(Details.REVOKED_CLIENT, "offline-client").assertEvent();
 
         // Assert refresh doesn't work now (increase time one more time)
-        setAdapterAndServerTimeOffset(9999);
+        setAdapterAndServerTimeOffset(19999);
         offlineTokenPage.navigateTo();
         assertCurrentUrlDoesntStartWith(offlineTokenPage);
         loginPage.assertCurrent();

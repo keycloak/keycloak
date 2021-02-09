@@ -41,6 +41,7 @@ import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.resources.ResourcesService;
@@ -286,8 +287,7 @@ public class AccountRestService {
             return ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
-        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
-        new UserSessionManager(session).revokeOfflineToken(user, client);
+        UserConsentManager.revokeConsentToClient(session, client, user);
         event.success();
 
         return Response.noContent().build();

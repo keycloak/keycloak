@@ -65,6 +65,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AbstractSecuredLocalService;
@@ -465,11 +466,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
-        new UserSessionManager(session).revokeOfflineToken(user, client);
-
-        // Logout clientSessions for this user and client
-        AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, session.getContext().getUri(), headers);
+        UserConsentManager.revokeConsentToClient(session, client, user);
 
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();

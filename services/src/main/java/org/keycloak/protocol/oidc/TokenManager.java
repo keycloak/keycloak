@@ -497,18 +497,13 @@ public class TokenManager {
     }
 
 
-    public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, AuthenticatedClientSessionModel clientSession) {
+    public static void dettachClientSession(AuthenticatedClientSessionModel clientSession) {
         UserSessionModel userSession = clientSession.getUserSession();
         if (userSession == null) {
             return;
         }
 
         clientSession.detachFromUserSession();
-
-        // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
-        if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-            sessions.removeUserSession(realm, userSession);
-        }
     }
 
 

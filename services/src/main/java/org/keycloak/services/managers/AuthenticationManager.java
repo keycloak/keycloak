@@ -555,7 +555,7 @@ public class AuthenticationManager {
                 .forEach(clientSession -> {
                     backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
                     clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+                    TokenManager.dettachClientSession(clientSession);
                 });
     }
 

@@ -65,6 +65,7 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.account.AccountFormService;
@@ -477,15 +478,9 @@ public class UserResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-        boolean revokedConsent = session.users().revokeConsentForClient(realm, user.getId(), client.getId());
-        boolean revokedOfflineToken = new UserSessionManager(session).revokeOfflineToken(user, client);
+        boolean revokedConsent = UserConsentManager.revokeConsentToClient(session, client, user);
 
-        if (revokedConsent) {
-            // Logout clientSessions for this user and client
-            AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, session.getContext().getUri(), headers);
-        }
-
-        if (!revokedConsent && !revokedOfflineToken) {
+        if (!revokedConsent) {
             throw new NotFoundException("Consent nor offline token not found");
         }
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
