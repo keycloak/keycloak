@@ -92,6 +92,8 @@ export const UserFederationKerberosSettings = () => {
   }, []);
 
   const setupForm = (component: ComponentRepresentation) => {
+    console.log("READING as:");
+    console.log(component);
     Object.entries(component).map((entry) => {
       form.setValue(
         "config.allowPasswordAuthentication",
@@ -105,6 +107,8 @@ export const UserFederationKerberosSettings = () => {
   };
 
   const save = async (component: ComponentRepresentation) => {
+    console.log("SAVING as:");
+    console.log(component);
     try {
       await adminClient.components.update({ id }, component);
       setupForm(component as ComponentRepresentation);

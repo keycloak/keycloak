@@ -26,6 +26,8 @@ import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import "./user-federation.css";
 
+import { useHistory, useRouteMatch } from "react-router-dom";
+
 export const UserFederationSection = () => {
   const [userFederations, setUserFederations] = useState<
     ComponentRepresentation[]
@@ -36,6 +38,9 @@ export const UserFederationSection = () => {
   const adminClient = useAdminClient();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
+
+  const { url } = useRouteMatch();
+  const history = useHistory();
 
   useEffect(() => {
     return asyncStateFetch(
@@ -53,8 +58,8 @@ export const UserFederationSection = () => {
   }, [key]);
 
   const ufAddProviderDropdownItems = [
-    <DropdownItem key="itemLDAP">LDAP</DropdownItem>,
-    <DropdownItem key="itemKerberos">Kerberos</DropdownItem>,
+    <DropdownItem key="itemLDAP" onClick={() => history.push(`${url}/ldap/new`)}>LDAP</DropdownItem>,
+    <DropdownItem key="itemKerberos" onClick={() => history.push(`${url}/kerberos/new`)}>Kerberos</DropdownItem>,
   ];
 
   const learnMoreLinkProps = {
