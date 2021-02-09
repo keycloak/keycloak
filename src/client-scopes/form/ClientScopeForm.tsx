@@ -284,12 +284,23 @@ export const ClientScopeForm = () => {
                   />
                 }
                 fieldId="kc-gui-order"
+                helperTextInvalid={t("shouldBeANumber")}
+                validated={
+                  errors.attributes && errors.attributes["gui_order"]
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
               >
                 <TextInput
-                  ref={register}
-                  type="number"
+                  ref={register({ pattern: /^([0-9]*)$/ })}
+                  type="text"
                   id="kc-gui-order"
                   name="attributes.gui_order"
+                  validated={
+                    errors.attributes && errors.attributes["gui_order"]
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
                 />
               </FormGroup>
               <ActionGroup>
