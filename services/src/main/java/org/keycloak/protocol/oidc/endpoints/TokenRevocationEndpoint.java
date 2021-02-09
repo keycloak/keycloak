@@ -228,7 +228,17 @@ public class TokenRevocationEndpoint {
                 .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as dettachClientSession removes the user sessions.
-                .forEach(clientSession -> TokenManager.dettachClientSession(session.sessions(), realm, clientSession));
+                .forEach(clientSession -> {
+                    UserSessionModel userSession = clientSession.getUserSession();
+                    TokenManager.dettachClientSession(clientSession);
+
+                    if (userSession != null) {
+                        // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
+                        if (userSession.getAuthenticatedClientSessions().isEmpty()) {
+                            session.sessions().removeUserSession(realm, userSession);
+                        }
+                    }
+                });
     }
 
     private void revokeAccessToken() {

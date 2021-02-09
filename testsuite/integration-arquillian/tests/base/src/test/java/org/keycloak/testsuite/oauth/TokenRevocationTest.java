@@ -113,6 +113,14 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         isTokenDisabled(tokenResponse1, "test-app");
         isTokenEnabled(tokenResponse2, "test-app-scope");
+
+        // Revoke second token and assert no sessions for testUser
+        response = oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password");
+        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+
+        userSessions = testUser.getUserSessions();
+        assertEquals(0, userSessions.size());
+
     }
 
     @Test

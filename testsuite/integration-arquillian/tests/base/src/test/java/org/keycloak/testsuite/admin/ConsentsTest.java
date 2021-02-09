@@ -318,9 +318,10 @@ public class ConsentsTest extends AbstractKeycloakTest {
         Map<String, Object> consent = consents.get(0);
         Assert.assertEquals("Consent should be given to " + CLIENT_ID, CLIENT_ID, consent.get("clientId"));
 
-        // list sessions
+        // list sessions. Single client should be in user session
         List<UserSessionRepresentation> sessions = userResource.getUserSessions();
         Assert.assertEquals("There should be one active session", 1, sessions.size());
+        Assert.assertEquals("There should be one client in user session", 1, sessions.get(0).getClients().size());
 
         // revoke consent
         userResource.revokeConsent(CLIENT_ID);
@@ -331,7 +332,8 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
         // list sessions
         sessions = userResource.getUserSessions();
-        Assert.assertEquals("There should be no active session", 0, sessions.size());
+        Assert.assertEquals("There should be one active session", 1, sessions.size());
+        Assert.assertEquals("There should be no client in user session", 0, sessions.get(0).getClients().size());
     }
 
     @Test
