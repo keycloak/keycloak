@@ -110,7 +110,11 @@ export const UserFederationKerberosSettings = () => {
     console.log("SAVING as:");
     console.log(component);
     try {
-      await adminClient.components.update({ id }, component);
+      if (id) {
+        await adminClient.components.update({ id }, component);
+      } else {
+        await adminClient.components.create(component);
+      }
       setupForm(component as ComponentRepresentation);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
