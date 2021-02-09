@@ -21,6 +21,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
@@ -37,7 +38,7 @@ public class MapRootAuthenticationSessionProviderFactory extends AbstractMapProv
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
+        MapStorageProviderFactory sp = (MapStorageProviderFactory) factory.getProviderFactory(MapStorageProvider.class);
         this.store = sp.getStorage("sessions", UUID.class, MapRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class);
     }
 

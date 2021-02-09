@@ -17,15 +17,19 @@
 package org.keycloak.models.map.storage;
 
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
-import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  *
  * @author hmlnarik
  */
-public interface MapStorageProvider extends Provider {
+public interface MapStorageProviderFactory extends ProviderFactory<MapStorageProvider> {
     
+    public enum Flag {
+        INITIALIZE_EMPTY,
+        LOCAL
+    }
+
     /**
      * Returns a key-value storage
      * @param <K> type of the primary key

@@ -33,6 +33,7 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
 
 /**
  *
@@ -48,7 +49,7 @@ public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientP
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
+        MapStorageProviderFactory sp = (MapStorageProviderFactory) factory.getProviderFactory(MapStorageProvider.class);
         this.store = sp.getStorage("clients", UUID.class, MapClientEntity.class, ClientModel.class);
 
         factory.register(this);

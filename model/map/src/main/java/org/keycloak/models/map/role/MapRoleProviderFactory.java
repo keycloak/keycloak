@@ -25,6 +25,7 @@ import org.keycloak.models.RoleProvider;
 import org.keycloak.models.RoleProviderFactory;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
 
 public class MapRoleProviderFactory extends AbstractMapProviderFactory<RoleProvider> implements RoleProviderFactory {
 
@@ -32,7 +33,7 @@ public class MapRoleProviderFactory extends AbstractMapProviderFactory<RoleProvi
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
+        MapStorageProviderFactory sp = (MapStorageProviderFactory) factory.getProviderFactory(MapStorageProvider.class);
         this.store = sp.getStorage("roles", UUID.class, MapRoleEntity.class, RoleModel.class);
     }
 
