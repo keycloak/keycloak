@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   FormGroup,
-  Form,
   Select,
   SelectVariant,
   SelectOption,
@@ -11,6 +10,7 @@ import { Controller, UseFormMethods } from "react-hook-form";
 
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ClientDescription } from "../ClientDescription";
+import { FormAccess } from "../../components/form-access/FormAccess";
 
 type GeneralSettingsProps = {
   form: UseFormMethods;
@@ -24,7 +24,7 @@ export const GeneralSettings = ({ form }: GeneralSettingsProps) => {
   const [open, isOpen] = useState(false);
 
   return (
-    <Form isHorizontal>
+    <FormAccess isHorizontal role="manage-clients">
       <FormGroup
         label="Client Type"
         fieldId="kc-type"
@@ -64,6 +64,6 @@ export const GeneralSettings = ({ form }: GeneralSettingsProps) => {
         />
       </FormGroup>
       <ClientDescription form={form} />
-    </Form>
+    </FormAccess>
   );
 };

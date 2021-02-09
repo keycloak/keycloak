@@ -6,7 +6,6 @@ import {
   CardBody,
   ClipboardCopy,
   Divider,
-  Form,
   FormGroup,
   Select,
   SelectOption,
@@ -20,6 +19,7 @@ import { Controller, UseFormMethods, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import {
@@ -136,7 +136,7 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
   });
 
   return (
-    <Form isHorizontal className="pf-u-mt-md">
+    <FormAccess isHorizontal className="pf-u-mt-md" role="manage-clients">
       <ClientSecretConfirm />
       <AccessTokenConfirm />
       <Card isFlat>
@@ -237,6 +237,6 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
           </FormGroup>
         </CardBody>
       </Card>
-    </Form>
+    </FormAccess>
   );
 };

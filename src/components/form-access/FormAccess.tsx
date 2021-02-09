@@ -111,7 +111,7 @@ export const FormAccess = ({
   return (
     <>
       {!unWrap && (
-        <Form {...rest}>
+        <Form {...rest} className={"keycloak__form " + (rest.className || "")}>
           {recursiveCloneChildren(children, isDisabled ? { isDisabled } : {})}
         </Form>
       )}

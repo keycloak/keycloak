@@ -3,7 +3,6 @@ import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Form,
   FormGroup,
   PageSection,
   Select,
@@ -31,6 +30,7 @@ import {
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { FormAccess } from "../../components/form-access/FormAccess";
 
 export const RoleMappingForm = () => {
   const { realm } = useContext(RealmContext);
@@ -149,7 +149,11 @@ export const RoleMappingForm = () => {
         subKey="client-scopes:addMapperExplain"
       />
       <PageSection variant="light">
-        <Form isHorizontal onSubmit={handleSubmit(save)}>
+        <FormAccess
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+          role="manage-clients"
+        >
           <FormGroup
             label={t("protocolMapper")}
             labelIcon={
@@ -302,7 +306,7 @@ export const RoleMappingForm = () => {
               {t("common:cancel")}
             </Button>
           </ActionGroup>
-        </Form>
+        </FormAccess>
       </PageSection>
     </>
   );

@@ -1,7 +1,6 @@
 import React from "react";
 import {
   PageSection,
-  Form,
   FormGroup,
   TextInput,
   ActionGroup,
@@ -17,6 +16,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
+import { FormAccess } from "../../components/form-access/FormAccess";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
@@ -55,7 +55,11 @@ export const ImportForm = () => {
         subKey="clients:clientsExplain"
       />
       <PageSection variant="light">
-        <Form isHorizontal onSubmit={handleSubmit(save)}>
+        <FormAccess
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+          role="manage-clients"
+        >
           <JsonFileUpload id="realm-file" onChange={handleFileChange} />
           <ClientDescription form={form} />
           <FormGroup label={t("common:type")} fieldId="kc-type">
@@ -73,7 +77,7 @@ export const ImportForm = () => {
             </Button>
             <Button variant="link">{t("common:cancel")}</Button>
           </ActionGroup>
-        </Form>
+        </FormAccess>
       </PageSection>
     </>
   );

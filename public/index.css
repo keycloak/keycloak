@@ -4,3 +4,7 @@
 .keycloak__pageheader_brand {
   height: 35px;
 }
+
+.keycloak__form {
+  max-width: 1024px;
+}

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import React from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Nav,
@@ -26,10 +26,6 @@ export const PageNav: React.FunctionComponent = () => {
 
   const history = useHistory();
 
-  const initialItem = history.location.pathname;
-
-  const [activeItem, setActiveItem] = useState(initialItem);
-
   type SelectedItem = {
     groupId: number | string;
     itemId: number | string;
@@ -38,24 +34,22 @@ export const PageNav: React.FunctionComponent = () => {
   };
 
   const onSelect = (item: SelectedItem) => {
-    setActiveItem(item.to);
     history.push(item.to);
     item.event.preventDefault();
   };
 
   type LeftNavProps = { title: string; path: string };
   const LeftNav = ({ title, path }: LeftNavProps) => {
-    const { realm } = useRealm();
     const route = routes(() => {}).find(
       (route) => route.path.substr("/:realm".length) === path
     );
     if (!route || !hasAccess(route.access)) return <></>;
-
+    const activeItem = history.location.pathname;
     return (
       <NavItem
         id={"nav-item" + path.replace("/", "-")}
         to={`/${realm}${path}`}
-        isActive={activeItem.substr(realm.length + 1) === path}
+        isActive={activeItem.substr(activeItem.indexOf("/", 1)) === path}
       >
         {t(title)}
       </NavItem>
@@ -76,6 +70,9 @@ export const PageNav: React.FunctionComponent = () => {
     "view-identity-providers"
   );
 
+  const { pathname } = useLocation();
+  const isOnAddRealm = () => pathname.indexOf("add-realm") === -1;
+
   return (
     <PageSidebar
       nav={
@@ -89,10 +86,12 @@ export const PageNav: React.FunctionComponent = () => {
               )}
             </DataLoader>
           </NavList>
-          <NavGroup title="">
-            <LeftNav title="home" path="/" />
-          </NavGroup>
-          {showManage && (
+          {isOnAddRealm() && (
+            <NavGroup title="">
+              <LeftNav title="home" path="/" />
+            </NavGroup>
+          )}
+          {showManage && isOnAddRealm() && (
             <NavGroup title={t("manage")}>
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
@@ -104,7 +103,7 @@ export const PageNav: React.FunctionComponent = () => {
             </NavGroup>
           )}
 
-          {showConfigure && (
+          {showConfigure && isOnAddRealm() && (
             <NavGroup title={t("configure")}>
               <LeftNav title="realmSettings" path="/realm-settings" />
               <LeftNav title="authentication" path="/authentication" />

@@ -1,6 +1,7 @@
 .kc-form-panel__panel {
   padding-top: var(--pf-global--spacer--lg);
   padding-bottom: var(--pf-global--spacer--2xl);
+  max-width: 768px;
 }
 
 .kc-form-panel__title {

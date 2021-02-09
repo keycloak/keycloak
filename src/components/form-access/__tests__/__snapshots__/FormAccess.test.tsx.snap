@@ -8,9 +8,11 @@ exports[`<FormAccess /> render normal form 1`] = `
     <FormAccess
       role="manage-clients"
     >
-      <Form>
+      <Form
+        className="keycloak__form "
+      >
         <form
-          className="pf-c-form"
+          className="pf-c-form keycloak__form "
           noValidate={true}
         >
           <FormGroup

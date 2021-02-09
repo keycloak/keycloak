@@ -85,7 +85,7 @@ export const JsonFileUpload = ({
             </Button>,
           ]}
         >
-          {t("Are you sure you want to clear this file?")}
+          {t("clearFileExplain")}
         </Modal>
       )}
       <FormGroup

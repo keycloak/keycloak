@@ -10,7 +10,6 @@ import {
   DropdownItem,
   Flex,
   FlexItem,
-  Form,
   FormGroup,
   PageSection,
   Select,
@@ -34,6 +33,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { FormAccess } from "../../components/form-access/FormAccess";
 
 type Params = {
   scopeId: string;
@@ -154,37 +154,45 @@ export const MappingDetails = () => {
         }
       />
       <PageSection variant="light">
-        <Form isHorizontal onSubmit={handleSubmit(save)}>
-          {!id.match(isGuid) && (
-            <FormGroup
-              label={t("common:name")}
-              labelIcon={
-                <HelpItem
-                  helpText="client-scopes-help:mapperName"
-                  forLabel={t("common:name")}
-                  forID="name"
-                />
-              }
-              fieldId="name"
-              isRequired
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              helperTextInvalid={t("common:required")}
-            >
-              <TextInput
-                ref={register({ required: true })}
-                type="text"
-                id="name"
-                name="name"
+        <FormAccess
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+          role="manage-clients"
+        >
+          <>
+            {!id.match(isGuid) && (
+              <FormGroup
+                label={t("common:name")}
+                labelIcon={
+                  <HelpItem
+                    helpText="client-scopes-help:mapperName"
+                    forLabel={t("common:name")}
+                    forID="name"
+                  />
+                }
+                fieldId="name"
+                isRequired
                 validated={
                   errors.name
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }
-              />
-            </FormGroup>
-          )}
+                helperTextInvalid={t("common:required")}
+              >
+                <TextInput
+                  ref={register({ required: true })}
+                  type="text"
+                  id="name"
+                  name="name"
+                  validated={
+                    errors.name
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                />
+              </FormGroup>
+            )}
+          </>
           <FormGroup
             label={t("realmRolePrefix")}
             labelIcon={
@@ -348,7 +356,7 @@ export const MappingDetails = () => {
             </Button>
             <Button variant="link">{t("common:cancel")}</Button>
           </ActionGroup>
-        </Form>
+        </FormAccess>
       </PageSection>
     </>
   );

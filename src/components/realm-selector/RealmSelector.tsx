@@ -74,7 +74,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
       key={`realm-dropdown-item-${r.realm}`}
       onClick={() => {
         setRealm(r.realm!);
-        history.push(`/${r.realm}`);
+        history.push(`/${r.realm}/`);
         setOpen(!open);
       }}
     >
