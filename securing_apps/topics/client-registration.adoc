@@ -165,7 +165,7 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 
 === Client Registration Policies
 
-{project_name} currently supports 2 ways how can be new clients registered through Client Registration Service.
+{project_name} currently supports two ways how new clients can be registered through Client Registration Service.
 
 * Authenticated requests - Request to register new client must contain either `Initial Access Token` or `Bearer Token` as mentioned above.
 
