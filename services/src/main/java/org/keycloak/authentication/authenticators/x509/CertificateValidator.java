@@ -526,6 +526,10 @@ public class CertificateValidator {
         }
         Map<X500Principal, X509Certificate> rootCerts = truststoreProvider.getRootCertificates();
         X509Certificate ca = rootCerts.get(issuer);
+        if (ca == null) {
+            // fallback to lookup the issuer from the list of intermediary CAs
+            ca = truststoreProvider.getIntermediateCertificates().get(issuer);
+        }
         if (ca != null) {
             ca.checkValidity();
         }
