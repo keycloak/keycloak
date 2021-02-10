@@ -2,23 +2,26 @@
 
 === X.509 Client Certificate User Authentication
 
-{project_name} supports login with a X.509 client certificate if the server is configured for mutual SSL authentication.
+{project_name} supports logging in with an X.509 client certificate if you have configured the server to use mutual SSL authentication.
 
-A typical workflow is as follows:
+A typical workflow:
 
-- A client sends an authentication request over SSL/TLS channel
-- During SSL/TLS handshake, the server and the client exchange their x.509/v3 certificates
-- The web container (either the reverse proxy or {appserver_name} where {project_name} is deployed) validates the certificate PKIX path and the certificate expiration
-- The x.509 client certificate authenticator validates the client certificate as follows:
-* Optionally checks the certificate revocation status using CRL and/or CRL Distribution Points
-* Optionally checks the Certificate revocation status using OCSP (Online Certificate Status Protocol)
-* Optionally validates whether the key usage in the certificate matches the expected key usage
-* Optionally validates whether the extended key usage in the certificate matches the expected extended key usage
-- If any of the above checks fails, the x.509 authentication fails
-- Otherwise, the authenticator extracts the certificate identity and maps it to an existing user
-- Once the certificate is mapped to an existing user, the behavior diverges depending on the authentication flow:
-* In the Browser Flow, the server prompts the user to confirm identity or to ignore it and instead sign in with username/password 
-* In the case of the Direct Grant Flow, the server signs in the user
+* A client sends an authentication request over SSL/TLS channel.
+* During the SSL/TLS handshake, the server and the client exchange their x.509/v3 certificates.
+* The container ({appserver_name}) validates the certificate PKIX path and the certificate expiration date.
+* The x.509 client certificate authenticator validates the client certificate by using the following methods:
++
+** Checks the certificate revocation status by using CRL or CRL Distribution Points.
+** Checks the Certificate revocation status by using OCSP (Online Certificate Status Protocol).
+** Validates whether the key in the certificate matches the expected key.
+** Validates whether the extended key in the certificate matches the expected extended key.
++
+* If any of the these checks fail, the x.509 authentication fails. Otherwise, the authenticator extracts the certificate identity and maps it to an existing user.
+
+When the certificate maps to an existing user, the behavior diverges depending on the authentication flow:
+
+* In the Browser Flow, the server prompts users to confirm their identity or sign in with a username and password.
+* In the Direct Grant Flow, the server signs in the user.
 
 IMPORTANT: Note that it is the responsibility of the web container to validate certificate PKIX path. X.509 authenticator on the
 {project_name} side provides just the additional support for check the certificate expiration, certificate revocation status and key usage. If you are
@@ -28,51 +31,55 @@ as it is configured as described below.
 
 ==== Features
 
-Supported Certificate Identity Sources::
-- Match SubjectDN using regular expression
-- X500 Subject's e-mail attribute
-- X500 Subject's e-mail from Subject Alternative Name Extension (RFC822Name General Name)
-- X500 Subject's other name from Subject Alternative Name Extension. This is typically UPN (User Principal Name)
-- X500 Subject's Common Name attribute
-- Match IssuerDN using regular expression
-- Certificate Serial Number
-- Certificate Serial Number and IssuerDN
-- SHA-256 Certificate thumbprint
-- Full certificate in PEM format
+Supported Certificate Identity Sources:
 
-Regular Expressions::
-The certificate identity can be extracted from either Subject DN or Issuer DN using a regular expression as a filter. For example, the regular expression below will match the e-mail attribute:
+* Match SubjectDN by using regular expressions
+* X500 Subject's email attribute
+* X500 Subject's email from Subject Alternative Name Extension (RFC822Name General Name)
+* X500 Subject's other name from Subject Alternative Name Extension. This other name is the User Principal Name (UPN), typically.
+* X500 Subject's Common Name attribute
+* Match IssuerDN by using regular expressions
+* Certificate Serial Number
+* Certificate Serial Number and IssuerDN
+* SHA-256 Certificate thumbprint
+* Full certificate in PEM format
+
+===== Regular Expressions
+{project_name} extracts the certificate identity from Subject DN or Issuer DN by using a regular expression as a filter. For example, this regular expression matches the email attribute:
+
 ```
 emailAddress=(.*?)(?:,|$)
 ```
-The regular expression filtering is applicable only if the `Identity Source` is set to either `Match SubjectDN using regular expression` or `Match IssuerDN using regular expression`. 
 
-Mapping certificate identity to an existing user::
+The regular expression filtering applies if the `Identity Source` is set to either `Match SubjectDN using regular expression` or `Match IssuerDN using regular expression`.
 
-The certificate identity mapping can be configured to map the extracted user identity to an existing user's username or e-mail or to a custom attribute which value matches the certificate identity. For example, setting the `Identity source` to _Subject's e-mail_ and `User mapping method` to _Username or email_ will have the X.509 client certificate authenticator use the e-mail attribute in the certificate's Subject DN  as a search criteria to look up an existing user by username or by e-mail. 
+====== Mapping certificate identity to an existing user
 
-IMPORTANT: Please notice that if we disable `Login with email` at realm settings, the same rules will be applied to certificate authentication. In other words, users won't be able to log in using e-mail attribute. 
+The certificate identity mapping can map the extracted user identity to an existing user's username, email, or a custom attribute whose value matches the certificate identity. For example, setting `Identity source` to _Subject's email_ or `User mapping method` to _Username or email_ makes the X.509 client certificate authenticator use the email attribute in the certificate's Subject DN as the search criteria when searching for an existing user by username or by email.
 
-IMPORTANT: Usage of `Certificate Serial Number and IssuerDN` as an identity source requires two custom attributes - one for serial number and the other for IssuerDN.
+[IMPORTANT]
+====
+* If you disable *Login with email* at realm settings, the same rules apply to certificate authentication. Users are unable to log in by using the email attribute.
+* Using `Certificate Serial Number and IssuerDN` as an identity source requires two custom attributes for the serial number and the IssuerDN.
+* `SHA-256 Certificate thumbprint` is the lowercase hexadecimal representation of SHA-256 certificate thumbprint.
+* Using `Full certificate in PEM format` as an identity source is limited to the custom attributes mapped to external federation sources, such as LDAP. {project_name} cannot store certificates in its database due to length limitations, so in the case of LDAP, you must enable `Always Read Value From LDAP`.
+====
 
-IMPORTANT: `SHA-256 Certificate thumbprint` is lowercase hexadecimal representation of SHA-256 certificate thumbprint.
-
-IMPORTANT: Usage of `Full certificate in PEM format` as an identity source is limited to custom attributes mapped to external federation sources like LDAP. You must enable `Always Read Value From LDAP` in this case, because certificates cannot be stored in Keycloak database due to a length limitation.
-
-Other Features: Extended Certificate Validation::
-- Revocation status checking using CRL
-- Revocation status checking using CRL/Distribution Point
-- Revocation status checking using OCSP/Responder URI
-- Certificate KeyUsage validation
-- Certificate ExtendedKeyUsage validation
+====== Extended Certificate Validation
+* Revocation status checking using CRL.
+* Revocation status checking using CRL/Distribution Point.
+* Revocation status checking using OCSP/Responder URI.
+* Certificate KeyUsage validation.
+* Certificate ExtendedKeyUsage validation.
 
 ==== Enable X.509 Client Certificate User Authentication
 
 The following sections describe how to configure {appserver_name}/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
 
 [[_enable-mtls-wildfly]]
-Enable mutual SSL in {appserver_name}::
-See link:https://docs.wildfly.org/19/Admin_Guide.html#enable-ssl[Enable SSL] for the instructions how to enable SSL in {appserver_name}.
+===== Enable mutual SSL in {appserver_name}
+
+See link:https://docs.wildfly.org/19/Admin_Guide.html#enable-ssl[Enable SSL] for the instructions to enable SSL in {appserver_name}.
 
 * Open {project_dirref}/standalone/configuration/standalone.xml and add a new realm:
 ```xml
@@ -80,14 +87,14 @@ See link:https://docs.wildfly.org/19/Admin_Guide.html#enable-ssl[Enable SSL] for
     <security-realm name="ssl-realm">
         <server-identities>
             <ssl>
-                <keystore path="servercert.jks" 
-                          relative-to="jboss.server.config.dir" 
+                <keystore path="servercert.jks"
+                          relative-to="jboss.server.config.dir"
                           keystore-password="servercert password"/>
             </ssl>
         </server-identities>
         <authentication>
-            <truststore path="truststore.jks" 
-                        relative-to="jboss.server.config.dir" 
+            <truststore path="truststore.jks"
+                        relative-to="jboss.server.config.dir"
                         keystore-password="truststore password"/>
         </authentication>
     </security-realm>
@@ -95,41 +102,41 @@ See link:https://docs.wildfly.org/19/Admin_Guide.html#enable-ssl[Enable SSL] for
 ```
 
 `ssl/keystore`::
-The `ssl` element contains the `keystore` element that defines how to load the server public key pair from a JKS keystore
+The `ssl` element contains the `keystore` element that contains the details to load the server public key pair from a JKS keystore.
 
 `ssl/keystore/path`::
-A path to a JKS keystore 
+The path to the JKS keystore.
 
 `ssl/keystore/relative-to`::
-Defines a path the keystore path is relative to
+The path that the keystore path is relative to.
 
 `ssl/keystore/keystore-password`::
-The password to open the keystore
+The password to open the keystore.
 
 `ssl/keystore/alias` (optional)::
-The alias of the entry in the keystore. Set it if the keystore contains multiple entries
+The alias of the entry in the keystore. Set if the keystore contains multiple entries.
 
 `ssl/keystore/key-password` (optional)::
 The private key password, if different from the keystore password.
 
 `authentication/truststore`::
-Defines how to load a trust store to verify the certificate presented by the remote side of the inbound/outgoing connection. Typically, the truststore contains a collection of trusted CA certificates.   
+Defines how to load a trust store to verify the certificate presented by the remote side of the inbound/outgoing connection. Typically, the truststore contains a collection of trusted CA certificates.
 
 `authentication/truststore/path`::
-A path to a JKS keystore that contains the certificates of the trusted CAs (certificate authorities)
+The path to the JKS keystore containing the certificates of the trusted certificate authorities.
 
 `authentication/truststore/relative-to`::
-Defines a path the truststore path is relative to
+The path that the truststore path is relative to.
 
 `authentication/truststore/keystore-password`::
-The password to open the truststore
+The password to open the truststore.
 
 
-Enable https listener::
+===== Enable HTTPS listener
 
-See link:https://docs.wildfly.org/19/Admin_Guide.html#https-listener[HTTPS Listener] for the instructions how to enable HTTPS in WildFly.
+See link:https://docs.wildfly.org/19/Admin_Guide.html#https-listener[HTTPS Listener] for the instructions to enable HTTPS in WildFly.
 
-* Add the <https-listener> element as shown below:
+* Add the <https-listener> element.
 
 [source,xml,subs="attributes+"]
 ----
@@ -145,112 +152,131 @@ See link:https://docs.wildfly.org/19/Admin_Guide.html#https-listener[HTTPS Liste
 ----
 
 `https-listener/security-realm`::
-The value must match the name of the realm from the previous section
+This value must match the name of the realm from the previous section.
 
 `https-listener/verify-client`::
-If set to `REQUESTED`, the server will optionally ask for a client certificate. Setting the attribute to `REQUIRED` will have the server to refuse inbound connections if no client certificate has been provided.
+If set to *REQUESTED*, the server optionally asks for a client certificate.
+If set to *REQUIRED*, the server refuses inbound connections if no client certificate has been provided.
 
-==== Adding X.509 Client Certificate Authentication to a Browser Flow
+[[_browser_flow]]
+==== Adding X.509 Client Certificate Authentication to browser flows
 
-* Select a realm, click on Authentication link, select the "Browser" flow 
-* Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, i.e. "X.509 Browser"
-* Using the drop down, select the copied flow, and click on "Add execution"
-* Select "X509/Validate Username Form" using the drop down and click on "Save"
+. Click *Authentication* in the menu.
+. Click the "Browser" flow.
+. Click *Copy* to make a copy of the built-in "Browser" flow.
+. Enter a name for the copy.
+. Click *Ok*.
+. Click the copy in the *Add policy* drop-down box.
+. Click *Add execution*.
+. Click "X509/Validate Username Form".
+. Click *Save*.
++
+.X509 Execution
+image:images/x509-execution.png[X509 Execution]
++
+. Click the up/down arrow buttons to move the "X509/Validate Username Form" over the "Browser Forms" execution.
+. Set the requirement to "ALTERNATIVE".
++
+.X509 Browser Flow
+image:images/x509-browser-flow.png[X509 Browser Flow]
++
+. Click the *Bindings* tab.
+. Click the *Browser Flow* drop-down list.
+. Click the copy of the browser flow from the drop-down list.
+. Click *Save*.
++
+.X509 Browser Flow Bindings
+image:images/x509-browser-flow-bindings.png[X509 Browser Flow Bindings]
 
-image:images/x509-execution.png[]
+==== Configuring X.509 Client Certificate Authentication
 
-* Using the up/down arrows, change the order of the "X509/Validate Username Form" by moving it above the "Browser Forms" execution, and set the requirement to "ALTERNATIVE"
+.X509 Configuration
+image:images/x509-configuration.png[X509 Configuration]
 
-image:images/x509-browser-flow.png[]
+*User Identity Source*::
+Defines the method for extracting the user identity from a client certificate.
 
-* Select the "Bindings" tab, find the drop down for "Browser Flow". Select the newly created X509 browser flow from the drop down and click on "Save".
+*Canonical DN representation enabled*::
+Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
 
-image:images/x509-browser-flow-bindings.png[]
+*Enable Serial Number hexadecimal representation*::
+Represent the link:https://tools.ietf.org/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC5280. See link:https://tools.ietf.org/html/rfc5280#appendix-B[RFC5280, appendix-B] for more details.
 
-Configuring X.509 Client Certificate Authentication::
+*A regular expression*::
+A regular expression to use as a filter for extracting the certificate identity. The expression must contain a single group.
 
-image:images/x509-configuration.png[]
+*User Mapping Method*::
+Defines the method to match the certificate identity with an existing user. _Username or email_ searches for existing users by username or email. _Custom Attribute Mapper_ searches for existing users with a custom attribute that matches the certificate identity. The name of the custom attribute is configurable.
 
-`User Identity Source`::
-Defines how to extract the user identity from a client certificate.
+*A name of user attribute*::
+A custom attribute whose value matches against the certificate identity. Use multiple custom attributes when attribute mapping is related to multiple values, For example,  'Certificate Serial Number and IssuerDN'.
 
-`Canonical DN representation enabled` (optional)::
-Defines whether to use the canonical format to determine a distinguished name.
-The format is described in detail in the official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] .
-This option only affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_.
-If you setup a new {project_name} instance it is recommended to enable this option. Leave this option disabled to remain beckward compatible with existing {project_name} instances.
+*CRL Checking Enabled*::
+Check the revocation status of the certificate by using the Certificate Revocation List. The location of the list is defined in the *CRL file path* attribute.
 
-`Enable Serial Number hexadecimal representation` (optional)::
-An option to use hexadecimal representation of the Serial Number. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[RFC5280, Section-4.1.2.2]. Serial Number with sign bit set to 1 should be left padded with 00 octet. E.g. Serial number with decimal value _161_, or _a1_ in hexadecimal representation according to RFC5280 must be encoded as _00a1_. More details can be found: link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC5280, appendix-B].
+*Enable CRL Distribution Point to check certificate revocation status*::
+Use CDP to check the certificate revocation status. Most PKI authorities include CDP in their certificates.
 
-`A regular expression` (optional)::
-Defines a regular expression to use as a filter to extract the certificate identity. The regular expression must contain a single group.
+*CRL file path*::
+The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
 
-`User Mapping Method`::
-Defines how to match the certificate identity to an existing user. _Username or e-mail_ will search for an existing user by username or e-mail. _Custom Attribute Mapper_ will  search for an existing user with a custom attribute which value matches the certificate identity. The name of the custom attribute is configurable.
+*OCSP Checking Enabled*::
+Checks the certificate revocation status by using Online Certificate Status Protocol.
 
-`A name of user attribute` (optional)::
-A custom attribute which value will be matched against the certificate identity. Multiple custom attributes are relevant when attribute mapping is related to multiple values, e.g. 'Certificate Serial Number and IssuerDN'.
+*OCSP Responder URI*::
+Override the value of the OCSP responder URI in the certificate.
 
-WARNING: It is highly recommended that attribute used here is read-only for the users. By default, only the `usercertificate` attribute is read-only by {project_name}.
-If you use a different attribute name, you may need to add it to the list of read-only attributes. See the details in the link:#_read_only_user_attributes[Threat model mitigation chapter].
+*Validate Key Usage*::
+Verifies the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" verifies if bits 0 and 2 in the KeyUsage extension are set.
+Leave this parameter empty to disable the Key Usage validation. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
 
-`CRL Checking Enabled` (optional)::
-Defines whether to check the revocation status of the certificate using Certificate Revocation List.
+*Validate Extended Key Usage*::
+Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
 
-`Enable CRL Distribution Point to check certificate revocation status` (optional)::
-Defines whether to use CDP to check the certificate revocation status. Most PKI authorities include CDP in their certificates.
-
-`CRL file path` (optional)::
-Defines a path to a file that contains a CRL list. The value must be a path to a valid file if `CRL Checking Enabled` option is turned on.
-
-`OCSP Checking Enabled`(optional)::
-Defines whether to check the certificate revocation status using Online Certificate Status Protocol. 
-
-`OCSP Responder URI` (optional)::
-Allows to override a value of the OCSP responder URI in the certificate.
-
-`Validate Key Usage` (optional)::
-Verifies whether the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" will verify if  bits 0 and 2 in the KeyUsage extension are asserted. Leave the parameter empty to disable the Key Usage validation. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3]. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch. 
-
-`Validate Extended Key Usage` (optional)::
-Verifies one or more purposes as defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12]. Leave the parameter empty to disable the Extended Key Usage validation. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch.
-
-`Bypass identity confirmation`::
-If set, X.509 client certificate authentication will not prompt the user to confirm the certificate identity and will automatically sign in the user upon successful authentication.
+*Bypass identity confirmation*::
+If enabled, X.509 client certificate authentication does not prompt the user to confirm the certificate identity. {project_name} signs in the user upon successful authentication.
 
 `Revalidate client certificate`::
 If set, the client certificate trust chain will be always verified at the application level using the certificates present in the configured trust store. This can be useful if the underlying web server does not enforce client certificate chain validation, for example because it is behind a non-validating load balancer or reverse proxy, or when the number of allowed CAs is too large for the mutual SSL negotiation (most browsers cap the maximum SSL negotiation packet size at 32767 bytes, which corresponds to about 200 advertised CAs). By default this option is off.
 
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 
-* Using {project_name} admin console, click on "Authentication" and select the "Direct Grant" flow,
-* Make a copy of the build-in "Direct Grant" flow. You may want to give the new flow a distinctive name, i.e. "X509 Direct Grant",
-* Delete "Username Validation" and "Password" authenticators,
-* Click on "Add execution" and add "X509/Validate Username" and click on "Save" to add the execution step to the parent flow.
-
-image:images/x509-directgrant-execution.png[]
-
-* Change the `Requirement` to _REQUIRED_.
-
-image:images/x509-directgrant-flow.png[]
-
-* Set up the x509 authentication configuration by following the steps described earlier in the x.509 Browser Flow section. 
-* Select the "Bindings" tab, find the drop down for "Direct Grant Flow". Select the newly created X509 direct grant flow from the drop down and click on "Save".
-
-image:images/x509-directgrant-flow-bindings.png[]
+. Click *Authentication* in the menu.
+. Click the "Direct Grant" flow.
+. Click *Copy* to make a copy of the "Direct Grant" flow.
+. Enter a name for the copy.
+. Click *Ok*.
+. Click on the *Actions* link for "Username Validation" and click *Delete*.
+. Click *Delete*.
+. Click on the *Actions* link for "Password" and click *Delete*.
+. Click *Delete*.
+. Click *Add execution*.
+. Click "X509/Validate Username".
+. Click *Save*.
++
+.X509 Direct Grant Execution
+image:images/x509-directgrant-execution.png[X509 Direct Grant Execution]
++
+. Set up the x509 authentication configuration by following the steps described in the <<_browser_flow, x509 Browser Flow>> section.
+. Click the *Bindings* tab.
+. Click the *Direct Grant Flow* drop-down list.
+. Click the newly created "x509 Direct Grant" flow.
+. Click *Save*.
++
+.X509 Direct Grant Flow Bindings
+image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
 
 ==== Client certificate lookup
 
-When an HTTP request is sent directly to {project_name} server, the {appserver_name} undertow subsystem will establish an SSL handshake and extract the client certificate. The client certificate will be then saved to the attribute `javax.servlet.request.X509Certificate` of the HTTP request, as specified in the servlet specification. The {project_name} X509 authenticator will be then able to lookup the certificate from this attribute.
+When the {project_name} server receives a direct HTTP request, the {appserver_name} undertow subsystem establishes an SSL handshake and extracts the client certificate. The {appserver_name} saves the client certificate to the `javax.servlet.request.X509Certificate` attribute of the HTTP request, as specified in the servlet specification. The {project_name} X509 authenticator can look up the certificate from this attribute.
 
-However, when the {project_name} server listens to HTTP requests behind a load balancer or reverse proxy, it may be the proxy server which extracts the client certificate and establishes the mutual SSL connection. A reverse proxy usually puts the authenticated client certificate in the HTTP header of the underlying request and forwards it to the back end {project_name} server. In this case, {project_name} must be able to look up the X.509 certificate chain from the HTTP headers instead of from the attribute of HTTP request, as is done for Undertow.
+However, when the {project_name} server listens to HTTP requests behind a load balancer or reverse proxy, the proxy server may extract the client certificate and establish a mutual SSL connection. A reverse proxy generally puts the authenticated client certificate in the HTTP header of the underlying request. The proxy forwards the request to the back end {project_name} server. In this case, {project_name} must look up the X.509 certificate chain from the HTTP headers rather than the attribute of the HTTP request.
 
-If {project_name} is behind a reverse proxy, you usually need to configure alternative provider of the `x509cert-lookup` SPI in {project_dirref}/standalone/configuration/standalone.xml. Along with the `default` provider, which looks up the certificate from the HTTP header, we also have two additional built-in providers: `haproxy` and `apache`, which are described next.
+If {project_name} is behind a reverse proxy, you generally need to configure the alternative provider of the `x509cert-lookup` SPI in {project_dirref}/standalone/configuration/standalone.xml. With the `default` provider looking up the HTTP header certificate, two additional built-in providers exist: `haproxy` and `apache`.
 
 ===== HAProxy certificate lookup provider
 
-You can use this provider when your {project_name} server is behind an HAProxy reverse proxy. Configure the server like this:
+You use this provider when your {project_name} server is behind an HAProxy reverse proxy. Use the following configuration for your server:
 
 [source,xml]
 ----
@@ -266,13 +292,13 @@ You can use this provider when your {project_name} server is behind an HAProxy r
 </spi>
 ----
 
-In this example configuration, the client certificate will be looked up from the HTTP header, `SSL_CLIENT_CERT`, and the other certificates from its chain will be looked up from HTTP headers like `CERT_CHAIN_0` , `CERT_CHAIN_1`, ..., `CERT_CHAIN_9` . The attribute `certificateChainLength` is the maximum length of the chain, so the last one tried attribute would be `CERT_CHAIN_9` .
+In this example configuration, the client certificate is looked up from the HTTP header, `SSL_CLIENT_CERT`, and the other certificates from its chain are looked up from HTTP headers such as `CERT_CHAIN_0` through `CERT_CHAIN_9`. The attribute `certificateChainLength` is the maximum length of the chain so the last attribute is `CERT_CHAIN_9`.
 
-Consult the HAProxy documentation for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+Consult the HAProxy documentation for the details of configuring the HTTP Headers for the client certificate and client certificate chain.
 
 ===== Apache certificate lookup provider
 
-You can use this provider when your {project_name} server is behind an Apache reverse proxy. Configure the server like this:
+You can use this provider when your {project_name} server is behind an Apache reverse proxy. Use the following configuration for your server:
 
 [source,xml]
 ----
@@ -288,11 +314,11 @@ You can use this provider when your {project_name} server is behind an Apache re
 </spi>
 ----
 
-The configuration is same as for the `haproxy` provider. Consult the Apache documentation on link:https://httpd.apache.org/docs/current/mod/mod_ssl.html[mod_ssl] and link:https://httpd.apache.org/docs/current/mod/mod_headers.html[mod_headers] for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+This configuration is the same as the `haproxy` provider. Consult the Apache documentation on link:https://httpd.apache.org/docs/current/mod/mod_ssl.html[mod_ssl] and link:https://httpd.apache.org/docs/current/mod/mod_headers.html[mod_headers] for details on how the HTTP Headers for the client certificate and client certificate chain are configured.
 
-===== Nginx certificate lookup provider
+===== NGINX certificate lookup provider
 
-You can use this provider when your {project_name} server is behind an Nginx reverse proxy. Configure the server like this:
+You can use this provider when your {project_name} server is behind an NGINX reverse proxy. Use the following configuration for your server:
 
 [source,xml]
 ----
@@ -308,14 +334,18 @@ You can use this provider when your {project_name} server is behind an Nginx rev
 </spi>
 ----
 
-NOTE: NGINX link:http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables[SSL/TLS module] does not expose the client certificate chain, so Keycloak NGINX certificate lookup provider is rebuilding it using the link:{installguide_truststore_link}[{installguide_truststore_name}]. Please populate Keycloak truststore using keytool CLI with all root and intermediate CA's needed for rebuilding client certificate chain.
+[NOTE]
+====
+The NGINX link:http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables[SSL/TLS module] does not expose the client certificate chain. {project_name}'s NGINX certificate lookup provider rebuilds it by using the link:{installguide_truststore_link}[{installguide_truststore_name}]. Populate the {project_name} truststore by using the keytool CLI with all root and intermediate CA's for rebuilding client certificate chain.
+====
 
-Consult the NGINX documentation for the details of how the HTTP Headers for the client certificate can be configured.
+Consult the NGINX documentation for the details of configuring the HTTP Headers for the client certificate.
+
 Example of NGINX configuration file :
 [source,txt]
 ----
  ...
- server { 
+ server {
     ...
     ssl_client_certificate                  trusted-ca-list-for-client-auth.pem;
     ssl_verify_client                       optional_no_ca;
@@ -330,16 +360,19 @@ Example of NGINX configuration file :
 }
 ----
 
-NOTE: all certificates in trusted-ca-list-for-client-auth.pem must be added to link:{installguide_truststore_link}[{installguide_truststore_name}].
- 
+[NOTE]
+====
+All certificates in trusted-ca-list-for-client-auth.pem must be added to link:{installguide_truststore_link}[{installguide_truststore_name}].
+====
+
 ===== Other reverse proxy implementations
 
-We do not have built-in support for other reverse proxy implementations. However, it is possible that other reverse proxies can be made to behave in a similar way to `apache` or `haproxy` and that some of those providers can be used. If none of those works, you may need to create your own implementation of the `org.keycloak.services.x509.X509ClientCertificateLookupFactory` and `org.keycloak.services.x509.X509ClientCertificateLookup` provider. See the link:{developerguide_link}[{developerguide_name}] for the details on how to add your own provider.
+{project_name} does not have built-in support for other reverse proxy implementations. However, you can make other reverse proxies behave in a similar way to `apache` or `haproxy`. If none of these work, create your implementation of the `org.keycloak.services.x509.X509ClientCertificateLookupFactory` and `org.keycloak.services.x509.X509ClientCertificateLookup` providers. See the link:{developerguide_link}[{developerguide_name}] for details on how to add your provider.
 
 ==== Troubleshooting
 
 Dumping HTTP headers::
-If you want to view what the reverse proxy is sending to Keycloak, enable the `RequestDumpingHandler` Undertow filter and consult `server.log` file.
+To view what the reverse proxy sends to Keycloak, enable the `RequestDumpingHandler` Undertow filter and consult the `server.log` file.
 
 Enable TRACE logging under the logging subsystem::
 [source,xml]
@@ -355,10 +388,13 @@ Enable TRACE logging under the logging subsystem::
                 <level name="TRACE"/>
             </logger>
 ----
- WARNING: Don't use RequestDumpingHandler or TRACE logging in production.
- 
+[WARNING]
+====
+Do not use RequestDumpingHandler or TRACE logging in production.
+====
+
 Direct Grant authentication with X.509::
-The following template can be used to request a token using the Resource Owner Password Credentials Grant: 
+You can use the following template to request a token by using the Resource Owner Password Credentials Grant:
 
 ```
 $ curl https://[host][:port]/auth/realms/master/protocol/openid-connect/token \
@@ -369,17 +405,16 @@ $ curl https://[host][:port]/auth/realms/master/protocol/openid-connect/token \
 ```
 
 `[host][:port]`::
-The host and the port number of a remote {project_name} server that has been configured to allow users authenticate with x.509 client certificates using the Direct Grant Flow.
+The host and the port number of the remote {project_name} server.
 
 `CLIENT_ID`::
-A client id.
+The client id.
 
 `CLIENT_SECRET`::
-For confidential clients, a client secret; otherwise, leave it empty.
+For confidential clients, a client secret.
 
 `client_cert.crt`::
-A public key certificate that will be used to verify the identity of the client in mutual SSL authentication. The certificate should be in PEM format.
+A public key certificate to verify the identity of the client in mutual SSL authentication. The certificate must be in PEM format.
 
 `client_cert.key`::
-A private key in the public key pair. Also expected in PEM format.
-
+A private key in the public key pair. This key must be in PEM format.

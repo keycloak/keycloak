@@ -56,3 +56,5 @@ html
 # vim
 ######
 *.swp
+
+.vale.ini

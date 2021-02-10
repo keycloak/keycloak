@@ -2,197 +2,227 @@
 
 === Authentication Flows
 
-An _authentication flow_ is a container for all authentications, screens, and actions that must happen during login, registration, and other
-{project_name} workflows.
-If you go to the admin console `Authentication` left menu item and go to the `Flows` tab, you can view all the defined flows
-in the system and what actions and checks each flow requires.
+An _authentication flow_ is a container of authentications, screens, and actions, during log in, registration, and other {project_name} workflows.
+To view all the flows, actions, and checks, each flow requires:
+
+.Procedure
+. Click *Authentication* in the menu.
+. Click the *Flows* tab.
 
 ==== Built-in flows
 
-{project_name} comes with a certain number of built-in flows. These flows cannot be modified, but the requirements can be modified to
-suit your needs.
+{project_name} has several built-in flows. You cannot modify these flows, but you can alter the flow's requirements to suit your needs.
 
-This section does a walk-through of the built-in browser login flow.  In the
-left drop-down list select `browser` to come to the screen shown below:
+In the drop-down list, select *browser* to display the Browser Flow screen.
 
 .Browser Flow
-image:{project_images}/browser-flow.png[]
+image:{project_images}/browser-flow.png[Browser Flow]
 
-If you hover over the tooltip (the tiny question mark) to the right of the flow selection list, this will describe what the
-flow is and does.
+Hover over the question-mark tooltip of the drop-down list to view a description of the flow. Two sections exist.
 
-The `Auth Type` column is the name of authentication or action that will be executed.  If an authentication is indented
-this means it is in a sub-flow and may or may not be executed depending on the behavior of its parent. The `Requirement`
-column is a set of radio buttons which define whether or not the action will execute. Let's describe what each radio
-button means in this context.
+===== Auth type
+The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent. 
+
+. Cookie
++
+The first time a user logs in successfully, {project_name} sets a session cookie.  If the cookie is already set, this authentication type is successful. Since the cookie provider returned success and each execution at this level of the flow is _alternative_, {project_name} does not perform any other execution. This results in a successful login.
+
+. Kerberos
++
+This authenticator is disabled by default and is skipped during the Browser Flow.
+
+. Identity Provider Redirector
++
+This action is configured through the *Actions* > *Config* link. It redirects to another IdP for <<_identity_broker, identity brokering>>.
+
+. Forms
++
+Since this sub-flow is marked as _alternative_, it will not be executed if the *Cookie* authentication type passed. This sub-flow contains an additional authentication type that needs to be executed. {project_name} loads the executions for this sub-flow and processes them.
+
+The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
+
+The second execution is the *Browser - Conditional OTP* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
+
+The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional OTP* sub-flow executes only when the user has a configured OTP credential.
+
+The final execution is the *OTP Form*. {project_name} marks this execution as _required_ but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If not, the user does not see an OTP form.
+
+===== Requirement
+A set of radio buttons that control the execution of an action executes.
 
 [[_execution-requirements]]
-===== Execution requirements
+====== Required
 
-Required::
-  For a flow to be evaluated as successful, all required elements in the flow must evaluate as successful. This means that all _Required_ elements in the flow
-  must be sequentially executed, from top to bottom, unless one of the elements causes the flow to fail. However, this is only true for the current flow.
-  Any _Required_ element within a sub-flow is only processed if that sub-flow is entered.
-Alternative::
-  When a flow contains only _Alternative_ elements, only a single element must evaluate as successful for the flow to evaluate as successful.
-  Because the _Required_ flow elements within a flow are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow
-  that contains _Required_ flow elements will never be executed. In this case, they are functionally _Disabled_.
-Disabled::
-  Any _Disabled_ element is not evaluated and does not count to mark a flow as successful.
-Conditional::
-  This requirement type can only be set on sub-flows. A _Conditional_ sub-flow can contain a "Condition" execution. These "Condition" executions must evaluate as
-  logical statements. If all "Condition" executions evaluate as _true_ then the _Conditional_ sub-flow acts as _Required_. If not, the _Conditional_ sub-flow
-  acts as _Disabled_. If no "Condition" execution is set, the _Conditional_ sub-flow acts as _Disabled_. If a flow contains "Condition" executions and is not set to
-  _Conditional_, the "Condition" executions are not evaluated, and can be considered functionally _Disabled_.
+All _Required_ elements in the flow must be successfully sequentially executed. The flow terminates if a required element fails.
 
-This is better described in an example.  Let's walk through the `browser` authentication flow.
+====== Alternative
 
-. The first authentication type is `Cookie`.  When a user successfully logs in for the first time, a session cookie is set.
-  If this cookie has already been set, then this authentication type is successful. In this case,
-  since the cookie provider returned success and each execution at this level of the flow is _alternative_, no other execution is executed and this results in a successful login.
-. The second execution of the flow looks at the `Kerberos` execution.  This authenticator is disabled by default and will be skipped.
-. The third execution is the `Identity Provider Redirector`. It can be configured through the `Actions` > `Config` link to automatically redirect to another IdP for <<_identity_broker, identity brokering>>.
-. The next execution is a sub-flow called `Forms`.  Since this sub-flow is marked as _alternative_ it will not be executed if the `Cookie` authentication type passed.
-  This sub-flow contains additional authentication type that needs to be executed.
-  The executions for this sub-flow are loaded and the same processing logic occurs.
-. The first execution in the Forms sub-flow is the `Username Password Form`.  This authentication type renders the username and password page.
-  It is marked as _required_ so the user must enter in a valid username and password.
-. The second execution in the Forms sub-flow is a new sub-flow: the `Browser - Conditional OTP` sub-flow. Since this sub-flow is _conditional_, whether it is executed depends on the result of the
-  evaluation of the `Condition - User Configured` execution. If it is, the executions for this sub-flow are loaded and the same processing logic occurs
-. The next execution is the `Condition - User Configured`. This checks if the other executions in the flow are configured for the user.
-  Meaning that the `Browser - Conditional OTP` sub-flow will only be executed if the user has an OTP credential configured.
-. The final execution is the `OTP Form`. This is marked as _required_, but because of the setup in the _conditional_ subflow, it will only be run if the user
-  has an OTP credential set up. If he doesn't, the user will not see an OTP form.
+Only a single element must successfully execute for the flow to evaluate as successful. Because the _Required_ flow elements are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow containing _Required_ flow elements will not execute.
+
+====== Disabled
+
+The element does not count to mark a flow as successful.
+
+====== Conditional
+
+This requirement type is only set on sub-flows. 
+
+* A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements. 
+* If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_. 
+* If all executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.
+* If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_. 
+* If a flow contains executions and the flow is not set to _Conditional_, {project_name} does not evaluate the executions, and the executions are considered functionally _Disabled_.
 
 ==== Creating flows
 
-This section explains in greater depth how flows work, and how to create your own flows. Note that there are important functionality and security
-considerations when designing your own flow. A badly created flow could either let no one log in, let users in with less verification than you would
-like, or simply result in an error.
+Important functionality and security considerations apply when you design a flow.
 
-To create a flow, you can either:
+To create a flow, perform the following:
 
-. Copy and then modify an existing flow. To do this select an existing flow (for example the `Browser` flow), and press the `Copy` button.
-  This will then ask you to set a name for the new flow, before creating it.
-. Create a new flow from scratch. To do this press the `New` button. Since this is the more general case, we will use this for our example.
+.Procedure
+. Click *Authentication* in the menu.
+. Click *New*.
 
-When creating a new flow, you will have to create a top level flow
+[NOTE]
+====
+You can copy and then modify an existing flow. Select a flow, click *Copy*, and enter a name for the new flow.
+====
 
-.Create a top level flow
-image:{project_images}/Create-top-level-flow.png[]
-
-With the following options:
+When creating a new flow, you must create a top-level flow first with the following options:
 
 Alias::
   The name of the flow.
 Description::
   The description you can set to the flow.
-Top Level Flow Type::
-  The type of flow. The type `client` is used only for the authentication of clients (applications). For all other cases choose `generic`.
+Top-Level Flow Type::
+  The type of flow. The type *client* is used only for the authentication of clients (applications). For all other cases, choose *generic*.
 
-Once the flow is created, in addition to the `New` and `Copy` buttons, you now have, `Delete`, `Add execution` and `Add flow`.
+.Create a top-level flow
+image:{project_images}/Create-top-level-flow.png[Top Level Flow]
+
+When {project_name} has created the flow, {project_name} displays the *Delete*, *Add execution*, and *Add flow* buttons.
 
 .An empty new flow
-image:{project_images}/New-flow.png[]
+image:{project_images}/New-flow.png[New Flow]
 
-What a flow finally does is determined by the structure of the flow and sub-flows, the executions in those flows, and the requirements set on the
-sub-flows and the executions.
+Three factors determine the behavior of flows and sub-flows.
 
-Executions can be added with the `Add execution` button. Executions can have a wide variety of actions, from sending a reset email to validating an OTP. If you hover over the
-tooltip (the tiny question mark) next to `Provider`, this will describe what the execution does.
+* The structure of the flow and sub-flows.
+* The executions within the flows
+* The requirements set within the sub-flows and the executions.
+
+Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add execution* button. Hover over the question mark next to *Provider*, to see a description of the execution.
 
 .Adding an authentication execution
-image:{project_images}/Create-authentication-execution.png[]
+image:{project_images}/Create-authentication-execution.png[Adding an Authentication Execution]
 
-These can be divided into _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the `Cookie` execution, and will automatically
-perform their action when they are encountered in the flow. _Interactive executions_ will halt the flow, usually to get some user input. Executions that execute
-successfully will get the _success_ status. This is important, because this is part of whether a flow is successful or not. For example, an empty `Browser` flow
-would not allow anyone to log in. For that it would need at least one execution that successfully evaluates, for example a `Username Password Form` that is correctly
-filled and submitted.
+Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
+perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_. 
 
-Sub-flows can be added in top level flow with the `Add flow` button, which opens a `Create Execution Flow` page that is very similar to the `Create Top Level Form`
-page. The only difference is that the `Flow Type` can be either `generic` (like before), or `form`. The `form` type is used to construct a sub-flow that generates
-a single form for the user, like what is done for the built-in `Registration` flow. Sub-flows are a special type of execution that evaluate as successful
-depending on how the executions they contain evaluate (and this includes the evaluation of their contained sub-flows). And the logic of this evaluation
-depends on the Requirement of each execution and sub-flow.
+You can add sub-flows to top-level flows with the *Add flow* button. The *Add flow* button displays the *Create Execution Flow* page. This page is similar to the *Create Top Level Form* page. The difference is that the *Flow Type* can be *generic* (default) or *form*. The *form* type constructs a sub-flow that generates a form for the user, similar to the built-in *Registration* flow.
+Sub-flows success depends on how their executions evaluate, including their contained sub-flows. See the <<_execution-requirements, execution requirements section>> for an in-depth explanation of how sub-flows work.
 
-Fully understanding this requires a more complete explanation of how requirements work when evaluating a flow, and this also applies to sub-flows.
-Refer to the <<_execution-requirements, execution requirements section>> above for more details.
+[NOTE]
+====
+After adding an execution, check the requirement has the correct value.
+====
 
-Note that after adding an execution, you should check that the Requirement is set to the correct value. Even if there is only a single possible Requirement, it
-can happen that it is not set.
+All elements in a flow have a *Delete* option in the *Actions* menu. This action removes the element from the flow.
+Executions have a *Config* menu option to configure the execution. It is also possible to add executions and sub-flows to sub-flows with the *Add execution* and *Add flow* menu options.
 
-When constructing a flow, all elements added to the flow will have an `Actions` menu on the right-hand side. All elements added to the flow have a `Delete`
-option in this menu to remove it from the flow. Executions can contain a `Config` menu option to configure the execution, as is the case for the
-`Identity Provider Redirector`. Sub-flows can also have executions and sub-flows added to them, with their `Add execution` and `Add flow` menu options.
-
-Finally, since the order of execution is important, you can move executions and sub-flows up and down within their respective flows with the up and down buttons
-that are set to left of their name.
+Since the order of execution is important, you can move executions and sub-flows up and down within their flows using the up and down buttons beside their names.
 
 ==== Creating a password-less browser login flow
 
-To illustrate the creation of flows, this section describes the creation of a more advanced browser login flow. The purpose of this flow is to allow a
-user to choose between logging in in a password-less manner using <<_webauthn, WebAuthn>>, and a two-factor authentication with password and OTP.
-The flow to create is similar to the standard browser login, but diverges when reaching the username selection. Instead of copying the flow however, you'll be
-creating the flow from the start:
+To illustrate the creation of flows, this section describes creating an advanced browser login flow. The purpose of this flow is to allow a user a choice between logging in using a password-less manner with <<_webauthn, WebAuthn>>, or two-factor authentication with a password and OTP.
 
-* Select a realm, click on Authentication link
-* Select "new", and give the new flow a distinctive Alias, i.e. "Browser Password-less"
-* Select "Add execution", and using the drop-down select "Cookie". After pressing "Save", set its Requirement to _Alternative_.
-* Select "Add execution", and using the drop-down select "Kerberos".
-* Select "Add execution", and using the drop-down select "Identity Provider Redirector". After pressing "Save", set its Requirement to _Alternative_.
-* Select "Add flow", and choose an representative Alias, e.g. "Forms". After pressing "Save", set its Requirement to _Alternative_.
-
+.Procedure
+. Click *Authentication* in the menu.
+. Click the *Flows* tab.
+. Click *New*.
+. Enter `Browser Password-less` as an alias.
+. Click *Save*.
+. Click *Add execution*.
+. Select *Cookie* from the drop-down list. 
+. Click *Save*.
+. Click *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
+. Click *Add execution*. 
+. Select *Kerberos* from the drop-down list. 
+. Click *Add execution*.
+. Select *Identity Provider Redirector* from the drop-down list. 
+. Click *Save*.
+. Click *Alternative* for the *Identity Provider Redirector* authentication type to set its requirement to alternative.
+. Click *Add flow*.
+. Enter *Forms* as an alias.
+. Click *Save*.
+. Click *Alternative* for the *Forms* authentication type to set its requirement to alternative.
++
 .The common part with the browser flow
 image:images/Passwordless-browser-login-common.png[]
++
+. Click *Actions for the *Forms* execution.
+. Select *Add execution*.
+. Select *Username Form* from the drop-down list.
+. Click *Save*.
+. Click *Required* for the *Username Form* authentication type to set its requirement to required.
 
-* Using the `Actions` menu on the right-hand side of the "Forms" subflow, select "Add execution". Using the drop-down select
-  "Username Form". After pressing "Save", set its Requirement to _Required_.
+At this stage, the form requires a username but no password. We must enable password authentication to avoid security risks.
 
-The Username form is similar to "Browser" flow's Username Password Form, but only asks for a username, allowing a user to perform a password-less login.
-However, note that this inevitably allows a user enumeration attack on your {project_name} server. This is an unavoidable security risk for the convenience,
-so the flow should make sure that an attacker cannot just have to guess a password to be able to enter.
+. Click *Actions* for the *Forms* sub-flow.
+. Click *Add flow*.
+. Enter `Authentication` as an alias.
+. Click *Save*.
+. Click *Required* for the *Authentication* authentication type to set its requirement to required.
+. Click *Actions* for the *Authentication* sub-flow.
+. Click *Add execution*.
+. Select *Webauthn Passwordless Authenticator* from the drop-down list. 
+. Click *Save*.
+. Click *Alternative* for the *Webauthn Passwordless Authenticator* authentication type to set its requirement to alternative.
+. Click *Actions* for the *Authentication* sub-flow.
+. Click *Add flow*.
+. Enter `Password with OTP` as an alias.
+. Click *Save*.
+. Click *Alternative* for the *Password with OTP* authentication type to set its requirement to alternative.
+. Click *Actions* for the *Password with OTP* sub-flow.
+. Click *Add execution*.
+. Select *Password Form* from the drop-down list. 
+. Click *Save*.
+. Click *Required* for the *Password Form* authentication type to set its requirement to required.
+. Click *Actions* for the *Password with OTP* sub-flow.
+. Click *Add execution*.
+. Select *OTP Form* from the drop-down list. 
+. Click *Save*.
+. Click *Required* for the *OTP Form* authentication type to set its requirement to required.
 
-* Using the `Actions` menu on the right-hand side of the "Forms" subflow, select "Add flow". Choose an representative Alias, e.g. "Authentication".
-  After pressing "Save", set its Requirement to _Required_.
-* Using the `Actions` menu on the right-hand side of the "Authentication" subflow, select "Add execution". Using the drop-down select
-  "Webauthn Passwordless Authenticator". After pressing "Save", set its Requirement to _Alternative_.
-* Using the `Actions` menu on the right-hand side of the "Authentication" subflow, select "Add flow". Choose an representative Alias, e.g. "Password with OTP".
-  After pressing "Save", set its Requirement to _Alternative_.
-* Using the `Actions` menu on the right-hand side of the "Password with OTP" subflow, select "Add execution". Using the drop-down select
-  "Password Form". After pressing "Save", set its Requirement to Required.
-* Using the `Actions` menu on the right-hand side of the "Password with OTP" subflow, select "Add execution". Using the drop-down select
-  "OTP Form". After pressing "Save", set its Requirement to Required.
-* In the "Bindings" menu, change the browser flow from "Browser" to "Browser Password-less"
+Finally, change the bindings.
 
-The final flow that is produced is the following:
+. Click the *Bindings* tab.
+. Click the *Browser Flow* drop-down list.
+. Select *Browser Password-less* from the drop-down list. 
+. Click *Save*.
 
 .A password-less browser login
 image:images/Passwordless-browser-login.png[]
 
-After entering the username, the way this flow works is the following:
+After entering the username, the flow works as follows:
 
-* If the user has any WebAuthn passwordless credentials recorded, that user will be able to use any of them to log in directly. This is the password-less login.
-  The user can instead select "Password with OTP". The user can do this because the "WebAuthn Passwordless" execution and the "Password with OTP"
-  flow are set to _Alternative_. Were they set to _Required_ the user would have to enter WebAuthn, password, and OTP.
-* If the user selects `Try another way` link on the screen with "WebAuthn passwordless" authentication, the user can choose between "Password" and
-  "Security Key" (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP as well.
-  If the user has no WebAuthn credentials, he will have to first enter his
-  password, and then his OTP. If the user has no OTP credential, he will be asked to record one.
+If users have WebAuthn passwordless credentials recorded, they can use these credentials to log in directly. This is the password-less login. The user can also select *Password with OTP* because the `WebAuthn Passwordless` execution and the `Password with OTP` flow are set to *Alternative*. If they are set to *Required*, the user has to enter WebAuthn, password, and OTP.
 
-It is important to note that since the WebAuthn Passwordless execution is set to _Alternative_ instead of _Required_, this flow will never ask the user to register a WebAuthn credential. For a user
-to have a Webauthn credential, that user must have a required action added by an administrator. This is done first by making sure that the `Webauthn Register Passwordless`
-required action is enabled in the realm (see the <<_webauthn,WebAuthn>> documentation), and then by setting the required action by using the `Credential Reset` part of a
-user's xref:ref-user-credentials_{context}[Credentials] management menu.
+If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Security Key` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
 
-Creating a more advanced flow such as this one can have some subtle side effects. For example, if you were to enable the ability to reset the password
-for the user, then this would be accessible from the password form. In the default "Reset Credentials" flow, the user has to enter his username. Since
-he's already entered his username earlier in the "Browser Password-less" flow, this would be unnecessary for {project_name}, and a sub-optimal in terms of user
-experience. To correct this, you could:
+[NOTE]
+====
+Since the WebAuthn Passwordless execution is set to *Alternative* rather than  *Required*, this flow will never ask the user to register a WebAuthn credential. For a user to have a Webauthn credential, an administrator must add a required action to the user. Do this by:
 
-* Copy the "Reset Credentials" flow, setting its name to, for example "Reset Credentials for password-less"
-* Use the `Actions` menu on the right-hand side of the "Choose user" execution, select "Delete"
-* In the "Bindings" menu, change the reset credential flow from "Reset Credentials" to "Reset Credentials for password-less"
+. Enabling the *Webauthn Register Passwordless* required action in the realm (see the <<_webauthn,WebAuthn>> documentation).
+. Setting the required action using the *Credential Reset* part of a user's xref:ref-user-credentials_{context}[Credentials] management menu.
+
+Creating an advanced flow such as this can have side effects. For example, if you enable the ability to reset the password for users, this would be accessible from the password form. In the default `Reset Credentials` flow, users must enter their username. Since the user has already entered a username earlier in the `Browser Password-less` flow, this action is unnecessary for {project_name} and sub-optimal for user experience. To correct this problem, you can:
+
+* Copy the `Reset Credentials` flow. Set its name to `Reset Credentials for password-less`, for example.
+* Select *Delete* in the *Actions* menu of the *Choose user* execution.
+* In the *Bindings* menu, change the reset credential flow from *Reset Credentials* to *Reset Credentials for password-less*
+====
 
 ifeval::[{project_community}==true]
 === Script Authenticator
