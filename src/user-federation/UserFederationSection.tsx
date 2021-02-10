@@ -58,8 +58,18 @@ export const UserFederationSection = () => {
   }, [key]);
 
   const ufAddProviderDropdownItems = [
-    <DropdownItem key="itemLDAP" onClick={() => history.push(`${url}/ldap/new`)}>LDAP</DropdownItem>,
-    <DropdownItem key="itemKerberos" onClick={() => history.push(`${url}/kerberos/new`)}>Kerberos</DropdownItem>,
+    <DropdownItem
+      key="itemLDAP"
+      onClick={() => history.push(`${url}/ldap/new`)}
+    >
+      LDAP
+    </DropdownItem>,
+    <DropdownItem
+      key="itemKerberos"
+      onClick={() => history.push(`${url}/kerberos/new`)}
+    >
+      Kerberos
+    </DropdownItem>,
   ];
 
   const learnMoreLinkProps = {

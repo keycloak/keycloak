@@ -37,6 +37,7 @@ const KerberosSettingsHeader = ({
   toggleDeleteDialog,
 }: KerberosSettingsHeaderProps) => {
   const { t } = useTranslation("user-federation");
+  const { id } = useParams<{ id: string }>();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDisableConfirmTitle",
     messageKey: "user-federation:userFedDisableConfirm",
@@ -49,24 +50,28 @@ const KerberosSettingsHeader = ({
   return (
     <>
       <DisableConfirm />
-      <ViewHeader
-        titleKey="Kerberos"
-        subKey=""
-        dropdownItems={[
-          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
-            {t("deleteProvider")}
-          </DropdownItem>,
-        ]}
-        isEnabled={value === "true"}
-        onToggle={(value) => {
-          if (!value) {
-            toggleDisableDialog();
-          } else {
-            onChange("" + value);
-            save();
-          }
-        }}
-      />
+      {id === "new" ? (
+        <ViewHeader titleKey="Kerberos" subKey="" />
+      ) : (
+        <ViewHeader
+          titleKey="Kerberos"
+          subKey=""
+          dropdownItems={[
+            <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+              {t("deleteProvider")}
+            </DropdownItem>,
+          ]}
+          isEnabled={value === "true"}
+          onToggle={(value) => {
+            if (!value) {
+              toggleDisableDialog();
+            } else {
+              onChange("" + value);
+              save();
+            }
+          }}
+        />
+      )}
     </>
   );
 };
@@ -92,8 +97,6 @@ export const UserFederationKerberosSettings = () => {
   }, []);
 
   const setupForm = (component: ComponentRepresentation) => {
-    console.log("READING as:");
-    console.log(component);
     Object.entries(component).map((entry) => {
       form.setValue(
         "config.allowPasswordAuthentication",
@@ -107,18 +110,24 @@ export const UserFederationKerberosSettings = () => {
   };
 
   const save = async (component: ComponentRepresentation) => {
-    console.log("SAVING as:");
-    console.log(component);
     try {
       if (id) {
-        await adminClient.components.update({ id }, component);
-      } else {
-        await adminClient.components.create(component);
+        if (id === "new") {
+          await adminClient.components.create(component);
+        } else {
+          await adminClient.components.update({ id }, component);
+        }
       }
       setupForm(component as ComponentRepresentation);
-      addAlert(t("saveSuccess"), AlertVariant.success);
+      addAlert(
+        t(id === "new" ? "createSuccess" : "saveSuccess"),
+        AlertVariant.success
+      );
     } catch (error) {
-      addAlert(`${t("saveError")} '${error}'`, AlertVariant.danger);
+      addAlert(
+        `${t(id === "new" ? "createError" : "saveError")} '${error}'`,
+        AlertVariant.danger
+      );
     }
   };
 
@@ -143,7 +152,7 @@ export const UserFederationKerberosSettings = () => {
       <DeleteConfirm />
       <Controller
         name="config.enabled[0]"
-        defaultValue={["true"]}
+        defaultValue={["true"][0]}
         control={form.control}
         render={({ onChange, value }) => (
           <KerberosSettingsHeader
