@@ -104,6 +104,13 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp);
 
+        org.keycloak.representations.idm.ClientRepresentation offlineApp2 = ClientBuilder.create().clientId("offline-client-without-base-url")
+                .id(KeycloakModelUtils.generateId())
+                .name("Offline Client Without Base URL")
+                .directAccessGrants()
+                .secret("secret1").build();
+        testRealm.getClients().add(offlineApp2);
+
         org.keycloak.representations.idm.ClientRepresentation alwaysDisplayApp = ClientBuilder.create().clientId("always-display-client")
                 .id(KeycloakModelUtils.generateId())
                 .name("Always Display Client")
