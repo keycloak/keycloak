@@ -24,6 +24,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
@@ -72,7 +73,7 @@ public class RedirectUtils {
 
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
         return session.getContext().getRealm().getClientsStream()
-                .filter(ClientModel::isEnabled)
+                .filter(client -> client.isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && !client.isBearerOnly() && (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()))
                 .map(c -> resolveValidRedirects(session, c.getRootUrl(), c.getRedirectUris()))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
