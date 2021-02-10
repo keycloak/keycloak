@@ -492,7 +492,7 @@ public class AccountRestService {
 
         realm.getAlwaysDisplayInConsoleClientsStream().forEach(clients::add);
 
-        return clients.stream().filter(client -> !client.isBearerOnly() && client.getBaseUrl() != null && !client.getClientId().isEmpty())
+        return clients.stream().filter(client -> !client.isBearerOnly() && !client.getClientId().isEmpty())
                 .filter(client -> matches(client, name))
                 .map(client -> modelToRepresentation(client, inUseClients, offlineClients, consentModels));
     }
