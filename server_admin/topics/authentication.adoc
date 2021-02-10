@@ -1,5 +1,5 @@
 
-== Authentication
+== Configuration Authentication
 
 This chapter covers several authentication topics. These topics include:
 
