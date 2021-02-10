@@ -18,8 +18,13 @@
 package org.keycloak;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.DecryptionContext;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.exceptions.TokenSignatureInvalidException;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEInput;
+import org.keycloak.jose.jwe.JWEInputException;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -32,6 +37,7 @@ import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
 
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.logging.Level;
@@ -196,18 +202,32 @@ public class TokenVerifier<T extends JsonWebToken> {
     private final LinkedList<Predicate<? super T>> checks = new LinkedList<>();
 
     private JWSInput jws;
+
+    private JWEInput jwe;
+
     private T token;
 
-    private SignatureVerifierContext verifier = null;
+    private SignatureVerifierContext verifier;
+
+    private DecryptionContext decrypter;
 
     public TokenVerifier<T> verifierContext(SignatureVerifierContext verifier) {
         this.verifier = verifier;
         return this;
     }
 
+    public TokenVerifier<T> decryptionContext(DecryptionContext decrypter) {
+        this.decrypter = decrypter;
+        return this;
+    }
+
     protected TokenVerifier(String tokenString, Class<T> clazz) {
         this.tokenString = tokenString;
         this.clazz = clazz;
+    }
+
+    protected TokenVerifier(TokenVerifier that) {
+        this(that.tokenString, that.clazz);
     }
 
     protected TokenVerifier(T token) {
@@ -391,17 +411,29 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     public TokenVerifier<T> parse() throws VerificationException {
-        if (jws == null) {
-            if (tokenString == null) {
-                throw new VerificationException("Token not set");
-            }
 
+        if (tokenString == null) {
+            throw new VerificationException("Token not set");
+        }
+
+        if (isJwe(tokenString)) {
+            if (jwe == null) {
+                // JWEs require multiple steps for parsing
+                // 1) parse the JWE object
+                // 2) in verify() decrypt JWE content to extract the nested JWS. Set tokenString to nested JWS
+                // 3) parse tokenString into JWS and validate signature.
+                try {
+                    jwe = new JWEInput(tokenString);
+                } catch (JWEInputException e) {
+                    throw new VerificationException("Failed to parse JWT (JWE)", e);
+                }
+            }
+        } else if (jws == null) {
             try {
                 jws = new JWSInput(tokenString);
             } catch (JWSInputException e) {
-                throw new VerificationException("Failed to parse JWT", e);
+                throw new VerificationException("Failed to parse JWT (JWS)", e);
             }
-
 
             try {
                 token = jws.readJsonContent(clazz);
@@ -409,7 +441,24 @@ public class TokenVerifier<T extends JsonWebToken> {
                 throw new VerificationException("Failed to read access token from JWT", e);
             }
         }
+
         return this;
+    }
+
+    public static boolean isJwe(String tokenString) {
+
+        if (tokenString == null || tokenString.isEmpty()) {
+            return false;
+        }
+
+        int dots = 0;
+        for(int i = 0, len = tokenString.length(); i < len && dots < 5; i++) {
+            if (tokenString.charAt(i) == '.') {
+                dots++;
+            }
+        }
+
+        return dots == 4; // JWE contains 5 parts separated by 4 dots
     }
 
     public T getToken() throws VerificationException {
@@ -424,10 +473,24 @@ public class TokenVerifier<T extends JsonWebToken> {
         return jws.getHeader();
     }
 
+    public JWEHeader getJWEHeader() throws VerificationException {
+        parse();
+        return jwe.getHeader();
+    }
+
     public void verifySignature() throws VerificationException {
+
+        if (this.jws == null) {
+            if (isJwe(tokenString)) {
+                throw new VerificationException("Nested JWS part from JWE not decrypted yet");
+            } else {
+                throw new VerificationException("JWS not parsed yet");
+            }
+        }
+
         if (this.verifier != null) {
             try {
-                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature())) {
+                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature())) {
                     throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }
             } catch (Exception e) {
@@ -465,6 +528,19 @@ public class TokenVerifier<T extends JsonWebToken> {
         if (getToken() == null) {
             parse();
         }
+
+        if (jwe != null) {
+            // use nested JWS
+            try {
+                this.tokenString = decryptJwe();
+            } catch(JWEException jwee) {
+                throw new VerificationException("Could not decrypt JWE", jwee);
+            }
+
+            // parse nested JWS extracted from JWE
+            parse();
+        }
+
         if (jws != null) {
             verifySignature();
         }
@@ -476,6 +552,15 @@ public class TokenVerifier<T extends JsonWebToken> {
         }
 
         return this;
+    }
+
+    public String decryptJwe() throws JWEException {
+
+        if (jwe == null ) {
+            return null;
+        }
+
+        return decrypter.decrypt(jwe.getWireString(), jwe.getHeader());
     }
 
     /**

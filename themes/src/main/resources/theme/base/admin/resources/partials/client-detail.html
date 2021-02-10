@@ -432,6 +432,36 @@
             </div>
 
             <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="accessTokenEncryptedResponseAlg">{{:: 'access-token-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="accessTokenEncryptedResponseAlg"
+                                ng-change="changeAccessTokenEncryptedResponseAlg()"
+                                ng-model="accessTokenEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'access-token-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="accessTokenEncryptedResponseEnc">{{:: 'access-token-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="accessTokenEncryptedResponseEnc"
+                                ng-change="changeAccessTokenEncryptedResponseEnc()"
+                                ng-model="accessTokenEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'access-token-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="idTokenSignedResponseAlg">{{:: 'id-token-signed-response-alg' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
@@ -474,6 +504,42 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'id-token-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="jweTokenKeystoreLocation">{{:: 'jwe-token-keystore-location' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <input class="form-control" type="text" name="jweTokenKeystoreLocation" id="jweTokenKeystoreLocation"
+                               data-ng-model="jweTokenKeystoreLocation"
+                               ng-change="changeJweTokenKeystoreLocation()">
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'jwe-token-keystore-location.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="jweTokenKeystorePassword">{{:: 'jwe-token-keystore-password' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <input class="form-control" type="password" name="jweTokenKeystorePassword" id="jweTokenKeystorePassword"
+                               data-ng-model="jweTokenKeystorePassword"
+                               ng-change="changeJweTokenKeystorePassword()">
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'jwe-token-keystore-password.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="jweTokenKeystoreKeyPassword">{{:: 'jwe-token-keystore-key-password' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <input class="form-control" type="password" name="jweTokenKeystoreKeyPassword" id="jweTokenKeystoreKeyPassword"
+                               data-ng-model="jweTokenKeystoreKeyPassword"
+                               ng-change="changeJweTokenKeystoreKeyPassword()">
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'jwe-token-keystore-key-password.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group clearfix block">

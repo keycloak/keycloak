@@ -74,6 +74,18 @@ public class OIDCClientRepresentation {
 
     private String id_token_encrypted_response_enc;
 
+    private String access_token_signed_response_alg;
+
+    private String access_token_encrypted_response_alg;
+
+    private String access_token_encrypted_response_enc;
+
+    private String jwe_token_keystore_location;
+
+    private String jwe_token_keystore_password;
+
+    private String jwe_token_keystore_key_password;
+
     private String userinfo_signed_response_alg;
 
     private String userinfo_encrypted_response_alg;
@@ -299,6 +311,54 @@ public class OIDCClientRepresentation {
 
     public void setIdTokenEncryptedResponseEnc(String idTokenEncryptedResponseEnc) {
         this.id_token_encrypted_response_enc = idTokenEncryptedResponseEnc;
+    }
+
+    public String getAccessTokenSignedResponseAlg() {
+        return access_token_signed_response_alg;
+    }
+
+    public void setAccessTokenSignedResponseAlg(String accessTokenSignedResponseAlg) {
+        this.access_token_signed_response_alg = accessTokenSignedResponseAlg;
+    }
+
+    public String getAccessTokenEncryptedResponseAlg() {
+        return access_token_encrypted_response_alg;
+    }
+
+    public void setAccessTokenEncryptedResponseAlg(String accessTokenEncryptedResponseAlg) {
+        this.access_token_encrypted_response_alg = accessTokenEncryptedResponseAlg;
+    }
+
+    public String getAccessTokenEncryptedResponseEnc() {
+        return access_token_encrypted_response_enc;
+    }
+
+    public void setAccessTokenEncryptedResponseEnc(String accessTokenEncryptedResponseEnc) {
+        this.access_token_encrypted_response_enc = accessTokenEncryptedResponseEnc;
+    }
+
+    public String getJweTokenKeystoreLocation() {
+        return jwe_token_keystore_location;
+    }
+
+    public void setJweTokenKeystoreLocation(String location) {
+        this.jwe_token_keystore_location = location;
+    }
+
+    public String getJweTokenKeystorePassword() {
+        return jwe_token_keystore_password;
+    }
+
+    public void setJweTokenKeystorePassword(String password) {
+        this.jwe_token_keystore_password = password;
+    }
+
+    public String getJweTokenKeystoreKeyPassword() {
+        return jwe_token_keystore_key_password;
+    }
+
+    public void setJweTokenKeystoreKeyPassword(String keyPassword) {
+        this.jwe_token_keystore_key_password = keyPassword;
     }
 
     public String getUserinfoSignedResponseAlg() {

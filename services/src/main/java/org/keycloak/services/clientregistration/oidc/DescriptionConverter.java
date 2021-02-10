@@ -162,6 +162,30 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
+        if (clientOIDC.getAccessTokenSignedResponseAlg() != null) {
+            configWrapper.setAccessTokenSignedResponseAlg(clientOIDC.getAccessTokenSignedResponseAlg());
+        }
+
+        if (clientOIDC.getAccessTokenEncryptedResponseAlg() != null) {
+            configWrapper.setAccessTokenEncryptedResponseAlg(clientOIDC.getAccessTokenEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getAccessTokenEncryptedResponseEnc() != null) {
+            configWrapper.setAccessTokenEncryptedResponseEnc(clientOIDC.getAccessTokenEncryptedResponseEnc());
+        }
+
+        if (clientOIDC.getJweTokenKeystoreLocation() != null ) {
+            configWrapper.setJweTokenKeystoreLocation(clientOIDC.getJweTokenKeystoreLocation());
+        }
+
+        if (clientOIDC.getJweTokenKeystorePassword() != null ) {
+            configWrapper.setJweTokenKeystorePassword(clientOIDC.getJweTokenKeystorePassword());
+        }
+
+        if (clientOIDC.getJweTokenKeystoreKeyPassword() != null ) {
+            configWrapper.setJweTokenKeystoreKeyPassword(clientOIDC.getJweTokenKeystoreKeyPassword());
+        }
+
         return client;
     }
 
@@ -263,9 +287,32 @@ public class DescriptionConverter {
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
+
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
         response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
+
+        if (config.getAccessTokenSignedResponseAlg() != null) {
+            response.setAccessTokenSignedResponseAlg(config.getAccessTokenSignedResponseAlg());
+        }
+        if (config.getAccessTokenEncryptedResponseAlg() != null) {
+            response.setAccessTokenEncryptedResponseAlg(config.getAccessTokenEncryptedResponseAlg());
+        }
+        if (config.getAccessTokenEncryptedResponseEnc() != null) {
+            response.setAccessTokenEncryptedResponseEnc(config.getAccessTokenEncryptedResponseEnc());
+        }
+
+        if (config.getJweTokenKeystoreLocation() != null) {
+            response.setJweTokenKeystoreLocation(config.getJweTokenKeystoreLocation());
+        }
+
+        if (config.getJweTokenKeystorePassword() != null) {
+            response.setJweTokenKeystorePassword(config.getJweTokenKeystorePassword());
+        }
+
+        if (config.getJweTokenKeystoreKeyPassword() != null) {
+            response.setJweTokenKeystoreKeyPassword(config.getJweTokenKeystoreKeyPassword());
+        }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;

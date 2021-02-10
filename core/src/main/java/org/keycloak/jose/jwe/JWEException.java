@@ -32,4 +32,8 @@ public class JWEException extends Exception {
     public JWEException(Throwable throwable) {
         super(throwable);
     }
+
+    public JWEException(String s, Throwable cause) {
+        super(s, cause);
+    }
 }

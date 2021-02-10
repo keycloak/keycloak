@@ -1254,7 +1254,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             }
         }
 
+        $scope.jweTokenKeystoreLocation = $scope.client.attributes['jwe.token.keystore.location'];
+        $scope.jweTokenKeystorePassword = $scope.client.attributes['jwe.token.keystore.password'];
+        $scope.jweTokenKeystoreKeyPassword = $scope.client.attributes['jwe.token.keystore.key.password'];
+
         $scope.accessTokenSignedResponseAlg = $scope.client.attributes['access.token.signed.response.alg'];
+        $scope.accessTokenEncryptedResponseAlg = $scope.client.attributes['access.token.encrypted.response.alg'];
+        $scope.accessTokenEncryptedResponseEnc = $scope.client.attributes['access.token.encrypted.response.enc'];
+
         $scope.idTokenSignedResponseAlg = $scope.client.attributes['id.token.signed.response.alg'];
         $scope.idTokenEncryptedResponseAlg = $scope.client.attributes['id.token.encrypted.response.alg'];
         $scope.idTokenEncryptedResponseEnc = $scope.client.attributes['id.token.encrypted.response.enc'];
@@ -1403,8 +1410,28 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.clientEdit.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] = $scope.samlXmlKeyNameTranformer;
     };
 
+    $scope.changeJweTokenKeystoreLocation = function() {
+        $scope.clientEdit.attributes['jwe.token.keystore.location'] = $scope.jweTokenKeystoreLocation;
+    };
+
+    $scope.changeJweTokenKeystorePassword = function() {
+        $scope.clientEdit.attributes['jwe.token.keystore.password'] = $scope.jweTokenKeystorePassword;
+    };
+
+    $scope.changeJweTokenKeystoreKeyPassword = function() {
+        $scope.clientEdit.attributes['jwe.token.keystore.key.password'] = $scope.jweTokenKeystoreKeyPassword;
+    };
+
     $scope.changeAccessTokenSignedResponseAlg = function() {
         $scope.clientEdit.attributes['access.token.signed.response.alg'] = $scope.accessTokenSignedResponseAlg;
+    };
+
+    $scope.changeAccessTokenEncryptedResponseAlg = function() {
+        $scope.clientEdit.attributes['access.token.encrypted.response.alg'] = $scope.accessTokenEncryptedResponseAlg;
+    };
+
+    $scope.changeAccessTokenEncryptedResponseEnc = function() {
+        $scope.clientEdit.attributes['access.token.encrypted.response.enc'] = $scope.accessTokenEncryptedResponseEnc;
     };
 
     $scope.changeIdTokenSignedResponseAlg = function() {

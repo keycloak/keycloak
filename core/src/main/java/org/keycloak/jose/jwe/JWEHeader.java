@@ -66,6 +66,14 @@ public class JWEHeader implements Serializable {
         this.keyId = keyId;
     }
 
+    public JWEHeader(String algorithm, String encryptionAlgorithm, String compressionAlgorithm, String keyId, String contentType) {
+        this.algorithm = algorithm;
+        this.encryptionAlgorithm = encryptionAlgorithm;
+        this.compressionAlgorithm = compressionAlgorithm;
+        this.keyId = keyId;
+        this.contentType = contentType;
+    }
+
     public String getAlgorithm() {
         return algorithm;
     }
