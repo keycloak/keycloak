@@ -1,46 +1,45 @@
+
 [[_vault-administration]]
 
 == Using a Vault to Obtain Secrets
 
-Several fields in the administration support obtaining the value of a secret from an external vault.
+To obtain a secret from a vault rather than entering it directly, enter the following specially crafted string into the appropriate field:
 
-To obtain a secret from a vault instead of entering it directly, enter
-the following specially crafted string into the appropriate field:
-`**${vault.**_key_**}**` where you replace the `_key_`
-with the name of the secret as recognized by the vault.
+[source]
+----
+**${vault.**_key_**}**
+----
+where the `_key_` is the name of the secret recognized by the vault.
 
-In order to prevent secrets from leaking across realms, implementations may combine the realm name with the `_key_`
-obtained from the vault expression. This means that the `_key_` won't directly map to an entry in the vault, but rather
-be used to create the final entry name according to the algorithm used to combine it with the realm name.
+To prevent secrets from leaking across realms, {project_name} combines the realm name with the `_key_` obtained from the vault expression. This method means that the `_key_` does not directly map to an entry in the vault but creates the final entry name according to the algorithm used to combine the `_key_` with the realm name.
 
-Currently, the secret can be obtained from the vault in the following fields:
+You can obtain the secret from the vault in the following fields:
 
 SMTP password::
-  In realm <<_email,SMTP settings>>
+In the realm <<_email,SMTP settings>>
 
 LDAP bind credential::
-  In <<_ldap,LDAP settings>> of LDAP-based user federation.
+In the <<_ldap,LDAP settings>> of LDAP-based user federation.
 
 OIDC identity provider secret::
-  In _Client Secret_ inside identity provider <<_identity_broker_oidc,OpenID Connect Config>>
+In the _Client Secret_ inside identity provider <<_identity_broker_oidc,OpenID Connect Config>>
 
-To use a vault, a vault provider must be registered within {project_name}.
-It is possible to either use a built-in provider described below or
-implement your own provider. See the link:{developerguide_link}[{developerguide_name}] for more information.
+To use a vault, register a vault provider in {project_name}. You can use the providers described <<_providers, here>> or implement your provider. See the link:{developerguide_link}[{developerguide_name}] for more information.
 
-NOTE: There is at most one vault provider active per {project_name} instance
-at any given time, and the vault provider in each instance within the cluster
-has to be configured consistently.
+[NOTE]
+====
+{project_name} permits a maximum of one active vault provider per {project_name} instance at a time. Configure the vault provider in each instance within the cluster consistently.
+====
 
-=== Kubernetes / OpenShift Files Plaintext Vault Provider
+[[_providers]]
 
-{project_name} supports vault implementation for https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes secrets]. These secrets
-can be mounted as data volumes, and they appear as a directory with a flat file structure, where each secret is represented by a file whose name is the secret name, and contents of that file is the secret value.
+=== Kubernetes / OpenShift Files Plain-text Vault Provider
 
-The files within this directory have to be named as secret name prefixed by realm name and an underscore. All underscores within the secret name or the realm name have to be doubled in the file name. For example, for a field within a realm called `sso_realm`, a reference to a secret with name `secret-name` would be written as `${vault.secret-name}`, and the file name looked up would be `sso+++__+++realm+++_+++secret-name` (note the underscore doubled in realm name).
+{project_name} supports vault implementation for https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes secrets]. You can mount Kubernetes secrets as data volumes, and they appear as a directory with a flat-file structure. {project_name} represents each secret as a file with the file's name as the secret name and the file's contents as the secret value.
 
-To use this type of secret store, you have to declare the `files-plaintext` vault provider in standalone.xml, and set its parameter for the directory that contains the mounted volume. The following example shows the `files-plaintext`
-provider with the directory where vault files are searched for set to `standalone/configuration/vault` relative to {project_name} base directory:
+You must name the files within this directory as the secret name prefixed by the realm name and an underscore. Double all underscores within the secret name or the realm name in the file name. For example, for a field within a realm named `sso_realm`, a reference to a secret with the name `secret-name` would be written as `${vault.secret-name}`, and the file name looked up would be `sso+++__+++realm+++_+++secret-name`. Note the underscore doubled in realm name.
+
+To use this type of secret store, you must declare the `files-plaintext` vault provider in the standalone.xml file and set its parameter for the directory containing the mounted volume. This example shows the `files-plaintext` provider with the directory where vault files are searched set to `standalone/configuration/vault` relative to the {project_name} base directory:
 
 [source, xml]
 ----
@@ -64,16 +63,11 @@ Here is the equivalent configuration using CLI commands:
 
 === Elytron Credential Store Vault Provider
 
-{project_name} also provides support for reading secrets stored in an Elytron credential store. The `elytron-cs-keystore`
-vault provider is capable of retrieving secrets from the keystore-based implementation of the credential store, which
-is also the default implementation provided by Elytron.
+{project_name} also provides support for reading secrets stored in an Elytron credential store. The `elytron-cs-keystore` vault provider can retrieve secrets from the credential store's keystore based implementation, which is also the default implementation Elytron provides.
 
-This credential store is backed by a keystore (`JCEKS` is the default format, but it is possible to use other formats such as `PKCS12`)
-and users can create and manage the store contents using either the `elytron` subsystem in WildFly/JBoss EAP, or using the
-`elytron-tool.sh` script.
+A keystore backs this credential store. `JCEKS` is the default format, but you can use other formats such as `PKCS12`. Users can create and manage the store contents using the `elytron` subsystem in WildFly/JBoss EAP, or the `elytron-tool.sh` script.
 
-To use this provider, you have to declare the `elytron-cs-keystore` in the `keycloak-server` subsystem and set the location
-and master secret of the keystore that was created by Elytron. An example of the minimal configuration for the provider follows:
+To use this provider, you must declare the `elytron-cs-keystore` in the `keycloak-server` subsystem and set the location and master secret of the keystore created by Elytron. An example of the minimal configuration for the provider follows:
 
 [source, xml]
 ----
@@ -88,7 +82,7 @@ and master secret of the keystore that was created by Elytron. An example of the
 </spi>
 ----
 
-If the underlying keystore has a format other than `JCEKS`, this format has to be informed using the `keyStoreType`:
+If the underlying keystore has a format different from `JCEKS`, you must specify this format by using the `keyStoreType`:
 
 [source, xml]
 ----
@@ -104,8 +98,7 @@ If the underlying keystore has a format other than `JCEKS`, this format has to b
 </spi>
 ----
 
-For the secret, the `elytron-cs-keystore` provider supports both clear-text values (as shown above) and also values that
-were masked using the `elytron-tool.sh` script:
+For the secret, the `elytron-cs-keystore` provider supports clear-text values and masked values by using the `elytron-tool.sh` script:
 
 [source, xml]
 ----
@@ -116,19 +109,16 @@ were masked using the `elytron-tool.sh` script:
 </spi>
 ----
 
-For more detailed information on how to create/manage elytron credential stores, as well as how to mask keystore secrets,
-please refer to the Elytron documentation.
+For more information about creating and managing elytron credential stores and masking keystore secrets, see the Elytron documentation.
 
-NOTE: The `elytron-cs-keystore` vault provider has been implemented as a WildFly extension and as such is only available
-if the {project_name} server runs on WildFly/JBoss EAP.
+[NOTE]
+====
+{project_name} implements the `elytron-cs-keystore` vault provider as a WildFly extension and is available if the {project_name} server runs on WildFly/JBoss EAP only.
+====
 
 === Key Resolvers
 
-All built-in providers support the configuration of one or more key resolvers. A key resolver essentially implements
-the algorithm or strategy for combining the realm name with the key (as obtained from the `${vault.key}` expression) into
-the final entry name that will be used to retrieve the secret from the vault. The `keyResolvers` property is used to configure
-the resolvers that are to be used by the provider. The value is a comma-separated list of resolver names. An example of
-configuration for the `files-plaintext` provider follows:
+All built-in providers support the configuration of key resolvers. A key resolver implements the algorithm or strategy for combining the realm name with the key, obtained from the `${vault.key}` expression, into the final entry name used to retrieve the secret from the vault. {project_name} uses the `keyResolvers` property to configure the resolvers that the provider uses. The value is a comma-separated list of resolver names. An example of the configuration for the `files-plaintext` provider follows:
 
 [source, xml]
 ----
@@ -143,34 +133,35 @@ configuration for the `files-plaintext` provider follows:
 </spi>
 ----
 
-The resolvers are executed in the same order that they are declared in the configuration. For each resolver, the final entry
-name produced by the resolver that combines the realm with the vault key is used to search for the secret in the vault.
-If a secret is found, it is immediately returned. If not, the next resolver is used and this continues until a non-empty
-secret is found or all resolvers have been tried, in which case an empty secret is returned. In the example above, first
-the `REALM_UNDERSCORE_KEY` resolver is used. If an entry is found in the vault with the name it produces, it is returned.
-If not, then the `KEY_ONLY` resolver is used. Again, if an entry is found in the vault with the name it produces, it is
-returned. If not, an empty secret is returned since there are no more resolvers to be used.
+The resolvers run in the same order you declare them in the configuration. For each resolver, {project_name} uses the last entry name the resolver produces, which combines the realm with the vault key to search for the vault's secret. If {project_name} finds a secret, it returns the secret. If not, {project_name} uses the next resolver. This search continues until {project_name} finds a non-empty secret or runs out of resolvers. If {project_name} finds no secret, {project_name} returns an empty secret. 
+
+In the previous example, {project_name} uses the `REALM_UNDERSCORE_KEY` resolver first. If {project_name} finds an entry in the vault that using that resolver, {project_name} returns that entry. If not, {project_name} searches again using the `KEY_ONLY` resolver. If {project_name} finds an entry by using the `KEY_ONLY` resolver, {project_name} returns that entry. If {project_name} uses all resolvers, {project_name} returns an empty secret.
 
 A list of the currently available resolvers follows:
 
-* `KEY_ONLY`: the realm name is ignored and the key from the vault expression is used as is.
-* `REALM_UNDERSCORE_KEY`: the realm and key are combined using an underscore `_` character. Occurrences of underscore in either the
-realm or key are escaped by another underscore character. So if the realm is called `master_realm` and the key is `smtp_key`, the
-combined key will be `master+++__+++realm_smtp+++__+++key`.
-* `REALM_FILESEPARATOR_KEY`: the realm and key are combined using the platform file separator character. This is useful in situations
-where the keys are grouped by realm using a directory structure.
+|===
+|Name |Description
+
+| KEY_ONLY
+| {project_name} ignores the realm name and uses the key from the vault expression.
+
+| REALM_UNDERSCORE_KEY
+| {project_name} combines the realm and key by using an underscore character. {project_name} escapes occurrences of underscores in the realm or key with another underscore character. For example, if the realm is called `master_realm` and the key is `smtp_key`, the combined key is `master+++__+++realm_smtp+++__+++key`.
+
+| REALM_FILESEPARATOR_KEY
+| {project_name} combines the realm and key by using the platform file separator character.
+
 ifeval::[{project_community}==true]
-* `FACTORY_PROVIDED`: the realm and key are combined using the `VaultKeyResolver` that is provided by the vault provider factory,
-allowing the creation of a custom key resolver by extending an existing factory and implementing the `getFactoryResolver` method.
+| FACTORY_PROVIDED
+| {project_name} combines the realm and key by using the vault provider factory's `VaultKeyResolver`, allowing the creation of a custom key resolver by extending an existing factory and implementing the `getFactoryResolver` method.
 endif::[]
 
-If no resolver is configured for the built-in providers, the `REALM_UNDERSCORE_KEY` is selected by default.
+|===
+
+If you have not configured a resolver for the built-in providers, {project_name} selects the `REALM_UNDERSCORE_KEY`.
 
 ifeval::[{project_community}==true]
-The `FACTORY_PROVIDED` resolver provides a hook that can be used to implement a custom resolver by extending the provider
-factory of choice and overriding the `getFactoryResolver` method so it returns the custom resolver. For example, if you want
-to use the `elytron-cs-keystore` provider but none of the built-in resolvers match the format used in your keystore, you
-can extend the `ElytronCSKeystoreProvider` and implement the `getFactoryResolver` method:
+The `FACTORY_PROVIDED` resolver provides a hook that you can use to implement a custom resolver by extending the provider factory of choice and overriding the `getFactoryResolver` method, so it returns the custom resolver. For example, if you want to use the `elytron-cs-keystore` provider but the built-in resolvers do not match the format used in your keystore, you can extend the `ElytronCSKeystoreProvider` and implement the `getFactoryResolver` method:
 
 [source,java]
 ----
@@ -190,13 +181,14 @@ can extend the `ElytronCSKeystoreProvider` and implement the `getFactoryResolver
     }
 ----
 
-The custom factory returns a key resolver that combines the realm and key with a triple `#` character. So an entry would look
-like `master_realm###smtp_key`, for example. This factory must then be installed just like any custom provider.
+The custom factory returns a key resolver that combines the realm and key with a triple `#` character. For example, an entry would be `master_realm###smtp_key`. Install this factory like any custom provider.
 
-Note that the custom factory must override both the `getFactoryResolver` and `getId` methods. The second method is needed so that
-we can properly configure the custom factory in {project_name}.
+[NOTE]
+====
+The custom factory must override both the `getFactoryResolver` and `getId` methods. The second method is necessary so that you can properly configure the custom factory in {project_name}.
+====
 
-To install and use the above custom provider the configuration would look something like this:
+To install and use the previous custom provider, the configuration would look similar to this:
 
 [source, xml]
 ----
@@ -213,8 +205,7 @@ To install and use the above custom provider the configuration would look someth
 </spi>
 ----
 
-The configuration above tells {project_name} to setup the custom Elytron provider and use the key resolver that is created by
-the custom factory.
+This configuration makes {project_name} set up the custom Elytron provider and use the key resolver that the custom factory creates.
 endif::[]
 
 === Sample Configuration

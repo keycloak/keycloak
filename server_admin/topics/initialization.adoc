@@ -1,28 +1,33 @@
 
-== Server Initialization
+== Creating the first administrator
 
-After performing all the installation and configuration tasks defined in the link:{installguide_link}[{installguide_name}],
-you will need to create an initial admin account.
-{project_name} does not have any configured admin account out of the box.
-This account will allow you to create an admin that can log into the _master_ realm's administration console so that
-you can start creating realms, users and registering applications to be secured by {project_name}.
+After installing {project_name}, you need an administrator account that can act as a superuser with full permisions to manage all parts of {project_name}. With this account, you can log into the {project_name} Admin Console where you create realms and users and register applications that are secured by {project_name}. 
 
-If your
-server is accessible from `localhost`, you can boot it up and create this admin user by going to the http://localhost:8080/auth URL.
+.Prerequisites
 
+* Perform the installation and configuration tasks defined in the link:{installguide_link}[{installguide_name}] to the point that the {project_name} server is running.
+
+=== Creating the account on the local host
+
+If your server is accessible from `localhost`, perform these steps.
+
+.Procedure
+
+. In a web browser, go to the http://localhost:8080/auth URL.
+
+. Supply a username and password that you can recall.
++
 .Welcome Page
-image:{project_images}/initial-welcome-page.png[]
+image:{project_images}/initial-welcome-page.png[Welcome Page]
 
-Simply specify the username and password you want for this initial admin.
+=== Creating the account remotely
 
-If you cannot access the server via a `localhost` address, or just want to provision {project_name} from the command line
-you can do this with the `.../bin/add-user-keycloak` script.
+If you cannot access the server from a `localhost` address, or just want to start {project_name} from the command line, use the `.../bin/add-user-keycloak` script.
 
 .add-user-keycloak script
 image:{project_images}/add-user-script.png[]
 
-The parameters are a little different depending if you are using the standalone operation mode or domain operation mode.  For
-standalone mode, here is how you use the script.
+The parameters are a little different depending if you are using the standalone operation mode or domain operation mode.  For standalone mode, here is how you use the script.
 
 .Linux/Unix
 [source]

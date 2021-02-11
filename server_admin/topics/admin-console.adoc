@@ -1,5 +1,5 @@
 
-== Admin Console
+== Working in the Admin Console
 
 The bulk of your administrative tasks will be done through the {project_name} Admin Console.
 You can go to the console url directly at http://localhost:8080/auth/admin/

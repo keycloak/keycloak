@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 == {project_name} features and concepts
+=======
+== Features and Concepts for {project_name}
+>>>>>>> Rework server initialization chapter
 
 {project_name} is a single sign on solution for web apps and RESTful web services.  The goal of {project_name}
 is to make security simple so that it is easy for application developers to secure the apps and services they have deployed
