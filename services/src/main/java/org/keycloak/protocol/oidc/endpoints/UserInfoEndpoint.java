@@ -44,7 +44,6 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.UserInfoRequestContext;
@@ -89,6 +88,7 @@ public class UserInfoEndpoint {
     private final org.keycloak.protocol.oidc.TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
     private final RealmModel realm;
+    private Cors cors;
 
     public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm) {
         this.realm = realm;
@@ -126,18 +126,20 @@ public class UserInfoEndpoint {
         return issueUserInfo(accessToken);
     }
 
-    private ErrorResponseException newUnauthorizedErrorResponseException(String oauthError, String errorMessage) {
+    // This method won't add allowedOrigins to the cors. Assumption is that allowedOrigins are already set to the "cors" object when this method is called
+    private CorsErrorResponseException newUnauthorizedErrorResponseException(String oauthError, String errorMessage) {
         // See: https://openid.net/specs/openid-connect-core-1_0.html#UserInfoError
         response.getOutputHeaders().put(HttpHeaders.WWW_AUTHENTICATE, Collections.singletonList(String.format("Bearer realm=\"%s\", error=\"%s\", error_description=\"%s\"", realm.getName(), oauthError, errorMessage)));
-        return new ErrorResponseException(oauthError, errorMessage, Response.Status.UNAUTHORIZED);
+        return new CorsErrorResponseException(cors, oauthError, errorMessage, Response.Status.UNAUTHORIZED);
     }
 
     private Response issueUserInfo(String tokenString) {
+        cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         try {
             session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenString));
         } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            throw new CorsErrorResponseException(cors.allowAllOrigins(), cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection)
@@ -146,11 +148,11 @@ public class UserInfoEndpoint {
 
         if (tokenString == null) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Token not provided", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "Token not provided", Response.Status.BAD_REQUEST);
         }
 
         AccessToken token;
-        ClientModel clientModel;
+        ClientModel clientModel = null;
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
@@ -163,20 +165,25 @@ public class UserInfoEndpoint {
             clientModel = realm.getClientByClientId(token.getIssuedFor());
             if (clientModel == null) {
                 event.error(Errors.CLIENT_NOT_FOUND);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+                throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
             }
+
+            cors.allowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
                     .withChecks(NotBeforeCheck.forModel(clientModel))
                     .verify();
         } catch (VerificationException e) {
+            if (clientModel == null) {
+                cors.allowAllOrigins();
+            }
             event.error(Errors.INVALID_TOKEN);
             throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token verification failed");
         }
 
 	    if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
         }
 
         session.getContext().setClient(clientModel);
@@ -185,7 +192,7 @@ public class UserInfoEndpoint {
 
         if (!clientModel.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client disabled", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client disabled", Response.Status.BAD_REQUEST);
         }
 
         UserSessionModel userSession = findValidSession(token, event, clientModel);
@@ -193,7 +200,7 @@ public class UserInfoEndpoint {
         UserModel userModel = userSession.getUser();
         if (userModel == null) {
             event.error(Errors.USER_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
         }
 
         event.user(userModel)
@@ -268,7 +275,7 @@ public class UserInfoEndpoint {
 
         event.success();
 
-        return Cors.add(request, responseBuilder).auth().allowedOrigins(session, clientModel).build();
+        return cors.builder(responseBuilder).build();
     }
 
 
@@ -303,7 +310,7 @@ public class UserInfoEndpoint {
         throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired");
     }
 
-    private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event) throws ErrorResponseException {
+    private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event) throws CorsErrorResponseException {
         if (token.getIssuedAt() + 1 < userSession.getStarted()) {
             event.error(Errors.INVALID_TOKEN);
             throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token");
