@@ -12,7 +12,7 @@ import {
 
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
 import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosIntegration";
-import { LdapSettingsCache } from "./ldap/LdapSettingsCache";
+import { SettingsCache } from "./shared/SettingsCache";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { LdapSettingsGeneral } from "./ldap/LdapSettingsGeneral";
 import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
@@ -208,7 +208,7 @@ export const UserFederationLdapSettings = () => {
           <LdapSettingsSearching form={form} />
           <LdapSettingsSynchronization form={form} />
           <LdapSettingsKerberosIntegration form={form} />
-          <LdapSettingsCache form={form} />
+          <SettingsCache form={form} />
           <LdapSettingsAdvanced form={form} />
         </ScrollForm>
         <Form onSubmit={form.handleSubmit(save)}>

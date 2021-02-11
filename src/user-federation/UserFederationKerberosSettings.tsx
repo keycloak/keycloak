@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
-import { KerberosSettingsCache } from "./kerberos/KerberosSettingsCache";
+import { SettingsCache } from "./shared/SettingsCache";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertToFormValues } from "../util";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
@@ -150,7 +150,7 @@ export const UserFederationKerberosSettings = () => {
         <KerberosSettingsRequired form={form} showSectionHeading />
       </PageSection>
       <PageSection variant="light" isFilled>
-        <KerberosSettingsCache form={form} showSectionHeading />
+        <SettingsCache form={form} showSectionHeading />
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
             <Button variant="primary" type="submit">

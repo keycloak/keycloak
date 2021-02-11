@@ -10,7 +10,7 @@ import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
 import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosIntegration";
-import { LdapSettingsCache } from "./ldap/LdapSettingsCache";
+import { SettingsCache } from "./shared/SettingsCache";
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
 import { useTranslation } from "react-i18next";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
@@ -81,11 +81,7 @@ export const UserFederationLdapWizard = () => {
       name: t("cacheSettings"),
       id: "ldapCacheSettingsStep",
       component: (
-        <LdapSettingsCache
-          form={form}
-          showSectionHeading
-          showSectionDescription
-        />
+        <SettingsCache form={form} showSectionHeading showSectionDescription />
       ),
     },
     {

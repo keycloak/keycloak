@@ -6,56 +6,85 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 import React, { useState } from "react";
-import { UseFormMethods, Controller, useWatch } from "react-hook-form";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { UseFormMethods, useWatch, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import _ from "lodash";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export type KerberosSettingsCacheProps = {
+export type SettingsCacheProps = {
   form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
 };
 
-export const KerberosSettingsCache = ({
+export const SettingsCache = ({
   form,
   showSectionHeading = false,
   showSectionDescription = false,
-}: KerberosSettingsCacheProps) => {
+}: SettingsCacheProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
+
+  const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] = useState(
+    false
+  );
+
+  const [isEvictionHourDropdownOpen, setIsEvictionHourDropdownOpen] = useState(
+    false
+  );
 
   const cachePolicyType = useWatch({
     control: form.control,
     name: "config.cachePolicy",
   });
 
-  const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] = useState(
-    false
-  );
-  const [isEvictionHourDropdownOpen, setIsEvictionHourDropdownOpen] = useState(
-    false
-  );
   const [
     isEvictionMinuteDropdownOpen,
     setIsEvictionMinuteDropdownOpen,
   ] = useState(false);
+
   const [isEvictionDayDropdownOpen, setIsEvictionDayDropdownOpen] = useState(
     false
   );
 
-  const hourOptions = [<SelectOption key={0} value={[`${1}`]} isPlaceholder />];
-  for (let index = 2; index <= 24; index++) {
-    hourOptions.push(<SelectOption key={index - 1} value={[`${index}`]} />);
+  const hourOptions = [
+    <SelectOption key={0} value={[`${0}`]} isPlaceholder>
+      {[`0${0}`]}
+    </SelectOption>,
+  ];
+  let hourDisplay = "";
+  for (let index = 1; index < 24; index++) {
+    if (index < 10) {
+      hourDisplay = `0${index}`;
+    } else {
+      hourDisplay = `${index}`;
+    }
+    hourOptions.push(
+      <SelectOption key={index} value={[`${index}`]}>
+        {hourDisplay}
+      </SelectOption>
+    );
   }
 
   const minuteOptions = [
-    <SelectOption key={0} value={[`${1}`]} isPlaceholder />,
+    <SelectOption key={0} value={[`${0}`]} isPlaceholder>
+      {[`0${0}`]}
+    </SelectOption>,
   ];
-  for (let index = 2; index <= 60; index++) {
-    minuteOptions.push(<SelectOption key={index - 1} value={[`${index}`]} />);
+  let minuteDisplay = "";
+  for (let index = 1; index < 60; index++) {
+    if (index < 10) {
+      minuteDisplay = `0${index}`;
+    } else {
+      minuteDisplay = `${index}`;
+    }
+    minuteOptions.push(
+      <SelectOption key={index} value={[`${index}`]}>
+        {minuteDisplay}
+      </SelectOption>
+    );
   }
 
   return (
@@ -63,12 +92,10 @@ export const KerberosSettingsCache = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("cacheSettings")}
-          description={helpText("kerberosCacheSettingsDescription")}
+          description={helpText("cacheSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
-
-      {/* Cache settings */}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("cachePolicy")}
@@ -109,7 +136,6 @@ export const KerberosSettingsCache = ({
             )}
           ></Controller>
         </FormGroup>
-
         {_.isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
           <FormGroup
             label={t("evictionDay")}
@@ -124,8 +150,8 @@ export const KerberosSettingsCache = ({
             fieldId="kc-eviction-day"
           >
             <Controller
-              name="config.evictionDay"
-              defaultValue={[t("common:Sunday")]}
+              name="config.evictionDay[0]"
+              defaultValue={"1"}
               control={form.control}
               render={({ onChange, value }) => (
                 <Select
@@ -142,25 +168,25 @@ export const KerberosSettingsCache = ({
                   selections={value}
                   variant={SelectVariant.single}
                 >
-                  <SelectOption key={0} value={["1"]} isPlaceholder>
+                  <SelectOption key={0} value="1" isPlaceholder>
                     {t("common:Sunday")}
                   </SelectOption>
-                  <SelectOption key={1} value={["2"]}>
+                  <SelectOption key={1} value="2">
                     {t("common:Monday")}
                   </SelectOption>
-                  <SelectOption key={2} value={["3"]}>
+                  <SelectOption key={2} value="3">
                     {t("common:Tuesday")}
                   </SelectOption>
-                  <SelectOption key={3} value={["4"]}>
+                  <SelectOption key={3} value="4">
                     {t("common:Wednesday")}
                   </SelectOption>
-                  <SelectOption key={4} value={["5"]}>
+                  <SelectOption key={4} value="5">
                     {t("common:Thursday")}
                   </SelectOption>
-                  <SelectOption key={5} value={["6"]}>
+                  <SelectOption key={5} value="6">
                     {t("common:Friday")}
                   </SelectOption>
-                  <SelectOption key={6} value={["7"]}>
+                  <SelectOption key={6} value="7">
                     {t("common:Saturday")}
                   </SelectOption>
                 </Select>
@@ -170,7 +196,6 @@ export const KerberosSettingsCache = ({
         ) : (
           <></>
         )}
-
         {_.isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
         _.isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
           <>
@@ -188,7 +213,7 @@ export const KerberosSettingsCache = ({
             >
               <Controller
                 name="config.evictionHour"
-                defaultValue={["1"]}
+                defaultValue={["0"]}
                 control={form.control}
                 render={({ onChange, value }) => (
                   <Select
@@ -209,7 +234,6 @@ export const KerberosSettingsCache = ({
                 )}
               ></Controller>
             </FormGroup>
-
             <FormGroup
               label={t("evictionMinute")}
               labelIcon={
@@ -224,7 +248,7 @@ export const KerberosSettingsCache = ({
             >
               <Controller
                 name="config.evictionMinute"
-                defaultValue={["1"]}
+                defaultValue={["0"]}
                 control={form.control}
                 render={({ onChange, value }) => (
                   <Select
@@ -261,11 +285,9 @@ export const KerberosSettingsCache = ({
                 forID="kc-max-lifespan"
               />
             }
-            isRequired
             fieldId="kc-max-lifespan"
           >
             <TextInput
-              isRequired
               type="text"
               id="kc-max-lifespan"
               name="config.maxLifespan[0]"

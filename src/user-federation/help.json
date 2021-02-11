@@ -41,7 +41,7 @@
     "allowKerberosAuthenticationHelp": "Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server.",
     "useKerberosForPasswordAuthenticationHelp": "User Kerberos login module for authenticating username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API",
 
-    "ldapCacheSettingsDescription": "This section contains options useful for caching users, which were loaded from this user storage provider.",
+    "cacheSettingsDescription": "This section contains options useful for caching users, which were loaded from this user storage provider.",
     "cachePolicyHelp": "Cache Policy for this storage provider. 'DEFAULT' is whatever the default settings are for the global cache. 'EVICT_DAILY' is a time of day every day that the cache will be invalidated. 'EVICT_WEEKLY' is a day of the week and time the cache will be invalidated. 'MAX_LIFESPAN' is the time in milliseconds that will be the lifespan of a cache entry.",
     "evictionDayHelp": "Day of the week the entry will become invalid",
     "evictionHourHelp": "Hour of the day the entry will become invalid",
@@ -65,8 +65,6 @@
     "allowPasswordAuthenticationHelp": "Enable/disable possibility of username/password authentication against Kerberos database",
     "editModeKerberosHelp": "READ_ONLY means that password updates are not allowed and user always authenticates with Kerberos password. UNSYNCED means that the user can change the password in the Keycloak database and this one will be used instead of the Kerberos password.",
     "updateFirstLoginHelp": "Update profile on first login",
-
-    "kerberosCacheSettingsDescription": "This section contains a few basic options common to all user storage providers.",
 
     "nameHelp": "Name of the mapper",
     "mapperTypeHelp": "",
