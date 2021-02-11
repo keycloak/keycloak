@@ -8,14 +8,13 @@ image:{project_images}/otp-policy.png[OTP Policy]
 
 {project_name} generates a QR code on the OTP set-up page, based on information configured in the *OTP Policy* tab. FreeOTP and Google Authenticator scan the QR code when configuring OTP.
 
-==== Time-Based One Time Passwords (TOTP) compared to Counter Based One Time Passwords (HOTP)
+==== Time-Based or Counter-Based One Time Passwords
 
-The algorithms available in {project_name} for your OTP generators are time-based and counter-based. 
+The algorithms available in {project_name} for your OTP generators are time-based and counter-based.
 
-With TOTP, the token generator will hash the current time and a shared secret.  The server validates the OTP by comparing the hashes within a window of time to the submitted value.  TOTPs are valid for a short window of time.
+With Time-Based One Time Passwords (TOTP), the token generator will hash the current time and a shared secret.  The server validates the OTP by comparing the hashes within a window of time to the submitted value.  TOTPs are valid for a short window of time.
 
-With HOTP, {project_name} uses a shared counter rather than the current time. The {project_name} server increments the counter with each successful OTP login. Valid OTPs
-change after a successful login.
+With Counter-Based One Time Passwords (HOTP), {project_name} uses a shared counter rather than the current time. The {project_name} server increments the counter with each successful OTP login. Valid OTPs change after a successful login. 
 
 TOTP is more secure than HOTP because the matchable OTP is valid for a short window of time, while the OTP for HOTP is valid for an indeterminate amount of time. HOTP is more user-friendly than TOTP because no time limit exists to enter the OTP.
 
