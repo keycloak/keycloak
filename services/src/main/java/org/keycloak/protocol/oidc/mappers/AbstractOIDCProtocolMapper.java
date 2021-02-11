@@ -119,7 +119,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     }
 
     /**
-     * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to a token.
      * @param token
      * @param mappingModel
      * @param userSession
@@ -133,7 +133,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     }
 
     /**
-     * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to a token response.
      * @param accessTokenResponse
      * @param mappingModel
      * @param userSession
@@ -142,6 +142,5 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
      */
     protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
                             ClientSessionContext clientSessionCtx) {
-
     }
 }
