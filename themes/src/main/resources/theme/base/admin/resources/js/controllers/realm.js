@@ -935,16 +935,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
     $scope.initSamlProvider = function() {
         $scope.nameIdFormats = [
-            /*
-            {
-                format: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
-                name: "Transient"
-            },
-            */
             {
                 format: "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
                 name: "Persistent"
 
+            },
+            {
+                format: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+                name: "Transient"
             },
             {
                 format: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
@@ -1008,7 +1006,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.principalType = $scope.principalTypes[0].type;
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
-            $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
+            $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];			
+            $scope.identityProvider.config.allowCreate = 'true';
         }
         $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
     }
