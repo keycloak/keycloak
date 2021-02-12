@@ -76,6 +76,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -713,6 +715,52 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
         events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+
+        // reset user for other tests
+        profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
+        events.clear();
+
+        // Revert
+        setEditUsernameAllowed(true);
+    }
+
+    @Test
+    public void changeProfileWithoutRemoveCustomAttributes() throws Exception {
+        setEditUsernameAllowed(false);
+        setRegistrationEmailAsUsername(false);
+
+        UserResource userResource = testRealm().users().get(userId);
+        UserRepresentation user = userResource.toRepresentation();
+
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("custom", Arrays.asList("custom-value"));
+
+        userResource.update(user);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl()).assertEvent();
+
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("Tom", profilePage.getFirstName());
+        Assert.assertEquals("Brady", profilePage.getLastName());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        profilePage.updateProfile("New first", "New last", "new@email.com");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("New first", profilePage.getFirstName());
+        Assert.assertEquals("New last", profilePage.getLastName());
+        Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+        events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+
+        user = userResource.toRepresentation();
+        assertNotNull(user.getAttributes());
+        assertTrue(user.getAttributes().containsKey("custom"));
 
         // reset user for other tests
         profilePage.updateProfile("Tom", "Brady", "test-user@localhost");

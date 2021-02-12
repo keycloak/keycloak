@@ -390,7 +390,8 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         try {
-            UserUpdateHelper.updateAccount(realm, user, updatedProfile);
+            // backward compatibility with old account console where attributes are not removed if missing
+            UserUpdateHelper.updateAccountOldConsole(realm, user, updatedProfile);
         } catch (ReadOnlyException e) {
             setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
