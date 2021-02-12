@@ -802,15 +802,15 @@ public class AuthenticationProcessor {
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client credentials");
             } else if (e.getError() == AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED) {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getMessage());
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client credentials setup required");
             } else {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", e.getError().toString() + ": " + e.getMessage());
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Invalid client credentials");
             }
         } else {
             ServicesLogger.LOGGER.errorAuthenticatingClient(failure);
             event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-            return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client: " + failure.getMessage());
+            return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client");
         }
     }
 
