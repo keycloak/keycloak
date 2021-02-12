@@ -1242,6 +1242,13 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient removeCustomParameter(String key) {
+        if (customParameters != null) {
+            customParameters.remove(key);
+        }
+        return this;
+    }
+
     public static class AuthorizationEndpointResponse {
 
         private boolean isRedirected;
