@@ -250,4 +250,22 @@ public class PersonalInfoTest extends BaseAccountPageTest {
 
         ApiUtil.removeUserByUsername(testRealm, "keycloak-15634");
     }
+
+    @Test
+    // https://issues.redhat.com/browse/KEYCLOAK-16890
+    // Stored personal info triggers attack via the display of user name in header.
+    // If user name is left unsanitized, this test will fail with
+    // org.openqa.selenium.UnhandledAlertException: unexpected alert open: {Alert text : XSS}
+    public void storedXSSAttack() {
+        personalInfoPage.navigateTo();
+        testUser.setFirstName("<img src=x onerror=\"alert('XSS');\">");
+        personalInfoPage.setValues(testUser, false);
+        personalInfoPage.clickSave();
+
+        personalInfoPage.header().clickLogoutBtn();
+        accountWelcomeScreen.header().clickLoginBtn();
+        loginPage.form().login(testUser);
+        personalInfoPage.navigateTo();
+    }
+
 }
