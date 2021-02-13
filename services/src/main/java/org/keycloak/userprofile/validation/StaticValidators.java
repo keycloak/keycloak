@@ -107,10 +107,14 @@ public class StaticValidators {
                         && session.users().getUserByEmail(session.getContext().getRealm(), value) != null);
     }
 
-    public static BiFunction<List<String>, UserProfileContext, Boolean> isAttributeUnchanged(String attributeName) {
+    public static BiFunction<List<String>, UserProfileContext, Boolean> isReadOnlyAttributeUnchanged(String attributeName) {
         return (newAttrValues, context) -> {
+            if (newAttrValues == null) {
+                return true;
+            }
             List<String> existingAttrValues = context.getCurrentProfile() == null ? null : context.getCurrentProfile().getAttributes().getAttribute(attributeName);
             boolean result = ObjectUtil.isEqualOrBothNull(newAttrValues, existingAttrValues);
+
             if (!result) {
                 logger.warnf("Attempt to edit denied attribute '%s' of user '%s'", attributeName, context.getCurrentProfile() == null ? "new user" : context.getCurrentProfile().getAttributes().getFirstAttribute(UserModel.USERNAME));
             }

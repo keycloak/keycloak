@@ -24,8 +24,16 @@ import java.util.List;
 
 public class UserProfileAttributes extends HashMap<String, List<String>> {
 
-    public UserProfileAttributes(Map<String, List<String>> attribtues){
+    private final UserProfileProvider profileProvider;
+
+    public UserProfileAttributes(Map<String, List<String>> attribtues,
+            UserProfileProvider profileProvider){
+        this.profileProvider = profileProvider;
         this.putAll(attribtues);
+    }
+
+    public UserProfileAttributes(Map<String, List<String>> attribtues){
+        this(attribtues, null);
     }
 
     public void setAttribute(String key, List<String> value){
@@ -46,5 +54,9 @@ public class UserProfileAttributes extends HashMap<String, List<String>> {
 
     public void removeAttribute(String attr) {
         this.remove(attr);
+    }
+
+    public boolean isReadOnlyAttribute(String key) {
+        return profileProvider != null && profileProvider.isReadOnlyAttribute(key);
     }
 }
