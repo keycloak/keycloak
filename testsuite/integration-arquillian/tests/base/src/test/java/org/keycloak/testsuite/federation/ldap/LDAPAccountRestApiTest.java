@@ -52,6 +52,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -142,8 +143,11 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         user.getAttributes().get(LDAPConstants.LDAP_ID).remove(0);
         updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
 
+        // ignore removal for read-only attributes
         user.getAttributes().remove(LDAPConstants.LDAP_ID);
-        updateProfileExpectError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+        updateProfileExpectSuccess(user);
+        user = getProfile();
+        assertFalse(user.getAttributes().get(LDAPConstants.LDAP_ID).isEmpty());
 
         // Trying to update LDAP_ENTRY_DN should fail
         user.getAttributes().put(LDAPConstants.LDAP_ID, origLdapId);
@@ -206,6 +210,42 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         usernew.setEmail("john@email.org");
         SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
+    }
+
+    @Test
+    public void testIgnoreReadOnlyAttributes() throws IOException {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            appRealm.setEditUsernameAllowed(false);
+        });
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        user.setEmail("john-alias@email.org");
+        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
+
+        UserRepresentation usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        assertEquals("johnkeycloak", usernew.getUsername());
+        assertEquals("John", usernew.getFirstName());
+        assertEquals("Doe", usernew.getLastName());
+        assertEquals("john-alias@email.org", usernew.getEmail());
+        assertFalse(usernew.isEmailVerified());
+
+        usernew.getAttributes().clear();
+
+        //clean up
+        usernew.setEmail("john@email.org");
+        final int i = SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
+
+        org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()
+                .search(usernew.getUsername()).get(0);
+
+        userRep.setAttributes(null);
+
+        testRealm().users().get(userRep.getId()).update(userRep);
+        usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+
+        assertTrue(usernew.getAttributes().containsKey(LDAPConstants.LDAP_ID));
+        assertTrue(usernew.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN));
     }
 
 

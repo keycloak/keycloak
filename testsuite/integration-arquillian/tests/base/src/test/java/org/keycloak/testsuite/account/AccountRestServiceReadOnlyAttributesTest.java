@@ -36,6 +36,8 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
@@ -135,9 +137,10 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         user.singleAttribute(attrName, "foo-updated");
         updateError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
 
-        // Remove attribute from the user with account REST (Case when we are removing existing attribute)
+        // Ignore removal of read-only attributes
         user.getAttributes().remove(attrName);
-        updateError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+        user = updateAndGet(user);
+        assertTrue(user.getAttributes().containsKey(attrName));
 
         // Revert with admin REST
         adminUserRep.getAttributes().remove(attrName);

@@ -1,28 +1,26 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  * Copyright 2021  Red Hat, Inc. and/or its affiliates
+ *  * and other contributors as indicated by the @author tags.
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 package org.keycloak.userprofile;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -36,7 +34,6 @@ import org.keycloak.userprofile.validation.ValidationChainBuilder;
  */
 public class LegacyUserProfileProvider implements UserProfileProvider {
 
-    private static final Logger logger = Logger.getLogger(LegacyUserProfileProvider.class);
     private final KeycloakSession session;
     private final Pattern readOnlyAttributes;
     private final Pattern adminReadOnlyAttributes;
@@ -77,7 +74,12 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
                 addReadOnlyAttributeValidators(builder, readOnlyAttributes, updateContext, updatedProfile);
                 break;
         }
-        return new UserProfileValidationResult(builder.build().validate(updateContext,updatedProfile));
+        return new UserProfileValidationResult(builder.build().validate(updateContext,updatedProfile), updatedProfile);
+    }
+
+    @Override
+    public boolean isReadOnlyAttribute(String key) {
+        return readOnlyAttributes.matcher(key).find() || adminReadOnlyAttributes.matcher(key).find();
     }
 
     private void addUserCreationValidators(ValidationChainBuilder builder) {
@@ -130,12 +132,12 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
     }
 
     private void addReadOnlyAttributeValidators(ValidationChainBuilder builder, Pattern configuredReadOnlyAttrs, UserProfileContext updateContext, UserProfile updatedProfile) {
-        addValidatorsForAllAttributeOfUser(builder, configuredReadOnlyAttrs, updatedProfile);
-        addValidatorsForAllAttributeOfUser(builder, configuredReadOnlyAttrs, updateContext.getCurrentProfile());
+        addValidatorsForReadOnlyAttributes(builder, configuredReadOnlyAttrs, updatedProfile);
+        addValidatorsForReadOnlyAttributes(builder, configuredReadOnlyAttrs, updateContext.getCurrentProfile());
     }
 
 
-    private void addValidatorsForAllAttributeOfUser(ValidationChainBuilder builder, Pattern configuredReadOnlyAttrsPattern, UserProfile profile) {
+    private void addValidatorsForReadOnlyAttributes(ValidationChainBuilder builder, Pattern configuredReadOnlyAttrsPattern, UserProfile profile) {
         if (profile == null) {
             return;
         }
@@ -144,7 +146,7 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
                 .filter(currentAttrName -> configuredReadOnlyAttrsPattern.matcher(currentAttrName).find())
                 .forEach((currentAttrName) ->
                         builder.addAttributeValidator().forAttribute(currentAttrName)
-                                .addValidationFunction(Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, StaticValidators.isAttributeUnchanged(currentAttrName)).build()
+                                .addValidationFunction(Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, StaticValidators.isReadOnlyAttributeUnchanged(currentAttrName)).build()
                 );
     }
 }

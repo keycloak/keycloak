@@ -71,13 +71,7 @@ import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.AccountUserRepresentationUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.profile.representations.UserRepresentationUserProfile;
 import org.keycloak.userprofile.validation.AttributeValidationResult;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 import org.keycloak.userprofile.validation.ValidationResult;
@@ -120,6 +114,7 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+import static org.keycloak.userprofile.profile.UserProfileContextFactory.forUserResource;
 
 /**
  * Base resource for managing users
@@ -202,9 +197,7 @@ public class UserResource {
     }
 
     public static Response validateUserProfile(UserModel user, UserRepresentation rep, KeycloakSession session) {
-        UserProfile updatedUser = new UserRepresentationUserProfile(rep);
-        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forUserResource(user), updatedUser);
+        UserProfileValidationResult result = forUserResource(user, rep, session).validate();
         if (!result.getErrors().isEmpty()) {
             for (AttributeValidationResult attrValidation : result.getErrors()) {
                 StringBuilder s = new StringBuilder("Failed to update attribute " + attrValidation.getField() + ": ");
@@ -221,7 +214,7 @@ public class UserResource {
 
     public static void updateUserFromRep(UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
         boolean removeMissingRequiredActions = isUpdateExistingUser;
-        UserUpdateHelper.updateUserResource(session.getContext().getRealm(), user, new UserRepresentationUserProfile(rep), isUpdateExistingUser);
+        UserUpdateHelper.updateUserResource(session, user, rep, isUpdateExistingUser);
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());

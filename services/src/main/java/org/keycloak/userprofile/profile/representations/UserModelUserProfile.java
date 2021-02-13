@@ -18,6 +18,7 @@
 package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.models.UserModel;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 /**
@@ -26,8 +27,8 @@ import org.keycloak.userprofile.profile.AbstractUserProfile;
 public class UserModelUserProfile extends AbstractUserProfile {
 
 
-    public UserModelUserProfile(UserModel user) {
-        super(user.getAttributes());
+    public UserModelUserProfile(UserModel user, UserProfileProvider profileProvider) {
+        super(user.getAttributes(), profileProvider);
         this.user = user;
     }
 

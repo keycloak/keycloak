@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import static org.keycloak.userprofile.profile.UserProfileContextFactory.forUpdateProfile;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
@@ -31,13 +33,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -71,14 +69,9 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         event.event(EventType.UPDATE_PROFILE);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         UserModel user = context.getUser();
-
-        AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(formData);
-
         String oldEmail = user.getEmail();
-        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
-
-        UserProfileProvider userProfile = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-        UserProfileValidationResult result = userProfile.validate(DefaultUserProfileContext.forUpdateProfile(user),updatedProfile);
+        UserProfileValidationResult result = forUpdateProfile(user, formData, context.getSession()).validate();
+        final UserProfile updatedProfile = result.getProfile();
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
 
         if (errors != null && !errors.isEmpty()) {
@@ -89,6 +82,8 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             context.challenge(challenge);
             return;
         }
+
+        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
 
         UserUpdateHelper.updateUserProfile(context.getRealm(), user, updatedProfile);
         if (result.hasAttributeChanged(UserModel.EMAIL)) {
