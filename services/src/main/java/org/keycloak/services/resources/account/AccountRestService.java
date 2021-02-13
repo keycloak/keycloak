@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.account;
 
+import static org.keycloak.userprofile.profile.UserProfileContextFactory.forAccountService;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -45,11 +47,6 @@ import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
-import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.AccountUserRepresentationUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
@@ -160,9 +157,7 @@ public class AccountRestService {
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
-        UserProfile updatedUser = new AccountUserRepresentationUserProfile(rep);
-        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forAccountService(user), updatedUser);
+        UserProfileValidationResult result = forAccountService(user, rep, session).validate();
 
         if (result.hasFailureOfErrorType(Messages.READ_ONLY_USERNAME))
             return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
@@ -177,7 +172,7 @@ public class AccountRestService {
         }
 
         try {
-            UserUpdateHelper.updateAccount(realm, user, updatedUser);
+            UserUpdateHelper.updateAccount(realm, user, result.getProfile());
             event.success();
 
             return Response.noContent().build();
