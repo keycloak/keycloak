@@ -44,6 +44,7 @@ import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
@@ -52,6 +53,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -145,6 +147,17 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(defaultArguments(), this::assertInitAuth)
                 .logout(this::assertOnTestAppUrl)
                 .init(defaultArguments(), this::assertInitNotAuth);
+    }
+
+    @Test
+    public void testIframeFailure() {
+        JSObjectBuilder configuration = JSObjectBuilder.create()
+                .add("url", AUTH_SERVER_SCHEME + "://192.168.99.100/auth")
+                .add("realm", REALM_NAME)
+                .add("clientId", CLIENT_ID);
+
+        testExecutor.configure(configuration)
+                .init(defaultArguments(), this::assertInitError);
     }
 
     @Test

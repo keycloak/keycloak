@@ -158,6 +158,10 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         waitUntilElement(events).text().contains("Auth Success");
     }
 
+    protected void assertInitError(WebDriver driver1, Object output, WebElement events) {
+        buildFunction(this::assertOutputContains, "Init Error").validate(driver1, output, events);
+    }
+
     protected void assertInitNotAuth(WebDriver driver1, Object output, WebElement events) {
         buildFunction(this::assertOutputContains, "Init Success (Not Authenticated)").validate(driver1, output, events);
     }
