@@ -348,8 +348,8 @@
 
             configPromise.then(function () {
                 domReady().then(check3pCookiesSupported).then(processInit)
-                .catch(function() {
-                    promise.setError();
+                .catch(function(error) {
+                    promise.setError(error);
                 });
             });
             configPromise.catch(function() {
@@ -1308,6 +1308,13 @@
                 iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
                 iframe.style.display = 'none';
                 document.body.appendChild(iframe);
+
+                // There is no 'onerror' event for iframes, so we need to work around this.
+                // The iframe is removed immediately in a successful flow (when a message is received),
+                // this means we can use the 'onload' event to determine if an error occurs during loading.
+                iframe.onload = function() {
+                    promise.setError(new Error('Unable to check if 3rd party cookies are supported.'));
+                }
 
                 var messageCallback = function(event) {
                     if (iframe.contentWindow !== event.source) {
