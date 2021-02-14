@@ -26,7 +26,6 @@ export const SearchUser = ({ onSearch }: SearchUserProps) => {
         {t("startBySearchingAUser")}
       </Title>
       <EmptyStateBody>
-        {t("startIntro")}
         <Form onSubmit={handleSubmit((form) => onSearch(form.search))}>
           <InputGroup>
             <TextInput

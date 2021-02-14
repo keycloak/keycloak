@@ -1,0 +1,4 @@
+
+.keycloak__user-section__email-verified {
+  color: var(--pf-global--danger-color--100);
+}

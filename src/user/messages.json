@@ -1,8 +1,12 @@
 {
   "users": {
     "title": "Users",
-    "userExplain": "This is the description",
     "searchForUser": "Search user",
+    "startBySearchingAUser": "Start by searching a user",
+    "createNewUser": "Create new user",
+    "noUsersFound": "No users found",
+    "noUsersFoundError": "No users found due to {{error}}",
+    "emptyInstructions": "Change your search criteria or add a user",
     "username": "Username",
     "email": "Email",
     "lastName": "Last name",
@@ -10,9 +14,13 @@
     "status": "Status",
     "disabled": "Disabled",
     "temporaryDisabled": "Temporarily disabled",
+    "notVerified": "Not verified",
     "addUser": "Add user",
     "deleteUser": "Delete user",
+    "deleteConfirm": "Delete user?",
+    "deleteConfirmDialog": "Are you sure you want to permanently delete {{count}} selected user",
+    "deleteConfirmDialog_plural": "Are you sure you want to permanently delete {{count}} selected users",
     "userDeletedSuccess": "The user has been deleted",
-    "userDeletedError": "The user could not be deleted {error}"
+    "userDeletedError": "The user could not be deleted {{error}}"
   }
 }
