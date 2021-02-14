@@ -207,8 +207,8 @@
             initPromise.promise.then(function() {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
-            }).catch(function(errorData) {
-                promise.setError(errorData);
+            }).catch(function(error) {
+                promise.setError(error);
             });
 
             var configPromise = loadConfig(config);
@@ -221,8 +221,8 @@
 
                     kc.login(options).then(function () {
                         initPromise.setSuccess();
-                    }).catch(function () {
-                        initPromise.setError();
+                    }).catch(function (error) {
+                        initPromise.setError(error);
                     });
                 }
 
@@ -260,8 +260,8 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).catch(function () {
-                                    initPromise.setError();
+                                }).catch(function (error) {
+                                    initPromise.setError(error);
                                 });
                             });
                         } else {
@@ -286,8 +286,8 @@
                 if (callback && callback.valid) {
                     return setupCheckLoginIframe().then(function() {
                         processCallback(callback, initPromise);
-                    }).catch(function (e) {
-                        initPromise.setError();
+                    }).catch(function (error) {
+                        initPromise.setError(error);
                     });
                 } else if (initOptions) {
                     if (initOptions.token && initOptions.refreshToken) {
@@ -303,20 +303,20 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).catch(function () {
-                                    initPromise.setError();
+                                }).catch(function (error) {
+                                    initPromise.setError(error);
                                 });
                             });
                         } else {
                             kc.updateToken(-1).then(function() {
                                 kc.onAuthSuccess && kc.onAuthSuccess();
                                 initPromise.setSuccess();
-                            }).catch(function() {
+                            }).catch(function(error) {
                                 kc.onAuthError && kc.onAuthError();
                                 if (initOptions.onLoad) {
                                     onLoad();
                                 } else {
-                                    initPromise.setError();
+                                    initPromise.setError(error);
                                 }
                             });
                         }
@@ -352,8 +352,9 @@
                     promise.setError(error);
                 });
             });
-            configPromise.catch(function() {
-                promise.setError();
+
+            configPromise.catch(function(error) {
+                promise.setError(error);
             });
 
             return promise.promise;
