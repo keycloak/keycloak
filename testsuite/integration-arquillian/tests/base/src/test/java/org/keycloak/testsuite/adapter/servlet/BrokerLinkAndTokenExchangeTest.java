@@ -700,7 +700,66 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             httpClient.close();
         }
     }
+    
+    /**
+     * KEYCLOAK-14577, see also KEYCLOAK-10932
+     */
+    @Test
+    public void testExternalExchange_extractIdentityFromProfile() throws Exception {
+        final String username = "username";
 
+        RealmResource childRealm = adminClient.realms().realm(CHILD_IDP);
+        RealmResource realm = adminClient.realms().realm(PARENT_IDP);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setFirstName("firstname");
+        user.setLastName("lastname");
+        user.setEmail("email");
+        user.setEnabled(true);
+        createUserAndResetPasswordWithAdminClient(realm, user, "password");
+
+        String accessToken = oauth.doGrantAccessTokenRequest(PARENT_IDP, username, "password", null, PARENT_CLIENT, "password").getAccessToken();
+        Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+        try {
+            WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
+            IdentityProviderRepresentation rep = adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).toRepresentation();
+            rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, String.valueOf(false));
+            adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
+
+            AccessToken token;
+            try (Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
+                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
+                    ))) {
+                Assert.assertEquals(200, response.getStatus());
+                
+                AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+                JWSInput jws = new JWSInput(tokenResponse.getToken());
+                token = jws.readJsonContent(AccessToken.class);
+            }
+
+            Assert.assertNotNull(token);
+            Assert.assertNotNull(token.getSubject());
+            Assert.assertEquals(username, token.getPreferredUsername());
+            Assert.assertEquals("firstname", token.getGivenName());
+            Assert.assertEquals("lastname", token.getFamilyName());
+            Assert.assertEquals("email", token.getEmail());
+            
+            // cleanup  remove the user
+            childRealm.users().get(token.getSubject()).remove();
+
+        } finally {
+            httpClient.close();
+        }
+    }
 
     public void logoutAll() {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
