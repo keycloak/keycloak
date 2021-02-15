@@ -126,6 +126,7 @@ export const SettingsCache = ({
                 }}
                 selections={value}
                 variant={SelectVariant.single}
+                data-cy="kerberos-cache-policy"
               >
                 <SelectOption key={0} value={["DEFAULT"]} isPlaceholder />
                 <SelectOption key={1} value={["EVICT_DAILY"]} />
@@ -292,6 +293,7 @@ export const SettingsCache = ({
               id="kc-max-lifespan"
               name="config.maxLifespan[0]"
               ref={form.register}
+              data-cy="kerberos-cache-lifespan"
             />
           </FormGroup>
         ) : (

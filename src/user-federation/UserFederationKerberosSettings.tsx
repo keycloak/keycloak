@@ -170,12 +170,13 @@ export const UserFederationKerberosSettings = () => {
         <SettingsCache form={form} showSectionHeading />
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" data-cy="kerberos-save">
               {t("common:save")}
             </Button>
             <Button
               variant="link"
               onClick={() => history.push(`/${realm}/user-federation`)}
+              data-cy="kerberos-cancel"
             >
               {t("common:cancel")}
             </Button>

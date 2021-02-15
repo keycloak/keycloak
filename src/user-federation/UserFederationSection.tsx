@@ -47,7 +47,7 @@ export const UserFederationSection = () => {
       () => {
         const testParams: { [name: string]: string | number } = {
           parentId: realm,
-          type: "org.keycloak.storage.UserStorageProvider", // MF note that this is providerType in the output, but API call is still type
+          type: "org.keycloak.storage.UserStorageProvider",
         };
         return adminClient.components.find(testParams);
       },
@@ -172,7 +172,11 @@ export const UserFederationSection = () => {
             </TextContent>
             <hr className="pf-u-mb-lg" />
             <Gallery hasGutter>
-              <Card isHoverable>
+              <Card
+                isHoverable
+                onClick={() => history.push(`${url}/kerberos/new`)}
+                data-cy="kerberos-card"
+              >
                 <CardTitle>
                   <Split hasGutter>
                     <SplitItem>

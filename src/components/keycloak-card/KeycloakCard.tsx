@@ -67,7 +67,7 @@ export const KeycloakCard = ({
             />
           )}
         </CardActions>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle data-cy="keycloak-card-title">{title}</CardTitle>
       </CardHeader>
       <CardBody />
       <CardFooter>
