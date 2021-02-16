@@ -1,13 +1,16 @@
 [[_clear-cache]]
-= Clearing Server Caches
+= Clearing server caches
 
-{project_name} will cache everything it can in memory within the limits of your JVM and/or the limits you've configured
-it for.  If the {project_name} database is modified by a third party (i.e. a DBA) outside the scope of the server's REST APIs or Admin Console
-there's a chance parts of the in-memory cache may be stale.  You can clear the realm cache, user cache or cache of external public keys (Public keys of
- external clients or Identity providers, which {project_name} usually uses to verify signatures of particular external entity) from the Admin Console by going
-to the `Realm Settings` left menu item and the `Cache` tab.
+{project_name} caches everything it can in memory within the limits of your JVM and the limits you have configured.  If the {project_name} database is modified by a third party, such as a DBA, outside the scope of the server's REST APIs or Admin Console, parts of the in-memory cache could be stale.  You can clear the realm cache, user cache or cache of external public keys, such as Public keys of
+ external clients or Identity providers, which {project_name} may use to verify signatures of particular external entity.
 
+.Procedure
+
+. Click *Realm Settings* in the menu.
+
+. Click the *Cache* tab.
+
+. Click *Clear* for the cache you want to evict.
++
 .Cache tab
-image:{project_images}/cache-tab.png[]
-
-Just click the `clear` button on the cache you want to evict.
+image:{project_images}/cache-tab.png[Cache tab]

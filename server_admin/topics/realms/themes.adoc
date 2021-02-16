@@ -1,44 +1,58 @@
 [[_themes]]
-= Themes and Internationalization
+= Configuring themes and internationalization
 
-Themes allow you to change the look and feel of any UI in {project_name}.  Themes are configured per realm.  To change
-a theme go to the `Realm Settings` left menu item and click on the `Themes` tab.
+For a given realm, you can change the appearance of any UI, including the language that appears, in {project_name} by using themes.
 
+.Procedure
+
+. Click *Realm Setting* in the menu.
+
+. Click the *Themes* tab.
++
 .Themes Tab
-image:{project_images}/themes-tab.png[]
+image:{project_images}/themes-tab.png[Themes Tab]
 
-
-Pick the theme you want for each UI category and click `Save`.
-
+. Pick the theme you want for each UI category and click *Save*.
++
 Login Theme::
   Username password entry, OTP entry, new user registration, and other similar screens related to login.
+
 Account Theme::
   Each user has an User Account Management UI.
+
 Admin Console Theme::
   The skin of the {project_name} Admin Console.
+
 Email Theme::
   Whenever {project_name} has to send out an email, it uses templates defined in this theme to craft the email.
 
+.Additional resources
+* The link:{developerguide_link}[{developerguide_name}] describes how to create a new theme or modify existing ones.
 
+== Enabling internationalization
 
-The link:{developerguide_link}[{developerguide_name}] goes into how to create a new themes or modify existing ones.
+Every UI screen is internationalized in {project_name}.  The default language is English, but you can choose which locales you want to support and what the default locale
+will be.
 
-== Internationalization
+.Procedure
 
-Every UI screen is internationalized in {project_name}.  The default language is English, but if you turn on the
-`Internationalization` switch on the `Theme` tab you can choose which locales you want to support and what the default locale
-will be.  The next time a user logs in, they will be able to choose a language on the login page to use for the login screens,
-User Account Management UI, and Admin Console.  The link:{developerguide_link}[{developerguide_name}] explains
-how you can offer additional languages. All internationalized texts which are provided by the theme can be overwritten
-by realm-specific texts on the `Localization` tab.
+. Click *Realm Settings* in the menu.
 
+. Click the *Theme* tab.
+
+. Set *Internationalization* to *ON*.
+
+The next time a user logs in, that user can choose a language on the login page to use for the login screens, Account Console, and Admin Console.
+
+.Additional resources
+
+* The link:{developerguide_link}[{developerguide_name}] explains
+how you can offer additional languages. All internationalized texts which are provided by the theme can be overwritten by realm-specific texts on the *Localization* tab.
 
 [[_user_locale_selection]]
 == User Locale selection
 
-In order to select the best possible locale for a user there is a locale selector provider that handles deciding what
-is the best locale on the information available. One thing to note here is that it is not always known who the user is.
-For this reason the previously authenticated users locale is remembered in a persisted cookie.
+A locale selector provider suggests the best locale on the information available. However, it is often unknown who the user is. For this reason, the previously authenticated user's locale is remembered in a persisted cookie.
 
 The logic for selecting the locale uses the first of the following that is available:
 
@@ -46,9 +60,9 @@ The logic for selecting the locale uses the first of the following that is avail
 * User profile - when there is an authenticated user and the user has a preferred locale set
 * Client selected - passed by the client using for example ui_locales parameter
 * Cookie - last locale selected on the browser
-* Accepted language - locale from `Accept-Language` header
+* Accepted language - locale from *Accept-Language* header
 * Realm default
-* If none of the above, fallback to English
+* If none of the above, fall back to English
 
 When a user is authenticated an action is triggered to update the locale in the persisted cookie mentioned earlier. If the
 user has actively switched the locale through the locale selector on the login pages the users locale is also updated at

@@ -5,6 +5,10 @@
 [role="_abstract"]
 You create a realm to provide a management space where you can create users and give them permissions to use applications. At first login, you are typically in the _master_ realm, the top-level realm from which you create other realms.
 
+When deciding what realms you need, consider the kind of isolation you want to have for your users and applications.  For example, you might create a realm for the employees of your company and a separate realm for your customers.
+Your employees would log into the employee realm and only be able to visit internal company applications.  Customers would log into the customer
+realm and only be able to interact with customer-facing apps. 
+
 .Procedure
 
 . Point to the top of the left pane.
@@ -12,19 +16,19 @@ You create a realm to provide a management space where you can create users and 
 . Click *Add Realm*.
 +
 .Add Realm Menu
-image:{project_images}/add-realm-menu.png[]
+image:{project_images}/add-realm-menu.png[Add Realm Menu]
 
 . Enter a name for the realm.
 
 . Click *Create*.
 +
 .Create Realm
-image:{project_images}/create-realm.png[]
+image:{project_images}/create-realm.png[Create Realm]
 
 The current realm is now set to the realm you just created.  You can switch between managing different realms by pointing to the top left corner to click *Select Realm*.
 
 ifdef::standalone[]
 [role="_additional-resources"]
 .Additional resources
-Alternatively you can import a JSON document that defines your new realm. For more detail, see the xref:assembly-exporting-importing_{context}[Export and Import] chapter.
+* Alternatively you can import a JSON document that defines your new realm. For more detail, see the xref:assembly-exporting-importing_{context}[Export and Import] chapter.
 endif::[]

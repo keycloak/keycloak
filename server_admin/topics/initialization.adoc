@@ -1,7 +1,8 @@
 
+[id="creating-first-admin_{context}"]
 == Creating the first administrator
 
-After installing {project_name}, you need an administrator account that can act as a superuser with full permisions to manage all parts of {project_name}. With this account, you can log into the {project_name} Admin Console where you create realms and users and register applications that are secured by {project_name}. 
+After installing {project_name}, you need an administrator account that can act as a _super_ admin with full permisions to manage all parts of {project_name}. With this account, you can log into the {project_name} Admin Console where you create realms and users and register applications that are secured by {project_name}. 
 
 .Prerequisites
 

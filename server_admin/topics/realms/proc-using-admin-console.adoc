@@ -1,0 +1,30 @@
+== Using the Admin Console
+
+You configure realms and perform most administrative tasks in the {project_name} Admin Console.
+
+.Prerequisites
+
+* You need an administrator account.  See xref:creating-first-admin_{context}[Creating the first administrator].
+
+.Procedure
+
+. Go the the URL for the Admin Console.
++
+For example, for localhost, use this URL: http://localhost:8080/auth/admin/
++
+.Login Page
+image:{project_images}/login-page.png[Login Page]
+
+. Enter the username and password you created on the Welcome Page or the `add-user-keycloak` script in the bin directory.
+This action displays the Admin Console.
++
+.Admin Console
+image:{project_images}/admin-console.png[Admin Console]
+
+. Note the menus and other options that you can use:
++
+* Click the menu labeled *Master* to pick a realm you want to manage or to create a new one.
++
+* Click the top right list to view your account or log out.
++
+* Hover over a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.

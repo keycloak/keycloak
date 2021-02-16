@@ -1,4 +1,4 @@
 
-== Login Page Settings
+= Controlling login options
 
 {project_name} includes several built-in login page features.

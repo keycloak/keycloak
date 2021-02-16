@@ -1,22 +1,18 @@
 
-= The Master Realm
-When you boot {project_name} for the first time {project_name} creates a
-pre-defined realm for you. This initial realm is the _master_ realm. It is the
-highest level in the hierarchy of realms. Admin accounts in this realm have
-permissions to view and manage any other realm created on the server instance.
-When you define your initial admin account, you create an account in the
-_master_ realm. Your initial login to the admin console will also be via the
-_master_ realm.
+= The master realm
+In the Admin Console, two types of realms exist:
 
-We recommend that you do not use the _master_ realm to manage the users
-and applications in your organization. Reserve use of the _master_ realm for
-_super_ admins to create and manage the realms in your system. Following this
-security model helps prevent accidental changes and follows the tradition
+* `Master realm` - This realm was created for you when you first started {project_name}. It contains the administrator account you created at the first login.  Use the _master_ realm only to create and manage the realms in your system.
+
+* `Other realms` - These realms are created by the administrator in the master realm. In these realms, administrators manage the users in your organization and the applications they need. The applications are owned by the users.
+
+.Realms and applications
+image:../../../getting_started/images/master_realm.png[Realms and applications]
+
+Realms are isolated from one another and can only manage and authenticate the users that they control. Following this security model helps prevent accidental changes and follows the tradition
 of permitting user accounts access to only those privileges and powers necessary
 for the successful completion of their current task.
 
-It is possible to disable the _master_ realm and define admin accounts within
-each individual new realm you create. Each realm has its own dedicated Admin
-Console that you can log into with local accounts. This guide talks more about
-this in the <<_per_realm_admin_permissions, Dedicated Realm Admin Consoles>>
-chapter.
+.Additional resources
+
+* See <<_per_realm_admin_permissions, Dedicated Realm Admin Consoles>> if you want to disable the _master_ realm and define administrator accounts within any new realm you create. Each realm has its own dedicated Admin Console that you can log into with local accounts.

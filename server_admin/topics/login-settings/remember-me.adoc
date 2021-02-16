@@ -1,5 +1,5 @@
 
-=== Remember Me
+== Enabling Remember Me
 
 A logged-in user closing their browser destroys their session, and that user must log in again. You can set {project_name} to keep the user's login session open if that user clicks the _Remember Me_ checkbox upon login. This action turns the login cookie from a session-only cookie to a persistence cookie.
 

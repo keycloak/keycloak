@@ -1,26 +1,16 @@
 
-== Working in the Admin Console
+== Configuring realms
 
-The bulk of your administrative tasks will be done through the {project_name} Admin Console.
-You can go to the console url directly at http://localhost:8080/auth/admin/
+Once you have an administrative account for the Admin Console, you can configure realms. A realm is a space where you manage objects, including users, applications, roles, and groups.  A user belongs to and logs into a realm.   One {project_name} deployment can define, store, and manage as many realms as there is space for in the database.
 
-.Login Page
-image:{project_images}/login-page.png[]
-
-Enter the username and password you created on the Welcome Page or the `add-user-keycloak` script in the bin directory.
-This will bring you to the {project_name} Admin Console.
-
-.Admin Console
-image:{project_images}/admin-console.png[]
-
-The left drop down menu allows you to pick a realm you want to manage or to create a new one.  The right drop down menu allows you to view your user account or logout.
-If you are curious about a certain feature, button, or field within the Admin Console, simply hover your mouse
-over any question mark `?` icon.  This will pop up tooltip text to describe the area of the console you are interested in.
-The image above shows the tooltip in action.
-
+include::realms/proc-using-admin-console.adoc[leveloffset=1]
 include::realms/master.adoc[leveloffset=2]
 include::realms/proc-creating-a-realm.adoc[leveloffset=2]
 include::realms/ssl.adoc[leveloffset=2][]
 include::realms/cache.adoc[leveloffset=2][]
 include::realms/email.adoc[leveloffset=2]
 include::realms/themes.adoc[leveloffset=2]
+include::login-settings.adoc[leveloffset=2]
+include::login-settings/forgot-password.adoc[leveloffset=2]
+include::login-settings/remember-me.adoc[leveloffset=2]
+include::realms/keys.adoc[]

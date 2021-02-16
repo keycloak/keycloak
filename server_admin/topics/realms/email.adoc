@@ -1,40 +1,44 @@
 [[_email]]
 
-= Email Settings
+= Configuring email for a realm
 
-{project_name} sends emails to users to verify their email address, when they forget their passwords, or when an admin needs to
-receive notifications about a server event.
-To enable {project_name} to send emails you need to provide {project_name} with your SMTP server settings.
-This is configured per realm.  Go to the `Realm Settings` left menu
-item and click the `Email` tab.
+{project_name} sends emails to users to verify their email addresses, when they forget their passwords, or when an administrator needs to receive notifications about a server event. To enable {project_name} to send emails, you provide {project_name} with your SMTP server settings.
 
+.Procedure
+
+. Click *Realm Settings* in the menu.
+
+. Click the *Email* tab.
++
 .Email Tab
-image:{project_images}/email-tab.png[]
+image:{project_images}/email-tab.png[Email Tab]
 
+. Fill in the fields and toggle the switches as needed.
++
 Host::
-  `Host` denotes the SMTP server hostname used for sending emails.
+  *Host* denotes the SMTP server hostname used for sending emails.
 
 Port::
-  `Port` denotes the SMTP server port.
+  *Port* denotes the SMTP server port.
 
 From::
-  `From` denotes the address used for the `From` SMTP-Header for the emails sent.
+  *From* denotes the address used for the *From* SMTP-Header for the emails sent.
 
 From Display Name::
-  `From Display Name` allows to configure a user friendly email address aliases (optional). If not set the plain `From` email address will be displayed in email clients.
+  *From Display Name* allows to configure a user friendly email address aliases (optional). If not set the plain *From* email address will be displayed in email clients.
 
 Reply To::
-  `Reply To` denotes the address used for the `Reply-To` SMTP-Header for the mails sent (optional). If not set the plain `From` email address will be used.
+  *Reply To* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional). If not set the plain *From* email address will be used.
 
 Reply To Display Name::
-  `Reply To Display Name` allows to configure a user friendly email address aliases (optional). If not set the plain `Reply To` email address will be displayed.
+  *Reply To Display Name* allows to configure a user friendly email address aliases (optional). If not set the plain *Reply To* email address will be displayed.
 
 Envelope From::
-  `Envelope From` denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the `Return-Path` SMTP-Header for the mails sent (optional).
+  *Envelope From* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
 
-As emails are used for recovering usernames and passwords it's recommended to use SSL or TLS, especially if the SMTP server is on an external network.
-To enable SSL click on `Enable SSL` or to enable TLS click on `Enable TLS`.
-You will most likely also need to change the `Port` (the default port for SSL/TLS is 465).
+Enable SSL and Enable StartTSL::
+  Toggle one of these switches to *ON* to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network. You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
 
-If your SMTP server requires authentication click on `Enable Authentication` and insert the `Username` and `Password`. The value of the `Password` field can refer a value from an external <<_vault-administration,vault>>.
+Enable Authentication::
+  Set this switch to *ON* if your SMTP server requires authentication. When prompted, supply the *Username* and *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
 

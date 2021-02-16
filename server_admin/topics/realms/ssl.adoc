@@ -1,27 +1,28 @@
 [[_ssl_modes]]
 
-= SSL Mode
+= Configuring SSL for a realm
 
-Each realm has an SSL Mode associated with it.  The SSL Mode defines the SSL/HTTPS requirements for interacting with the realm.
-Browsers and applications that interact with the realm must honor the SSL/HTTPS requirements defined by the SSL Mode or they
-will not be allowed to interact with the server.
+Each realm has an associated SSL Mode, which defines the SSL/HTTPS requirements for interacting with the realm.
+Browsers and applications that interact with the realm honor the SSL/HTTPS requirements defined by the SSL Mode or they cannot interact with the server.
 
 WARNING:  {project_name} generates a self-signed certificate the first time it runs.  Please note that self-signed certificates are not secure, and should only be used for testing purposes.  It is highly recommended that you install a CA-signed certificate on the {project_name} server itself or on a reverse proxy in front of the {project_name} server.  See the link:{installguide_link}[{installguide_name}].
 
-To configure the SSL Mode of your realm, you need to click on the `Realm Settings` left menu item and go to the `Login` tab.
+.Procedure 
+. Click *Realm Settings* in the menu.
 
+. Click the *Login* tab.
++
 .Login Tab
-image:{project_images}/login-tab.png[]
+image:{project_images}/login-tab.png[Login Tab]
 
-The `Require SSL` option allows you to pick the SSL Mode you want.  Here is an explanation of each mode:
+. Set *Require SSL* to one of the following SSL modes:
 
-external requests::
-  Users can interact with {project_name} without SSL so long as they stick to private IP addresses like `localhost`, `127.0.0.1`, `10.x.x.x`, `192.168.x.x`, and `172.16.x.x`.
-  If you try to access {project_name} without SSL from a non-private IP address you will get an error.
+* external requests::
+  Users can interact with {project_name} without SSL so long as they stick to private IP addresses such as `localhost`, `127.0.0.1`, `10.x.x.x`, `192.168.x.x`, and `172.16.x.x`.
+  If you try to access {project_name} without SSL from a non-private IP address, you will get an error.
 
-none::
-  {project_name} does not require SSL.  This should really only be used in development when you are playing around with things and don't want to bother
-  configuring SSL on your server.
-
-all requests::
+* none::
+  {project_name} does not require SSL.  This choice applies only in development when you are experimenting and do not plan to support this deployment.
+  
+* all requests::
   {project_name} requires SSL for all IP addresses.
