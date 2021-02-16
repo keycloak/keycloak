@@ -58,13 +58,13 @@ export const KeycloakCard = ({
         <CardActions>
           {dropdownItems && (
             <Dropdown
+              data-cy={`${title}-dropdown`}
               isPlain
               position={"right"}
               toggle={<KebabToggle onToggle={onDropdownToggle} />}
               onClick={(e) => handleCardMenuClick(e)}
               isOpen={isDropdownOpen}
               dropdownItems={dropdownItems}
-              data-cy={`${title}-dropdown`}
             />
           )}
         </CardActions>
