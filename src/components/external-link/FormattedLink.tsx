@@ -1,21 +1,28 @@
-import React from "react";
+import React, { AnchorHTMLAttributes } from "react";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
-import { Button, ButtonProps } from "@patternfly/react-core";
 import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 
-export const FormattedLink = ({ title, href, ...rest }: ButtonProps) => {
+export type FormattedLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+  isInline?: boolean;
+};
+
+export const FormattedLink = ({
+  title,
+  href,
+  isInline,
+  ...rest
+}: FormattedLinkProps) => {
   return (
-    <Button
-      variant="link"
-      icon={href?.startsWith("http") && <ExternalLinkAltIcon />}
-      iconPosition="right"
-      component="a"
+    <a
       href={href}
       target="_blank"
+      rel="noreferrer noopener"
+      className={isInline ? "pf-m-link pf-m-inline" : ""}
       {...rest}
     >
-      {title ? title : href}
-    </Button>
+      {title ? title : href}{" "}
+      {href?.startsWith("http") && <ExternalLinkAltIcon />}
+    </a>
   );
 };
 

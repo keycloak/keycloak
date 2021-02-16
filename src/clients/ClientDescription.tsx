@@ -35,12 +35,29 @@ export const ClientDescription = ({ form }: ClientDescriptionProps) => {
       <FormGroup label={t("common:name")} fieldId="kc-name">
         <TextInput ref={register()} type="text" id="kc-name" name="name" />
       </FormGroup>
-      <FormGroup label={t("common:description")} fieldId="kc-description">
+      <FormGroup
+        label={t("common:description")}
+        fieldId="kc-description"
+        validated={
+          errors.description ? ValidatedOptions.error : ValidatedOptions.default
+        }
+        helperTextInvalid={errors.description?.message}
+      >
         <TextInput
-          ref={register()}
+          ref={register({
+            maxLength: {
+              value: 255,
+              message: t("common:maxLength", { length: 255 }),
+            },
+          })}
           type="text"
           id="kc-description"
           name="description"
+          validated={
+            errors.description
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
+          }
         />
       </FormGroup>
     </FormAccess>

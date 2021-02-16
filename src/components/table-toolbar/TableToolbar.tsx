@@ -12,6 +12,7 @@ import {
   TextInput,
   Button,
   ButtonVariant,
+  Divider,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
@@ -72,6 +73,7 @@ export const TableToolbar = ({
           {toolbarItem}
         </ToolbarContent>
       </Toolbar>
+      <Divider />
       {children}
       <Toolbar>{toolbarItemFooter}</Toolbar>
     </>

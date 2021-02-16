@@ -41,7 +41,11 @@ export const ClientsSection = () => {
     <>
       <Link key={client.id} to={`${url}/${client.id}`}>
         {client.clientId}
-        {!client.enabled && <Badge isRead>Disabled</Badge>}
+        {!client.enabled && (
+          <Badge isRead className="pf-u-ml-sm">
+            Disabled
+          </Badge>
+        )}
       </Link>
     </>
   );
@@ -51,7 +55,7 @@ export const ClientsSection = () => {
         titleKey="clients:clientList"
         subKey="clients:clientsExplain"
       />
-      <PageSection variant="light">
+      <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable
           loader={loader}
           isPaginated

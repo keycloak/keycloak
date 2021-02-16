@@ -11,21 +11,23 @@ import {
   ToolbarContent,
   ToolbarItem,
   Badge,
-  ButtonProps,
   Dropdown,
   DropdownToggle,
   DropdownPosition,
 } from "@patternfly/react-core";
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
-import { FormattedLink } from "../external-link/FormattedLink";
+import {
+  FormattedLink,
+  FormattedLinkProps,
+} from "../external-link/FormattedLink";
 
 export type ViewHeaderProps = {
   titleKey: string;
   badge?: string;
   subKey: string;
   actionsDropdownId?: string;
-  subKeyLinkProps?: ButtonProps;
+  subKeyLinkProps?: FormattedLinkProps;
   dropdownItems?: ReactElement[];
   lowerDropdownItems?: any;
   lowerDropdownMenuTitle?: any;

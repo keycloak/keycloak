@@ -1,14 +1,18 @@
 import React from "react";
 import { Meta, Story } from "@storybook/react";
-import { FormattedLink } from "../components/external-link/FormattedLink";
-import { ButtonProps } from "@patternfly/react-core";
+import {
+  FormattedLink,
+  FormattedLinkProps,
+} from "../components/external-link/FormattedLink";
 
 export default {
   title: "Formatted link",
   component: FormattedLink,
 } as Meta;
 
-const Template: Story<ButtonProps> = (args) => <FormattedLink {...args} />;
+const Template: Story<FormattedLinkProps> = (args) => (
+  <FormattedLink {...args} />
+);
 
 export const WithTitle = Template.bind({});
 WithTitle.args = {
@@ -25,11 +29,4 @@ export const ApplicationLink = Template.bind({});
 ApplicationLink.args = {
   title: "Application link",
   href: "/application/main",
-};
-
-export const DisabledLink = Template.bind({});
-DisabledLink.args = {
-  title: "Disabled link",
-  href: "http://some-other-link.nl/super",
-  isAriaDisabled: true,
 };
