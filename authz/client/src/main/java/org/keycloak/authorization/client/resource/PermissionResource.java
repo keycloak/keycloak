@@ -65,10 +65,10 @@ public class PermissionResource {
                       final String requester,
                       final Boolean granted,
                       final Boolean returnNames) {
-        Callable<Map<String, Long>> callable = new Callable<Map<String, Long>>() {
+        Callable<Long> callable = new Callable<Long>() {
             @Override
-            public Map<String, Long> call() throws Exception {
-                return http.<Map<String, Long>>get(serverConfiguration.getPermissionEndpoint()+"/ticket/count")
+            public Long call() throws Exception {
+                return http.<Long>get(serverConfiguration.getPermissionEndpoint()+"/ticket/count")
                         .authorizationBearer(pat.call())
                         .param("resourceId", resourceId)
                         .param("scopeId", scopeId)
@@ -76,14 +76,13 @@ public class PermissionResource {
                         .param("requester", requester)
                         .param("granted", granted == null ? null : granted.toString())
                         .param("returnNames", returnNames == null ? null : returnNames.toString())
-                        .response().json(new TypeReference<Map<String, Long>>(){}).execute();
+                        .response().json(new TypeReference<Long>(){}).execute();
             }
         };
         try {
-            return callable.call().get("count");
+            return callable.call();
         } catch (Exception cause) {
-            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error querying permission ticket count", cause)
-                    .get("count");
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error querying permission ticket count", cause);
         }
     }
 
