@@ -57,7 +57,11 @@ const KerberosSettingsHeader = ({
           titleKey="Kerberos"
           subKey=""
           dropdownItems={[
-            <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+            <DropdownItem
+              key="delete"
+              onClick={() => toggleDeleteDialog()}
+              data-cy="delete-provider-cmd"
+            >
               {t("deleteProvider")}
             </DropdownItem>,
           ]}

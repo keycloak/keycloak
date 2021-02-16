@@ -64,6 +64,7 @@ export const KeycloakCard = ({
               onClick={(e) => handleCardMenuClick(e)}
               isOpen={isDropdownOpen}
               dropdownItems={dropdownItems}
+              data-cy={`${title}-dropdown`}
             />
           )}
         </CardActions>

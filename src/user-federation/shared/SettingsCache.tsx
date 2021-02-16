@@ -156,6 +156,7 @@ export const SettingsCache = ({
               control={form.control}
               render={({ onChange, value }) => (
                 <Select
+                  data-cy="cache-day"
                   toggleId="kc-eviction-day"
                   required
                   onToggle={() =>

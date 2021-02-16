@@ -110,6 +110,7 @@ export const UserFederationSection = () => {
           onClick={() => {
             toggleDeleteForCard(userFederation.id!);
           }}
+          data-cy="card-delete"
         >
           {t("common:delete")}
         </DropdownItem>,
