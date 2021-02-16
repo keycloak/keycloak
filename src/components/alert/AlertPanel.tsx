@@ -24,6 +24,7 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
         <Alert
           key={key}
           isLiveRegion
+          timeout={true}
           variant={AlertVariant[variant]}
           variantLabel=""
           title={message}
