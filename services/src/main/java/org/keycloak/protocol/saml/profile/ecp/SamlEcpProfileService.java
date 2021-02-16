@@ -69,6 +69,11 @@ public class SamlEcpProfileService extends SamlService {
                 }
 
                 @Override
+                protected boolean isDestinationRequired() {
+                    return false;
+                }
+
+                @Override
                 protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
                     // force passive authentication when executing this profile
                     requestAbstractType.setIsPassive(true);
