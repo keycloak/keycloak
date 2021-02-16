@@ -240,6 +240,10 @@ public class SAMLEndpoint {
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
 
+        protected boolean isDestinationRequired() {
+            return true;
+        }
+
         protected KeyLocator getIDPKeyLocator() {
             List<Key> keys = new LinkedList<>();
 
@@ -271,7 +275,8 @@ public class SAMLEndpoint {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
-            if (requestAbstractType.getDestination() == null && containsUnencryptedSignature(holder)) {
+            if (isDestinationRequired() &&
+                    requestAbstractType.getDestination() == null && containsUnencryptedSignature(holder)) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_REQUEST);
@@ -582,7 +587,8 @@ public class SAMLEndpoint {
             }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
+            if (isDestinationRequired()
+                    && statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);

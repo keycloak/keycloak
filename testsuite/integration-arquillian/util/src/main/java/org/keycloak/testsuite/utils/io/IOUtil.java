@@ -28,12 +28,16 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -99,6 +103,19 @@ public class IOUtil {
             return sw.toString();
         } catch (TransformerException e) {
             log.error("Can't transform document to String");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static InputStream documentToInputStream(Document doc) {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            Source xmlSource = new DOMSource(doc);
+            Result outputTarget = new StreamResult(outputStream);
+            TransformerFactory.newInstance().newTransformer().transform(xmlSource, outputTarget);
+            return new ByteArrayInputStream(outputStream.toByteArray());
+        } catch (TransformerException e) {
+            log.error("Can't transform document to InputStream");
             throw new RuntimeException(e);
         }
     }

@@ -141,6 +141,10 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             return null;
         }
+        
+        protected boolean isDestinationRequired() {
+            return true;
+        }
 
         protected Response handleSamlResponse(String samlResponse, String relayState) {
             event.event(EventType.LOGOUT);
@@ -154,7 +158,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
+            if (isDestinationRequired() &&
+                    statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
                 event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -268,7 +273,8 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             logger.debug("verified request");
 
-            if (requestAbstractType.getDestination() == null && containsUnencryptedSignature(documentHolder)) {
+            if (isDestinationRequired() &&
+                    requestAbstractType.getDestination() == null && containsUnencryptedSignature(documentHolder)) {
                 event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -501,6 +507,9 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         private boolean validateDestination(RequestAbstractType req, SamlClient samlClient, String errorCode) {
+            if (!isDestinationRequired() && req.getDestination() == null) {
+                return true;
+            }
             // validate destination
             if (req.getDestination() == null && samlClient.requiresClientSignature()) {
                 event.detail(Details.REASON, "missing_destination_required");
