@@ -80,15 +80,15 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     public void passwordUpdated(UserModel user, LDAPObject ldapUser, UserCredentialModel password) {
         logger.debugf("Going to update pwdLastSet for ldap user '%s' after successful password update", ldapUser.getDn().toString());
 
-        // Normally it's read-only
+        // Normally it's read-only and adlds do this automaticly
         ldapUser.removeReadOnlyAttributeName(LDAPConstants.PWD_LAST_SET);
-
+        // set but not commit in AD LDS (-1 set pwdLastSet time to now)
         ldapUser.setSingleAttribute(LDAPConstants.PWD_LAST_SET, "-1");
-        
+
         if (user.isEnabled()) {
             // TODO: Use removeAttribute once available
             ldapUser.setSingleAttribute(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED, "FALSE");
-            logger.debugf("Removing msDS-UserPasswordExpired of user '%s'", ldapUser.getDn().toString());
+            logger.debugf("Removing %s of user '%s'",LDAPConstants.MSDS_USER_ACCOUNT_DISABLED, ldapUser.getDn().toString());
         }
 
         ldapProvider.getLdapIdentityStore().update(ldapUser);
@@ -180,7 +180,9 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
         public boolean isEnabled() {
             boolean kcEnabled = super.isEnabled();
 
-            if (getPwdLastSet() > 0) {
+            // getPwdLastSet() == -1 when is set but not commit in AD LDS (-1 set pwdLastSet time to now)
+            if (getPwdLastSet() > 0
+                || getPwdLastSet() == -1) {
                 // Merge KC and MSAD LDS
                 return kcEnabled && !Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED));
             } else {
