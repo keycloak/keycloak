@@ -38,7 +38,7 @@ export const PaginatingTableToolbar = ({
   inputGroupOnChange,
   inputGroupOnClick,
 }: TableToolbarProps) => {
-  const page = first / max;
+  const page = Math.round(first / max);
   const pagination = (variant: "top" | "bottom" = "top") => (
     <Pagination
       isCompact
@@ -52,7 +52,7 @@ export const PaginatingTableToolbar = ({
       perPage={max}
       onNextClick={(_, p) => onNextClick((p - 1) * max)}
       onPreviousClick={(_, p) => onPreviousClick((p - 1) * max)}
-      onPerPageSelect={(_, m, f) => onPerPageSelect(f, m)}
+      onPerPageSelect={(_, m, f) => onPerPageSelect(f - 1, m)}
       variant={variant}
     />
   );
