@@ -98,7 +98,7 @@ For more details on how to invoke on this endpoint, see https://tools.ietf.org/h
 
 If you need to manually validate access tokens issued by {project_name} you can invoke the <<_token_introspection_endpoint,Introspection Endpoint>>.
 The downside to this approach is that you have to make a network invocation to the {project_name} server.  This can be slow and possibly overload the
-server if you have too many validation requests going on at the same time.  {project_name} issued access tokens are https://tools.ietf.org/html/rfc7519[JSON Web Tokens (JWT)] digitally signed and encoded using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)].
+server if you have too many validation requests going on at the same time.  {project_name} issued access tokens are https://tools.ietf.org/html/rfc7519[JSON Web Tokens (JWT)] digitally signed and encoded using https://tools.ietf.org/html/rfc7515[JSON Web Signature (JWS)].
 Because they are encoded in this way, this allows you to locally validate access tokens using the public key of the issuing realm.  You can either hard code the
 realm's public key in your validation code, or lookup and cache the public key using the <<_certificate_endpoint, certificate endpoint>> with the Key ID (KID) embedded within the
 JWS.  Depending what language you code in, there are a multitude of third party libraries out there that can help you with JWS validation.
