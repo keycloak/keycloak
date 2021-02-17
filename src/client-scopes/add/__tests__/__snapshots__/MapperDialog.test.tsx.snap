@@ -21009,7 +21009,6 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                             <ul
                               aria-label="chooseAMapperType"
                               className="pf-c-data-list pf-m-compact pf-m-grid-md"
-                              style={Object {}}
                             >
                               <DataListItem
                                 aria-labelledby="User Realm Role"
