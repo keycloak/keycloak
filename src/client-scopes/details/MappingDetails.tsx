@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useErrorHandler } from "react-error-boundary";
 import {
   ActionGroup,
   AlertVariant,
@@ -43,6 +44,7 @@ type Params = {
 export const MappingDetails = () => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
 
   const { scopeId, id } = useParams<Params>();
@@ -90,7 +92,8 @@ export const MappingDetails = () => {
       (result) => {
         setConfigProperties(result.configProperties);
         setMapping(result.mapping);
-      }
+      },
+      handleError
     );
   }, []);
 

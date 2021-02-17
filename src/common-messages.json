@@ -50,6 +50,8 @@
     "type": "Type",
     "category": "Category",
     "priority": "Priority",
+    "unexpectedError": "An unexpected error occurred: '{{error}}'",
+    "retry": "Retry",
 
     "home": "Home",
     "manage": "Manage",

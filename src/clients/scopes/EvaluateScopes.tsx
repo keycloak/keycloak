@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useErrorHandler } from "react-error-boundary";
 import {
   ClipboardCopy,
   EmptyState,
@@ -145,10 +146,12 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const tabContent2 = useRef(null);
   const tabContent3 = useRef(null);
 
+  const handleError = useErrorHandler();
   useEffect(() => {
     return asyncStateFetch(
       () => adminClient.clients.listOptionalClientScopes({ id: clientId }),
-      (optionalClientScopes) => setSelectableScopes(optionalClientScopes)
+      (optionalClientScopes) => setSelectableScopes(optionalClientScopes),
+      handleError
     );
   }, []);
 
@@ -182,7 +185,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               return user;
             })
             .map((user) => <SelectOption key={user.id} value={user} />)
-        )
+        ),
+      handleError
     );
   }, [userSearch]);
 
@@ -221,7 +225,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
 
         setProtocolMappers(mapperList);
         refresh();
-      }
+      },
+      handleError
     );
   }, [selected]);
 
@@ -241,7 +246,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       },
       (accessToken) => {
         setAccessToken(JSON.stringify(accessToken, undefined, 3));
-      }
+      },
+      handleError
     );
   }, [user, selected]);
 

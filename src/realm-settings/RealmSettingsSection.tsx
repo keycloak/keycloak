@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
+import { useErrorHandler } from "react-error-boundary";
 import {
   ActionGroup,
   AlertVariant,
@@ -119,6 +120,7 @@ const requireSslTypes = ["all", "external", "none"];
 export const RealmSettingsSection = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
   const { register, control, getValues, setValue, handleSubmit } = useForm();
@@ -134,7 +136,8 @@ export const RealmSettingsSection = () => {
       (realm) => {
         setRealm(realm);
         setupForm(realm);
-      }
+      },
+      handleError
     );
   }, []);
 

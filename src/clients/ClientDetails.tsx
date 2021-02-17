@@ -8,9 +8,10 @@ import {
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { useParams } from "react-router-dom";
+import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useParams } from "react-router-dom";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 
 import { ClientSettings } from "./ClientSettings";
@@ -96,6 +97,8 @@ const ClientDetailHeader = ({
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
+
   const { addAlert } = useAlerts();
 
   const form = useForm();
@@ -164,7 +167,8 @@ export const ClientDetails = () => {
       (fetchedClient) => {
         setClient(fetchedClient);
         setupForm(fetchedClient);
-      }
+      },
+      handleError
     );
   }, []);
 

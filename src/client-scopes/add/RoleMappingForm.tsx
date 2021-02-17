@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
+import { useErrorHandler } from "react-error-boundary";
 import {
   FormGroup,
   PageSection,
@@ -35,6 +36,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 export const RoleMappingForm = () => {
   const { realm } = useContext(RealmContext);
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const history = useHistory();
   const { addAlert } = useAlerts();
 
@@ -74,7 +76,8 @@ export const RoleMappingForm = () => {
         );
         return filteredClients;
       },
-      (filteredClients) => setClients(filteredClients)
+      (filteredClients) => setClients(filteredClients),
+      handleError
     );
   }, []);
 
@@ -91,7 +94,8 @@ export const RoleMappingForm = () => {
           return await adminClient.roles.find();
         }
       },
-      (clientRoles) => setClientRoles(clientRoles)
+      (clientRoles) => setClientRoles(clientRoles),
+      handleError
     );
   }, [selectedClient]);
 

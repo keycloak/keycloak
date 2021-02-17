@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
+import { useErrorHandler } from "react-error-boundary";
 import {
   ActionGroup,
   AlertVariant,
@@ -41,6 +42,7 @@ export const ClientScopeForm = () => {
   const [clientScope, setClientScope] = useState<ClientScopeRepresentation>();
 
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const providers = useLoginProviders();
   const { id } = useParams<{ id: string }>();
 
@@ -67,7 +69,8 @@ export const ClientScopeForm = () => {
           return data;
         }
       },
-      (data) => setClientScope(data)
+      (data) => setClientScope(data),
+      handleError
     );
   }, [key]);
 

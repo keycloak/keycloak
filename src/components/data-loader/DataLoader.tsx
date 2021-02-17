@@ -1,5 +1,7 @@
 import React, { DependencyList, useEffect, useState } from "react";
 import { Spinner } from "@patternfly/react-core";
+import { useErrorHandler } from "react-error-boundary";
+
 import { asyncStateFetch } from "../../context/auth/AdminClient";
 
 type DataLoaderProps<T> = {
@@ -10,11 +12,13 @@ type DataLoaderProps<T> = {
 
 export function DataLoader<T>(props: DataLoaderProps<T>) {
   const [data, setData] = useState<T | undefined>();
+  const handleError = useErrorHandler();
 
   useEffect(() => {
     return asyncStateFetch(
       () => props.loader(),
-      (result) => setData(result)
+      (result) => setData(result),
+      handleError
     );
   }, props.deps || []);
 

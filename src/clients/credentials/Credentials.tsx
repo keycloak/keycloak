@@ -1,3 +1,7 @@
+import React, { useEffect, useState } from "react";
+import { Controller, UseFormMethods, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useErrorHandler } from "react-error-boundary";
 import {
   ActionGroup,
   AlertVariant,
@@ -14,18 +18,16 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import CredentialRepresentation from "keycloak-admin/lib/defs/credentialRepresentation";
-import React, { useEffect, useState } from "react";
-import { Controller, UseFormMethods, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-
 import {
   useAdminClient,
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
+
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
@@ -53,6 +55,7 @@ export type CredentialsProps = {
 export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
   const clientAuthenticatorType = useWatch({
     control: form.control,
@@ -84,7 +87,8 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
       ({ providers, secret }) => {
         setProviders(providers);
         setSecret(secret);
-      }
+      },
+      handleError
     );
   }, []);
 

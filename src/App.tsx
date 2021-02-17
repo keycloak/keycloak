@@ -6,6 +6,7 @@ import {
   Switch,
   useParams,
 } from "react-router-dom";
+import { ErrorBoundary, useErrorHandler } from "react-error-boundary";
 
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
@@ -21,6 +22,7 @@ import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/GroupsSection";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
+import { ErrorRenderer } from "./components/error/ErrorRenderer";
 
 // This must match the id given as scrollableSelector in scroll-form
 const mainPageContentId = "kc-main-content-page-container";
@@ -42,6 +44,7 @@ const RealmPathSelector = ({ children }: { children: ReactNode }) => {
   const { setRealm } = useRealm();
   const { realm } = useParams<{ realm: string }>();
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   useEffect(
     () =>
       asyncStateFetch(
@@ -50,7 +53,8 @@ const RealmPathSelector = ({ children }: { children: ReactNode }) => {
           if (realms.findIndex((r) => r.realm == realm) !== -1) {
             setRealm(realm);
           }
-        }
+        },
+        handleError
       ),
     []
   );
@@ -79,24 +83,29 @@ export const App = () => {
           breadcrumb={<PageBreadCrumbs />}
           mainContainerId={mainPageContentId}
         >
-          <Switch>
-            {routes(() => {}).map((route, i) => (
-              <Route
-                exact={
-                  route.matchOptions?.exact === undefined
-                    ? true
-                    : route.matchOptions.exact
-                }
-                key={i}
-                path={route.path}
-                component={() => (
-                  <RealmPathSelector>
-                    <SecuredRoute route={route} />
-                  </RealmPathSelector>
-                )}
-              />
-            ))}
-          </Switch>
+          <ErrorBoundary
+            FallbackComponent={ErrorRenderer}
+            onReset={() => (location.href = "/")}
+          >
+            <Switch>
+              {routes(() => {}).map((route, i) => (
+                <Route
+                  exact={
+                    route.matchOptions?.exact === undefined
+                      ? true
+                      : route.matchOptions.exact
+                  }
+                  key={i}
+                  path={route.path}
+                  component={() => (
+                    <RealmPathSelector>
+                      <SecuredRoute route={route} />
+                    </RealmPathSelector>
+                  )}
+                />
+              ))}
+            </Switch>
+          </ErrorBoundary>
         </Page>
       </Router>
     </AppContexts>

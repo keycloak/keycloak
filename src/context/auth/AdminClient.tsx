@@ -32,18 +32,26 @@ export const useAdminClient = () => {
  *
  * @param adminClientCall use this to do your adminClient call
  * @param callback when the data is fetched this is where you set your state
+ * @param onError custom error handler
  */
 export function asyncStateFetch<T>(
   adminClientCall: () => Promise<T>,
-  callback: (param: T) => void
+  callback: (param: T) => void,
+  onError?: (error: Error) => void
 ) {
   let canceled = false;
 
-  adminClientCall().then((result) => {
-    if (!canceled) {
-      callback(result);
-    }
-  });
+  adminClientCall()
+    .then((result) => {
+      try {
+        if (!canceled) {
+          callback(result);
+        }
+      } catch (error) {
+        if (onError) onError(error);
+      }
+    })
+    .catch(onError);
 
   return () => {
     canceled = true;

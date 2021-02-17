@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useErrorHandler } from "react-error-boundary";
 import {
   IFormatter,
   IFormatterValueType,
@@ -123,6 +124,7 @@ type TableRow = {
 export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
 
   const [searchToggle, setSearchToggle] = useState(false);
@@ -182,7 +184,8 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
       ({ rows, rest }) => {
         setRows(rows);
         setRest(rest);
-      }
+      },
+      handleError
     );
   }, [key]);
 

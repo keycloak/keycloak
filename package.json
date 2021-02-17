@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "private": true,
-  "workspaces": ["tests"],
+  "workspaces": [
+    "tests"
+  ],
   "scripts": {
     "build": "snowpack build",
     "build-storybook": "build-storybook -s public",
@@ -31,6 +33,7 @@
     "moment": "^2.29.1",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
+    "react-error-boundary": "^3.1.0",
     "react-hook-form": "^6.8.3",
     "react-i18next": "^11.7.0",
     "react-router-dom": "^5.2.0",

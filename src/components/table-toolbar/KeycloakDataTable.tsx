@@ -1,5 +1,6 @@
 import React, { ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useErrorHandler } from "react-error-boundary";
 import {
   IAction,
   IActions,
@@ -139,6 +140,7 @@ export function KeycloakDataTable<T>({
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
+  const handleError = useErrorHandler();
 
   useEffect(() => {
     setRefresher && setRefresher(refresh);
@@ -168,7 +170,8 @@ export function KeycloakDataTable<T>({
         setRows(result);
         setFilteredData(result);
         setLoading(false);
-      }
+      },
+      handleError
     );
   }, [key, first, max]);
 
