@@ -213,11 +213,39 @@ export const RealmRoleTabs = () => {
     },
   });
 
+  const [
+    toggleDeleteAllAssociatedRolesDialog,
+    DeleteAllAssociatedRolesConfirm,
+  ] = useConfirmDialog({
+    titleKey: t("roles:removeAllAssociatedRoles") + "?",
+    messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
+      name: role?.name || t("createRole"),
+    }),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.roles.delCompositeRoles({ id }, additionalRoles);
+        addAlert(
+          t("compositeRoleOff"),
+          AlertVariant.success,
+          t("compositesRemovedAlertDescription")
+        );
+        const loc = url.replace(/\/AssociatedRoles/g, "/details");
+        history.push(loc);
+        refresh();
+      } catch (error) {
+        addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+      }
+    },
+  });
+
   const toggleModal = () => setOpen(!open);
 
   return (
     <>
       <DeleteConfirm />
+      <DeleteAllAssociatedRolesConfirm />
       <AssociatedRolesModal
         onConfirm={addComposites}
         existingCompositeRoles={additionalRoles}
@@ -226,10 +254,30 @@ export const RealmRoleTabs = () => {
       />
       <ViewHeader
         titleKey={role?.name || t("createRole")}
+        badge={additionalRoles.length > 0 ? t("composite") : ""}
+        badgeId="composite-role-badge"
+        badgeIsRead={true}
         subKey={id ? "" : "roles:roleCreateExplain"}
         actionsDropdownId="roles-actions-dropdown"
         dropdownItems={
-          id
+          url.includes("AssociatedRoles")
+            ? [
+                <DropdownItem
+                  key="delete-all-associated"
+                  component="button"
+                  onClick={() => toggleDeleteAllAssociatedRolesDialog()}
+                >
+                  {t("roles:removeAllAssociatedRoles")}
+                </DropdownItem>,
+                <DropdownItem
+                  key="delete-role"
+                  component="button"
+                  onClick={() => toggleDeleteDialog()}
+                >
+                  {t("deleteRole")}
+                </DropdownItem>,
+              ]
+            : id
             ? [
                 <DropdownItem
                   key="delete-role"
@@ -269,7 +317,12 @@ export const RealmRoleTabs = () => {
                 eventKey="AssociatedRoles"
                 title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
               >
-                <AssociatedRolesTab additionalRoles={additionalRoles} />
+                <AssociatedRolesTab
+                  additionalRoles={additionalRoles}
+                  addComposites={addComposites}
+                  parentRole={role!}
+                  onRemove={() => refresh()}
+                />
               </Tab>
             ) : null}
             <Tab

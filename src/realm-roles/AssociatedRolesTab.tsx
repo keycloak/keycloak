@@ -1,28 +1,36 @@
 import React, { useState } from "react";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Checkbox,
   PageSection,
 } from "@patternfly/react-core";
-import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter, toUpperCase } from "../util";
+import { boolFormatter, emptyFormatter } from "../util";
+import { AssociatedRolesModal } from "./AssociatedRolesModal";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { RoleFormType } from "./RealmRoleTabs";
 
 type AssociatedRolesTabProps = {
   additionalRoles: RoleRepresentation[];
+  addComposites: (newReps: RoleRepresentation[]) => void;
+  parentRole: RoleFormType;
+  onRemove: (newReps: RoleRepresentation[]) => void;
 };
 
 export const AssociatedRolesTab = ({
   additionalRoles,
+  addComposites,
+  parentRole,
+  onRemove,
 }: AssociatedRolesTabProps) => {
   const { t } = useTranslation("roles");
   const history = useHistory();
@@ -30,7 +38,11 @@ export const AssociatedRolesTab = ({
   const { url } = useRouteMatch();
   const tableRefresher = React.useRef<() => void>();
 
-  const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
+  const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
+  const [open, setOpen] = useState(false);
+
+  const adminClient = useAdminClient();
+  const { id } = useParams<{ id: string; clientId: string }>();
 
   const loader = async () => {
     return Promise.resolve(additionalRoles);
@@ -40,33 +52,47 @@ export const AssociatedRolesTab = ({
     tableRefresher.current && tableRefresher.current();
   }, [additionalRoles]);
 
-  const RoleDetailLink = (role: RoleRepresentation) => (
-    <>
-      <Link key={role.id} to={`${url}/${role.id}`}>
-        {role.name}
-      </Link>
-    </>
-  );
+  const RoleName = (role: RoleRepresentation) => <>{role.name}</>;
 
-  const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-    const boolVal = data?.toString();
-
-    return (boolVal ? toUpperCase(boolVal) : undefined) as string;
-  };
+  const toggleModal = () => setOpen(!open);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleRemoveAssociatedRoleConfirm",
-    messageKey: t("roles:roleRemoveAssociatedText", {
-      selectedRoleName: selectedRole ? selectedRole!.name : "",
+    messageKey: t("roles:roleRemoveAssociatedText"),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.roles.delCompositeRoles({ id }, selectedRows);
+        setSelectedRows([]);
+
+        addAlert(t("associatedRolesRemoved"), AlertVariant.success);
+      } catch (error) {
+        addAlert(t("roleDeleteError", { error }), AlertVariant.danger);
+      }
+    },
+  });
+
+  const [
+    toggleDeleteAssociatedRolesDialog,
+    DeleteAssociatedRolesConfirm,
+  ] = useConfirmDialog({
+    titleKey: t("roles:removeAssociatedRoles") + "?",
+    messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
+      name: parentRole?.name || t("createRole"),
     }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        // await adminClient.roles.delCompositeRoles({ id: compID }, compies);
-
-        setSelectedRole(undefined);
-        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+        if (selectedRows.length === additionalRoles.length) {
+          onRemove(selectedRows);
+          const loc = url.replace(/\/AssociatedRoles/g, "/details");
+          history.push(loc);
+        }
+        onRemove(selectedRows);
+        await adminClient.roles.delCompositeRoles({ id }, selectedRows);
+        addAlert(t("associatedRolesRemoved"), AlertVariant.success);
       } catch (error) {
         addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
       }
@@ -82,23 +108,54 @@ export const AssociatedRolesTab = ({
     <>
       <PageSection variant="light">
         <DeleteConfirm />
+        <DeleteAssociatedRolesConfirm />
+        <AssociatedRolesModal
+          onConfirm={addComposites}
+          existingCompositeRoles={additionalRoles}
+          open={open}
+          toggleDialog={() => setOpen(!open)}
+        />
         <KeycloakDataTable
-          key={selectedRole ? selectedRole.id : "roleList"}
           loader={loader}
           ariaLabelKey="roles:roleList"
           searchPlaceholderKey="roles:searchFor"
+          canSelectAll
+          onSelect={(rows) => {
+            setSelectedRows([...rows]);
+          }}
           isPaginated
           setRefresher={setRefresher}
           toolbarItem={
             <>
-              <Button onClick={goToCreate}>{t("createRole")}</Button>
+              <Checkbox
+                label="Hide inherited roles"
+                key="associated-roles-check"
+                id="kc-hide-inherited-roles-checkbox"
+              />
+              <Button
+                className="kc-add-role-button"
+                key="add-role-button"
+                onClick={() => toggleModal()}
+              >
+                {t("addRole")}
+              </Button>
+              <Button
+                variant="link"
+                isDisabled={selectedRows.length == 0}
+                key="remove-role-button"
+                onClick={() => {
+                  toggleDeleteAssociatedRolesDialog();
+                }}
+              >
+                {t("removeRoles")}
+              </Button>
             </>
           }
           actions={[
             {
               title: t("common:remove"),
               onRowClick: (role) => {
-                setSelectedRole(role);
+                setSelectedRows([role]);
                 toggleDeleteDialog();
               },
             },
@@ -107,12 +164,12 @@ export const AssociatedRolesTab = ({
             {
               name: "name",
               displayKey: "roles:roleName",
-              cellRenderer: RoleDetailLink,
+              cellRenderer: RoleName,
               cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
             },
             {
-              name: "composite",
-              displayKey: "roles:composite",
+              name: "inherited from",
+              displayKey: "roles:inheritedFrom",
               cellFormatters: [boolFormatter(), emptyFormatter()],
             },
             {

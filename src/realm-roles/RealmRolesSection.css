@@ -15,10 +15,14 @@
   color: var(--pf-c-button--m-plain--Color);
 }
 
+.kc-add-role-button {
+  margin-left: var(--pf-global--spacer--lg);
+}
+
 .kc-role-attributes__action-group {
   /* subtract the padding at the bottom of the table from the action group margin */
   --pf-c-form__group--m-action--MarginTop: calc(
     var(--pf-global--spacer--2xl) - var(--pf-global--spacer--sm)
   );
-
+  
 }

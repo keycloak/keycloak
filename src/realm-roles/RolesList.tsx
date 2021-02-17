@@ -19,9 +19,14 @@ type RolesListProps = {
     search?: string
   ) => Promise<RoleRepresentation[]>;
   paginated?: boolean;
+  parentRoleId?: string;
 };
 
-export const RolesList = ({ loader, paginated = true }: RolesListProps) => {
+export const RolesList = ({
+  loader,
+  paginated = true,
+  parentRoleId,
+}: RolesListProps) => {
   const { t } = useTranslation("roles");
   const history = useHistory();
   const adminClient = useAdminClient();
@@ -47,9 +52,15 @@ export const RolesList = ({ loader, paginated = true }: RolesListProps) => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.roles.delById({
-          id: selectedRole!.id!,
-        });
+        if (!parentRoleId) {
+          await adminClient.roles.delById({
+            id: selectedRole!.id!,
+          });
+        } else {
+          await adminClient.roles.delCompositeRoles({ id: parentRoleId }, [
+            selectedRole!,
+          ]);
+        }
         setSelectedRole(undefined);
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {

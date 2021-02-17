@@ -60,7 +60,7 @@ describe("Realm roles test", function () {
       listingPage.itemExist(itemId, false);
     });
 
-    it("Associated roles modal test", function () {
+    it("Associated roles test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
@@ -79,6 +79,10 @@ describe("Realm roles test", function () {
       cy.get('[type="checkbox"]').eq(1).check();
 
       cy.get("#add-associated-roles-button").contains("Add").click();
+
+      cy.url().should("include", "/AssociatedRoles");
+
+      cy.get("#composite-role-badge").should("contain.text", "Composite");
     });
   });
 });
