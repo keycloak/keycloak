@@ -26,6 +26,8 @@ import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import "./user-federation.css";
 
+import { useHistory, useRouteMatch } from "react-router-dom";
+
 export const UserFederationSection = () => {
   const [userFederations, setUserFederations] = useState<
     ComponentRepresentation[]
@@ -37,12 +39,15 @@ export const UserFederationSection = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
+  const { url } = useRouteMatch();
+  const history = useHistory();
+
   useEffect(() => {
     return asyncStateFetch(
       () => {
         const testParams: { [name: string]: string | number } = {
           parentId: realm,
-          type: "org.keycloak.storage.UserStorageProvider", // MF note that this is providerType in the output, but API call is still type
+          type: "org.keycloak.storage.UserStorageProvider",
         };
         return adminClient.components.find(testParams);
       },
@@ -53,8 +58,18 @@ export const UserFederationSection = () => {
   }, [key]);
 
   const ufAddProviderDropdownItems = [
-    <DropdownItem key="itemLDAP">LDAP</DropdownItem>,
-    <DropdownItem key="itemKerberos">Kerberos</DropdownItem>,
+    <DropdownItem
+      key="itemLDAP"
+      onClick={() => history.push(`${url}/ldap/new`)}
+    >
+      LDAP
+    </DropdownItem>,
+    <DropdownItem
+      key="itemKerberos"
+      onClick={() => history.push(`${url}/kerberos/new`)}
+    >
+      Kerberos
+    </DropdownItem>,
   ];
 
   const learnMoreLinkProps = {
@@ -95,6 +110,7 @@ export const UserFederationSection = () => {
           onClick={() => {
             toggleDeleteForCard(userFederation.id!);
           }}
+          data-cy="card-delete"
         >
           {t("common:delete")}
         </DropdownItem>,
@@ -157,7 +173,11 @@ export const UserFederationSection = () => {
             </TextContent>
             <hr className="pf-u-mb-lg" />
             <Gallery hasGutter>
-              <Card isHoverable>
+              <Card
+                isHoverable
+                onClick={() => history.push(`${url}/kerberos/new`)}
+                data-cy="kerberos-card"
+              >
                 <CardTitle>
                   <Split hasGutter>
                     <SplitItem>

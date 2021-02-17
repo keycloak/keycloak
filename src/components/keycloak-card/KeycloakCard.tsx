@@ -58,6 +58,7 @@ export const KeycloakCard = ({
         <CardActions>
           {dropdownItems && (
             <Dropdown
+              data-cy={`${title}-dropdown`}
               isPlain
               position={"right"}
               toggle={<KebabToggle onToggle={onDropdownToggle} />}
@@ -67,7 +68,7 @@ export const KeycloakCard = ({
             />
           )}
         </CardActions>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle data-cy="keycloak-card-title">{title}</CardTitle>
       </CardHeader>
       <CardBody />
       <CardFooter>

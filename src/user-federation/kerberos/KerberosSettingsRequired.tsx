@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { UseFormMethods, Controller, useWatch } from "react-hook-form";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import _ from "lodash";
@@ -29,6 +30,7 @@ export const KerberosSettingsRequired = ({
 }: KerberosSettingsRequiredProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
+  const { realm } = useRealm();
 
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
 
@@ -62,18 +64,19 @@ export const KerberosSettingsRequired = ({
           isRequired
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          <TextInput
+          {/* <TextInput
             hidden
             type="text"
             id="kc-console-id"
             name="id"
             ref={form.register}
-          />
+          /> */}
           <TextInput
             hidden
             type="text"
             id="kc-console-providerId"
             name="providerId"
+            defaultValue="kerberos"
             ref={form.register}
           />
           <TextInput
@@ -81,6 +84,7 @@ export const KerberosSettingsRequired = ({
             type="text"
             id="kc-console-providerType"
             name="providerType"
+            defaultValue="org.keycloak.storage.UserStorageProvider"
             ref={form.register}
           />
           <TextInput
@@ -88,6 +92,7 @@ export const KerberosSettingsRequired = ({
             type="text"
             id="kc-console-parentId"
             name="parentId"
+            defaultValue={realm}
             ref={form.register}
           />
 
@@ -102,6 +107,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateName")}`,
               },
             })}
+            data-cy="kerberos-name"
           />
           {form.errors.name && (
             <div className="error">{form.errors.name.message}</div>
@@ -131,6 +137,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateRealm")}`,
               },
             })}
+            data-cy="kerberos-realm"
           />
           {form.errors.config &&
             form.errors.config.kerberosRealm &&
@@ -164,6 +171,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateServerPrincipal")}`,
               },
             })}
+            data-cy="kerberos-principal"
           />
           {form.errors.config &&
             form.errors.config.serverPrincipal &&
@@ -197,6 +205,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateKeyTab")}`,
               },
             })}
+            data-cy="kerberos-keytab"
           />
           {form.errors.config &&
             form.errors.config.keyTab &&
@@ -222,7 +231,7 @@ export const KerberosSettingsRequired = ({
           {" "}
           <Controller
             name="config.debug"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
@@ -251,7 +260,7 @@ export const KerberosSettingsRequired = ({
         >
           <Controller
             name="config.allowPasswordAuthentication"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
@@ -324,7 +333,7 @@ export const KerberosSettingsRequired = ({
         >
           <Controller
             name="config.updateProfileFirstLogin"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
