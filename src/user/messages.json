@@ -2,7 +2,7 @@
   "users": {
     "title": "Users",
     "searchForUser": "Search user",
-    "startBySearchingAUser": "Start by searching a user",
+    "startBySearchingAUser": "Start by searching for users",
     "createNewUser": "Create new user",
     "noUsersFound": "No users found",
     "noUsersFoundError": "No users found due to {{error}}",
