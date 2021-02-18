@@ -82,16 +82,19 @@ public class AccountConsole {
     @GET
     @NoCache
     public Response getMainPage() throws IOException, FreeMarkerException {
+        UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        URI accountBaseUrl = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName())
+                .path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).path("/").build(realm);
+
         if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("/").build()).build();
+            return Response.status(302).location(accountBaseUrl).build();
         } else {
             Map<String, Object> map = new HashMap<>();
 
             URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
-            UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
             URI authUrl = uriInfo.getBaseUri();
             map.put("authUrl", authUrl.toString());
-            map.put("baseUrl", uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName()).path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).build(realm).toString());
+            map.put("baseUrl", accountBaseUrl);
             map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
             map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
