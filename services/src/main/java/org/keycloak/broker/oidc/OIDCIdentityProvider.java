@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -25,7 +26,6 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -45,14 +45,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
@@ -69,6 +67,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.IOException;
 import java.security.PublicKey;
 
@@ -656,11 +655,26 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         String name = getJsonProperty(userInfo, "name");
         String preferredUsername = getUsernameFromUserInfo(userInfo);
+        String givenName = getJsonProperty(userInfo, "given_name");
+        String familyName = getJsonProperty(userInfo, "family_name");
         String email = getJsonProperty(userInfo, "email");
+
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
 
         identity.setId(id);
-        identity.setName(name);
+        
+        if (givenName != null) {
+            identity.setFirstName(givenName);
+        }
+        
+        if (familyName != null) {
+            identity.setLastName(familyName);
+        }
+        
+        if (givenName == null && familyName == null) {
+            identity.setName(name);
+        }
+        
         identity.setEmail(email);
 
         identity.setBrokerUserId(getConfig().getAlias() + "." + id);
