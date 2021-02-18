@@ -98,7 +98,7 @@ It has no other task than sending the received tokens to the main application an
 
 Please keep in mind that this page at the specified location must be provided by the application itself and is _not_ part of the JavaScript adapter!
 
-WARNING: _Silent_ `check-sso` functionality is limited in some modern browsers. Please see link:#_modern_browsers[Modern Browsers with Tracking Protection Section].
+WARNING: _Silent_ `check-sso` functionality is limited in some modern browsers. Please see the <<_modern_browsers,Modern Browsers with Tracking Protection Section>>.
 
 To enable `login-required` set `onLoad` to `login-required` and pass to the init method:
 
@@ -160,7 +160,7 @@ This feature can be disabled by setting `checkLoginIframe: false` in the options
 You should not rely on looking at this cookie directly. Its format can change and it's also associated with the URL of the {project_name} server, not
 your application.
 
-WARNING: Session Status iframe functionality is limited in some modern browsers. Please see link:#_modern_browsers[Modern Browsers with Tracking Protection Section].
+WARNING: Session Status iframe functionality is limited in some modern browsers. Please see <<_modern_browsers,Modern Browsers with Tracking Protection Section>>.
 
 [[_javascript_implicit_flow]]
 ==== Implicit and Hybrid Flow
@@ -450,7 +450,7 @@ Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after login.
 * prompt - This parameter allows to slightly customize the login flow on the {project_name} server side.
-For example enforce displaying the login screen in case of value `login`. See link:#_params_forwarding[Parameters Forwarding Section]
+For example enforce displaying the login screen in case of value `login`. See link:{adapterguide_link}#_params_forwarding[Parameters Forwarding Section]
 for the details and all the possible values of the `prompt` parameter.
 * maxAge - Used just if user is already authenticated. Specifies maximum time since the authentication of user happened. If user is already authenticated for longer time than `maxAge`, the SSO is ignored and he will need to re-authenticate again.
 * loginHint - Used to pre-fill the username/email field on the login form.

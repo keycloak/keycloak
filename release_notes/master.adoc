@@ -10,6 +10,8 @@ include::runtimes-common/attributes/runtimes-attributes.adoc[]
 
 = {releasenotes_name}
 
+include::topics/templates/making-open-source-more-inclusive.adoc[]
+
 == {project_name_full} 7.4.0.GA
 
 include::topics/product/7_4_final.adoc[leveloffset=2]

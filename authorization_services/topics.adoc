@@ -1,3 +1,5 @@
+include::topics/templates/making-open-source-more-inclusive.adoc[]
+
 include::topics/auth-services-overview.adoc[leveloffset=+1]
 
 include::topics/auth-services-architecture.adoc[leveloffset=+2]

@@ -1,6 +1,7 @@
 ifeval::[{project_community}==true]
 include::topics/introduction-keycloak.adoc[]
 endif::[]
+include::topics/templates/making-open-source-more-inclusive.adoc[]
 include::topics/assembly-installing-standalone.adoc[]
 include::topics/assembly-creating-first-realm.adoc[]
 include::topics/assembly-securing-sample-app.adoc[]
