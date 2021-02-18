@@ -35,11 +35,11 @@
     .pf-c-tile:hover .pf-c-tile__icon {
         color: #06c;
     }
-    .pf-c-tile.pf-m-selected .pf-c-tile__title,
-    .pf-c-tile.pf-m-selected .pf-c-tile__icon {
+    .pf-c-tile__input:checked + .pf-c-tile .pf-c-tile__title,
+    .pf-c-tile__input:checked + .pf-c-tile .pf-c-tile__icon {
         color: #06c;
     }
-    .pf-c-tile.pf-m-selected {
+    .pf-c-tile__input:checked + .pf-c-tile {
         border: 2px solid #06c;
         border-radius: 3px;
     }
@@ -119,6 +119,7 @@
     cursor: pointer;
     background-color: var(--pf-c-tile--BackgroundColor);
     grid-template-rows: min-content;
+    overflow: hidden;
 }
 
 .pf-c-tile::before {
@@ -139,7 +140,7 @@
     --pf-c-tile--before--BorderColor: var(--pf-c-tile--hover--before--BorderColor);
 }
 
-.pf-c-tile.pf-m-selected {
+.pf-c-tile__input:checked + .pf-c-tile {
     --pf-c-tile__title--Color: var(--pf-c-tile--m-selected__title--Color);
     --pf-c-tile__icon--Color: var(--pf-c-tile--m-selected__icon--Color);
     --pf-c-tile--before--BorderWidth: var(--pf-c-tile--m-selected--before--BorderWidth);
@@ -164,6 +165,10 @@
 
 .pf-c-tile.pf-m-display-lg .pf-c-tile__header.pf-m-stacked {
     --pf-c-tile__icon--FontSize: var(--pf-c-tile--m-display-lg__header--m-stacked__icon--FontSize);
+}
+
+.pf-c-tile__input {
+    display: none;
 }
 
 .pf-c-tile__header {
