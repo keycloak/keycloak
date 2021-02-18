@@ -6,9 +6,9 @@ import { RolesList } from "./RolesList";
 
 export const RealmRolesSection = () => {
   const adminClient = useAdminClient();
-  const loader = async (to?: number, max?: number, search?: string) => {
+  const loader = async (first?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {
-      to: to!,
+      first: first!,
       max: max!,
       search: search!,
     };

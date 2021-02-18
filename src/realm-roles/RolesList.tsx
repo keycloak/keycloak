@@ -13,13 +13,13 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter, boolFormatter } from "../util";
 
 type RolesListProps = {
-  loader: (
+  paginated?: boolean;
+  parentRoleId?: string;
+  loader?: (
     first?: number,
     max?: number,
     search?: string
   ) => Promise<RoleRepresentation[]>;
-  paginated?: boolean;
-  parentRoleId?: string;
 };
 
 export const RolesList = ({
@@ -75,7 +75,7 @@ export const RolesList = ({
       <DeleteConfirm />
       <KeycloakDataTable
         key={selectedRole ? selectedRole.id : "roleList"}
-        loader={loader}
+        loader={loader!}
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey="roles:searchFor"
         isPaginated={paginated}
