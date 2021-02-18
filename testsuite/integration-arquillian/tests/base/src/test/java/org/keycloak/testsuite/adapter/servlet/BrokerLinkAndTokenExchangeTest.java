@@ -224,8 +224,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         createUserAndResetPasswordWithAdminClient(realm, user, "password");
         user = new UserRepresentation();
         user.setUsername(PARENT3_USERNAME);
-        user.setFirstName("firstname");
-        user.setLastName("lastname");
+        user.setFirstName("first name");
+        user.setLastName("last name");
         user.setEmail("email");
         user.setEnabled(true);
         createUserAndResetPasswordWithAdminClient(realm, user, "password");        
@@ -746,8 +746,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertNotNull(token);
             Assert.assertNotNull(token.getSubject());
             Assert.assertEquals(PARENT3_USERNAME, token.getPreferredUsername());
-            Assert.assertEquals("firstname", token.getGivenName());
-            Assert.assertEquals("lastname", token.getFamilyName());
+            Assert.assertEquals("first name", token.getGivenName());
+            Assert.assertEquals("last name", token.getFamilyName());
             Assert.assertEquals("email", token.getEmail());
 
             // cleanup remove the user
