@@ -1,14 +1,18 @@
 import React, { useState, useContext, ReactNode, createContext } from "react";
 import {
+  Divider,
   Dropdown,
   DropdownItem,
   DropdownToggle,
   Split,
   SplitItem,
   Switch,
+  TextContent,
 } from "@patternfly/react-core";
 import { Trans, useTranslation } from "react-i18next";
 import { HelpIcon, ExternalLinkAltIcon } from "@patternfly/react-icons";
+
+import "./help-header.css";
 
 type HelpProps = {
   children: ReactNode;
@@ -51,16 +55,8 @@ export const HelpHeader = () => {
         </SplitItem>
       </Split>
     </DropdownItem>,
-    <DropdownItem
-      key="enable"
-      id="enable"
-      description={
-        <Trans>
-          This toggle will enable / disable part of the help info in the
-          console. Includes any help text, links and popovers.
-        </Trans>
-      }
-    >
+    <Divider key="divide" />,
+    <DropdownItem key="enable" id="enable">
       <Split>
         <SplitItem isFilled>{t("enableHelpMode")}</SplitItem>
         <SplitItem>
@@ -68,10 +64,15 @@ export const HelpHeader = () => {
             id="enableHelp"
             aria-label="Help is enabled"
             isChecked={help.enabled}
+            label=""
+            className="keycloak_help-header-switch"
             onChange={() => help.toggleHelp()}
           />
         </SplitItem>
       </Split>
+      <TextContent className="keycloak_help-header-description">
+        {t("common-help:helpToggleInfo")}
+      </TextContent>
     </DropdownItem>,
   ];
   return (
