@@ -89,7 +89,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("otp-tile"));
+            driver.findElement(By.className("pf-c-tile"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
@@ -105,7 +105,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
 
     public String getSelectedOtpCredential() {
         try {
-            WebElement selected = driver.findElement(getXPathForLookupActiveCard());
+            WebElement selected = driver.findElement(getCssSelectorForLookupActiveCard());
             return selected.getText();
         } catch (NoSuchElementException nse) {
             // No selected element found
@@ -114,20 +114,20 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     private By getXPathForLookupAllCards() {
-        return By.xpath("//div[contains(@class, 'pf-c-tile otp-tile')]");
+        return By.xpath("//span[contains(@class, 'pf-c-tile__title')]");
     }
 
-    private By getXPathForLookupActiveCard() {
-        return By.xpath("//div[contains(@class, 'otp-tile pf-m-selected')]");
+    private By getCssSelectorForLookupActiveCard() {
+        return By.cssSelector(".pf-c-tile__input:checked + .pf-c-tile .pf-c-tile__title");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'otp-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//label[contains(@class, 'pf-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
 
     public void selectOtpCredential(String credentialName) {
-        waitForElement(getXPathForLookupActiveCard());
+        waitForElement(getCssSelectorForLookupActiveCard());
 
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
