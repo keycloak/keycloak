@@ -190,7 +190,11 @@ export const UserFederationSection = () => {
                   </Split>
                 </CardTitle>
               </Card>
-              <Card isHoverable>
+              <Card
+                isHoverable
+                onClick={() => history.push(`${url}/ldap/new`)}
+                data-testid="ldap-card"
+              >
                 <CardTitle>
                   <Split hasGutter>
                     <SplitItem>

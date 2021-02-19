@@ -44,7 +44,7 @@ export const LdapSettingsSynchronization = ({
         >
           <Controller
             name="config.importEnabled"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch

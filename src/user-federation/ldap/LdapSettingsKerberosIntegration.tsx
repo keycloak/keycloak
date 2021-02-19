@@ -45,7 +45,7 @@ export const LdapSettingsKerberosIntegration = ({
         >
           <Controller
             name="config.allowKerberosAuthentication"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
@@ -73,7 +73,7 @@ export const LdapSettingsKerberosIntegration = ({
         >
           <Controller
             name="config.useKerberosForPasswordAuthentication"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch

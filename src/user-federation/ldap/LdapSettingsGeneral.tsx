@@ -10,6 +10,8 @@ import React, { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { useRealm } from "../../context/realm-context/RealmContext";
+
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsGeneralProps = {
@@ -25,6 +27,7 @@ export const LdapSettingsGeneral = ({
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
+  const { realm } = useRealm();
 
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
@@ -51,11 +54,35 @@ export const LdapSettingsGeneral = ({
           isRequired
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          <TextInput
+          {/* <TextInput
             hidden
             type="text"
             id="kc-console-id"
             name="id"
+            ref={form.register}
+          /> */}
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-provider-id"
+            name="providerId"
+            defaultValue="ldap"
+            ref={form.register}
+          />
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-provider-type"
+            name="providerType"
+            defaultValue="org.keycloak.storage.UserStorageProvider"
+            ref={form.register}
+          />
+          <TextInput
+            hidden
+            type="text"
+            id="kc-console-parentId"
+            name="parentId"
+            defaultValue={realm}
             ref={form.register}
           />
           <TextInput
@@ -69,27 +96,6 @@ export const LdapSettingsGeneral = ({
                 message: `${t("validateName")}`,
               },
             })}
-          />
-          <TextInput
-            hidden
-            type="text"
-            id="kc-console-provider-id"
-            name="providerId"
-            ref={form.register}
-          />
-          <TextInput
-            hidden
-            type="text"
-            id="kc-console-provider-type"
-            name="providerType"
-            ref={form.register}
-          />
-          <TextInput
-            hidden
-            type="text"
-            id="kc-console-parentId"
-            name="parentId"
-            ref={form.register}
           />
           {form.errors.name && (
             <div className="error">{form.errors.name.message}</div>
