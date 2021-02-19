@@ -35,5 +35,6 @@
             </imports>
         </module>
         <module name="javax.api"/>
+        <module name="javax.xml.bind.api"/>
     </dependencies>
 </module>
