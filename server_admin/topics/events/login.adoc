@@ -1,70 +1,111 @@
 
 === Login Events
 
-Login events occur for things like when a user logs in successfully, when somebody enters in a bad password, or when a user account
-is updated.  Every single event that happens to a user can be recorded and viewed.  By default, no events are stored
-or viewed in the Admin Console.  Only error events are logged to the console and the server's log file.  To start
-persisting  you'll need to enable storage.  Go to the `Events` left menu item and select the `Config` tab.
+You can record and view every event that affects users. {project_name} triggers login events for actions such as successful user login, a user entering an incorrect password, or a user account updating. By default, {project_name} does not store or display events in the Admin Console. Only the error events are logged to the Admin Console and the server’s log file.
 
+To start saving events, enable storage.
+
+.Procedure
+. Click *Events* in the menu.
+. Click the *Config* tab.
++
 .Event Configuration
-image:{project_images}/login-events-config.png[]
-
-To start storing events you'll need to turn the `Save Events` switch to on under the `Login Events Settings`.
-
+image:{project_images}/login-events-config.png[Event Configuration]
++
+. Toggle *Save Events* to *ON*.
++
 .Save Events
-image:{project_images}/login-events-settings.png[]
+image:{project_images}/login-events-settings.png[Save Events]
++
+. Specify the events to store in the *Saved Types* field.
 
-The `Saved Types` field allows you to specify which event types you want to store in the event store.  The `Clear events`
-button allows you to delete all the events in the database. The `Expiration` field allows you to specify how long you want
-to keep events stored.  Once you've enabled storage of login events and decided on your settings, don't forget to click
-the `Save` button on the bottom of this page.
+You can click the *Clear events* button to delete all events.
 
-To view events, go to the `Login Events` tab.
+Specify the length of time to store events in the *Expiration* field. When you enable login event storage and enable your settings, click the *Save* button.
+
+Click the *Login Events* tab to view the events.
 
 .Login Events
-image:{project_images}/login-events.png[]
+image:{project_images}/login-events.png[Login Events]
 
-As you can see, there's a lot of information stored and, if you are storing every event, there are a lot of events stored for
-each login action.  The `Filter` button on this page allows you to filter which events you are actually interested in.
+You can filter events using the *Filter* button.
 
 .Login Event Filter
-image:{project_images}/login-events-filter.png[]
+image:{project_images}/login-events-filter.png[Login Event Filter]
 
-In this screenshot, we're filtering only `Login` events.  Clicking the `Update` button runs the filter.
-
+In this example, we filter only `Login` events. Click *Update* to run the filter.
 
 ==== Event Types
 
-Login events:
+*Login events:*
 
-* Login - A user has logged in.
-* Register - A user has registered.
-* Logout - A user has logged out.
-* Code to Token - An application/client has exchanged a code for a token.
-* Refresh Token - An application/client has refreshed a token.
+[cols="2",options="header"]
+|===
+|Event |Description
+|Login
+|A user logs in.
 
-Account events:
+|Register
+|A user registers.
 
-* Social Link - An account has been linked to a social provider.
-* Remove Social Link - A social provider has been removed from an account.
-* Update Email - The email address for an account has changed.
-* Update Profile - The profile for an account has changed.
-* Send Password Reset - A password reset email has been sent.
-* Update Password - The password for an account has changed.
-* Update TOTP - The TOTP settings for an account have changed.
-* Remove TOTP - TOTP has been removed from an account.
-* Send Verify Email - An email verification email has been sent.
-* Verify Email - The email address for an account has been verified.
+|Logout
+|A user logs out.
 
-For all events there is a corresponding error event.
+|Code to Token
+|An application, or client, exchanges a code for a token.
+
+|Refresh Token
+|An application, or client, refreshes a token.
+
+|===
+
+*Account events:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Social Link
+|A user account links to a social media provider.
+
+|Remove Social Link
+|The link from a social media account to a user account severs.
+
+|Update Email
+|An email address for an account changes.
+
+|Update Profile
+|A profile for an account changes.
+
+|Send Password Reset
+|{project_name} sends a password reset email.
+
+|Update Password
+|The password for an account changes.
+
+|Update TOTP
+|The Time-based One-time Password (TOTP) settings for an account changes.
+
+|Remove TOTP
+|{project_name} removes TOTP from an account.
+
+|Send Verify Email
+|{project_name} sends an email verification email.
+
+|Verify Email
+|{project_name} verifies the email address for an account.
+
+|===
+
+Each event has a corresponding error event.
 
 ==== Event Listener
 
-Event listeners listen for events and perform an action based on that event.  There are two built-in
-listeners that come with {project_name}: Logging Event Listener and Email Event Listener.
+Event listeners listen for events and perform actions based on that event. {project_name} includes two built-in listeners, the Logging Event Listener and Email Event Listener.
 
-The Logging Event Listener writes to a log file whenever an error event occurs and is enabled by default.
-Here's an example log message:
+===== The Logging Event Listener
+When the Logging Event Listener is enabled, this listener writes to a log file when an error event occurs.
+
+An example log message from a Logging Event Listener:
 
 ----
 11:36:09,965 WARN  [org.keycloak.events] (default task-51) type=LOGIN_ERROR, realmId=master,
@@ -75,15 +116,20 @@ Here's an example log message:
                     code_id=b669da14-cdbb-41d0-b055-0810a0334607, username=admin
 ----
 
-This logging is very useful if you want to use a tool like Fail2Ban to detect if there is a hacker bot somewhere that
-is trying to guess user passwords.  You can parse the log file for `LOGIN_ERROR` and pull out the IP Address. Then feed this information
-into Fail2Ban so that it can help prevent attacks.
+You can use the Logging Event Listener to protect against hacker bot attacks:
 
-The Logging Event Listener logs events to the `org.keycloak.events` logger category. By default debug log events are not
-included in server logs.
+. Parse the log file for the `LOGIN_ERROR` event.
+. Extract the IP Address of the failed login event.
+. Send the IP address to an intrusion prevention software framework tool.
 
-To include debug log events in server logs, edit the `standalone.xml` file and change the log level used by the Logging
-Event listener. Alternately, you can configure the log level for `org.keycloak.events`.
+The Logging Event Listener logs events to the `org.keycloak.events` log category. {project_name} does not include debug log events in server logs, by default.
+
+To include debug log events in server logs:
+
+. Edit the `standalone.xml` file.
+. Change the log level used by the Logging Event listener.
+
+Alternately, you can configure the log level for `org.keycloak.events`.
 
 For example, to change the log level add the following:
 
@@ -114,22 +160,27 @@ To change the log level used by the Logging Event listener, add the following:
 </subsystem>
 ----
 
-Valid values for the log levels are `debug`, `info`, `warn`, `error`, and `fatal`.
+The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal`.
 
-The Email Event Listener sends an email to the user's account when an event occurs.
+===== The Email Event Listener
 
-Currently, the Email Event Listener supports the following events:
+The Email Event Listener sends an email to the user's account when an event occurs and supports the following events:
 
-* Login Error
-* Update Password
-* Update TOTP
-* Remove TOTP
+* Login Error.
+* Update Password.
+* Update Time-based One-time Password (TOTP).
+* Remove Time-based One-time Password (TOTP).
 
-To enable the Email Listener go to the `Config` tab and click on the `Event Listeners` field.  This will show a drop down list box
-where you can select email.
+.Procedure
 
-You can exclude one or more events by editing the `standalone.xml`, `standalone-ha.xml`, or `domain.xml`
-that comes with your distribution and adding for example:
+To enable the Email Listener:
+
+. Click *Events* from the menu.
+. Click the *Config* tab.
+. Click the *Event Listeners* field.
+. Select `email`.
+
+You can exclude events by editing the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` configuration files included in your distribution. For example:
 
 [source,xml]
 ----
@@ -142,8 +193,7 @@ that comes with your distribution and adding for example:
 </spi>
 ----
 
-You can also set up a maximum length of the Event detail stored in the database by editing `standalone.xml`, `standalone-ha.xml`, or 
-`domain.xml`. This setting can be useful in case some field (e.g. redirect_uri) is very long. Here is an example of defining the maximum length.:
+You can set a maximum length of the Event detail in the database by editing the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` configuration files. This setting is useful if a field (for example, redirect_uri) is long. For example:
 
 [source,xml]
 ----
@@ -156,5 +206,4 @@ You can also set up a maximum length of the Event detail stored in the database 
 </spi>
 ----
 
-See the link:{installguide_link}[{installguide_name}] for more details on
-where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
+See the link:{installguide_link}[{installguide_name}] for more details on the location of the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` files.
