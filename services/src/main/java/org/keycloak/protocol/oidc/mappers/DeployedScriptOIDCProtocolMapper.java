@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.mappers;
 
 import java.util.List;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -25,28 +26,18 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 
-public final class DeployedScriptOIDCProtocolMapper extends ScriptBasedOIDCProtocolMapper {
+public class DeployedScriptOIDCProtocolMapper extends ScriptBasedOIDCProtocolMapper {
 
-    private static final List<ProviderConfigProperty> configProperties;
+    private List<ProviderConfigProperty> configProperties;
 
-    static {
-        configProperties = ProviderConfigurationBuilder.create()
-                .property()
-                .name(ProtocolMapperUtils.MULTIVALUED)
-                .label(ProtocolMapperUtils.MULTIVALUED_LABEL)
-                .helpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT)
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .defaultValue(false)
-                .add()
-                .build();
-
-        OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserPropertyMapper.class);
-    }
-
-    private final ScriptProviderMetadata metadata;
+    protected ScriptProviderMetadata metadata;
 
     public DeployedScriptOIDCProtocolMapper(ScriptProviderMetadata metadata) {
         this.metadata = metadata;
+    }
+
+    public DeployedScriptOIDCProtocolMapper() {
+        // for reflection
     }
 
     @Override
@@ -69,6 +60,21 @@ public final class DeployedScriptOIDCProtocolMapper extends ScriptBasedOIDCProto
         return metadata.getCode();
     }
 
+    @Override
+    public void init(Config.Scope config) {
+        configProperties = ProviderConfigurationBuilder.create()
+                .property()
+                .name(ProtocolMapperUtils.MULTIVALUED)
+                .label(ProtocolMapperUtils.MULTIVALUED_LABEL)
+                .helpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(false)
+                .add()
+                .build();
+
+        OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserPropertyMapper.class);
+    }
+
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
@@ -76,5 +82,13 @@ public final class DeployedScriptOIDCProtocolMapper extends ScriptBasedOIDCProto
     @Override
     public boolean isSupported() {
         return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+    }
+
+    public void setMetadata(ScriptProviderMetadata metadata) {
+        this.metadata = metadata;
+    }
+
+    public ScriptProviderMetadata getMetadata() {
+        return metadata;
     }
 }
