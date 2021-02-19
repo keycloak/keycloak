@@ -37,8 +37,8 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 
@@ -387,22 +387,22 @@ public class OAuthRequestAuthenticator {
                 .replaceQueryParam(OAuth2Constants.SESSION_STATE, null);
         return builder.build().toString();
     }
-    
+
     private String rewrittenRedirectUri(String originalUri) {
         Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
-            if(rewriteRules != null && !rewriteRules.isEmpty()) {
+        if(rewriteRules != null && !rewriteRules.isEmpty()) {
             try {
-                URL url = new URL(originalUri);
                 Map.Entry<String, String> rule =  rewriteRules.entrySet().iterator().next();
-                StringBuilder redirectUriBuilder = new StringBuilder(url.getProtocol());
-                redirectUriBuilder.append("://"+ url.getAuthority());
-                redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
-                return redirectUriBuilder.toString();
-            } catch (MalformedURLException ex) {
+                URI uri = new URI(originalUri);
+                return KeycloakUriBuilder.fromUri(uri)
+                                         .replacePath(uri.getPath().replaceFirst(rule.getKey(), rule.getValue()))
+                                         .build()
+                                         .toString();
+            } catch (URISyntaxException ex) {
                 log.error("Not a valid request url");
                 throw new RuntimeException(ex);
             }
-            }
+        }
         return originalUri;
     }
 
