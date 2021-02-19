@@ -19,12 +19,21 @@ package org.keycloak.quarkus.deployment;
 
 import static org.keycloak.configuration.Configuration.getPropertyNames;
 import static org.keycloak.configuration.Configuration.getRawValue;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
 
 import javax.persistence.spi.PersistenceUnitTransactionType;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +41,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
@@ -46,7 +58,12 @@ import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticatorSpi;
+import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
+import org.keycloak.authorization.policy.provider.PolicySpi;
+import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.configuration.Configuration;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
@@ -54,6 +71,8 @@ import org.keycloak.configuration.MicroProfileConfigProvider;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
+import org.keycloak.protocol.ProtocolMapperSpi;
+import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.Provider;
@@ -70,18 +89,42 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
+import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.services.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.health.KeycloakMetricsHandler;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.util.Environment;
+import org.keycloak.util.JsonSerialization;
 
 class KeycloakProcessor {
 
     private static final Logger logger = Logger.getLogger(KeycloakProcessor.class);
 
+    private static final String JAR_FILE_SEPARATOR = "!/";
     private static final String DEFAULT_HEALTH_ENDPOINT = "/health";
+    private static final Map<String, Function<ScriptProviderMetadata, ProviderFactory>> DEPLOYEABLE_SCRIPT_PROVIDERS = new HashMap<>();
+    private static final String KEYCLOAK_SCRIPTS_JSON_PATH = "META-INF/keycloak-scripts.json";
+
+    static {
+        DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
+        DEPLOYEABLE_SCRIPT_PROVIDERS.put(POLICIES, KeycloakProcessor::registerScriptPolicy);
+        DEPLOYEABLE_SCRIPT_PROVIDERS.put(MAPPERS, KeycloakProcessor::registerScriptMapper);
+    }
+
+    private static ProviderFactory registerScriptAuthenticator(ScriptProviderMetadata metadata) {
+        return new DeployedScriptAuthenticatorFactory(metadata);
+    }
+
+    private static ProviderFactory registerScriptPolicy(ScriptProviderMetadata metadata) {
+        return new DeployedScriptPolicyFactory(metadata);
+    }
+
+    private static ProviderFactory registerScriptMapper(ScriptProviderMetadata metadata) {
+        return new DeployedScriptOIDCProtocolMapper(metadata);
+    }
 
     @BuildStep
     FeatureBuildItem getFeature() {
@@ -125,8 +168,9 @@ class KeycloakProcessor {
         Profile.setInstance(recorder.createProfile());
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
+        Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
 
-        for (Map.Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories()
+        for (Map.Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders)
                 .entrySet()) {
             checkProviders(entry.getKey(), entry.getValue(), defaultProviders);
 
@@ -139,7 +183,7 @@ class KeycloakProcessor {
             }
         }
 
-        recorder.configSessionFactory(factories, defaultProviders, Environment.isRebuild());
+        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, Environment.isRebuild());
     }
 
     /**
@@ -245,15 +289,22 @@ class KeycloakProcessor {
         hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.properties"));
     }
 
-    private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories() {
+    private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
+            Map<String, ProviderFactory> preConfiguredProviders) {
         loadConfig();
-        ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), new BuildClassLoader());
+        BuildClassLoader providerClassLoader = new BuildClassLoader();
+        ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), providerClassLoader);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
             Map<Class<? extends Provider>, Map<String, ProviderFactory>> providers = new HashMap<>();
+            List<ProviderFactory> loadedFactories = new ArrayList<>(pm.load(spi));
+            Map<String, ProviderFactory> deployedScriptProviders = loadDeployedScriptProviders(providerClassLoader, spi);
 
-            for (ProviderFactory factory : pm.load(spi)) {
+            loadedFactories.addAll(deployedScriptProviders.values());
+            preConfiguredProviders.putAll(deployedScriptProviders);
+
+            for (ProviderFactory factory : loadedFactories) {
                 if (Arrays.asList(
                         JBossJtaTransactionManagerLookup.class,
                         DefaultJpaConnectionProviderFactory.class,
@@ -280,6 +331,86 @@ class KeycloakProcessor {
         }
 
         return factories;
+    }
+
+    private Map<String, ProviderFactory> loadDeployedScriptProviders(BuildClassLoader providerClassLoader, Spi spi) {
+        Map<String, ProviderFactory> providers = new HashMap<>();
+
+        if (supportsDeployeableScripts(spi)) {
+            try {
+                Enumeration<URL> urls = providerClassLoader.getResources(KEYCLOAK_SCRIPTS_JSON_PATH);
+
+                while (urls.hasMoreElements()) {
+                    URL url = urls.nextElement();
+                    int fileSeparator = url.getFile().indexOf(JAR_FILE_SEPARATOR);
+
+                    if (fileSeparator != -1) {
+                        JarFile jarFile = new JarFile(url.getFile().substring("file:".length(), fileSeparator));
+                        JarEntry descriptorEntry = jarFile.getJarEntry(KEYCLOAK_SCRIPTS_JSON_PATH);
+                        ScriptProviderDescriptor descriptor;
+
+                        try (InputStream is = jarFile.getInputStream(descriptorEntry)) {
+                            descriptor = JsonSerialization.readValue(is, ScriptProviderDescriptor.class);
+                        }
+
+                        for (Map.Entry<String, List<ScriptProviderMetadata>> entry : descriptor.getProviders().entrySet()) {
+                            if (isScriptForSpi(spi, entry.getKey())) {
+                                for (ScriptProviderMetadata metadata : entry.getValue()) {
+                                    ProviderFactory provider = createDeployableScriptProvider(jarFile, entry, metadata);
+                                    providers.put(metadata.getId(), provider);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to discover script providers", e);
+            }
+        }
+
+        return providers;
+    }
+
+    private ProviderFactory createDeployableScriptProvider(JarFile jarFile, Map.Entry<String, List<ScriptProviderMetadata>> entry,
+            ScriptProviderMetadata metadata) throws IOException {
+        String fileName = metadata.getFileName();
+
+        if (fileName == null) {
+            throw new RuntimeException("You must provide the script file name");
+        }
+
+        JarEntry scriptFile = jarFile.getJarEntry(fileName);
+
+        try (InputStream in = jarFile.getInputStream(scriptFile)) {
+            metadata.setCode(StreamUtil.readString(in, StandardCharsets.UTF_8));
+        }
+
+        metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+
+        String name = metadata.getName();
+
+        if (name == null) {
+            name = fileName;
+        }
+
+        metadata.setName(name);
+
+        return DEPLOYEABLE_SCRIPT_PROVIDERS.get(entry.getKey()).apply(metadata);
+    }
+
+    private boolean isScriptForSpi(Spi spi, String type) {
+        if (spi instanceof ProtocolMapperSpi && MAPPERS.equals(type)) {
+            return true;
+        } else if (spi instanceof PolicySpi && POLICIES.equals(type)) {
+            return true;
+        } else if (spi instanceof AuthenticatorSpi && AUTHENTICATORS.equals(type)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean supportsDeployeableScripts(Spi spi) {
+        return spi instanceof ProtocolMapperSpi || spi instanceof PolicySpi || spi instanceof AuthenticatorSpi;
     }
 
     private boolean isEnabled(ProviderFactory factory, Config.Scope scope) {
