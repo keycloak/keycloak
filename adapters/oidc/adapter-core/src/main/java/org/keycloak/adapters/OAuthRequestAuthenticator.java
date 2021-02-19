@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters;
 
+import org.apache.commons.collections.MapUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
@@ -390,9 +391,9 @@ public class OAuthRequestAuthenticator {
 
     private String rewrittenRedirectUri(String originalUri) {
         Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
-        if(rewriteRules != null && !rewriteRules.isEmpty()) {
+        if(MapUtils.isNotEmpty(rewriteRules)) {
             try {
-                Map.Entry<String, String> rule =  rewriteRules.entrySet().iterator().next();
+                Map.Entry<String, String> rule = rewriteRules.entrySet().iterator().next();
                 URI uri = new URI(originalUri);
                 return KeycloakUriBuilder.fromUri(uri)
                                          .replacePath(uri.getPath().replaceFirst(rule.getKey(), rule.getValue()))
