@@ -1,8 +1,4 @@
-== Threat Model Mitigation
 
-This chapter discusses possible security vulnerabilities any authentication server could have and how {project_name}
-mitigates those vulnerabilities.
-A good list of potential vulnerabilities and what security implementations should do to mitigate them can be found in
-the https://datatracker.ietf.org/doc/html/rfc6819[OAuth 2.0 Threat Model] document and its most recent extension https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics-15[OAuth 2.0 Security Best Current Practice] put out by the IETF.
-Many of those vulnerabilities are discussed here. 
+== Mitigating Security threats
 
+Security vulnerabilities exist in any authentication server. See the Internet Engineering Task Force's (IETF) https://tools.ietf.org/html/rfc6819[OAuth 2.0 Threat Model] and the https://tools.ietf.org/html/draft-ietf-oauth-security-topics-15[OAuth 2.0 Security Best Current Practice] for more information.

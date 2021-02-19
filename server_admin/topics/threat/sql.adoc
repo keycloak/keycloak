@@ -1,5 +1,4 @@
 
 === SQL Injection Attacks
 
-At this point in time, there is no knowledge of any SQL injection vulnerabilities in {project_name}.
-
+Currently, {project_name} has no known SQL injection vulnerabilities.

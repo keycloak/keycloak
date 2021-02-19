@@ -1,26 +1,17 @@
 
 === Admin Endpoints and Console
 
-The {project_name} administrative REST API and the web console are exposed by default on the same port as non-admin
-usage. If access to the admin console is not needed externally, we recommend not exposing the admin endpoints on the
-Internet.
+{project_name} exposes the administrative REST API and the web console on the same port as non-administrative usage by default. Do not expose administrative endpoints externally if external access is not necessary. If you need to expose administrative endpoints externally, you can expose them directly in {project_name} or use a proxy.
 
-This can be achieved either directly in {project_name} or with a proxy such as Apache or nginx.
+To expose endpoints by using a proxy, consult the documentation for the proxy. You need to control access to requests to the `/auth/admin` endpoint.
 
-For the proxy option please follow the documentation for the proxy. You need to control access to any requests
-to `/auth/admin`.
+Two options are available in {project_name} to expose endpoints directly, IP restriction and separate ports.
 
-To achieve this directly in {project_name} there are a few options. This document covers two options, IP restriction
-and separate ports.
-
-Once the admin console is no longer accessible on the frontend URL of Keycloak, you need to configure a fixed admin
-URL in the default hostname provider.
+When the Admin Console becomes inaccessible on the frontend URL of {project_name}, configure a fixed admin URL in the default hostname provider.
 
 ==== IP Restriction
 
-It is possible to restrict access to `/auth/admin` to only specific IP addresses.
-
-The following example restricts access to `/auth/admin` to IP addresses in the range `10.0.0.1` to `10.0.0.255`.
+You can restrict access to `/auth/admin` to only specific IP addresses. For example, restrict access to `/auth/admin` to IP addresses in the range `10.0.0.1` to `10.0.0.255`.
 
 [source,xml,subs="attributes+"]
 ----
@@ -40,7 +31,7 @@ The following example restricts access to `/auth/admin` to IP addresses in the r
 </subsystem>
 ----
 
-Equivalent configuration using CLI commands:
+You can also restrict access to specific IP addresses by using these CLI commands.:
 
 [source,bash]
 ----
@@ -48,14 +39,14 @@ Equivalent configuration using CLI commands:
 /subsystem=undertow/server=default-server/host=default-host/filter-ref=ipAccess:add()
 ----
 
-NOTE: For IP restriction if you are using a proxy it is important to configure it correctly to make sure {project_name}
-receives the client IP address and not the proxy IP address
+[NOTE]
+====
+For IP restriction using a proxy, configure the proxy to ensure {project_name} receives the client IP address and not the proxy IP address.
+====
 
 ==== Port Restriction
 
-It is possible to expose `/auth/admin` to a different port that is not exposed on the Internet.
-
-The following example exposes `/auth/admin` on port `8444` while not permitting access with the default port `8443`.
+You can expose `/auth/admin` to a different unexposed port. For example, expose `/auth/admin` on port `8444` and prevent access to the default port `8443`.
 
 [source,xml,subs="attributes+"]
 ----
@@ -86,7 +77,7 @@ The following example exposes `/auth/admin` on port `8444` while not permitting 
 </socket-binding-group>
 ----
 
-Equivalent configuration using CLI commands:
+You can expose `/auth/admin` on port `8444` and prevent access to the default port `8443` by using CLI commands:
 
 [source,bash]
 ----

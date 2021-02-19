@@ -1,18 +1,25 @@
 
 === Clickjacking
 
-With clickjacking, a malicious site loads the target site in a transparent iFrame overlaid on top of a set of dummy
-buttons that are carefully constructed to be placed directly under important buttons on the target site.
-When a user clicks a visible button, they are actually clicking a button (such as a "login" button) on the hidden page.
-An attacker can steal a user's authentication credentials and access their resources.
+Clickjacking is a technique of tricking users into clicking on a user interface element different from what users perceive. A malicious site loads the target site in a transparent iFrame, overlaid on top of a set of dummy buttons placed directly under important buttons on the target site. When a user clicks a visible button, they are clicking a button on the hidden page. An attacker can steal a user's authentication credentials and access their resources by using this method.
 
+<<<<<<< HEAD
 By default, every response by {project_name} sets some specific browser headers that can prevent this from happening.
 Specifically, it sets https://datatracker.ietf.org/doc/html/rfc7034[X-FRAME_OPTIONS] and http://www.w3.org/TR/CSP/[Content-Security-Policy].
 You should take a look at the definition of both of these headers as there is a lot of fine-grain browser access you can control.
 In the admin console you can specify the values these headers will have.  Go to the `Realm Settings` left menu item and
 click the `Security Defenses` tab and make sure you are on the `Headers` sub-tab.
+=======
+By default, every response by {project_name} sets the https://tools.ietf.org/html/rfc7034[X-FRAME_OPTIONS] and http://www.w3.org/TR/CSP/[Content-Security-Policy] browser headers to prevent clickjacking. See the documentation for these headers for details on fine-grain browser access. 
+>>>>>>> 88fa9a3a... KEYCLOAK-15790 Security Threats rewrite (#57)
 
-image:{project_images}/security-headers.png[]
+.Procedure
+In the Admin Console, you can specify the values of the X-FRAME_OPTIONS and Content-Security-Policy headers. 
+
+. Click the *Realm Settings* menu item.
+. Click the *Security Defenses* tab.
++
+.Security Defenses
+image:{project_images}/security-headers.png[Security Defences]
 
 By default, {project_name} only sets up a _same-origin_ policy for iframes.
-

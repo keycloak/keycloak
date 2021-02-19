@@ -1,10 +1,6 @@
 
 === Limiting Scope
 
-By default, each new client application has an unlimited `role scope mappings`.  This means that every access token that is created
-for that client will contain all the permissions the user has.  If the client gets compromised and the access token
-is leaked, then each system that the user has permission to access is now also compromised.  It is highly suggested
-that you limit the roles an access token is assigned by using the <<_role_scope_mappings, Scope menu>> for each client.
-Or alternatively, you can set role scope mappings at the Client Scope level and assign Client Scopes to your client by using the
-<<_client_scopes_linking, Client Scope menu>>.
+By default, new client applications have unlimited `role scope mappings`. Every access token for that client contains all permissions that the user has. If an attacker compromises the client and obtains the client's access tokens, each system that the user can access is compromised. 
 
+Limit the roles of an access token by using the <<_role_scope_mappings, Scope menu>> for each client. Alternatively, you can set role scope mappings at the Client Scope level and assign Client Scopes to your client by using the <<_client_scopes_linking, Client Scope menu>>.

@@ -1,15 +1,15 @@
 
 === Compromised Access and Refresh Tokens
 
-There are a few things you can do to mitigate access tokens and refresh tokens from being stolen. The most important thing is to enforce SSL/HTTPS communication between {project_name} and its clients and applications. It might seem obvious, but since {project_name} does not have SSL enabled by default, an administrator might not realize that it is necessary.
+{project_name} includes several actions to prevent malicious actors from stealing access tokens and refresh tokens. The crucial action is to enforce SSL/HTTPS communication between {project_name} and its clients and applications. {project_name} does not enable SSL by default.
 
-Another thing you can do to mitigate leaked access tokens is to shorten their lifespans.  You can specify this within the <<_timeouts, timeouts page>>.
-Short lifespans (minutes) for access tokens for clients and applications to refresh their access tokens after a short amount of time. If an admin detects a leak, they can logout all user sessions to invalidate these refresh tokens or set up a revocation policy. Making sure refresh tokens always stay private to the client and are never transmitted ever is very important as well.
+Another action to mitigate damage from leaked access tokens is to shorten the token's lifespans. You can specify token lifespans within the <<_timeouts, timeouts page>>. Short lifespans for access tokens force clients and applications to refresh their access tokens after a short time. If an admin detects a leak, the admin can log out all user sessions to invalidate these refresh tokens or set up a revocation policy. 
 
-You can also mitigate against leaked access tokens and refresh tokens by issuing these tokens as holder-of-key tokens. See <<_mtls-client-certificate-bound-tokens, OAuth 2.0 Mutual TLS Client Certificate Bound Access Token>> to learn how.
+Ensure refresh tokens always stay private to the client and are never transmitted.
 
-If an access token or refresh token is compromised, the first thing you should do is go to the admin console and push a not-before revocation policy to all applications. This will enforce that any tokens issued prior to that date are now invalid. Pushing new not-before policy will also ensure that application will be forced to download new public keys from {project_name}, hence it is also useful for the case, when you think that realm signing key was compromised.
-More info in the  <<realm_keys, keys chapter>>.
+You can mitigate damage from leaked access tokens and refresh tokens by issuing these tokens as holder-of-key tokens. See <<_mtls-client-certificate-bound-tokens, OAuth 2.0 Mutual TLS Client Certificate Bound Access Token>> for more information.
 
-You can also disable specific applications, clients, and users if you feel that any one of those entities is completely compromised.
+If an access token or refresh token is compromised, access the Admin Console and push a not-before revocation policy to all applications. Pushing a not-before policy ensures that any tokens issued before that time become invalid. 
+Pushing a new not-before policy ensures that applications must download new public keys from {project_name} and mitigate damage from a compromised realm signing key. See the <<realm_keys, keys chapter>> for more information.
 
+You can disable specific applications, clients, or users if they are compromised.

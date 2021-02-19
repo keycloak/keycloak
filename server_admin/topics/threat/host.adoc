@@ -1,14 +1,8 @@
 
 === Host
 
-{project_name} uses the public hostname for a number of things. For example, in the token issuer fields and URLs sent in
-password reset emails.
+{project_name} uses the public hostname in several ways, such as within token issuer fields and URLs in password reset emails.
 
-By default, the hostname is based on the request headers and there is no check to make sure this hostname is valid.
+By default, the hostname derives from request headers. No validation exists to ensure a hostname is valid. If you are not using a load balancer, or proxy, with {project_name} to prevent invalid host headers, configure the acceptable hostnames.
 
-If you are not using a load balancer or proxy in front of {project_name} that prevents invalid host headers, you must
-explicitly configure what hostnames should be accepted.
-
-The Hostname SPI provides a way to configure the hostname for a request. The out of the box provider allows setting
-a fixed URL for frontend requests, while allowing backend requests to be based on the request URI. It is also possible
-to develop your own provider in the case the built-in provider does not provide the functionality needed.
+The hostname's Service Provider Interface (SPI) provides a way to configure the hostname for requests. You can use this built-in provider to set a fixed URL for frontend requests while allowing backend requests based on the request URI. If the built-in provider does not have the required capability, you can develop a customized provider.

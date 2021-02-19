@@ -1,19 +1,8 @@
 
 === SSL/HTTPS Requirement
 
-If you do not use SSL/HTTPS for all communication between the {project_name} auth server and the clients it secures, you will be very vulnerable to man in the middle attacks.
-OAuth 2.0/OpenID Connect uses access tokens for security.
-Without SSL/HTTPS, attackers can sniff your network and obtain an access token.
-Once they have an access token they can do any operation that the token has been given permission for.
+OAuth 2.0/OpenID Connect uses access tokens for security. Attackers can scan your network for access tokens and use them to perform malicious operations for which the token has permission. This attack is known as a man-in-the-middle attack. Use SSL/HTTPS for communication between the {project_name} auth server and the clients {project_name} secures to prevent man-in-the-middle attacks. 
 
-{project_name} has <<_ssl_modes,three modes for SSL/HTTPS>>.
-SSL can be hard to set up, so out of the box, {project_name} allows non-HTTPS communication over private IP addresses like
-localhost, 192.168.x.x, and other private IP addresses.
-In production, you should make sure SSL is enabled and required across the board.
+{project_name} has <<_ssl_modes,three modes for SSL/HTTPS>>. SSL is complex to set up, so {project_name} allows non-HTTPS communication over private IP addresses such as localhost, 192.168.x.x, and other private IP addresses. In production, ensure you enable SSL and SSL is compulsory for all operations.
 
-On the adapter/client side, {project_name} allows you to turn off the SSL trust manager.
-The trust manager ensures identity the client is talking to.
-It checks the DNS domain name against the server's certificate.
-In production you should make sure that each of your client adapters is configured to use a truststore.
-Otherwise you are vulnerable to DNS man in the middle attacks.
-
+On the adapter/client-side, you can disable the SSL trust manager. The trust manager ensures the client's identity that {project_name} communicates with is valid and ensures the DNS domain name against the server's certificate. In production, ensure that each of your client adapters uses a truststore to prevent DNS man-in-the-middle attacks.
