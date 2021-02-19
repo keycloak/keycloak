@@ -1,11 +1,8 @@
+
 [[_transient-session]]
 
 === Transient sessions
 
-{project_name} has concept of transient sessions. When transient sessions are used, there is no real user session created after successful authentication.
-Only a temporary transient session is created for the scope of the current request that successfully authenticated the user. This transient session allows {project_name}
-to run <<_protocol-mappers, protocol mappers>> after the authentication.
+You can conduct transient sessions in {project_name}. When using transient sessions, {project_name} does not create a user session after successful authentication. {project_name} creates a temporary, transient session for the scope of the current request that successfully authenticates the user. {project_name} can run <<_protocol-mappers, protocol mappers>> using transient sessions after authentication.
 
-When transient sessions are used, the client application has no way to refresh or introspect the token or check if a specific session is valid.
-In some situations, these actions are not needed, so you can avoid the additional overhead for persistence of user sessions.
-This would mean the save of performance, memory and network communication (in case of cluster and cross-datacenter environments).
+During transient sessions, the client application cannot refresh tokens, introspect tokens, or validate a specific session. Sometimes these actions are unnecessary, so you can avoid the additional resource use of persisting user sessions. This session saves performance, memory, and network communication (in cluster and cross-data center environments) resources.

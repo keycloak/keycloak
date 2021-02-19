@@ -1,14 +1,12 @@
+
 [[_revocation-policy]]
 
 === Revocation Policies
+[role="_abstract"]
 
-If your system is compromised you will want a way to revoke all sessions and access tokens that have been handed out.
-You can do this by going to the `Revocation` tab of the `Sessions` screen.
+If your system is compromised, you can revoke all active sessions and access tokens by clicking the `Sessions` screen *Revocation* tab.
 
 .Revocation
 image:{project_images}/revocation.png[]
 
-You can only set a time-based revocation policy.  The console allows you to specify a time and date where any session
-or token issued before that time and date is invalid.  The `Set to now` will set the policy to the current time and date.
-The `Push` button will push this revocation policy to any registered OIDC client that has the {project_name}
-OIDC client adapter installed.
+You can specify a time and date where sessions or tokens issued before that time and date are invalid using this console. Click *Set to now* to set the policy to the current time and date. Click *Push* to push this revocation policy to any registered OIDC client with the {project_name} OIDC client adapter.

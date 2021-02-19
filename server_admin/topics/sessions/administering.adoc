@@ -1,36 +1,32 @@
 
 === Administering Sessions
 
-If you go to the `Sessions` left menu item you can see a top level view of the number of sessions that are currently active in the realm.
+To see a top-level view of the active clients and sessions in {project_name}, click *Sessions* from the menu.
 
 .Sessions
 image:{project_images}/sessions.png[]
 
-A list of clients is given and how many active sessions there currently are for that client. You can also log out all
-users in the realm by clicking the `Logout all` button on the right side of this list.
+==== The *Logout all* Operation
 
-==== Limitations of the `Logout all` Operation
+You can log out all users in the realm by clicking the *Logout all* button.
 
-Any SSO cookies set will now be invalid and clients that request authentication in active browser sessions will now have to
-re-login.  Only certain clients are notified of this logout event, specifically clients that are using the {project_name}
-OIDC client adapter. Other client types, such as SAML, will not receive a backchannel logout request.
+When you click the *Logout all* button, all SSO cookies become invalid, and clients requesting authentication within active browser sessions must log in again. {project_name} notifies clients by using the {project_name} OIDC client adapter of the logout event. Client types such as SAML do not receive a back-channel logout request.
 
-It is important to note that any outstanding access tokens are not revoked by clicking `Logout all`.  They have to
-expire naturally.  You have to push a <<_revocation-policy, revocation policy>> out to
-clients, but that also only works with clients using the {project_name} OIDC client adapter.
+[NOTE]
+====
+Clicking *Logout all* does not revoke outstanding access tokens. Outstanding tokens must expire naturally. For clients using the {project_name} OIDC client adapter, you can push a <<_revocation-policy, revocation policy>> to revoke the token, but this does not work for other adapters.
+====
 
-==== Application Drilldown
+==== Application Navigation
 
-On the `Sessions` page, you can also drill down to each client. This will bring you to the `Sessions` tab of that client.
-Clicking on the `Show Sessions` button there allows you to see which users are logged into that application.
+On the `Sessions` page, you can click on each client to go to that client's `Sessions` tab. Click the *Show Sessions* button there to see which users are in the application.
 
 .Application Sessions
 image:{project_images}/application-sessions.png[]
 
-==== User Drilldown
+==== User Navigation
 
-If you go to the `Sessions` tab of an individual user, you can also view the session information.
+If you go to the `Sessions` tab of an individual user, you can also view the user's session information.
 
 .User Sessions
 image:{project_images}/user-sessions.png[]
-
