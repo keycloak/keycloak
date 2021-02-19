@@ -19,10 +19,10 @@ export default class CreateKerberosProviderPage {
   cancelBtn: string;
 
   constructor() {
-    this.kerberosNameInput = "data-cy=kerberos-name";
-    this.kerberosRealmInput = "data-cy=kerberos-realm";
-    this.kerberosPrincipalInput = "data-cy=kerberos-principal";
-    this.kerberosKeytabInput = "data-cy=kerberos-keytab";
+    this.kerberosNameInput = "data-testid=kerberos-name";
+    this.kerberosRealmInput = "data-testid=kerberos-realm";
+    this.kerberosPrincipalInput = "data-testid=kerberos-principal";
+    this.kerberosKeytabInput = "data-testid=kerberos-keytab";
 
     this.kerberosEnabledInput = "#Kerberos-switch";
 
@@ -35,8 +35,8 @@ export default class CreateKerberosProviderPage {
     this.kerberosCachePolicyInput = "#kc-cache-policy";
     this.kerberosCachePolicyList = "#kc-cache-policy + ul";
 
-    this.saveBtn = "data-cy=kerberos-save";
-    this.cancelBtn = "data-cy=kerberos-cancel";
+    this.saveBtn = "data-testid=kerberos-save";
+    this.cancelBtn = "data-testid=kerberos-cancel";
   }
 
   //#region Required Settings

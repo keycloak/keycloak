@@ -113,7 +113,7 @@ export const UserFederationSection = () => {
           onClick={() => {
             toggleDeleteForCard(userFederation.id!);
           }}
-          data-cy="card-delete"
+          data-testid="card-delete"
         >
           {t("common:delete")}
         </DropdownItem>,
@@ -179,7 +179,7 @@ export const UserFederationSection = () => {
               <Card
                 isHoverable
                 onClick={() => history.push(`${url}/kerberos/new`)}
-                data-cy="kerberos-card"
+                data-testid="kerberos-card"
               >
                 <CardTitle>
                   <Split hasGutter>
