@@ -1,6 +1,6 @@
 [[_user-storage-federation]]
 
-== User Storage Federation
+== Using external storage
 
 Many companies have existing user databases that hold information about users and their passwords or other credentials.
 In many cases, it is just not possible to migrate off of those existing stores to a pure {project_name} deployment.

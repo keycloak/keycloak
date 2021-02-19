@@ -1,5 +1,5 @@
 
-== Auditing and Events
+== Configuring auditing to track events
 
 {project_name} provides a rich set of auditing capabilities.  Every single login action can be recorded and stored in
 the database and reviewed in the Admin Console.  All admin actions can also be recorded and reviewed.  There is also a Listener SPI

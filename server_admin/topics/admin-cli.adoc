@@ -1,5 +1,5 @@
 
-== The Admin CLI
+== Admin CLI
 
 In previous chapters, we described how to use the {project_name} Admin Console to perform administrative tasks. You can also perform those tasks from the command-line interface (CLI) by using the Admin CLI command-line tool.
 

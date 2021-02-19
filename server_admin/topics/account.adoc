@@ -111,7 +111,7 @@ You can view the devices that are logged in to your account.
 .Procedure
 
 . Click *Account Security* in the menu.
-. Click *Device Activity*. 
+. Click *Device Activity*.
 . Log out a device if it looks suspicious.
 
 .Devices
@@ -135,7 +135,7 @@ You can link your account with an <<_identity_broker, identity broker>>. This op
 
 . Click *Account Security* in the menu.
 
-. Click *Linked Accounts*. 
+. Click *Linked Accounts*.
 
 The identity provider you added appears in this page.
 
@@ -148,4 +148,3 @@ The *Applications* menu item shows users which applications you can access. In t
 
 .Applications
 image:images/account-console-applications.png[Applications]
-

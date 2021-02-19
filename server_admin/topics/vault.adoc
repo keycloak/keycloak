@@ -1,7 +1,7 @@
 
 [[_vault-administration]]
 
-== Using a Vault to Obtain Secrets
+== Using a vault to obtain secrets
 
 To obtain a secret from a vault rather than entering it directly, enter the following specially crafted string into the appropriate field:
 
@@ -133,7 +133,7 @@ All built-in providers support the configuration of key resolvers. A key resolve
 </spi>
 ----
 
-The resolvers run in the same order you declare them in the configuration. For each resolver, {project_name} uses the last entry name the resolver produces, which combines the realm with the vault key to search for the vault's secret. If {project_name} finds a secret, it returns the secret. If not, {project_name} uses the next resolver. This search continues until {project_name} finds a non-empty secret or runs out of resolvers. If {project_name} finds no secret, {project_name} returns an empty secret. 
+The resolvers run in the same order you declare them in the configuration. For each resolver, {project_name} uses the last entry name the resolver produces, which combines the realm with the vault key to search for the vault's secret. If {project_name} finds a secret, it returns the secret. If not, {project_name} uses the next resolver. This search continues until {project_name} finds a non-empty secret or runs out of resolvers. If {project_name} finds no secret, {project_name} returns an empty secret.
 
 In the previous example, {project_name} uses the `REALM_UNDERSCORE_KEY` resolver first. If {project_name} finds an entry in the vault that using that resolver, {project_name} returns that entry. If not, {project_name} searches again using the `KEY_ONLY` resolver. If {project_name} finds an entry by using the `KEY_ONLY` resolver, {project_name} returns that entry. If {project_name} uses all resolvers, {project_name} returns an empty secret.
 
@@ -223,7 +223,7 @@ You create the credential store and a vault where the credential store and vault
 
 .Prerequisites
 
-* A running LDAP instance has `BIND DN credential: secret12`.  
+* A running LDAP instance has `BIND DN credential: secret12`.
 
 * The alias uses the format <realm-name>_< key-value> when using the default key resolver. In this case, the instance is running in the realm `ldaptest` and `ldaptest_ldap_secret` is the alias that corresponds to the value `ldap_secret` in that realm.
 
@@ -238,7 +238,7 @@ NOTE: The resolver replaces underscore characters with double underscore charact
 [standalone@localhost:9990 /] /subsystem=elytron/credential-store=test-store:add(create=true, location=/home/test/test-store.p12, credential-reference={clear-text=testpwd1!},implementation-properties={keyStoreType=PKCS12})
 ----
 
-. Add an alias to the credential store. 
+. Add an alias to the credential store.
 
 +
 [source,bash,subs=+attributes]
@@ -258,7 +258,7 @@ Keystore provider: SUN
 
 Your keystore contains 1 entries
 
-ldaptest_ldap__secret/passwordcredential/clear/, Oct 12, 2020, SecretKeyEntry, 
+ldaptest_ldap__secret/passwordcredential/clear/, Oct 12, 2020, SecretKeyEntry,
 ----
 
 . Configure the vault SPI in {project_name}.
@@ -329,7 +329,7 @@ MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123
 /subsystem=elytron/credential-store=cs-store:write-attribute(name=credential-reference.clear-text,value="MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123")
 ----
 
-. Update the {project_name} vault configuration to use the masked password. 
+. Update the {project_name} vault configuration to use the masked password.
 +
 [source,bash,subs=+attributes]
 ----

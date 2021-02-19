@@ -1,6 +1,6 @@
 
 [id="assembly-managing-clients_{context}"]
-== Managing Clients
+== Managing OpenID Connect and SAML Clients
 
 [role="_abstract"]
 Clients are entities that can request authentication of a user.  Clients come in two forms.

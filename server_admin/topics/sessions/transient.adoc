@@ -6,3 +6,4 @@
 You can conduct transient sessions in {project_name}. When using transient sessions, {project_name} does not create a user session after successful authentication. {project_name} creates a temporary, transient session for the scope of the current request that successfully authenticates the user. {project_name} can run <<_protocol-mappers, protocol mappers>> using transient sessions after authentication.
 
 During transient sessions, the client application cannot refresh tokens, introspect tokens, or validate a specific session. Sometimes these actions are unnecessary, so you can avoid the additional resource use of persisting user sessions. This session saves performance, memory, and network communication (in cluster and cross-data center environments) resources.
+

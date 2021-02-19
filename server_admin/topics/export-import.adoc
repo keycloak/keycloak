@@ -1,5 +1,5 @@
 [id=assembly-exporting-importing_{context}]
-== Export and Import
+== Exporting and import the database
 
 {project_name} has the ability to export and import the entire database.
 This can be especially useful if you want to migrate your whole {project_name} database from one environment to another or migrate to a different database (for example from MySQL to Oracle). Export and import is triggered at server boot time  and its parameters are passed in via Java system properties.
