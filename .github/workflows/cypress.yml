@@ -36,18 +36,18 @@ jobs:
       run: ./import.js
 
     - name: Cypress run
-      run: cd tests && npx cypress run --headless --browser chrome && cd ..
+      run: yarn start:cypress-tests --headless --browser chrome
 
     - name: Add Cypress videos artifacts
       uses: actions/upload-artifact@v2
       if: failure()
       with:
         name: cypress-videos
-        path: tests/assets/videos
+        path: assets/videos
 
     - name: Add Cypress screenshots artifacts
       uses: actions/upload-artifact@v2
       if: failure()
       with:
         name: cypress-screenshots
-        path: tests/assets/screenshots
+        path: assets/screenshots

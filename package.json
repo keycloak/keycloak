@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
-  "private": true,
-  "workspaces": [
-    "tests"
-  ],
   "scripts": {
     "build": "snowpack build",
     "build-storybook": "build-storybook -s public",
@@ -18,8 +14,8 @@
     "start": "snowpack dev",
     "storybook": "start-storybook -p 6006 -s public",
     "test": "jest",
-    "start:cypress": "cd tests && npx cypress open",
-    "start:cypress-tests": "cd tests && npx cypress run"
+    "start:cypress": "cypress open",
+    "start:cypress-tests": "cypress run"
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.87.1",
@@ -68,6 +64,7 @@
     "@typescript-eslint/eslint-plugin": "^3.8.0",
     "@typescript-eslint/parser": "^3.8.0",
     "babel-loader": "^8.1.0",
+    "cypress": "^6.5.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "enzyme": "^3.11.0",
