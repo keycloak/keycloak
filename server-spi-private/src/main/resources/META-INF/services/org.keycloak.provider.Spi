@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.keycloak.component.ComponentFactorySpi
 org.keycloak.provider.ExceptionConverterSpi
 org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi

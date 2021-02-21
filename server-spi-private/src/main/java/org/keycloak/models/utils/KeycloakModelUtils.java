@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
@@ -64,6 +66,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -299,6 +305,93 @@ public final class KeycloakModelUtils {
 
     }
 
+    public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
+        return factory -> getComponentModel(factory, realmId, componentId);
+    }
+
+    public static ComponentModel getComponentModel(KeycloakSessionFactory factory, String realmId, String componentId) {
+        AtomicReference<ComponentModel> cm = new AtomicReference<>();
+        KeycloakModelUtils.runJobInTransaction(factory, session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            cm.set(realm == null ? null : realm.getComponent(componentId));
+        });
+        return cm.get();
+    }
+
+    public static <T extends Provider> ProviderFactory<T> getComponentFactory(KeycloakSessionFactory factory, Class<T> providerClass, Scope config, String spiName) {
+        String realmId = config.get("realmId");
+        String componentId = config.get("componentId");
+        if (realmId == null || componentId == null) {
+            realmId = "ROOT";
+            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName);
+            return factory.getProviderFactory(providerClass, realmId, cm.getId(), k -> cm);
+        } else {
+            return factory.getProviderFactory(providerClass, realmId, componentId, componentModelGetter(realmId, componentId));
+        }
+    }
+
+    private static class ScopeComponentModel extends ComponentModel {
+
+        private final String componentId;
+        private final String providerId;
+        private final String providerType;
+        private final Scope config;
+
+        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName) {
+            final String pr = baseConfiguration.get("provider", Config.getProvider(spiName));
+
+            this.providerId = pr == null ? "default" : pr;
+            this.config = baseConfiguration.scope(this.providerId);
+            this.componentId = spiName + "-" + this.providerId;
+            this.providerType = providerClass.getName();
+        }
+
+        @Override
+        public String getProviderType() {
+            return providerType;
+        }
+
+        @Override
+        public String getProviderId() {
+            return providerId;
+        }
+
+        @Override
+        public String getName() {
+            return componentId + "-config";
+        }
+
+        @Override
+        public String getId() {
+            return componentId;
+        }
+
+        @Override
+        public boolean get(String key, boolean defaultValue) {
+            return config.getBoolean(key, defaultValue);
+        }
+
+        @Override
+        public long get(String key, long defaultValue) {
+            return config.getLong(key, defaultValue);
+        }
+
+        @Override
+        public int get(String key, int defaultValue) {
+            return config.getInt(key, defaultValue);
+        }
+
+        @Override
+        public String get(String key, String defaultValue) {
+
+            return config.get(key, defaultValue);
+        }
+
+        @Override
+        public String get(String key) {
+            return get(key, null);
+        }
+    }
 
     public static String getMasterRealmAdminApplicationClientId(String realmName) {
         return realmName + "-realm";

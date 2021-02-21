@@ -71,9 +71,16 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
             }
         }
 
+        // Component factory must be initialized first, so that postInit in other factories can use component factories
+        updateComponentFactoryProviderFactory();
+        if (componentFactoryPF != null) {
+            componentFactoryPF.postInit(this);
+        }
         for (Map<String, ProviderFactory> f : factoriesMap.values()) {
             for (ProviderFactory factory : f.values()) {
-                factory.postInit(this);
+                if (factory != componentFactoryPF) {
+                    factory.postInit(this);
+                }
             }
         }
 

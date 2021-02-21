@@ -268,6 +268,11 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
 
+    @GET
+    @Path("/test-amphibian-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Map<String, Object>> getTestAmphibianComponentDetails();
+
 
     @GET
     @Path("/identity-config")
