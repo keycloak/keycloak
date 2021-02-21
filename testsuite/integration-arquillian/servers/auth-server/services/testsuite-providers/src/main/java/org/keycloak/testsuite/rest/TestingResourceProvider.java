@@ -62,6 +62,7 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
+import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
@@ -690,6 +691,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
                         }));
     }
 
+    @GET
+    @Path("/test-amphibian-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Map<String, Object>> getTestAmphibianComponentDetails() {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponentsStream(realm.getId(), TestAmphibianProvider.class.getName())
+                .collect(Collectors.toMap(
+                  ComponentModel::getName,
+                  componentModel -> {
+                      TestAmphibianProvider t = session.getComponentProvider(TestAmphibianProvider.class, componentModel.getId());
+                      return t == null ? null : t.getDetails();
+                  }));
+    }
+
 
     @GET
     @Path("/identity-config")
@@ -992,7 +1007,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .entity(builder.toString()).build();
 
     }
-
 
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
