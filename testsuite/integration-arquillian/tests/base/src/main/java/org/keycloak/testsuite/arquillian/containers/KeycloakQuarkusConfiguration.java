@@ -23,6 +23,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private int bindHttpPort = 8080;
     private int bindHttpsPortOffset = 0;
     private int bindHttpsPort = Integer.valueOf(System.getProperty("auth.server.https.port", "8543"));
+    private int debugPort = -1;
     private Path providersPath = Paths.get(System.getProperty("auth.server.home"));
     private int startupTimeoutInSeconds = 300;
     private String route;
@@ -145,4 +146,13 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     public void setReaugmentBeforeStart(boolean reaugmentBeforeStart) {
         this.reaugmentBeforeStart = reaugmentBeforeStart;
     }
+
+    public int getDebugPort() {
+        return debugPort;
+    }
+
+    public void setDebugPort(int debugPort) {
+        this.debugPort = debugPort;
+    }
+
 }

@@ -30,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.KeyManager;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ThemeManager;
@@ -38,6 +39,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
@@ -53,10 +56,13 @@ import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -71,6 +77,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final List<Provider> closable = new LinkedList<>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private final Map<String, Object> attributes = new HashMap<>();
+    private final Map<InvalidableObjectType, Set<Object>> invalidationMap = new HashMap<>();
     private RealmProvider model;
     private ClientProvider clientProvider;
     private ClientScopeProvider clientScopeProvider;
@@ -156,6 +163,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     public UserCache userCache() {
         return getProvider(UserCache.class);
 
+    }
+
+    @Override
+    public void invalidate(InvalidableObjectType type, Object... ids) {
+        factory.invalidate(type, ids);
+        invalidationMap.computeIfAbsent(type, o -> new HashSet<>()).addAll(Arrays.asList(ids));
     }
 
     @Override
@@ -323,6 +336,30 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId) {
+        Integer hash = clazz.hashCode() + componentId.hashCode();
+        T provider = (T) providers.get(hash);
+        final RealmModel realm = getContext().getRealm();
+        if (realm == null) {
+            throw new IllegalArgumentException("Realm not set in the context.");
+        }
+
+        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
+        // since per JDK-8071667 the remapping function should not modify the map during computation. While
+        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
+        if (provider == null) {
+            final String realmId = realm.getId();
+            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, realmId, componentId, KeycloakModelUtils.componentModelGetter(realmId, componentId));
+            if (providerFactory != null) {
+                provider = providerFactory.create(this);
+                providers.put(hash, provider);
+            }
+        }
+        return provider;
+    }
+
+    @Override
     public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
         String modelId = componentModel.getId();
 
@@ -468,6 +505,9 @@ public class DefaultKeycloakSession implements KeycloakSession {
         };
         providers.values().forEach(safeClose);
         closable.forEach(safeClose);
+        for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
+            factory.invalidate(me.getKey(), me.getValue().toArray());
+        }
     }
 
 }
