@@ -256,8 +256,20 @@ export const LdapSettingsSearching = ({
             type="text"
             id="kc-user-ldap-filter"
             name="config.customUserSearchFilter[0]"
-            ref={form.register}
+            ref={form.register({ 
+              pattern: {
+                value: /(\(.*\))$/,
+                message: `${t("validateCustomUserSearchFilter")}`
+              }  
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.customUserSearchFilter &&
+            form.errors.config.customUserSearchFilter[0] && (
+              <div className="error">
+                {form.errors.config.customUserSearchFilter[0].message}
+              </div>
+            )}
         </FormGroup>
 
         <FormGroup
@@ -312,7 +324,7 @@ export const LdapSettingsSearching = ({
           fieldId="kc-read-timeout"
         >
           <TextInput
-            type="text"
+            type="number"
             id="kc-read-timeout"
             name="config.readTimeout[0]"
             ref={form.register}

@@ -110,6 +110,7 @@
     "validateUsersDn": "You must enter users DN",
     "validateUsernameLDAPAttribute": "You must enter a username LDAP attribute",
     "validateRdnLdapAttribute": "You must enter an RDN LDAP attribute",
+    "validateCustomUserSearchFilter": "Filter must be enclosed in parentheses, for example: (filter)", 
 
     "id": "ID",
     "mapperType": "Mapper type",

@@ -71,7 +71,7 @@ export const LdapSettingsSynchronization = ({
           fieldId="kc-batch-size"
         >
           <TextInput
-            type="text"
+            type="number"
             id="kc-batch-size"
             name="config.batchSizeForSync[0]"
             ref={form.register}
@@ -92,7 +92,7 @@ export const LdapSettingsSynchronization = ({
           fieldId="kc-full-sync-period"
         >
           <TextInput
-            type="text"
+            type="number"
             id="kc-full-sync-period"
             name="config.fullSyncPeriod[0]"
             ref={form.register}
@@ -113,7 +113,7 @@ export const LdapSettingsSynchronization = ({
           hasNoPaddingTop
         >
           <TextInput
-            type="text"
+            type="number"
             id="kc-changed-users-sync-period"
             name="config.changedSyncPeriod[0]"
             ref={form.register}
