@@ -51,11 +51,11 @@ public class UserUpdateHelper {
     }
 
     public static void updateIdpReview(RealmModel realm, UserModel userModelDelegate, UserProfile updatedProfile) {
-        update(UserUpdateEvent.IdpReview, realm, userModelDelegate, updatedProfile);
+        update(UserUpdateEvent.IdpReview, realm, userModelDelegate, updatedProfile.getAttributes(), false);
     }
 
     public static void updateUserProfile(RealmModel realm, UserModel user, UserProfile updatedProfile) {
-        update(UserUpdateEvent.UpdateProfile, realm, user, updatedProfile);
+        update(UserUpdateEvent.UpdateProfile, realm, user, updatedProfile.getAttributes(), false);
     }
 
     public static void updateAccount(RealmModel realm, UserModel user, UserProfile updatedProfile) {

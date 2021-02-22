@@ -214,7 +214,7 @@ public class UserResource {
 
     public static void updateUserFromRep(UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
         boolean removeMissingRequiredActions = isUpdateExistingUser;
-        UserUpdateHelper.updateUserResource(session, user, rep, isUpdateExistingUser);
+        UserUpdateHelper.updateUserResource(session, user, rep, rep.getAttributes() != null);
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
