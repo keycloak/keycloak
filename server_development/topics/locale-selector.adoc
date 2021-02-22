@@ -3,7 +3,6 @@
 
 By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled. With internationalization enabled, the locale is resolved in the following priority:
 
-. `kc_locale` query parameter
 . `KEYCLOAK_LOCALE` cookie value
 . User's preferred locale if a user instance is available
 . `ui_locales` query parameter
