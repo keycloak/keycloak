@@ -93,9 +93,11 @@ export const UserFederationKerberosSettings = () => {
 
   useEffect(() => {
     (async () => {
-      const fetchedComponent = await adminClient.components.findOne({ id });
-      if (fetchedComponent) {
-        setupForm(fetchedComponent);
+      if (id !== "new") {
+        const fetchedComponent = await adminClient.components.findOne({ id });
+        if (fetchedComponent) {
+          setupForm(fetchedComponent);
+        }
       }
     })();
   }, []);
