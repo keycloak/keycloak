@@ -3,11 +3,14 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-product.adoc[]
+include::runtimes-common/attributes/runtimes-attributes.adoc[]
 
 :release_notes:
+:context: release_notes
 
 = {releasenotes_name}
 
 == {project_name_full} 7.4.0.GA
 
 include::topics/product/7_4_final.adoc[leveloffset=2]
+include::runtimes-common/ref_runtimes_metering_labels.adoc[leveloffset=2]
