@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
@@ -39,6 +40,9 @@ import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.junit.Assert.assertFalse;
+
+import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -319,6 +323,42 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
         Assert.assertEquals(backToAppLink, client.getBaseUrl());
+    }
+
+    @Test
+    public void updateProfileWithoutRemoveCustomAttributes() {
+        UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        UserResource user = adminClient.realm("test").users().get(userRep.getId());
+
+        userRep.setAttributes(new HashMap<>());
+        userRep.getAttributes().put("custom", Arrays.asList("custom"));
+
+        user.update(userRep);
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+        assertFalse(updateProfilePage.isCancelDisplayed());
+
+        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+
+        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
+
+        // assert user is really updated in persistent store
+        userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        Assert.assertEquals("New first", userRep.getFirstName());
+        Assert.assertEquals("New last", userRep.getLastName());
+        Assert.assertEquals("new@email.com", userRep.getEmail());
+        Assert.assertEquals("test-user@localhost", userRep.getUsername());
+        Assert.assertNotNull(userRep.getAttributes());
+        Assert.assertTrue(userRep.getAttributes().containsKey("custom"));
     }
 
 }

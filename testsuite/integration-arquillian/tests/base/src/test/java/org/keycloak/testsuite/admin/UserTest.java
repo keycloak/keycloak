@@ -1088,7 +1088,15 @@ public class UserTest extends AbstractAdminTest {
         assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
         assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
-        user1.getAttributes().clear();
+        // null attributes should not remove attributes
+        user1.setAttributes(null);
+        updateUser(realm.users().get(user1Id), user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertNotNull(user1.getAttributes());
+        assertEquals(2, user1.getAttributes().size());
+
+        // empty attributes should remove attributes
+        user1.setAttributes(Collections.emptyMap());
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
