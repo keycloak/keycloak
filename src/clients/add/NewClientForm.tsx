@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import {
   PageSection,
   Wizard,
@@ -17,9 +17,11 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 export const NewClientForm = () => {
   const { t } = useTranslation("clients");
+  const { realm } = useRealm();
   const adminClient = useAdminClient();
   const history = useHistory();
 
@@ -40,8 +42,9 @@ export const NewClientForm = () => {
 
   const save = async () => {
     try {
-      await adminClient.clients.create({ ...client });
+      const newClient = await adminClient.clients.create({ ...client });
       addAlert(t("createSuccess"), AlertVariant.success);
+      history.push(`/${realm}/clients/${newClient.id}`);
     } catch (error) {
       addAlert(t("createError", { error }), AlertVariant.danger);
     }
@@ -89,7 +92,6 @@ export const NewClientForm = () => {
   );
 
   const title = t("createClient");
-  const { url } = useRouteMatch();
   return (
     <>
       <ViewHeader
@@ -98,7 +100,7 @@ export const NewClientForm = () => {
       />
       <PageSection variant="light">
         <Wizard
-          onClose={() => history.push(`${url}/clients`)}
+          onClose={() => history.push(`/${realm}/clients`)}
           navAriaLabel={`${title} steps`}
           mainAriaLabel={`${title} content`}
           steps={[

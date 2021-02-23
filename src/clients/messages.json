@@ -6,6 +6,8 @@
     "importClient": "Import client",
     "clientID": "Client ID",
     "homeURL": "Home URL",
+    "webOrigins": "Web origins",
+    "adminURL": "Admin URL",
     "formatOption": "Format option",
     "downloadAdaptorTitle": "Download adaptor configs",
     "credentials": "Credentials",

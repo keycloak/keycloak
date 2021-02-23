@@ -151,7 +151,7 @@ export const ClientDetails = () => {
   const setupForm = (client: ClientRepresentation) => {
     form.reset(client);
     Object.entries(client).map((entry) => {
-      if (entry[0] === "redirectUris") {
+      if (entry[0] === "redirectUris" || entry[0] === "webOrigins") {
         form.setValue(entry[0], convertToMultiline(entry[1]));
       } else if (entry[0] === "attributes") {
         convertToFormValues(entry[1], "attributes", form.setValue);
@@ -175,6 +175,7 @@ export const ClientDetails = () => {
   const save = async () => {
     if (await form.trigger()) {
       const redirectUris = toValue(form.getValues()["redirectUris"]);
+      const webOrigins = toValue(form.getValues()["webOrigins"]);
       const attributes = form.getValues()["attributes"]
         ? convertFormValuesToObject(form.getValues()["attributes"])
         : {};
@@ -183,6 +184,7 @@ export const ClientDetails = () => {
         const client = {
           ...form.getValues(),
           redirectUris,
+          webOrigins,
           attributes,
         };
         await adminClient.clients.update({ id }, client);

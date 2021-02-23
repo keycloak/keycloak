@@ -321,9 +321,9 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             typeAheadAriaLabel={t("user")}
             onToggle={() => setIsUserOpen(!isUserOpen)}
             onFilter={(e) => {
-              const value = e.target.value;
+              const value = e?.target.value || "";
               setUserSearch(value);
-              return [];
+              return userItems;
             }}
             onClear={() => setUser(undefined)}
             selections={[user]}
@@ -333,9 +333,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               setIsUserOpen(false);
             }}
             isOpen={isUserOpen}
-          >
-            {userItems}
-          </Select>
+          />
         </FormGroup>
       </Form>
       <Grid hasGutter className="keycloak__scopes_evaluate__tabs">

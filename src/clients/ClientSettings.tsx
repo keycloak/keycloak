@@ -16,6 +16,7 @@ import { ClientDescription } from "./ClientDescription";
 import { CapabilityConfig } from "./add/CapabilityConfig";
 import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 import { FormAccess } from "../components/form-access/FormAccess";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 
 type ClientSettingsProps = {
   form: UseFormMethods;
@@ -56,6 +57,37 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
               type="text"
               id="kc-home-url"
               name="baseUrl"
+              ref={form.register}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("webOrigins")}
+            fieldId="kc-web-origins"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:webOrigins"
+                forLabel={t("webOrigins")}
+                forID="kc-web-origins"
+              />
+            }
+          >
+            <MultiLineInput form={form} name="webOrigins" />
+          </FormGroup>
+          <FormGroup
+            label={t("adminURL")}
+            fieldId="kc-admin-url"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:adminURL"
+                forLabel={t("adminURL")}
+                forID="kc-admin-url"
+              />
+            }
+          >
+            <TextInput
+              type="text"
+              id="kc-admin-url"
+              name="adminUrl"
               ref={form.register}
             />
           </FormGroup>

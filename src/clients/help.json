@@ -1,5 +1,7 @@
 {
   "clients-help": {
+    "webOrigins": "Allowed CORS origins. To permit all origins of Valid Redirect URIs, add '+'. This does not include the '*' wildcard though. To permit all origins, explicitly add '*'.",
+    "adminURL": "URL to the admin interface of the client. Set this if the client supports the adapter REST API. This REST API allows the auth server to push revocation policies and other administrative tasks. Usually this is set to the base URL of the client.",
     "downloadType": "this is information about the download type",
     "details": "this is information about the details",
     "client-authenticator-type": "Client Authenticator used for authentication of this client against Keycloak server",
