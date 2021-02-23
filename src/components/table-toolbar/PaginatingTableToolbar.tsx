@@ -13,6 +13,7 @@ type TableToolbarProps = {
   onNextClick: (page: number) => void;
   onPreviousClick: (page: number) => void;
   onPerPageSelect: (max: number, first: number) => void;
+  searchTypeComponent?: React.ReactNode;
   toolbarItem?: React.ReactNode;
   children: React.ReactNode;
   inputGroupName?: string;
@@ -31,6 +32,7 @@ export const PaginatingTableToolbar = ({
   onNextClick,
   onPreviousClick,
   onPerPageSelect,
+  searchTypeComponent,
   toolbarItem,
   children,
   inputGroupName,
@@ -59,6 +61,7 @@ export const PaginatingTableToolbar = ({
 
   return (
     <TableToolbar
+      searchTypeComponent={searchTypeComponent}
       toolbarItem={
         <>
           {toolbarItem}

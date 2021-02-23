@@ -70,6 +70,7 @@ describe("Realm roles test", function () {
 
       masthead.checkNotificationMessage("Role created");
 
+      // Add associated realm role
       cy.get("#roles-actions-dropdown").last().click();
 
       cy.get("#add-roles").click();
@@ -83,6 +84,24 @@ describe("Realm roles test", function () {
       cy.url().should("include", "/AssociatedRoles");
 
       cy.get("#composite-role-badge").should("contain.text", "Composite");
+
+      // Add associated client role
+
+      cy.get('[data-cy=add-role-button]').click();
+
+      cy.wait(100);
+
+      cy.get('[data-cy=filter-type-dropdown]').click()
+
+      cy.get('[data-cy=filter-type-dropdown-item]').click()
+
+      cy.wait(2500);
+
+      cy.get('[type="checkbox"]').eq(4).check({force: true});
+
+      cy.get("#add-associated-roles-button").contains("Add").click();
+
+      cy.wait(2500);
     });
   });
 });

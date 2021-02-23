@@ -89,6 +89,7 @@ export type DataListProps<T> = {
   columns: Field<T>[];
   actions?: Action<T>[];
   actionResolver?: IActionsResolver;
+  searchTypeComponent?: ReactNode;
   toolbarItem?: ReactNode;
   emptyState?: ReactNode;
 };
@@ -126,6 +127,7 @@ export function KeycloakDataTable<T>({
   columns,
   actions,
   actionResolver,
+  searchTypeComponent,
   toolbarItem,
   emptyState,
 }: DataListProps<T>) {
@@ -262,6 +264,7 @@ export function KeycloakDataTable<T>({
           inputGroupOnChange={searchOnChange}
           inputGroupOnClick={refresh}
           inputGroupPlaceholder={t(searchPlaceholderKey)}
+          searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
         >
           {!loading && (emptyState === undefined || rows.length !== 0) && (
@@ -286,6 +289,7 @@ export function KeycloakDataTable<T>({
           inputGroupOnClick={() => {}}
           inputGroupPlaceholder={t(searchPlaceholderKey)}
           toolbarItem={toolbarItem}
+          searchTypeComponent={searchTypeComponent}
         >
           {(emptyState === undefined || rows.length !== 0) && (
             <DataTable

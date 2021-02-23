@@ -13,6 +13,8 @@
     "importRole": "Import role",
     "roleID": "Role ID",
     "homeURL": "Home URL",
+    "filterByClients": "Filter by clients",
+    "filterByRoles": "Filter by roles",
     "roleExplain": "Realm-level roles are a global namespace to define your roles.",
     "roleCreateExplain": "This is some description",
     "roleName": "Role name",
