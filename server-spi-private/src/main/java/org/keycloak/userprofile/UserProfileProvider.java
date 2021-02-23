@@ -18,7 +18,9 @@
 package org.keycloak.userprofile;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
@@ -27,5 +29,13 @@ public interface UserProfileProvider extends Provider {
 
     UserProfileValidationResult validate(UserProfileContext updateContext, UserProfile updatedProfile);
 
-    boolean isReadOnlyAttribute(String key);
+    boolean isReadOnlyAttribute(UserUpdateEvent userUpdateEvent, String key);
+
+    default boolean removeMissingAttribute(UserUpdateEvent userUpdateEvent, String key, boolean defaultValue) {
+        return defaultValue;
+    }
+
+    default UserRepresentation filterUserRepresentation(UserRepresentation rep, UserUpdateEvent userUpdateEvent) {
+        return rep;
+    }
 }

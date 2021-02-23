@@ -1152,6 +1152,23 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("foo", user1.getAttributes().get("usercertificate").get(0));
         assertEquals("bar", user1.getAttributes().get("saml.persistent.name.id.for.foo").get(0));
         assertFalse(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID));
+
+        // Add an attribute that is read only for a regular user, but not for an admin
+        UserRepresentation user2 = new UserRepresentation();
+        user2.setUsername("user2");
+        String user2Id = createUser(user2);
+        user2 = realm.users().get(user2Id).toRepresentation();
+        user2.singleAttribute("foo", "bar");
+        user2.singleAttribute("saml.persistent.name.id.for.foo2", "bar");
+        updateUser(realm.users().get(user2Id), user2);
+        user2 = realm.users().get(user2Id).toRepresentation();
+        assertEquals("bar", user2.getAttributes().get("saml.persistent.name.id.for.foo2").get(0));
+
+        // Remove an attribute that is read only for a regular user, but not for an admin
+        user2.getAttributes().remove("saml.persistent.name.id.for.foo2");
+        updateUser(realm.users().get(user2Id), user2);
+        user2 = realm.users().get(user2Id).toRepresentation();
+        assertNull(user2.getAttributes().get("saml.persistent.name.id.for.foo2"));
     }
 
     @Test

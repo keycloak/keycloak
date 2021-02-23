@@ -27,6 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.validation.StaticValidators;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.userprofile.validation.ValidationChainBuilder;
 
 /**
@@ -78,8 +79,13 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
     }
 
     @Override
-    public boolean isReadOnlyAttribute(String key) {
-        return readOnlyAttributes.matcher(key).find() || adminReadOnlyAttributes.matcher(key).find();
+    public boolean isReadOnlyAttribute(UserUpdateEvent userUpdateEvent, String key) {
+        switch (userUpdateEvent) {
+            case UserResource:
+                return adminReadOnlyAttributes.matcher(key).find();
+            default:
+                return readOnlyAttributes.matcher(key).find();
+        }
     }
 
     private void addUserCreationValidators(ValidationChainBuilder builder) {
