@@ -92,7 +92,11 @@ const LdapSettingsHeader = ({
               {t("removeImported")}
             </DropdownItem>,
             <DropdownSeparator key="separator" />,
-            <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+            <DropdownItem
+              key="delete"
+              onClick={() => toggleDeleteDialog()}
+              data-testid="delete-ldap-cmd"
+            >
               {t("deleteProvider")}
             </DropdownItem>,
           ]}
@@ -235,12 +239,13 @@ export const UserFederationLdapSettings = () => {
         </ScrollForm>
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" data-testid="ldap-save">
               {t("common:save")}
             </Button>
             <Button
               variant="link"
               onClick={() => history.push(`/${realm}/user-federation`)}
+              data-testid="ldap-cancel"
             >
               {t("common:cancel")}
             </Button>

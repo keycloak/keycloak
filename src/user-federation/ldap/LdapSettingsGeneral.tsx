@@ -54,13 +54,6 @@ export const LdapSettingsGeneral = ({
           isRequired
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          {/* <TextInput
-            hidden
-            type="text"
-            id="kc-console-id"
-            name="id"
-            ref={form.register}
-          /> */}
           <TextInput
             hidden
             type="text"
@@ -96,6 +89,7 @@ export const LdapSettingsGeneral = ({
                 message: `${t("validateName")}`,
               },
             })}
+            data-testid="ldap-name"
           />
           {form.errors.name && (
             <div className="error">{form.errors.name.message}</div>
@@ -129,6 +123,7 @@ export const LdapSettingsGeneral = ({
                 }}
                 selections={value}
                 variant={SelectVariant.single}
+                // data-testid="ldap-vendor"
               >
                 <SelectOption key={0} value="ad" isPlaceholder>
                   Active Directory

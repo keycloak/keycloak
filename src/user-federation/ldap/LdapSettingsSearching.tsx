@@ -97,6 +97,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-console-users-dn"
+            data-testid="ldap-users-dn"
             name="config.usersDn[0]"
             ref={form.register({
               required: {
@@ -129,6 +130,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-username-ldap-attribute"
+            data-testid="ldap-username-attribute"
             name="config.usernameLDAPAttribute[0]"
             ref={form.register({
               required: {
@@ -161,6 +163,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-rdn-ldap-attribute"
+            data-testid="ldap-rdn-attribute"
             name="config.rdnLDAPAttribute[0]"
             ref={form.register({
               required: {
@@ -193,6 +196,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-uuid-ldap-attribute"
+            data-testid="ldap-uuid-attribute"
             name="config.uuidLDAPAttribute[0]"
             ref={form.register({
               required: {
@@ -225,6 +229,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-user-object-classes"
+            data-testid="ldap-user-object-classes"
             name="config.userObjectClasses[0]"
             ref={form.register({
               required: {
@@ -256,11 +261,11 @@ export const LdapSettingsSearching = ({
             type="text"
             id="kc-user-ldap-filter"
             name="config.customUserSearchFilter[0]"
-            ref={form.register({ 
+            ref={form.register({
               pattern: {
                 value: /(\(.*\))$/,
-                message: `${t("validateCustomUserSearchFilter")}`
-              }  
+                message: `${t("validateCustomUserSearchFilter")}`,
+              },
             })}
           />
           {form.errors.config &&

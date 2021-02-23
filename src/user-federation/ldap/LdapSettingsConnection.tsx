@@ -66,6 +66,7 @@ export const LdapSettingsConnection = ({
             isRequired
             type="text"
             id="kc-console-connection-url"
+            data-testid="ldap-connection-url"
             name="config.connectionUrl[0]"
             ref={form.register({
               required: {
@@ -229,6 +230,7 @@ export const LdapSettingsConnection = ({
                 }}
                 selections={value}
                 variant={SelectVariant.single}
+                data-testid="ldap-bind-type"
               >
                 <SelectOption key={3} value="simple" />
                 <SelectOption key={4} value="none" />
@@ -246,13 +248,27 @@ export const LdapSettingsConnection = ({
             />
           }
           fieldId="kc-console-bind-dn"
+          isRequired
         >
           <TextInput
             type="text"
             id="kc-console-bind-dn"
+            data-testid="ldap-bind-dn"
             name="config.bindDn[0]"
-            ref={form.register}
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateBindDn")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.bindDn &&
+            form.errors.config.bindDn[0] && (
+              <div className="error">
+                {form.errors.config.bindDn[0].message}
+              </div>
+            )}
         </FormGroup>
         <FormGroup
           label={t("bindCredentials")}
@@ -271,6 +287,7 @@ export const LdapSettingsConnection = ({
               isRequired
               type={isPasswordVisible ? "text" : "password"}
               id="kc-console-bind-credentials"
+              data-testid="ldap-bind-credentials"
               name="config.bindCredential[0]"
               ref={form.register({
                 required: {

@@ -215,7 +215,7 @@ describe("User Fed Kerberos tests", () => {
     cy.wait(1000);
 
     cy.get('[data-testid="action-dropdown"]').click();
-    cy.get('[data-testid="delete-provider-cmd"]').click();
+    cy.get('[data-testid="delete-kerberos-cmd"]').click();
 
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
 

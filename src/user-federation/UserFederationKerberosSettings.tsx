@@ -60,7 +60,7 @@ const KerberosSettingsHeader = ({
             <DropdownItem
               key="delete"
               onClick={() => toggleDeleteDialog()}
-              data-testid="delete-provider-cmd"
+              data-testid="delete-kerberos-cmd"
             >
               {t("deleteProvider")}
             </DropdownItem>,
