@@ -1,4 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useHistory, useRouteMatch } from "react-router-dom";
+import { useErrorHandler } from "react-error-boundary";
 import {
   AlertVariant,
   ButtonVariant,
@@ -24,9 +26,8 @@ import { useTranslation } from "react-i18next";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import "./user-federation.css";
 
-import { useHistory, useRouteMatch } from "react-router-dom";
+import "./user-federation.css";
 
 export const UserFederationSection = () => {
   const [userFederations, setUserFederations] = useState<
@@ -39,6 +40,7 @@ export const UserFederationSection = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
+  const handleError = useErrorHandler();
   const { url } = useRouteMatch();
   const history = useHistory();
 
@@ -53,7 +55,8 @@ export const UserFederationSection = () => {
       },
       (userFederations) => {
         setUserFederations(userFederations);
-      }
+      },
+      handleError
     );
   }, [key]);
 

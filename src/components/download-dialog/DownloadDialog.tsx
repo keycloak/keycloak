@@ -1,4 +1,5 @@
 import React, { useState, useEffect, ReactElement, useContext } from "react";
+import { useErrorHandler } from "react-error-boundary";
 import {
   Alert,
   AlertVariant,
@@ -56,6 +57,7 @@ export const DownloadDialog = ({
   protocol = "openid-connect",
 }: DownloadDialogModalProps) => {
   const adminClient = useAdminClient();
+  const handleError = useErrorHandler();
   const { t } = useTranslation("common");
   const { enabled } = useContext(HelpContext);
   const serverInfo = useServerInfo();
@@ -80,7 +82,8 @@ export const DownloadDialog = ({
           return JSON.stringify(snippet, undefined, 3);
         }
       },
-      (snippet) => setSnippet(snippet)
+      (snippet) => setSnippet(snippet),
+      handleError
     );
   }, [selected]);
   return (

@@ -37,7 +37,7 @@ export const useAdminClient = () => {
 export function asyncStateFetch<T>(
   adminClientCall: () => Promise<T>,
   callback: (param: T) => void,
-  onError?: (error: Error) => void
+  onError: (error: Error) => void
 ) {
   let canceled = false;
 

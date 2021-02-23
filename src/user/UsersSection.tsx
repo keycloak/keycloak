@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -34,6 +35,7 @@ type BruteUser = UserRepresentation & {
 
 export const UsersSection = () => {
   const { t } = useTranslation("users");
+  const handleError = useErrorHandler();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { realm: realmName } = useContext(RealmContext);
@@ -61,7 +63,8 @@ export const UsersSection = () => {
         setListUsers(
           !((response[0] && response[0].length > 0) || response[1] > 100)
         );
-      }
+      },
+      handleError
     );
   }, []);
 
