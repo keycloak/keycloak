@@ -42,7 +42,6 @@ public class BrokeredIdentityContext {
     private String lastName;
     private String brokerSessionId;
     private String brokerUserId;
-    private String code;
     private String token;
     private IdentityProviderModel idpConfig;
     private IdentityProvider idp;
@@ -134,14 +133,6 @@ public class BrokeredIdentityContext {
 
     public void setToken(String token) {
         this.token = token;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public IdentityProviderModel getIdpConfig() {
