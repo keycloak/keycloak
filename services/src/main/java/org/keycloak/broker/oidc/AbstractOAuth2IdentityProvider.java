@@ -479,18 +479,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
             }
 
-            if (error != null) {
-                logger.error(error + " for broker login " + getConfig().getProviderId());
-                if (error.equals(ACCESS_DENIED)) {
-                    return callback.cancelled(state);
-                } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
-                    return callback.error(state, error);
-                } else {
-                    return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
-                }
-            }
-
             try {
+                AuthenticationSessionModel authSession = this.callback.getAndVerifyAuthenticationSession(state);
+                session.getContext().setAuthenticationSession(authSession);
+
+                if (error != null) {
+                    logger.error(error + " for broker login " + getConfig().getProviderId());
+                    if (error.equals(ACCESS_DENIED)) {
+                        return callback.cancelled();
+                    } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
+                        return callback.error(error);
+                    } else {
+                        return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                    }
+                }
 
                 if (authorizationCode != null) {
                     String response = generateTokenRequest(authorizationCode).asString();
@@ -505,7 +507,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
                     federatedIdentity.setIdpConfig(getConfig());
                     federatedIdentity.setIdp(AbstractOAuth2IdentityProvider.this);
-                    federatedIdentity.setCode(state);
+                    federatedIdentity.setAuthenticationSession(authSession);
 
                     return callback.authenticated(federatedIdentity);
                 }
@@ -518,7 +520,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         private Response errorIdentityProviderLogin(String message) {
-            event.event(EventType.LOGIN);
+            event.event(EventType.IDENTITY_PROVIDER_LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
             return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, message);
         }
