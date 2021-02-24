@@ -343,7 +343,7 @@ export const RealmRoleTabs = () => {
               eventKey="users-in-role"
               title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
             >
-              <UsersInRoleTab />
+              <UsersInRoleTab data-cy="users-in-role-tab" />
             </Tab>
           </KeycloakTabs>
         )}

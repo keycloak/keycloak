@@ -18,6 +18,7 @@ export type Action = {
 };
 
 export type ListEmptyStateProps = {
+  id?: string,
   message: string;
   instructions: string;
   primaryActionText?: string;
@@ -28,6 +29,7 @@ export type ListEmptyStateProps = {
 };
 
 export const ListEmptyState = ({
+  id,
   message,
   instructions,
   onPrimaryAction,
@@ -38,7 +40,7 @@ export const ListEmptyState = ({
 }: ListEmptyStateProps) => {
   return (
     <>
-      <EmptyState variant="large">
+      <EmptyState id={id} variant="large">
         {hasIcon && isSearchVariant ? (
           <EmptyStateIcon icon={SearchIcon} />
         ) : (

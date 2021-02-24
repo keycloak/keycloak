@@ -89,13 +89,13 @@ describe("Realm roles test", function () {
 
       // Add associated client role
 
-      cy.get('[data-cy=add-role-button]').click();
+      cy.get("[data-cy=add-role-button]").click();
 
       cy.wait(100);
 
-      cy.get('[data-cy=filter-type-dropdown]').click()
+      cy.get("[data-cy=filter-type-dropdown]").click();
 
-      cy.get('[data-cy=filter-type-dropdown-item]').click()
+      cy.get("[data-cy=filter-type-dropdown-item]").click();
 
       cy.wait(2500);
 
@@ -104,6 +104,11 @@ describe("Realm roles test", function () {
       cy.get("#add-associated-roles-button").contains("Add").click();
 
       cy.wait(2500);
+
+      cy.contains("Users in role")
+        .click()
+        .get("#users-empty-state > div > h4")
+        .contains("No direct users");
     });
   });
 });

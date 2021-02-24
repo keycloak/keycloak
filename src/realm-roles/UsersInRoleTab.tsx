@@ -38,7 +38,7 @@ export const UsersInRoleTab = () => {
             hasIcon={true}
             message={t("noDirectUsers")}
             instructions={t("noUsersEmptyStateDescription")}
-            primaryActionText={t("addUser")}
+            id="users-empty-state"
           />
         ) : (
           <KeycloakDataTable
