@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Badge,
   Button,
+  ButtonVariant,
   PageSection,
 } from "@patternfly/react-core";
 
@@ -15,6 +16,7 @@ import { emptyFormatter, exportClient, getBaseUrl } from "../util";
 import { useAlerts } from "../components/alert/Alerts";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -24,6 +26,10 @@ export const ClientsSection = () => {
 
   const adminClient = useAdminClient();
   const baseUrl = getBaseUrl(adminClient);
+
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
+  const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {
@@ -36,6 +42,26 @@ export const ClientsSection = () => {
     }
     return await adminClient.clients.find({ ...params });
   };
+
+  useEffect(refresh, [selectedClient]);
+
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
+    messageKey: "clients:clientDeleteConfirm",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.clients.del({
+          id: selectedClient!.id!,
+        });
+        addAlert(t("clientDeletedSuccess"), AlertVariant.success);
+        setSelectedClient(undefined);
+      } catch (error) {
+        addAlert(t("clientDeleteError", { error }), AlertVariant.danger);
+      }
+    },
+  });
 
   const ClientDetailLink = (client: ClientRepresentation) => (
     <>
@@ -56,7 +82,9 @@ export const ClientsSection = () => {
         subKey="clients:clientsExplain"
       />
       <PageSection variant="light" className="pf-u-p-0">
+        <DeleteConfirm />
         <KeycloakDataTable
+          key={key}
           loader={loader}
           isPaginated
           ariaLabelKey="clients:clientList"
@@ -83,19 +111,9 @@ export const ClientsSection = () => {
             },
             {
               title: t("common:delete"),
-              onRowClick: async (client) => {
-                try {
-                  await adminClient.clients.del({
-                    id: client.id!,
-                  });
-                  addAlert(t("clientDeletedSuccess"), AlertVariant.success);
-                  return true;
-                } catch (error) {
-                  addAlert(
-                    t("clientDeleteError", { error }),
-                    AlertVariant.danger
-                  );
-                }
+              onRowClick: (client) => {
+                setSelectedClient(client);
+                toggleDeleteDialog();
               },
             },
           ]}

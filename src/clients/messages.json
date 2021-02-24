@@ -63,6 +63,7 @@
     "clientSaveSuccess": "Client successfully updated",
     "clientSaveError": "Client could not be updated:",
     "clientImportSuccess": "Client imported successfully",
+    "clientDelete": "Delete {{clientId}} ?",
     "clientDeletedSuccess": "The client has been deleted",
     "clientDeleteError": "Could not delete client: {{error}}",
     "clientDeleteConfirmTitle": "Delete client?",

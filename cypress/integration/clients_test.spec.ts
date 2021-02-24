@@ -3,6 +3,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
+import ModalUtils from "../support/util/ModalUtils";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -10,9 +11,9 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const createClientPage = new CreateClientPage();
+const modalUtils = new ModalUtils();
 
 describe("Clients test", function () {
-
   describe("Client creation", function () {
     beforeEach(function () {
       cy.visit("");
@@ -68,7 +69,8 @@ describe("Clients test", function () {
       listingPage.searchItem(itemId).itemExist(itemId);
 
       // Delete
-      listingPage.deleteItem(itemId); // There should be a confirmation pop-up
+      listingPage.deleteItem(itemId);
+      modalUtils.checkModalTitle(`Delete ${itemId} ?`).confirmModal();
 
       masthead.checkNotificationMessage("The client has been deleted");
 
