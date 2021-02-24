@@ -169,8 +169,6 @@ export const RealmRoleTabs = () => {
       );
     }
   };
-  
-
 
   const addComposites = async (composites: Composites[]): Promise<void> => {
     const compositeArray = composites;

@@ -18,7 +18,7 @@ export type Action = {
 };
 
 export type ListEmptyStateProps = {
-  id?: string,
+  id?: string;
   message: string;
   instructions: string;
   primaryActionText?: string;
