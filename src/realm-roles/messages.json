@@ -48,6 +48,8 @@
     "roleRemoveAssociatedText": "This action will remove {{role}} from {{roleName}. All the associated roles of {{role}} will also be removed.",
     "compositeRoleOff": "Composite role turned off",
     "associatedRolesRemoved": "Associated roles have been removed",
-    "compositesRemovedAlertDescription": "All the associated roles have been removed"
+    "compositesRemovedAlertDescription": "All the associated roles have been removed",
+    "usersInRole": "Users in role"
+
   }
 }

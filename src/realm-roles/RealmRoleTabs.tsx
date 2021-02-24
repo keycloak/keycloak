@@ -23,6 +23,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
+import { UsersInRoleTab } from "./UsersInRoleTab";
 
 const arrayToAttributes = (attributeArray: KeyValueType[]) => {
   const initValue: { [index: string]: string[] } = {};
@@ -168,7 +169,8 @@ export const RealmRoleTabs = () => {
       );
     }
   };
-
+  
+  console.log(role)
   const addComposites = async (composites: Composites[]): Promise<void> => {
     const compositeArray = composites;
     setAdditionalRoles([...additionalRoles, ...compositeArray]);
@@ -334,6 +336,18 @@ export const RealmRoleTabs = () => {
                 save={save}
                 array={{ fields, append, remove }}
                 reset={() => form.reset(role)}
+              />
+            </Tab>
+            <Tab
+              eventKey="users-in-role"
+              title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
+            >
+              <UsersInRoleTab
+                roleName={role}
+                // form={form}
+                // save={save}
+                // array={{ fields, append, remove }}
+                // reset={() => form.reset(role)}
               />
             </Tab>
           </KeycloakTabs>
