@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -183,6 +184,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     protected String generateTabId() {
-        return Base64Url.encode(KeycloakModelUtils.generateSecret(8));
+        return SecretGenerator.generate(8);
     }
 }

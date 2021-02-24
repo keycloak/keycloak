@@ -22,6 +22,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ForbiddenException;
@@ -251,7 +252,7 @@ public class QuarkusWelcomeResource {
     }
 
     private String setCsrfCookie() {
-        String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+        String stateChecker = SecretGenerator.generate();
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
         CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);

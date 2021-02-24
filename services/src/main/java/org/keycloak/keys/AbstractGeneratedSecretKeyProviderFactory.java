@@ -19,6 +19,7 @@ package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -52,8 +53,8 @@ public abstract class AbstractGeneratedSecretKeyProviderFactory<T extends KeyPro
 
     private void generateSecret(ComponentModel model, int size) {
         try {
-            byte[] secret = KeycloakModelUtils.generateSecret(size);
-            model.put(Attributes.SECRET_KEY, Base64Url.encode(secret));
+            String secret = SecretGenerator.generate(size);
+            model.put(Attributes.SECRET_KEY, secret);
 
             String kid = KeycloakModelUtils.generateId();
             model.put(Attributes.KID_KEY, kid);

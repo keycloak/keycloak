@@ -22,6 +22,7 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.PrettyUUID;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -77,16 +78,6 @@ public final class KeycloakModelUtils {
 
     public static String generateId() {
         return UUID.randomUUID().toString();
-    }
-
-    public static byte[] generateSecret() {
-        return generateSecret(32);
-    }
-
-    public static byte[] generateSecret(int bytes) {
-        byte[] buf = new byte[bytes];
-        new SecureRandom().nextBytes(buf);
-        return buf;
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {

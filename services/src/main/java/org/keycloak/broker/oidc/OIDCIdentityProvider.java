@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -776,7 +777,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         UriBuilder uriBuilder = super.createAuthorizationUrl(request);
-        String nonce = Base64Url.encode(KeycloakModelUtils.generateSecret(16));
+        String nonce = SecretGenerator.generate(16);
         AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
