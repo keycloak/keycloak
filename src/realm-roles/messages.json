@@ -49,7 +49,16 @@
     "compositeRoleOff": "Composite role turned off",
     "associatedRolesRemoved": "Associated roles have been removed",
     "compositesRemovedAlertDescription": "All the associated roles have been removed",
-    "usersInRole": "Users in role"
-
+    "usersInRole": "Users in role",
+    "addUser": "Add user",
+    "removeUser": "Remove users",
+    "removeUserText": "Do you want to remove {{numSelected}} users?. These users will no longer have permissions of the role {{role}} and the associated roles of it.",
+    "noDirectUsers": "No direct users",
+    "noUsersEmptyStateDescription": "Only the users with this role directly assigned will appear under this tab. If you need to find users assigned to this role, you can go to Groups or Users to find them. Users that already have this role as an effective role cannot be added here.",
+    "id": "ID",
+    "userName": "Username",
+    "email": "Email",
+    "lastName": "Last name",
+    "firstName": "First name"
   }
 }

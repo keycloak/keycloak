@@ -190,7 +190,6 @@ export const AssociatedRolesTab = ({
           onSelect={(rows) => {
             setSelectedRows([...rows]);
           }}
-          isPaginated
           toolbarItem={
             <>
               <Checkbox

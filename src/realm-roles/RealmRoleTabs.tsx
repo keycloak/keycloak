@@ -170,7 +170,8 @@ export const RealmRoleTabs = () => {
     }
   };
   
-  console.log(role)
+
+
   const addComposites = async (composites: Composites[]): Promise<void> => {
     const compositeArray = composites;
     setAdditionalRoles([...additionalRoles, ...compositeArray]);
@@ -342,13 +343,7 @@ export const RealmRoleTabs = () => {
               eventKey="users-in-role"
               title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
             >
-              <UsersInRoleTab
-                roleName={role}
-                // form={form}
-                // save={save}
-                // array={{ fields, append, remove }}
-                // reset={() => form.reset(role)}
-              />
+              <UsersInRoleTab />
             </Tab>
           </KeycloakTabs>
         )}
