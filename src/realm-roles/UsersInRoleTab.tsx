@@ -32,13 +32,12 @@ export const UsersInRoleTab = () => {
 
   return (
     <>
-      <PageSection variant="light">
+      <PageSection data-test-id="users-page" variant="light">
         {users.length == 0 ? (
           <ListEmptyState
             hasIcon={true}
             message={t("noDirectUsers")}
             instructions={t("noUsersEmptyStateDescription")}
-            id="users-empty-state"
           />
         ) : (
           <KeycloakDataTable

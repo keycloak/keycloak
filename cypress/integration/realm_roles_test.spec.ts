@@ -107,8 +107,8 @@ describe("Realm roles test", function () {
 
       cy.contains("Users in role")
         .click()
-        .get("#users-empty-state > div > h4")
-        .contains("No direct users");
+        .get('[data-test-id="users-page"]')
+        .should('exist')
     });
   });
 });
