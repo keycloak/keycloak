@@ -46,11 +46,6 @@ export const UsersInRoleTab = () => {
             searchPlaceholderKey=""
             columns={[
               {
-                name: "id",
-                displayKey: "roles:id",
-                cellFormatters: [emptyFormatter()],
-              },
-              {
                 name: "username",
                 displayKey: "roles:userName",
                 cellFormatters: [emptyFormatter()],
