@@ -1,5 +1,4 @@
 
 === Custom Providers
 
-{project_name} does have an SPI for User Storage Federation that you can use to write your own custom providers.
-You can find documentation for this in our link:{developerguide_link}[{developerguide_name}].
+{project_name} does have a Service Provider Interface (SPI) for User Storage Federation to develop custom providers. You can find documentation on developing customer providers in the link:{developerguide_link}[{developerguide_name}].

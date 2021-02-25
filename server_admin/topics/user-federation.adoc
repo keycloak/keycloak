@@ -2,45 +2,30 @@
 
 == Using external storage
 
-Many companies have existing user databases that hold information about users and their passwords or other credentials.
-In many cases, it is just not possible to migrate off of those existing stores to a pure {project_name} deployment.
-{project_name} can federate existing external user databases.
-By default, we support LDAP and Active Directory, but you can also code your own extension for any custom
-user database using our User Storage SPI.
+[role="_abstract"]
+Organizations can have databases containing information, passwords, and other credentials. Typically, you cannot migrate existing data storage to a {project_name} deployment so {project_name} can federate existing external user databases. {project_name} supports LDAP and Active Directory, but you can also code extensions for any custom user database by using the {project_name} User Storage SPI.
 
-The way it works is that when a user logs in, {project_name} will look into its own internal user store to find the user.
-If it cannot find it there, it will iterate
-over every User Storage provider you have configured for the realm until it finds a match.  Data from the external store is mapped into a common user model that is consumed by the {project_name}
-runtime.  This common user model can then be mapped to OIDC token claims and SAML assertion attributes.
+When a user attempts to log in, {project_name} examines that user's storage to find that user. If {project_name} does not find the user, {project_name} iterates over each User Storage provider for the realm until it finds a match. Data from the external data storage then maps into a standard user model the {project_name} runtime consumes. This user model then maps to OIDC token claims and SAML assertion attributes.
 
-External user databases rarely have every piece of data needed to support all the features that {project_name} has.
-Therefore, the User Storage Provider can opt to store some things locally in the {project_name} user store.
-Some providers even import the user locally and sync periodically with the external store. This approach depends on the capabilities of the provider and how it is configured.  For example, your
-external user store may not support OTP.  Depending on the provider, this OTP can be handled and stored by {project_name}.
+External user databases rarely have the data necessary to support all the features of {project_name}, so the User Storage Provider can opt to store items locally in {project_name} user data storage. Providers can import users locally and sync periodically with external data storage. This approach depends on the capabilities of the provider and the configuration of the provider.  For example, your external user data storage may not support OTP. The OTP can be handled and stored by {project_name}, depending on the provider.
 
 === Adding a Provider
+To add a storage provider, perform the following procedure:
 
-To add a storage provider go to the `User Federation` left menu item in the Admin Console.
-
+.Procedure
+. Click *User Federation* in the menu.
++
 .User Federation
-image:{project_images}/user-federation.png[]
-
-On the center, there is an `Add Provider` list box.  Choose the provider type you want to add and you will be brought to the configuration page of that provider.
+image:{project_images}/user-federation.png[User Federation]
++
+. Select the provider type from the *Add Provider* list. {project_name} brings you to that provider's configuration page.
 
 === Dealing with Provider Failures
 
-If a User Storage Provider fails (for example, your LDAP server is down), you may have trouble logging in and may not be able to view users in the admin console.
-{project_name} does not catch failures when using a Storage Provider to lookup a user.  It will abort the invocation.  So, if you have a Storage Provider with a higher
-priority that fails during user lookup, the login or user query will fail entirely with an exception and abort.  It will not fail over to the next configured provider.
+If a User Storage Provider fails, you may not be able to log in and view users in the Admin Console. {project_name} does not detect failures when using a Storage Provider to look up a user, so it cancels the invocation. If you have a Storage Provider with a high priority that fails during user lookup, the login or user query fails with an exception and will not fail over to the next configured provider.
 
-The local {project_name} user database is always searched first to resolve users before any LDAP or custom User Storage Provider.
-You may want to consider creating an admin account that is stored in the local {project_name} user database just in case any problems come up in connecting
-to your LDAP and custom back ends.
+{project_name} searches the local {project_name} user database first to resolve users before any LDAP or custom User Storage Provider. Consider creating an administrator account stored in the local {project_name} user database in case of problems connecting to your LDAP and back ends.
 
-Each LDAP and custom User Storage Provider has an `enable` switch on its admin console page.  Disabling the User Storage Provider will skip the provider when
-doing user queries so that you can view and login with users that might be stored in a different provider with lower priority.  If your provider is using an
-`import` strategy and you disable it, imported users are still available for lookup, but only in read only mode.  You will not be able to modify these users until
-you re-enable the provider.
+Each LDAP and custom User Storage Provider has an `enable` toggle on its Admin Console page. Disabling the User Storage Provider skips the provider when performing queries, so you can view and log in with user accounts in a different provider with lower priority. If your provider uses an `import` strategy and is disabled, imported users are still available for lookup in read-only mode.
 
-The reason why {project_name} does not fail over if a Storage Provider lookup fails is that user databases often have duplicate usernames or duplicate emails between them.
-This can cause security issues and unforeseen problems as the user may be loaded from one external store when the admin is expecting the user to be loaded from another.
+When a Storage Provider lookup fails, {project_name} does not fail over because user databases often have duplicate usernames or duplicate emails between them. Duplicate usernames and emails can cause problems because the user loads from one external data store when the admin expects them to load from another data store.
