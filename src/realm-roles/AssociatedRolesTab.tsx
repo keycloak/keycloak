@@ -14,16 +14,19 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { boolFormatter, emptyFormatter } from "../util";
+import { emptyFormatter } from "../util";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { RoleFormType } from "./RealmRoleTabs";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { AliasRendererComponent } from "./AliasRendererComponent";
 
 type AssociatedRolesTabProps = {
   additionalRoles: RoleRepresentation[];
   addComposites: (newReps: RoleRepresentation[]) => void;
   parentRole: RoleFormType;
   onRemove: (newReps: RoleRepresentation[]) => void;
+  client?: ClientRepresentation;
 };
 
 export const AssociatedRolesTab = ({
@@ -40,20 +43,86 @@ export const AssociatedRolesTab = ({
   const refresh = () => setKey(new Date().getTime());
 
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
+  const [isInheritedHidden, setIsInheritedHidden] = useState(false);
+
   const [open, setOpen] = useState(false);
 
   const adminClient = useAdminClient();
-  const { id } = useParams<{ id: string; clientId: string }>();
+  const { id } = useParams<{ id: string }>();
+  const inheritanceMap = React.useRef<{ [key: string]: string }>({});
+
+  const getSubRoles = async (
+    role: RoleRepresentation,
+    allRoles: RoleRepresentation[]
+  ): Promise<RoleRepresentation[]> => {
+    // Fetch all composite roles
+    const allCompositeRoles = await adminClient.roles.getCompositeRoles({
+      id: role.id!,
+    });
+
+    // Need to ensure we don't get into an infinite loop, do not add any role that is already there or the starting role
+    const newRoles: Promise<RoleRepresentation[]> = allCompositeRoles.reduce(
+      async (acc: Promise<RoleRepresentation[]>, newRole) => {
+        const resolvedRoles = await acc;
+        if (!allRoles.find((ar) => ar.id === newRole.id)) {
+          inheritanceMap.current[newRole.id!] = role.name!;
+          resolvedRoles.push(newRole);
+          const subRoles = await getSubRoles(newRole, [
+            ...allRoles,
+            ...resolvedRoles,
+          ]);
+          resolvedRoles.push(...subRoles);
+        }
+
+        return acc;
+      },
+      Promise.resolve([] as RoleRepresentation[])
+    );
+
+    return newRoles;
+  };
 
   const loader = async () => {
-    return Promise.resolve(additionalRoles);
+    if (isInheritedHidden) {
+      return additionalRoles;
+    }
+
+    const allRoles: Promise<RoleRepresentation[]> = additionalRoles.reduce(
+      async (acc: Promise<RoleRepresentation[]>, role) => {
+        const resolvedRoles = await acc;
+        resolvedRoles.push(role);
+        const subRoles = await getSubRoles(role, resolvedRoles);
+        resolvedRoles.push(...subRoles);
+        return acc;
+      },
+      Promise.resolve([] as RoleRepresentation[])
+    );
+
+    return allRoles;
   };
 
   useEffect(() => {
     refresh();
-  }, [additionalRoles]);
+  }, [additionalRoles, isInheritedHidden]);
 
-  const RoleName = (role: RoleRepresentation) => <>{role.name}</>;
+  const InheritedRoleName = (role: RoleRepresentation) => {
+    return <>{inheritanceMap.current[role.id!]}</>;
+  };
+
+  const AliasRenderer = (role: RoleRepresentation) => {
+    return (
+      <>
+        <AliasRendererComponent
+          id={id}
+          name={role.name}
+          adminClient={adminClient}
+          containerId={role.containerId}
+        />
+      </>
+    );
+  };
+
+  console.log(inheritanceMap);
 
   const toggleModal = () => setOpen(!open);
 
@@ -128,6 +197,8 @@ export const AssociatedRolesTab = ({
                 label="Hide inherited roles"
                 key="associated-roles-check"
                 id="kc-hide-inherited-roles-checkbox"
+                onChange={() => setIsInheritedHidden(!isInheritedHidden)}
+                isChecked={isInheritedHidden}
               />
               <Button
                 className="kc-add-role-button"
@@ -162,13 +233,14 @@ export const AssociatedRolesTab = ({
             {
               name: "name",
               displayKey: "roles:roleName",
-              cellRenderer: RoleName,
+              cellRenderer: AliasRenderer,
               cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
             },
             {
-              name: "inherited from",
+              name: "containerId",
               displayKey: "roles:inheritedFrom",
-              cellFormatters: [boolFormatter(), emptyFormatter()],
+              cellRenderer: InheritedRoleName,
+              cellFormatters: [emptyFormatter()],
             },
             {
               name: "description",

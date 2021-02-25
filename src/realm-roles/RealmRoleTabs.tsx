@@ -52,7 +52,6 @@ export const RealmRoleTabs = () => {
   const { t } = useTranslation("roles");
   const form = useForm<RoleFormType>({ mode: "onChange" });
   const history = useHistory();
-  // const [name, setName] = useState("");
 
   const adminClient = useAdminClient();
   const [role, setRole] = useState<RoleFormType>();
@@ -322,6 +321,7 @@ export const RealmRoleTabs = () => {
                   addComposites={addComposites}
                   parentRole={role!}
                   onRemove={() => refresh()}
+                  // client={client!}
                 />
               </Tab>
             ) : null}

@@ -5,7 +5,6 @@ import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
-  Label,
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
@@ -16,50 +15,7 @@ import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
-import KeycloakAdminClient from "keycloak-admin";
-
-type AliasRendererComponentProps = {
-  name?: string;
-  containerId?: string;
-  filterType: string;
-  adminClient: KeycloakAdminClient;
-  id: string;
-};
-
-const AliasRendererComponent = ({
-  name,
-  containerId,
-  filterType,
-  adminClient,
-  id,
-}: AliasRendererComponentProps) => {
-  const [containerName, setContainerName] = useState<string>("");
-
-  useEffect(() => {
-    adminClient.clients
-      .findOne({ id: containerId! })
-      .then((client) => setContainerName(client.clientId as string));
-  }, [containerId]);
-
-  if (filterType === "roles") {
-    return <>{name}</>;
-  }
-
-  if (filterType === "clients") {
-    return (
-      <>
-        {containerId && (
-          <Label color="blue" key={`label-${id}`}>
-            {containerName}
-          </Label>
-        )}{" "}
-        {name}
-      </>
-    );
-  }
-
-  return null;
-};
+import { AliasRendererComponent } from "./AliasRendererComponent";
 
 export type AssociatedRolesModalProps = {
   open: boolean;
@@ -95,7 +51,8 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState("roles");
-  const tableRefresher = React.useRef<() => void>();
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
   const { id } = useParams<{ id: string }>();
 
@@ -171,8 +128,8 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
     });
   };
 
-  React.useEffect(() => {
-    tableRefresher.current && tableRefresher.current();
+  useEffect(() => {
+    refresh();
   }, [filterType]);
 
   useEffect(() => {
@@ -211,10 +168,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
     setIsFilterDropdownOpen(!isFilterDropdownOpen);
   };
 
-  const setRefresher = (refresher: () => void) => {
-    tableRefresher.current = refresher;
-  };
-
   return (
     <Modal
       title={t("roles:associatedRolesModalTitle", { name })}
@@ -246,11 +199,10 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
       ]}
     >
       <KeycloakDataTable
-        key="role-list-modal"
+        key={key}
         loader={filterType == "roles" ? loader : clientRolesLoader}
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey="roles:searchFor"
-        setRefresher={setRefresher}
         searchTypeComponent={
           <Dropdown
             onSelect={() => onFilterDropdownSelect(filterType)}

@@ -18,7 +18,6 @@ import { SearchIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 
 type TableToolbarProps = {
-  filterToolbarDropdown?: ReactNode;
   toolbarItem?: ReactNode;
   toolbarItemFooter?: ReactNode;
   children: ReactNode;
@@ -33,7 +32,6 @@ type TableToolbarProps = {
 };
 
 export const TableToolbar = ({
-  filterToolbarDropdown,
   toolbarItem,
   toolbarItemFooter,
   children,
@@ -52,7 +50,6 @@ export const TableToolbar = ({
             {inputGroupName && (
               <ToolbarItem>
                 <InputGroup>
-                  {filterToolbarDropdown}
                   {searchTypeComponent}
                   <TextInput
                     name={inputGroupName}

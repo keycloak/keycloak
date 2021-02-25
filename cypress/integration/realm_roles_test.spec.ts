@@ -85,6 +85,8 @@ describe("Realm roles test", function () {
 
       cy.get("#composite-role-badge").should("contain.text", "Composite");
 
+      cy.wait(100);
+
       // Add associated client role
 
       cy.get('[data-cy=add-role-button]').click();
@@ -97,7 +99,7 @@ describe("Realm roles test", function () {
 
       cy.wait(2500);
 
-      cy.get('[type="checkbox"]').eq(4).check({force: true});
+      cy.get('[type="checkbox"]').eq(40).check({force: true});
 
       cy.get("#add-associated-roles-button").contains("Add").click();
 
