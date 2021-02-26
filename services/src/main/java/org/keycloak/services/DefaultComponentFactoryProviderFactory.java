@@ -59,10 +59,12 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
     private KeycloakSessionFactory factory;
     private boolean componentCachingAvailable;
     private boolean componentCachingEnabled;
+    private Boolean componentCachingForced;
 
     @Override
     public void init(Scope config) {
         this.componentCachingEnabled = config.getBoolean("cachingEnabled", true);
+        this.componentCachingForced = config.getBoolean("cachingForced", false);
     }
 
     @Override
@@ -72,7 +74,12 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         if (! componentCachingEnabled) {
             LOG.warn("Caching of components disabled by the configuration which may have performance impact.");
         } else if (! componentCachingAvailable) {
-            LOG.warn("No system-wide ClusterProviderFactory found. Cannot send messages across cluster, thus disabling caching of components.");
+            if (Objects.equals(componentCachingForced, Boolean.TRUE)) {
+                LOG.warn("Component caching forced even though no system-wide ClusterProviderFactory found. This would be only reliable in single-node deployment.");
+                this.componentCachingAvailable = true;
+            } else {
+                LOG.warn("No system-wide ClusterProviderFactory found. Cannot send messages across cluster, thus disabling caching of components. Consider setting cachingForced option in single-node deployment.");
+            }
         }
     }
 
@@ -120,9 +127,13 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         Scope scope = Config.scope(factory.getSpi(clazz).getName(), provider);
         ComponentModelScope configScope = new ComponentModelScope(scope, cm);
 
-        return this.componentCachingAvailable
-          ? componentsMap.get().computeIfAbsent(componentId, cId -> initializeFactory(clazz, realmId, componentId, newFactory, configScope))
-          : initializeFactory(clazz, realmId, componentId, newFactory, configScope);
+        ProviderFactory<T> providerFactory;
+        if (this.componentCachingAvailable) {
+            providerFactory = componentsMap.get().computeIfAbsent(componentId, cId -> initializeFactory(clazz, realmId, componentId, newFactory, configScope));
+        } else {
+            providerFactory = initializeFactory(clazz, realmId, componentId, newFactory, configScope);
+        }
+        return providerFactory;
     }
 
     @SuppressWarnings("unchecked")

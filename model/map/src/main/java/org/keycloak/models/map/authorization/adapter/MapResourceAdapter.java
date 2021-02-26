@@ -19,25 +19,19 @@ package org.keycloak.models.map.authorization.adapter;
 
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 
+import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity> {
+public abstract class MapResourceAdapter<K> extends AbstractResourceModel<MapResourceEntity<K>> {
 
-    public MapResourceAdapter(MapResourceEntity entity, StoreFactory storeFactory) {
+    public MapResourceAdapter(MapResourceEntity<K> entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -88,7 +82,7 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     public List<Scope> getScopes() {
         return entity.getScopeIds().stream()
                 .map(id -> storeFactory
-                        .getScopeStore().findById(id.toString(), entity.getResourceServerId()))
+                        .getScopeStore().findById(id, entity.getResourceServerId()))
                 .collect(Collectors.toList());
     }
 
@@ -127,7 +121,7 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     @Override
     public void updateScopes(Set<Scope> scopes) {
         throwExceptionIfReadonly();
-        entity.setScopeIds(scopes.stream().map(Scope::getId).map(UUID::fromString).collect(Collectors.toSet()));
+        entity.setScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toSet()));
     }
 
     @Override

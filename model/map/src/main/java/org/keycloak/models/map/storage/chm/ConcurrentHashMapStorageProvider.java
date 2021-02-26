@@ -37,8 +37,8 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
     }
 
     @Override
-    public <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> getStorage(String name,
-      Class<K> keyType, Class<V> valueType, Class<M> modelType, Flag... flags) {
-        return factory.getStorage(name, keyType, valueType, modelType, flags);
+    public <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> getStorage(
+      Class<V> valueType, Class<M> modelType, Flag... flags) {
+        return factory.getStorage(valueType, modelType, flags);
     }
 }

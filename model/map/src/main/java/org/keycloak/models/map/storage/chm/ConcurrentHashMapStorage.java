@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import org.keycloak.models.map.storage.StringKeyConvertor;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -43,10 +44,12 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     private final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
     private final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    private final StringKeyConvertor<K> keyConvertor;
 
     @SuppressWarnings("unchecked")
-    public ConcurrentHashMapStorage(Class<M> modelClass) {
+    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConvertor<K> keyConvertor) {
         this.fieldPredicates = MapFieldPredicates.getPredicates(modelClass);
+        this.keyConvertor = keyConvertor;
     }
 
     @Override
@@ -108,6 +111,10 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
         return sessionTransaction == null ? new MapKeycloakTransaction<>(this) : (MapKeycloakTransaction<K, V, M>) sessionTransaction;
     }
 
+    @Override
+    public StringKeyConvertor<K> getKeyConvertor() {
+        return keyConvertor;
+    }
 
     @Override
     public Stream<V> read(ModelCriteriaBuilder<M> criteria) {

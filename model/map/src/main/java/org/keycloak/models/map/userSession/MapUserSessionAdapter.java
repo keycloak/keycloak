@@ -23,26 +23,23 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import org.keycloak.models.UserSessionModel;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapUserSessionAdapter extends AbstractUserSessionModel<MapUserSessionEntity> {
+public abstract class MapUserSessionAdapter<K> extends AbstractUserSessionModel<K> {
 
-    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
+    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity<K> entity) {
         super(session, realm, entity);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -134,7 +131,7 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel<Map
 
     @Override
     public AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
-        UUID clientSessionId = entity.getAuthenticatedClientSessions().get(clientUUID);
+        String clientSessionId = entity.getAuthenticatedClientSessions().get(clientUUID);
 
         if (clientSessionId == null) {
             return null;
@@ -219,5 +216,19 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel<Map
     @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserSessionModel)) return false;
+
+        UserSessionModel that = (UserSessionModel) o;
+        return Objects.equals(that.getId(), getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 }

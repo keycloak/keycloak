@@ -49,6 +49,8 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
 
     /**
      * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
+     * <br>
+     * TODO: Consider returning {@code Optional<V>} instead.
      * @param key Key of the object. Must not be {@code null}.
      * @return See description
      * @throws NullPointerException if the {@code key} is {@code null}
@@ -115,7 +117,7 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * If possible, do <i>not</i> delay filtering after the models are reconstructed from
      * storage entities, in most cases this would be highly inefficient.
      *
-     * @return See description
+     * @return See description. Never returns {@code null}
      */
     ModelCriteriaBuilder<M> createCriteriaBuilder();
 
@@ -126,8 +128,16 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * shared same across storages accessing the same database within the same session; in other cases
      * (e.g. plain map) a separate transaction handler might be created per each storage.
      *
-     * @return See description.
+     * @return See description. Never returns {@code null}
      */
     public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session);
+
+    /**
+     * Returns a {@link StringKeyConvertor} that is used to convert primary keys
+     * from {@link String} to internal representation and vice versa.
+     * 
+     * @return See above. Never returns {@code null}.
+     */
+    public StringKeyConvertor<K> getKeyConvertor();
 
 }

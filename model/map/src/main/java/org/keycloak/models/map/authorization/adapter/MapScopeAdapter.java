@@ -22,15 +22,10 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 
-public class MapScopeAdapter extends AbstractScopeModel<MapScopeEntity> {
+public abstract class MapScopeAdapter<K> extends AbstractScopeModel<MapScopeEntity<K>> {
 
-    public MapScopeAdapter(MapScopeEntity entity, StoreFactory storeFactory) {
+    public MapScopeAdapter(MapScopeEntity<K> entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override

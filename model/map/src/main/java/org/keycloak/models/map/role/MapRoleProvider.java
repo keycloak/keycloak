@@ -28,7 +28,6 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,16 +42,16 @@ import org.keycloak.models.map.common.StreamUtils;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
-public class MapRoleProvider implements RoleProvider {
+public class MapRoleProvider<K> implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<UUID, MapRoleEntity, RoleModel> tx;
-    private final MapStorage<UUID, MapRoleEntity, RoleModel> roleStore;
+    final MapKeycloakTransaction<K, MapRoleEntity<K>, RoleModel> tx;
+    private final MapStorage<K, MapRoleEntity<K>, RoleModel> roleStore;
 
-    private static final Comparator<MapRoleEntity> COMPARE_BY_NAME = new Comparator<MapRoleEntity>() {
+    private static final Comparator<MapRoleEntity<?>> COMPARE_BY_NAME = new Comparator<MapRoleEntity<?>>() {
         @Override
-        public int compare(MapRoleEntity o1, MapRoleEntity o2) {
+        public int compare(MapRoleEntity<?> o1, MapRoleEntity<?> o2) {
             String r1 = o1 == null ? null : o1.getName();
             String r2 = o2 == null ? null : o2.getName();
             return r1 == r2 ? 0
@@ -63,22 +62,27 @@ public class MapRoleProvider implements RoleProvider {
         }
     };
 
-    public MapRoleProvider(KeycloakSession session, MapStorage<UUID, MapRoleEntity, RoleModel> roleStore) {
+    public MapRoleProvider(KeycloakSession session, MapStorage<K, MapRoleEntity<K>, RoleModel> roleStore) {
         this.session = session;
         this.roleStore = roleStore;
         this.tx = roleStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private Function<MapRoleEntity, RoleModel> entityToAdapterFunc(RealmModel realm) {
+    private Function<MapRoleEntity<K>, RoleModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapRoleAdapter(session, realm, registerEntityForChanges(origEntity));
+        return origEntity -> new MapRoleAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+            @Override
+            public String getId() {
+                return roleStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
-    private MapRoleEntity registerEntityForChanges(MapRoleEntity origEntity) {
-        final MapRoleEntity res = Serialization.from(origEntity);
-        tx.updateIfChanged(origEntity.getId(), res, MapRoleEntity::isUpdated);
+    private MapRoleEntity<K> registerEntityForChanges(MapRoleEntity<K> origEntity) {
+        final MapRoleEntity<K> res = Serialization.from(origEntity);
+        tx.updateIfChanged(origEntity.getId(), res, MapRoleEntity<K>::isUpdated);
         return res;
     }
 
@@ -88,11 +92,11 @@ public class MapRoleProvider implements RoleProvider {
             throw new ModelDuplicateException("Role exists: " + id);
         }
 
-        final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
+        final K entityId = id == null ? roleStore.getKeyConvertor().yieldNewUniqueKey() : roleStore.getKeyConvertor().fromString(id);
 
         LOG.tracef("addRealmRole(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntity(entityId, realm.getId());
+        MapRoleEntity<K> entity = new MapRoleEntity<K>(entityId, realm.getId());
         entity.setName(name);
         entity.setRealmId(realm.getId());
         if (tx.read(entity.getId()) != null) {
@@ -124,11 +128,11 @@ public class MapRoleProvider implements RoleProvider {
             throw new ModelDuplicateException("Role exists: " + id);
         }
 
-        final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
+        final K entityId = id == null ? roleStore.getKeyConvertor().yieldNewUniqueKey() : roleStore.getKeyConvertor().fromString(id);
 
         LOG.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntity(entityId, client.getRealm().getId());
+        MapRoleEntity<K> entity = new MapRoleEntity<K>(entityId, client.getRealm().getId());
         entity.setName(name);
         entity.setClientRole(true);
         entity.setClientId(client.getId());
@@ -168,13 +172,13 @@ public class MapRoleProvider implements RoleProvider {
           .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
 
         //remove role from realm-roles composites
-        try (Stream<MapRoleEntity> baseStream = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapRoleEntity<K>> baseStream = tx.getUpdatedNotRemoved(mcb)) {
 
-            StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity::getCompositeRoles)
+            StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity<K>::getCompositeRoles)
                 .filter(pair -> role.getId().equals(pair.getV()))
                 .collect(Collectors.toSet())
                 .forEach(pair -> {
-                    MapRoleEntity origEntity = pair.getK();
+                    MapRoleEntity<K> origEntity = pair.getK();
                     
                     //
                     // TODO: Investigate what this is for - the return value is ignored
@@ -192,13 +196,13 @@ public class MapRoleProvider implements RoleProvider {
               .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
               .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
 
-            try (Stream<MapRoleEntity> baseStream = tx.getUpdatedNotRemoved(mcbClient)) {
+            try (Stream<MapRoleEntity<K>> baseStream = tx.getUpdatedNotRemoved(mcbClient)) {
                 
-                StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity::getCompositeRoles)
+                StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity<K>::getCompositeRoles)
                     .filter(pair -> role.getId().equals(pair.getV()))
                     .collect(Collectors.toSet())
                     .forEach(pair -> {
-                        MapRoleEntity origEntity = pair.getK();
+                        MapRoleEntity<K> origEntity = pair.getK();
 
                         //
                         // TODO: Investigate what this is for - the return value is ignored
@@ -223,7 +227,7 @@ public class MapRoleProvider implements RoleProvider {
         });
         // TODO: ^^^^^^^ Up to here
 
-        tx.delete(UUID.fromString(role.getId()));
+        tx.delete(roleStore.getKeyConvertor().fromString(role.getId()));
 
         return true;
     }
@@ -287,7 +291,7 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("getRoleById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapRoleEntity entity = tx.read(UUID.fromString(id));
+        MapRoleEntity<K> entity = tx.read(roleStore.getKeyConvertor().fromStringSafe(id));
         String realmId = realm.getId();
         return (entity == null || ! Objects.equals(realmId, entity.getRealmId()))
           ? null
@@ -306,7 +310,7 @@ public class MapRoleProvider implements RoleProvider {
             roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
           );
 
-        Stream<MapRoleEntity> s = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapRoleEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
             .sorted(COMPARE_BY_NAME);
 
         return paginatedStream(s.map(entityToAdapterFunc(realm)), first, max);
@@ -324,7 +328,7 @@ public class MapRoleProvider implements RoleProvider {
             roleStore.createCriteriaBuilder().compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
             roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
           );
-        Stream<MapRoleEntity> s = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapRoleEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
             .sorted(COMPARE_BY_NAME);
 
         return paginatedStream(s,first, max).map(entityToAdapterFunc(client.getRealm()));

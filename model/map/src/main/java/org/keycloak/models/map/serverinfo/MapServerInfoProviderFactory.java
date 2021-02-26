@@ -27,13 +27,20 @@ import org.keycloak.common.util.RandomString;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ServerInfoProvider;
 import org.keycloak.models.ServerInfoProviderFactory;
-import org.keycloak.models.map.common.AbstractMapProviderFactory;
 
-public class MapServerInfoProviderFactory extends AbstractMapProviderFactory<ServerInfoProvider> implements ServerInfoProviderFactory {
+public class MapServerInfoProviderFactory implements ServerInfoProviderFactory {
+
+    public static final String PROVIDER_ID = "map";
 
     private static final String RESOURCES_VERSION_SEED = "resourcesVersionSeed";
+
+    @Override
+    public ServerInfoProvider create(KeycloakSession session) {
+        return INSTANCE;
+    }
 
     @Override
     public void init(Config.Scope config) {
@@ -53,8 +60,16 @@ public class MapServerInfoProviderFactory extends AbstractMapProviderFactory<Ser
     }
 
     @Override
-    public ServerInfoProvider create(KeycloakSession session) {
-        return INSTANCE;
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public void close() {
     }
 
     private static final ServerInfoProvider INSTANCE =  new ServerInfoProvider() {

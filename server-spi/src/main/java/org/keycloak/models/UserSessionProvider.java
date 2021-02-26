@@ -40,7 +40,14 @@ public interface UserSessionProvider extends Provider {
     KeycloakSession getKeycloakSession();
 
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
-    AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline);
+    
+    /**
+     * @deprecated Use {@link #getClientSession(UserSessionModel, ClientModel, String, boolean)} instead.
+     */
+    default AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline) {
+        return getClientSession(userSession, client, clientSessionId == null ? null : clientSessionId.toString(), offline);
+    }
+    AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline);
 
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 

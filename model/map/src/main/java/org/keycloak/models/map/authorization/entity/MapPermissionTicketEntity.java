@@ -17,21 +17,114 @@
 
 package org.keycloak.models.map.authorization.entity;
 
+import org.keycloak.models.map.common.AbstractEntity;
+
 import java.util.Comparator;
-import java.util.UUID;
+import java.util.Objects;
 
-public class MapPermissionTicketEntity extends AbstractPermissionTicketEntity<UUID> {
+public class MapPermissionTicketEntity<K> implements AbstractEntity<K> {
 
-    public static final Comparator<AbstractPermissionTicketEntity<UUID>> COMPARE_BY_ID = Comparator.comparing(AbstractPermissionTicketEntity::getId);
-    public static final Comparator<AbstractPermissionTicketEntity<UUID>> COMPARE_BY_RESOURCE_ID = Comparator.comparing(AbstractPermissionTicketEntity::getResourceId);
+    public static final Comparator<MapPermissionTicketEntity<?>> COMPARE_BY_RESOURCE_ID = Comparator.comparing(MapPermissionTicketEntity::getResourceId);
 
+    private final K id;
+    private String owner;
+    private String requester;
+    private Long createdTimestamp;
+    private Long grantedTimestamp;
+    private String resourceId;
+    private String scopeId;
+    private String resourceServerId;
+    private String policyId;
+    private boolean updated = false;
 
-    protected MapPermissionTicketEntity() {
-        super();
+    public MapPermissionTicketEntity(K id) {
+        this.id = id;
     }
 
-    public MapPermissionTicketEntity(UUID id) {
-        super(id);
+    public MapPermissionTicketEntity() {
+        this.id = null;
+    }
+
+    @Override
+    public K getId() {
+        return id;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.updated |= !Objects.equals(this.owner, owner);
+        this.owner = owner;
+    }
+
+    public String getRequester() {
+        return requester;
+    }
+
+    public void setRequester(String requester) {
+        this.updated |= !Objects.equals(this.requester, requester);
+        this.requester = requester;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.updated |= !Objects.equals(this.createdTimestamp, createdTimestamp);
+        this.createdTimestamp = createdTimestamp;
+    }
+
+    public Long getGrantedTimestamp() {
+        return grantedTimestamp;
+    }
+
+    public void setGrantedTimestamp(Long grantedTimestamp) {
+        this.updated |= !Objects.equals(this.grantedTimestamp, grantedTimestamp);
+        this.grantedTimestamp = grantedTimestamp;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.updated |= !Objects.equals(this.resourceId, resourceId);
+        this.resourceId = resourceId;
+    }
+
+    public String getScopeId() {
+        return scopeId;
+    }
+
+    public void setScopeId(String scopeId) {
+        this.updated |= !Objects.equals(this.scopeId, scopeId);
+        this.scopeId = scopeId;
+    }
+
+    public String getResourceServerId() {
+        return resourceServerId;
+    }
+
+    public void setResourceServerId(String resourceServerId) {
+        this.updated |= !Objects.equals(this.resourceServerId, resourceServerId);
+        this.resourceServerId = resourceServerId;
+    }
+
+    public String getPolicyId() {
+        return policyId;
+    }
+
+    public void setPolicyId(String policyId) {
+        this.updated |= !Objects.equals(this.policyId, policyId);
+        this.policyId = policyId;
+    }
+
+    @Override
+    public boolean isUpdated() {
+        return updated;
     }
 
     @Override

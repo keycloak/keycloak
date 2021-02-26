@@ -28,18 +28,12 @@ import org.keycloak.representations.idm.authorization.Logic;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
+public abstract class MapPolicyAdapter<K> extends AbstractPolicyModel<MapPolicyEntity<K>> {
     
-    public MapPolicyAdapter(MapPolicyEntity entity, StoreFactory storeFactory) {
+    public MapPolicyAdapter(MapPolicyEntity<K> entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -123,7 +117,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     public Set<Policy> getAssociatedPolicies() {
         String resourceServerId = entity.getResourceServerId();
         return entity.getAssociatedPoliciesIds().stream()
-                .map(policyId -> storeFactory.getPolicyStore().findById(policyId.toString(), resourceServerId))
+                .map(policyId -> storeFactory.getPolicyStore().findById(policyId, resourceServerId))
                 .collect(Collectors.toSet());
     }
 
@@ -131,7 +125,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     public Set<Resource> getResources() {
         String resourceServerId = entity.getResourceServerId();
         return entity.getResourceIds().stream()
-                .map(resourceId -> storeFactory.getResourceStore().findById(resourceId.toString(), resourceServerId))
+                .map(resourceId -> storeFactory.getResourceStore().findById(resourceId, resourceServerId))
                 .collect(Collectors.toSet());
     }
 
@@ -139,7 +133,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     public Set<Scope> getScopes() {
         String resourceServerId = entity.getResourceServerId();
         return entity.getScopeIds().stream()
-                .map(scopeId -> storeFactory.getScopeStore().findById(scopeId.toString(), resourceServerId))
+                .map(scopeId -> storeFactory.getScopeStore().findById(scopeId, resourceServerId))
                 .collect(Collectors.toSet());
     }
 
@@ -157,37 +151,37 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     @Override
     public void addScope(Scope scope) {
         throwExceptionIfReadonly();
-        entity.addScope(UUID.fromString(scope.getId()));
+        entity.addScope(scope.getId());
     }
 
     @Override
     public void removeScope(Scope scope) {
         throwExceptionIfReadonly();
-        entity.removeScope(UUID.fromString(scope.getId()));
+        entity.removeScope(scope.getId());
     }
 
     @Override
     public void addAssociatedPolicy(Policy associatedPolicy) {
         throwExceptionIfReadonly();
-        entity.addAssociatedPolicy(UUID.fromString(associatedPolicy.getId()));
+        entity.addAssociatedPolicy(associatedPolicy.getId());
     }
 
     @Override
     public void removeAssociatedPolicy(Policy associatedPolicy) {
         throwExceptionIfReadonly();
-        entity.removeAssociatedPolicy(UUID.fromString(associatedPolicy.getId()));
+        entity.removeAssociatedPolicy(associatedPolicy.getId());
     }
 
     @Override
     public void addResource(Resource resource) {
         throwExceptionIfReadonly();
-        entity.addResource(UUID.fromString(resource.getId()));
+        entity.addResource(resource.getId());
     }
 
     @Override
     public void removeResource(Resource resource) {
         throwExceptionIfReadonly();
-        entity.removeResource(UUID.fromString(resource.getId()));
+        entity.removeResource(resource.getId());
     }
 
     @Override

@@ -31,15 +31,10 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity> {
+public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity<K>> {
 
-    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity entity) {
+    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity<K> entity) {
         super(session, realm, entity);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -102,9 +97,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     public void removeAuthenticationSessionByTabId(String tabId) {
         if (entity.removeAuthenticationSession(tabId) != null) {
             if (entity.getAuthenticationSessions().isEmpty()) {
-                MapRootAuthenticationSessionProvider authenticationSessionProvider =
-                        (MapRootAuthenticationSessionProvider) session.authenticationSessions();
-                authenticationSessionProvider.tx.delete(entity.getId());
+                session.authenticationSessions().removeRootAuthenticationSession(realm, this);
             } else {
                 entity.setTimestamp(Time.currentTime());
             }

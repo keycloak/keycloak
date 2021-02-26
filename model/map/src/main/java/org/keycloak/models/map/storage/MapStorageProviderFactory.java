@@ -16,27 +16,17 @@
  */
 package org.keycloak.models.map.storage;
 
-import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  *
  * @author hmlnarik
  */
-public interface MapStorageProviderFactory extends ProviderFactory<MapStorageProvider> {
+public interface MapStorageProviderFactory extends ProviderFactory<MapStorageProvider>, ComponentFactory<MapStorageProvider, MapStorageProvider> {
     
     public enum Flag {
         INITIALIZE_EMPTY,
         LOCAL
     }
-
-    /**
-     * Returns a key-value storage
-     * @param <K> type of the primary key
-     * @param <V> type of the value
-     * @param name Name of the storage
-     * @param flags
-     * @return
-     */
-    <K, V extends AbstractEntity<K>, M> MapStorage<K, V, M> getStorage(String name, Class<K> keyType, Class<V> valueType, Class<M> modelType, Flag... flags);
 }
