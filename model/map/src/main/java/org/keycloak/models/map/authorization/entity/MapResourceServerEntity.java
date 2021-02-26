@@ -17,13 +17,64 @@
 
 package org.keycloak.models.map.authorization.entity;
 
-public class MapResourceServerEntity extends AbstractResourceServerEntity<String> {
-    protected MapResourceServerEntity() {
-        super();
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+
+import java.util.Objects;
+
+public class MapResourceServerEntity<K> implements AbstractEntity<K> {
+
+    private final K id;
+    private boolean updated = false;
+
+    private boolean allowRemoteResourceManagement;
+    private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
+    private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
+
+    public MapResourceServerEntity(K id) {
+        this.id = id;
     }
 
-    public MapResourceServerEntity(String id) {
-        super(id);
+    public MapResourceServerEntity() {
+        this.id = null;
+    }
+
+    @Override
+    public K getId() {
+        return id;
+    }
+
+    public boolean isAllowRemoteResourceManagement() {
+        return allowRemoteResourceManagement;
+    }
+
+    public void setAllowRemoteResourceManagement(boolean allowRemoteResourceManagement) {
+        this.updated |= this.allowRemoteResourceManagement != allowRemoteResourceManagement;
+        this.allowRemoteResourceManagement = allowRemoteResourceManagement;
+    }
+
+    public PolicyEnforcementMode getPolicyEnforcementMode() {
+        return policyEnforcementMode;
+    }
+
+    public void setPolicyEnforcementMode(PolicyEnforcementMode policyEnforcementMode) {
+        this.updated |= !Objects.equals(this.policyEnforcementMode, policyEnforcementMode);
+        this.policyEnforcementMode = policyEnforcementMode;
+    }
+
+    public DecisionStrategy getDecisionStrategy() {
+        return decisionStrategy;
+    }
+
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        this.updated |= !Objects.equals(this.decisionStrategy, decisionStrategy);
+        this.decisionStrategy = decisionStrategy;
+    }
+
+    @Override
+    public boolean isUpdated() {
+        return updated;
     }
 
     @Override

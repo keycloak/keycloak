@@ -23,21 +23,15 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
+
+
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
-
-import java.util.UUID;
-
 import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
 
-public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<MapPermissionTicketEntity> {
+public abstract class MapPermissionTicketAdapter<K extends Comparable<K>> extends AbstractPermissionTicketModel<MapPermissionTicketEntity<K>> {
     
-    public MapPermissionTicketAdapter(MapPermissionTicketEntity entity, StoreFactory storeFactory) {
+    public MapPermissionTicketAdapter(MapPermissionTicketEntity<K> entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -52,13 +46,13 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(entity.getResourceId().toString(), entity.getResourceServerId());
+        return storeFactory.getResourceStore().findById(entity.getResourceId(), entity.getResourceServerId());
     }
 
     @Override
     public Scope getScope() {
         if (entity.getScopeId() == null) return null;
-        return storeFactory.getScopeStore().findById(entity.getScopeId().toString(), entity.getResourceServerId());
+        return storeFactory.getScopeStore().findById(entity.getScopeId(), entity.getResourceServerId());
     }
 
     @Override
@@ -90,13 +84,13 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
     @Override
     public Policy getPolicy() {
         if (entity.getPolicyId() == null) return null;
-        return storeFactory.getPolicyStore().findById(entity.getPolicyId().toString(), entity.getResourceServerId());
+        return storeFactory.getPolicyStore().findById(entity.getPolicyId(), entity.getResourceServerId());
     }
 
     @Override
     public void setPolicy(Policy policy) {
         if (policy != null) {
-            entity.setPolicyId(UUID.fromString(policy.getId()));
+            entity.setPolicyId(policy.getId());
         }
     }
 

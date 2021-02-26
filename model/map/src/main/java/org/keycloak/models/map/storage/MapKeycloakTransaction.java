@@ -54,7 +54,7 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
 
     @Override
     public void commit() {
-        log.trace("Commit");
+        log.tracef("Commit - %s", map);
 
         if (rollback) {
             throw new RuntimeException("Rollback only!");
@@ -97,7 +97,11 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
 
     // This is for possibility to lookup for session by id, which was created in this transaction
     public V read(K key) {
-        return read(key, map::read);
+        try {   // TODO: Consider using Optional rather than handling NPE
+            return read(key, map::read);
+        } catch (NullPointerException ex) {
+            return null;
+        }
     }
 
     public V read(K key, Function<K, V> defaultValueFunc) {
@@ -126,8 +130,6 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
     /**
      * Returns the stream of records that match given criteria and includes changes made in this transaction, i.e.
      * the result contains updates and excludes records that have been deleted in this transaction.
-     *
-     * Note that returned stream might not reflect on the bulk delete. This is known limitation that can be fixed if necessary.
      *
      * @param mcb
      * @return

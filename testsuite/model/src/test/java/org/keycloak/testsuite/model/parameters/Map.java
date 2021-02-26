@@ -16,8 +16,12 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
+import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.models.ServerInfoSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
+import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
@@ -26,6 +30,7 @@ import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
+import org.keycloak.models.map.serverinfo.MapServerInfoProviderFactory;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.user.MapUserProviderFactory;
@@ -48,15 +53,19 @@ public class Map extends KeycloakModelParameters {
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
+      .add(MapAuthorizationStoreFactory.class)
       .add(MapClientProviderFactory.class)
       .add(MapClientScopeProviderFactory.class)
       .add(MapGroupProviderFactory.class)
       .add(MapRealmProviderFactory.class)
       .add(MapRoleProviderFactory.class)
+      .add(MapRootAuthenticationSessionProviderFactory.class)
+      .add(MapServerInfoProviderFactory.class)
       .add(MapUserProviderFactory.class)
-      .add(MapStorageProviderFactory.class)
       .add(MapUserSessionProviderFactory.class)
       .add(MapUserLoginFailureProviderFactory.class)
+
+      .add(MapStorageProviderFactory.class)
       .build();
 
     public Map() {
@@ -71,6 +80,8 @@ public class Map extends KeycloakModelParameters {
           .spi("group").defaultProvider(MapGroupProviderFactory.PROVIDER_ID)
           .spi("realm").defaultProvider(MapRealmProviderFactory.PROVIDER_ID)
           .spi("role").defaultProvider(MapRoleProviderFactory.PROVIDER_ID)
+          .spi(ServerInfoSpi.NAME).defaultProvider(MapServerInfoProviderFactory.PROVIDER_ID)
+          .spi(StoreFactorySpi.NAME).defaultProvider(MapAuthorizationStoreFactory.PROVIDER_ID)
           .spi("user").defaultProvider(MapUserProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).defaultProvider(MapUserSessionProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).defaultProvider(MapUserLoginFailureProviderFactory.PROVIDER_ID)

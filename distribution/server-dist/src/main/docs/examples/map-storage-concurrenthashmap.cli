@@ -30,6 +30,6 @@ embed-server
 /subsystem=keycloak-server/spi=userSessions:add(default-provider=map)
 
 /subsystem=keycloak-server/spi=mapStorage:add(default-provider=concurrenthashmap)
-/subsystem=keycloak-server/spi=mapStorage/provider=concurrenthashmap:add(properties={dir="${jboss.server.data.dir}/map"},enabled=true)
+/subsystem=keycloak-server/spi=mapStorage/provider=concurrenthashmap:add(properties={dir="${jboss.server.data.dir}/map",keyType.realms=string,keyType.authz-resource-servers=string},enabled=true)
 
 quit

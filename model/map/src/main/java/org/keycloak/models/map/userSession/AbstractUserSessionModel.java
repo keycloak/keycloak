@@ -26,31 +26,17 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class AbstractUserSessionModel<E extends AbstractEntity> implements UserSessionModel {
+public abstract class AbstractUserSessionModel<K> implements UserSessionModel {
     protected final KeycloakSession session;
     protected final RealmModel realm;
-    protected final E entity;
+    protected final MapUserSessionEntity<K> entity;
 
-    public AbstractUserSessionModel(KeycloakSession session, RealmModel realm, E entity) {
+    public AbstractUserSessionModel(KeycloakSession session, RealmModel realm, MapUserSessionEntity<K> entity) {
         Objects.requireNonNull(entity, "entity");
         Objects.requireNonNull(realm, "realm");
 
         this.session = session;
         this.realm = realm;
         this.entity = entity;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserSessionModel)) return false;
-
-        UserSessionModel that = (UserSessionModel) o;
-        return Objects.equals(that.getId(), getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
     }
 }

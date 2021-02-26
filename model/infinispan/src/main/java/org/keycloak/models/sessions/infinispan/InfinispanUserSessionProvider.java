@@ -277,6 +277,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public AuthenticatedClientSessionAdapter getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline) {
+        return getClientSession(userSession, client, clientSessionId == null ? null : UUID.fromString(clientSessionId), offline);
+    }
+
+    @Override
     public AuthenticatedClientSessionAdapter getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline) {
         AuthenticatedClientSessionEntity entity = getClientSessionEntity(clientSessionId, offline);
         return wrap(userSession, client, entity, offline);

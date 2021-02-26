@@ -18,7 +18,6 @@ package org.keycloak.testsuite.model.parameters;
 
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProvider;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -42,8 +41,8 @@ public class ConcurrentHashMapStorage extends KeycloakModelParameters {
     @Override
     public void updateConfig(Config cf) {
         cf.spi(MapStorageSpi.NAME)
-            .defaultProvider(ConcurrentHashMapStorageProvider.PROVIDER_ID)
-            .provider(ConcurrentHashMapStorageProvider.PROVIDER_ID)
+            .defaultProvider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+            .provider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
               .config("dir", "${project.build.directory:target}");
     }
 
