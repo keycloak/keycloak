@@ -41,30 +41,35 @@ import org.keycloak.storage.StorageId;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
-public class MapResourceServerStore implements ResourceServerStore {
+public class MapResourceServerStore<K> implements ResourceServerStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<String, MapResourceServerEntity, ResourceServer> tx;
-    private final MapStorage<String, MapResourceServerEntity, ResourceServer> resourceServerStore;
+    final MapKeycloakTransaction<K, MapResourceServerEntity<K>, ResourceServer> tx;
+    private final MapStorage<K, MapResourceServerEntity<K>, ResourceServer> resourceServerStore;
 
-    public MapResourceServerStore(KeycloakSession session, MapStorage<String, MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
+    public MapResourceServerStore(KeycloakSession session, MapStorage<K, MapResourceServerEntity<K>, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.resourceServerStore = resourceServerStore;
         this.tx = resourceServerStore.createTransaction(session);
         this.authorizationProvider = provider;
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapResourceServerEntity registerEntityForChanges(MapResourceServerEntity origEntity) {
-        final MapResourceServerEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapResourceServerEntity::isUpdated);
+    private MapResourceServerEntity<K> registerEntityForChanges(MapResourceServerEntity<K> origEntity) {
+        final MapResourceServerEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapResourceServerEntity<K>::isUpdated);
         return res;
     }
 
-    private ResourceServer entityToAdapter(MapResourceServerEntity origEntity) {
+    private ResourceServer entityToAdapter(MapResourceServerEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceServerAdapter(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory());
+        return new MapResourceServerAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+            @Override
+            public String getId() {
+                return resourceServerStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
     @Override
@@ -77,11 +82,11 @@ public class MapResourceServerStore implements ResourceServerStore {
             throw new ModelException("Creating resource server from federated ClientModel not supported");
         }
 
-        if (tx.read(clientId) != null) {
+        if (tx.read(resourceServerStore.getKeyConvertor().fromString(clientId)) != null) {
             throw new ModelDuplicateException("Resource server already exists: " + clientId);
         }
 
-        MapResourceServerEntity entity = new MapResourceServerEntity(clientId);
+        MapResourceServerEntity<K> entity = new MapResourceServerEntity<>(resourceServerStore.getKeyConvertor().fromString(clientId));
 
         tx.create(entity.getId(), entity);
 
@@ -113,7 +118,7 @@ public class MapResourceServerStore implements ResourceServerStore {
                 .map(Scope::getId)
                 .forEach(scopeStore::delete);
 
-        tx.delete(id);
+        tx.delete(resourceServerStore.getKeyConvertor().fromString(id));
     }
 
     @Override
@@ -125,7 +130,7 @@ public class MapResourceServerStore implements ResourceServerStore {
         }
 
 
-        MapResourceServerEntity entity = tx.read(id);
+        MapResourceServerEntity<K> entity = tx.read(resourceServerStore.getKeyConvertor().fromStringSafe(id));
         return entityToAdapter(entity);
     }
 }

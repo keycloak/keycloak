@@ -136,4 +136,9 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
         provider.getLoginFailuresTx().addTask(key, task);
     }
 
+    @Override
+    public String getId() {
+        return key.toString();
+    }
+
 }

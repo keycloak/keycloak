@@ -18,11 +18,6 @@
 package org.keycloak.models.map.authorization;
 
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
@@ -30,14 +25,8 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
-import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
-import org.keycloak.models.map.authorization.entity.MapResourceEntity;
-import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
-import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.storage.MapStorage;
 
-import java.util.UUID;
 
 /**
  * @author mhajas 
@@ -51,7 +40,7 @@ public class MapAuthorizationStore implements StoreFactory {
     private final PermissionTicketStore permissionTicketStore;
     private boolean readOnly;
 
-    public MapAuthorizationStore(KeycloakSession session, MapStorage<UUID, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore, MapStorage<UUID, MapPolicyEntity, Policy> policyStore, MapStorage<String, MapResourceServerEntity, ResourceServer> resourceServerStore, MapStorage<UUID, MapResourceEntity, Resource> resourceStore, MapStorage<UUID, MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
+    public MapAuthorizationStore(KeycloakSession session, MapStorage permissionTicketStore, MapStorage policyStore, MapStorage resourceServerStore, MapStorage resourceStore, MapStorage scopeStore, AuthorizationProvider provider) {
         this.permissionTicketStore = new MapPermissionTicketStore(session, permissionTicketStore, provider);
         this.policyStore = new MapPolicyStore(session, policyStore, provider);
         this.resourceServerStore = new MapResourceServerStore(session, resourceServerStore, provider);

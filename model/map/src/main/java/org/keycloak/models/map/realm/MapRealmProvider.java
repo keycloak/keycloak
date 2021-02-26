@@ -39,29 +39,34 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapRealmProvider implements RealmProvider {
+public class MapRealmProvider<K> implements RealmProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRealmProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<String, MapRealmEntity, RealmModel> tx;
-    private final MapStorage<String, MapRealmEntity, RealmModel> realmStore;
+    final MapKeycloakTransaction<K, MapRealmEntity<K>, RealmModel> tx;
+    private final MapStorage<K, MapRealmEntity<K>, RealmModel> realmStore;
 
-    public MapRealmProvider(KeycloakSession session, MapStorage<String, MapRealmEntity, RealmModel> realmStore) {
+    public MapRealmProvider(KeycloakSession session, MapStorage<K, MapRealmEntity<K>, RealmModel> realmStore) {
         this.session = session;
         this.realmStore = realmStore;
         this.tx = realmStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private RealmModel entityToAdapter(MapRealmEntity entity) {
+    private RealmModel entityToAdapter(MapRealmEntity<K> entity) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return new MapRealmAdapter(session, registerEntityForChanges(entity));
+        return new MapRealmAdapter<K>(session, registerEntityForChanges(entity)) {
+            @Override
+            public String getId() {
+                return realmStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
-    private MapRealmEntity registerEntityForChanges(MapRealmEntity origEntity) {
-        final MapRealmEntity res = Serialization.from(origEntity);
-        tx.updateIfChanged(origEntity.getId(), res, MapRealmEntity::isUpdated);
+    private MapRealmEntity<K> registerEntityForChanges(MapRealmEntity<K> origEntity) {
+        final MapRealmEntity<K> res = Serialization.from(origEntity);
+        tx.updateIfChanged(origEntity.getId(), res, MapRealmEntity<K>::isUpdated);
         return res;
     }
 
@@ -76,20 +81,21 @@ public class MapRealmProvider implements RealmProvider {
             throw new ModelDuplicateException("Realm with given name exists: " + name);
         }
 
-        if (id != null) {
-            if (tx.read(id) != null) {
-                throw new ModelDuplicateException("Realm exists: " + id);
+        K kId = id == null ? null : realmStore.getKeyConvertor().fromString(id);
+        if (kId != null) {
+            if (tx.read(kId) != null) {
+                throw new ModelDuplicateException("Realm exists: " + kId);
             }
         } else {
-            id = KeycloakModelUtils.generateId();
+            kId = realmStore.getKeyConvertor().yieldNewUniqueKey();
         }
 
-        LOG.tracef("createRealm(%s, %s)%s", id, name, getShortStackTrace());
+        LOG.tracef("createRealm(%s, %s)%s", kId, name, getShortStackTrace());
 
-        MapRealmEntity entity = new MapRealmEntity(id);
+        MapRealmEntity<K> entity = new MapRealmEntity<>(kId);
         entity.setName(name);
 
-        tx.create(id, entity);
+        tx.create(kId, entity);
         return entityToAdapter(entity);
     }
 
@@ -99,7 +105,7 @@ public class MapRealmProvider implements RealmProvider {
 
         LOG.tracef("getRealm(%s)%s", id, getShortStackTrace());
 
-        MapRealmEntity entity = tx.read(id);
+        MapRealmEntity<K> entity = tx.read(realmStore.getKeyConvertor().fromStringSafe(id));
         return entity == null ? null : entityToAdapter(entity);
     }
 
@@ -112,12 +118,12 @@ public class MapRealmProvider implements RealmProvider {
         ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        String realmId = tx.getUpdatedNotRemoved(mcb)
+        K realmId = tx.getUpdatedNotRemoved(mcb)
                 .findFirst()
-                .map(MapRealmEntity::getId)
+                .map(MapRealmEntity<K>::getId)
                 .orElse(null);
         //we need to go via session.realms() not to bypass cache
-        return realmId == null ? null : session.realms().getRealm(realmId);
+        return realmId == null ? null : session.realms().getRealm(realmStore.getKeyConvertor().keyToString(realmId));
     }
 
     @Override
@@ -167,7 +173,7 @@ public class MapRealmProvider implements RealmProvider {
         });
         // TODO: ^^^^^^^ Up to here
 
-        tx.delete(id);
+        tx.delete(realmStore.getKeyConvertor().fromString(id));
         return true;
     }
 
@@ -178,7 +184,7 @@ public class MapRealmProvider implements RealmProvider {
 
         tx.getUpdatedNotRemoved(mcb)
                 .map(this::registerEntityForChanges)
-                .forEach(MapRealmEntity::removeExpiredClientInitialAccesses);
+                .forEach(MapRealmEntity<K>::removeExpiredClientInitialAccesses);
     }
 
     //TODO move the following method to adapter

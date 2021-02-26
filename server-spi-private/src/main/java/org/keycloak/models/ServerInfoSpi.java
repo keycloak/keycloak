@@ -23,6 +23,8 @@ import org.keycloak.provider.Spi;
 
 public class ServerInfoSpi implements Spi {
 
+    public static final String NAME = "serverInfo";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -30,7 +32,7 @@ public class ServerInfoSpi implements Spi {
 
     @Override
     public String getName() {
-        return "serverInfo";
+        return NAME;
     }
 
     @Override

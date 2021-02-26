@@ -26,7 +26,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
-import org.keycloak.models.map.authorization.entity.AbstractPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
@@ -38,37 +37,41 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
-public class MapPolicyStore implements PolicyStore {
+public class MapPolicyStore<K> implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<UUID, MapPolicyEntity, Policy> tx;
-    private final MapStorage<UUID, MapPolicyEntity, Policy> policyStore;
+    final MapKeycloakTransaction<K, MapPolicyEntity<K>, Policy> tx;
+    private final MapStorage<K, MapPolicyEntity<K>, Policy> policyStore;
 
-    public MapPolicyStore(KeycloakSession session, MapStorage<UUID, MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(KeycloakSession session, MapStorage<K, MapPolicyEntity<K>, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.policyStore = policyStore;
         this.tx = policyStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapPolicyEntity registerEntityForChanges(MapPolicyEntity origEntity) {
-        final MapPolicyEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapPolicyEntity::isUpdated);
+    private MapPolicyEntity<K> registerEntityForChanges(MapPolicyEntity<K> origEntity) {
+        final MapPolicyEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapPolicyEntity<K>::isUpdated);
         return res;
     }
 
-    private Policy entityToAdapter(MapPolicyEntity origEntity) {
+    private Policy entityToAdapter(MapPolicyEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPolicyAdapter(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory());
+        return new MapPolicyAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+            @Override
+            public String getId() {
+                return policyStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
     private ModelCriteriaBuilder<Policy> forResourceServer(String resourceServerId) {
@@ -92,8 +95,8 @@ public class MapPolicyStore implements PolicyStore {
             throw new ModelDuplicateException("Policy with name '" + representation.getName() + "' for " + resourceServer.getId() + " already exists");
         }
 
-        UUID uid = representation.getId() == null ? UUID.randomUUID() : UUID.fromString(representation.getId());
-        MapPolicyEntity entity = new MapPolicyEntity(uid);
+        K uid = representation.getId() == null ? policyStore.getKeyConvertor().yieldNewUniqueKey() : policyStore.getKeyConvertor().fromString(representation.getId());
+        MapPolicyEntity<K> entity = new MapPolicyEntity<>(uid);
         entity.setType(representation.getType());
         entity.setName(representation.getName());
         entity.setResourceServerId(resourceServer.getId());
@@ -106,7 +109,7 @@ public class MapPolicyStore implements PolicyStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(UUID.fromString(id));
+        tx.delete(policyStore.getKeyConvertor().fromString(id));
     }
 
     @Override
@@ -155,9 +158,9 @@ public class MapPolicyStore implements PolicyStore {
         }
 
         return paginatedStream(tx.getUpdatedNotRemoved(mcb)
-                .sorted(AbstractPolicyEntity.COMPARE_BY_NAME), firstResult, maxResult)
-                .map(MapPolicyEntity::getId)
-                .map(UUID::toString)
+                .sorted(MapPolicyEntity.COMPARE_BY_NAME), firstResult, maxResult)
+                .map(MapPolicyEntity<K>::getId)
+                .map(K::toString)
                 .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId)) // We need to go through cache
                 .collect(Collectors.toList());
     }

@@ -26,6 +26,9 @@ import org.keycloak.provider.Spi;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class StoreFactorySpi implements Spi {
+
+    public static final String NAME = "authorizationPersister";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +36,7 @@ public class StoreFactorySpi implements Spi {
 
     @Override
     public String getName() {
-        return "authorizationPersister";
+        return NAME;
     }
 
     @Override

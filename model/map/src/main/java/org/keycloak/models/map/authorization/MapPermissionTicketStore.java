@@ -28,7 +28,6 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapPermissionTicketAdapter;
-import org.keycloak.models.map.authorization.entity.AbstractPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
@@ -37,11 +36,11 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,30 +48,35 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
-public class MapPermissionTicketStore implements PermissionTicketStore {
+public class MapPermissionTicketStore<K extends Comparable<K>> implements PermissionTicketStore {
 
     private static final Logger LOG = Logger.getLogger(MapPermissionTicketStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<UUID, MapPermissionTicketEntity, PermissionTicket> tx;
-    private final MapStorage<UUID, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore;
+    final MapKeycloakTransaction<K, MapPermissionTicketEntity<K>, PermissionTicket> tx;
+    private final MapStorage<K, MapPermissionTicketEntity<K>, PermissionTicket> permissionTicketStore;
 
-    public MapPermissionTicketStore(KeycloakSession session, MapStorage<UUID, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore, AuthorizationProvider provider) {
+    public MapPermissionTicketStore(KeycloakSession session, MapStorage<K, MapPermissionTicketEntity<K>, PermissionTicket> permissionTicketStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.permissionTicketStore = permissionTicketStore;
         this.tx = permissionTicketStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapPermissionTicketEntity registerEntityForChanges(MapPermissionTicketEntity origEntity) {
-        final MapPermissionTicketEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapPermissionTicketEntity::isUpdated);
+    private MapPermissionTicketEntity<K> registerEntityForChanges(MapPermissionTicketEntity<K> origEntity) {
+        final MapPermissionTicketEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapPermissionTicketEntity<K>::isUpdated);
         return res;
     }
 
-    private PermissionTicket entityToAdapter(MapPermissionTicketEntity origEntity) {
+    private PermissionTicket entityToAdapter(MapPermissionTicketEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPermissionTicketAdapter(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory());
+        return new MapPermissionTicketAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+            @Override
+            public String getId() {
+                return permissionTicketStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
     private ModelCriteriaBuilder<PermissionTicket> forResourceServer(String resourceServerId) {
@@ -116,13 +120,14 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                     + ", Resource: " + resourceId + ", owner: " + owner + ", scopeId: " + scopeId + " already exists.");
         }
 
-        MapPermissionTicketEntity entity = new MapPermissionTicketEntity(UUID.randomUUID());
-        entity.setResourceId(UUID.fromString(resourceId));
+        final K newId = permissionTicketStore.getKeyConvertor().yieldNewUniqueKey();
+        MapPermissionTicketEntity<K> entity = new MapPermissionTicketEntity<>(newId);
+        entity.setResourceId(resourceId);
         entity.setRequester(requester);
         entity.setCreatedTimestamp(System.currentTimeMillis());
 
         if (scopeId != null) {
-            entity.setScopeId(UUID.fromString(scopeId));
+            entity.setScopeId(scopeId);
         }
 
         entity.setOwner(owner);
@@ -136,7 +141,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(UUID.fromString(id));
+        tx.delete(permissionTicketStore.getKeyConvertor().fromString(id));
     }
 
     @Override
@@ -204,7 +209,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
             if (r == null || r.isEmpty()) {
                 return Collections.emptyList();
             }
-            mcb = mcb.compare(SearchableFields.RESOURCE_ID, Operator.IN, r.stream().map(Resource::getId).collect(Collectors.toList()));
+            mcb = mcb.compare(SearchableFields.RESOURCE_ID, Operator.IN, r.stream().map(Resource::getId));
         }
         
         mcb = mcb.and(
@@ -213,8 +218,9 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                     .toArray(ModelCriteriaBuilder[]::new)
         );
 
+        Comparator<? super MapPermissionTicketEntity<K>> c = Comparator.comparing(MapPermissionTicketEntity::getId);
         return paginatedStream(tx.getUpdatedNotRemoved(mcb)
-                .sorted(MapPermissionTicketEntity.COMPARE_BY_ID), firstResult, maxResult)
+                .sorted(c), firstResult, maxResult)
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList()); 
     }
@@ -278,14 +284,14 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                 .compare(SearchableFields.REQUESTER, Operator.EQ, requester)
                 .compare(SearchableFields.GRANTED_TIMESTAMP, Operator.EXISTS);
 
-        Function<MapPermissionTicketEntity, Resource> ticketResourceMapper;
+        Function<MapPermissionTicketEntity<K>, Resource> ticketResourceMapper;
 
         ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
         if (name != null) {
             ticketResourceMapper = ticket -> {
                 Map<Resource.FilterOption, String[]> filterOptionMap = new EnumMap<>(Resource.FilterOption.class);
 
-                filterOptionMap.put(Resource.FilterOption.ID, new String[] {ticket.getResourceId().toString()});
+                filterOptionMap.put(Resource.FilterOption.ID, new String[] {ticket.getResourceId()});
                 filterOptionMap.put(Resource.FilterOption.NAME, new String[] {name});
 
                 List<Resource> resource = resourceStore.findByResourceServer(filterOptionMap, ticket.getResourceServerId(), -1, 1);
@@ -294,11 +300,11 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
             };
         } else {
             ticketResourceMapper = ticket -> resourceStore
-                    .findById(ticket.getResourceId().toString(), ticket.getResourceServerId());
+                    .findById(ticket.getResourceId(), ticket.getResourceServerId());
         }
 
         return paginatedStream(tx.getUpdatedNotRemoved(mcb)
-                .filter(distinctByKey(AbstractPermissionTicketEntity::getResourceId))
+                .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
                 .sorted(MapPermissionTicketEntity.COMPARE_BY_RESOURCE_ID)
                 .map(ticketResourceMapper)
                 .filter(Objects::nonNull), first, max)
@@ -311,10 +317,10 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                 .compare(SearchableFields.OWNER, Operator.EQ, owner);
 
         return paginatedStream(tx.getUpdatedNotRemoved(mcb)
-                .filter(distinctByKey(AbstractPermissionTicketEntity::getResourceId))
+                .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
                 .sorted(MapPermissionTicketEntity.COMPARE_BY_RESOURCE_ID), first, max)
                 .map(ticket -> authorizationProvider.getStoreFactory().getResourceStore()
-                        .findById(ticket.getResourceId().toString(), ticket.getResourceServerId()))
+                        .findById(ticket.getResourceId(), ticket.getResourceServerId()))
                 .collect(Collectors.toList());
     }
 }

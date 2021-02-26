@@ -22,8 +22,8 @@ import org.keycloak.models.RealmModel;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<MapUserLoginFailureEntity> {
-    public MapUserLoginFailureAdapter(KeycloakSession session, RealmModel realm, MapUserLoginFailureEntity entity) {
+public abstract class MapUserLoginFailureAdapter<K> extends AbstractUserLoginFailureModel<MapUserLoginFailureEntity<K>> {
+    public MapUserLoginFailureAdapter(KeycloakSession session, RealmModel realm, MapUserLoginFailureEntity<K> entity) {
         super(session, realm, entity);
     }
 
