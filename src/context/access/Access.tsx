@@ -19,12 +19,14 @@ export const useAccess = () => useContext(AccessContext);
 type AccessProviderProps = { children: React.ReactNode };
 export const AccessContextProvider = ({ children }: AccessProviderProps) => {
   const { whoAmI } = useContext(WhoAmIContext);
-  const realmCtx = useContext(RealmContext);
+  const { realm } = useContext(RealmContext);
   const [access, setAccess] = useState<readonly AccessType[]>([]);
 
   useEffect(() => {
-    setAccess(whoAmI.getRealmAccess()[realmCtx.realm]);
-  }, [whoAmI]);
+    if (whoAmI.getRealmAccess()[realm]) {
+      setAccess(whoAmI.getRealmAccess()[realm]);
+    }
+  }, [whoAmI, realm]);
 
   const hasAccess = (...types: AccessType[]) => {
     return types.every((type) => type === "anyone" || access.includes(type));

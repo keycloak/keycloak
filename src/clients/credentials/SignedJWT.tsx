@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, UseFormMethods } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
   Select,
@@ -12,11 +12,8 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { sortProviders } from "../../util";
 
-export type SignedJWTProps = {
-  form: UseFormMethods;
-};
-
-export const SignedJWT = ({ form }: SignedJWTProps) => {
+export const SignedJWT = () => {
+  const { control } = useFormContext();
   const providers = sortProviders(
     useServerInfo().providers!.clientSignature.providers
   );
@@ -37,9 +34,9 @@ export const SignedJWT = ({ form }: SignedJWTProps) => {
         }
       >
         <Controller
-          name="attributes.token_endpoint_auth_signing_alg"
+          name="attributes.token-endpoint-auth-signing-alg"
           defaultValue={providers[0]}
-          control={form.control}
+          control={control}
           render={({ onChange, value }) => (
             <Select
               toggleId="kc-signature-algorithm"

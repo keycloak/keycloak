@@ -9,7 +9,7 @@ import {
   Button,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 
 import { GeneralSettings } from "./GeneralSettings";
 import { CapabilityConfig } from "./CapabilityConfig";
@@ -99,23 +99,25 @@ export const NewClientForm = () => {
         subKey="clients:clientsExplain"
       />
       <PageSection variant="light">
-        <Wizard
-          onClose={() => history.push(`/${realm}/clients`)}
-          navAriaLabel={`${title} steps`}
-          mainAriaLabel={`${title} content`}
-          steps={[
-            {
-              name: t("generalSettings"),
-              component: <GeneralSettings form={methods} />,
-            },
-            {
-              name: t("capabilityConfig"),
-              component: <CapabilityConfig form={methods} />,
-            },
-          ]}
-          footer={<Footer />}
-          onSave={() => save()}
-        />
+        <FormProvider {...methods}>
+          <Wizard
+            onClose={() => history.push(`/${realm}/clients`)}
+            navAriaLabel={`${title} steps`}
+            mainAriaLabel={`${title} content`}
+            steps={[
+              {
+                name: t("generalSettings"),
+                component: <GeneralSettings />,
+              },
+              {
+                name: t("capabilityConfig"),
+                component: <CapabilityConfig />,
+              },
+            ]}
+            footer={<Footer />}
+            onSave={() => save()}
+          />
+        </FormProvider>
       </PageSection>
     </>
   );

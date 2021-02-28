@@ -1,13 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Meta } from "@storybook/react";
 
-import serverInfo from "../context/server-info/__tests__/mock.json";
-import { ServerInfoContext } from "../context/server-info/ServerInfoProvider";
-
-import {
-  DownloadDialog,
-  useDownloadDialog,
-} from "../components/download-dialog/DownloadDialog";
+import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import { MockAdminClient } from "./MockAdminClient";
 
 export default {
@@ -16,20 +10,22 @@ export default {
 } as Meta;
 
 const Test = () => {
-  const [toggle, Dialog] = useDownloadDialog({
-    id: "58577281-7af7-410c-a085-61ff3040be6d",
-  });
+  const [open, setOpen] = useState(false);
+  const toggle = () => setOpen(!open);
+
   return (
-    <ServerInfoContext.Provider value={serverInfo}>
-      <MockAdminClient
-        mock={{ clients: { getInstallationProviders: () => '{some: "json"}' } }}
-      >
-        <button id="show" onClick={toggle}>
-          Show
-        </button>
-        <Dialog />
-      </MockAdminClient>
-    </ServerInfoContext.Provider>
+    <MockAdminClient
+      mock={{ clients: { getInstallationProviders: () => '{some: "json"}' } }}
+    >
+      <button id="show" onClick={toggle}>
+        Show
+      </button>
+      <DownloadDialog
+        id="58577281-7af7-410c-a085-61ff3040be6d"
+        open={open}
+        toggleDialog={toggle}
+      />
+    </MockAdminClient>
   );
 };
 

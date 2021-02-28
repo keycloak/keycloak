@@ -59,14 +59,14 @@ export const convertToFormValues = (
   setValue: (name: string, value: any) => void
 ) => {
   return Object.keys(obj).map((key) => {
-    const newKey = key.replace(/\./g, "_");
+    const newKey = key.replace(/\./g, "-");
     setValue(prefix + "." + newKey, obj[key]);
   });
 };
 
 export const convertFormValuesToObject = (obj: any) => {
   const keyValues = Object.keys(obj).map((key) => {
-    const newKey = key.replace(/_/g, ".");
+    const newKey = key.replace(/-/g, ".");
     return { [newKey]: obj[key] };
   });
   return Object.assign({}, ...keyValues);

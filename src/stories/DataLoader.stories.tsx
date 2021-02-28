@@ -27,7 +27,7 @@ export const loadPosts = () => {
 
   return (
     <PostLoader url="https://jsonplaceholder.typicode.com/posts">
-      {(posts: { data: Post[] }) => (
+      {(posts: Post[]) => (
         <table>
           <thead>
             <tr>
@@ -36,7 +36,7 @@ export const loadPosts = () => {
             </tr>
           </thead>
           <tbody>
-            {posts.data.map((post, i) => (
+            {posts.map((post, i) => (
               <tr key={i}>
                 <td>{post.title}</td>
                 <td>{post.body}</td>

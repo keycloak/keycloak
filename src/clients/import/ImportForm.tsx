@@ -7,7 +7,7 @@ import {
   Button,
   AlertVariant,
 } from "@patternfly/react-core";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { ClientDescription } from "../ClientDescription";
@@ -60,23 +60,25 @@ export const ImportForm = () => {
           onSubmit={handleSubmit(save)}
           role="manage-clients"
         >
-          <JsonFileUpload id="realm-file" onChange={handleFileChange} />
-          <ClientDescription form={form} />
-          <FormGroup label={t("common:type")} fieldId="kc-type">
-            <TextInput
-              type="text"
-              id="kc-type"
-              name="protocol"
-              isReadOnly
-              ref={register()}
-            />
-          </FormGroup>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
-              {t("common:save")}
-            </Button>
-            <Button variant="link">{t("common:cancel")}</Button>
-          </ActionGroup>
+          <FormProvider {...form}>
+            <JsonFileUpload id="realm-file" onChange={handleFileChange} />
+            <ClientDescription />
+            <FormGroup label={t("common:type")} fieldId="kc-type">
+              <TextInput
+                type="text"
+                id="kc-type"
+                name="protocol"
+                isReadOnly
+                ref={register()}
+              />
+            </FormGroup>
+            <ActionGroup>
+              <Button variant="primary" type="submit">
+                {t("common:save")}
+              </Button>
+              <Button variant="link">{t("common:cancel")}</Button>
+            </ActionGroup>
+          </FormProvider>
         </FormAccess>
       </PageSection>
     </>

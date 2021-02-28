@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useFieldArray, UseFormMethods } from "react-hook-form";
+import { useFieldArray, useFormContext, UseFormMethods } from "react-hook-form";
 import {
   TextInput,
   Split,
@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { MinusIcon, PlusIcon } from "@patternfly/react-icons";
 
-type MultiLine = {
+export type MultiLine = {
   value: string;
 };
 
@@ -25,22 +25,17 @@ export function toValue(formValue: MultiLine[]): string[] {
 }
 
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
-  form: UseFormMethods;
   name: string;
 };
 
-export const MultiLineInput = ({
-  name,
-  form,
-  ...rest
-}: MultiLineInputProps) => {
-  const { register, control } = form;
+export const MultiLineInput = ({ name, ...rest }: MultiLineInputProps) => {
+  const { register, control, reset } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     name,
     control,
   });
   useEffect(() => {
-    form.reset({
+    reset({
       [name]: [{ value: "" }],
     });
   }, []);

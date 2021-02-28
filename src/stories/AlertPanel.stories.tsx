@@ -16,13 +16,18 @@ export const Api = () => (
     onCloseAlert={() => {}}
   />
 );
-export const AddAlert = () => {
+
+const AlertButton = () => {
   const { addAlert } = useAlerts();
   return (
+    <Button onClick={() => addAlert("Hello", AlertVariant.default)}>Add</Button>
+  );
+};
+
+export const AddAlert = () => {
+  return (
     <AlertProvider>
-      <Button onClick={() => addAlert("Hello", AlertVariant.default)}>
-        Add
-      </Button>
+      <AlertButton />
     </AlertProvider>
   );
 };

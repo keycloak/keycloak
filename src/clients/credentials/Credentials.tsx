@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Controller, UseFormMethods, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useErrorHandler } from "react-error-boundary";
 import {
@@ -48,17 +48,20 @@ type AccessToken = {
 
 export type CredentialsProps = {
   clientId: string;
-  form: UseFormMethods;
   save: () => void;
 };
 
-export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
+export const Credentials = ({ clientId, save }: CredentialsProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
+  const {
+    control,
+    formState: { isDirty },
+  } = useFormContext();
   const clientAuthenticatorType = useWatch({
-    control: form.control,
+    control: control,
     name: "clientAuthenticatorType",
   });
 
@@ -158,7 +161,7 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
           >
             <Controller
               name="clientAuthenticatorType"
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Select
                   toggleId="kc-client-authenticator-type"
@@ -186,15 +189,13 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
               )}
             />
           </FormGroup>
-          {clientAuthenticatorType === "client-jwt" && (
-            <SignedJWT form={form} />
-          )}
-          {clientAuthenticatorType === "client-x509" && <X509 form={form} />}
+          {clientAuthenticatorType === "client-jwt" && <SignedJWT />}
+          {clientAuthenticatorType === "client-x509" && <X509 />}
           <ActionGroup>
             <Button
               variant="primary"
               onClick={() => save()}
-              isDisabled={!form.formState.isDirty}
+              isDisabled={!isDirty}
             >
               {t("common:save")}
             </Button>

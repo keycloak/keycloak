@@ -211,7 +211,7 @@ export const MappingDetails = () => {
               ref={register()}
               type="text"
               id="prefix"
-              name="config.usermodel_realmRoleMapping_rolePrefix"
+              name="config.usermodel-realmRoleMapping-rolePrefix"
             />
           </FormGroup>
           <FormGroup
@@ -255,7 +255,7 @@ export const MappingDetails = () => {
               ref={register()}
               type="text"
               id="claimName"
-              name="config.claim_name"
+              name="config.claim-name"
             />
           </FormGroup>
           <FormGroup
@@ -270,7 +270,7 @@ export const MappingDetails = () => {
             fieldId="claimJsonType"
           >
             <Controller
-              name="config.jsonType_label"
+              name="config.jsonType-label"
               defaultValue=""
               control={control}
               render={({ onChange, value }) => (
@@ -308,7 +308,7 @@ export const MappingDetails = () => {
             <Flex>
               <FlexItem>
                 <Controller
-                  name="config.id_token_claim"
+                  name="config.id-token-claim"
                   defaultValue="false"
                   control={control}
                   render={({ onChange, value }) => (
@@ -323,7 +323,7 @@ export const MappingDetails = () => {
               </FlexItem>
               <FlexItem>
                 <Controller
-                  name="config.access_token_claim"
+                  name="config.access-token-claim"
                   defaultValue="false"
                   control={control}
                   render={({ onChange, value }) => (
@@ -338,7 +338,7 @@ export const MappingDetails = () => {
               </FlexItem>
               <FlexItem>
                 <Controller
-                  name="config.userinfo_token_claim"
+                  name="config.userinfo-token-claim"
                   defaultValue="false"
                   control={control}
                   render={({ onChange, value }) => (

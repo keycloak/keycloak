@@ -218,7 +218,7 @@ export const ClientScopeForm = () => {
                 fieldId="kc-display.on.consent.screen"
               >
                 <Controller
-                  name="attributes.display_on_consent_screen"
+                  name="attributes.display-on-consent-screen"
                   control={control}
                   defaultValue="false"
                   render={({ onChange, value }) => (
@@ -247,7 +247,7 @@ export const ClientScopeForm = () => {
                   ref={register}
                   type="text"
                   id="kc-consent-screen-text"
-                  name="attributes.consent_screen_text"
+                  name="attributes.consent-screen-text"
                 />
               </FormGroup>
               <FormGroup
@@ -263,7 +263,7 @@ export const ClientScopeForm = () => {
                 fieldId="includeInTokenScope"
               >
                 <Controller
-                  name="attributes.include_in_token_scope"
+                  name="attributes.include-in-token-scope"
                   control={control}
                   defaultValue="false"
                   render={({ onChange, value }) => (
@@ -298,7 +298,7 @@ export const ClientScopeForm = () => {
                   ref={register({ pattern: /^([0-9]*)$/ })}
                   type="text"
                   id="kc-gui-order"
-                  name="attributes.gui_order"
+                  name="attributes.gui-order"
                   validated={
                     errors.attributes && errors.attributes["gui_order"]
                       ? ValidatedOptions.error

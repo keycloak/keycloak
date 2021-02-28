@@ -9,7 +9,7 @@ import {
   ActionGroup,
   Button,
 } from "@patternfly/react-core";
-import { Controller, UseFormMethods } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { ClientDescription } from "./ClientDescription";
@@ -19,11 +19,11 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 
 type ClientSettingsProps = {
-  form: UseFormMethods;
   save: () => void;
 };
 
-export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
+export const ClientSettings = ({ save }: ClientSettingsProps) => {
+  const { register, control } = useFormContext();
   const { t } = useTranslation("clients");
 
   return (
@@ -36,9 +36,9 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
           t("loginSettings"),
         ]}
       >
-        <CapabilityConfig form={form} />
+        <CapabilityConfig />
         <Form isHorizontal>
-          <ClientDescription form={form} />
+          <ClientDescription />
         </Form>
         <FormAccess isHorizontal role="manage-clients">
           <FormGroup label={t("rootUrl")} fieldId="kc-root-url">
@@ -46,18 +46,18 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
               type="text"
               id="kc-root-url"
               name="rootUrl"
-              ref={form.register}
+              ref={register}
             />
           </FormGroup>
           <FormGroup label={t("validRedirectUri")} fieldId="kc-redirect">
-            <MultiLineInput form={form} name="redirectUris" />
+            <MultiLineInput name="redirectUris" />
           </FormGroup>
           <FormGroup label={t("homeURL")} fieldId="kc-home-url">
             <TextInput
               type="text"
               id="kc-home-url"
               name="baseUrl"
-              ref={form.register}
+              ref={register}
             />
           </FormGroup>
           <FormGroup
@@ -71,7 +71,7 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
               />
             }
           >
-            <MultiLineInput form={form} name="webOrigins" />
+            <MultiLineInput name="webOrigins" />
           </FormGroup>
           <FormGroup
             label={t("adminURL")}
@@ -88,7 +88,7 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
               type="text"
               id="kc-admin-url"
               name="adminUrl"
-              ref={form.register}
+              ref={register}
             />
           </FormGroup>
         </FormAccess>
@@ -101,7 +101,7 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
             <Controller
               name="consentRequired"
               defaultValue={false}
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Switch
                   id="kc-consent"
@@ -119,16 +119,16 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
             hasNoPaddingTop
           >
             <Controller
-              name="attributes.display_on_consent_screen"
+              name="attributes.display-on-consent-screen"
               defaultValue={false}
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Switch
                   id="kc-display-on-client"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={onChange}
+                  isChecked={value === "true"}
+                  onChange={(value) => onChange("" + value)}
                 />
               )}
             />
@@ -139,12 +139,12 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
           >
             <TextArea
               id="kc-consent-screen-text"
-              name="attributes.consent_screen_text"
-              ref={form.register}
+              name="attributes.consent-screen-text"
+              ref={register}
             />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" onClick={() => save()}>
+            <Button variant="primary" onClick={save}>
               {t("common:save")}
             </Button>
             <Button variant="link">{t("common:cancel")}</Button>

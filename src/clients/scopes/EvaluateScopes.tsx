@@ -325,7 +325,10 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               setUserSearch(value);
               return userItems;
             }}
-            onClear={() => setUser(undefined)}
+            onClear={() => {
+              setUser(undefined);
+              setUserSearch("");
+            }}
             selections={[user]}
             onSelect={(_, value) => {
               setUser(value as UserRepresentation);

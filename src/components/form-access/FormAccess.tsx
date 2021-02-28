@@ -3,6 +3,7 @@ import React, {
   cloneElement,
   isValidElement,
   ReactElement,
+  ReactNode,
 } from "react";
 import { Controller } from "react-hook-form";
 import {
@@ -39,7 +40,7 @@ export type FormAccessProps = FormProps & {
    * @type {boolean}
    */
   unWrap?: boolean;
-  children: ReactElement[];
+  children: ReactNode;
 };
 
 /**
@@ -56,9 +57,9 @@ export const FormAccess = ({
   const { hasAccess } = useAccess();
 
   const recursiveCloneChildren = (
-    children: ReactElement[],
+    children: ReactNode,
     newProps: any
-  ): ReactElement[] => {
+  ): ReactNode => {
     return Children.map(children, (child) => {
       if (!isValidElement(child)) {
         return child;

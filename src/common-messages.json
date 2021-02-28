@@ -84,6 +84,14 @@
     "Wednesday": "Wednesday",
     "Thursday": "Thursday",
     "Friday": "Friday",
-    "Saturday": "Saturday"
+    "Saturday": "Saturday",
+
+    "unitLabel": "Select a time unit",
+    "times": {
+      "seconds": "Seconds",
+      "minutes": "Minutes",
+      "hours": "Hours",
+      "days": "Days"
+    }
   }
 }

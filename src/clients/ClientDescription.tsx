@@ -1,16 +1,14 @@
 import React from "react";
 import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
-import { UseFormMethods } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
 import { FormAccess } from "../components/form-access/FormAccess";
+import { ClientForm } from "./ClientDetails";
 
-type ClientDescriptionProps = {
-  form: UseFormMethods;
-};
-
-export const ClientDescription = ({ form }: ClientDescriptionProps) => {
+export const ClientDescription = () => {
   const { t } = useTranslation("clients");
-  const { register, errors } = form;
+  const { register, errors } = useFormContext<ClientForm>();
   return (
     <FormAccess role="manage-clients" unWrap>
       <FormGroup

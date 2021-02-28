@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactElement, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useErrorHandler } from "react-error-boundary";
 import {
   Alert,
@@ -25,29 +25,11 @@ import {
 } from "../../context/auth/AdminClient";
 import { HelpContext } from "../help-enabler/HelpHeader";
 
-export type DownloadDialogProps = {
+type DownloadDialogProps = {
   id: string;
   protocol?: string;
-};
-
-type DownloadDialogModalProps = DownloadDialogProps & {
   open: boolean;
   toggleDialog: () => void;
-};
-
-export const useDownloadDialog = (
-  props: DownloadDialogProps
-): [() => void, () => ReactElement] => {
-  const [show, setShow] = useState(false);
-
-  function toggleDialog() {
-    setShow((show) => !show);
-  }
-
-  const Dialog = () => (
-    <DownloadDialog {...props} open={show} toggleDialog={toggleDialog} />
-  );
-  return [toggleDialog, Dialog];
 };
 
 export const DownloadDialog = ({
@@ -55,7 +37,7 @@ export const DownloadDialog = ({
   open,
   toggleDialog,
   protocol = "openid-connect",
-}: DownloadDialogModalProps) => {
+}: DownloadDialogProps) => {
   const adminClient = useAdminClient();
   const handleError = useErrorHandler();
   const { t } = useTranslation("common");
@@ -85,7 +67,7 @@ export const DownloadDialog = ({
       (snippet) => setSnippet(snippet),
       handleError
     );
-  }, [selected]);
+  }, [id, selected]);
   return (
     <ConfirmDialogModal
       titleKey={t("clients:downloadAdaptorTitle")}

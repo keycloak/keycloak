@@ -299,7 +299,7 @@ export const RoleMappingForm = () => {
               ref={register()}
               type="text"
               id="newRoleName"
-              name="config.new_role_name"
+              name="config.new-role-name"
             />
           </FormGroup>
           <ActionGroup>

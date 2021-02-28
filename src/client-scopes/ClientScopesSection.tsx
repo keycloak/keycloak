@@ -69,13 +69,12 @@ export const ClientScopesSection = () => {
           columns={[
             {
               name: "name",
-              displayKey: t("common:name"),
               cellRenderer: ClientScopeDetailLink,
             },
-            { name: "description", displayKey: t("common:description") },
+            { name: "description" },
             {
               name: "protocol",
-              displayKey: t("protocol"),
+              displayKey: "client-scopes:protocol",
             },
           ]}
         />

@@ -5,9 +5,11 @@ import KeycloakAdminClient from "keycloak-admin";
 import { AccessContextProvider } from "../context/access/Access";
 import { WhoAmIContextProvider } from "../context/whoami/WhoAmI";
 import { RealmContext } from "../context/realm-context/RealmContext";
+import { AdminClient } from "../context/auth/AdminClient";
+import { ServerInfoContext } from "../context/server-info/ServerInfoProvider";
 
 import whoamiMock from "../context/whoami/__tests__/mock-whoami.json";
-import { AdminClient } from "../context/auth/AdminClient";
+import serverInfo from "../context/server-info/__tests__/mock.json";
 
 /**
  * This component provides some mocked default react context so that other components can work in a storybook.
@@ -28,24 +30,26 @@ export const MockAdminClient = (props: {
 }) => {
   return (
     <HashRouter>
-      <AdminClient.Provider
-        value={
-          ({
-            ...props.mock,
-            keycloak: {},
-            whoAmI: { find: () => whoamiMock },
-            setConfig: () => {},
-          } as unknown) as KeycloakAdminClient
-        }
-      >
-        <WhoAmIContextProvider>
-          <RealmContext.Provider
-            value={{ realm: "master", setRealm: () => {} }}
-          >
-            <AccessContextProvider>{props.children}</AccessContextProvider>
-          </RealmContext.Provider>
-        </WhoAmIContextProvider>
-      </AdminClient.Provider>
+      <ServerInfoContext.Provider value={serverInfo}>
+        <AdminClient.Provider
+          value={
+            ({
+              ...props.mock,
+              keycloak: {},
+              whoAmI: { find: () => Promise.resolve(whoamiMock) },
+              setConfig: () => {},
+            } as unknown) as KeycloakAdminClient
+          }
+        >
+          <WhoAmIContextProvider>
+            <RealmContext.Provider
+              value={{ realm: "master", setRealm: () => {} }}
+            >
+              <AccessContextProvider>{props.children}</AccessContextProvider>
+            </RealmContext.Provider>
+          </WhoAmIContextProvider>
+        </AdminClient.Provider>
+      </ServerInfoContext.Provider>
     </HashRouter>
   );
 };

@@ -22,4 +22,12 @@ export default class AdminClient {
     await this.login();
     await this.client.realms.del({ realm });
   }
+
+  async deleteClient(clientName: string) {
+    await this.login();
+    const client = (
+      await this.client.clients.find({ clientId: clientName })
+    )[0];
+    await this.client.clients.del({ id: client.id! });
+  }
 }

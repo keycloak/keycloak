@@ -4,6 +4,8 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
 import ModalUtils from "../support/util/ModalUtils";
+import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
+import AdminClient from "../support/util/AdminClient";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -75,6 +77,67 @@ describe("Clients test", function () {
       masthead.checkNotificationMessage("The client has been deleted");
 
       listingPage.itemExist(itemId, false);
+    });
+  });
+
+  describe("Advanced tab test", () => {
+    const advancedTab = new AdvancedTab();
+    let client: string;
+
+    beforeEach(() => {
+      cy.visit("");
+      loginPage.logIn();
+      sidebarPage.goToClients();
+
+      client = "client_" + (Math.random() + 1).toString(36).substring(7);
+
+      listingPage.goToCreateItem();
+
+      createClientPage
+        .selectClientType("openid-connect")
+        .fillClientData(client)
+        .continue()
+        .continue();
+
+      advancedTab.goToTab();
+    });
+
+    afterEach(() => {
+      new AdminClient().deleteClient(client);
+    });
+
+    it("Revocation", () => {
+      advancedTab.checkNone();
+
+      advancedTab.clickSetToNow().checkSetToNow();
+      advancedTab.clickClear().checkNone();
+
+      advancedTab.clickPush();
+      masthead.checkNotificationMessage(
+        "No push sent. No admin URI configured or no registered cluster nodes available"
+      );
+    });
+
+    it("Clustering", () => {
+      advancedTab.expandClusterNode().checkTestClusterAvailability(false);
+
+      advancedTab
+        .clickRegisterNodeManually()
+        .fillHost("localhost")
+        .clickSaveHost();
+      advancedTab.checkTestClusterAvailability(true);
+    });
+
+    it("Fine grain OpenID connect configuration", () => {
+      const algorithm = "ES384";
+      advancedTab
+        .selectAccessTokenSignatureAlgorithm(algorithm)
+        .clickSaveFineGrain();
+
+      advancedTab
+        .selectAccessTokenSignatureAlgorithm("HS384")
+        .clickReloadFineGrain();
+      advancedTab.checkAccessTokenSignatureAlgorithm(algorithm);
     });
   });
 });

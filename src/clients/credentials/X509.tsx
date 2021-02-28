@@ -1,15 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { UseFormMethods } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { FormGroup, TextInput } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-export type X509Props = {
-  form: UseFormMethods;
-};
-
-export const X509 = ({ form }: X509Props) => {
+export const X509 = () => {
   const { t } = useTranslation("clients");
+  const { register } = useFormContext();
   return (
     <FormGroup
       label={t("subject")}
@@ -23,10 +20,10 @@ export const X509 = ({ form }: X509Props) => {
       }
     >
       <TextInput
-        ref={form.register()}
+        ref={register()}
         type="text"
         id="kc-subject"
-        name="attributes.x509_subjectdn"
+        name="attributes.x509-subjectdn"
       />
     </FormGroup>
   );

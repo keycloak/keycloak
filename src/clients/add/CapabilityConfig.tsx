@@ -7,16 +7,14 @@ import {
   Grid,
   GridItem,
 } from "@patternfly/react-core";
-import { UseFormMethods, Controller } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { ClientForm } from "../ClientDetails";
 
-type CapabilityConfigProps = {
-  form: UseFormMethods;
-};
-
-export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
+export const CapabilityConfig = () => {
   const { t } = useTranslation("clients");
+  const { control } = useFormContext<ClientForm>();
   return (
     <FormAccess isHorizontal role="manage-clients">
       <FormGroup
@@ -27,7 +25,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
         <Controller
           name="publicClient"
           defaultValue={false}
-          control={form.control}
+          control={control}
           render={({ onChange, value }) => (
             <Switch
               id="kc-authentication"
@@ -48,7 +46,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
         <Controller
           name="authorizationServicesEnabled"
           defaultValue={false}
-          control={form.control}
+          control={control}
           render={({ onChange, value }) => (
             <Switch
               id="kc-authorization"
@@ -71,7 +69,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
             <Controller
               name="standardFlowEnabled"
               defaultValue={false}
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("standardFlow")}
@@ -87,7 +85,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
             <Controller
               name="directAccessGrantsEnabled"
               defaultValue={false}
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("directAccess")}
@@ -103,7 +101,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
             <Controller
               name="implicitFlowEnabled"
               defaultValue={false}
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("implicitFlow")}
@@ -119,7 +117,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
             <Controller
               name="serviceAccountsEnabled"
               defaultValue={false}
-              control={form.control}
+              control={control}
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("serviceAccount")}
