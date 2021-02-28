@@ -138,6 +138,8 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     <bean id="keycloakAuthenticationProcessingFilter" class="org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcessingFilter">
         <constructor-arg name="authenticationManager" ref="authenticationManager" />
     </bean>
+    <bean id="keycloakSecurityContextRequestFilter"
+          class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
 
     <bean id="keycloakLogoutHandler" class="org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler">
         <constructor-arg ref="adapterDeploymentContext" />
@@ -162,6 +164,7 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     <security:http auto-config="false" entry-point-ref="keycloakAuthenticationEntryPoint">
         <security:custom-filter ref="keycloakPreAuthActionsFilter" before="LOGOUT_FILTER" />
         <security:custom-filter ref="keycloakAuthenticationProcessingFilter" before="FORM_LOGIN_FILTER" />
+        <security:custom-filter ref="keycloakSecurityContextRequestFilter" after="FORM_LOGIN_FILTER" />
         <security:intercept-url pattern="/customers**" access="ROLE_USER" />
         <security:intercept-url pattern="/admin**" access="ROLE_ADMIN" />
         <security:custom-filter ref="logoutFilter" position="LOGOUT_FILTER" />
