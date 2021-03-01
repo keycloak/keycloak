@@ -590,10 +590,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         RealmModel currentRealm = session.realms().getRealm(realmId);
                         session.getContext().setRealm(currentRealm);
 
-                        //String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
                         exists.value = true;
                         LDAPUtils.checkUuid(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
-                        //UserModel currentUser = session.userLocalStorage().getUserByUsername(currentRealm, username);
                         UserModel currentUser = session.userLocalStorage().getUserById(currentRealm, ldapUser.getUuid());
 
                         if (currentUser == null) {
