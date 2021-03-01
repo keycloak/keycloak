@@ -103,7 +103,7 @@ endif::[]
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
-:appserver_version: 21
+:appserver_version: 22
 
 :appserver_doc_base_url: http://docs.wildfly.org/{appserver_version}
 :appserver_socket_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
@@ -125,7 +125,7 @@ endif::[]
 
 :jdgserver_name: Infinispan
 :jdgserver_version: 9.4.19
-:jdgserver_version_latest: 11.0.3
+:jdgserver_version_latest: 11.0.8
 :jdgserver_crossdcdocs_link: https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 12

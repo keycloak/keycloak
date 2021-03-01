@@ -343,7 +343,7 @@ Enable TRACE logging under the logging subsystem::
 ----
 ...
     <profile>
-        <subsystem xmlns="urn:jboss:domain:logging:3.0">
+        <subsystem xmlns="urn:jboss:domain:logging:8.0">
 ...
             <logger category="org.keycloak.authentication.authenticators.x509">
                 <level name="TRACE"/>
