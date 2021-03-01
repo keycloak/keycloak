@@ -1,4 +1,4 @@
-import React, { FormEvent } from "react";
+import React from "react";
 import {
   AlertVariant,
   Button,
@@ -10,52 +10,41 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 import { useForm } from "react-hook-form";
 
+import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useAlerts } from "../components/alert/Alerts";
+
 type GroupsCreateModalProps = {
+  id?: string;
   handleModalToggle: () => void;
-  isCreateModalOpen: boolean;
-  setIsCreateModalOpen: (isCreateModalOpen: boolean) => void;
-  createGroupName: string;
-  setCreateGroupName: (createGroupName: string) => void;
   refresh: () => void;
 };
 
 export const GroupsCreateModal = ({
+  id,
   handleModalToggle,
-  isCreateModalOpen,
-  setIsCreateModalOpen,
-  createGroupName,
-  setCreateGroupName,
   refresh,
 }: GroupsCreateModalProps) => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
-  const form = useForm();
-  const { register, errors } = form;
+  const { register, errors, handleSubmit } = useForm();
 
-  const valueChange = (createGroupName: string) => {
-    setCreateGroupName(createGroupName);
-  };
-
-  const submitForm = async (e: FormEvent) => {
-    e.preventDefault();
-    if (await form.trigger()) {
-      try {
-        await adminClient.groups.create({ name: createGroupName });
-        refresh();
-        setIsCreateModalOpen(false);
-        setCreateGroupName("");
-        addAlert(t("groupCreated"), AlertVariant.success);
-      } catch (error) {
-        addAlert(
-          `${t("couldNotCreateGroup")} ': '${error}'`,
-          AlertVariant.danger
-        );
+  const submitForm = async (group: GroupRepresentation) => {
+    try {
+      if (!id) {
+        await adminClient.groups.create({ name: group.name });
+      } else {
+        await adminClient.groups.setOrCreateChild({ id }, { name: group.name });
       }
+
+      refresh();
+      handleModalToggle();
+      addAlert(t("groupCreated"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("couldNotCreateGroup", { error }), AlertVariant.danger);
     }
   };
 
@@ -64,15 +53,21 @@ export const GroupsCreateModal = ({
       <Modal
         variant={ModalVariant.small}
         title={t("createAGroup")}
-        isOpen={isCreateModalOpen}
+        isOpen={true}
         onClose={handleModalToggle}
         actions={[
-          <Button key="confirm" variant="primary" onClick={submitForm}>
+          <Button
+            data-testid="createGroup"
+            key="confirm"
+            variant="primary"
+            type="submit"
+            form="group-form"
+          >
             {t("create")}
           </Button>,
         ]}
       >
-        <Form isHorizontal onSubmit={submitForm}>
+        <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
           <FormGroup
             name="create-modal-group"
             label={t("common:name")}
@@ -84,13 +79,12 @@ export const GroupsCreateModal = ({
             isRequired
           >
             <TextInput
+              data-testid="groupNameInput"
               ref={register({ required: true })}
               autoFocus
               type="text"
               id="create-group-name"
               name="name"
-              value={createGroupName}
-              onChange={valueChange}
               validated={
                 errors.name ? ValidatedOptions.error : ValidatedOptions.default
               }

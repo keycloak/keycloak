@@ -51,21 +51,25 @@ export const TableToolbar = ({
               <ToolbarItem>
                 <InputGroup>
                   {searchTypeComponent}
-                  <TextInput
-                    name={inputGroupName}
-                    id={inputGroupName}
-                    type="search"
-                    aria-label={t("search")}
-                    placeholder={inputGroupPlaceholder}
-                    onChange={inputGroupOnChange}
-                  />
-                  <Button
-                    variant={ButtonVariant.control}
-                    aria-label={t("search")}
-                    onClick={inputGroupOnClick}
-                  >
-                    <SearchIcon />
-                  </Button>
+                  {inputGroupPlaceholder && (
+                    <>
+                      <TextInput
+                        name={inputGroupName}
+                        id={inputGroupName}
+                        type="search"
+                        aria-label={t("search")}
+                        placeholder={inputGroupPlaceholder}
+                        onChange={inputGroupOnChange}
+                      />
+                      <Button
+                        variant={ButtonVariant.control}
+                        aria-label={t("search")}
+                        onClick={inputGroupOnClick}
+                      >
+                        <SearchIcon />
+                      </Button>
+                    </>
+                  )}
                 </InputGroup>
               </ToolbarItem>
             )}

@@ -84,7 +84,6 @@ export const GroupsSection = () => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
   const [isKebabOpen, setIsKebabOpen] = useState(false);
-  const [createGroupName, setCreateGroupName] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
   const { subGroups, setSubGroups } = useSubGroups();
@@ -189,7 +188,33 @@ export const GroupsSection = () => {
 
   return (
     <>
-      <ViewHeader titleKey="groups:groups" subKey="groups:groupsDescription" />
+      <ViewHeader
+        titleKey="groups:groups"
+        subKey="groups:groupsDescription"
+        dropdownItems={[
+          <DropdownItem
+            data-testid="searchGroup"
+            key="searchGroup"
+            onClick={() => history.push(`/${realm}/groups/search`)}
+          >
+            {t("searchGroup")}
+          </DropdownItem>,
+          <DropdownItem
+            data-testid="renameGroup"
+            key="renameGroup"
+            onClick={() => addAlert("Not implemented")}
+          >
+            {t("renameGroup")}
+          </DropdownItem>,
+          <DropdownItem
+            data-testid="deleteGroup"
+            key="deleteGroup"
+            onClick={() => deleteGroup({ id })}
+          >
+            {t("deleteGroup")}
+          </DropdownItem>,
+        ]}
+      />
       <PageSection variant={PageSectionVariants.light}>
         <KeycloakDataTable
           key={key}
@@ -201,7 +226,11 @@ export const GroupsSection = () => {
           toolbarItem={
             <>
               <ToolbarItem>
-                <Button variant="primary" onClick={handleModalToggle}>
+                <Button
+                  data-testid="openCreateGroupModal"
+                  variant="primary"
+                  onClick={handleModalToggle}
+                >
                   {t("createGroup")}
                 </Button>
               </ToolbarItem>
@@ -257,22 +286,23 @@ export const GroupsSection = () => {
           emptyState={
             <ListEmptyState
               hasIcon={true}
-              message={t("noGroupsInThisRealm")}
-              instructions={t("noGroupsInThisRealmInstructions")}
+              message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
+              instructions={t(
+                `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`
+              )}
               primaryActionText={t("createGroup")}
               onPrimaryAction={() => handleModalToggle()}
             />
           }
         />
 
-        <GroupsCreateModal
-          isCreateModalOpen={isCreateModalOpen}
-          handleModalToggle={handleModalToggle}
-          setIsCreateModalOpen={setIsCreateModalOpen}
-          createGroupName={createGroupName}
-          setCreateGroupName={setCreateGroupName}
-          refresh={refresh}
-        />
+        {isCreateModalOpen && (
+          <GroupsCreateModal
+            id={id}
+            handleModalToggle={handleModalToggle}
+            refresh={refresh}
+          />
+        )}
       </PageSection>
     </>
   );

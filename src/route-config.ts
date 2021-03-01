@@ -25,6 +25,7 @@ import { UserFederationKerberosSettings } from "./user-federation/UserFederation
 import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
+import { SearchGroups } from "./groups/SearchGroups";
 
 export type RouteDef = BreadcrumbsRoute & {
   access: AccessType;
@@ -245,6 +246,21 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "anyone",
   },
   {
+    path: "/:realm/groups/search",
+    component: SearchGroups,
+    breadcrumb: t("groups:searchGroups"),
+    access: "query-groups",
+  },
+  {
+    path: "/:realm/groups",
+    component: GroupsSection,
+    breadcrumb: null,
+    matchOptions: {
+      exact: false,
+    },
+    access: "query-groups",
+  },
+  {
     path: "/",
     component: DashboardSection,
     breadcrumb: t("common:home"),
@@ -255,14 +271,5 @@ export const routes: RoutesFn = (t: TFunction) => [
     component: PageNotFoundSection,
     breadcrumb: null,
     access: "anyone",
-  },
-  {
-    path: "/:realm/groups",
-    component: GroupsSection,
-    breadcrumb: null,
-    matchOptions: {
-      exact: false,
-    },
-    access: "query-groups",
   },
 ];

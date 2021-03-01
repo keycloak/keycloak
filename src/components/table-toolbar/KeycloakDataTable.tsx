@@ -243,7 +243,7 @@ export function KeycloakDataTable<T>({
   return (
     <>
       {!rows && <Loading />}
-      {rows && isPaginated && (
+      {rows && (rows.length > 0 || !emptyState) && isPaginated && (
         <PaginatingTableToolbar
           count={rows.length}
           first={first}
@@ -263,22 +263,19 @@ export function KeycloakDataTable<T>({
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
         >
-          {!loading && (emptyState === undefined || rows.length !== 0) && (
-            <DataTable
-              canSelectAll={canSelectAll}
-              onSelect={onSelect ? _onSelect : undefined}
-              actions={convertAction()}
-              actionResolver={actionResolver}
-              rows={rows}
-              columns={columns}
-              ariaLabelKey={ariaLabelKey}
-            />
-          )}
-          {!loading && rows.length === 0 && emptyState}
+          <DataTable
+            canSelectAll={canSelectAll}
+            onSelect={onSelect ? _onSelect : undefined}
+            actions={convertAction()}
+            actionResolver={actionResolver}
+            rows={rows}
+            columns={columns}
+            ariaLabelKey={ariaLabelKey}
+          />
           {loading && <Loading />}
         </PaginatingTableToolbar>
       )}
-      {rows && !isPaginated && (
+      {rows && (rows.length > 0 || !emptyState) && !isPaginated && (
         <TableToolbar
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
@@ -289,20 +286,18 @@ export function KeycloakDataTable<T>({
           toolbarItem={toolbarItem}
           searchTypeComponent={searchTypeComponent}
         >
-          {(emptyState === undefined || rows.length !== 0) && (
-            <DataTable
-              canSelectAll={canSelectAll}
-              onSelect={onSelect ? _onSelect : undefined}
-              actions={convertAction()}
-              actionResolver={actionResolver}
-              rows={filteredData || rows}
-              columns={columns}
-              ariaLabelKey={ariaLabelKey}
-            />
-          )}
-          {rows.length === 0 && emptyState}
+          <DataTable
+            canSelectAll={canSelectAll}
+            onSelect={onSelect ? _onSelect : undefined}
+            actions={convertAction()}
+            actionResolver={actionResolver}
+            rows={filteredData || rows}
+            columns={columns}
+            ariaLabelKey={ariaLabelKey}
+          />
         </TableToolbar>
       )}
+      <>{!loading && rows?.length === 0 && emptyState}</>
     </>
   );
 }

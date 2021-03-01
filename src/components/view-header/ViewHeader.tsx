@@ -118,7 +118,7 @@ export const ViewHeader = ({
                       }
                       isOpen={isDropdownOpen}
                       dropdownItems={dropdownItems}
-                      data-cy="action-dropdown"
+                      data-testid="action-dropdown"
                     />
                   </ToolbarItem>
                 )}
