@@ -486,7 +486,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return existing;
         }
 
-        LDAPObject ldapUser = loadLDAPUserByUsername(realm, local.getUsername());
+        LDAPObject ldapUser = loadLDAPUserByUUID(realm, local.getFirstAttribute(LDAPConstants.LDAP_ID));
         if (ldapUser == null) {
             return null;
         }
@@ -784,6 +784,18 @@ public class LDAPStorageProvider implements UserStorageProvider,
         // Creating user to local storage
         logger.debugf("Kerberos authenticated user [%s] not in Keycloak storage. Creating him", username);
         return getUserByUsername(realm, username);
+    }
+
+    public LDAPObject loadLDAPUserByUUID(RealmModel realm, String uuid){
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+            String uuidMappedAttribute = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
+            Condition uuidCondition = conditionsBuilder.equal(uuidMappedAttribute, uuid, EscapeStrategy.DEFAULT);
+            ldapQuery.addWhereCondition(uuidCondition);
+
+            return ldapQuery.getFirstResult();
+        }
     }
 
     public LDAPObject loadLDAPUserByUsername(RealmModel realm, String username) {

@@ -443,4 +443,55 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             Assert.assertEquals("group5 - description", kcGroup5.getFirstAttribute(descriptionAttrName));
         });
     }
+
+    @Test
+    public void test08LDAPSyncWhenUsernameChanged() {
+
+        // Sync users from LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "user9", "Betty", "Packer", "betty.packer@email.org", "duke street", "793");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel testRealm = ctx.getRealm();
+            UserProvider userProvider = session.userLocalStorage();
+
+            // Trigger sync
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            new UserStorageSyncManager().syncAllUsers(sessionFactory, "test", ctx.getLdapModel());
+            // Assert users imported
+            LDAPTestAsserts.assertUserImported(userProvider, testRealm, "user9", "Betty", "Packer", "betty.packer@email.org", "793");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel testRealm = ctx.getRealm();
+            UserProvider userProvider = session.userLocalStorage();
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+
+            // Update 'user9' in LDAP
+            LDAPObject ldapUser9 = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, "user9");
+            // NOTE: Changing LDAP Username directly here
+            String userNameLdapAttributeName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            ldapUser9.setSingleAttribute(userNameLdapAttributeName, "user9_updated");
+            ctx.getLdapProvider().getLdapIdentityStore().update(ldapUser9);
+
+            // Assert still old users in local provider
+            LDAPTestAsserts.assertUserImported(userProvider, testRealm, "user9", "Betty", "Packer", "betty.packer@email.org", "793");
+
+            // Trigger partial sync
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, "test", ctx.getLdapModel());
+            Assert.assertEquals(1, syncResult.getUpdated());
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel testRealm = session.realms().getRealm("test");
+            UserProvider userProvider = session.userLocalStorage();
+            // Assert users updated in local provider
+            LDAPTestAsserts.assertUserImported(userProvider, testRealm, "user9_updated", "Betty", "Packer", "betty.packer@email.org", "793");
+        });
+    }
 }
