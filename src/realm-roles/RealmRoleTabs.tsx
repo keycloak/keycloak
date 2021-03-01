@@ -255,7 +255,6 @@ export const RealmRoleTabs = () => {
       <ViewHeader
         titleKey={role?.name || t("createRole")}
         badge={additionalRoles.length > 0 ? t("composite") : ""}
-        badgeId="composite-role-badge"
         badgeIsRead={true}
         subKey={id ? "" : "roles:roleCreateExplain"}
         actionsDropdownId="roles-actions-dropdown"
@@ -288,7 +287,7 @@ export const RealmRoleTabs = () => {
                 </DropdownItem>,
                 <DropdownItem
                   key="toggle-modal"
-                  id="add-roles"
+                  data-testid="add-roles"
                   component="button"
                   onClick={() => toggleModal()}
                 >

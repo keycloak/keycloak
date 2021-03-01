@@ -32,7 +32,7 @@ export const UsersInRoleTab = () => {
 
   return (
     <>
-      <PageSection data-test-id="users-page" variant="light">
+      <PageSection data-testid="users-page" variant="light">
         {users.length == 0 ? (
           <ListEmptyState
             hasIcon={true}

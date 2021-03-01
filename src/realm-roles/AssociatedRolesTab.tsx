@@ -203,7 +203,7 @@ export const AssociatedRolesTab = ({
                 className="kc-add-role-button"
                 key="add-role-button"
                 onClick={() => toggleModal()}
-                data-cy="add-role-button"
+                data-testid="add-role-button"
               >
                 {t("addRole")}
               </Button>

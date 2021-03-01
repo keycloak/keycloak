@@ -71,43 +71,43 @@ describe("Realm roles test", function () {
       masthead.checkNotificationMessage("Role created");
 
       // Add associated realm role
-      cy.get("#roles-actions-dropdown").last().click();
+      cy.get("[data-testid=action-dropdown]").last().click();
 
-      cy.get("#add-roles").click();
+      cy.get("[data-testid=add-roles]").click();
 
       cy.wait(100);
 
       cy.get('[type="checkbox"]').eq(1).check();
 
-      cy.get("#add-associated-roles-button").contains("Add").click();
+      cy.get("[data-testid=add-associated-roles-button]").contains("Add").click();
 
       cy.url().should("include", "/AssociatedRoles");
 
-      cy.get("#composite-role-badge").should("contain.text", "Composite");
+      cy.get("[data-testid=composite-role-badge]").should("contain.text", "Composite");
 
-      cy.wait(100);
+      cy.wait(2500);
 
       // Add associated client role
 
-      cy.get("[data-cy=add-role-button]").click();
+      cy.get("[data-testid=add-role-button]").click();
 
       cy.wait(100);
 
-      cy.get("[data-cy=filter-type-dropdown]").click();
+      cy.get("[data-testid=filter-type-dropdown]").click();
 
-      cy.get("[data-cy=filter-type-dropdown-item]").click();
+      cy.get("[data-testid=filter-type-dropdown-item]").click();
 
       cy.wait(2500);
 
       cy.get('[type="checkbox"]').eq(40).check({force: true});
 
-      cy.get("#add-associated-roles-button").contains("Add").click();
+      cy.get("[data-testid=add-associated-roles-button]").contains("Add").click();
 
       cy.wait(2500);
 
       cy.contains("Users in role")
         .click()
-        .get('[data-test-id="users-page"]')
+        .get('[data-testid="users-page"]')
         .should('exist')
     });
   });

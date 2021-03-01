@@ -41,7 +41,6 @@ export const ViewHeader = ({
   actionsDropdownId,
   titleKey,
   badge,
-  badgeId,
   badgeIsRead,
   subKey,
   subKeyLinkProps,
@@ -77,7 +76,10 @@ export const ViewHeader = ({
               </LevelItem>
               {badge && (
                 <LevelItem>
-                  <Badge id={badgeId} isRead={badgeIsRead}>
+                  <Badge
+                    data-testid="composite-role-badge"
+                    isRead={badgeIsRead}
+                  >
                     {badge}
                   </Badge>
                 </LevelItem>
