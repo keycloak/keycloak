@@ -240,10 +240,60 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         });
     }
 
+    @Test
+    public void test03LDAPSyncWhenUsernameChanged() {
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+
+            // Add user to LDAP
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "beckybecks", "Becky", "Becks", "becky-becks@email.org", null, "123");
+            SynchronizationResult syncResult = new UserStorageSyncManager().syncAllUsers(sessionFactory, "test", ctx.getLdapModel());
+            Assert.assertEquals(0, syncResult.getFailed());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel testRealm = ctx.getRealm();
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+
+            // Update user 'beckybecks' in LDAP
+            LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, "beckybecks");
+            // NOTE: Changing LDAP Username directly here
+            String userNameLdapAttributeName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            ldapUser.setSingleAttribute(userNameLdapAttributeName, "beckyupdated");
+            ldapUser.setSingleAttribute(LDAPConstants.EMAIL, "becky-updated@email.org");
+            ctx.getLdapProvider().getLdapIdentityStore().update(ldapUser);
+
+            // Assert still old users in local provider
+            LDAPTestAsserts.assertUserImported(session.userLocalStorage(), testRealm, "beckybecks", "Becky", "Becks", "becky-becks@email.org", "123");
+
+            // Trigger partial sync
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, "test", ctx.getLdapModel());
+            Assert.assertEquals(0, syncResult.getFailed());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel testRealm = session.realms().getRealm("test");
+            UserProvider userProvider = session.userLocalStorage();
+            // Assert users updated in local provider
+            LDAPTestAsserts.assertUserImported(session.users(), testRealm, "beckyupdated", "Becky", "Becks", "becky-updated@email.org", "123");
+            UserModel updatedLocalUser = userProvider.getUserByUsername(testRealm, "beckyupdated");
+            LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, "beckyupdated");
+            // Assert old user 'beckybecks' does not exists locally
+            Assert.assertNull(userProvider.getUserByUsername(testRealm, "beckybecks"));
+            // Assert UUID didn't change
+            Assert.assertEquals(updatedLocalUser.getAttributeStream(LDAPConstants.LDAP_ID).findFirst().get(),ldapUser.getUuid());
+        });
+    }
+
 
     // KEYCLOAK-1571
     @Test
-    public void test03SameUUIDAndUsernameSync() {
+    public void test04SameUUIDAndUsernameSync() {
         String origUuidAttrName = testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
@@ -290,10 +340,9 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         testRealm().components().component(ldapModelId).update(ldapRep);
     }
 
-
     // KEYCLOAK-1728
     @Test
-    public void test04MissingLDAPUsernameSync() {
+    public void test05MissingLDAPUsernameSync() {
         String origUsernameAttrName = testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
@@ -355,7 +404,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
     // KEYCLOAK-10770 user-storage/{id}/sync should return 400 instead of 404
     @Test
-    public void test05SyncRestAPIMissingAction() {
+    public void test06SyncRestAPIMissingAction() {
         ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
 
         try {
@@ -368,7 +417,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
     // KEYCLOAK-10770 user-storage/{id}/sync should return 400 instead of 404
     @Test
-    public void test06SyncRestAPIWrongAction() {
+    public void test07SyncRestAPIWrongAction() {
         ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
 
         try {
@@ -380,7 +429,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     }
 
     @Test
-    public void test07LDAPGroupSyncAfterGroupRename() {
+    public void test08LDAPGroupSyncAfterGroupRename() {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();

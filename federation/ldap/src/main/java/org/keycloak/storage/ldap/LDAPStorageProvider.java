@@ -486,8 +486,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return existing;
         }
 
-        LDAPObject ldapUser = loadLDAPUserByUsername(realm, local.getUsername());
-        if (ldapUser == null) {
+        String uuidLdapAttribute = local.getFirstAttribute(LDAPConstants.LDAP_ID);
+
+        LDAPObject ldapUser = loadLDAPUserByUuid(realm, uuidLdapAttribute);
+
+        if(ldapUser == null){
             return null;
         }
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
@@ -516,7 +519,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         UserModel imported = null;
         if (model.isImportEnabled()) {
-            imported = session.userLocalStorage().addUser(realm, ldapUsername);
+            // Search if there is already an existing user, which means the username might have changed in LDAP without Keycloak knowing about it
+            UserModel existingLocalUser = session.userLocalStorage()
+                    .searchForUserByUserAttributeStream(realm, LDAPConstants.LDAP_ID, ldapUser.getUuid()).findFirst().orElse(null);
+            if(existingLocalUser != null){
+                imported = existingLocalUser;
+                // Need to evict the existing user from cache
+                session.userCache().evict(realm, existingLocalUser);
+            } else {
+                imported = session.userLocalStorage().addUser(realm, ldapUsername);
+            }
+
         } else {
             InMemoryUserAdapter adapter = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), ldapUsername).getId());
             adapter.addDefaults();
@@ -803,5 +816,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
+    public LDAPObject loadLDAPUserByUuid(RealmModel realm, String uuid) {
+        if(uuid == null){
+            return null;
+        }
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+            String uuidLDAPAttributeName = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
+            Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, uuid, EscapeStrategy.DEFAULT);
+            ldapQuery.addWhereCondition(usernameCondition);
+
+            return ldapQuery.getFirstResult();
+        }
+    }
 
 }
