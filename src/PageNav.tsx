@@ -44,12 +44,15 @@ export const PageNav: React.FunctionComponent = () => {
       (route) => route.path.substr("/:realm".length) === path
     );
     if (!route || !hasAccess(route.access)) return <></>;
-    const activeItem = history.location.pathname;
+    //remove "/realm-name" from the start of the path
+    const activeItem = history.location.pathname.substr(realm.length + 1);
     return (
       <NavItem
         id={"nav-item" + path.replace("/", "-")}
         to={`/${realm}${path}`}
-        isActive={activeItem.substr(activeItem.indexOf("/", 1)) === path}
+        isActive={
+          path === activeItem || (path !== "/" && activeItem.startsWith(path))
+        }
       >
         {t(title)}
       </NavItem>
