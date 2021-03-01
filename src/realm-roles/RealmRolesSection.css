@@ -43,3 +43,14 @@
   padding-right: var(--pf-global--spacer--xs);
   padding-top: 0px;
 }
+
+.pf-c-button.pf-m-link.kc-groups-link-empty-state {
+  padding-left: var(--pf-global--spacer--xs);
+  padding-right: var(--pf-global--spacer--xs);
+}
+
+.pf-c-button.pf-m-link.kc-users-link-empty-state {
+  padding-left: var(--pf-global--spacer--xs);
+  padding-right: var(--pf-global--spacer--xs);
+}
+

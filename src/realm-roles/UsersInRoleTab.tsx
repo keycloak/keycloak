@@ -74,7 +74,27 @@ export const UsersInRoleTab = () => {
             <ListEmptyState
               hasIcon={true}
               message={t("noDirectUsers")}
-              instructions={t("noUsersEmptyStateDescription")}
+              instructions={
+                <div>
+                  {t("noUsersEmptyStateDescription")}
+                  <Button
+                    className="kc-groups-link-empty-state"
+                    variant="link"
+                    onClick={() => history.push(`/${realm}/groups`)}
+                  >
+                    {t("groups")}
+                  </Button>
+                  {t("or")}
+                  <Button
+                    className="kc-users-link-empty-state"
+                    variant="link"
+                    onClick={() => history.push(`/${realm}/users`)}
+                  >
+                    {t("users")}
+                  </Button>
+                  {t("noUsersEmptyStateDescriptionContinued")}
+                </div>
+              }
             />
           }
           columns={[
