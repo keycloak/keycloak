@@ -27,10 +27,6 @@ export const UsersInRoleTab = () => {
     return usersWithRole;
   };
 
-  useEffect(() => {
-    loader();
-  }, []);
-
   return (
     <>
       <PageSection data-testid="users-page" variant="light">
