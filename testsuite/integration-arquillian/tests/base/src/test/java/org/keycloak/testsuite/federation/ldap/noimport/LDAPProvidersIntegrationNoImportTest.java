@@ -334,4 +334,10 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         }
     }
 
+    // No need to test this in no-import mode. There won't be any users in localStorage.
+    @Test
+    @Ignore
+    @Override
+    public void updateLDAPUsernameTest() {
+    }
 }
