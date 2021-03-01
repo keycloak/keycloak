@@ -23,7 +23,7 @@
     <parent>
         <artifactId>keycloak-examples-broker-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>12.0.3</version>
+        <version>12.0.4</version>
     </parent>
 
     <name>Keycloak Broker Examples - Google Authentication</name>
