@@ -6,12 +6,9 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { boolFormatter, emptyFormatter } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
-import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 
 export const UsersInRoleTab = () => {
   const { t } = useTranslation("roles");
-
-  const [users, setUsers] = useState<UserRepresentation[]>([]);
 
   const { id } = useParams<{ id: string }>();
 
@@ -22,7 +19,6 @@ export const UsersInRoleTab = () => {
     const usersWithRole = await adminClient.roles.findUsersWithRole({
       name: role.name!,
     });
-    setUsers(usersWithRole);
     return usersWithRole;
   };
 
@@ -33,41 +29,40 @@ export const UsersInRoleTab = () => {
   return (
     <>
       <PageSection data-testid="users-page" variant="light">
-        {users.length == 0 ? (
-          <ListEmptyState
-            hasIcon={true}
-            message={t("noDirectUsers")}
-            instructions={t("noUsersEmptyStateDescription")}
-          />
-        ) : (
-          <KeycloakDataTable
-            loader={loader}
-            ariaLabelKey="roles:roleList"
-            searchPlaceholderKey=""
-            columns={[
-              {
-                name: "username",
-                displayKey: "roles:userName",
-                cellFormatters: [emptyFormatter()],
-              },
-              {
-                name: "email",
-                displayKey: "roles:email",
-                cellFormatters: [emptyFormatter()],
-              },
-              {
-                name: "lastName",
-                displayKey: "roles:lastName",
-                cellFormatters: [emptyFormatter()],
-              },
-              {
-                name: "firstName",
-                displayKey: "roles:firstName",
-                cellFormatters: [boolFormatter(), emptyFormatter()],
-              },
-            ]}
-          />
-        )}
+        <KeycloakDataTable
+          loader={loader}
+          ariaLabelKey="roles:roleList"
+          searchPlaceholderKey=""
+          emptyState={
+            <ListEmptyState
+              hasIcon={true}
+              message={t("noDirectUsers")}
+              instructions={t("noUsersEmptyStateDescription")}
+            />
+          }
+          columns={[
+            {
+              name: "username",
+              displayKey: "roles:userName",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "email",
+              displayKey: "roles:email",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "lastName",
+              displayKey: "roles:lastName",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "firstName",
+              displayKey: "roles:firstName",
+              cellFormatters: [boolFormatter(), emptyFormatter()],
+            },
+          ]}
+        />
       </PageSection>
     </>
   );
