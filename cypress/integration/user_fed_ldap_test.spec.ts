@@ -53,22 +53,24 @@ const deleteModalTitle = "Delete user federation provider?";
 const disableModalTitle = "Disable user federation provider?";
 
 describe("User Fed LDAP tests", () => {
-  it("Create Ldap provider from empty state", () => {
+  beforeEach(() => {
     cy.visit("");
+    cy.wait(1000);
     loginPage.logIn();
+    cy.wait(1000);
     sidebarPage.goToUserFederation();
+    cy.wait(1000);
+  });
 
+  it("Create Ldap provider from empty state", () => {
     cy.get("[data-testid=ldap-card]").click();
 
-    providersPage.fillLdapRequiredGeneralData(
-      firstLdapName,
-      firstLdapVendor,
-    );
+    providersPage.fillLdapRequiredGeneralData(firstLdapName, firstLdapVendor);
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,
       firstBindType,
       firstBindDn,
-      firstBindCreds,
+      firstBindCreds
     );
     providersPage.fillLdapRequiredSearchingData(
       firstUsersDn,
@@ -85,14 +87,8 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Update an existing LDAP provider and save", () => {
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
+    providersPage.clickProviderCard(firstLdapName);
 
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
     providersPage.selectCacheType(newPolicy);
 
     cy.contains(defaultLdapDay).click();
@@ -110,25 +106,14 @@ describe("User Fed LDAP tests", () => {
     sidebarPage.goToUserFederation();
     cy.wait(1000);
 
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
+    providersPage.clickProviderCard(firstLdapName);
 
     expect(cy.contains(newPolicy).should("exist"));
     expect(cy.contains(defaultPolicy).should("not.exist"));
   });
 
   it("Change existing LDAP provider and click button to cancel", () => {
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
-
-    cy.wait(1000);
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
+    providersPage.clickProviderCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
     cy.contains(newLdapDay).click();
@@ -141,32 +126,21 @@ describe("User Fed LDAP tests", () => {
     cy.contains(defaultLdapMinute).click();
 
     providersPage.cancel();
+    cy.wait(1000);
 
-    cy.wait(1000);
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
+    providersPage.clickProviderCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
     expect(cy.contains(newLdapDay).should("exist"));
     expect(cy.contains(newLdapHour).should("exist"));
     expect(cy.contains(newLdapMinute).should("exist"));
-
     expect(cy.contains(defaultLdapMinute).should("not.exist"));
 
     sidebarPage.goToUserFederation();
   });
 
   it("Disable an existing LDAP provider", () => {
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
-
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
+    providersPage.clickProviderCard(firstLdapName);
 
     providersPage.disableEnabledSwitch();
 
@@ -184,48 +158,29 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Enable an existing previously-disabled LDAP provider", () => {
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
-
-    cy.wait(1000);
-
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
+    providersPage.clickProviderCard(firstLdapName);
 
     providersPage.enableEnabledSwitch();
+
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
-
     cy.wait(1000);
+
     expect(cy.contains("Enabled").should("exist"));
   });
 
   it("Create new LDAP provider using the New Provider dropdown", () => {
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
-
     // cy get contains
-    cy.contains("button", "Add new provider", ).click();
+    cy.contains("button", "Add new provider").click();
     cy.contains("li", "LDAP").click();
 
-
-    // cy.contains("Add new provider").click();
-    // cy.contains("LDAP").click();
-
-    providersPage.fillLdapRequiredGeneralData(
-      secondLdapName,
-      secondLdapVendor,
-    );
+    providersPage.fillLdapRequiredGeneralData(secondLdapName, secondLdapVendor);
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,
       secondBindType,
       secondBindDn,
-      secondBindCreds,
+      secondBindCreds
     );
     providersPage.fillLdapRequiredSearchingData(
       secondUsersDn,
@@ -242,11 +197,6 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Delete an LDAP provider from card view using the card's menu", () => {
-
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
-
     cy.get('[data-testid="my-ldap-2-dropdown"]').click();
     cy.get('[data-testid="card-delete"]').click();
 
@@ -256,14 +206,7 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Delete an LDAP provider using the Settings view's Action menu", () => {
-    cy.visit("");
-    loginPage.logIn();
-    sidebarPage.goToUserFederation();
-
-    cy.get('[data-testid="keycloak-card-title"]')
-      .contains(firstLdapName)
-      .click();
-    cy.wait(1000);
+    providersPage.clickProviderCard(firstLdapName);
 
     cy.get('[data-testid="action-dropdown"]').click();
     cy.get('[data-testid="delete-ldap-cmd"]').click();

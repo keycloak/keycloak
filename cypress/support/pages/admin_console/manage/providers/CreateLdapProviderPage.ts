@@ -68,10 +68,7 @@ export default class CreateLdapProviderPage {
   }
 
   // Required fields - these always must be filled out when testing a save, everything else can feasibly be left blank (TEST THIS)
-  fillLdapRequiredGeneralData(
-    name: string,
-    vendor: string,
-  ) {
+  fillLdapRequiredGeneralData(name: string, vendor: string) {
     if (name) {
       cy.get(`[${this.ldapNameInput}]`).type(name);
     }
@@ -86,7 +83,7 @@ export default class CreateLdapProviderPage {
     connectionUrl: string,
     bindType: string,
     bindDn: string,
-    bindCreds: string,
+    bindCreds: string
   ) {
     if (connectionUrl) {
       cy.get(`[${this.ldapConnectionUrlInput}]`).type(connectionUrl);
@@ -135,12 +132,20 @@ export default class CreateLdapProviderPage {
     return this;
   }
 
+  clickProviderCard(cardName) {
+    cy.get('[data-testid="keycloak-card-title"]').contains(cardName).click();
+    cy.wait(1000);
+    return this;
+  }
+
   disableEnabledSwitch() {
     cy.get(this.ldapEnabledInput).uncheck({ force: true });
+    return this;
   }
 
   enableEnabledSwitch() {
     cy.get(this.ldapEnabledInput).check({ force: true });
+    return this;
   }
 
   save() {
