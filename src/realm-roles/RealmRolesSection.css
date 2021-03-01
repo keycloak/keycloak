@@ -28,9 +28,7 @@
 }
 
 .kc-who-will-appear-button {
-  /* padding-left: 0px; */
-  /* padding-top: 0px; */
-  margin-bottom: var(--pf-global--spacer--lg);;
+  padding-left: 0px;
 }
 
 .kc-groups-link {
