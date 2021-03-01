@@ -231,7 +231,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           />
         }
         canSelectAll
-        // isPaginated
+        isPaginated
         onSelect={(rows) => {
           setSelectedRows([...rows]);
         }}
