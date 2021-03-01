@@ -26,3 +26,23 @@
   );
   
 }
+
+.kc-who-will-appear-button {
+  /* padding-left: 0px; */
+  /* padding-top: 0px; */
+  margin-bottom: var(--pf-global--spacer--lg);;
+}
+
+.kc-groups-link {
+  font-size: var(--pf-global--FontSize--sm);
+  padding-left: 0px;
+  padding-right: var(--pf-global--spacer--xs);
+}
+
+.pf-c-button.pf-m-link.kc-users-link {
+  font-size: var(--pf-global--FontSize--sm);
+  padding-left: var(--pf-global--spacer--xs);
+  padding-right: var(--pf-global--spacer--xs);
+  padding-top: 0px
+
+}
