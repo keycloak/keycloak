@@ -59,7 +59,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   const [filter, setFilter] = useState(clientScope.protocolMappers);
   const toggleAddMapperDialog = (buildIn: boolean) => {
     if (buildIn) {
-      setFilter(mapperList);
+      setFilter(mapperList || []);
     } else {
       setFilter(undefined);
     }
@@ -123,9 +123,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         cells: {
           name: (
             <>
-              <Link to={`${url}/${clientScope.id}/${mapper.id}`}>
-                {mapper.name}
-              </Link>
+              <Link to={`${url}/${mapper.id}`}>{mapper.name}</Link>
             </>
           ),
           category: mapperType.category,

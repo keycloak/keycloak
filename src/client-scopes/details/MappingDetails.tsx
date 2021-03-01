@@ -37,8 +37,8 @@ import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
 
 type Params = {
-  scopeId: string;
   id: string;
+  mapperId: string;
 };
 
 export const MappingDetails = () => {
@@ -47,7 +47,7 @@ export const MappingDetails = () => {
   const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
 
-  const { scopeId, id } = useParams<Params>();
+  const { id, mapperId } = useParams<Params>();
   const { register, errors, setValue, control, handleSubmit } = useForm();
   const [mapping, setMapping] = useState<ProtocolMapperRepresentation>();
   const [typeOpen, setTypeOpen] = useState(false);
@@ -63,10 +63,10 @@ export const MappingDetails = () => {
   useEffect(() => {
     return asyncStateFetch(
       async () => {
-        if (id.match(isGuid)) {
+        if (mapperId.match(isGuid)) {
           const data = await adminClient.clientScopes.findProtocolMapper({
-            id: scopeId,
-            mapperId: id,
+            id,
+            mapperId,
           });
           if (data) {
             Object.entries(data).map((entry) => {
@@ -83,9 +83,19 @@ export const MappingDetails = () => {
             mapping: data,
           };
         } else {
-          const scope = await adminClient.clientScopes.findOne({ id: scopeId });
+          const scope = await adminClient.clientScopes.findOne({ id });
+          const protocolMappers = serverInfo.protocolMapperTypes![
+            scope.protocol!
+          ];
+          const mapping = protocolMappers.find(
+            (mapper) => mapper.id === mapperId
+          )!;
           return {
-            mapping: { protocol: scope.protocol, protocolMapper: id },
+            mapping: {
+              name: mapping.name,
+              protocol: scope.protocol,
+              protocolMapper: mapperId,
+            },
           };
         }
       },
@@ -105,11 +115,11 @@ export const MappingDetails = () => {
     onConfirm: async () => {
       try {
         await adminClient.clientScopes.delClientScopeMappings(
-          { client: scopeId, id },
+          { client: id, id: mapperId },
           []
         );
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        history.push(`${url}/${scopeId}`);
+        history.push(`${url}/${id}`);
       } catch (error) {
         addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
       }
@@ -119,15 +129,15 @@ export const MappingDetails = () => {
   const save = async (formMapping: ProtocolMapperRepresentation) => {
     const config = convertFormValuesToObject(formMapping.config);
     const map = { ...mapping, ...formMapping, config };
-    const key = id.match(isGuid) ? "Updated" : "Created";
+    const key = mapperId.match(isGuid) ? "Updated" : "Created";
     try {
-      if (id.match(isGuid)) {
+      if (mapperId.match(isGuid)) {
         await adminClient.clientScopes.updateProtocolMapper(
-          { id: scopeId, mapperId: id },
+          { id, mapperId },
           map
         );
       } else {
-        await adminClient.clientScopes.addProtocolMapper({ id: scopeId }, map);
+        await adminClient.clientScopes.addProtocolMapper({ id }, map);
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
     } catch (error) {
@@ -140,10 +150,10 @@ export const MappingDetails = () => {
       <DeleteConfirm />
       <ViewHeader
         titleKey={mapping ? mapping.name! : t("addMapper")}
-        subKey={id.match(isGuid) ? id : ""}
+        subKey={mapperId.match(isGuid) ? mapperId : ""}
         badge={mapping?.protocol}
         dropdownItems={
-          id.match(isGuid)
+          mapperId.match(isGuid)
             ? [
                 <DropdownItem
                   key="delete"
@@ -163,7 +173,7 @@ export const MappingDetails = () => {
           role="manage-clients"
         >
           <>
-            {!id.match(isGuid) && (
+            {!mapperId.match(isGuid) && (
               <FormGroup
                 label={t("common:name")}
                 labelIcon={

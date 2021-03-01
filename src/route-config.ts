@@ -60,12 +60,6 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-clients",
   },
   {
-    path: "/:realm/clients/:id",
-    component: ClientDetails,
-    breadcrumb: t("clients:clientSettings"),
-    access: "view-clients",
-  },
-  {
     path: "/:realm/clients/:clientId/roles/add-role",
     component: RealmRoleTabs,
     breadcrumb: t("roles:createRole"),
@@ -84,9 +78,9 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/:realm/clients/:id/:tab?/:subtab?",
+    path: "/:realm/clients/:clientId/:tab",
     component: ClientDetails,
-    breadcrumb: null,
+    breadcrumb: t("clients:clientSettings"),
     access: "view-clients",
   },
   {
@@ -96,31 +90,19 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-clients",
   },
   {
-    path: "/:realm/client-scopes/:id",
-    component: ClientScopeForm,
-    breadcrumb: t("client-scopes:clientScopeDetails"),
-    access: "view-clients",
-  },
-  {
-    path: "/:realm/client-scopes/:id/:tab",
-    component: ClientScopeForm,
-    breadcrumb: null,
-    access: "view-clients",
-  },
-  {
-    path: "/:realm/client-scopes/:scopeId/oidc-role-name-mapper",
+    path: "/:realm/client-scopes/:id/mappers/oidc-role-name-mapper",
     component: RoleMappingForm,
     breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
   },
   {
-    path: "/:realm/client-scopes/:scopeId/:id",
+    path: "/:realm/client-scopes/:id/mappers/:mapperId",
     component: MappingDetails,
     breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
   },
   {
-    path: "/:realm/client-scopes/:id",
+    path: "/:realm/client-scopes/:id/:tab",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:clientScopeDetails"),
     access: "view-clients",

@@ -42,7 +42,7 @@ export const RoleMappingForm = () => {
 
   const { t } = useTranslation("client-scopes");
   const { register, handleSubmit, control, errors } = useForm();
-  const { clientScopeId } = useParams<{ clientScopeId: string }>();
+  const { id } = useParams<{ id: string }>();
 
   const [roleOpen, setRoleOpen] = useState(false);
 
@@ -101,10 +101,7 @@ export const RoleMappingForm = () => {
 
   const save = async (mapping: ProtocolMapperRepresentation) => {
     try {
-      await adminClient.clientScopes.addProtocolMapper(
-        { id: clientScopeId },
-        mapping
-      );
+      await adminClient.clientScopes.addProtocolMapper({ id }, mapping);
       addAlert(t("mapperCreateSuccess"));
     } catch (error) {
       addAlert(t("mapperCreateError", error));
@@ -227,7 +224,7 @@ export const RoleMappingForm = () => {
                   placeholderText={t("selectASourceOfRoles")}
                   isGrouped
                   onFilter={(evt) => {
-                    const textInput = evt.target.value;
+                    const textInput = evt?.target.value || "";
                     if (textInput === "") {
                       return createSelectGroup(clients);
                     } else {

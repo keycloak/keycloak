@@ -15,8 +15,6 @@ const createUrl = (
     const value = params[key];
     if (url.indexOf(key) !== -1) {
       url = url.replace(new RegExp(`:${key}\\??`), value || "");
-    } else {
-      url += `/${value}`;
     }
   }
   return url;
@@ -37,13 +35,13 @@ export const KeycloakTabs = ({
     (isValidElement<TabProps>(firstTab) && firstTab.props.eventKey) ||
     "";
 
+  const pathIndex = match.path.indexOf(paramName) + paramName.length;
+  const path = match.path.substr(0, pathIndex);
   return (
     <Tabs
       activeKey={tab}
       onSelect={(_, key) =>
-        history.push(
-          createUrl(match.path, { ...params, [paramName]: key as string })
-        )
+        history.push(createUrl(path, { ...params, [paramName]: key as string }))
       }
       {...rest}
     >

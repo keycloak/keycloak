@@ -6,6 +6,7 @@ import {
   PageSection,
   Spinner,
   Tab,
+  Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
 import { useParams } from "react-router-dom";
@@ -113,6 +114,7 @@ export const ClientDetails = () => {
   const { addAlert } = useAlerts();
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const toggleDownloadDialog = () => setDownloadDialogOpen(!downloadDialogOpen);
+  const [activeTab2, setActiveTab2] = useState(30);
 
   const form = useForm<ClientForm>();
   const publicClient = useWatch({
@@ -121,12 +123,12 @@ export const ClientDetails = () => {
     defaultValue: false,
   });
 
-  const { id } = useParams<{ id: string }>();
+  const { clientId } = useParams<{ clientId: string }>();
 
   const [client, setClient] = useState<ClientRepresentation>();
 
   const loader = async () => {
-    const roles = await adminClient.clients.listRoles({ id });
+    const roles = await adminClient.clients.listRoles({ id: clientId });
     return _.sortBy(roles, (role) => role.name?.toUpperCase());
   };
 
@@ -137,7 +139,7 @@ export const ClientDetails = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.clients.del({ id });
+        await adminClient.clients.del({ id: clientId });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
@@ -162,14 +164,14 @@ export const ClientDetails = () => {
 
   useEffect(() => {
     return asyncStateFetch(
-      () => adminClient.clients.findOne({ id }),
+      () => adminClient.clients.findOne({ id: clientId }),
       (fetchedClient) => {
         setClient(fetchedClient);
         setupForm(fetchedClient);
       },
       handleError
     );
-  }, [id]);
+  }, [clientId]);
 
   const save = async () => {
     if (await form.trigger()) {
@@ -187,7 +189,7 @@ export const ClientDetails = () => {
           webOrigins,
           attributes,
         };
-        await adminClient.clients.update({ id }, newClient);
+        await adminClient.clients.update({ id: clientId }, newClient);
         setupForm(newClient);
         setClient(newClient);
         addAlert(t("clientSaveSuccess"), AlertVariant.success);
@@ -244,7 +246,7 @@ export const ClientDetails = () => {
                 eventKey="credentials"
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
               >
-                <Credentials clientId={id} save={save} />
+                <Credentials clientId={clientId} save={save} />
               </Tab>
             )}
             <Tab
@@ -259,22 +261,32 @@ export const ClientDetails = () => {
               eventKey="clientScopes"
               title={<TabTitleText>{t("clientScopes")}</TabTitleText>}
             >
-              <KeycloakTabs paramName="subtab" isSecondary>
+              <Tabs
+                activeKey={activeTab2}
+                isSecondary
+                onSelect={(_, key) => setActiveTab2(key as number)}
+              >
                 <Tab
                   id="setup"
-                  eventKey="setup"
+                  eventKey={30}
                   title={<TabTitleText>{t("setup")}</TabTitleText>}
                 >
-                  <ClientScopes clientId={id} protocol={client!.protocol!} />
+                  <ClientScopes
+                    clientId={clientId}
+                    protocol={client!.protocol!}
+                  />
                 </Tab>
                 <Tab
                   id="evaluate"
-                  eventKey="evaluate"
+                  eventKey={31}
                   title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                 >
-                  <EvaluateScopes clientId={id} protocol={client!.protocol!} />
+                  <EvaluateScopes
+                    clientId={clientId}
+                    protocol={client!.protocol!}
+                  />
                 </Tab>
-              </KeycloakTabs>
+              </Tabs>
             </Tab>
             {client!.serviceAccountsEnabled && (
               <Tab
@@ -282,7 +294,7 @@ export const ClientDetails = () => {
                 eventKey="serviceAccount"
                 title={<TabTitleText>{t("serviceAccount")}</TabTitleText>}
               >
-                <ServiceAccount clientId={id} />
+                <ServiceAccount clientId={clientId} />
               </Tab>
             )}
             <Tab
