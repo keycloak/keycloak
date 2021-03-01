@@ -590,10 +590,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         RealmModel currentRealm = session.realms().getRealm(realmId);
                         session.getContext().setRealm(currentRealm);
 
-                        String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
+                        //String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
                         exists.value = true;
                         LDAPUtils.checkUuid(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
-                        UserModel currentUser = session.userLocalStorage().getUserByUsername(currentRealm, username);
+                        //UserModel currentUser = session.userLocalStorage().getUserByUsername(currentRealm, username);
+                        UserModel currentUser = session.userLocalStorage().getUserById(currentRealm, ldapUser.getUuid());
 
                         if (currentUser == null) {
 
@@ -621,7 +622,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                 logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
                                 syncResult.increaseUpdated();
                             } else {
-                                logger.warnf("User '%s' is not updated during sync as he already exists in Keycloak database but is not linked to federation provider '%s'", username, fedModel.getName());
+                                logger.warnf("User with ID '%s' is not updated during sync as he already exists in Keycloak database but is not linked to federation provider '%s'", ldapUser.getUuid(), fedModel.getName());
                                 syncResult.increaseFailed();
                             }
                         }
