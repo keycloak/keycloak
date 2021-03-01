@@ -132,7 +132,7 @@ export default class CreateLdapProviderPage {
     return this;
   }
 
-  clickProviderCard(cardName) {
+  clickProviderCard(cardName: string) {
     cy.get('[data-testid="keycloak-card-title"]').contains(cardName).click();
     cy.wait(1000);
     return this;
