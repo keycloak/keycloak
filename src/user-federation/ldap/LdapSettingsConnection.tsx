@@ -195,6 +195,7 @@ export const LdapSettingsConnection = ({
         >
           <TextInput
             type="number"
+            min={0}
             id="kc-console-connection-timeout"
             name="config.connectionTimeout[0]"
             ref={form.register}

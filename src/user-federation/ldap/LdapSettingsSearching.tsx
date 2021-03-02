@@ -330,6 +330,7 @@ export const LdapSettingsSearching = ({
         >
           <TextInput
             type="number"
+            min={0}
             id="kc-read-timeout"
             name="config.readTimeout[0]"
             ref={form.register}

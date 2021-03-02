@@ -72,6 +72,7 @@ export const LdapSettingsSynchronization = ({
         >
           <TextInput
             type="number"
+            min={0}
             id="kc-batch-size"
             name="config.batchSizeForSync[0]"
             ref={form.register}
@@ -93,6 +94,7 @@ export const LdapSettingsSynchronization = ({
         >
           <TextInput
             type="number"
+            min={-1}
             id="kc-full-sync-period"
             name="config.fullSyncPeriod[0]"
             ref={form.register}
@@ -114,6 +116,7 @@ export const LdapSettingsSynchronization = ({
         >
           <TextInput
             type="number"
+            min={-1}
             id="kc-changed-users-sync-period"
             name="config.changedSyncPeriod[0]"
             ref={form.register}
