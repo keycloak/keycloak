@@ -44,7 +44,7 @@ export const LdapSettingsSynchronization = ({
         >
           <Controller
             name="config.importEnabled"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
@@ -71,7 +71,8 @@ export const LdapSettingsSynchronization = ({
           fieldId="kc-batch-size"
         >
           <TextInput
-            type="text"
+            type="number"
+            min={0}
             id="kc-batch-size"
             name="config.batchSizeForSync[0]"
             ref={form.register}
@@ -92,7 +93,8 @@ export const LdapSettingsSynchronization = ({
           fieldId="kc-full-sync-period"
         >
           <TextInput
-            type="text"
+            type="number"
+            min={-1}
             id="kc-full-sync-period"
             name="config.fullSyncPeriod[0]"
             ref={form.register}
@@ -113,7 +115,8 @@ export const LdapSettingsSynchronization = ({
           hasNoPaddingTop
         >
           <TextInput
-            type="text"
+            type="number"
+            min={-1}
             id="kc-changed-users-sync-period"
             name="config.changedSyncPeriod[0]"
             ref={form.register}

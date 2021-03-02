@@ -97,6 +97,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-console-users-dn"
+            data-testid="ldap-users-dn"
             name="config.usersDn[0]"
             ref={form.register({
               required: {
@@ -129,6 +130,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-username-ldap-attribute"
+            data-testid="ldap-username-attribute"
             name="config.usernameLDAPAttribute[0]"
             ref={form.register({
               required: {
@@ -161,6 +163,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-rdn-ldap-attribute"
+            data-testid="ldap-rdn-attribute"
             name="config.rdnLDAPAttribute[0]"
             ref={form.register({
               required: {
@@ -193,6 +196,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-uuid-ldap-attribute"
+            data-testid="ldap-uuid-attribute"
             name="config.uuidLDAPAttribute[0]"
             ref={form.register({
               required: {
@@ -225,6 +229,7 @@ export const LdapSettingsSearching = ({
             isRequired
             type="text"
             id="kc-user-object-classes"
+            data-testid="ldap-user-object-classes"
             name="config.userObjectClasses[0]"
             ref={form.register({
               required: {
@@ -256,8 +261,20 @@ export const LdapSettingsSearching = ({
             type="text"
             id="kc-user-ldap-filter"
             name="config.customUserSearchFilter[0]"
-            ref={form.register}
+            ref={form.register({
+              pattern: {
+                value: /(\(.*\))$/,
+                message: `${t("validateCustomUserSearchFilter")}`,
+              },
+            })}
           />
+          {form.errors.config &&
+            form.errors.config.customUserSearchFilter &&
+            form.errors.config.customUserSearchFilter[0] && (
+              <div className="error">
+                {form.errors.config.customUserSearchFilter[0].message}
+              </div>
+            )}
         </FormGroup>
 
         <FormGroup
@@ -312,7 +329,8 @@ export const LdapSettingsSearching = ({
           fieldId="kc-read-timeout"
         >
           <TextInput
-            type="text"
+            type="number"
+            min={0}
             id="kc-read-timeout"
             name="config.readTimeout[0]"
             ref={form.register}
@@ -332,7 +350,7 @@ export const LdapSettingsSearching = ({
         >
           <Controller
             name="config.pagination"
-            defaultValue={false}
+            defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch

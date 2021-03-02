@@ -107,7 +107,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateName")}`,
               },
             })}
-            data-cy="kerberos-name"
+            data-testid="kerberos-name"
           />
           {form.errors.name && (
             <div className="error">{form.errors.name.message}</div>
@@ -137,7 +137,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateRealm")}`,
               },
             })}
-            data-cy="kerberos-realm"
+            data-testid="kerberos-realm"
           />
           {form.errors.config &&
             form.errors.config.kerberosRealm &&
@@ -171,7 +171,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateServerPrincipal")}`,
               },
             })}
-            data-cy="kerberos-principal"
+            data-testid="kerberos-principal"
           />
           {form.errors.config &&
             form.errors.config.serverPrincipal &&
@@ -205,7 +205,7 @@ export const KerberosSettingsRequired = ({
                 message: `${t("validateKeyTab")}`,
               },
             })}
-            data-cy="kerberos-keytab"
+            data-testid="kerberos-keytab"
           />
           {form.errors.config &&
             form.errors.config.keyTab &&

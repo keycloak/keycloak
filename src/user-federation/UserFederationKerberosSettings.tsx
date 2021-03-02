@@ -60,7 +60,7 @@ const KerberosSettingsHeader = ({
             <DropdownItem
               key="delete"
               onClick={() => toggleDeleteDialog()}
-              data-cy="delete-provider-cmd"
+              data-testid="delete-kerberos-cmd"
             >
               {t("deleteProvider")}
             </DropdownItem>,
@@ -93,9 +93,11 @@ export const UserFederationKerberosSettings = () => {
 
   useEffect(() => {
     (async () => {
-      const fetchedComponent = await adminClient.components.findOne({ id });
-      if (fetchedComponent) {
-        setupForm(fetchedComponent);
+      if (id !== "new") {
+        const fetchedComponent = await adminClient.components.findOne({ id });
+        if (fetchedComponent) {
+          setupForm(fetchedComponent);
+        }
       }
     })();
   }, []);
@@ -174,13 +176,13 @@ export const UserFederationKerberosSettings = () => {
         <SettingsCache form={form} showSectionHeading />
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
-            <Button variant="primary" type="submit" data-cy="kerberos-save">
+            <Button variant="primary" type="submit" data-testid="kerberos-save">
               {t("common:save")}
             </Button>
             <Button
               variant="link"
               onClick={() => history.push(`/${realm}/user-federation`)}
-              data-cy="kerberos-cancel"
+              data-testid="kerberos-cancel"
             >
               {t("common:cancel")}
             </Button>

@@ -41,7 +41,7 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
 
     sidebarPage.goToUserFederation();
-    cy.get("[data-cy=kerberos-card]").click();
+    cy.get("[data-testid=kerberos-card]").click();
 
     providersPage.fillKerberosRequiredData(
       firstKerberosName,
@@ -60,7 +60,7 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
     sidebarPage.goToUserFederation();
 
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
@@ -81,7 +81,7 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
     cy.wait(1000);
 
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
@@ -95,7 +95,7 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
     sidebarPage.goToUserFederation();
 
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
@@ -113,7 +113,7 @@ describe("User Fed Kerberos tests", () => {
     providersPage.cancel();
 
     cy.wait(1000);
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
@@ -133,7 +133,7 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
     sidebarPage.goToUserFederation();
 
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
@@ -158,7 +158,7 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
     sidebarPage.goToUserFederation();
 
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
@@ -196,8 +196,8 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
     sidebarPage.goToUserFederation();
 
-    cy.get('[data-cy="my-kerberos-2-dropdown"]').click();
-    cy.get('[data-cy="card-delete"]').click();
+    cy.get('[data-testid="my-kerberos-2-dropdown"]').click();
+    cy.get('[data-testid="card-delete"]').click();
 
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
 
@@ -209,13 +209,13 @@ describe("User Fed Kerberos tests", () => {
     loginPage.logIn();
     sidebarPage.goToUserFederation();
 
-    cy.get('[data-cy="keycloak-card-title"]')
+    cy.get('[data-testid="keycloak-card-title"]')
       .contains(firstKerberosName)
       .click();
     cy.wait(1000);
 
     cy.get('[data-testid="action-dropdown"]').click();
-    cy.get('[data-cy="delete-provider-cmd"]').click();
+    cy.get('[data-testid="delete-kerberos-cmd"]').click();
 
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
 

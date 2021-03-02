@@ -47,6 +47,7 @@ const LdapSettingsHeader = ({
   toggleRemoveUsersDialog,
 }: LdapSettingsHeaderProps) => {
   const { t } = useTranslation("user-federation");
+  const { id } = useParams<{ id: string }>();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDisableConfirmTitle",
     messageKey: "user-federation:userFedDisableConfirm",
@@ -59,46 +60,57 @@ const LdapSettingsHeader = ({
   return (
     <>
       <DisableConfirm />
-      <ViewHeader
-        titleKey="LDAP"
-        subKey=""
-        dropdownItems={[
-          <DropdownItem
-            key="sync"
-            onClick={() => console.log("Sync users TBD")}
-          >
-            {t("syncChangedUsers")}
-          </DropdownItem>,
-          <DropdownItem
-            key="syncall"
-            onClick={() => console.log("Sync all users TBD")}
-          >
-            {t("syncAllUsers")}
-          </DropdownItem>,
-          <DropdownItem
-            key="unlink"
-            onClick={() => console.log("Unlink users TBD")}
-          >
-            {t("unlinkUsers")}
-          </DropdownItem>,
-          <DropdownItem key="remove" onClick={() => toggleRemoveUsersDialog()}>
-            {t("removeImported")}
-          </DropdownItem>,
-          <DropdownSeparator key="separator" />,
-          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
-            {t("deleteProvider")}
-          </DropdownItem>,
-        ]}
-        isEnabled={value === "true"}
-        onToggle={(value) => {
-          if (!value) {
-            toggleDisableDialog();
-          } else {
-            onChange("" + value);
-            save();
-          }
-        }}
-      />
+      {id === "new" ? (
+        <ViewHeader titleKey="LDAP" subKey="" />
+      ) : (
+        <ViewHeader
+          titleKey="LDAP"
+          subKey=""
+          dropdownItems={[
+            <DropdownItem
+              key="sync"
+              onClick={() => console.log("Sync users TBD")}
+            >
+              {t("syncChangedUsers")}
+            </DropdownItem>,
+            <DropdownItem
+              key="syncall"
+              onClick={() => console.log("Sync all users TBD")}
+            >
+              {t("syncAllUsers")}
+            </DropdownItem>,
+            <DropdownItem
+              key="unlink"
+              onClick={() => console.log("Unlink users TBD")}
+            >
+              {t("unlinkUsers")}
+            </DropdownItem>,
+            <DropdownItem
+              key="remove"
+              onClick={() => toggleRemoveUsersDialog()}
+            >
+              {t("removeImported")}
+            </DropdownItem>,
+            <DropdownSeparator key="separator" />,
+            <DropdownItem
+              key="delete"
+              onClick={() => toggleDeleteDialog()}
+              data-testid="delete-ldap-cmd"
+            >
+              {t("deleteProvider")}
+            </DropdownItem>,
+          ]}
+          isEnabled={value === "true"}
+          onToggle={(value) => {
+            if (!value) {
+              toggleDisableDialog();
+            } else {
+              onChange("" + value);
+              save();
+            }
+          }}
+        />
+      )}
     </>
   );
 };
@@ -115,9 +127,11 @@ export const UserFederationLdapSettings = () => {
 
   useEffect(() => {
     (async () => {
-      const fetchedComponent = await adminClient.components.findOne({ id });
-      if (fetchedComponent) {
-        setupForm(fetchedComponent);
+      if (id !== "new") {
+        const fetchedComponent = await adminClient.components.findOne({ id });
+        if (fetchedComponent) {
+          setupForm(fetchedComponent);
+        }
       }
     })();
   }, []);
@@ -134,11 +148,23 @@ export const UserFederationLdapSettings = () => {
 
   const save = async (component: ComponentRepresentation) => {
     try {
-      await adminClient.components.update({ id }, component);
+      if (id) {
+        if (id === "new") {
+          await adminClient.components.create(component);
+        } else {
+          await adminClient.components.update({ id }, component);
+        }
+      }
       setupForm(component as ComponentRepresentation);
-      addAlert(t("saveSuccess"), AlertVariant.success);
+      addAlert(
+        t(id === "new" ? "createSuccess" : "saveSuccess"),
+        AlertVariant.success
+      );
     } catch (error) {
-      addAlert(`${t("saveError")} '${error}'`, AlertVariant.danger);
+      addAlert(
+        `${t(id === "new" ? "createError" : "saveError")} '${error}'`,
+        AlertVariant.danger
+      );
     }
   };
 
@@ -179,7 +205,7 @@ export const UserFederationLdapSettings = () => {
       <RemoveUsersConfirm />
       <Controller
         name="config.enabled[0]"
-        defaultValue={["true"]}
+        defaultValue={["true"][0]}
         control={form.control}
         render={({ onChange, value }) => (
           <LdapSettingsHeader
@@ -213,12 +239,13 @@ export const UserFederationLdapSettings = () => {
         </ScrollForm>
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" data-testid="ldap-save">
               {t("common:save")}
             </Button>
             <Button
               variant="link"
               onClick={() => history.push(`/${realm}/user-federation`)}
+              data-testid="ldap-cancel"
             >
               {t("common:cancel")}
             </Button>
