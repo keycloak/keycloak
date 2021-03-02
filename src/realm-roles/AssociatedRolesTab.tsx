@@ -51,14 +51,18 @@ export const AssociatedRolesTab = ({
   const { id } = useParams<{ id: string }>();
   const inheritanceMap = React.useRef<{ [key: string]: string }>({});
 
+  console.log(id)
+
   const getSubRoles = async (
     role: RoleRepresentation,
-    allRoles: RoleRepresentation[]
+    allRoles: RoleRepresentation[],
+    first?: number,
+    max?: number,
+    search?: string,
   ): Promise<RoleRepresentation[]> => {
+
     // Fetch all composite roles
-    const allCompositeRoles = await adminClient.roles.getCompositeRoles({
-      id: role.id!,
-    });
+    const allCompositeRoles = await adminClient.roles.getCompositeRoles({id: role.id!});
 
     // Need to ensure we don't get into an infinite loop, do not add any role that is already there or the starting role
     const newRoles: Promise<RoleRepresentation[]> = allCompositeRoles.reduce(
@@ -87,6 +91,8 @@ export const AssociatedRolesTab = ({
       return additionalRoles;
     }
 
+    
+
     const allRoles: Promise<RoleRepresentation[]> = additionalRoles.reduce(
       async (acc: Promise<RoleRepresentation[]>, role) => {
         const resolvedRoles = await acc;
@@ -100,6 +106,17 @@ export const AssociatedRolesTab = ({
 
     return allRoles;
   };
+
+
+  // const loader = async (first?: number, max?: number, search?: string, id?: string) => {
+  //   const params = {
+  //     first: first!,
+  //     max: max!,
+  //     search: search!,
+  //     id: id!
+  //   };
+  //   return await adminClient.roles.getCompositeRoles({...params});
+  // };
 
   useEffect(() => {
     refresh();
@@ -184,6 +201,7 @@ export const AssociatedRolesTab = ({
         <KeycloakDataTable
           key={key}
           loader={loader}
+          isPaginated
           ariaLabelKey="roles:roleList"
           searchPlaceholderKey="roles:searchFor"
           canSelectAll

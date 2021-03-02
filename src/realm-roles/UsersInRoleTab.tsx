@@ -19,11 +19,13 @@ export const UsersInRoleTab = () => {
 
   const adminClient = useAdminClient();
 
-  const loader = async () => {
+  const loader = async (first?: number, max?: number) => {
     const role = await adminClient.roles.findOneById({ id: id });
     const usersWithRole = await adminClient.roles.findUsersWithRole({
       name: role.name!,
-    });
+      first: first!,
+      max: max!,
+    } as any);
     return usersWithRole;
   };
 
@@ -31,6 +33,7 @@ export const UsersInRoleTab = () => {
     <>
       <PageSection data-testid="users-page" variant="light">
         <KeycloakDataTable
+          isPaginated
           loader={loader}
           ariaLabelKey="roles:roleList"
           searchPlaceholderKey=""
