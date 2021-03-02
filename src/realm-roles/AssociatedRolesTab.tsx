@@ -53,11 +53,12 @@ export const AssociatedRolesTab = ({
 
   const getSubRoles = async (
     role: RoleRepresentation,
-    allRoles: RoleRepresentation[],
+    allRoles: RoleRepresentation[]
   ): Promise<RoleRepresentation[]> => {
-
     // Fetch all composite roles
-    const allCompositeRoles = await adminClient.roles.getCompositeRoles({id: role.id!});
+    const allCompositeRoles = await adminClient.roles.getCompositeRoles({
+      id: role.id!,
+    });
 
     // Need to ensure we don't get into an infinite loop, do not add any role that is already there or the starting role
     const newRoles: Promise<RoleRepresentation[]> = allCompositeRoles.reduce(
@@ -85,8 +86,6 @@ export const AssociatedRolesTab = ({
     if (isInheritedHidden) {
       return additionalRoles;
     }
-
-    
 
     const allRoles: Promise<RoleRepresentation[]> = additionalRoles.reduce(
       async (acc: Promise<RoleRepresentation[]>, role) => {
