@@ -81,6 +81,9 @@ public class TokenIntrospectionEndpoint {
         authorizeClient();
 
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+
+        checkParameterDuplicated(formParams);
+
         String tokenTypeHint = formParams.getFirst(PARAM_TOKEN_TYPE_HINT);
 
         if (tokenTypeHint == null) {
@@ -145,6 +148,15 @@ public class TokenIntrospectionEndpoint {
     private void checkRealm() {
         if (!realm.isEnabled()) {
             throw new ErrorResponseException("access_denied", "Realm not enabled", Status.FORBIDDEN);
+        }
+    }
+
+
+    private void checkParameterDuplicated(MultivaluedMap<String, String> formParams) {
+        for (String key : formParams.keySet()) {
+            if (formParams.get(key).size() != 1) {
+                throw throwErrorResponseException(Errors.INVALID_REQUEST, "duplicated parameter", Status.BAD_REQUEST);
+            }
         }
     }
 
