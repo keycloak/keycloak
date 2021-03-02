@@ -7,6 +7,7 @@ import {
   Button,
   ButtonVariant,
   PageSection,
+  ToolbarItem,
 } from "@patternfly/react-core";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -92,15 +93,19 @@ export const ClientsSection = () => {
           searchPlaceholderKey="clients:searchForClient"
           toolbarItem={
             <>
-              <Button onClick={() => history.push(`${url}/add-client`)}>
-                {t("createClient")}
-              </Button>
-              <Button
-                onClick={() => history.push(`${url}/import-client`)}
-                variant="link"
-              >
-                {t("importClient")}
-              </Button>
+              <ToolbarItem>
+                <Button onClick={() => history.push(`${url}/add-client`)}>
+                  {t("createClient")}
+                </Button>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Button
+                  onClick={() => history.push(`${url}/import-client`)}
+                  variant="link"
+                >
+                  {t("importClient")}
+                </Button>
+              </ToolbarItem>
             </>
           }
           actions={[

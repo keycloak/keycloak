@@ -34,10 +34,16 @@ export default class ListingPage {
     return this;
   }
 
-  searchItem(searchValue: string) {
+  searchItem(searchValue: string, wait = true) {
+    if (wait) {
+      const searchUrl = `/admin/realms/master/*${searchValue}*`;
+      cy.intercept(searchUrl).as("searchClients");
+    }
     cy.get(this.searchInput).type(searchValue);
     cy.get(this.searchBtn).click();
-
+    if (wait) {
+      cy.wait(["@searchClients"]);
+    }
     return this;
   }
 
