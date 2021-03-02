@@ -51,8 +51,6 @@ export const AssociatedRolesTab = ({
   const { id } = useParams<{ id: string }>();
   const inheritanceMap = React.useRef<{ [key: string]: string }>({});
 
-  console.log(id)
-
   const getSubRoles = async (
     role: RoleRepresentation,
     allRoles: RoleRepresentation[],

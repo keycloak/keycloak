@@ -13,8 +13,7 @@ export const RealmRolesSection = () => {
       max: max!,
       search: search!,
     };
-    const x  = await adminClient.roles.find(params);
-    return x;
+    return await adminClient.roles.find(params);
   };
   return (
     <>
