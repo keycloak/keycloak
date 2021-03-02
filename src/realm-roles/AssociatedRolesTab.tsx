@@ -56,9 +56,6 @@ export const AssociatedRolesTab = ({
   const getSubRoles = async (
     role: RoleRepresentation,
     allRoles: RoleRepresentation[],
-    first?: number,
-    max?: number,
-    search?: string,
   ): Promise<RoleRepresentation[]> => {
 
     // Fetch all composite roles
@@ -106,17 +103,6 @@ export const AssociatedRolesTab = ({
 
     return allRoles;
   };
-
-
-  // const loader = async (first?: number, max?: number, search?: string, id?: string) => {
-  //   const params = {
-  //     first: first!,
-  //     max: max!,
-  //     search: search!,
-  //     id: id!
-  //   };
-  //   return await adminClient.roles.getCompositeRoles({...params});
-  // };
 
   useEffect(() => {
     refresh();
