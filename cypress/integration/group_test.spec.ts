@@ -34,7 +34,7 @@ describe("Group test", () => {
       masthead.checkNotificationMessage("Group created");
 
       sidebarPage.goToGroups();
-      listingPage.searchItem(groupName).itemExist(groupName);
+      listingPage.searchItem(groupName, false).itemExist(groupName);
 
       // Delete
       listingPage.deleteItem(groupName);
