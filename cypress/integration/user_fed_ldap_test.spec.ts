@@ -63,8 +63,7 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Create Ldap provider from empty state", () => {
-    cy.get("[data-testid=ldap-card]").click();
-
+    providersPage.clickNewCard("ldap");
     providersPage.fillLdapRequiredGeneralData(firstLdapName, firstLdapVendor);
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,
@@ -87,18 +86,12 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Update an existing LDAP provider and save", () => {
-    providersPage.clickProviderCard(firstLdapName);
-
+    providersPage.clickExistingCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
-    cy.contains(defaultLdapDay).click();
-    cy.contains(newLdapDay).click();
-
-    cy.contains(defaultLdapHour).click();
-    cy.contains(newLdapHour).click();
-
-    cy.contains(defaultLdapMinute).click();
-    cy.contains(newLdapMinute).click();
+    providersPage.changeTime(defaultLdapDay, newLdapDay);
+    providersPage.changeTime(defaultLdapHour, newLdapHour);
+    providersPage.changeTime(defaultLdapMinute, newLdapMinute);
 
     providersPage.save();
     masthead.checkNotificationMessage(savedSuccessMessage);
@@ -106,29 +99,24 @@ describe("User Fed LDAP tests", () => {
     sidebarPage.goToUserFederation();
     cy.wait(1000);
 
-    providersPage.clickProviderCard(firstLdapName);
+    providersPage.clickExistingCard(firstLdapName);
 
     expect(cy.contains(newPolicy).should("exist"));
     expect(cy.contains(defaultPolicy).should("not.exist"));
   });
 
   it("Change existing LDAP provider and click button to cancel", () => {
-    providersPage.clickProviderCard(firstLdapName);
+    providersPage.clickExistingCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
-    cy.contains(newLdapDay).click();
-    cy.contains(defaultLdapDay).click();
-
-    cy.contains(newLdapHour).click();
-    cy.contains(defaultLdapHour).click();
-
-    cy.contains(newLdapMinute).click();
-    cy.contains(defaultLdapMinute).click();
+    providersPage.changeTime(newLdapDay, defaultLdapDay);
+    providersPage.changeTime(newLdapHour, defaultLdapHour);
+    providersPage.changeTime(newLdapMinute, defaultLdapMinute);
 
     providersPage.cancel();
     cy.wait(1000);
 
-    providersPage.clickProviderCard(firstLdapName);
+    providersPage.clickExistingCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
     expect(cy.contains(newLdapDay).should("exist"));
@@ -140,41 +128,33 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Disable an existing LDAP provider", () => {
-    providersPage.clickProviderCard(firstLdapName);
-
+    providersPage.clickExistingCard(firstLdapName);
     providersPage.disableEnabledSwitch();
 
     modalUtils.checkModalTitle(disableModalTitle).confirmModal();
 
     masthead.checkNotificationMessage(savedSuccessMessage);
-
     sidebarPage.goToUserFederation();
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
-
     cy.wait(1000);
     expect(cy.contains("Disabled").should("exist"));
   });
 
   it("Enable an existing previously-disabled LDAP provider", () => {
-    providersPage.clickProviderCard(firstLdapName);
-
+    providersPage.clickExistingCard(firstLdapName);
     providersPage.enableEnabledSwitch();
 
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
     cy.wait(1000);
-
     expect(cy.contains("Enabled").should("exist"));
   });
 
   it("Create new LDAP provider using the New Provider dropdown", () => {
-    // cy get contains
-    cy.contains("button", "Add new provider").click();
-    cy.contains("li", "LDAP").click();
-
+    providersPage.clickMenuCommand("Add new provider", "LDAP");
     providersPage.fillLdapRequiredGeneralData(secondLdapName, secondLdapVendor);
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,
@@ -189,30 +169,20 @@ describe("User Fed LDAP tests", () => {
       secondUuidLdapAtt,
       secondUserObjClasses
     );
-
     providersPage.save();
-
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
   });
 
   it("Delete an LDAP provider from card view using the card's menu", () => {
-    cy.get('[data-testid="my-ldap-2-dropdown"]').click();
-    cy.get('[data-testid="card-delete"]').click();
-
+    providersPage.deleteCardFromCard(secondLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
-
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });
 
   it("Delete an LDAP provider using the Settings view's Action menu", () => {
-    providersPage.clickProviderCard(firstLdapName);
-
-    cy.get('[data-testid="action-dropdown"]').click();
-    cy.get('[data-testid="delete-ldap-cmd"]').click();
-
+    providersPage.deleteCardFromMenu(firstLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
-
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });
 });

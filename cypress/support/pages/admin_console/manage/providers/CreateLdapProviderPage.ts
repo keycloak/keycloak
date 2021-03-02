@@ -67,7 +67,26 @@ export default class CreateLdapProviderPage {
     this.cancelBtn = "data-testid=ldap-cancel";
   }
 
-  // Required fields - these always must be filled out when testing a save, everything else can feasibly be left blank (TEST THIS)
+  changeTime(oldTime: string, newTime: string) {
+    cy.contains(oldTime).click();
+    cy.contains(newTime).click();
+    return this;
+  }
+
+  deleteCardFromCard(card: string) {
+    cy.get(`[data-testid=${card}-dropdown]`).click();
+    cy.get('[data-testid="card-delete"]').click();
+    return this;
+  }
+
+  deleteCardFromMenu(card: string) {
+    this.clickExistingCard(card);
+    cy.get('[data-testid="action-dropdown"]').click();
+    cy.get('[data-testid="delete-ldap-cmd"]').click();
+    return this;
+  }
+
+  // Required fields - these always must be filled out when testing a save
   fillLdapRequiredGeneralData(name: string, vendor: string) {
     if (name) {
       cy.get(`[${this.ldapNameInput}]`).type(name);
@@ -132,8 +151,20 @@ export default class CreateLdapProviderPage {
     return this;
   }
 
-  clickProviderCard(cardName: string) {
+  clickExistingCard(cardName: string) {
     cy.get('[data-testid="keycloak-card-title"]').contains(cardName).click();
+    cy.wait(1000);
+    return this;
+  }
+
+  clickMenuCommand(menu: string, command: string) {
+    cy.contains("button", menu).click();
+    cy.contains("li", command).click();
+    return this;
+  }
+
+  clickNewCard(providerType: string) {
+    cy.get(`[data-testid=${providerType}-card]`).click();
     cy.wait(1000);
     return this;
   }
