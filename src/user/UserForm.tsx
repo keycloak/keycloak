@@ -87,6 +87,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
           type="text"
           id="kc-email"
           name="email"
+          aria-label={t("emailInput")}
         />
       </FormGroup>
       <FormGroup
@@ -140,6 +141,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
           type="text"
           id="kc-lastname"
           name="lastname"
+          aria-label={t("lastName")}
         />
       </FormGroup>
       <FormGroup
