@@ -1135,25 +1135,24 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordLinkNewTabAndProperRedirectClient() throws IOException {
-        final String REDIRECT_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/master/app/auth";
+        final String REDIRECT_URI = getAuthServerRoot() + "realms/master/app/auth";
         final String CLIENT_ID = "test-app";
 
-        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(getAdminClient(), TEST_REALM_NAME, CLIENT_ID)
-                .filterRedirectUris(uri -> uri.contains(getAuthServerRoot().toString()))
-                .update()) {
-            try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
-                assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver);
+             ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(getAdminClient(), TEST_REALM_NAME, CLIENT_ID)
+                     .filterRedirectUris(uri -> uri.contains(REDIRECT_URI))
+                     .update()) {
 
-                loginPage.open();
-                resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI);
-                assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-                oauth.openLogout();
+            loginPage.open();
+            resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI);
+            assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
+            oauth.openLogout();
 
-                loginPage.open();
-                resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI);
-                assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
-            }
+            loginPage.open();
+            resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI);
+            assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
         }
     }
 
@@ -1199,8 +1198,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                     .orElse(null);
 
             assertThat(client, Matchers.notNullValue());
-            System.out.println("HEE");
-            System.out.println(client.getRootUrl());
             updateForgottenPassword(user, clientId, getValidRedirectUriWithRootUrl(client.getRootUrl(), client.getRedirectUris()));
         } else {
             doForgotPassword(user.getUsername());
