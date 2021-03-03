@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import java.util.stream.Stream;
 
@@ -127,6 +128,6 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      *
      * @return See description.
      */
-    public MapKeycloakTransaction<K, V, M> createTransaction();
+    public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session);
 
 }

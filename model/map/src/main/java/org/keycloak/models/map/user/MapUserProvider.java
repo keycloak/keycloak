@@ -83,7 +83,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public MapUserProvider(KeycloakSession session, MapStorage<UUID, MapUserEntity, UserModel> store) {
         this.session = session;
         this.userStore = store;
-        this.tx = userStore.createTransaction();
+        this.tx = userStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 

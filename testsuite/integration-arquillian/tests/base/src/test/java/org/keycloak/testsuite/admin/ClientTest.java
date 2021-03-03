@@ -595,6 +595,57 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
     }
 
+    @Test
+    public void scopesRoleRemoval() {
+        // clientA to test scope mappins
+        Response response = realm.clients().create(ClientBuilder.create().clientId("clientA").fullScopeEnabled(false).build());
+        String idA = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(idA);
+        response.close();
+        assertAdminEvents.poll();
+
+        // clientB to create a client role for clientA
+        response = realm.clients().create(ClientBuilder.create().clientId("clientB").fullScopeEnabled(false).build());
+        String idB = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(idB);
+        response.close();
+        assertAdminEvents.poll();
+
+        RoleMappingResource scopesResource = realm.clients().get(idA).getScopeMappings();
+
+        // create a realm role and a role in clientB
+        RoleRepresentation realmRoleRep = RoleBuilder.create().name("realm-role").build();
+        realm.roles().create(realmRoleRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), realmRoleRep, ResourceType.REALM_ROLE);
+        RoleRepresentation clientBRoleRep = RoleBuilder.create().name("clientB-role").build();
+        realm.clients().get(idB).roles().create(clientBRoleRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), clientBRoleRep, ResourceType.CLIENT_ROLE);
+
+        // assing to clientA both roles to the scope mappings
+        realmRoleRep = realm.roles().get(realmRoleRep.getName()).toRepresentation();
+        clientBRoleRep = realm.clients().get(idB).roles().get(clientBRoleRep.getName()).toRepresentation();
+        scopesResource.realmLevel().add(Collections.singletonList(realmRoleRep));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsRealmLevelPath(idA), Collections.singletonList(realmRoleRep), ResourceType.REALM_SCOPE_MAPPING);
+        scopesResource.clientLevel(idB).add(Collections.singletonList(clientBRoleRep));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsClientLevelPath(idA, idB), Collections.singletonList(clientBRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
+
+        // assert the roles are there
+        Assert.assertNames(scopesResource.realmLevel().listAll(), realmRoleRep.getName());
+        Assert.assertNames(scopesResource.clientLevel(idB).listAll(), clientBRoleRep.getName());
+
+        // delete realm role and check everything is refreshed ok
+        realm.roles().deleteRole(realmRoleRep.getName());
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), ResourceType.REALM_ROLE);
+        Assert.assertNames(scopesResource.realmLevel().listAll());
+        Assert.assertNames(scopesResource.clientLevel(idB).listAll(), clientBRoleRep.getName());
+
+        // delete client role and check everything is refreshed ok
+        realm.clients().get(idB).roles().deleteRole(clientBRoleRep.getName());
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), ResourceType.CLIENT_ROLE);
+        Assert.assertNames(scopesResource.realmLevel().listAll());
+        Assert.assertNames(scopesResource.clientLevel(idB).listAll());
+    }
+
     public void protocolMappersTest(String clientDbId, ProtocolMappersResource mappersResource) {
         // assert default mappers found
         List<ProtocolMapperRepresentation> protocolMappers = mappersResource.getMappers();

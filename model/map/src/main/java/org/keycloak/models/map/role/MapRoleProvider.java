@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
@@ -67,7 +66,7 @@ public class MapRoleProvider implements RoleProvider {
     public MapRoleProvider(KeycloakSession session, MapStorage<UUID, MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
         this.roleStore = roleStore;
-        this.tx = roleStore.createTransaction();
+        this.tx = roleStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
@@ -210,8 +209,6 @@ public class MapRoleProvider implements RoleProvider {
             }
         });
         
-        session.groups().preRemove(realm, role);
-
         // TODO: Sending an event should be extracted to store layer
         session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
             @Override

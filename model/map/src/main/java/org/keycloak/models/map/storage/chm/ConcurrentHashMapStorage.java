@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapModelCriteriaBuilder;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapFieldPredicates;
@@ -101,8 +102,10 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public MapKeycloakTransaction<K, V, M> createTransaction() {
-        return new MapKeycloakTransaction<>(this);
+    @SuppressWarnings("unchecked")
+    public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session) {
+        MapKeycloakTransaction sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+        return sessionTransaction == null ? new MapKeycloakTransaction<>(this) : (MapKeycloakTransaction<K, V, M>) sessionTransaction;
     }
 
 

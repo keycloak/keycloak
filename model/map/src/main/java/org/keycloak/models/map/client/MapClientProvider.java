@@ -25,6 +25,7 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
@@ -64,7 +65,7 @@ public class MapClientProvider implements ClientProvider {
         this.session = session;
         this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
-        this.tx = clientStore.createTransaction();
+        this.tx = clientStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
@@ -319,6 +320,18 @@ public class MapClientProvider implements ClientProvider {
                 .filter(Objects::nonNull)
                 .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
                 .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
+    }
+
+    public void preRemove(RealmModel realm, RoleModel role) {
+        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
+          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
+        try (Stream<MapClientEntity> toRemove = tx.getUpdatedNotRemoved(mcb)) {
+            toRemove
+                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))
+                .filter(Objects::nonNull)
+                .forEach(clientModel -> clientModel.deleteScopeMapping(role));
+        }
     }
 
     @Override
