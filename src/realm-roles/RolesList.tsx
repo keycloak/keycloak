@@ -22,6 +22,15 @@ type RolesListProps = {
   ) => Promise<RoleRepresentation[]>;
 };
 
+const RoleLink = ({ role }: { role: RoleRepresentation }) => {
+  const { url } = useRouteMatch();
+  return (
+    <Link key={role.id} to={`${url}/${role.id}/details`}>
+      {role.name}
+    </Link>
+  );
+};
+
 export const RolesList = ({
   loader,
   paginated = true,
@@ -37,9 +46,7 @@ export const RolesList = ({
 
   const RoleDetailLink = (role: RoleRepresentation) => (
     <>
-      <Link key={role.id} to={`${url}/${role.id}/details`}>
-        {role.name}
-      </Link>
+      <RoleLink role={role} />
     </>
   );
 

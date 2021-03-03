@@ -66,7 +66,7 @@ export const ClientsSection = () => {
 
   const ClientDetailLink = (client: ClientRepresentation) => (
     <>
-      <Link key={client.id} to={`${url}/${client.id}`}>
+      <Link key={client.id} to={`${url}/${client.id}/settings`}>
         {client.clientId}
         {!client.enabled && (
           <Badge isRead className="pf-u-ml-sm">

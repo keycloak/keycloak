@@ -21,7 +21,7 @@ export const ClientScopesSection = () => {
 
   const ClientScopeDetailLink = (clientScope: ClientScopeRepresentation) => (
     <>
-      <Link key={clientScope.id} to={`${url}/${clientScope.id}`}>
+      <Link key={clientScope.id} to={`${url}/${clientScope.id}/settings`}>
         {clientScope.name}
       </Link>
     </>

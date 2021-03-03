@@ -44,7 +44,7 @@ export const NewClientForm = () => {
     try {
       const newClient = await adminClient.clients.create({ ...client });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(`/${realm}/clients/${newClient.id}`);
+      history.push(`/${realm}/clients/${newClient.id}/settings`);
     } catch (error) {
       addAlert(t("createError", { error }), AlertVariant.danger);
     }
