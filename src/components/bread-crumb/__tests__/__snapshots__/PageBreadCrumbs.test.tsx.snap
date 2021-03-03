@@ -136,7 +136,7 @@ exports[`BreadCrumbs tests couple of crumbs 1`] = `
               </AngleRightIcon>
             </span>
             <span
-              key="/master/clients/1234"
+              key="/master/clients/1234/settings"
             >
               Client details
             </span>
