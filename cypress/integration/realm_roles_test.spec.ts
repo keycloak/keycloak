@@ -4,6 +4,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
+import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
 
 let itemId = "realm_role_crud";
 const loginPage = new LoginPage();
@@ -12,6 +13,7 @@ const modalUtils = new ModalUtils();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const createRealmRolePage = new CreateRealmRolePage();
+const associatedRolesPage = new AssociatedRolesPage();
 
 describe("Realm roles test", function () {
   describe("Realm roles creation", function () {
@@ -48,7 +50,7 @@ describe("Realm roles test", function () {
 
       listingPage.searchItem(itemId).itemExist(itemId);
 
-      // Update
+      cy.wait(100);
 
       // Delete
       listingPage.deleteItem(itemId);
@@ -70,40 +72,15 @@ describe("Realm roles test", function () {
 
       masthead.checkNotificationMessage("Role created");
 
+      cy.wait(100);
+
       // Add associated realm role
-      cy.get("#roles-actions-dropdown").last().click();
 
-      cy.get("#add-roles").click();
-
-      cy.wait(100);
-
-      cy.get('[type="checkbox"]').eq(1).check();
-
-      cy.get("#add-associated-roles-button").contains("Add").click();
-
-      cy.url().should("include", "/AssociatedRoles");
-
-      cy.get("#composite-role-badge").should("contain.text", "Composite");
-
-      cy.wait(100);
+      associatedRolesPage.addAssociatedRealmRole();
 
       // Add associated client role
 
-      cy.get('[data-cy=add-role-button]').click();
-
-      cy.wait(100);
-
-      cy.get('[data-cy=filter-type-dropdown]').click()
-
-      cy.get('[data-cy=filter-type-dropdown-item]').click()
-
-      cy.wait(2500);
-
-      cy.get('[type="checkbox"]').eq(40).check({force: true});
-
-      cy.get("#add-associated-roles-button").contains("Add").click();
-
-      cy.wait(2500);
+      associatedRolesPage.addAssociatedClientRole();
     });
   });
 });

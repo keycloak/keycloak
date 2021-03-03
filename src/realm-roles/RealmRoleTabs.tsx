@@ -23,6 +23,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
+import { UsersInRoleTab } from "./UsersInRoleTab";
 
 const arrayToAttributes = (attributeArray: KeyValueType[]) => {
   const initValue: { [index: string]: string[] } = {};
@@ -254,7 +255,6 @@ export const RealmRoleTabs = () => {
       <ViewHeader
         titleKey={role?.name || t("createRole")}
         badge={additionalRoles.length > 0 ? t("composite") : ""}
-        badgeId="composite-role-badge"
         badgeIsRead={true}
         subKey={id ? "" : "roles:roleCreateExplain"}
         actionsDropdownId="roles-actions-dropdown"
@@ -287,7 +287,7 @@ export const RealmRoleTabs = () => {
                 </DropdownItem>,
                 <DropdownItem
                   key="toggle-modal"
-                  id="add-roles"
+                  data-testid="add-roles"
                   component="button"
                   onClick={() => toggleModal()}
                 >
@@ -335,6 +335,12 @@ export const RealmRoleTabs = () => {
                 array={{ fields, append, remove }}
                 reset={() => form.reset(role)}
               />
+            </Tab>
+            <Tab
+              eventKey="users-in-role"
+              title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
+            >
+              <UsersInRoleTab data-cy="users-in-role-tab" />
             </Tab>
           </KeycloakTabs>
         )}

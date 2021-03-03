@@ -177,7 +177,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
       actions={[
         <Button
           key="add"
-          id="add-associated-roles-button"
+          data-testid="add-associated-roles-button"
           variant="primary"
           isDisabled={!selectedRows?.length}
           onClick={() => {
@@ -206,7 +206,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
         searchTypeComponent={
           <Dropdown
             onSelect={() => onFilterDropdownSelect(filterType)}
-            data-cy="filter-type-dropdown"
+            data-testid="filter-type-dropdown"
             toggle={
               <DropdownToggle
                 id="toggle-id-9"
@@ -220,7 +220,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
             isOpen={isFilterDropdownOpen}
             dropdownItems={[
               <DropdownItem
-                data-cy="filter-type-dropdown-item"
+                data-testid="filter-type-dropdown-item"
                 key="filter-type"
               >
                 {filterType == "roles"
@@ -231,7 +231,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           />
         }
         canSelectAll
-        // isPaginated
+        isPaginated
         onSelect={(rows) => {
           setSelectedRows([...rows]);
         }}

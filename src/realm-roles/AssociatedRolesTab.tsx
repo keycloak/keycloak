@@ -184,13 +184,13 @@ export const AssociatedRolesTab = ({
         <KeycloakDataTable
           key={key}
           loader={loader}
+          isPaginated
           ariaLabelKey="roles:roleList"
           searchPlaceholderKey="roles:searchFor"
           canSelectAll
           onSelect={(rows) => {
             setSelectedRows([...rows]);
           }}
-          isPaginated
           toolbarItem={
             <>
               <Checkbox
@@ -204,7 +204,7 @@ export const AssociatedRolesTab = ({
                 className="kc-add-role-button"
                 key="add-role-button"
                 onClick={() => toggleModal()}
-                data-cy="add-role-button"
+                data-testid="add-role-button"
               >
                 {t("addRole")}
               </Button>

@@ -24,5 +24,33 @@
   --pf-c-form__group--m-action--MarginTop: calc(
     var(--pf-global--spacer--2xl) - var(--pf-global--spacer--sm)
   );
-  
 }
+
+.kc-who-will-appear-button {
+  padding-left: 0px;
+}
+
+.pf-c-button.pf-m-link.kc-groups-link {
+  font-size: var(--pf-global--FontSize--sm);
+  padding-left: 0px;
+  padding-right: var(--pf-global--spacer--xs);
+  padding-top: 0px;
+}
+
+.pf-c-button.pf-m-link.kc-users-link {
+  font-size: var(--pf-global--FontSize--sm);
+  padding-left: var(--pf-global--spacer--xs);
+  padding-right: var(--pf-global--spacer--xs);
+  padding-top: 0px;
+}
+
+.pf-c-button.pf-m-link.kc-groups-link-empty-state {
+  padding-left: var(--pf-global--spacer--xs);
+  padding-right: var(--pf-global--spacer--xs);
+}
+
+.pf-c-button.pf-m-link.kc-users-link-empty-state {
+  padding-left: var(--pf-global--spacer--xs);
+  padding-right: var(--pf-global--spacer--xs);
+}
+

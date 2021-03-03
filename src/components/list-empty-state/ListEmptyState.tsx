@@ -19,7 +19,7 @@ export type Action = {
 
 export type ListEmptyStateProps = {
   message: string;
-  instructions: string;
+  instructions: React.ReactNode;
   primaryActionText?: string;
   onPrimaryAction?: MouseEventHandler<HTMLButtonElement>;
   hasIcon?: boolean;
