@@ -27,7 +27,6 @@ import java.net.URISyntaxException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +40,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -102,12 +102,14 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.testsuite.util.RoleBuilder;
 
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
 
 @EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
@@ -1251,33 +1253,30 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     @Test
     public void testHolderOfKeyEnforceExecutor() throws Exception {
-        String policyName = POLICY_NAME;
+        Assume.assumeTrue("This test must be executed with enabled TLS.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
+
+        final String policyName = POLICY_NAME;
         createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
         logger.info("... Created Policy : " + policyName);
 
-        String conditionName = AnyClientCondition_NAME;
-        createCondition(conditionName, AnyClientConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {});
+        final String conditionName = AnyClientCondition_NAME;
+        createCondition(conditionName, AnyClientConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
         registerCondition(conditionName, policyName);
         logger.info("... Registered Condition : " + conditionName);
 
-        String executorName = HolderOfKeyEnforceExecutor_NAME;
-        createExecutor(executorName, HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
-            setExecutorAugmentActivate(provider);
-        });
+        final String executorName = HolderOfKeyEnforceExecutor_NAME;
+        createExecutor(executorName, HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, null, this::setExecutorAugmentActivate);
         registerExecutor(executorName, policyName);
         logger.info("... Registered Executor : " + executorName);
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT);
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
-        clientResource.update(clientRep);
-        try {
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CLIENT)) {
+            ClientRepresentation clientRep = cau.getResource().toRepresentation();
+            Assert.assertNotNull(clientRep);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
+            cau.update();
+
             checkMtlsFlow();
-        } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT);
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(false);
-            clientResource.update(clientRep);
         }
     }
 
