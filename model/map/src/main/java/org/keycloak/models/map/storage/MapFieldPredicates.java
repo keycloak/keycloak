@@ -62,6 +62,7 @@ public class MapFieldPredicates {
     static {
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.REALM_ID,             AbstractClientEntity::getRealmId);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.CLIENT_ID,            AbstractClientEntity::getClientId);
+        put(CLIENT_PREDICATES, ClientModel.SearchableFields.SCOPE_MAPPING_ROLE,   MapFieldPredicates::checkScopeMappingRole);
 
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.REALM_ID,  AbstractClientScopeEntity::getRealmId);
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.NAME,      AbstractClientScopeEntity::getName);
@@ -134,6 +135,13 @@ public class MapFieldPredicates {
         }
         String s = (String) ob;
         return s;
+    }
+
+    private static MapModelCriteriaBuilder<Object, AbstractClientEntity<Object>, ClientModel> checkScopeMappingRole(MapModelCriteriaBuilder<Object, AbstractClientEntity<Object>, ClientModel> mcb, Operator op, Object[] values) {
+        String roleIdS = ensureEqSingleValue(ClientModel.SearchableFields.SCOPE_MAPPING_ROLE, "role_id", op, values);
+        Function<AbstractClientEntity<Object>, ?> getter;
+        getter = ce -> ce.getScopeMappings().contains(roleIdS);
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
     private static MapModelCriteriaBuilder<Object, AbstractGroupEntity<Object>, GroupModel> checkGrantedGroupRole(MapModelCriteriaBuilder<Object, AbstractGroupEntity<Object>, GroupModel> mcb, Operator op, Object[] values) {

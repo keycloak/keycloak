@@ -52,6 +52,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.jpa.entities.ClientEntity;
@@ -335,14 +336,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         }
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
-        realm.getClientsStream().forEach(c -> c.deleteScopeMapping(role));
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
-        session.groups().preRemove(realm, role);
 
         em.flush();
         em.remove(roleEntity);
 
-        session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
+        session.getKeycloakSessionFactory().publish(roleRemovedEvent(role));
+
+        em.flush();
+        return true;
+
+    }
+
+    public RoleRemovedEvent roleRemovedEvent(RoleModel role) {
+        return new RoleContainerModel.RoleRemovedEvent() {
             @Override
             public RoleModel getRole() {
                 return role;
@@ -352,11 +359,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             public KeycloakSession getKeycloakSession() {
                 return session;
             }
-        });
-
-        em.flush();
-        return true;
-
+        };
     }
 
     @Override
@@ -584,11 +587,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         subGroup.setParent(null);
     }
 
-    @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         // GroupProvider method implementation starts here
         em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", role.getId()).executeUpdate();
         // GroupProvider method implementation ends here
+
+        // ClientProvider implementation
+        String clientScopeMapping = JpaUtils.getTableNameForNativeQuery("SCOPE_MAPPING", em);
+        em.createNativeQuery("delete from " + clientScopeMapping + " where ROLE_ID = :role").setParameter("role", role.getId()).executeUpdate();
     }
 
     @Override
