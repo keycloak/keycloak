@@ -4,6 +4,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
+import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
 
 let itemId = "realm_role_crud";
 const loginPage = new LoginPage();
@@ -12,6 +13,7 @@ const modalUtils = new ModalUtils();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const createRealmRolePage = new CreateRealmRolePage();
+const associatedRolesPage = new AssociatedRolesPage();
 
 describe("Realm roles test", function () {
   describe("Realm roles creation", function () {
@@ -48,7 +50,7 @@ describe("Realm roles test", function () {
 
       listingPage.searchItem(itemId).itemExist(itemId);
 
-      // Update
+      cy.wait(100);
 
       // Delete
       listingPage.deleteItem(itemId);
@@ -70,45 +72,15 @@ describe("Realm roles test", function () {
 
       masthead.checkNotificationMessage("Role created");
 
-      // Add associated realm role
-      cy.get("[data-testid=action-dropdown]").last().click();
-
-      cy.get("[data-testid=add-roles]").click();
-
       cy.wait(100);
 
-      cy.get('[type="checkbox"]').eq(1).check();
+      // Add associated realm role
 
-      cy.get("[data-testid=add-associated-roles-button]").contains("Add").click();
-
-      cy.url().should("include", "/AssociatedRoles");
-
-      cy.get("[data-testid=composite-role-badge]").should("contain.text", "Composite");
-
-      cy.wait(2500);
+      associatedRolesPage.addAssociatedRealmRole();
 
       // Add associated client role
 
-      cy.get("[data-testid=add-role-button]").click();
-
-      cy.wait(100);
-
-      cy.get("[data-testid=filter-type-dropdown]").click();
-
-      cy.get("[data-testid=filter-type-dropdown-item]").click();
-
-      cy.wait(2500);
-
-      cy.get('[type="checkbox"]').eq(40).check({force: true});
-
-      cy.get("[data-testid=add-associated-roles-button]").contains("Add").click();
-
-      cy.wait(2500);
-
-      cy.contains("Users in role")
-        .click()
-        .get('[data-testid="users-page"]')
-        .should('exist')
+      associatedRolesPage.addAssociatedClientRole();
     });
   });
 });
