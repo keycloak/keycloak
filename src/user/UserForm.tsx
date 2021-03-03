@@ -6,7 +6,6 @@ import {
   Select,
   SelectOption,
   Switch,
-  TextArea,
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -219,7 +218,11 @@ export const UserForm = ({ form, save }: UserFormProps) => {
         <Button variant="primary" type="submit">
           {t("common:Create")}
         </Button>
-        <Button onClick={() => history.push(`/${realm}/users`)} variant="link">
+        <Button
+          data-testid="cancel-create-user"
+          onClick={() => history.push(`/${realm}/users`)}
+          variant="link"
+        >
           {t("common:cancel")}
         </Button>
       </ActionGroup>

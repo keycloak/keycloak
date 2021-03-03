@@ -194,7 +194,9 @@ export const UsersSection = () => {
             toolbarItem={
               <>
                 <ToolbarItem>
-                  <Button onClick={goToCreate}>{t("addUser")}</Button>
+                  <Button data-testid="add-user" onClick={goToCreate}>
+                    {t("addUser")}
+                  </Button>
                 </ToolbarItem>
                 <ToolbarItem>
                   <Button
