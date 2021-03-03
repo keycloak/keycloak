@@ -53,7 +53,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
     public MapClientScopeProvider(KeycloakSession session, MapStorage<UUID, MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
         this.session = session;
         this.clientScopeStore = clientScopeStore;
-        this.tx = clientScopeStore.createTransaction();
+        this.tx = clientScopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 

@@ -51,7 +51,7 @@ public class MapGroupProvider implements GroupProvider {
     public MapGroupProvider(KeycloakSession session, MapStorage<UUID, MapGroupEntity, GroupModel> groupStore) {
         this.session = session;
         this.groupStore = groupStore;
-        this.tx = groupStore.createTransaction();
+        this.tx = groupStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
@@ -295,7 +295,6 @@ public class MapGroupProvider implements GroupProvider {
         subGroup.setParent(null);
     }
 
-    @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         LOG.tracef("preRemove(%s, %s)%s", realm, role, getShortStackTrace());
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
