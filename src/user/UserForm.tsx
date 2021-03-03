@@ -21,7 +21,10 @@ export type UserFormProps = {
   save: (user: UserRepresentation) => void;
 };
 
-export const UserForm = ({ form, save }: UserFormProps) => {
+export const UserForm = ({
+  form: { handleSubmit, register, errors, watch, control },
+  save,
+}: UserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
 
@@ -31,6 +34,8 @@ export const UserForm = ({ form, save }: UserFormProps) => {
   ] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const history = useHistory();
+
+  const watchUsernameInput = watch("username");
 
   const requiredUserActionsOptions = [
     <SelectOption key={0} value="Configure OTP">
@@ -58,7 +63,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
   return (
     <FormAccess
       isHorizontal
-      onSubmit={form.handleSubmit(save)}
+      onSubmit={handleSubmit(save)}
       role="manage-users"
       className="pf-u-mt-lg"
     >
@@ -66,24 +71,25 @@ export const UserForm = ({ form, save }: UserFormProps) => {
         label={t("username")}
         fieldId="kc-username"
         isRequired
-        validated={form.errors.username ? "error" : "default"}
+        validated={errors.username ? "error" : "default"}
         helperTextInvalid={t("common:required")}
       >
         <TextInput
-          ref={form.register()}
+          ref={register({ required: true })}
           type="text"
           id="kc-username"
           name="username"
         />
       </FormGroup>
+
       <FormGroup
         label={t("email")}
         fieldId="kc-description"
-        validated={form.errors.email ? "error" : "default"}
-        helperTextInvalid={form.errors.email?.message}
+        validated={errors.email ? "error" : "default"}
+        helperTextInvalid={errors.email?.message}
       >
         <TextInput
-          ref={form.register()}
+          ref={register()}
           type="text"
           id="kc-email"
           name="email"
@@ -105,7 +111,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
         <Controller
           name="user-email-verified"
           defaultValue={false}
-          control={form.control}
+          control={control}
           render={({ onChange, value }) => (
             <Switch
               id={"kc-user-email-verified"}
@@ -121,11 +127,11 @@ export const UserForm = ({ form, save }: UserFormProps) => {
       <FormGroup
         label={t("firstName")}
         fieldId="kc-firstname"
-        validated={form.errors.firstName ? "error" : "default"}
+        validated={errors.firstName ? "error" : "default"}
         helperTextInvalid={t("common:required")}
       >
         <TextInput
-          ref={form.register()}
+          ref={register()}
           type="text"
           id="kc-firstname"
           name="firstname"
@@ -134,10 +140,10 @@ export const UserForm = ({ form, save }: UserFormProps) => {
       <FormGroup
         label={t("lastName")}
         fieldId="kc-name"
-        validated={form.errors.lastName ? "error" : "default"}
+        validated={errors.lastName ? "error" : "default"}
       >
         <TextInput
-          ref={form.register()}
+          ref={register()}
           type="text"
           id="kc-lastname"
           name="lastname"
@@ -158,7 +164,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
         <Controller
           name="user-enabled"
           defaultValue={false}
-          control={form.control}
+          control={control}
           render={({ onChange, value }) => (
             <Switch
               id={"kc-user-enabled"}
@@ -174,7 +180,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
       <FormGroup
         label={t("requiredUserActions")}
         fieldId="kc-required-user-actions"
-        validated={form.errors.requiredActions ? "error" : "default"}
+        validated={errors.requiredActions ? "error" : "default"}
         helperTextInvalid={t("common:required")}
         labelIcon={
           <HelpItem
@@ -188,7 +194,7 @@ export const UserForm = ({ form, save }: UserFormProps) => {
           name="required-user-actions"
           defaultValue={["0"]}
           typeAheadAriaLabel="Select an action"
-          control={form.control}
+          control={control}
           render={() => (
             <Select
               placeholderText="Select action"
@@ -217,7 +223,11 @@ export const UserForm = ({ form, save }: UserFormProps) => {
         ></Controller>
       </FormGroup>
       <ActionGroup>
-        <Button variant="primary" type="submit">
+        <Button
+          isDisabled={!watchUsernameInput}
+          variant="primary"
+          type="submit"
+        >
           {t("common:Create")}
         </Button>
         <Button
