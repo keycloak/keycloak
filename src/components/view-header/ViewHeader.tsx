@@ -36,6 +36,7 @@ export type ViewHeaderProps = {
   lowerDropdownMenuTitle?: any;
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
+  divider?: boolean;
 };
 
 export const ViewHeader = ({
@@ -51,6 +52,7 @@ export const ViewHeader = ({
   lowerDropdownItems,
   isEnabled = true,
   onToggle,
+  divider = true,
 }: ViewHeaderProps) => {
   const { t } = useTranslation();
   const { enabled } = useContext(HelpContext);

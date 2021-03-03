@@ -8,6 +8,8 @@ import {
   ButtonVariant,
   PageSection,
   ToolbarItem,
+  Tab,
+  TabTitleText,
 } from "@patternfly/react-core";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -18,6 +20,8 @@ import { useAlerts } from "../components/alert/Alerts";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { InitialAccessTokenList } from "./InitialAccessTokenList";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -82,81 +86,105 @@ export const ClientsSection = () => {
       <ViewHeader
         titleKey="clients:clientList"
         subKey="clients:clientsExplain"
+        divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <DeleteConfirm />
-        <KeycloakDataTable
-          key={key}
-          loader={loader}
-          isPaginated
-          ariaLabelKey="clients:clientList"
-          searchPlaceholderKey="clients:searchForClient"
-          toolbarItem={
-            <>
+        <KeycloakTabs
+          isBox
+          inset={{
+            default: "insetNone",
+            md: "insetSm",
+            xl: "inset2xl",
+            "2xl": "insetLg",
+          }}
+        >
+          <Tab
+            data-testid="list"
+            eventKey="list"
+            title={<TabTitleText>{t("clientsList")}</TabTitleText>}
+          >
+            <DeleteConfirm />
+            <KeycloakDataTable
+              key={key}
+              loader={loader}
+              isPaginated
+              ariaLabelKey="clients:clientList"
+              searchPlaceholderKey="clients:searchForClient"
+              toolbarItem={
+                <>
               <ToolbarItem>
-                <Button onClick={() => history.push(`${url}/add-client`)}>
-                  {t("createClient")}
-                </Button>
+                  <Button onClick={() => history.push(`${url}/add-client`)}>
+                    {t("createClient")}
+                  </Button>
               </ToolbarItem>
               <ToolbarItem>
-                <Button
-                  onClick={() => history.push(`${url}/import-client`)}
-                  variant="link"
-                >
-                  {t("importClient")}
-                </Button>
+                  <Button
+                    onClick={() => history.push(`${url}/import-client`)}
+                    variant="link"
+                  >
+                    {t("importClient")}
+                  </Button>
               </ToolbarItem>
-            </>
-          }
-          actions={[
-            {
-              title: t("common:export"),
-              onRowClick: (client) => {
-                exportClient(client);
-              },
-            },
-            {
-              title: t("common:delete"),
-              onRowClick: (client) => {
-                setSelectedClient(client);
-                toggleDeleteDialog();
-              },
-            },
-          ]}
-          columns={[
-            {
-              name: "clientId",
-              displayKey: "clients:clientID",
-              cellRenderer: ClientDetailLink,
-            },
-            { name: "protocol", displayKey: "common:type" },
-            {
-              name: "description",
-              displayKey: "common:description",
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "baseUrl",
-              displayKey: "clients:homeURL",
-              cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
-              cellRenderer: (client) => {
-                if (client.rootUrl) {
-                  if (
-                    !client.rootUrl.startsWith("http") ||
-                    client.rootUrl.indexOf("$") !== -1
-                  ) {
-                    client.rootUrl =
-                      client.rootUrl
-                        .replace("${authBaseUrl}", baseUrl)
-                        .replace("${authAdminUrl}", baseUrl) +
-                      (client.baseUrl ? client.baseUrl.substr(1) : "");
-                  }
-                }
-                return client.rootUrl;
-              },
-            },
-          ]}
-        />
+                </>
+              }
+              actions={[
+                {
+                  title: t("common:export"),
+                  onRowClick: (client) => {
+                    exportClient(client);
+                  },
+                },
+                {
+                  title: t("common:delete"),
+                  onRowClick: (client) => {
+                    setSelectedClient(client);
+                    toggleDeleteDialog();
+                  },
+                },
+              ]}
+              columns={[
+                {
+                  name: "clientId",
+                  displayKey: "clients:clientID",
+                  cellRenderer: ClientDetailLink,
+                },
+                { name: "protocol", displayKey: "common:type" },
+                {
+                  name: "description",
+                  displayKey: "common:description",
+                  cellFormatters: [emptyFormatter()],
+                },
+                {
+                  name: "baseUrl",
+                  displayKey: "clients:homeURL",
+                  cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
+                  cellRenderer: (client) => {
+                    if (client.rootUrl) {
+                      if (
+                        !client.rootUrl.startsWith("http") ||
+                        client.rootUrl.indexOf("$") !== -1
+                      ) {
+                        client.rootUrl =
+                          client.rootUrl
+                            .replace("${authBaseUrl}", baseUrl)
+                            .replace("${authAdminUrl}", baseUrl) +
+                          (client.baseUrl ? client.baseUrl.substr(1) : "");
+                      }
+                    }
+                    return client.rootUrl;
+                  },
+                },
+              ]}
+            />
+          </Tab>
+          <Tab
+            data-testid="initialAccessToken"
+            eventKey="initialAccessToken"
+            title={<TabTitleText>{t("initialAccessToken")}</TabTitleText>}
+          >
+            <InitialAccessTokenList />
+          </Tab>
+        </KeycloakTabs>
       </PageSection>
     </>
   );

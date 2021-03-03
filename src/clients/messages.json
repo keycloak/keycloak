@@ -52,6 +52,8 @@
     "noGeneratedAccessToken": "No generated access token",
     "generatedAccessTokenIsDisabled": "Generated access token is disabled when no user is selected",
     "clientList": "Clients",
+    "clientsList": "Clients list",
+    "initialAccessToken": "Initial access token",
     "clientSettings": "Client details",
     "selectEncryptionType": "Select Encryption type",
     "generalSettings": "General Settings",

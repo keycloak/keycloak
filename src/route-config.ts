@@ -49,6 +49,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "query-clients",
   },
   {
+    path: "/:realm/clients/:tab?",
+    component: ClientsSection,
+    breadcrumb: null,
+    access: "query-clients",
+  },
+  {
     path: "/:realm/clients/add-client",
     component: NewClientForm,
     breadcrumb: t("clients:createClient"),
