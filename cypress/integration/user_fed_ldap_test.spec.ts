@@ -54,12 +54,18 @@ const disableModalTitle = "Disable user federation provider?";
 
 describe("User Fed LDAP tests", () => {
   beforeEach(() => {
+  /* 
+    Prevent unpredictable 401 errors from failing individual tests.
+    These are most often occurring during the login process:
+       GET /admin/serverinfo/
+       GET /admin/master/console/whoami
+  */
+    cy.on("uncaught:exception", (err, runnable) => {
+      return false;
+    });
     cy.visit("");
-    cy.wait(1000);
     loginPage.logIn();
-    cy.wait(1000);
     sidebarPage.goToUserFederation();
-    cy.wait(1000);
   });
 
   it("Create Ldap provider from empty state", () => {

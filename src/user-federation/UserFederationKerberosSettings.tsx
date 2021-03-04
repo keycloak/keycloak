@@ -120,6 +120,7 @@ export const UserFederationKerberosSettings = () => {
       if (id) {
         if (id === "new") {
           await adminClient.components.create(component);
+          history.push(`/${realm}/user-federation`);
         } else {
           await adminClient.components.update({ id }, component);
         }
