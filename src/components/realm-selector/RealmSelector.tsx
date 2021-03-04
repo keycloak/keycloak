@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, ReactElement } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -104,7 +104,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
           screenReaderLabel={toUpperCase(realm)}
           onToggle={() => setOpen(!open)}
           onSelect={(_, r) => {
-            const value = ((r as unknown) as any).props.value;
+            const value = (r as ReactElement).props.value;
             setRealm(value || "master");
             setOpen(!open);
           }}
