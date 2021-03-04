@@ -242,12 +242,12 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
+            <version>${postgresql.driver.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>${mariadb.version}</version>
+            <version>${mariadb.driver.version}</version>
         </dependency>
     </dependencies>
 
