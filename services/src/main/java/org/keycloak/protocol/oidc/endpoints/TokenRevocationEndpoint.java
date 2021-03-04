@@ -99,6 +99,8 @@ public class TokenRevocationEndpoint {
 
         formParams = request.getDecodedFormParameters();
 
+        checkParameterDuplicated(formParams);
+
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
         } catch (ClientPolicyException cpe) {
@@ -217,6 +219,14 @@ public class TokenRevocationEndpoint {
         }
 
         event.user(user);
+    }
+
+    private void checkParameterDuplicated(MultivaluedMap<String, String> formParams) {
+        for (String key : formParams.keySet()) {
+            if (formParams.get(key).size() != 1) {
+                throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "duplicated parameter", Response.Status.BAD_REQUEST);
+            }
+        }
     }
 
     private void revokeClient() {
