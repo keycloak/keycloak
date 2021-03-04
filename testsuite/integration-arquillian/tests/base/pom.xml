@@ -372,6 +372,7 @@
                                             <time>300000</time>
                                             <exec>
                                               <postStart>${docker.database.postStart}</postStart>
+                                              <breakOnError>true</breakOnError>
                                             </exec>
                                         </wait>
                                     </run>
