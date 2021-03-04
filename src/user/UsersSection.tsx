@@ -188,7 +188,7 @@ export const UsersSection = () => {
                 message={t("noUsersFound")}
                 instructions={t("emptyInstructions")}
                 primaryActionText={t("createNewUser")}
-                onPrimaryAction={() => {}}
+                onPrimaryAction={goToCreate}
               />
             }
             toolbarItem={

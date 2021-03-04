@@ -12,6 +12,7 @@ import {
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useForm } from "react-hook-form";
+import { useHistory, useRouteMatch } from "react-router-dom";
 
 type SearchUserProps = {
   onSearch: (search: string) => void;
@@ -20,6 +21,11 @@ type SearchUserProps = {
 export const SearchUser = ({ onSearch }: SearchUserProps) => {
   const { t } = useTranslation("users");
   const { register, handleSubmit } = useForm<{ search: string }>();
+  const { url } = useRouteMatch();
+  const history = useHistory();
+
+  const goToCreate = () => history.push(`${url}/add-user`);
+
   return (
     <EmptyState>
       <Title headingLevel="h4" size="lg">
@@ -44,7 +50,7 @@ export const SearchUser = ({ onSearch }: SearchUserProps) => {
           </InputGroup>
         </Form>
       </EmptyStateBody>
-      <Button variant="link" onClick={() => {}}>
+      <Button variant="link" onClick={goToCreate}>
         {t("createNewUser")}
       </Button>
     </EmptyState>
