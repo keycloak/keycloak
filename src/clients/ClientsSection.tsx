@@ -112,19 +112,19 @@ export const ClientsSection = () => {
               searchPlaceholderKey="clients:searchForClient"
               toolbarItem={
                 <>
-              <ToolbarItem>
-                  <Button onClick={() => history.push(`${url}/add-client`)}>
-                    {t("createClient")}
-                  </Button>
-              </ToolbarItem>
-              <ToolbarItem>
-                  <Button
-                    onClick={() => history.push(`${url}/import-client`)}
-                    variant="link"
-                  >
-                    {t("importClient")}
-                  </Button>
-              </ToolbarItem>
+                  <ToolbarItem>
+                    <Button onClick={() => history.push(`${url}/add-client`)}>
+                      {t("createClient")}
+                    </Button>
+                  </ToolbarItem>
+                  <ToolbarItem>
+                    <Button
+                      onClick={() => history.push(`${url}/import-client`)}
+                      variant="link"
+                    >
+                      {t("importClient")}
+                    </Button>
+                  </ToolbarItem>
                 </>
               }
               actions={[
