@@ -40,13 +40,13 @@ export const InitialAccessTokenList = () => {
         {
           name: "timestamp",
           displayKey: "clients:timestamp",
-          cellRenderer: (row) => moment(row.timestamp * 1000).format("LLL"),
+          cellRenderer: (row) => moment(row.timestamp! * 1000).format("LLL"),
         },
         {
           name: "expiration",
           displayKey: "clients:expires",
           cellRenderer: (row) =>
-            moment(row.timestamp * 1000 + row.expiration * 1000).fromNow(),
+            moment(row.timestamp! * 1000 + row.expiration! * 1000).fromNow(),
         },
         {
           name: "count",
