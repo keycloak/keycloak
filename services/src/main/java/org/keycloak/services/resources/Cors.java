@@ -194,11 +194,7 @@ public class Cors {
             return;
         }
 
-        if (allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)) {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
-        } else {
-            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-        }
+        response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
         if (preflight) {
             if (allowedMethods != null) {

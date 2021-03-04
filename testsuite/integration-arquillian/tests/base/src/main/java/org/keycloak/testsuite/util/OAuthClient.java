@@ -726,6 +726,9 @@ public class OAuthClient {
         } else if (clientId != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
+        if (origin != null) {
+            post.addHeader("Origin", origin);
+        }
 
         UrlEncodedFormEntity formEntity;
         try {

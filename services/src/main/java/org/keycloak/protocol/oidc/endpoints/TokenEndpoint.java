@@ -263,7 +263,7 @@ public class TokenEndpoint {
     }
 
     private void checkClient() {
-        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event);
+        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         client = clientAuth.getClient();
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
 

@@ -140,7 +140,7 @@ public class TokenRevocationEndpoint {
     }
 
     private void checkClient() {
-        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event);
+        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         client = clientAuth.getClient();
 
         event.client(client);
