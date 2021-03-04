@@ -224,6 +224,7 @@ export const UserForm = ({
       </FormGroup>
       <ActionGroup>
         <Button
+          data-testid="create-user"
           isDisabled={!watchUsernameInput}
           variant="primary"
           type="submit"
