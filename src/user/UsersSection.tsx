@@ -28,6 +28,7 @@ import { emptyFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 import "./user-section.css";
+import { useHistory, useRouteMatch } from "react-router-dom";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
@@ -39,6 +40,8 @@ export const UsersSection = () => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { realm: realmName } = useContext(RealmContext);
+  const history = useHistory();
+  const { url } = useRouteMatch();
   const [listUsers, setListUsers] = useState(false);
   const [initialSearch, setInitialSearch] = useState("");
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
@@ -157,11 +160,13 @@ export const UsersSection = () => {
     );
   };
 
+  const goToCreate = () => history.push(`${url}/add-user`);
+
   return (
     <>
       <DeleteConfirm />
       <ViewHeader titleKey="users:title" subKey="" />
-      <PageSection variant="light">
+      <PageSection data-testid="users-page" variant="light">
         {!listUsers && !initialSearch && (
           <SearchUser
             onSearch={(search) => {
@@ -183,13 +188,15 @@ export const UsersSection = () => {
                 message={t("noUsersFound")}
                 instructions={t("emptyInstructions")}
                 primaryActionText={t("createNewUser")}
-                onPrimaryAction={() => {}}
+                onPrimaryAction={goToCreate}
               />
             }
             toolbarItem={
               <>
                 <ToolbarItem>
-                  <Button>{t("addUser")}</Button>
+                  <Button data-testid="add-user" onClick={goToCreate}>
+                    {t("addUser")}
+                  </Button>
                 </ToolbarItem>
                 <ToolbarItem>
                   <Button

@@ -27,6 +27,7 @@ export type ViewHeaderProps = {
   badge?: string;
   badgeId?: string;
   badgeIsRead?: boolean;
+  dividerComponent?: "div" | "hr" | "li" | undefined;
   subKey: string;
   actionsDropdownId?: string;
   subKeyLinkProps?: FormattedLinkProps;
@@ -42,6 +43,7 @@ export const ViewHeader = ({
   titleKey,
   badge,
   badgeIsRead,
+  dividerComponent,
   subKey,
   subKeyLinkProps,
   dropdownItems,
@@ -159,7 +161,7 @@ export const ViewHeader = ({
           />
         )}
       </PageSection>
-      <Divider />
+      <Divider component={dividerComponent} />
     </>
   );
 };

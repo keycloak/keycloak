@@ -38,7 +38,7 @@ export const ListEmptyState = ({
 }: ListEmptyStateProps) => {
   return (
     <>
-      <EmptyState variant="large">
+      <EmptyState data-testid="empty-state" variant="large">
         {hasIcon && isSearchVariant ? (
           <EmptyStateIcon icon={SearchIcon} />
         ) : (
