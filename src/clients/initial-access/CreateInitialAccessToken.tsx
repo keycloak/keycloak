@@ -47,7 +47,13 @@ export const CreateInitialAccessToken = () => {
   return (
     <>
       {token && (
-        <AccessTokenDialog token={token} toggleDialog={() => setToken("")} />
+        <AccessTokenDialog
+          token={token}
+          toggleDialog={() => {
+            setToken("");
+            history.push(`/${realm}/clients/initialAccessToken`);
+          }}
+        />
       )}
       <ViewHeader
         titleKey="clients:createToken"

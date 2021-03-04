@@ -7,6 +7,7 @@ import { Button } from "@patternfly/react-core";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 export const InitialAccessTokenList = () => {
   const { t } = useTranslation("clients");
@@ -56,6 +57,14 @@ export const InitialAccessTokenList = () => {
           displayKey: "clients:remainingCount",
         },
       ]}
+      emptyState={
+        <ListEmptyState
+          message={t("noTokens")}
+          instructions={t("noTokensInstructions")}
+          primaryActionText={t("common:create")}
+          onPrimaryAction={() => history.push(`${url}/create`)}
+        />
+      }
     />
   );
 };
