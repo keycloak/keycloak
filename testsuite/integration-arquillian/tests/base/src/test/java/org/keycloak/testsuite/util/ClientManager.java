@@ -162,6 +162,28 @@ public class ClientManager {
             clientResource.update(app);
         }
 
+        public ClientManagerBuilder addWebOrigins(String... webOrigins) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            if (app.getWebOrigins() == null) {
+                app.setWebOrigins(new LinkedList<String>());
+            }
+            for (String webOrigin : webOrigins) {
+                app.getWebOrigins().add(webOrigin);
+            }
+            clientResource.update(app);
+            return this;
+        }
+
+        public void removeWebOrigins(String... webOrigins) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            for (String webOrigin : webOrigins) {
+                if (app.getWebOrigins() != null) {
+                    app.getWebOrigins().remove(webOrigin);
+                }
+            }
+            clientResource.update(app);
+        }
+
         // Set valid values of "request_uri" parameter
         public void setRequestUris(String... requestUris) {
             ClientRepresentation app = clientResource.toRepresentation();

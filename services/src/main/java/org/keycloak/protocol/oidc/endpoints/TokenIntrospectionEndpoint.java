@@ -124,7 +124,7 @@ public class TokenIntrospectionEndpoint {
 
     private void authorizeClient() {
         try {
-            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
+            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, null).getClient();
 
             this.event.client(client);
 

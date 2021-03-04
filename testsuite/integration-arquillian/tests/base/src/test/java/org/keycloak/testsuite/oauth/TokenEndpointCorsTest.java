@@ -114,6 +114,29 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         assertCors(response);
     }
 
+    @Test
+    public void accessTokenWithConfidentialClientCorsRequest() throws Exception {
+        oauth.realm("test");
+        oauth.clientId("direct-grant");
+        oauth.origin(VALID_CORS_URL);
+
+        // Successful token request with correct origin - cors should work
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
+        assertCors(response);
+
+        // Invalid client authentication with correct origin - cors should work
+        response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
+        assertEquals(401, response.getStatusCode());
+        assertCors(response);
+
+        // Successful token request with bad origin - cors should NOT work
+        oauth.origin(INVALID_CORS_URL);
+        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
+        assertNotCors(response);
+    }
+
     private static void assertCors(OAuthClient.AccessTokenResponse response) {
         assertEquals("true", response.getHeaders().get("Access-Control-Allow-Credentials"));
         assertEquals(VALID_CORS_URL, response.getHeaders().get("Access-Control-Allow-Origin"));

@@ -146,7 +146,7 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
 
     private void authorizeClient() {
         try {
-            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
+            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, null).getClient();
             event.client(client);
 
             if (client == null || client.isPublicClient()) {
