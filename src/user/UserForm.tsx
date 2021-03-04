@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { Controller, UseFormMethods } from "react-hook-form";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { FormAccess } from "../components/form-access/FormAccess";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
@@ -27,7 +27,6 @@ export const UserForm = ({
 }: UserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
-  const { url } = useRouteMatch();
 
   const [
     isRequiredUserActionsDropdownOpen,
@@ -37,6 +36,8 @@ export const UserForm = ({
   const history = useHistory();
 
   const watchUsernameInput = watch("username");
+
+  const emailRegexPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
   const requiredUserActionsOptions = [
     <SelectOption key={0} value="Configure OTP">
@@ -61,8 +62,6 @@ export const UserForm = ({
     setRequiredUserActionsDropdownOpen(false);
   };
 
-  const goToCreate = () => history.push(`${url}/add-user`);
-
   return (
     <FormAccess
       isHorizontal
@@ -84,16 +83,17 @@ export const UserForm = ({
           name="username"
         />
       </FormGroup>
-
       <FormGroup
         label={t("email")}
         fieldId="kc-description"
         validated={errors.email ? "error" : "default"}
-        helperTextInvalid={errors.email?.message}
+        helperTextInvalid={t("users:emailInvalid")}
       >
         <TextInput
-          ref={register()}
-          type="text"
+          ref={register({
+            pattern: emailRegexPattern,
+          })}
+          type="email"
           id="kc-email"
           name="email"
           aria-label={t("emailInput")}
@@ -137,7 +137,7 @@ export const UserForm = ({
           ref={register()}
           type="text"
           id="kc-firstname"
-          name="firstname"
+          name="firstName"
         />
       </FormGroup>
       <FormGroup
@@ -149,7 +149,7 @@ export const UserForm = ({
           ref={register()}
           type="text"
           id="kc-lastname"
-          name="lastname"
+          name="lastName"
           aria-label={t("lastName")}
         />
       </FormGroup>

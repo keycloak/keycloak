@@ -28,7 +28,7 @@ export const SearchUser = ({ onSearch }: SearchUserProps) => {
 
   return (
     <EmptyState>
-      <Title headingLevel="h4" size="lg">
+      <Title data-testid="search-users-title" headingLevel="h4" size="lg">
         {t("startBySearchingAUser")}
       </Title>
       <EmptyStateBody>
@@ -50,7 +50,7 @@ export const SearchUser = ({ onSearch }: SearchUserProps) => {
           </InputGroup>
         </Form>
       </EmptyStateBody>
-      <Button variant="link" onClick={goToCreate}>
+      <Button data-testid="create-new-user" variant="link" onClick={goToCreate}>
         {t("createNewUser")}
       </Button>
     </EmptyState>

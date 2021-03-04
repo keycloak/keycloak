@@ -17,6 +17,7 @@
     "disabled": "Disabled",
     "disabledHelpText": "A disabled user cannot log in.",
     "emailVerifiedHelpText": "Has the user's email been verified?",
+    "emailInvalid": "You must enter a valid email.",
     "temporaryDisabled": "Temporarily disabled",
     "notVerified": "Not verified",
     "requiredUserActions": "Required user actions",

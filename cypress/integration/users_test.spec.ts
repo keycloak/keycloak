@@ -21,6 +21,8 @@ describe("Users test", () => {
     });
 
     it("Go to create User page", () => {
+      cy.wait(100);
+
       createUserPage.goToCreateUser();
       cy.url().should("include", "users/add-user");
 
@@ -31,9 +33,12 @@ describe("Users test", () => {
 
     it("Create user test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
- 
+
       // Create
+      cy.wait(100);
+
       createUserPage.goToCreateUser();
+
       createUserPage.fillRealmRoleData(itemId).save();
 
       masthead.checkNotificationMessage("The user has been created");

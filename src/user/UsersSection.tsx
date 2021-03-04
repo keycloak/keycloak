@@ -166,7 +166,7 @@ export const UsersSection = () => {
     <>
       <DeleteConfirm />
       <ViewHeader titleKey="users:title" subKey="" />
-      <PageSection variant="light">
+      <PageSection data-testid="users-page" variant="light">
         {!listUsers && !initialSearch && (
           <SearchUser
             onSearch={(search) => {
