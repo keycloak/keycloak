@@ -103,6 +103,7 @@ export const UserFederationKerberosSettings = () => {
   }, []);
 
   const setupForm = (component: ComponentRepresentation) => {
+    form.reset();
     Object.entries(component).map((entry) => {
       form.setValue(
         "config.allowPasswordAuthentication",
@@ -177,7 +178,12 @@ export const UserFederationKerberosSettings = () => {
         <SettingsCache form={form} showSectionHeading />
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
-            <Button variant="primary" type="submit" data-testid="kerberos-save">
+            <Button
+              isDisabled={!form.formState.isDirty}
+              variant="primary"
+              type="submit"
+              data-testid="kerberos-save"
+            >
               {t("common:save")}
             </Button>
             <Button

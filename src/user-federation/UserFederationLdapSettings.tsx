@@ -137,6 +137,7 @@ export const UserFederationLdapSettings = () => {
   }, []);
 
   const setupForm = (component: ComponentRepresentation) => {
+    form.reset();
     Object.entries(component).map((entry) => {
       if (entry[0] === "config") {
         convertToFormValues(entry[1], "config", form.setValue);
@@ -240,7 +241,12 @@ export const UserFederationLdapSettings = () => {
         </ScrollForm>
         <Form onSubmit={form.handleSubmit(save)}>
           <ActionGroup>
-            <Button variant="primary" type="submit" data-testid="ldap-save">
+            <Button
+              isDisabled={!form.formState.isDirty}
+              variant="primary"
+              type="submit"
+              data-testid="ldap-save"
+            >
               {t("common:save")}
             </Button>
             <Button
