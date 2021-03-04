@@ -189,7 +189,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' )" >> $GITHUB_ENV
+        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -245,7 +245,7 @@ jobs:
           fetch-depth: 2
 
       - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' )" >> $GITHUB_ENV
+        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
       - uses: actions/setup-java@v1
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
