@@ -44,6 +44,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -87,13 +88,14 @@ public class AccountConsole {
                 .path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).path("/").build(realm);
 
         if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(accountBaseUrl).build();
+            UriBuilder redirectUri = session.getContext().getUri().getRequestUriBuilder().uri(accountBaseUrl);
+            return Response.status(302).location(redirectUri.build()).build();
         } else {
             Map<String, Object> map = new HashMap<>();
 
             URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
             URI authUrl = uriInfo.getBaseUri();
-            map.put("authUrl", authUrl.toString());
+            map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
             map.put("baseUrl", accountBaseUrl);
             map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
