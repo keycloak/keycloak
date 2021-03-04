@@ -21,7 +21,7 @@ import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { InitialAccessTokenList } from "./InitialAccessTokenList";
+import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");

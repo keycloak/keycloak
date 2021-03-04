@@ -27,6 +27,7 @@ import { UserFederationLdapSettings } from "./user-federation/UserFederationLdap
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 import { SearchGroups } from "./groups/SearchGroups";
+import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
 
 export type RouteDef = BreadcrumbsRoute & {
   access: AccessType;
@@ -53,6 +54,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     component: ClientsSection,
     breadcrumb: null,
     access: "query-clients",
+  },
+  {
+    path: "/:realm/clients/initialAccessToken/create",
+    component: CreateInitialAccessToken,
+    breadcrumb: t("clients:createToken"),
+    access: "manage-clients",
   },
   {
     path: "/:realm/clients/add-client",
