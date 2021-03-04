@@ -73,6 +73,7 @@
     "downloadAdapterConfig": "Download adapter config",
     "disableConfirm": "If you disable this client, you cannot initiate a login or obtain access tokens.",
     "clientDeleteConfirm": "If you delete this client, all associated data will be removed.",
+    "searchInitialAccessToken": "Search token",
     "clientAuthentication": "Client authentication",
     "authentication": "Authentication",
     "authenticationFlow": "Authentication flow",
