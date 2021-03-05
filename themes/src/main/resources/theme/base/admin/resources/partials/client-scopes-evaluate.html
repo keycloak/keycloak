@@ -126,9 +126,17 @@
             <a href="">{{:: 'evaluated-roles' | translate}}</a>
             <kc-tooltip>{{:: 'evaluated-roles.tooltip' | translate}}</kc-tooltip>
         </li>
-        <li class="{{tabCss.tab3}}" data-ng-click="showTab(3)" data-ng-show="isTokenAvailable()">
+        <li class="{{tabCss.tab3}}" data-ng-click="showTab(3)" data-ng-show="isAccessTokenAvailable()">
             <a href="">{{:: 'generated-access-token' | translate}}</a>
             <kc-tooltip>{{:: 'generated-access-token.tooltip' | translate}}</kc-tooltip>
+        </li>
+        <li class="{{tabCss.tab4}}" data-ng-click="showTab(4)" data-ng-show="isIDTokenAvailable()">
+            <a href="">{{:: 'generated-id-token' | translate}}</a>
+            <kc-tooltip>{{:: 'generated-id-token.tooltip' | translate}}</kc-tooltip>
+        </li>
+        <li class="{{tabCss.tab5}}" data-ng-click="showTab(5)" data-ng-show="isUserInfoAvailable()">
+            <a href="">{{:: 'generated-user-info' | translate}}</a>
+            <kc-tooltip>{{:: 'generated-user-info.tooltip' | translate}}</kc-tooltip>
         </li>
     </ul>
 
@@ -246,11 +254,11 @@
     </form>
 
 
-    <!-- Access token -->
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.viewClients">
+    <!-- Example content: One of Access token, ID token or User Info -->
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.viewClients" data-ng-show="exampleTabInfo().isShown">
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-1" data-ng-show="tokenShown()">
-                <textarea class="form-control" rows="20" kc-select-action="click" readonly>{{oidcAccessToken}}</textarea>
+            <div class="col-md-10 col-md-offset-1">
+                <textarea class="form-control" rows="20" kc-select-action="click" readonly>{{exampleTabInfo().value}}</textarea>
             </div>
         </div>
     </form>
