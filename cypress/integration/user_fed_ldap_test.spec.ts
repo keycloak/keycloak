@@ -1,14 +1,17 @@
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import CreateLdapProviderPage from "../support/pages/admin_console/manage/providers/CreateLdapProviderPage";
+import ProviderPage from "../support/pages/admin_console/manage/providers/ProviderPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
-const providersPage = new CreateLdapProviderPage();
+const providersPage = new ProviderPage();
 const modalUtils = new ModalUtils();
+
+const provider = "ldap";
+const allCapProvider = provider.toUpperCase();
 
 const firstLdapName = "my-ldap";
 const firstLdapVendor = "Active Directory";
@@ -85,7 +88,7 @@ describe("User Fed LDAP tests", () => {
       firstUserObjClasses
     );
 
-    providersPage.save();
+    providersPage.save(provider);
 
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
@@ -95,11 +98,11 @@ describe("User Fed LDAP tests", () => {
     providersPage.clickExistingCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
-    providersPage.changeTime(defaultLdapDay, newLdapDay);
-    providersPage.changeTime(defaultLdapHour, newLdapHour);
-    providersPage.changeTime(defaultLdapMinute, newLdapMinute);
+    providersPage.changeCacheTime("day", newLdapDay);
+    providersPage.changeCacheTime("hour", newLdapHour);
+    providersPage.changeCacheTime("minute", newLdapMinute);
 
-    providersPage.save();
+    providersPage.save(provider);
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
@@ -113,11 +116,11 @@ describe("User Fed LDAP tests", () => {
     providersPage.clickExistingCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
-    providersPage.changeTime(newLdapDay, defaultLdapDay);
-    providersPage.changeTime(newLdapHour, defaultLdapHour);
-    providersPage.changeTime(newLdapMinute, defaultLdapMinute);
+    providersPage.changeCacheTime("day", defaultLdapDay);
+    providersPage.changeCacheTime("hour", defaultLdapHour);
+    providersPage.changeCacheTime("minute", defaultLdapMinute);
 
-    providersPage.cancel();
+    providersPage.cancel(provider);
     cy.wait(1000);
 
     providersPage.clickExistingCard(firstLdapName);
@@ -133,7 +136,7 @@ describe("User Fed LDAP tests", () => {
 
   it("Disable an existing LDAP provider", () => {
     providersPage.clickExistingCard(firstLdapName);
-    providersPage.disableEnabledSwitch();
+    providersPage.disableEnabledSwitch(allCapProvider);
 
     modalUtils.checkModalTitle(disableModalTitle).confirmModal();
 
@@ -147,7 +150,7 @@ describe("User Fed LDAP tests", () => {
 
   it("Enable an existing previously-disabled LDAP provider", () => {
     providersPage.clickExistingCard(firstLdapName);
-    providersPage.enableEnabledSwitch();
+    providersPage.enableEnabledSwitch(allCapProvider);
 
     masthead.checkNotificationMessage(savedSuccessMessage);
 
@@ -171,7 +174,7 @@ describe("User Fed LDAP tests", () => {
       secondUuidLdapAtt,
       secondUserObjClasses
     );
-    providersPage.save();
+    providersPage.save(provider);
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
   });
@@ -183,7 +186,7 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Delete an LDAP provider using the Settings view's Action menu", () => {
-    providersPage.deleteCardFromMenu(firstLdapName);
+    providersPage.deleteCardFromMenu(provider, firstLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });

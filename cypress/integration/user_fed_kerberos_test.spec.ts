@@ -1,14 +1,17 @@
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import CreateKerberosProviderPage from "../support/pages/admin_console/manage/providers/CreateKerberosProviderPage";
+import ProviderPage from "../support/pages/admin_console/manage/providers/ProviderPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
-const providersPage = new CreateKerberosProviderPage();
+const providersPage = new ProviderPage();
 const modalUtils = new ModalUtils();
+
+const provider = "kerberos";
+const initCapProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
 
 const firstKerberosName = "my-kerberos";
 const firstKerberosRealm = "my-realm";
@@ -29,6 +32,7 @@ const newKerberosDay = "Wednesday";
 const newKerberosHour = "15";
 const newKerberosMinute = "55";
 
+const addProviderMenu = "Add new provider";
 const createdSuccessMessage = "User federation provider successfully created";
 const savedSuccessMessage = "User federation provider successfully saved";
 const deletedSuccessMessage = "The user federation provider has been deleted.";
@@ -52,14 +56,14 @@ describe("User Fed Kerberos tests", () => {
     });
 
   it("Create Kerberos provider from empty state", () => {
-    providersPage.clickNewCard("kerberos");
+    providersPage.clickNewCard(provider);
     providersPage.fillKerberosRequiredData(
       firstKerberosName,
       firstKerberosRealm,
       firstKerberosPrincipal,
       firstKerberosKeytab
     );
-    providersPage.save();
+    providersPage.save(provider);
 
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
@@ -68,10 +72,10 @@ describe("User Fed Kerberos tests", () => {
   it("Update an existing Kerberos provider and save", () => {
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.selectCacheType(newPolicy);
-    providersPage.changeTime(defaultKerberosDay, newKerberosDay);
-    providersPage.changeTime(defaultKerberosHour, newKerberosHour);
-    providersPage.changeTime(defaultKerberosMinute, newKerberosMinute);
-    providersPage.save();
+    providersPage.changeCacheTime("day", newKerberosDay);
+    providersPage.changeCacheTime("hour", newKerberosHour);
+    providersPage.changeCacheTime("minute", newKerberosMinute);
+    providersPage.save(provider);
 
     masthead.checkNotificationMessage(savedSuccessMessage);
     sidebarPage.goToUserFederation();
@@ -84,12 +88,10 @@ describe("User Fed Kerberos tests", () => {
   it("Change existing Kerberos provider and click button to cancel", () => {
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.selectCacheType(newPolicy);
-
-    providersPage.changeTime(newKerberosDay, defaultKerberosDay);
-    providersPage.changeTime(newKerberosHour, defaultKerberosHour);
-    providersPage.changeTime(newKerberosMinute, defaultKerberosMinute);
-
-    providersPage.cancel();
+    providersPage.changeCacheTime("day", defaultKerberosDay);
+    providersPage.changeCacheTime("hour", defaultKerberosHour);
+    providersPage.changeCacheTime("minute", defaultKerberosMinute);
+    providersPage.cancel(provider);
     cy.wait(1000);
 
     providersPage.clickExistingCard(firstKerberosName);
@@ -105,7 +107,7 @@ describe("User Fed Kerberos tests", () => {
 
   it("Disable an existing Kerberos provider", () => {
     providersPage.clickExistingCard(firstKerberosName);
-    providersPage.disableEnabledSwitch();
+    providersPage.disableEnabledSwitch(initCapProvider);
 
     modalUtils.checkModalTitle(disableModalTitle).confirmModal();
 
@@ -119,7 +121,7 @@ describe("User Fed Kerberos tests", () => {
 
   it("Enable an existing previously-disabled Kerberos provider", () => {
     providersPage.clickExistingCard(firstKerberosName);
-    providersPage.enableEnabledSwitch();
+    providersPage.enableEnabledSwitch(initCapProvider);
 
     masthead.checkNotificationMessage(savedSuccessMessage);
 
@@ -128,7 +130,7 @@ describe("User Fed Kerberos tests", () => {
   });
 
   it("Create new Kerberos provider using the New Provider dropdown", () => {
-    providersPage.clickMenuCommand("Add new provider", "Kerberos");
+    providersPage.clickMenuCommand(addProviderMenu, initCapProvider);
 
     providersPage.fillKerberosRequiredData(
       secondKerberosName,
@@ -136,7 +138,7 @@ describe("User Fed Kerberos tests", () => {
       secondKerberosPrincipal,
       secondKerberosKeytab
     );
-    providersPage.save();
+    providersPage.save(provider);
 
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
@@ -150,7 +152,7 @@ describe("User Fed Kerberos tests", () => {
   });
 
   it("Delete a Kerberos provider using the Settings view's Action menu", () => {
-    providersPage.deleteCardFromMenu("kerberos", firstKerberosName);
+    providersPage.deleteCardFromMenu(provider, firstKerberosName);
 
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
