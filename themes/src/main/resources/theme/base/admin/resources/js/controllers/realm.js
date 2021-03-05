@@ -2602,8 +2602,8 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 });
 
 module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredRequiredActions,
-                                                  $modal, $route,
-                                                  RegisterRequiredAction, RequiredActions, RequiredActionRaisePriority, RequiredActionLowerPriority, Notifications) {
+                                                  $modal, $route, Dialog,
+                                                  RegisterRequiredAction, RequiredActions, RequiredActionRaisePriority, RequiredActionLowerPriority, RequiredActionReset, Notifications) {
     console.log('RequiredActionsCtrl');
     $scope.realm = realm;
     $scope.unregisteredRequiredActions = unregisteredRequiredActions;
@@ -2623,6 +2623,21 @@ module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredReq
             Notifications.success("Required action updated");
             setupRequiredActionsForm();
         });
+    }
+
+    $scope.resetRequiredAction = function(action) {
+
+        Dialog.confirm(
+            "Reset required action",
+            "This will reset this required action for all existing users. Are you sure?",
+            function() {
+                 RequiredActionReset.save({realm: realm.realm, alias: action.alias}, action, function() {
+                     Notifications.success("Required action reset");
+                 });
+             },
+             function(){}
+         );
+
     }
 
     $scope.raisePriority = function(action) {

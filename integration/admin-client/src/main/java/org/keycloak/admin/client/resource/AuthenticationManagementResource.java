@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -176,6 +177,10 @@ public interface AuthenticationManagementResource {
     @Path("required-actions/{alias}/lower-priority")
     @POST
     void lowerRequiredActionPriority(@PathParam("alias") String alias);
+
+    @Path("/required-actions/{alias}/reset")
+    @POST
+    public void resetRequiredAction(@PathParam("alias") String alias);
 
     @Path("config-description/{providerId}")
     @GET
