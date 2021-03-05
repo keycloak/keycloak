@@ -19,7 +19,6 @@
 package org.keycloak.cluster.infinispan;
 
 import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 
@@ -62,7 +61,7 @@ public class LockEntryPredicate implements Predicate<Map.Entry<String, Serializa
         @Override
         public void writeObject(ObjectOutput output, LockEntryPredicate obj) throws IOException {
             output.writeByte(VERSION_1);
-            MarshallUtil.marshallCollection(obj.removedNodesAddresses, output);
+            KeycloakMarshallUtil.writeCollection(obj.removedNodesAddresses, KeycloakMarshallUtil.STRING_EXT, output);
         }
 
         @Override
