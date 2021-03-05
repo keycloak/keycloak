@@ -41,8 +41,7 @@ export const PageNav: React.FunctionComponent = () => {
   type LeftNavProps = { title: string; path: string };
   const LeftNav = ({ title, path }: LeftNavProps) => {
     const route = routes(() => {}).find(
-      (route) =>
-        route.path.replaceAll(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
+      (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
     );
     if (!route || !hasAccess(route.access)) return <></>;
     //remove "/realm-name" from the start of the path

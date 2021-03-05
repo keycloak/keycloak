@@ -163,7 +163,7 @@ export const ViewHeader = ({
           />
         )}
       </PageSection>
-      <Divider component={dividerComponent} />
+      {divider && <Divider component={dividerComponent} />}
     </>
   );
 };
