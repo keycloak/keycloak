@@ -20,8 +20,6 @@ export default class ProviderPage {
   ldapUuidLdapAttInput: string;
   ldapUserObjClassesInput: string;
 
-  ldapEnabledInput: string;
-
   cacheDayInput: string;
   cacheDayList: string;
   cacheHourInput: string;
@@ -30,9 +28,6 @@ export default class ProviderPage {
   cacheMinuteList: string;
   cachePolicyInput: string;
   cachePolicyList: string;
-
-  saveBtn: string;
-  cancelBtn: string;
 
   constructor() {
     // KerberosSettingsRequired required input values
@@ -69,13 +64,6 @@ export default class ProviderPage {
     this.cacheMinuteList = "#kc-eviction-minute + ul";
     this.cachePolicyInput = "#kc-cache-policy";
     this.cachePolicyList = "#kc-cache-policy + ul";
-
-    // LDAP settings enabled switch
-    this.ldapEnabledInput = "#LDAP-switch";
-
-    // LDAP action buttons
-    this.saveBtn = "data-testid=ldap-save";
-    this.cancelBtn = "data-testid=ldap-cancel";
   }
 
   changeCacheTime(unit: string, time: string) {
