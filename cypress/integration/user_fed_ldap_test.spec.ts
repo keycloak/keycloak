@@ -49,6 +49,7 @@ const newLdapDay = "Wednesday";
 const newLdapHour = "15";
 const newLdapMinute = "55";
 
+const addProviderMenu = "Add new provider";
 const createdSuccessMessage = "User federation provider successfully created";
 const savedSuccessMessage = "User federation provider successfully saved";
 const deletedSuccessMessage = "The user federation provider has been deleted.";
@@ -72,7 +73,15 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Create Ldap provider from empty state", () => {
-    providersPage.clickNewCard("ldap");
+    // if tests don't start at empty state, e.g. user has providers configured locally,
+    // create a new card from the card view instead
+    cy.get("body").then(($body) => {
+      if ($body.find(`[data-testid=ldap-card]`).length > 0) {
+        providersPage.clickNewCard(provider);
+      } else {
+        providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
+      }
+    });
     providersPage.fillLdapRequiredGeneralData(firstLdapName, firstLdapVendor);
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,
@@ -159,7 +168,7 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Create new LDAP provider using the New Provider dropdown", () => {
-    providersPage.clickMenuCommand("Add new provider", "LDAP");
+    providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
     providersPage.fillLdapRequiredGeneralData(secondLdapName, secondLdapVendor);
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,

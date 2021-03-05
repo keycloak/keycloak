@@ -56,7 +56,15 @@ describe("User Fed Kerberos tests", () => {
     });
 
   it("Create Kerberos provider from empty state", () => {
-    providersPage.clickNewCard(provider);
+    // if tests don't start at empty state, e.g. user has providers configured locally,
+    // create a new card from the card view instead
+    cy.get("body").then(($body) => {
+      if ($body.find(`[data-testid=kerberos-card]`).length > 0) {
+        providersPage.clickNewCard(provider);
+      } else {
+        providersPage.clickMenuCommand(addProviderMenu, initCapProvider);
+      }
+    });
     providersPage.fillKerberosRequiredData(
       firstKerberosName,
       firstKerberosRealm,
