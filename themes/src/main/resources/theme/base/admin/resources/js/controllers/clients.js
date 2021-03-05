@@ -2573,8 +2573,9 @@ module.controller('ClientClientScopesSetupCtrl', function($scope, realm, Realm, 
 });
 
 module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User, ClientEvaluateProtocolMappers, ClientEvaluateGrantedRoles,
-        ClientEvaluateNotGrantedRoles, ClientEvaluateGenerateExampleToken, realm, client, clients, clientScopes, serverInfo,
-        ComponentUtils, clientOptionalClientScopes, clientDefaultClientScopes, $route, $routeParams, $http, Notifications, $location,
+        ClientEvaluateNotGrantedRoles, ClientEvaluateGenerateExampleAccessToken, ClientEvaluateGenerateExampleIDToken,
+        ClientEvaluateGenerateExampleUserInfo, realm, client, clients, clientScopes, serverInfo, ComponentUtils,
+        clientOptionalClientScopes, clientDefaultClientScopes, $route, $routeParams, $http, Notifications, $location,
         Client) {
 
     console.log('ClientClientScopesEvaluateCtrl');
@@ -2610,6 +2611,8 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
         $scope.notGrantedClientRoles = null;
         $scope.targetClient = null;
         $scope.oidcAccessToken = null;
+        $scope.oidcIDToken = null;
+        $scope.oidcUserInfo = null;
 
         $scope.selectedTab = 0;
     }
@@ -2743,47 +2746,73 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
 
         // Send request for retrieve accessToken (in case user was selected)
         if (client.protocol === 'openid-connect' && $scope.userId != null && $scope.userId !== '') {
-            var url = ClientEvaluateGenerateExampleToken.url({
+            var exampleRequestParams = {
                 realm: realm.realm,
                 client: client.id,
                 userId: $scope.userId,
                 scopeParam: $scope.scopeParam
+            };
+
+            var accessTokenUrl = ClientEvaluateGenerateExampleAccessToken.url(exampleRequestParams);
+            getPrettyJsonResponse(accessTokenUrl).then(function (result) {
+                $scope.oidcAccessToken = result;
             });
 
-            $http.get(url).then(function (response) {
-                if (response.data) {
-                    var oidcAccessToken = angular.fromJson(response.data);
-                    oidcAccessToken = angular.toJson(oidcAccessToken, true);
-                    $scope.oidcAccessToken = oidcAccessToken;
-                } else {
-                    $scope.oidcAccessToken = null;
-                }
+            var idTokenUrl = ClientEvaluateGenerateExampleIDToken.url(exampleRequestParams);
+            getPrettyJsonResponse(idTokenUrl).then(function (result) {
+                $scope.oidcIDToken = result;
+            });
+
+            var userInfoUrl = ClientEvaluateGenerateExampleUserInfo.url(exampleRequestParams);
+            getPrettyJsonResponse(userInfoUrl).then(function (result) {
+                $scope.oidcUserInfo = result;
             });
         }
 
         $scope.showTab(1);
     };
 
+    function getPrettyJsonResponse(url) {
+        return $http.get(url).then(function (response) {
+            if (response.data) {
+                var responseJson = angular.fromJson(response.data);
+                return angular.toJson(responseJson, true);
+            } else {
+                return null;
+            }
+        });
+    }
 
     $scope.isResponseAvailable = function () {
         return $scope.protocolMappers != null;
     }
 
-    $scope.isTokenAvailable = function () {
+    $scope.isAccessTokenAvailable = function () {
         return $scope.oidcAccessToken != null;
+    }
+
+    $scope.isIDTokenAvailable = function () {
+        return $scope.oidcIDToken != null;
+    }
+
+    $scope.isUserInfoAvailable = function () {
+        return $scope.oidcUserInfo != null;
     }
 
     $scope.showTab = function (tab) {
         $scope.selectedTab = tab;
 
-        // Check if there is more clever way to do it... :/
-        if (tab === 1) {
-            $scope.tabCss = { tab1: 'active', tab2: '', tab3: '' }
-        } else if (tab === 2) {
-            $scope.tabCss = { tab1: '', tab2: 'active', tab3: '' }
-        } else if (tab === 3) {
-            $scope.tabCss = { tab1: '', tab2: '', tab3: 'active' }
+        $scope.tabCss = {
+            tab1: getTabCssClass(1, tab),
+            tab2: getTabCssClass(2, tab),
+            tab3: getTabCssClass(3, tab),
+            tab4: getTabCssClass(4, tab),
+            tab5: getTabCssClass(5, tab)
         }
+    }
+
+    function getTabCssClass(tabNo, selectedTab) {
+        return (tabNo === selectedTab) ? 'active' : '';
     }
 
     $scope.protocolMappersShown = function () {
@@ -2794,8 +2823,17 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
         return $scope.selectedTab === 2;
     }
 
-    $scope.tokenShown = function () {
-        return $scope.selectedTab === 3;
+    $scope.exampleTabInfo = function() {
+        switch ($scope.selectedTab) {
+            case 3:
+                return { isShown: true, value: $scope.oidcAccessToken}
+            case 4:
+                return { isShown: true, value: $scope.oidcIDToken}
+            case 5:
+                return { isShown: true, value: $scope.oidcUserInfo}
+            default:
+                return { isShown: false, value: null}
+        }
     }
 
     $scope.sortMappersByPriority = function(mapper) {
