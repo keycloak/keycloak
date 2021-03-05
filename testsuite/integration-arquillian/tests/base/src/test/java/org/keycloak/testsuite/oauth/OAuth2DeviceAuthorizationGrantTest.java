@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.oauth;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL;
 
@@ -29,6 +30,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -148,6 +150,40 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(tokenString);
 
         assertNotNull(token);
+    }
+
+    @Test
+    public void testNoRefreshToken() throws Exception {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+        client.update(clientRepresentation);
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+
+        // Verify user code from verification page using browser
+        openVerificationPage(response.getVerificationUri());
+        verificationPage.submit(response.getUserCode());
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.accept();
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret",
+            response.getDeviceCode());
+
+        Assert.assertEquals(200, tokenResponse.getStatusCode());
+
+        assertNotNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
+
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        client.update(clientRepresentation);
     }
 
     @Test

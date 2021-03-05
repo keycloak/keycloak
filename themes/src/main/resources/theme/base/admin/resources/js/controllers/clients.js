@@ -1112,6 +1112,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
+    $scope.useRefreshTokens = true;
 
     $scope.accessTokenLifespan = TimeUnit2.asUnit(client.attributes['access.token.lifespan']);
     $scope.samlAssertionLifespan = TimeUnit2.asUnit(client.attributes['saml.assertion.lifespan']);
@@ -1287,6 +1288,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                $scope.oauth2DeviceAuthorizationGrantEnabled = true;
            } else {
                $scope.oauth2DeviceAuthorizationGrantEnabled = false;
+           }
+       }
+
+       if ($scope.client.attributes["use.refresh.tokens"]) {
+           if ($scope.client.attributes["use.refresh.tokens"] == "true") {
+               $scope.useRefreshTokens = true;
+           } else {
+               $scope.useRefreshTokens = false;
            }
        }
 
@@ -1695,6 +1704,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "true";
         } else {
             $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "false";
+        }
+
+        if ($scope.useRefreshTokens == true) {
+            $scope.clientEdit.attributes["use.refresh.tokens"] = "true";
+        } else {
+            $scope.clientEdit.attributes["use.refresh.tokens"] = "false";
         }
 
         // KEYCLOAK-6771 Certificate Bound Token

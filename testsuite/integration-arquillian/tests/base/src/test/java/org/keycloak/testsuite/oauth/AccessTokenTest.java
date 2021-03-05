@@ -1212,6 +1212,27 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void accessTokenRequestNoRefreshToken() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+        client.update(clientRepresentation);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertNotNull(response.getAccessToken());
+        assertNull(response.getRefreshToken());
+
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        client.update(clientRepresentation);
+    }
+
+    @Test
     public void accessTokenRequest_ClientPS384_RealmRS256() throws Exception {
         conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.RS256);
     }
