@@ -69,9 +69,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author pedroigor
@@ -229,28 +227,7 @@ public class UserInfoEndpoint {
         AccessToken userInfo = new AccessToken();
         
         tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
-
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", userModel.getId());
-        claims.putAll(userInfo.getOtherClaims());
-
-        if (userInfo.getRealmAccess() != null) {
-            Map<String, Set<String>> realmAccess = new HashMap<>();
-            realmAccess.put("roles", userInfo.getRealmAccess().getRoles());
-            claims.put("realm_access", realmAccess);
-        }
-
-        if (userInfo.getResourceAccess() != null && !userInfo.getResourceAccess().isEmpty()) {
-            Map<String, Map<String, Set<String>>> resourceAccessMap = new HashMap<>();
-
-            for (Map.Entry<String, AccessToken.Access> resourceAccessMapEntry : userInfo.getResourceAccess()
-                    .entrySet()) {
-                Map<String, Set<String>> resourceAccess = new HashMap<>();
-                resourceAccess.put("roles", resourceAccessMapEntry.getValue().getRoles());
-                resourceAccessMap.put(resourceAccessMapEntry.getKey(), resourceAccess);
-            }
-            claims.put("resource_access", resourceAccessMap);
-        }
+        Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
 
         Response.ResponseBuilder responseBuilder;
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
