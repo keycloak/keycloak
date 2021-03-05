@@ -560,6 +560,14 @@
                 <kc-tooltip>{{:: 'exclude-session-state-from-auth-response.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="useRefreshTokens">{{:: 'use-refresh-tokens' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="useRefreshTokens" ng-click="switchChange()" name="useRefreshTokens" id="useRefreshTokens"
+                        onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'use-refresh-tokens.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="useRefreshTokenForClientCredentialsGrant">{{:: 'use-refresh-token-for-client-credentials-grant' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="useRefreshTokenForClientCredentialsGrant" ng-click="switchChange()" name="useRefreshTokenForClientCredentialsGrant" id="useRefreshTokenForClientCredentialsGrant" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>

@@ -40,6 +40,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -64,6 +65,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -114,6 +116,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .publicClient()
                 .build();
         realm.client(app2);
+
+        ClientRepresentation app3 = ClientBuilder.create().id(KeycloakModelUtils.generateId())
+            .clientId("resource-owner-refresh").directAccessGrants().secret("secret").build();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(app3).setUseRefreshToken(false);
+        realm.client(app3);
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -659,6 +666,17 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, response.getError());
             assertEquals("Unsupported grant_type", response.getErrorDescription());
         }
+    }
+
+    @Test
+    public void grantAccessTokenNoRefreshToken() throws Exception {
+        oauth.clientId("resource-owner-refresh");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login", "password", null);
+
+        assertEquals(200, response.getStatusCode());
+
+        assertNotNull(response.getAccessToken());
+        assertNull(response.getRefreshToken());
     }
 
     private int getAuthenticationSessionsCount() {

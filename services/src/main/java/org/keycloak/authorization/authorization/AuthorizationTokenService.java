@@ -71,6 +71,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
@@ -361,11 +362,13 @@ public class AuthorizationTokenService {
             // Skip generating refresh token for accessToken without sessionState claim. This is "stateless" accessToken not pointing to any real persistent userSession
             rpt.setSessionState(null);
         } else {
-            responseBuilder.generateRefreshToken();
-            RefreshToken refreshToken = responseBuilder.getRefreshToken();
+            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+                responseBuilder.generateRefreshToken();
+                RefreshToken refreshToken = responseBuilder.getRefreshToken();
 
-            refreshToken.issuedFor(client.getClientId());
-            refreshToken.setAuthorization(authorization);
+                refreshToken.issuedFor(client.getClientId());
+                refreshToken.setAuthorization(authorization);
+            }
         }
 
         if (!rpt.hasAudience(targetClient.getClientId())) {
