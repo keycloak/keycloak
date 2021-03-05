@@ -7,6 +7,7 @@ export default class ListingPage {
   searchBtn: string;
   createBtn: string;
   importBtn: string;
+  initialAccessTokenTab = "initialAccessToken";
 
   constructor() {
     this.searchInput = '.pf-c-toolbar__item [type="search"]';
@@ -34,15 +35,20 @@ export default class ListingPage {
     return this;
   }
 
+  goToInitialAccessTokenTab() {
+    cy.getId(this.initialAccessTokenTab).click();
+    return this;
+  }
+
   searchItem(searchValue: string, wait = true) {
     if (wait) {
       const searchUrl = `/admin/realms/master/*${searchValue}*`;
-      cy.intercept(searchUrl).as("searchClients");
+      cy.intercept(searchUrl).as("search");
     }
     cy.get(this.searchInput).type(searchValue);
     cy.get(this.searchBtn).click();
     if (wait) {
-      cy.wait(["@searchClients"]);
+      cy.wait(["@search"]);
     }
     return this;
   }

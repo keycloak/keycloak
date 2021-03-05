@@ -81,7 +81,11 @@ export const CreateInitialAccessToken = () => {
               defaultValue=""
               control={control}
               render={({ onChange, value }) => (
-                <TimeSelector value={value} onChange={onChange} />
+                <TimeSelector
+                  data-testid="expiration"
+                  value={value}
+                  onChange={onChange}
+                />
               )}
             />
           </FormGroup>
@@ -102,6 +106,7 @@ export const CreateInitialAccessToken = () => {
               control={control}
               render={({ onChange, value }) => (
                 <NumberInput
+                  data-testid="count"
                   inputName="count"
                   inputAriaLabel={t("count")}
                   min={1}
@@ -116,10 +121,11 @@ export const CreateInitialAccessToken = () => {
             />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" data-testid="save">
               {t("common:save")}
             </Button>
             <Button
+              data-testid="cancel"
               variant="link"
               onClick={() =>
                 history.push(`/${realm}/clients/initialAccessToken`)

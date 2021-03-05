@@ -5,13 +5,14 @@ import {
   Split,
   SplitItem,
   TextInput,
+  TextInputProps,
 } from "@patternfly/react-core";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export type Unit = "seconds" | "minutes" | "hours" | "days";
 
-export type TimeSelectorProps = {
+export type TimeSelectorProps = TextInputProps & {
   value: number;
   units?: Unit[];
   onChange: (time: number | string) => void;
@@ -21,6 +22,7 @@ export const TimeSelector = ({
   value,
   units = ["seconds", "minutes", "hours", "days"],
   onChange,
+  ...rest
 }: TimeSelectorProps) => {
   const { t } = useTranslation("common");
 
@@ -73,6 +75,7 @@ export const TimeSelector = ({
     <Split hasGutter>
       <SplitItem>
         <TextInput
+          {...rest}
           type="number"
           id={`kc-time-${new Date().getTime()}`}
           min="0"
