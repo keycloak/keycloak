@@ -19,13 +19,13 @@ export default class CreateKerberosProviderPage {
   cancelBtn: string;
 
   constructor() {
+    // KerberosSettingsRequired required input values
     this.kerberosNameInput = "data-testid=kerberos-name";
     this.kerberosRealmInput = "data-testid=kerberos-realm";
     this.kerberosPrincipalInput = "data-testid=kerberos-principal";
     this.kerberosKeytabInput = "data-testid=kerberos-keytab";
 
-    this.kerberosEnabledInput = "#Kerberos-switch";
-
+    // SettingsCache input values
     this.kerberosCacheDayInput = "#kc-eviction-day";
     this.kerberosCacheDayList = "#kc-eviction-day + ul";
     this.kerberosCacheHourInput = "#kc-eviction-hour";
@@ -35,11 +35,34 @@ export default class CreateKerberosProviderPage {
     this.kerberosCachePolicyInput = "#kc-cache-policy";
     this.kerberosCachePolicyList = "#kc-cache-policy + ul";
 
+    // Kerberos settings enabled switch
+    this.kerberosEnabledInput = "#Kerberos-switch";
+
+    // Kerberos action buttons
     this.saveBtn = "data-testid=kerberos-save";
     this.cancelBtn = "data-testid=kerberos-cancel";
   }
 
-  //#region Required Settings
+  changeTime(oldTime: string, newTime: string) {
+    cy.contains(oldTime).click();
+    cy.contains(newTime).click();
+    return this;
+  }
+
+  deleteCardFromCard(card: string) {
+    cy.get(`[data-testid=${card}-dropdown]`).click();
+    cy.get('[data-testid="card-delete"]').click();
+    return this;
+  }
+
+  deleteCardFromMenu(providerType: string, card: string) {
+    this.clickExistingCard(card);
+    cy.get('[data-testid="action-dropdown"]').click();
+    cy.get(`[data-testid="delete-${providerType}-cmd"]`).click();
+    return this;
+  }
+
+  // Required fields - these always must be filled out when testing a save
   fillKerberosRequiredData(
     name: string,
     realm: string,
@@ -64,6 +87,24 @@ export default class CreateKerberosProviderPage {
   selectCacheType(cacheType: string) {
     cy.get(this.kerberosCachePolicyInput).click();
     cy.get(this.kerberosCachePolicyList).contains(cacheType).click();
+    return this;
+  }
+
+  clickExistingCard(cardName: string) {
+    cy.get('[data-testid="keycloak-card-title"]').contains(cardName).click();
+    cy.wait(1000);
+    return this;
+  }
+
+  clickMenuCommand(menu: string, command: string) {
+    cy.contains("button", menu).click();
+    cy.contains("li", command).click();
+    return this;
+  }
+
+  clickNewCard(providerType: string) {
+    cy.get(`[data-testid=${providerType}-card]`).click();
+    cy.wait(1000);
     return this;
   }
 

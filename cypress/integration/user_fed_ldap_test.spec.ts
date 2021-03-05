@@ -103,8 +103,6 @@ describe("User Fed LDAP tests", () => {
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
-    cy.wait(1000);
-
     providersPage.clickExistingCard(firstLdapName);
 
     expect(cy.contains(newPolicy).should("exist"));
@@ -144,7 +142,6 @@ describe("User Fed LDAP tests", () => {
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
-    cy.wait(1000);
     expect(cy.contains("Disabled").should("exist"));
   });
 
@@ -155,7 +152,6 @@ describe("User Fed LDAP tests", () => {
     masthead.checkNotificationMessage(savedSuccessMessage);
 
     sidebarPage.goToUserFederation();
-    cy.wait(1000);
     expect(cy.contains("Enabled").should("exist"));
   });
 
