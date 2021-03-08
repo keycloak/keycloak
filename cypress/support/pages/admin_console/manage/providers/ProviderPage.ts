@@ -1,4 +1,9 @@
-export default class CreateLdapProviderPage {
+export default class ProviderPage {
+  kerberosNameInput: string;
+  kerberosRealmInput: string;
+  kerberosPrincipalInput: string;
+  kerberosKeytabInput: string;
+
   ldapNameInput: string;
   ldapVendorInput: string;
   ldapVendorList: string;
@@ -15,21 +20,22 @@ export default class CreateLdapProviderPage {
   ldapUuidLdapAttInput: string;
   ldapUserObjClassesInput: string;
 
-  ldapEnabledInput: string;
-
-  ldapCacheDayInput: string;
-  ldapCacheDayList: string;
-  ldapCacheHourInput: string;
-  ldapCacheHourList: string;
-  ldapCacheMinuteInput: string;
-  ldapCacheMinuteList: string;
-  ldapCachePolicyInput: string;
-  ldapCachePolicyList: string;
-
-  saveBtn: string;
-  cancelBtn: string;
+  cacheDayInput: string;
+  cacheDayList: string;
+  cacheHourInput: string;
+  cacheHourList: string;
+  cacheMinuteInput: string;
+  cacheMinuteList: string;
+  cachePolicyInput: string;
+  cachePolicyList: string;
 
   constructor() {
+    // KerberosSettingsRequired required input values
+    this.kerberosNameInput = "data-testid=kerberos-name";
+    this.kerberosRealmInput = "data-testid=kerberos-realm";
+    this.kerberosPrincipalInput = "data-testid=kerberos-principal";
+    this.kerberosKeytabInput = "data-testid=kerberos-keytab";
+
     // LdapSettingsGeneral required input values
     this.ldapNameInput = "data-testid=ldap-name";
     this.ldapVendorInput = "#kc-vendor";
@@ -50,26 +56,34 @@ export default class CreateLdapProviderPage {
     this.ldapUserObjClassesInput = "data-testid=ldap-user-object-classes";
 
     // SettingsCache input values
-    this.ldapCacheDayInput = "#kc-eviction-day";
-    this.ldapCacheDayList = "#kc-eviction-day + ul";
-    this.ldapCacheHourInput = "#kc-eviction-hour";
-    this.ldapCacheHourList = "#kc-eviction-hour + ul";
-    this.ldapCacheMinuteInput = "#kc-eviction-minute";
-    this.ldapCacheMinuteList = "#kc-eviction-minute + ul";
-    this.ldapCachePolicyInput = "#kc-cache-policy";
-    this.ldapCachePolicyList = "#kc-cache-policy + ul";
-
-    // LDAP settings enabled switch
-    this.ldapEnabledInput = "#LDAP-switch";
-
-    // LDAP action buttons
-    this.saveBtn = "data-testid=ldap-save";
-    this.cancelBtn = "data-testid=ldap-cancel";
+    this.cacheDayInput = "#kc-eviction-day";
+    this.cacheDayList = "#kc-eviction-day + ul";
+    this.cacheHourInput = "#kc-eviction-hour";
+    this.cacheHourList = "#kc-eviction-hour + ul";
+    this.cacheMinuteInput = "#kc-eviction-minute";
+    this.cacheMinuteList = "#kc-eviction-minute + ul";
+    this.cachePolicyInput = "#kc-cache-policy";
+    this.cachePolicyList = "#kc-cache-policy + ul";
   }
 
-  changeTime(oldTime: string, newTime: string) {
-    cy.contains(oldTime).click();
-    cy.contains(newTime).click();
+  changeCacheTime(unit: string, time: string) {
+    switch (unit) {
+      case "day":
+        cy.get(this.cacheDayInput).click();
+        cy.get(this.cacheDayList).contains(time).click();
+        break;
+      case "hour":
+        cy.get(this.cacheHourInput).click();
+        cy.get(this.cacheHourList).contains(time).click();
+        break;
+      case "minute":
+        cy.get(this.cacheMinuteInput).click();
+        cy.get(this.cacheMinuteList).contains(time).click();
+        break;
+      default:
+        console.log("Invalid cache time, must be 'day', 'hour', or 'minute'.");
+        break;
+    }
     return this;
   }
 
@@ -79,14 +93,34 @@ export default class CreateLdapProviderPage {
     return this;
   }
 
-  deleteCardFromMenu(card: string) {
+  deleteCardFromMenu(providerType: string, card: string) {
     this.clickExistingCard(card);
     cy.get('[data-testid="action-dropdown"]').click();
-    cy.get('[data-testid="delete-ldap-cmd"]').click();
+    cy.get(`[data-testid="delete-${providerType}-cmd"]`).click();
+    return this;
+  }
+  
+  fillKerberosRequiredData(
+    name: string,
+    realm: string,
+    principal: string,
+    keytab: string
+  ) {
+    if (name) {
+      cy.get(`[${this.kerberosNameInput}]`).type(name);
+    }
+    if (realm) {
+      cy.get(`[${this.kerberosRealmInput}]`).type(realm);
+    }
+    if (principal) {
+      cy.get(`[${this.kerberosPrincipalInput}]`).type(principal);
+    }
+    if (keytab) {
+      cy.get(`[${this.kerberosKeytabInput}]`).type(keytab);
+    }
     return this;
   }
 
-  // Required fields - these always must be filled out when testing a save
   fillLdapRequiredGeneralData(name: string, vendor: string) {
     if (name) {
       cy.get(`[${this.ldapNameInput}]`).type(name);
@@ -146,8 +180,8 @@ export default class CreateLdapProviderPage {
   }
 
   selectCacheType(cacheType: string) {
-    cy.get(this.ldapCachePolicyInput).click();
-    cy.get(this.ldapCachePolicyList).contains(cacheType).click();
+    cy.get(this.cachePolicyInput).click();
+    cy.get(this.cachePolicyList).contains(cacheType).click();
     return this;
   }
 
@@ -169,23 +203,23 @@ export default class CreateLdapProviderPage {
     return this;
   }
 
-  disableEnabledSwitch() {
-    cy.get(this.ldapEnabledInput).uncheck({ force: true });
+  disableEnabledSwitch(providerType: string) {
+    cy.get(`#${providerType}-switch`).uncheck({ force: true });
     return this;
   }
 
-  enableEnabledSwitch() {
-    cy.get(this.ldapEnabledInput).check({ force: true });
+  enableEnabledSwitch(providerType: string) {
+    cy.get(`#${providerType}-switch`).check({ force: true });
     return this;
   }
 
-  save() {
-    cy.get(`[${this.saveBtn}]`).click();
+  save(providerType: string) {
+    cy.get(`[data-testid=${providerType}-save]`).click();
     return this;
   }
 
-  cancel() {
-    cy.get(`[${this.cancelBtn}]`).click();
+  cancel(providerType: string) {
+    cy.get(`[data-testid=${providerType}-cancel]`).click();
     return this;
   }
 }
