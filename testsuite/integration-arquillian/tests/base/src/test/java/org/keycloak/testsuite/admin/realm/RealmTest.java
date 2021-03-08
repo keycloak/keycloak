@@ -818,6 +818,22 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(0, sessionStats.size());
     }
 
+    @Test
+    // KEYCLOAK-17342
+    public void testDefaultSignatureAlgorithm() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("new-realm");
+
+        try {
+            adminClient.realms().create(rep);
+
+            assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, adminClient.realm("master").toRepresentation().getDefaultSignatureAlgorithm());
+            assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, adminClient.realm("new-realm").toRepresentation().getDefaultSignatureAlgorithm());
+        } finally {
+            adminClient.realms().realm(rep.getRealm()).remove();
+        }
+    }
+
     private void setupTestAppAndUser() {
         testingClient.testApp().clearAdminActions();
 
