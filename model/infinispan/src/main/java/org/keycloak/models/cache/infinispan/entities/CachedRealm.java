@@ -299,7 +299,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
         dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
-        cibaFlow = model.getCIBAFlow();
 
         model.getComponentsStream().forEach(component ->
             componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component)

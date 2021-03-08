@@ -177,10 +177,10 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         return events.expectLogin().clearDetails().detail(Details.USERNAME, username).user(AssertEvents.isUUID()).client(clientIdAsConsumerDevice).assertEvent();
     }
 
-    private EventRepresentation doAuthenticationChannelCallback(AuthenticationChannelRequest authenticationChannelReq, String authenticationChannelStatus, String username, String error) throws Exception {
+    private EventRepresentation doAuthenticationChannelCallback(String clientId, AuthenticationChannelRequest authenticationChannelReq, String authenticationChannelStatus, String username, String error) throws Exception {
         int statusCode = oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, authenticationChannelReq.getUserInfo(), authenticationChannelReq.getAuthenticationChannelId(), authenticationChannelStatus);
         Assert.assertThat(statusCode, is(equalTo(200)));
-        return events.expect(EventType.LOGIN_ERROR).clearDetails().client(AUTHENTICATION_CHANNEL_SERVER_NAME).error(error).user((String)null).session(AssertEvents.isUUID()).assertEvent();
+        return events.expect(EventType.LOGIN_ERROR).clearDetails().client(clientId).error(error).user((String)null).session(AssertEvents.isUUID()).assertEvent();
     }
 
     private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String codeId, String sessionId, String username, String authReqId, boolean isOfflineAccess) throws Exception {
@@ -1212,7 +1212,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
 
             // user Authentication Channel completed
-            doAuthenticationChannelCallback(authenticationChannelReq, authnResult, username, errorEvent);
+            doAuthenticationChannelCallback(TEST_CLIENT_NAME, authenticationChannelReq, authnResult, username, errorEvent);
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());

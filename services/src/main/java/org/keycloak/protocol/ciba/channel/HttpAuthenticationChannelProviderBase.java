@@ -37,16 +37,16 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.ciba.utils.AuthenticationChannelResultParser;
 import org.keycloak.protocol.ciba.AuthenticationChannelResult;
 import org.keycloak.protocol.ciba.AuthenticationChannelStatus;
@@ -108,6 +108,9 @@ public abstract class HttpAuthenticationChannelProviderBase implements Authentic
         checkClient();
 
         Response response = verifyAuthenticationChannelResult();
+
+        event.client(client);
+
         if (response != null) return response;
 
         setupSessions(httpRequest, clientConnection);
@@ -130,22 +133,24 @@ public abstract class HttpAuthenticationChannelProviderBase implements Authentic
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, getScope());
 
-        // authentication
-        AuthenticationFlowModel flow = AuthenticationFlowResolver.resolveCIBAFlow(authSession);
-        String flowId = flow.getId();
-        AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setAuthenticationSession(authSession)
-                .setFlowId(flowId)
-                .setConnection(clientConnection)
-                .setEventBuilder(event)
-                .setRealm(realm)
-                .setSession(session)
-                .setUriInfo(session.getContext().getUri())
-                .setRequest(httpRequest);
+        String userIdField = CIBAConstants.LOGIN_HINT;
+        String username = httpRequest.getDecodedFormParameters().getFirst(userIdField);
 
-        processor.authenticateOnly();
-        processor.evaluateRequiredActionTriggers();
-        UserModel user = authSession.getAuthenticatedUser();
+        if (username == null) {
+            // the custom parameter should come from the provider config
+            username = httpRequest.getDecodedFormParameters().getFirst("user_info");
+        }
+
+        logger.tracef("CIBA Grant :: authenticator username = %s", username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+        if (user == null) {
+            event.error(Errors.USERNAME_MISSING);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Could not identify user", Response.Status.BAD_REQUEST);
+        }
+        logger.tracef("CIBA Grant :: user model found. user.getId() = %s, user.getEmail() = %s, user.getUsername() = %s.", user.getId(), user.getEmail(), user.getUsername());
+
+        authSession.setAuthenticatedUser(user);
+
         if (user.getRequiredActionsStream().count() > 0) {
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
@@ -153,8 +158,9 @@ public abstract class HttpAuthenticationChannelProviderBase implements Authentic
 
         AuthenticationManager.setClientScopesInSession(authSession);
 
-        processor.attachSession();
-        UserSessionModel userSession = processor.getUserSession();
+        ClientSessionContext context = AuthenticationProcessor
+                .attachSession(authSession, null, session, realm, session.getContext().getConnection(), event);
+        UserSessionModel userSession = context.getClientSession().getUserSession();
         if (userSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User session is not found", Response.Status.BAD_REQUEST);

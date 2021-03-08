@@ -441,9 +441,6 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
 
-    AuthenticationFlowModel getCIBAFlow();
-    void setCIBAFlow(AuthenticationFlowModel flow);
-
     /**
      * @deprecated Use {@link #getAuthenticationFlowsStream() getAuthenticationFlowsStream} instead.
      */

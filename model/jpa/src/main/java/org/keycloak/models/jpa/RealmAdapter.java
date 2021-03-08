@@ -1024,9 +1024,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public CIBAPolicy getCIBAPolicy() {
         CIBAPolicy policy = new CIBAPolicy();
 
-        policy.setCibaFlow(getAttribute(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS, CIBAPolicy.DEFAULT_CIBA_FLOW_ALIAS));
-
-        policy.setBackchannelTokenDeliveryMode(getAttribute(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, 
+        policy.setBackchannelTokenDeliveryMode(getAttribute(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE,
                 CIBAPolicy.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE));
 
         String expiresIn = getAttribute(CIBAPolicy.CIBA_EXPIRES_IN);
@@ -1051,9 +1049,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void setCIBAPolicy(CIBAPolicy policy) {
-        String cibaFlow = policy.getCibaFlow();
-        setAttribute(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS, cibaFlow);
-
         String backchannelTokenDeliveryMode = policy.getBackchannelTokenDeliveryMode();
         setAttribute(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, backchannelTokenDeliveryMode);
 
@@ -1571,18 +1566,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
         realm.setDockerAuthenticationFlow(flow.getId());
-    }
-
-    @Override
-    public AuthenticationFlowModel getCIBAFlow() {
-        String flowAlias = getAttribute(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS);
-        if (flowAlias == null) return null;
-        return getFlowByAlias(flowAlias);
-    }
-
-    @Override
-    public void setCIBAFlow(AuthenticationFlowModel flow) {
-        setAttribute(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS, flow.getAlias());
     }
 
     @Override

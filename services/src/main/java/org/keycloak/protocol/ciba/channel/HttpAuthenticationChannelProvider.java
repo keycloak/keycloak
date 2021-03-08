@@ -113,6 +113,8 @@ public class HttpAuthenticationChannelProvider extends HttpAuthenticationChannel
         // to bind Client Session of CD(Consumption Device) with User Session, set CD's Client Model to this class member "client".
         client = realm.getClientByClientId(authenticationChannelIdJwt.getIssuedFor());
 
+        event.client(client);
+
         CIBALoginUserResolver resolver = session.getProvider(CIBALoginUserResolver.class);
         if (resolver == null) {
             throw new RuntimeException("CIBA Login User Resolver not setup properly.");

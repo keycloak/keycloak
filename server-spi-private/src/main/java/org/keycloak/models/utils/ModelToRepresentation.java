@@ -402,7 +402,6 @@ public class ModelToRepresentation {
 
         CIBAPolicy cibaPolicy = realm.getCIBAPolicy();
         Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-        attrMap.put(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS, cibaPolicy.getCibaFlow());
         attrMap.put(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, cibaPolicy.getBackchannelTokenDeliveryMode());
         attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, String.valueOf(cibaPolicy.getExpiresIn()));
         attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(cibaPolicy.getInterval()));

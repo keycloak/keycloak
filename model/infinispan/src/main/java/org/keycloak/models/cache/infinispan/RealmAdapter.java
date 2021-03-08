@@ -1275,18 +1275,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public AuthenticationFlowModel getCIBAFlow() {
-        if (isUpdated()) return updated.getCIBAFlow();
-        return cached.getCIBAFlow();
-    }
-
-    @Override
-    public void setCIBAFlow(AuthenticationFlowModel flow) {
-        getDelegateForUpdate();
-        updated.setCIBAFlow(flow);
-    }
-
-    @Override
     public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         if (isUpdated()) return updated.getAuthenticationFlowsStream();
         return cached.getAuthenticationFlowList().stream();

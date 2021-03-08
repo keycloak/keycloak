@@ -60,7 +60,6 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
         if (realm.getFlowByAlias(HTTP_CHALLENGE_FLOW) == null) httpChallengeFlow(realm);
-        if (realm.getFlowByAlias(CIBAPolicy.DEFAULT_CIBA_FLOW_ALIAS) == null) cibaFlow(realm);
     }
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
@@ -69,10 +68,8 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
-        if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
         if (realm.getFlowByAlias(HTTP_CHALLENGE_FLOW) == null) httpChallengeFlow(realm);
-        if (realm.getFlowByAlias(CIBAPolicy.DEFAULT_CIBA_FLOW_ALIAS) == null) cibaFlow(realm);
     }
 
     public static void registrationFlow(RealmModel realm) {
@@ -378,33 +375,6 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-    }
-
-    public static void cibaFlow(RealmModel realm) {
-        AuthenticationFlowModel grant = new AuthenticationFlowModel();
-        grant.setAlias(CIBAPolicy.DEFAULT_CIBA_FLOW_ALIAS);
-        grant.setDescription("OpenID Connect CIBA flow");
-        grant.setProviderId("basic-flow");
-        grant.setTopLevel(true);
-        grant.setBuiltIn(true);
-        grant = realm.addAuthenticationFlow(grant);
-        realm.setCIBAFlow(grant);
-
-        // CIBA Authentication Channel Authenticator
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(grant.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("ciba-auth-channel-authenticator");
-        execution.setPriority(10);
-        execution.setAuthenticatorFlow(false);
-        AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
-        Map<String, String> config = new HashMap<>();
-        config.put("defaultUserIdField", "user_info");
-        configModel.setConfig(config);
-        configModel.setAlias("Default Config");
-        configModel = realm.addAuthenticatorConfig(configModel);
-        execution.setAuthenticatorConfig(configModel.getId());
         realm.addAuthenticatorExecution(execution);
     }
 

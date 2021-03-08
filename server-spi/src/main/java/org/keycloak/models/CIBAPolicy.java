@@ -34,19 +34,10 @@ public class CIBAPolicy implements Serializable {
     public static final int DEFAULT_CIBA_POLICY_INTERVAL = 0;
     public static final String DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT = "login_hint";
 
-    private String cibaFlow = DEFAULT_CIBA_FLOW_ALIAS;
     private String backchannelTokenDeliveryMode = DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
     private int expiresIn = DEFAULT_CIBA_POLICY_EXPIRES_IN;
     private int interval = DEFAULT_CIBA_POLICY_INTERVAL;
     private String authRequestedUserHint = DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
-
-    public String getCibaFlow() {
-        return cibaFlow;
-    }
-
-    public void setCibaFlow(String cibaFlow) {
-        this.cibaFlow = cibaFlow;
-    }
 
     public String getBackchannelTokenDeliveryMode() {
         return backchannelTokenDeliveryMode;
