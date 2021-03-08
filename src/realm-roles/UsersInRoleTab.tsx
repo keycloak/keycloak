@@ -26,7 +26,7 @@ export const UsersInRoleTab = () => {
       name: role.name!,
       first: first!,
       max: max!,
-    } as any);
+    });
     return usersWithRole;
   };
 

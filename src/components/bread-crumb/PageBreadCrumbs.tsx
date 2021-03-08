@@ -1,7 +1,8 @@
-import React from "react";
+import React, { isValidElement } from "react";
 import { Link } from "react-router-dom";
-import useBreadcrumbs from "use-react-router-breadcrumbs";
+import useBreadcrumbs, { BreadcrumbData } from "use-react-router-breadcrumbs";
 import { useTranslation } from "react-i18next";
+import _ from "lodash";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -11,9 +12,15 @@ import { GroupBreadCrumbs } from "./GroupBreadCrumbs";
 export const PageBreadCrumbs = () => {
   const { t } = useTranslation();
   const { realm } = useRealm();
-  const crumbs = useBreadcrumbs(routes(t), {
-    excludePaths: ["/", `/${realm}`],
-  });
+  const elementText = (crumb: BreadcrumbData) =>
+    isValidElement(crumb.breadcrumb) && crumb.breadcrumb.props.children;
+
+  const crumbs = _.uniqBy(
+    useBreadcrumbs(routes(t), {
+      excludePaths: ["/", `/${realm}`],
+    }),
+    elementText
+  );
   return (
     <>
       {crumbs.length > 1 && (

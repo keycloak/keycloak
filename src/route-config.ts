@@ -27,6 +27,7 @@ import { UserFederationLdapSettings } from "./user-federation/UserFederationLdap
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 import { SearchGroups } from "./groups/SearchGroups";
+import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
 
 export type RouteDef = BreadcrumbsRoute & {
   access: AccessType;
@@ -43,12 +44,6 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-realm",
   },
   {
-    path: "/:realm/clients",
-    component: ClientsSection,
-    breadcrumb: t("clients:clientList"),
-    access: "query-clients",
-  },
-  {
     path: "/:realm/clients/add-client",
     component: NewClientForm,
     breadcrumb: t("clients:createClient"),
@@ -61,21 +56,27 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-clients",
   },
   {
+    path: "/:realm/clients/:tab?",
+    component: ClientsSection,
+    breadcrumb: t("clients:clientList"),
+    access: "query-clients",
+  },
+  {
+    path: "/:realm/clients/initialAccessToken/create",
+    component: CreateInitialAccessToken,
+    breadcrumb: t("clients:createToken"),
+    access: "manage-clients",
+  },
+  {
     path: "/:realm/clients/:clientId/roles/add-role",
     component: RealmRoleTabs,
     breadcrumb: t("roles:createRole"),
     access: "manage-realm",
   },
   {
-    path: "/:realm/clients/:clientId/roles/:id",
+    path: "/:realm/clients/:clientId/roles/:id/:tab?",
     component: RealmRoleTabs,
     breadcrumb: t("roles:roleDetails"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/clients/:clientId/roles/:id/:tab",
-    component: RealmRoleTabs,
-    breadcrumb: null,
     access: "view-realm",
   },
   {
@@ -127,15 +128,9 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-realm",
   },
   {
-    path: "/:realm/roles/:id",
+    path: "/:realm/roles/:id/:tab?",
     component: RealmRoleTabs,
     breadcrumb: t("roles:roleDetails"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/roles/:id/:tab",
-    component: RealmRoleTabs,
-    breadcrumb: null,
     access: "view-realm",
   },
   {
@@ -157,15 +152,9 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/:realm/events",
+    path: "/:realm/events/:tab?",
     component: EventsSection,
     breadcrumb: t("events:title"),
-    access: "view-events",
-  },
-  {
-    path: "/:realm/events/:tab",
-    component: EventsSection,
-    breadcrumb: null,
     access: "view-events",
   },
   {

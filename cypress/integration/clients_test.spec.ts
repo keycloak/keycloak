@@ -6,6 +6,7 @@ import CreateClientPage from "../support/pages/admin_console/manage/clients/Crea
 import ModalUtils from "../support/util/ModalUtils";
 import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
 import AdminClient from "../support/util/AdminClient";
+import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -77,6 +78,27 @@ describe("Clients test", function () {
       masthead.checkNotificationMessage("The client has been deleted");
 
       listingPage.itemExist(itemId, false);
+    });
+
+    it("Initial access token", () => {
+      const initialAccessTokenTab = new InitialAccessTokenTab();
+      listingPage.goToInitialAccessTokenTab();
+      initialAccessTokenTab.shouldBeEmpty();
+      initialAccessTokenTab.createNewToken(1, 1).save();
+
+      modalUtils.checkModalTitle("Initial access token details").closeModal();
+
+      initialAccessTokenTab.shouldNotBeEmpty();
+
+      initialAccessTokenTab.getFistId((id) => {
+        listingPage.deleteItem(id);
+        modalUtils
+          .checkModalTitle("Delete initial access token?")
+          .confirmModal();
+        masthead.checkNotificationMessage(
+          "initial access token created successfully"
+        );
+      });
     });
   });
 
