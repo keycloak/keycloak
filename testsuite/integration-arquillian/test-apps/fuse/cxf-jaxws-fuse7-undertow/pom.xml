@@ -39,10 +39,10 @@
             javax.xml.bind.annotation;version="[2.2,3)",
             javax.xml.namespace,
             javax.xml.ws,
-            META-INF.cxf;version="[2.7,3.3)",
-            META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
-            org.apache.cxf.transport.http_undertow;version="[2.7,3.3)";resolution:=optional,
-            org.apache.cxf.transport.http_undertow.blueprint;version="[2.7,3.3)";resolution:=optional,
+            META-INF.cxf;version="[2.7,3.4)",
+            META-INF.cxf.osgi;version="[2.7,3.4)";resolution:=optional,
+            org.apache.cxf.transport.http_undertow;version="[2.7,3.4)";resolution:=optional,
+            org.apache.cxf.transport.http_undertow.blueprint;version="[2.7,3.4)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>

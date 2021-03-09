@@ -123,7 +123,7 @@ public class FuseUtils {
             "system:property -p hawtio.keycloakServerConfig ${karaf.etc}/keycloak-bearer.json; " +
             "system:property -p hawtio.roles admin,manager,viewer,ssh; " +
             "system:property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal;" +
-            "restart io.hawt.hawtio-war",
+            "restart io.hawt.hawtio-osgi",
         Result.EMPTY);
 
         assertCommand(managementUser, managementPassword,
