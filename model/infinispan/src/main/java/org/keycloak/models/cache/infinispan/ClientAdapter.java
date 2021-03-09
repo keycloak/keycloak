@@ -126,7 +126,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = cacheSession.getClientScopeById(scopeId, cachedRealm);
+            ClientScopeModel clientScope = cacheSession.getClientScopeById(cachedRealm, scopeId);
             if (clientScope != null) {
                 if (!filterByProtocol || clientScope.getProtocol().equals(clientProtocol)) {
                     clientScopes.put(clientScope.getName(), clientScope);

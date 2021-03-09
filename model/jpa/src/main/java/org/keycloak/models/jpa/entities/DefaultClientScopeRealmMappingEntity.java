@@ -36,8 +36,8 @@ import javax.persistence.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="defaultClientScopeRealmMappingIdsByRealm", query="select m.clientScope.id from DefaultClientScopeRealmMappingEntity m where m.realm = :realm and m.defaultScope = :defaultScope"),
-        @NamedQuery(name="deleteDefaultClientScopeRealmMapping", query="delete from DefaultClientScopeRealmMappingEntity where realm = :realm and clientScope = :clientScope"),
+        @NamedQuery(name="defaultClientScopeRealmMappingIdsByRealm", query="select m.clientScopeId from DefaultClientScopeRealmMappingEntity m where m.realm = :realm and m.defaultScope = :defaultScope"),
+        @NamedQuery(name="deleteDefaultClientScopeRealmMapping", query="delete from DefaultClientScopeRealmMappingEntity where realm = :realm and clientScopeId = :clientScopeId"),
         @NamedQuery(name="deleteDefaultClientScopeRealmMappingByRealm", query="delete from DefaultClientScopeRealmMappingEntity where realm = :realm")
 })
 @Entity
@@ -46,9 +46,8 @@ import javax.persistence.Table;
 public class DefaultClientScopeRealmMappingEntity {
 
     @Id
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name = "SCOPE_ID")
-    protected ClientScopeEntity clientScope;
+    @Column(name = "SCOPE_ID")
+    protected String clientScopeId;
 
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
@@ -58,12 +57,12 @@ public class DefaultClientScopeRealmMappingEntity {
     @Column(name="DEFAULT_SCOPE")
     protected boolean defaultScope;
 
-    public ClientScopeEntity getClientScope() {
-        return clientScope;
+    public String getClientScopeId() {
+        return clientScopeId;
     }
 
-    public void setClientScope(ClientScopeEntity clientScope) {
-        this.clientScope = clientScope;
+    public void setClientScopeId(String clientScopeId) {
+        this.clientScopeId = clientScopeId;
     }
 
     public RealmEntity getRealm() {
@@ -84,20 +83,20 @@ public class DefaultClientScopeRealmMappingEntity {
 
     public static class Key implements Serializable {
 
-        protected ClientScopeEntity clientScope;
+        protected String clientScopeId;
 
         protected RealmEntity realm;
 
         public Key() {
         }
 
-        public Key(ClientScopeEntity clientScope, RealmEntity realm) {
-            this.clientScope = clientScope;
+        public Key(String clientScopeId, RealmEntity realm) {
+            this.clientScopeId = clientScopeId;
             this.realm = realm;
         }
 
-        public ClientScopeEntity getClientScope() {
-            return clientScope;
+        public String getClientScopeId() {
+            return clientScopeId;
         }
 
         public RealmEntity getRealm() {
@@ -111,7 +110,7 @@ public class DefaultClientScopeRealmMappingEntity {
 
             DefaultClientScopeRealmMappingEntity.Key key = (DefaultClientScopeRealmMappingEntity.Key) o;
 
-            if (clientScope != null ? !clientScope.getId().equals(key.clientScope != null ? key.clientScope.getId() : null) : key.clientScope != null) return false;
+            if (clientScopeId != null ? !clientScopeId.equals(key.getClientScopeId() != null ? key.getClientScopeId() : null) : key.getClientScopeId() != null) return false;
             if (realm != null ? !realm.getId().equals(key.realm != null ? key.realm.getId() : null) : key.realm != null) return false;
 
             return true;
@@ -119,7 +118,7 @@ public class DefaultClientScopeRealmMappingEntity {
 
         @Override
         public int hashCode() {
-            int result = clientScope != null ? clientScope.getId().hashCode() : 0;
+            int result = clientScopeId != null ? clientScopeId.hashCode() : 0;
             result = 31 * result + (realm != null ? realm.getId().hashCode() : 0);
             return result;
         }
@@ -133,7 +132,7 @@ public class DefaultClientScopeRealmMappingEntity {
 
         DefaultClientScopeRealmMappingEntity key = (DefaultClientScopeRealmMappingEntity) o;
 
-        if (clientScope != null ? !clientScope.getId().equals(key.clientScope != null ? key.clientScope.getId() : null) : key.clientScope != null) return false;
+        if (clientScopeId != null ? !clientScopeId.equals(key.getClientScopeId() != null ? key.getClientScopeId() : null) : key.getClientScopeId() != null) return false;
         if (realm != null ? !realm.getId().equals(key.realm != null ? key.realm.getId() : null) : key.realm != null) return false;
 
         return true;
@@ -141,7 +140,7 @@ public class DefaultClientScopeRealmMappingEntity {
 
     @Override
     public int hashCode() {
-        int result = clientScope != null ? clientScope.getId().hashCode() : 0;
+        int result = clientScopeId != null ? clientScopeId.hashCode() : 0;
         result = 31 * result + (realm != null ? realm.getId().hashCode() : 0);
         return result;
     }

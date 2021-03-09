@@ -90,6 +90,18 @@ public class ExtensionsType {
         return Collections.unmodifiableList(this.any);
     }
 
+    public List<Element> getDomElements() {
+        List<Element> output = new ArrayList<Element>();
+
+        for (Object o : this.any) {
+            if (o instanceof Element) {
+                output.add((Element) o);
+            }
+        }
+
+        return Collections.unmodifiableList(output);
+    }
+
     public EntityAttributes getEntityAttributes() {
         for (Object o : this.any) {
             if (o instanceof EntityAttributes) {

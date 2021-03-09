@@ -48,6 +48,10 @@
         "provider": "${keycloak.client.provider:jpa}"
     },
 
+    "clientScope": {
+        "provider": "${keycloak.clientScope.provider:jpa}"
+    },
+
     "group": {
         "provider": "${keycloak.group.provider:jpa}"
     },

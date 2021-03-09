@@ -160,7 +160,7 @@ jobs:
         run: |
           declare -A PARAMS TESTGROUP
           PARAMS["quarkus"]="-Pauth-server-quarkus"
-          PARAMS["undertow-map"]="-Pauth-server-undertow -Dkeycloak.client.provider=map -Dkeycloak.group.provider=map -Dkeycloak.role.provider=map -Dkeycloak.authSession.provider=map -Dkeycloak.user.provider=map"
+          PARAMS["undertow-map"]="-Pauth-server-undertow -Dkeycloak.client.provider=map -Dkeycloak.group.provider=map -Dkeycloak.role.provider=map -Dkeycloak.authSession.provider=map -Dkeycloak.user.provider=map -Dkeycloak.clientScope.provider=map"
           PARAMS["wildfly"]="-Pauth-server-wildfly"
           TESTGROUP["group1"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(a[abc]|ad[a-l]|[^a-q]).*]"   # Tests alphabetically before admin tests and those after "r"
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"

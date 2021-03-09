@@ -107,11 +107,13 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Finally, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
 
-        // Logined
+        // Logged in
         appPage.assertCurrent();
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().assertEvent();
@@ -139,9 +141,11 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Second, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
 
         // Finally, accept terms
         termsPage.assertCurrent();

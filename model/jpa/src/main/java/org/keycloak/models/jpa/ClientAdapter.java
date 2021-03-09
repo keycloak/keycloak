@@ -364,7 +364,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     private void persist(ClientScopeModel clientScope, boolean defaultScope) {
         ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
-        entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
+        entity.setClientScopeId(clientScope.getId());
         entity.setClient(getEntity());
         entity.setDefaultScope(defaultScope);
         em.persist(entity);
@@ -375,7 +375,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public void removeClientScope(ClientScopeModel clientScope) {
         int numRemoved = em.createNamedQuery("deleteClientScopeClientMapping")
-                .setParameter("clientScope", ClientScopeAdapter.toClientScopeEntity(clientScope, em))
+                .setParameter("clientScopeId", clientScope.getId())
                 .setParameter("client", getEntity())
                 .executeUpdate();
         em.flush();

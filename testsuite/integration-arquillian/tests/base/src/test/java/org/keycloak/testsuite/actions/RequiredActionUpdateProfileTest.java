@@ -102,9 +102,11 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-       events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
-
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
@@ -129,12 +131,9 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.update("New first", "New last", "john-doh@localhost", "new");
 
-        events.expectLogin()
-                .event(EventType.UPDATE_PROFILE)
+        events.expectLogin().event(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
+                .detail(Details.UPDATED_LAST_NAME, "New last").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
                 .detail(Details.USERNAME, "john-doh@localhost")
-                .user(userId)
-                .session(Matchers.nullValue(String.class))
-                .removeDetail(Details.CONSENT)
                 .assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -344,8 +343,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

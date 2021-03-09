@@ -90,9 +90,6 @@ public class LogoutTest extends AbstractSamlTest {
     private ClientRepresentation salesRep;
     private ClientRepresentation sales2Rep;
 
-    private final AtomicReference<NameIDType> nameIdRef = new AtomicReference<>();
-    private final AtomicReference<String> sessionIndexRef = new AtomicReference<>();
-
     @Before
     public void setup() {
         salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
@@ -114,22 +111,6 @@ public class LogoutTest extends AbstractSamlTest {
     @Override
     protected boolean isImportAfterEachMethod() {
         return true;
-    }
-
-    private SAML2Object extractNameIdAndSessionIndexAndTerminate(SAML2Object so) {
-        assertThat(so, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
-        ResponseType loginResp1 = (ResponseType) so;
-        final AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
-        assertThat(firstAssertion, org.hamcrest.Matchers.notNullValue());
-        assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
-
-        NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
-        AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
-
-        nameIdRef.set(nameId);
-        sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
-
-        return null;
     }
 
     private SamlClientBuilder logIntoUnsignedSalesAppViaIdp() throws IllegalArgumentException, UriBuilderException {
