@@ -18,21 +18,25 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.ui.account2.page.ForbiddenPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@Ignore // TODO Remove when KEYCLOAK-17366 is fixed
 public class PermissionsTest extends AbstractAccountTest {
     @Page
     private WelcomeScreen welcomeScreen;
@@ -46,14 +50,20 @@ public class PermissionsTest extends AbstractAccountTest {
     @Page
     private ForbiddenPage forbiddenPage;
 
+    private static final String DEFAULT_ROLE_NAME = "default-roles-" + TEST;
+
     @Test
     public void manageAccountRoleRequired() {
-        // remove the default role from test user
+        // remove the default role from test user ACCOUNT_MANAGEMENT_CLIENT_ID
         String accountClientId = testRealmResource().clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
-        RoleScopeResource roleScopes = testUserResource().roles().clientLevel(accountClientId);
-        roleScopes.remove(roleScopes.listAll().stream()
-                .filter(r -> MANAGE_ACCOUNT.equals(r.getName()))
-                .collect(Collectors.toList()));
+
+        List<RoleRepresentation> rolesToRemove = testRealmResource().roles()
+                .get(DEFAULT_ROLE_NAME)
+                .getClientRoleComposites(accountClientId).stream()
+                .filter(role -> role.getName().equals(MANAGE_ACCOUNT))
+                .collect(Collectors.toList());
+
+        testRealmResource().roles().get(DEFAULT_ROLE_NAME).deleteComposites(rolesToRemove);
 
         welcomeScreen.header().clickLoginBtn();
         loginToAccount();
@@ -70,5 +80,8 @@ public class PermissionsTest extends AbstractAccountTest {
         welcomeScreen.assertCurrent();
         welcomeScreen.header().assertLoginBtnVisible(true);
         welcomeScreen.header().assertLogoutBtnVisible(false);
+
+        // Revert role changes
+        getCleanup().addCleanup((Runnable) () -> testRealmResource().roles().get(DEFAULT_ROLE_NAME).addComposites(rolesToRemove));
     }
 }

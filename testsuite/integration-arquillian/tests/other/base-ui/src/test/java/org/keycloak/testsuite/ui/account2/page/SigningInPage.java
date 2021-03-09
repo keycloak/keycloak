@@ -209,7 +209,10 @@ public class SigningInPage extends AbstractLoggedInPage {
         }
 
         public String getCreatedAtStr() {
-            return getTextFromItem(CREATED_AT).split("Created: ")[1];
+            String lastCreatedAtText = getTextFromElement(
+                    driver.findElement(By.cssSelector("[id*='" + CREATED_AT + "'] strong")));
+
+            return getTextFromItem(CREATED_AT).substring(lastCreatedAtText.length()).trim();
         }
 
         public LocalDateTime getCreatedAt() {
