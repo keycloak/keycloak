@@ -96,8 +96,14 @@
 
     "removeImportedUsers": "Remove imported users?",
     "removeImportedUsersMessage": "Do you really want to remove all imported users? The option \"Unlink users\" makes sense just for the Edit Mode \"Unsynced\" and there should be a warning that \"unlinked\" users without the password in the Keycloak database won't be able to authenticate.",
-    "removeImportedUsersSuccess": "Imported users have been removed",
+    "removeImportedUsersSuccess": "Imported users have been removed.",
     "removeImportedUsersError": "Could not remove imported users: '{{error}}'",
+
+    "syncUsersSuccess": "Sync of users finished successfully.",
+    "syncUsersError": "Could not sync users: '{{error}}'",
+
+    "unlinkUsersSuccess": "Unlink of users finished successfully.",
+    "unlinkUsersError": "Could not unlink users: '{{error}}'",
 
     "validateName": "You must enter a name",
     "validateRealm":"You must enter a realm",
