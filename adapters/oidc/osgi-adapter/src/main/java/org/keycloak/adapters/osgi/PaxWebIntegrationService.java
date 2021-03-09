@@ -266,7 +266,7 @@ public class PaxWebIntegrationService {
 
                 log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getPathSpec() + ", dataConstraint=" + dataConstraintStr + ", canAuthenticate="
                         + constraint.getAuthenticate() + ", roles=" + rolesList);
-                service.registerConstraintMapping(name, null, constraintMapping.getPathSpec(), dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
+                service.registerConstraintMapping(name, "", constraintMapping.getPathSpec(), dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
                 return true;
             }
             return false;

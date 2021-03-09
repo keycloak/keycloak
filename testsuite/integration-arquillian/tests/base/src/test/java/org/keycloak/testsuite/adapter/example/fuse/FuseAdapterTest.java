@@ -381,6 +381,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void testProductPortal() {
         productPortal.navigateTo();
         WaitUtils.waitForPageToLoad();
