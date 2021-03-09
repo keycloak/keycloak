@@ -48,7 +48,7 @@ You just need to download and run JBoss Fuse and then run those commands from th
 ```
 KEYCLOAK_VERSION="2.2.1.Final"
 features:addurl mvn:org.keycloak/keycloak-osgi-features/$KEYCLOAK_VERSION/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/$KEYCLOAK_VERSION/xml/features
+features:addurl mvn:org.keycloak.testsuite/fuse-example-keycloak-features/$KEYCLOAK_VERSION/xml/features
 features:install keycloak-fuse-6.3-example
 ```
 
