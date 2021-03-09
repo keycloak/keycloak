@@ -32,7 +32,6 @@ exports[`<JsonFileUpload /> render 1`] = `
         className="pf-c-form__group-control"
       >
         <FileUpload
-          allowEditingUploadedText={true}
           dropzoneProps={
             Object {
               "accept": ".json",
@@ -59,7 +58,6 @@ exports[`<JsonFileUpload /> render 1`] = `
             preventDropOnDocument={true}
           >
             <FileUploadField
-              allowEditingUploadedText={true}
               containerRef={[Function]}
               filename=""
               id="test"
@@ -303,7 +301,6 @@ exports[`<JsonFileUpload /> upload file 1`] = `
         className="pf-c-form__group-control"
       >
         <FileUpload
-          allowEditingUploadedText={true}
           dropzoneProps={
             Object {
               "accept": ".json",
@@ -330,7 +327,6 @@ exports[`<JsonFileUpload /> upload file 1`] = `
             preventDropOnDocument={true}
           >
             <FileUploadField
-              allowEditingUploadedText={true}
               containerRef={[Function]}
               filename=""
               id="upload"

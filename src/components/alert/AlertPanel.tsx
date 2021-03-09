@@ -22,23 +22,22 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
   return (
     <AlertGroup isToast>
       {alerts.map(({ key, variant, message, description }) => (
-        <>
-          <Alert
-            key={key}
-            isLiveRegion
-            variant={AlertVariant[variant]}
-            variantLabel=""
-            title={message}
-            actionClose={
-              <AlertActionCloseButton
-                title={message}
-                onClose={() => onCloseAlert(key)}
-              />
-            }
-          >
-            {description && <p>{description}</p>}
-          </Alert>
-        </>
+        <Alert
+          timeout={true}
+          key={key}
+          isLiveRegion
+          variant={AlertVariant[variant]}
+          variantLabel=""
+          title={message}
+          actionClose={
+            <AlertActionCloseButton
+              title={message}
+              onClose={() => onCloseAlert(key)}
+            />
+          }
+        >
+          {description && <p>{description}</p>}
+        </Alert>
       ))}
     </AlertGroup>
   );

@@ -2,6 +2,11 @@
   "clients-help": {
     "webOrigins": "Allowed CORS origins. To permit all origins of Valid Redirect URIs, add '+'. This does not include the '*' wildcard though. To permit all origins, explicitly add '*'.",
     "adminURL": "URL to the admin interface of the client. Set this if the client supports the adapter REST API. This REST API allows the auth server to push revocation policies and other administrative tasks. Usually this is set to the base URL of the client.",
+    "clientID": "Specifies ID referenced in URI and tokens. For example 'my-client'. For SAML this is also the expected issuer value from authn requests",
+    "clientName": "Specifies display name of the client. For example 'My Client'. Supports keys for localized values as well. For example: ${my_client}",
+    "description": "Specifies description of the client. For example 'My Client for TimeSheets'. Supports keys for localized values as well. For example: ${my_client_description}",
+    "encryptAssertions": "Should SAML assertions be encrypted with client's public key using AES?",
+    "clientSignature": "Will the client sign their saml requests and responses? And should they be validated?",
     "downloadType": "this is information about the download type",
     "details": "this is information about the details",
     "createToken": "An initial access token can only be used to create clients",

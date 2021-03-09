@@ -111,11 +111,11 @@ export const NewClientForm = () => {
               },
               {
                 name: t("capabilityConfig"),
-                component: <CapabilityConfig />,
+                component: <CapabilityConfig protocol={client.protocol} />,
               },
             ]}
             footer={<Footer />}
-            onSave={() => save()}
+            onSave={save}
           />
         </FormProvider>
       </PageSection>

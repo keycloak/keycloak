@@ -49,7 +49,10 @@ export const JsonFileUpload = ({
       | React.ChangeEvent<HTMLTextAreaElement>
       | React.MouseEvent<HTMLButtonElement, MouseEvent>
   ): void => {
-    if (event.nativeEvent instanceof MouseEvent) {
+    if (
+      event.nativeEvent instanceof MouseEvent &&
+      !(event.nativeEvent instanceof DragEvent)
+    ) {
       setFileUpload({ ...fileUpload, modal: true });
     } else {
       setFileUpload({
@@ -100,7 +103,6 @@ export const JsonFileUpload = ({
           value={fileUpload.value}
           filename={fileUpload.filename}
           onChange={handleChange}
-          allowEditingUploadedText
           onReadStarted={() =>
             setFileUpload({ ...fileUpload, isLoading: true })
           }

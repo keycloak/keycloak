@@ -16,11 +16,6 @@ export const AlertContext = createContext<AlertProps>({
 
 export const useAlerts = () => useContext(AlertContext);
 
-type TimeOut = {
-  key: number;
-  timeOut: NodeJS.Timeout;
-};
-
 export const AlertProvider = ({ children }: { children: ReactNode }) => {
   const [alerts, setAlerts] = useState<AlertType[]>([]);
 

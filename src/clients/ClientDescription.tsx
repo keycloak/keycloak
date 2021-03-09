@@ -1,7 +1,14 @@
 import React from "react";
-import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import {
+  FormGroup,
+  TextArea,
+  TextInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+
+import { HelpItem } from "../components/help-enabler/HelpItem";
 
 import { FormAccess } from "../components/form-access/FormAccess";
 import { ClientForm } from "./ClientDetails";
@@ -12,6 +19,13 @@ export const ClientDescription = () => {
   return (
     <FormAccess role="manage-clients" unWrap>
       <FormGroup
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:clientID"
+            forLabel={t("clientID")}
+            forID="kc-client-id"
+          />
+        }
         label={t("clientID")}
         fieldId="kc-client-id"
         helperTextInvalid={t("common:required")}
@@ -30,10 +44,27 @@ export const ClientDescription = () => {
           }
         />
       </FormGroup>
-      <FormGroup label={t("common:name")} fieldId="kc-name">
+      <FormGroup
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:clientName"
+            forLabel={t("common:name")}
+            forID="kc-name"
+          />
+        }
+        label={t("common:name")}
+        fieldId="kc-name"
+      >
         <TextInput ref={register()} type="text" id="kc-name" name="name" />
       </FormGroup>
       <FormGroup
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:description"
+            forLabel={t("common:description")}
+            forID="kc-description"
+          />
+        }
         label={t("common:description")}
         fieldId="kc-description"
         validated={
@@ -41,7 +72,7 @@ export const ClientDescription = () => {
         }
         helperTextInvalid={errors.description?.message}
       >
-        <TextInput
+        <TextArea
           ref={register({
             maxLength: {
               value: 255,
