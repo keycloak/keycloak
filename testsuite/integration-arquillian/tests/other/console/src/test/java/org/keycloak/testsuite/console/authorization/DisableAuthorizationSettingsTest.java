@@ -37,6 +37,7 @@ public class DisableAuthorizationSettingsTest extends AbstractAuthorizationSetti
         clientSettingsPage.form().confirmDisableAuthorizationSettings();
         Thread.sleep(1000);
         clientSettingsPage.form().save();
+        clientSettingsPage.form().confirmDisableAuthorizationSettings();
         assertAlertSuccess();
 
         clientSettingsPage.navigateTo();
