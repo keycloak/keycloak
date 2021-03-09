@@ -242,7 +242,6 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
-      {!rows && <Loading />}
       {rows && (rows.length > 0 || !emptyState) && isPaginated && (
         <PaginatingTableToolbar
           count={rows.length}
@@ -263,15 +262,17 @@ export function KeycloakDataTable<T>({
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
         >
-          <DataTable
-            canSelectAll={canSelectAll}
-            onSelect={onSelect ? _onSelect : undefined}
-            actions={convertAction()}
-            actionResolver={actionResolver}
-            rows={rows}
-            columns={columns}
-            ariaLabelKey={ariaLabelKey}
-          />
+          {!loading && (
+            <DataTable
+              canSelectAll={canSelectAll}
+              onSelect={onSelect ? _onSelect : undefined}
+              actions={convertAction()}
+              actionResolver={actionResolver}
+              rows={rows}
+              columns={columns}
+              ariaLabelKey={ariaLabelKey}
+            />
+          )}
           {loading && <Loading />}
         </PaginatingTableToolbar>
       )}
@@ -286,15 +287,18 @@ export function KeycloakDataTable<T>({
           toolbarItem={toolbarItem}
           searchTypeComponent={searchTypeComponent}
         >
-          <DataTable
-            canSelectAll={canSelectAll}
-            onSelect={onSelect ? _onSelect : undefined}
-            actions={convertAction()}
-            actionResolver={actionResolver}
-            rows={filteredData || rows}
-            columns={columns}
-            ariaLabelKey={ariaLabelKey}
-          />
+          {!loading && (
+            <DataTable
+              canSelectAll={canSelectAll}
+              onSelect={onSelect ? _onSelect : undefined}
+              actions={convertAction()}
+              actionResolver={actionResolver}
+              rows={filteredData || rows}
+              columns={columns}
+              ariaLabelKey={ariaLabelKey}
+            />
+          )}
+          {loading && <Loading />}
         </TableToolbar>
       )}
       <>{!loading && rows?.length === 0 && emptyState}</>
