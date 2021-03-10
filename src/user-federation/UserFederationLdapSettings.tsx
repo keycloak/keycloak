@@ -48,6 +48,8 @@ const LdapSettingsHeader = ({
 }: LdapSettingsHeaderProps) => {
   const { t } = useTranslation("user-federation");
   const { id } = useParams<{ id: string }>();
+  const adminClient = useAdminClient();
+  const { addAlert } = useAlerts();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDisableConfirmTitle",
     messageKey: "user-federation:userFedDisableConfirm",
@@ -57,6 +59,62 @@ const LdapSettingsHeader = ({
       save();
     },
   });
+
+  const syncChangedUsers = async () => {
+    try {
+      if (id) {
+        const response = await adminClient.userStorageProvider.sync({
+          id: id,
+          action: "triggerChangedUsersSync",
+        });
+        if (response.ignored) {
+          addAlert(`${response.status}.`, AlertVariant.warning);
+        } else {
+          addAlert(
+            t("syncUsersSuccess") +
+              `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
+            AlertVariant.success
+          );
+        }
+      }
+    } catch (error) {
+      addAlert(t("syncUsersError", { error }), AlertVariant.danger);
+    }
+  };
+
+  const syncAllUsers = async () => {
+    try {
+      if (id) {
+        const response = await adminClient.userStorageProvider.sync({
+          id: id,
+          action: "triggerFullSync",
+        });
+        if (response.ignored) {
+          addAlert(`${response.status}.`, AlertVariant.warning);
+        } else {
+          addAlert(
+            t("syncUsersSuccess") +
+              `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
+            AlertVariant.success
+          );
+        }
+      }
+    } catch (error) {
+      addAlert(t("syncUsersError", { error }), AlertVariant.danger);
+    }
+  };
+
+  const unlinkUsers = async () => {
+    try {
+      if (id) {
+        await adminClient.userStorageProvider.unlinkUsers({ id });
+      }
+      addAlert(t("unlinkUsersSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("unlinkUsersError", { error }), AlertVariant.danger);
+    }
+  };
+
   return (
     <>
       <DisableConfirm />
@@ -67,34 +125,22 @@ const LdapSettingsHeader = ({
           titleKey="LDAP"
           subKey=""
           dropdownItems={[
-            <DropdownItem
-              key="sync"
-              onClick={() => console.log("Sync users TBD")}
-            >
+            <DropdownItem key="sync" onClick={syncChangedUsers}>
               {t("syncChangedUsers")}
             </DropdownItem>,
-            <DropdownItem
-              key="syncall"
-              onClick={() => console.log("Sync all users TBD")}
-            >
+            <DropdownItem key="syncall" onClick={syncAllUsers}>
               {t("syncAllUsers")}
             </DropdownItem>,
-            <DropdownItem
-              key="unlink"
-              onClick={() => console.log("Unlink users TBD")}
-            >
+            <DropdownItem key="unlink" onClick={unlinkUsers}>
               {t("unlinkUsers")}
             </DropdownItem>,
-            <DropdownItem
-              key="remove"
-              onClick={() => toggleRemoveUsersDialog()}
-            >
+            <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
               {t("removeImported")}
             </DropdownItem>,
             <DropdownSeparator key="separator" />,
             <DropdownItem
               key="delete"
-              onClick={() => toggleDeleteDialog()}
+              onClick={toggleDeleteDialog}
               data-testid="delete-ldap-cmd"
             >
               {t("deleteProvider")}
@@ -147,6 +193,17 @@ export const UserFederationLdapSettings = () => {
     });
   };
 
+  const removeImportedUsers = async () => {
+    try {
+      if (id) {
+        await adminClient.userStorageProvider.removeImportedUsers({ id });
+      }
+      addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("removeImportedUsersError", { error }), AlertVariant.danger);
+    }
+  };
+
   const save = async (component: ComponentRepresentation) => {
     try {
       if (id) {
@@ -176,8 +233,7 @@ export const UserFederationLdapSettings = () => {
     continueButtonLabel: "common:remove",
     onConfirm: async () => {
       try {
-        console.log("Remove imported TBD");
-        // TODO await remove imported users command
+        removeImportedUsers();
         addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
       } catch (error) {
         addAlert(t("removeImportedUsersError", { error }), AlertVariant.danger);
