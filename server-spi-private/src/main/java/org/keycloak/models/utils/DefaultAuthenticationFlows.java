@@ -68,6 +68,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
+        if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
         if (realm.getFlowByAlias(HTTP_CHALLENGE_FLOW) == null) httpChallengeFlow(realm);
     }
