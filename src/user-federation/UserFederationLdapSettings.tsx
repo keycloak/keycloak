@@ -131,25 +131,22 @@ const LdapSettingsHeader = ({
           titleKey="LDAP"
           subKey=""
           dropdownItems={[
-            <DropdownItem key="sync" onClick={() => syncChangedUsers()}>
+            <DropdownItem key="sync" onClick={syncChangedUsers}>
               {t("syncChangedUsers")}
             </DropdownItem>,
-            <DropdownItem key="syncall" onClick={() => syncAllUsers()}>
+            <DropdownItem key="syncall" onClick={syncAllUsers}>
               {t("syncAllUsers")}
             </DropdownItem>,
-            <DropdownItem key="unlink" onClick={() => unlinkUsers()}>
+            <DropdownItem key="unlink" onClick={unlinkUsers}>
               {t("unlinkUsers")}
             </DropdownItem>,
-            <DropdownItem
-              key="remove"
-              onClick={() => toggleRemoveUsersDialog()}
-            >
+            <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
               {t("removeImported")}
             </DropdownItem>,
             <DropdownSeparator key="separator" />,
             <DropdownItem
               key="delete"
-              onClick={() => toggleDeleteDialog()}
+              onClick={toggleDeleteDialog}
               data-testid="delete-ldap-cmd"
             >
               {t("deleteProvider")}
