@@ -68,14 +68,11 @@ const LdapSettingsHeader = ({
           action: "triggerChangedUsersSync",
         });
         if (response.ignored) {
-          addAlert(
-            t("syncUsersSuccess") + ` ${response.status}.`,
-            AlertVariant.success
-          );
+          addAlert(`${response.status}.`, AlertVariant.warning);
         } else {
           addAlert(
             t("syncUsersSuccess") +
-              ` ${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
+              `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
             AlertVariant.success
           );
         }
@@ -93,14 +90,11 @@ const LdapSettingsHeader = ({
           action: "triggerFullSync",
         });
         if (response.ignored) {
-          addAlert(
-            t("syncUsersSuccess") + ` ${response.status}.`,
-            AlertVariant.success
-          );
+          addAlert(`${response.status}.`, AlertVariant.warning);
         } else {
           addAlert(
             t("syncUsersSuccess") +
-              ` ${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
+              `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
             AlertVariant.success
           );
         }
