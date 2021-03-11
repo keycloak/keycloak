@@ -31,6 +31,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -284,7 +285,7 @@ public class KeycloakServer {
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
         try {
-          File tempKeycloakFolder = Files.createTempDirectory("keycloak-server-").toFile();
+          File tempKeycloakFolder = Platform.getPlatform().getTmpDirectory();
           File tmpDataDir = new File(tempKeycloakFolder, "/data");
 
           if (tmpDataDir.mkdirs()) {

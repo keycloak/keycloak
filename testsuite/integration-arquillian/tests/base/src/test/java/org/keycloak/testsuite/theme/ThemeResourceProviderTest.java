@@ -7,29 +7,24 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Version;
+import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.theme.Theme;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -82,12 +77,39 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     public void gzipEncoding() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
 
+        // This will return true if files did not exists before the test OR they did exists, but were successfully deleted.
+        // False will be returned just in case that files were exists, but were NOT successfully deleted.
+        // This can happen in rare case when the file were created before in "tmp" directory by different system user and current user can't delete them
+        boolean filesNotExistsInTmp = testingClient.server().fetch(session -> {
+            boolean deleted = true;
+            File file1 = Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile();
+            if (file1.isFile()) {
+                deleted = file1.delete();
+            }
+
+            File file2 = Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile();
+            if (file2.isFile()) {
+                deleted = deleted && file2.delete();
+            }
+
+            return deleted;
+        }, Boolean.class);
+
         assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", "body {");
         assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/js/keycloak.js", "function(root, factory)");
 
+        // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user
+        if (filesNotExistsInTmp) {
+            testingClient.server().run(session -> {
+                assertFalse(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
+                assertFalse(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile().isFile());
+            });
+        }
+
         testingClient.server().run(session -> {
-            assertTrue(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
-            assertTrue(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile().isFile());
+            String serverTmpDir = Platform.getPlatform().getTmpDirectory().toString();
+            assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
+            assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "js", "keycloak.js.gz").toFile().isFile());
         });
     }
 
