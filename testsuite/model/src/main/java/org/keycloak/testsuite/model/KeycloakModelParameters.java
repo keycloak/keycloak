@@ -18,10 +18,6 @@ package org.keycloak.testsuite.model;
 
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.testsuite.model.Config.SpiConfig;
-import org.keycloak.util.JsonSerialization;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.runner.Description;
@@ -58,9 +54,6 @@ public class KeycloakModelParameters {
      */
     public <T> Stream<T> getParameters(Class<T> clazz) {
         return Stream.empty();
-    }
-
-    public void updateConfig(Config cf) {
     }
 
     public Statement classRule(Statement base, Description description) {

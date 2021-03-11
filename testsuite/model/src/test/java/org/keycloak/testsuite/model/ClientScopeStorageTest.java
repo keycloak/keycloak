@@ -61,6 +61,7 @@ public class ClientScopeStorageTest extends KeycloakModelTest {
             ComponentModel res = realm.addComponentModel(federatedStorage);
             clientScopeFederationId = res.getId();
             log.infof("Added %s client scope federation provider: %s", federatedStorage.getName(), clientScopeFederationId);
+            return null;
         }));
 
         inComittedTransaction(1, (session, i) -> {
@@ -68,6 +69,7 @@ public class ClientScopeStorageTest extends KeycloakModelTest {
             StorageId storageId = new StorageId(clientScopeFederationId, "scope_name");
             ClientScopeModel hardcoded = session.clientScopes().getClientScopeById(realm, storageId.getId());
             Assert.assertNotNull(hardcoded);
+            return null;
         });
     }
 }

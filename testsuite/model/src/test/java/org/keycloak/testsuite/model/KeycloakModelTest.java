@@ -30,6 +30,7 @@ import org.keycloak.models.ClientSpi;
 import org.keycloak.models.GroupSpi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleSpi;
 import org.keycloak.models.UserSpi;
@@ -47,8 +48,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
@@ -92,8 +96,11 @@ public abstract class KeycloakModelTest {
                 st = Stream.concat(Stream.of(testClass.getAnnotationsByType(RequireProvider.class)), st);
                 testClass = testClass.getSuperclass();
             }
-            List<Class<? extends Provider>> notFound = st.map(RequireProvider::value)
-              .filter(pClass -> FACTORY.getProviderFactory(pClass) == null)
+            List<Class<? extends Provider>> notFound = st
+              .filter(rp -> rp.only().length == 0 
+                ? FACTORY.getProviderFactory(rp.value()) == null
+                : Stream.of(rp.only()).allMatch(provider -> FACTORY.getProviderFactory(rp.value(), provider) == null))
+              .map(RequireProvider::value)
               .collect(Collectors.toList());
             Assume.assumeThat("Some required providers not found", notFound, Matchers.empty());
 
@@ -119,16 +126,30 @@ public abstract class KeycloakModelTest {
                 st = Stream.concat(st, Stream.of(rp));
             }
 
-            for (Iterator<Class<? extends Provider>> iterator = st.map(RequireProvider::value).iterator(); iterator.hasNext();) {
-                Class<? extends Provider> providerClass = iterator.next();
+            for (Iterator<RequireProvider> iterator = st.iterator(); iterator.hasNext();) {
+                RequireProvider rpInner = iterator.next();
+                Class<? extends Provider> providerClass = rpInner.value();
+                String[] only = rpInner.only();
 
-                if (FACTORY.getProviderFactory(providerClass) == null) {
-                    return new Statement() {
-                        @Override
-                        public void evaluate() throws Throwable {
-                            throw new AssumptionViolatedException("Provider must exist: " + providerClass);
-                        }
-                    };
+                if (only.length == 0) {
+                    if (FACTORY.getProviderFactory(providerClass) == null) {
+                        return new Statement() {
+                            @Override
+                            public void evaluate() throws Throwable {
+                                throw new AssumptionViolatedException("Provider must exist: " + providerClass);
+                            }
+                        };
+                    }
+                } else {
+                    boolean notFoundAny = Stream.of(only).allMatch(provider -> FACTORY.getProviderFactory(providerClass, provider) == null);
+                    if (notFoundAny) {
+                        return new Statement() {
+                            @Override
+                            public void evaluate() throws Throwable {
+                                throw new AssumptionViolatedException("Provider must exist: " + providerClass + " one of [" + String.join(",", only) + "]");
+                            }
+                        };
+                    }
                 }
             }
 
@@ -160,7 +181,8 @@ public abstract class KeycloakModelTest {
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
-    protected static final DefaultKeycloakSessionFactory FACTORY;
+    protected static Config CONFIG;
+    protected static DefaultKeycloakSessionFactory FACTORY;
 
     static {
         KeycloakModelParameters basicParameters = new KeycloakModelParameters(ALLOWED_SPIS, ALLOWED_FACTORIES);
@@ -170,13 +192,22 @@ public abstract class KeycloakModelTest {
             .filter(s -> s != null && ! s.trim().isEmpty())
             .map(cn -> { try { return Class.forName(cn.indexOf('.') >= 0 ? cn : ("org.keycloak.testsuite.model.parameters." + cn)); } catch (Exception e) { LOG.error("Cannot find " + cn); return null; }})
             .filter(Objects::nonNull)
-            .map(c -> { try { return c.newInstance(); } catch (Exception e) { LOG.error("Cannot instantiate " + c); return null; }} )
+            .map(c -> { try { return c.getDeclaredConstructor().newInstance(); } catch (Exception e) { LOG.error("Cannot instantiate " + c); return null; }} )
             .filter(KeycloakModelParameters.class::isInstance)
             .map(KeycloakModelParameters.class::cast)
           )
           .collect(Collectors.toList());
 
-        FACTORY = new DefaultKeycloakSessionFactory() {
+        reinitializeKeycloakSessionFactory();
+    }
+
+    public static DefaultKeycloakSessionFactory createKeycloakSessionFactory() {
+        CONFIG = new Config();
+        MODEL_PARAMETERS.forEach(m -> m.updateConfig(CONFIG));
+        LOG.debug("Using the following configuration:\n    " + CONFIG);
+        org.keycloak.Config.init(CONFIG);
+
+        DefaultKeycloakSessionFactory res = new DefaultKeycloakSessionFactory() {
             @Override
             protected boolean isEnabled(ProviderFactory factory, Scope scope) {
                 return super.isEnabled(factory, scope) && isFactoryAllowed(factory);
@@ -196,7 +227,16 @@ public abstract class KeycloakModelTest {
                 return MODEL_PARAMETERS.stream().anyMatch(p -> p.isFactoryAllowed(factory));
             }
         };
-        FACTORY.init();
+        res.init();
+        return res;
+    }
+
+    public static void reinitializeKeycloakSessionFactory() {
+        DefaultKeycloakSessionFactory f = createKeycloakSessionFactory();
+        if (FACTORY != null) {
+            FACTORY.close();
+        }
+        FACTORY = f;
     }
 
     @BeforeClass
@@ -237,11 +277,20 @@ public abstract class KeycloakModelTest {
         session.getTransactionManager().rollback();
     }
 
-    protected <T> void inComittedTransaction(T parameter, BiConsumer<KeycloakSession, T> what) {
-        inComittedTransaction(parameter, what, (a,b) -> {}, (a,b) -> {});
+    protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what) {
+        return inComittedTransaction(parameter, what, null, null);
     }
 
-    protected <T> void inComittedTransaction(T parameter, BiConsumer<KeycloakSession, T> what, BiConsumer<KeycloakSession, T> onCommit, BiConsumer<KeycloakSession, T> onRollback) {
+    protected void inComittedTransaction(Consumer<KeycloakSession> what) {
+        inComittedTransaction(a -> { what.accept(a); return null; });
+    }
+
+    protected <R> R inComittedTransaction(Function<KeycloakSession, R> what) {
+        return inComittedTransaction(1, (a,b) -> what.apply(a));
+    }
+
+    protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what, BiConsumer<KeycloakSession, T> onCommit, BiConsumer<KeycloakSession, T> onRollback) {
+        AtomicReference<R> res = new AtomicReference<>();
         KeycloakModelUtils.runJobInTransaction(FACTORY, session -> {
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
@@ -254,7 +303,16 @@ public abstract class KeycloakModelTest {
                     if (onRollback != null) { onRollback.accept(session, parameter); }
                 }
             });
-            what.accept(session, parameter);
+            res.set(what.apply(session, parameter));
+        });
+        return res.get();
+    }
+
+    protected <R> R withRealm(String realmId, BiFunction<KeycloakSession, RealmModel, R> what) {
+        return inComittedTransaction(session -> {
+            final RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            return what.apply(session, realm);
         });
     }
 

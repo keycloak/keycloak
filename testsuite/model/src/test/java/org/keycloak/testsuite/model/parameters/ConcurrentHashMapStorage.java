@@ -16,15 +16,12 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
-import org.keycloak.testsuite.model.KeycloakModelParameters;
-import org.keycloak.models.map.client.MapClientProviderFactory;
-import org.keycloak.models.map.group.MapGroupProviderFactory;
-import org.keycloak.models.map.role.MapRoleProviderFactory;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 
@@ -41,8 +38,12 @@ public class ConcurrentHashMapStorage extends KeycloakModelParameters {
       .add(ConcurrentHashMapStorageProvider.class)
       .build();
 
-    static {
-        System.setProperty("keycloak.mapStorage.concurrenthashmap.dir", System.getProperty("keycloak.mapStorage.concurrenthashmap.dir", "${project.build.directory:target}"));
+    @Override
+    public void updateConfig(Config cf) {
+        cf.spi(MapStorageSpi.NAME)
+            .defaultProvider(ConcurrentHashMapStorageProvider.PROVIDER_ID)
+            .provider(ConcurrentHashMapStorageProvider.PROVIDER_ID)
+              .config("dir", "${project.build.directory:target}");
     }
 
     public ConcurrentHashMapStorage() {

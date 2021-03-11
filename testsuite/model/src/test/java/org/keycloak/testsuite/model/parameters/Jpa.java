@@ -35,6 +35,7 @@ import org.keycloak.models.jpa.JpaRoleProviderFactory;
 import org.keycloak.models.jpa.JpaUserProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 
@@ -73,4 +74,14 @@ public class Jpa extends KeycloakModelParameters {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
     }
 
+
+    @Override
+    public void updateConfig(Config cf) {
+        cf.spi("client").defaultProvider("jpa")
+          .spi("clientScope").defaultProvider("jpa")
+          .spi("group").defaultProvider("jpa")
+          .spi("role").defaultProvider("jpa")
+          .spi("user").defaultProvider("jpa")
+        ;
+    }
 }

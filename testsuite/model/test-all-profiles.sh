@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd "$(dirname $0)"
+mvn -version
 
 EXIT_CODE=0
 mvn clean
