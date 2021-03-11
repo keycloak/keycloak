@@ -142,17 +142,18 @@ public class OAuthRequestAuthenticator {
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
         log.debugf("callback uri: %s", url);
-      
+
+        KeycloakUriBuilder newUrl = KeycloakUriBuilder.fromUri(url);
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             int port = sslRedirectPort();
             if (port < 0) {
                 // disabled?
                 return null;
             }
-            KeycloakUriBuilder secureUrl = KeycloakUriBuilder.fromUri(url).scheme("https").port(-1);
-            if (port != 443) secureUrl.port(port);
-            url = secureUrl.build().toString();
+            newUrl.scheme("https").port(-1);
+            if (port != 443) newUrl.port(port);
         }
+        url = newUrl.build().toString();
 
         String loginHint = getQueryParamValue("login_hint");
         url = UriUtils.stripQueryParam(url,"login_hint");
