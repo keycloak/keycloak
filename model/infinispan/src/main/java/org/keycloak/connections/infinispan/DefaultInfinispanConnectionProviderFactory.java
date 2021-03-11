@@ -21,10 +21,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.configuration.Builder;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.cache.CacheMode;
@@ -465,8 +462,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, jgroupsUdpMcastAddr);
                 }
                 try {
-                    // Compatibility with Wildfly
-                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
+                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-keycloak-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
                     channel.setName(nodeName);
                     JGroupsTransport transport = new JGroupsTransport(channel);
 
@@ -482,7 +478,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
 
                     transportBuilder.jmx()
-                        .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
+                        .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
                         .enable();
 
                     logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
