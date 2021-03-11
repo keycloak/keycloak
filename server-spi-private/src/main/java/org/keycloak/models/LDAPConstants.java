@@ -163,7 +163,7 @@ public class LDAPConstants {
         } else if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_NEVER)) {
             shouldSetTruststore = false;
         } else {
-            shouldSetTruststore = (url != null && url.startsWith("ldaps"));
+            shouldSetTruststore = (url != null && url.toLowerCase().startsWith("ldaps"));
         }
 
         if (shouldSetTruststore) {
