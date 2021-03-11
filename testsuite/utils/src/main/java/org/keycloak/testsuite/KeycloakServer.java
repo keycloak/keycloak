@@ -37,6 +37,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
+import io.undertow.servlet.api.InstanceHandle;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 
@@ -58,6 +59,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import javax.servlet.Filter;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -406,7 +408,17 @@ public class KeycloakServer {
             // KEYCLOAK-14178
             deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
-            FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class);
+            InstanceHandle<Filter> filterInstance = new InstanceHandle<Filter>() {
+                @Override
+                public Filter getInstance() {
+                    return new UndertowRequestFilter(sessionFactory);
+                }
+
+                @Override
+                public void release() {
+                }
+            };
+            FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class, () -> filterInstance);
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);

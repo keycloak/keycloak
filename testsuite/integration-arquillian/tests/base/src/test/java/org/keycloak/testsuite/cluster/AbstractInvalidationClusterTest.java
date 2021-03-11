@@ -49,28 +49,37 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
     public void crud(boolean backendFailover) {
         T testEntity = createTestEntityRepresentation();
 
-        // CREATE 
+        // CREATE
+        log.info("(1) createEntityOnCurrentFailNode");
         testEntity = createEntityOnCurrentFailNode(testEntity);
 
         if (backendFailover) {
+            log.info("(2) failure");
             failure();
         }
 
+        log.info("(3) assertEntityOnSurvivorNodesEqualsTo");
         assertEntityOnSurvivorNodesEqualsTo(testEntity);
 
+        log.info("(4) failback");
         failback();
+        log.info("(5) iterateCurrentFailNode");
         iterateCurrentFailNode();
 
         // UPDATE(s)
+        log.info("(6) testEntityUpdates");
         testEntity = testEntityUpdates(testEntity, backendFailover);
 
         // DELETE 
+        log.info("(7) deleteEntityOnCurrentFailNode");
         deleteEntityOnCurrentFailNode(testEntity);
 
         if (backendFailover) {
+            log.info("(8) failure");
             failure();
         }
 
+        log.info("(9) assertEntityOnSurvivorNodesIsDeleted");
         assertEntityOnSurvivorNodesIsDeleted(testEntity);
     }
 
@@ -136,6 +145,7 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
     protected void assertEntityOnSurvivorNodesEqualsTo(T testEntityOnFailNode) {
         boolean entityDiffers = false;
         for (ContainerInfo survivorNode : getCurrentSurvivorNodes()) {
+            log.debug(String.format("Attempt to verify %s on survivor %s (%s)", getEntityType(testEntityOnFailNode), survivorNode, survivorNode.getContextRoot()));
             T testEntityOnSurvivorNode = readEntity(testEntityOnFailNode, survivorNode);
 
             if (EqualsBuilder.reflectionEquals(sortFields(testEntityOnSurvivorNode), sortFields(testEntityOnFailNode), excludedComparisonFields)) {
