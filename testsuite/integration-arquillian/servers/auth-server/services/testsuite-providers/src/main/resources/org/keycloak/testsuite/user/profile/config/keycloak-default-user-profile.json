@@ -1,0 +1,18 @@
+{
+	"attributes": [
+		{
+			"name": "username"
+		},
+		{
+			"name": "email"
+		},
+		{
+			"name": "firstName",
+	        "required": {}
+		},
+		{
+			"name": "lastName",
+	        "required": {}
+		}
+	]
+}

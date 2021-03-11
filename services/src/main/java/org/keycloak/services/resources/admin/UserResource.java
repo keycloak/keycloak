@@ -72,10 +72,9 @@ import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.validation.AttributeValidationResult;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.ValidationResult;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.BadRequestException;
@@ -113,7 +112,7 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
-import static org.keycloak.userprofile.profile.UserProfileContextFactory.forUserResource;
+import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
  * Base resource for managing users
@@ -170,11 +169,14 @@ public class UserResource {
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
 
-            Response response = validateUserProfile(user, rep, session);
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, rep.toAttributes(), user);
+
+            Response response = validateUserProfile(profile);
             if (response != null) {
                 return response;
             }
-            updateUserFromRep(user, rep, session, true);
+            profile.update(rep.getAttributes() != null);
+            updateUserFromRep(profile, user, rep, session, true);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -203,25 +205,25 @@ public class UserResource {
         }
     }
 
-    public static Response validateUserProfile(UserModel user, UserRepresentation rep, KeycloakSession session) {
-        UserProfileValidationResult result = forUserResource(user, rep, session).validate();
-        if (!result.getErrors().isEmpty()) {
-            for (AttributeValidationResult attrValidation : result.getErrors()) {
-                StringBuilder s = new StringBuilder("Failed to update attribute " + attrValidation.getField() + ": ");
-                for (ValidationResult valResult : attrValidation.getFailedValidations()) {
-                    s.append(valResult.getErrorType() + ", ");
-                }
+    public static Response validateUserProfile(UserProfile profile) {
+        try {
+            profile.validate();
+        } catch (ValidationException pve) {
+            for (ValidationException.Error error : pve.getErrors()) {
+                StringBuilder s = new StringBuilder("Failed to update attribute " + error.getAttribute() + ": ");
+
+                s.append(error.getMessage()).append(", ");
+
                 logger.warn(s);
             }
             return ErrorResponse.error("Could not update user! See server log for more details", Response.Status.BAD_REQUEST);
-        } else {
-            return null;
         }
+
+        return null;
     }
 
-    public static void updateUserFromRep(UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
+    public static void updateUserFromRep(UserProfile profile, UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
         boolean removeMissingRequiredActions = isUpdateExistingUser;
-        UserUpdateHelper.updateUserResource(session, user, rep, rep.getAttributes() != null);
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
