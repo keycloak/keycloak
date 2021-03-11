@@ -1,5 +1,10 @@
 import React from "react";
-import { AlertVariant, PageSection } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  PageSection,
+  Tab,
+  TabTitleText,
+} from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 
@@ -8,7 +13,8 @@ import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { UserForm } from "./UserForm";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");
@@ -18,20 +24,18 @@ export const UsersTabs = () => {
 
   const adminClient = useAdminClient();
   const form = useForm<UserRepresentation>({ mode: "onChange" });
+  const { id } = useParams<{ id: string }>();
 
   const save = async (user: UserRepresentation) => {
     try {
-      await adminClient.users.create({
-        username: user!.username,
-        email: user!.email,
-        emailVerified: user!.emailVerified,
-        firstName: user!.firstName,
-        lastName: user!.lastName,
-        enabled: user!.enabled,
-        requiredActions: user!.requiredActions,
-      });
-      addAlert(t("users:userCreated"), AlertVariant.success);
-      history.push(url.substr(0, url.lastIndexOf("/")));
+      if (id) {
+        await adminClient.users.update({ id: user.id! }, user);
+        addAlert(t("users:userSaved"), AlertVariant.success);
+      } else {
+        await adminClient.users.create(user);
+        addAlert(t("users:userCreated"), AlertVariant.success);
+        history.push(url.substr(0, url.lastIndexOf("/")));
+      }
     } catch (error) {
       addAlert(
         t("users:userCreateError", {
@@ -45,12 +49,23 @@ export const UsersTabs = () => {
   return (
     <>
       <ViewHeader
-        titleKey={t("users:createUser")}
+        titleKey={id! || t("users:createUser")}
         subKey=""
         dividerComponent="div"
       />
       <PageSection variant="light">
-        <UserForm form={form} save={save} />
+        {id && (
+          <KeycloakTabs isBox>
+            <Tab
+              eventKey="details"
+              data-testid="user-details-tab"
+              title={<TabTitleText>{t("details")}</TabTitleText>}
+            >
+              <UserForm form={form} save={save} editMode={true} />
+            </Tab>
+          </KeycloakTabs>
+        )}
+        {!id && <UserForm form={form} save={save} editMode={false} />}
       </PageSection>
     </>
   );

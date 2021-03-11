@@ -45,9 +45,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
-  const [allClientRoles, setAllClientRoles] = useState<RoleRepresentation[]>(
-    []
-  );
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState("roles");
@@ -115,9 +112,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
     const existingAdditionalRoles = await adminClient.roles.getCompositeRoles({
       id,
     });
-
-    setAllClientRoles(rolesList);
-    console.log(allClientRoles);
 
     return alphabetize(rolesList).filter((role: RoleRepresentation) => {
       return (

@@ -146,6 +146,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-users",
   },
   {
+    path: "/:realm/users/:id/:tab",
+    component: UsersTabs,
+    breadcrumb: t("users:userDetails"),
+    access: "manage-users",
+  },
+  {
     path: "/:realm/sessions",
     component: SessionsSection,
     breadcrumb: t("sessions:title"),

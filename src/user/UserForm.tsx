@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActionGroup,
   Button,
@@ -10,20 +10,26 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { Controller, UseFormMethods } from "react-hook-form";
-import { useHistory } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { FormAccess } from "../components/form-access/FormAccess";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useErrorHandler } from "react-error-boundary";
+import moment from "moment";
 
 export type UserFormProps = {
   form: UseFormMethods<UserRepresentation>;
   save: (user: UserRepresentation) => void;
+  editMode: boolean;
+  timestamp?: number;
 };
 
 export const UserForm = ({
-  form: { handleSubmit, register, errors, watch, control },
+  form: { handleSubmit, register, errors, watch, control, setValue, reset },
   save,
+  editMode,
 }: UserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
@@ -32,33 +38,56 @@ export const UserForm = ({
     isRequiredUserActionsDropdownOpen,
     setRequiredUserActionsDropdownOpen,
   ] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
   const history = useHistory();
+  const adminClient = useAdminClient();
+  const { id } = useParams<{ id: string }>();
+  const handleError = useErrorHandler();
 
   const watchUsernameInput = watch("username");
+  const [timestamp, setTimestamp] = useState(null);
+
+  useEffect(() => {
+    if (editMode) {
+      return asyncStateFetch(
+        () => adminClient.users.find({ username: id }),
+        (user) => {
+          setupForm(user[0]);
+        },
+        handleError
+      );
+    }
+  }, []);
+
+  const setupForm = (user: UserRepresentation) => {
+    reset();
+    Object.entries(user).map((entry) => {
+      console.log(entry[0], entry[1]);
+      if (entry[0] == "createdTimestamp") {
+        setTimestamp(entry[1]);
+      } else {
+        setValue(entry[0], entry[1]);
+      }
+    });
+  };
 
   const emailRegexPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
   const requiredUserActionsOptions = [
-    <SelectOption key={0} value="Configure OTP">
+    <SelectOption key={0} value="CONFIGURE_TOTP">
       {t("configureOTP")}
     </SelectOption>,
-    <SelectOption key={1} value="Update Password">
+    <SelectOption key={1} value="UPDATE_PASSWORD">
       {t("updatePassword")}
     </SelectOption>,
-    <SelectOption key={2} value="Update Profile">
+    <SelectOption key={2} value="UPDATE_PROFILE">
       {t("updateProfile")}
     </SelectOption>,
-    <SelectOption key={3} value="Verify Email">
+    <SelectOption key={3} value="VERIFY_EMAIL">
       {t("verifyEmail")}
-    </SelectOption>,
-    <SelectOption key={4} value="Update User Locale">
-      {t("updateUserLocale")}
     </SelectOption>,
   ];
 
   const clearSelection = () => {
-    setSelected([]);
     setRequiredUserActionsDropdownOpen(false);
   };
 
@@ -69,20 +98,56 @@ export const UserForm = ({
       role="manage-users"
       className="pf-u-mt-lg"
     >
-      <FormGroup
-        label={t("username")}
-        fieldId="kc-username"
-        isRequired
-        validated={errors.username ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
-      >
-        <TextInput
-          ref={register({ required: true })}
-          type="text"
-          id="kc-username"
-          name="username"
-        />
-      </FormGroup>
+      {editMode ? (
+        <>
+          <FormGroup
+            label={t("id")}
+            fieldId="kc-id"
+            isRequired
+            validated={errors.id ? "error" : "default"}
+            helperTextInvalid={t("common:required")}
+          >
+            <TextInput
+              ref={register({ required: !editMode })}
+              type="text"
+              id="kc-id"
+              name="id"
+              isReadOnly={editMode}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("createdAt")}
+            fieldId="kc-created-at"
+            isRequired
+            validated={errors.createdTimestamp ? "error" : "default"}
+            helperTextInvalid={t("common:required")}
+          >
+            <TextInput
+              value={moment(timestamp).format("MM/DD/YY hh:MM:ss A")}
+              type="text"
+              id="kc-created-at"
+              name="createdTimestamp"
+              isReadOnly={editMode}
+            />
+          </FormGroup>
+        </>
+      ) : (
+        <FormGroup
+          label={t("username")}
+          fieldId="kc-username"
+          isRequired
+          validated={errors.username ? "error" : "default"}
+          helperTextInvalid={t("common:required")}
+        >
+          <TextInput
+            ref={register()}
+            type="text"
+            id="kc-username"
+            name="username"
+            isReadOnly={editMode}
+          />
+        </FormGroup>
+      )}
       <FormGroup
         label={t("email")}
         fieldId="kc-description"
@@ -96,6 +161,7 @@ export const UserForm = ({
           type="email"
           id="kc-email"
           name="email"
+          data-testid="email-input"
           aria-label={t("emailInput")}
         />
       </FormGroup>
@@ -112,15 +178,16 @@ export const UserForm = ({
         }
       >
         <Controller
-          name="user-email-verified"
+          name="emailVerified"
           defaultValue={false}
           control={control}
           render={({ onChange, value }) => (
             <Switch
+              data-testid="email-verified-switch"
               id={"kc-user-email-verified"}
               isDisabled={false}
-              onChange={(value) => onChange([`${value}`])}
-              isChecked={value[0] === "true"}
+              onChange={(value) => onChange(value)}
+              isChecked={value}
               label={t("common:on")}
               labelOff={t("common:off")}
             />
@@ -135,6 +202,7 @@ export const UserForm = ({
       >
         <TextInput
           ref={register()}
+          data-testid="firstName-input"
           type="text"
           id="kc-firstname"
           name="firstName"
@@ -147,6 +215,7 @@ export const UserForm = ({
       >
         <TextInput
           ref={register()}
+          data-testid="lastName-input"
           type="text"
           id="kc-lastname"
           name="lastName"
@@ -165,15 +234,16 @@ export const UserForm = ({
         }
       >
         <Controller
-          name="user-enabled"
+          name="enabled"
           defaultValue={false}
           control={control}
           render={({ onChange, value }) => (
             <Switch
+              data-testid="user-enabled-switch"
               id={"kc-user-enabled"}
               isDisabled={false}
-              onChange={(value) => onChange([`${value}`])}
-              isChecked={value[0] === "true"}
+              onChange={(value) => onChange(value)}
+              isChecked={value}
               label={t("common:on")}
               labelOff={t("common:off")}
             />
@@ -194,12 +264,13 @@ export const UserForm = ({
         }
       >
         <Controller
-          name="required-user-actions"
-          defaultValue={["0"]}
+          name="requiredActions"
+          defaultValue={[]}
           typeAheadAriaLabel="Select an action"
           control={control}
-          render={() => (
+          render={({ onChange, value }) => (
             <Select
+              data-testid="required-actions-select"
               placeholderText="Select action"
               toggleId="kc-required-user-actions"
               onToggle={() =>
@@ -208,13 +279,13 @@ export const UserForm = ({
                 )
               }
               isOpen={isRequiredUserActionsDropdownOpen}
-              selections={selected}
-              onSelect={(_, value) => {
-                const option = value as string;
-                if (selected.includes(option)) {
-                  setSelected(selected.filter((item) => item !== option));
+              selections={value}
+              onSelect={(_, v) => {
+                const option = v as string;
+                if (value.includes(option)) {
+                  onChange(value.filter((item: string) => item !== option));
                 } else {
-                  setSelected([...selected, option]);
+                  onChange([...value, option]);
                 }
               }}
               onClear={clearSelection}
@@ -223,16 +294,16 @@ export const UserForm = ({
               {requiredUserActionsOptions}
             </Select>
           )}
-        ></Controller>
+        />
       </FormGroup>
       <ActionGroup>
         <Button
-          data-testid="create-user"
-          isDisabled={!watchUsernameInput}
+          data-testid={!editMode ? "create-user" : "save-user"}
+          isDisabled={!editMode && !watchUsernameInput}
           variant="primary"
           type="submit"
         >
-          {t("common:Create")}
+          {!editMode ? t("common:Create") : t("common:Save")}
         </Button>
         <Button
           data-testid="cancel-create-user"

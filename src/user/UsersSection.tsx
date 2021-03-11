@@ -28,7 +28,7 @@ import { emptyFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 import "./user-section.css";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
@@ -70,6 +70,14 @@ export const UsersSection = () => {
       handleError
     );
   }, []);
+
+  const UserDetailLink = (user: UserRepresentation) => (
+    <>
+      <Link key={user.username} to={`${url}/${user.username}/details`}>
+        {user.username}
+      </Link>
+    </>
+  );
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {
@@ -221,6 +229,7 @@ export const UsersSection = () => {
               {
                 name: "username",
                 displayKey: "users:username",
+                cellRenderer: UserDetailLink,
               },
               {
                 name: "email",
