@@ -120,8 +120,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user = updateAndGet(user);
 
             assertEquals(user.getLastName(), "Bob");
-            assertEquals(user.getFirstName(), originalFirstName);
-            assertEquals(user.getEmail(), originalEmail);
+            assertNull(user.getFirstName());
+            assertNull(user.getEmail());
 
         } finally {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();

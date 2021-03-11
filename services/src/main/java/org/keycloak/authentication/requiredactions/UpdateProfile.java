@@ -17,8 +17,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import static org.keycloak.userprofile.profile.UserProfileContextFactory.forUpdateProfile;
-
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
@@ -34,9 +32,10 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -73,36 +72,34 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         String oldFirstName = user.getFirstName();
         String oldLastName = user.getLastName();
         String oldEmail = user.getEmail();
-        UserProfileValidationResult result = forUpdateProfile(user, formData, context.getSession()).validate();
-        final UserProfile updatedProfile = result.getProfile();
-        List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
+        UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, user);
 
-        if (errors != null && !errors.isEmpty()) {
+        try {
+            // backward compatibility with old account console where attributes are not removed if missing
+            profile.update(false, (attributeName, userModel) -> {
+                if (attributeName.equals(UserModel.FIRST_NAME)) {
+                    event.detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, user.getFirstName());
+                }
+                if (attributeName.equals(UserModel.LAST_NAME)) {
+                    event.detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, user.getLastName());
+                }
+                if (attributeName.equals(UserModel.EMAIL)) {
+                    user.setEmailVerified(false);
+                    event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, user.getEmail());
+                }
+            });
+
+            context.success();
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+
             Response challenge = context.form()
                     .setErrors(errors)
                     .setFormData(formData)
                     .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
             context.challenge(challenge);
-            return;
         }
-
-        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
-        String newFirstName = updatedProfile.getAttributes().getFirstAttribute(UserModel.FIRST_NAME);
-        String newLastName = updatedProfile.getAttributes().getFirstAttribute(UserModel.LAST_NAME);
-
-        UserUpdateHelper.updateUserProfile(context.getRealm(), user, updatedProfile);
-        if (result.hasAttributeChanged(UserModel.FIRST_NAME)) {
-            event.detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, newFirstName);
-        }
-        if (result.hasAttributeChanged(UserModel.LAST_NAME)) {
-            event.detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, newLastName);
-        }
-        if (result.hasAttributeChanged(UserModel.EMAIL)) {
-            user.setEmailVerified(false);
-            event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail);
-        }
-        context.success();
-
     }
 
 
