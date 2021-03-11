@@ -17,14 +17,19 @@
 
 package org.keycloak.provider.quarkus;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.logging.Logger;
 import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
+import org.keycloak.util.Environment;
 
 public class QuarkusPlatform implements PlatformProvider {
+
+    private static final Logger log = Logger.getLogger(QuarkusPlatform.class);
 
     public static void addInitializationException(Throwable throwable) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
@@ -68,6 +73,7 @@ public class QuarkusPlatform implements PlatformProvider {
 
     private AtomicBoolean started = new AtomicBoolean(false);
     private List<Throwable> deferredExceptions = new CopyOnWriteArrayList<>();
+    private File tmpDir;
 
     @Override
     public void onStartup(Runnable startupHook) {
@@ -108,4 +114,29 @@ public class QuarkusPlatform implements PlatformProvider {
         return deferredExceptions;
     }
 
+    @Override
+    public File getTmpDirectory() {
+        if (tmpDir == null) {
+            String homeDir = Environment.getHomeDir();
+
+            File tmpDir;
+            if (homeDir == null) {
+                // Should happen just in the unit tests
+                homeDir = System.getProperty("java.io.tmpdir");
+                tmpDir = new File(homeDir, "keycloak-quarkus-tmp");
+                tmpDir.mkdir();
+            } else {
+                tmpDir = new File(homeDir, "tmp");
+                tmpDir.mkdir();
+            }
+
+            if (tmpDir.isDirectory()) {
+                this.tmpDir = tmpDir;
+                log.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
+            } else {
+                throw new RuntimeException("Temporary directory " + tmpDir.getAbsolutePath() + " does not exists and it was not possible to create it.");
+            }
+        }
+        return tmpDir;
+    }
 }

@@ -28,6 +28,7 @@ import java.util.List;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.jboss.logging.Logger;
+import org.keycloak.platform.Platform;
 import org.keycloak.util.Environment;
 
 public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
@@ -104,7 +105,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir == null) {
-            return Paths.get(System.getProperty("java.io.tmpdir"), PersistedConfigSource.KEYCLOAK_PROPERTIES);
+            return Paths.get(Platform.getPlatform().getTmpDirectory().toString(), PersistedConfigSource.KEYCLOAK_PROPERTIES);
         }
 
         return Paths.get(homeDir, "conf", PersistedConfigSource.KEYCLOAK_PROPERTIES);
