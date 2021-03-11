@@ -25,13 +25,30 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.persistence.EntityManager;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
 public class JpaClientProviderFactory implements ClientProviderFactory {
 
+    private Set<String> clientSearchableAttributes = null;
+
     @Override
     public void init(Config.Scope config) {
+        String[] searchableAttrsArr = config.getArray("searchableAttributes");
+        if (searchableAttrsArr == null) {
+            String s = System.getProperty("keycloak.client.searchableAttributes");
+            searchableAttrsArr = s == null ? null : s.split("\\s*,\\s*");
+        }
+        if (searchableAttrsArr != null) {
+            clientSearchableAttributes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(searchableAttrsArr)));
+        }
+        else {
+            clientSearchableAttributes = Collections.emptySet();
+        }
     }
 
     @Override
@@ -47,7 +64,7 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
     @Override
     public ClientProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em);
+        return new JpaRealmProvider(session, em, clientSearchableAttributes);
     }
 
     @Override

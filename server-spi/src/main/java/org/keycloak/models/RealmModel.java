@@ -411,7 +411,9 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link ClientModel}. Never returns {@code null}.
      */
     Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
-    
+
+    Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();

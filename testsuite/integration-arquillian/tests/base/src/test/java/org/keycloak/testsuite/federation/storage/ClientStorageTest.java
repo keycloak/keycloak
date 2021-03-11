@@ -151,6 +151,24 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                             hasItem("root-url-client"))
                         );
 
+                // test the pagination; the clients from local storage (root-url-client) are fetched first
+                assertThat(session.clientStorageManager()
+                                .searchClientsByClientIdStream(realm, "client", 0, 1)
+                                .map(ClientModel::getClientId)
+                                .collect(Collectors.toList()),
+                        allOf(
+                                not(hasItem(hardcodedClient)),
+                                hasItem("root-url-client"))
+                );
+                assertThat(session.clientStorageManager()
+                                .searchClientsByClientIdStream(realm, "client", 1, 1)
+                                .map(ClientModel::getClientId)
+                                .collect(Collectors.toList()),
+                        allOf(
+                                hasItem(hardcodedClient),
+                                not(hasItem("root-url-client")))
+                );
+
                 //update the provider to simulate delay during the search
                 ComponentModel memoryProvider = realm.getComponent(providerId);
                 memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));

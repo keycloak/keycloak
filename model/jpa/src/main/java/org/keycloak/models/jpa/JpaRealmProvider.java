@@ -21,6 +21,7 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,11 @@ import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -55,6 +60,7 @@ import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ServerInfoProvider;
+import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
@@ -74,10 +80,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
+    private Set<String> clientSearchableAttributes;
 
-    public JpaRealmProvider(KeycloakSession session, EntityManager em) {
+    public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes) {
         this.session = session;
         this.em = em;
+        this.clientSearchableAttributes = clientSearchableAttributes;
     }
 
     @Override
@@ -686,6 +694,39 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        Map<String, String> filteredAttributes = clientSearchableAttributes == null ? attributes :
+                attributes.entrySet().stream().filter(m -> clientSearchableAttributes.contains(m.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<ClientEntity> queryBuilder = builder.createQuery(ClientEntity.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+
+        for (Map.Entry<String, String> entry : filteredAttributes.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            Join<ClientEntity, ClientAttributeEntity> attributeJoin = root.join("attributes");
+
+            Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
+            Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+        }
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
+
+        TypedQuery<ClientEntity> query = em.createQuery(queryBuilder);
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(c -> session.clients().getClientById(realm, c.getId()));
+    }
+
+    @Override
     public void removeClients(RealmModel realm) {
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         query.setParameter("realm", realm.getId());
@@ -962,5 +1003,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         } else {
             return false;
         }
+    }
+
+    public Set<String> getClientSearchableAttributes() {
+        return clientSearchableAttributes;
     }
 }

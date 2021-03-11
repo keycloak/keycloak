@@ -271,6 +271,21 @@ public class MapClientProvider<K> implements ClientProvider {
     }
 
     @Override
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
+                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
+        }
+
+        Stream<MapClientEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
+                .sorted(COMPARE_BY_CLIENT_ID);
+
+        return paginatedStream(s, firstResult, maxResults).map(entityToAdapterFunc(realm));
+    }
+
+    @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         final String id = client.getId();
         MapClientEntity<K> entity = tx.read(clientStore.getKeyConvertor().fromString(id));
