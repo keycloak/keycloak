@@ -288,6 +288,12 @@ public class MapRealmProvider<K> implements RealmProvider {
 
     @Override
     @Deprecated
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAttributes(realm, attributes, firstResult, maxResults);
+    }
+
+    @Override
+    @Deprecated
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         session.clients().addClientScopes(realm, client, clientScopes, defaultScope);
     }

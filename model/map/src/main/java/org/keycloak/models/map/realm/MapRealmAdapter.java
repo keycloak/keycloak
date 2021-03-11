@@ -566,6 +566,11 @@ public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEnti
     }
 
     @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
+    }
+
+    @Override
     public Map<String, String> getSmtpConfig() {
         return Collections.unmodifiableMap(entity.getSmtpConfig());
     }

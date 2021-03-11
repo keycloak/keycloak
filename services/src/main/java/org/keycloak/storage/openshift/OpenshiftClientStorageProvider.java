@@ -29,6 +29,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
@@ -81,6 +82,12 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         // TODO not sure about this, but I don't see this implementation using the search now
         return Stream.of(getClientByClientId(realm, clientId));
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        // TODO not sure if we support searching clients for this provider
+        return Stream.empty();
     }
 
     @Override

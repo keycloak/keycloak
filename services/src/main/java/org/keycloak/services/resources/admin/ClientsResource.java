@@ -40,6 +40,7 @@ import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
@@ -54,6 +55,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -100,16 +102,23 @@ public class ClientsResource {
     public Stream<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
                                                  @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
                                                  @QueryParam("search") @DefaultValue("false") boolean search,
+                                                 @QueryParam("q") String searchQuery,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults) {
         boolean canView = auth.clients().canView();
         Stream<ClientModel> clientModels = Stream.empty();
 
-        if (clientId == null || clientId.trim().equals("")) {
+        if (searchQuery != null) {
+            auth.clients().requireList();
+            Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+            clientModels = canView
+                    ? realm.searchClientByAttributes(attributes, firstResult, maxResults)
+                    : realm.searchClientByAttributes(attributes, -1, -1);
+        } else if (clientId == null || clientId.trim().equals("")) {
+            auth.clients().requireList();
             clientModels = canView
                     ? realm.getClientsStream(firstResult, maxResults)
                     : realm.getClientsStream();
-            auth.clients().requireList();
         } else if (search) {
             clientModels = canView
                     ? realm.searchClientByClientIdStream(clientId, firstResult, maxResults)

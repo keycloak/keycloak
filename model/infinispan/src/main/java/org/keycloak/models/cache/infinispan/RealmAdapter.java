@@ -820,6 +820,11 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return cacheSession.searchClientsByAttributes(this, attributes, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults) {
         return cacheSession.getClientsStream(this, firstResult, maxResults);
     }

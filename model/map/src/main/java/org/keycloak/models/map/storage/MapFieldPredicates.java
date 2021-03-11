@@ -96,6 +96,7 @@ public class MapFieldPredicates {
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.REALM_ID,             MapClientEntity::getRealmId);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.CLIENT_ID,            MapClientEntity::getClientId);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.SCOPE_MAPPING_ROLE,   MapFieldPredicates::checkScopeMappingRole);
+        put(CLIENT_PREDICATES, ClientModel.SearchableFields.ATTRIBUTE,            MapFieldPredicates::checkClientAttributes);
 
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.REALM_ID,  MapClientScopeEntity::getRealmId);
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.NAME,      MapClientScopeEntity::getName);
@@ -214,7 +215,7 @@ public class MapFieldPredicates {
       SearchableModelField<M> field, UpdatePredicatesFunc<K, V, M> function) {
         map.put(field, function);
     }
-    
+
     private static <V extends AbstractEntity<?>> Function<V, Object> predicateForKeyField(Function<V, Object> extractor) {
         return entity -> {
             Object o = extractor.apply(entity);
@@ -285,6 +286,22 @@ public class MapFieldPredicates {
         };
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
+    }
+
+    private static MapModelCriteriaBuilder<Object, MapClientEntity<Object>, ClientModel> checkClientAttributes(MapModelCriteriaBuilder<Object, MapClientEntity<Object>, ClientModel> mcb, Operator op, Object[] values) {
+        if (values == null || values.length != 2) {
+            throw new CriterionNotSupportedException(ClientModel.SearchableFields.ATTRIBUTE, op, "Invalid arguments, expected attribute_name-value pair, got: " + Arrays.toString(values));
+        }
+
+        final Object attrName = values[0];
+        if (! (attrName instanceof String)) {
+            throw new CriterionNotSupportedException(ClientModel.SearchableFields.ATTRIBUTE, op, "Invalid arguments, expected (String attribute_name), got: " + Arrays.toString(values));
+        }
+        String attrNameS = (String) attrName;
+        Function<MapClientEntity<Object>, ?> getter = ue -> ue.getAttribute(attrNameS);
+        Object[] realValue = {values[1]};
+
+        return mcb.fieldCompare(op, getter, realValue);
     }
 
     private static MapModelCriteriaBuilder<Object, MapUserEntity<Object>, UserModel> checkGrantedUserRole(MapModelCriteriaBuilder<Object, MapUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {

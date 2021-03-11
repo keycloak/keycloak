@@ -45,7 +45,7 @@ public class JpaServerInfoProviderFactory implements ServerInfoProviderFactory {
     @Override
     public ServerInfoProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em);
+        return new JpaRealmProvider(session, em, null);
     }
 
     @Override
