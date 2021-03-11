@@ -26,6 +26,7 @@ import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -48,11 +49,8 @@ public class DirImportProvider implements ImportProvider {
     private final File rootDirectory;
 
     public DirImportProvider() {
-        // Determine system tmp directory
-        String tempDir = System.getProperty("java.io.tmpdir");
-
-        // Delete and recreate directory inside tmp
-        this.rootDirectory = new File(tempDir + "/keycloak-export");
+        // Determine platform tmp directory
+        this.rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
         if (!this.rootDirectory .exists()) {
             throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
         }
