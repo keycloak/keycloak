@@ -75,7 +75,7 @@ public class Config {
 
     public static class SystemPropertiesScope implements Scope {
 
-        private String prefix;
+        protected String prefix;
 
         public SystemPropertiesScope(String prefix) {
             this.prefix = prefix;

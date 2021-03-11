@@ -26,6 +26,7 @@ import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
 import org.keycloak.models.cache.infinispan.InfinispanUserCacheProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 
@@ -49,8 +50,11 @@ public class Infinispan extends KeycloakModelParameters {
       .add(InfinispanUserCacheProviderFactory.class)
       .build();
 
-    static {
-        System.setProperty("keycloak.connectionsInfinispan.default.embedded", System.getProperty("keycloak.connectionsInfinispan.default.embedded", "true"));
+    @Override
+    public void updateConfig(Config cf) {
+        cf.spi("connectionsInfinispan")
+            .provider("default")
+              .config("embedded", "true");
     }
 
     public Infinispan() {
