@@ -3,7 +3,6 @@ package org.keycloak.testsuite.cluster;
 import org.apache.commons.lang.RandomStringUtils;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
-import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
@@ -49,16 +48,11 @@ public class RoleInvalidationClusterTest extends AbstractInvalidationClusterTest
     @Override
     protected RoleRepresentation readEntity(RoleRepresentation role, ContainerInfo node) {
         RoleRepresentation u = null;
-        u = Retry.call(new Retry.Supplier<RoleRepresentation>() {
-            @Override
-            public RoleRepresentation get(int iteration) {
-                try {
-                    return entityResource(role, node).toRepresentation();
-                } catch (NotFoundException nfe) {
-                    return null;
-                }
-            }
-        }, 3, 5000);
+        try {
+            u = entityResource(role, node).toRepresentation();
+        } catch (NotFoundException nfe) {
+            // expected when role doesn't exist
+        }
         return u;
     }
 
@@ -68,23 +62,13 @@ public class RoleInvalidationClusterTest extends AbstractInvalidationClusterTest
     }
 
     private RoleRepresentation updateEntity(String roleName, RoleRepresentation role, ContainerInfo node) {
-        Retry.execute(new Runnable() {
-            @Override
-            public void run() {
-                entityResource(roleName, node).update(role);
-            }
-        }, 3, 5000);
+        entityResource(roleName, node).update(role);
         return readEntity(role, node);
     }
 
     @Override
     protected void deleteEntity(RoleRepresentation role, ContainerInfo node) {
-        Retry.execute(new Runnable() {
-            @Override
-            public void run() {
-                entityResource(role, node).remove();
-            }
-        }, 3, 5000);
+        entityResource(role, node).remove();
         assertNull(readEntity(role, node));
     }
 
