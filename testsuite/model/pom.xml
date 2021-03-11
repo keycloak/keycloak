@@ -30,7 +30,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -111,6 +111,26 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <delete>
+                                    <fileset dir="${project.build.directory}" includes="map-*.json"/>
+                                    <fileset dir="${project.build.directory}" includes="map/**/*.json"/>
+                                </delete>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>                        
         </plugins>
     </build>
     
@@ -174,7 +194,14 @@
         <profile>
             <id>map+infinispan</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Infinispan,Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>map</id>
+            <properties>
+                <keycloak.model.parameters>Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
     </profiles>

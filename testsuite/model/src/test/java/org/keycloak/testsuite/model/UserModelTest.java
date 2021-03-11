@@ -81,7 +81,7 @@ public class UserModelTest extends KeycloakModelTest {
         s.realms().removeRealm(realmId);
     }
 
-    private void addRemoveUser(KeycloakSession session, int i) {
+    private Void addRemoveUser(KeycloakSession session, int i) {
         RealmModel realm = session.realms().getRealmByName("realm");
 
         UserModel user = session.users().addUser(realm, "user-" + i);
@@ -102,6 +102,8 @@ public class UserModelTest extends KeycloakModelTest {
         assertTrue(session.users().removeUser(realm, user));
         assertFalse(session.users().removeUser(realm, user));
         assertNull(session.users().getUserByUsername(realm, user.getUsername()));
+
+        return null;
     }
 
     @Test
@@ -125,9 +127,10 @@ public class UserModelTest extends KeycloakModelTest {
             final UserModel user = session.users().addUser(realm, "user-" + i);
             user.joinGroup(session.groups().getGroupById(realm, groupId));
             userIds.add(user.getId());
+            return null;
         }));
 
-        inComittedTransaction(1, (session, i) -> {
+        inComittedTransaction(session -> {
             final RealmModel realm = session.realms().getRealm(realmId);
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).count(), is(100L));
@@ -140,6 +143,7 @@ public class UserModelTest extends KeycloakModelTest {
                 final RealmModel realm = session.realms().getRealm(realmId);
                 final UserModel user = session.users().getUserById(realm, userId);
                 log.debugf("Remove user %s: %s", userId, session.users().removeUser(realm, user));
+                return null;
             }, null, (session, userId) -> remainingUserIds.add(userId) ));
 
             userIds.clear();
@@ -147,7 +151,7 @@ public class UserModelTest extends KeycloakModelTest {
             remainingUserIds.clear();
         } while (! userIds.isEmpty());
 
-        inComittedTransaction(1, (session, i) -> {
+        inComittedTransaction(session -> {
             final RealmModel realm = session.realms().getRealm(realmId);
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).collect(Collectors.toList()), Matchers.empty());
@@ -159,27 +163,24 @@ public class UserModelTest extends KeycloakModelTest {
     public void testAddDirtyRemoveFederationUser() {
         registerUserFederationWithRealm();
 
-        inComittedTransaction(1, (session, i) -> {
-            final RealmModel realm = session.realms().getRealm(realmId);
-            final UserModel user = session.users().addUser(realm, "user-A");
-        });
+        withRealm(realmId, (session, realm) -> session.users().addUser(realm, "user-A"));
 
         // Remove user _from the federation_, simulates eg. user being removed from LDAP without Keycloak knowing
-        inComittedTransaction(1, (session, i) -> {
-            final RealmModel realm = session.realms().getRealm(realmId);
+        withRealm(realmId, (session, realm) -> {
             final UserStorageProvider instance = getUserFederationInstance(session, realm);
             log.debugf("Removing selected users from backend");
             final UserModel user = session.users().getUserByUsername(realm, "user-A");
             ((UserRegistrationProvider) instance).removeUser(realm, user);
+            return null;
         });
 
-        inComittedTransaction(1, (session, i) -> {
-            final RealmModel realm = session.realms().getRealm(realmId);
+        withRealm(realmId, (session, realm) -> {
             if (session.userCache() != null) {
                 session.userCache().clear();
             }
             final UserModel user = session.users().getUserByUsername(realm, "user-A");
             assertThat("User should not be found in the main store", user, Matchers.nullValue());
+            return null;
         });
     }
 
@@ -198,26 +199,27 @@ public class UserModelTest extends KeycloakModelTest {
             user.joinGroup(session.groups().getGroupById(realm, groupId));
             log.infof("Created user with id: %s", user.getId());
             userIds.add(user.getId());
+            return null;
         }));
 
         // Remove users _from the federation_, simulates eg. user being removed from LDAP without Keycloak knowing
-        inComittedTransaction(1, (session, i) -> {
-            final RealmModel realm = session.realms().getRealm(realmId);
+        withRealm(realmId, (session, realm) -> {
             UserStorageProvider instance = getUserFederationInstance(session, realm);
             log.debugf("Removing selected users from backend");
             IntStream.range(FIRST_DELETED_USER_INDEX, LAST_DELETED_USER_INDEX).forEach(j -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user-" + j);
                 ((UserRegistrationProvider) instance).removeUser(realm, user);
             });
+            return null;
         });
 
-        IntStream.range(0, 7).parallel().forEach(index -> inComittedTransaction(index, (session, i) -> {
-            final RealmModel realm = session.realms().getRealm(realmId);
+        IntStream.range(0, 7).parallel().forEach(index -> withRealm(realmId, (session, realm) -> {
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).count(), is(100L - DELETED_USER_COUNT));
+            return null;
         }));
 
-        inComittedTransaction(1, (session, i) -> {
+        inComittedTransaction(session -> {
             // If we are using cache, we need to invalidate all users because after removing users from external
             // provider cache may not be cleared and it may be the case, that cache is the only place that is having 
             // a reference to removed users. Our importValidation method won't be called at all for removed users
@@ -227,6 +229,7 @@ public class UserModelTest extends KeycloakModelTest {
             if (session.userCache() != null) {
                 session.userCache().clear();
             }
+            return null;
         });
 
         // Now delete the users, and count those that were not found to be deleted. This should be equal to the number
@@ -245,6 +248,7 @@ public class UserModelTest extends KeycloakModelTest {
                     log.debugf("Failed deleting user: %s", userId);
                     notFoundUsers.incrementAndGet();
                 }
+                return null;
             }, null, (session, userId) -> {
                 log.debugf("Could not delete user %s", userId);
                 remainingUserIds.add(userId);
@@ -257,22 +261,22 @@ public class UserModelTest extends KeycloakModelTest {
 
         assertThat(notFoundUsers.get(), is(DELETED_USER_COUNT));
 
-        inComittedTransaction(1, (session, i) -> {
-            final RealmModel realm = session.realms().getRealm(realmId);
+        withRealm(realmId, (session, realm) -> {
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).collect(Collectors.toList()), Matchers.empty());
+            return null;
         });
     }
 
     private void registerUserFederationWithRealm() {
-        getParameters(UserStorageProviderModel.class).forEach(fs -> inComittedTransaction(fs, (session, federatedStorage) -> {
+        getParameters(UserStorageProviderModel.class).forEach(fs -> inComittedTransaction(session -> {
             assumeThat("Cannot handle more than 1 user federation provider", userFederationId, Matchers.nullValue());
             RealmModel realm = session.realms().getRealm(realmId);
-            federatedStorage.setParentId(realmId);
-            federatedStorage.setImportEnabled(true);
-            ComponentModel res = realm.addComponentModel(federatedStorage);
+            fs.setParentId(realmId);
+            fs.setImportEnabled(true);
+            ComponentModel res = realm.addComponentModel(fs);
             userFederationId = res.getId();
-            log.infof("Added %s user federation provider: %s", federatedStorage.getName(), userFederationId);
+            log.infof("Added %s user federation provider: %s", fs.getName(), userFederationId);
         }));
     }
 
