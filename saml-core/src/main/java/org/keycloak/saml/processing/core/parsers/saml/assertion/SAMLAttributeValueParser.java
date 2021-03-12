@@ -36,7 +36,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- * 
+ *
  */
 public class SAMLAttributeValueParser implements StaxParser {
 
@@ -97,11 +97,21 @@ public class SAMLAttributeValueParser implements StaxParser {
             return StaxParserUtil.getElementText(xmlEventReader);
         } else if (typeValue.contains(":anyType")) {
             return parseAnyTypeAsString(xmlEventReader);
-        } else if(typeValue.contains(":base64Binary")){
+        } else if (typeValue.contains(":base64Binary")) {
             return StaxParserUtil.getElementText(xmlEventReader);
-        } else if(typeValue.contains(":date")){
+        } else if (typeValue.contains(":date")) {
             return XMLTimeUtil.parse(StaxParserUtil.getElementText(xmlEventReader));
-        } else if(typeValue.contains(":boolean")){
+        } else if (typeValue.contains(":boolean")) {
+            return StaxParserUtil.getElementText(xmlEventReader);
+        } else if (typeValue.contains(":CurrentFamilyNameType")) {
+            return StaxParserUtil.getElementText(xmlEventReader);
+        } else if (typeValue.contains(":CurrentGivenNameType")) {
+            return StaxParserUtil.getElementText(xmlEventReader);
+        } else if (typeValue.contains(":DateOfBirthType")) {
+            return XMLTimeUtil.parse(StaxParserUtil.getElementText(xmlEventReader));
+        } else if (typeValue.contains(":PlaceOfBirthType")) {
+            return StaxParserUtil.getElementText(xmlEventReader);
+        } else if (typeValue.contains(":CurrentAddressType")) {
             return StaxParserUtil.getElementText(xmlEventReader);
         }
 
