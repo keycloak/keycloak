@@ -103,7 +103,7 @@ export const FineGrainSamlEndpointConfig = ({
           {t("common:save")}
         </Button>
         <Button variant="link" onClick={reset}>
-          {t("common:reload")}
+          {t("common:revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

@@ -15,8 +15,8 @@ export const SaveReset = ({ name, save, reset }: SaveResetProps) => {
       <Button data-testid={name + "Save"} variant="tertiary" onClick={save}>
         {t("common:save")}
       </Button>
-      <Button data-testid={name + "Reload"} variant="link" onClick={reset}>
-        {t("common:reload")}
+      <Button data-testid={name + "Revert"} variant="link" onClick={reset}>
+        {t("common:revert")}
       </Button>
     </ActionGroup>
   );

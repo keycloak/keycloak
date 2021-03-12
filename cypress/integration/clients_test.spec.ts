@@ -158,7 +158,7 @@ describe("Clients test", function () {
 
       advancedTab
         .selectAccessTokenSignatureAlgorithm("HS384")
-        .clickReloadFineGrain();
+        .clickRevertFineGrain();
       advancedTab.checkAccessTokenSignatureAlgorithm(algorithm);
     });
   });
