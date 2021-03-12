@@ -133,9 +133,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                             .format(nameIDPolicyFormat)
                             .setAllowCreate(Boolean.TRUE))
                     .requestedAuthnContext(requestedAuthnContext)
-                    .subject(loginHint)
-                    .addExtension(new NiaSPType())
-                    .addExtension(new NiaCustomAttributes());
+                    .subject(loginHint);
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
