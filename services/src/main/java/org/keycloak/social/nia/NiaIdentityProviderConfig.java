@@ -48,6 +48,11 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
     }
 
     private void initialize() {
+        setPostBindingAuthnRequest(true);
+        setPostBindingResponse(true);
+        setPostBindingLogout(true);
+        setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
 
 //        this.setSignSpMetadata(true);
         setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);

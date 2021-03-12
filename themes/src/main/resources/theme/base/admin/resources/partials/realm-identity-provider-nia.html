@@ -140,20 +140,7 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.saml.entity-id.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="singleSignOnServiceUrl"><span class="required">*</span> {{:: 'single-signon-service-url' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="singleSignOnServiceUrl" type="text" ng-model="identityProvider.config.singleSignOnServiceUrl" required>
-                </div>
-                <kc-tooltip>{{:: 'saml.single-signon-service-url.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="singleSignOnServiceUrl">{{:: 'single-logout-service-url' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="singleLogoutServiceUrl" type="text" ng-model="identityProvider.config.singleLogoutServiceUrl">
-                </div>
-                <kc-tooltip>{{:: 'saml.single-logout-service-url.tooltip' | translate}}</kc-tooltip>
-            </div>
+            
             <div class="form-group">
                 <label class="col-sm-2 control-label" for="backchannelSupported">{{:: 'backchannel-logout' | translate}}</label>
                 <div class="col-sm-4">

@@ -24,7 +24,6 @@ public class NiaCustomAttribute implements SamlProtocolExtensionsAwareBuilder.No
 
     @Override
     public void write(XMLStreamWriter writer) throws ProcessingException {
-
         StaxUtil.writeStartElement(writer, NS_PREFIX, KEY_INFO_ELEMENT_NAME, NS_URI);
         StaxUtil.writeAttribute(writer, NAME_FORMAT, NS_URI);
         if (this.keyId != null) {
