@@ -40,20 +40,23 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
 
     public NiaIdentityProviderConfig(IdentityProviderModel model) {
         super(model);
-//        initialize();
+        initialize();
     }
 
-    public NiaIdentityProviderConfig() {
-//        initialize();
+    NiaIdentityProviderConfig() {
+        initialize();
     }
 
     private void initialize() {
+
 //        this.setSignSpMetadata(true);
-//        this.setPostBindingAuthnRequest(true);
-//        this.setPostBindingResponse(true);
+        setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
+        // setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
+        setPostBindingAuthnRequest(true);
+        setPostBindingResponse(true);
 //        this.setPostBindingLogout(true);
-//        this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-//        this.setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
 //        this.setWantAuthnRequestsSigned(true);
 
     }
