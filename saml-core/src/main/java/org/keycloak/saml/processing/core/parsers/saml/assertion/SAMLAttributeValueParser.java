@@ -36,7 +36,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- *
+ * 
  */
 public class SAMLAttributeValueParser implements StaxParser {
 
