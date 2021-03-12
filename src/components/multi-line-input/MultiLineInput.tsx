@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useFieldArray, useFormContext, UseFormMethods } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 import {
   TextInput,
   Split,

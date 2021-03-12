@@ -36,7 +36,7 @@ const arrayToAttributes = (attributeArray: KeyValueType[]) => {
 const attributesToArray = (attributes?: {
   [key: string]: string[];
 }): KeyValueType[] => {
-  if (!attributes || Object.keys(attributes).length == 0) {
+  if (!attributes || Object.keys(attributes).length === 0) {
     return [];
   }
   return Object.keys(attributes).map((key) => ({

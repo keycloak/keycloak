@@ -102,7 +102,7 @@ export const UserFederationLdapWizard = () => {
       <WizardContextConsumer>
         {({ activeStep, onNext, onBack, onClose }) => {
           // First step buttons
-          if (activeStep.id == "ldapRequiredSettingsStep") {
+          if (activeStep.id === "ldapRequiredSettingsStep") {
             return (
               <>
                 <Button variant="primary" type="submit" onClick={onNext}>
@@ -123,8 +123,8 @@ export const UserFederationLdapWizard = () => {
           }
           // Other required step buttons
           else if (
-            activeStep.id == "ldapConnectionSettingsStep" ||
-            activeStep.id == "ldapSearchingSettingsStep"
+            activeStep.id === "ldapConnectionSettingsStep" ||
+            activeStep.id === "ldapSearchingSettingsStep"
           ) {
             return (
               <>
@@ -141,7 +141,7 @@ export const UserFederationLdapWizard = () => {
             );
           }
           // Last step buttons
-          else if (activeStep.id == "ldapAdvancedSettingsStep") {
+          else if (activeStep.id === "ldapAdvancedSettingsStep") {
             return (
               <>
                 <Button

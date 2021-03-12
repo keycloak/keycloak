@@ -59,9 +59,6 @@ export const PaginatingTableToolbar = ({
     />
   );
 
-  if (count === 0) {
-    <>{children}</>;
-  }
   return (
     <TableToolbar
       searchTypeComponent={searchTypeComponent}
