@@ -40,7 +40,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude({REMOTE})
 public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
     @Override

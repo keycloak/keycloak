@@ -13,6 +13,7 @@ import javax.ws.rs.ApplicationPath;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -31,6 +32,7 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
             forceEntityManagerInitialization();
             initializeKeycloakSessionFactory();
             setupScheduledTasks(sessionFactory);
+            initializeAdditionalFeatures();
         } catch (Throwable cause) {
             QuarkusPlatform.exitOnError(cause);
         }
@@ -65,5 +67,11 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         // also forces an initialization of the entity manager so that providers don't need to wait for any initialization logic
         // when first creating an entity manager
         entityManagerFactory.get().createEntityManager().close();
+    }
+
+    private void initializeAdditionalFeatures() {
+        KeycloakSession session = sessionFactory.create();
+        // Client Policies
+        session.clientPolicy().setupClientPoliciesOnKeycloakApp("/keycloak-default-client-profiles.json", "/keycloak-default-client-policies.json");
     }
 }
