@@ -79,6 +79,10 @@ If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Implicit F
 
 If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Access Grants>>.
 
+*OAuth 2.0 Device Authorization Grant Enabled*
+
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Device Authorization Grant>>.
+
 *Root URL*
 
 If {project_name} uses any configured relative URLs, this value is prepended to them.

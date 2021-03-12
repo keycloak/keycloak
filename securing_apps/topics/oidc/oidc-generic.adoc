@@ -94,6 +94,15 @@ The token revocation endpoint is used to revoke tokens. Both refresh tokens and 
 
 For more details on how to invoke on this endpoint, see https://tools.ietf.org/html/rfc7009[OAuth 2.0 Token Revocation specification].
 
+===== Device Authorization Endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/auth/device
+....
+
+The device authorization endpoint is used to obtain a device code and a user code. It can only be invoked by confidential clients.
+
+For more details on how to invoke on this endpoint, see https://tools.ietf.org/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
+
 ==== Validating Access Tokens
 
 If you need to manually validate access tokens issued by {project_name} you can invoke the <<_token_introspection_endpoint,Introspection Endpoint>>.
@@ -179,6 +188,17 @@ for example be useful for background services that applies changes to the system
 This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
 
 For more details refer to the https://tools.ietf.org/html/rfc6749#section-4.4[Client Credentials Grant] chapter in the OAuth 2.0 specification.
+
+===== Device Authorization Grant
+
+Device Authorization Grant is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser.
+The application requests {project_name} a device code and a user code. {project_name} creates a device code and a user code. 
+{project_name} returns a response including the device code and the user code to the application. 
+Then the application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. 
+The application repeatedly polls {project_name} until {project_name} completes the user authorization. 
+If user authentication is complete, the application obtains the device code. Then the application uses the device code along with its credentials to obtain an Access Token, Refresh Token and ID Token from {project_name}.
+
+For more details refer to the https://tools.ietf.org/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
 ==== Redirect URIs
 
