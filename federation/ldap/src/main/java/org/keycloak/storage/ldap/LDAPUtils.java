@@ -107,13 +107,17 @@ public class LDAPUtils {
     public static void computeAndSetDn(LDAPConfig config, LDAPObject ldapUser) {
         String rdnLdapAttrName = config.getRdnLdapAttribute();
         String rdnLdapAttrValue = ldapUser.getAttributeAsString(rdnLdapAttrName);
-        if (rdnLdapAttrValue == null) {
+        if (isBlank(rdnLdapAttrValue)) {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
 
         LDAPDn dn = LDAPDn.fromString(config.getUsersDn());
         dn.addFirst(rdnLdapAttrName, rdnLdapAttrValue);
         ldapUser.setDn(dn);
+    }
+
+    public static boolean isBlank(String s) {
+        return s == null || s.trim().length() == 0;
     }
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
