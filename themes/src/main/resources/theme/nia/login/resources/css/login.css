@@ -1,0 +1,7 @@
+.login-pf body{
+    background: dimgray none;
+}
+body{
+    background-image: url("../img/university.png") ;
+    background-size: cover;
+}
