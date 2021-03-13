@@ -1,7 +1,5 @@
 .login-pf body{
-    background: dimgray none;
-}
-body{
-    background-image: url("../img/university.png") ;
+    background: url("../img/university.png") no-repeat center center fixed;
     background-size: cover;
+    height: 100%;
 }
