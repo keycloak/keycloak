@@ -11,13 +11,13 @@
 }
 
 a.zocial.nia {
-    background: url("../img/nia-logo.png") no-repeat left top;
+    background: url("../img/nia-logo-02.png") no-repeat left top;
     height: 70px;
     width: auto;
     padding-top: 60px;
 }
 a.zocial.nia:hover {
-    background:  url("../img/nia-logo.png") no-repeat left top !important;
+    background:  url("../img/nia-logo-02.png") no-repeat left top !important;
     height: 70px;
     width: auto;
 }
