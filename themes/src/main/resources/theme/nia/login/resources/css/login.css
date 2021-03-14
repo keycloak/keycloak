@@ -10,6 +10,22 @@
     color: #333333;
 }
 
+a.social.nia {
+    background: url("../img/nia-logo.png") no-repeat left top;
+    height: 70px;
+    width: auto;
+    padding-top: 60px;
+}
+a.social.nia:hover {
+    background:  url("../img/nia-logo.png") no-repeat left top !important;
+    height: 70px;
+    width: auto;
+}
+
+a.social.nia span {
+    display:none;
+}
+
 #kc-locale ul {
     display: none;
     position: absolute;
