@@ -49,8 +49,10 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.saml.mappers.NameIdMapperHelper;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
+import org.keycloak.protocol.saml.mappers.SAMLNameIdMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.saml.SAML2ErrorResponseBuilder;
@@ -414,19 +416,6 @@ public class SamlProtocol implements LoginProtocol {
         String redirectUri = authSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
         String nameIdFormat = getNameIdFormat(samlClient, authSession);
-        String nameId = getNameId(nameIdFormat, authSession, userSession);
-
-        if (nameId == null) {
-            return samlErrorMessage(
-                    null, samlClient, isPostBinding(authSession),
-                    redirectUri, JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, relayState
-            );
-        }
-
-        // save NAME_ID and format in clientSession as they may be persistent or transient or email and not username
-        // we'll need to send this back on a logout
-        clientSession.setNote(SAML_NAME_ID, nameId);
-        clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
         int assertionLifespan = samlClient.getAssertionLifespan();
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
@@ -437,7 +426,6 @@ public class SamlProtocol implements LoginProtocol {
                 .subjectExpiration(assertionLifespan <= 0? realm.getAccessTokenLifespan() : assertionLifespan)
                 .sessionExpiration(realm.getSsoSessionMaxLifespan())
                 .requestIssuer(clientSession.getClient().getClientId())
-                .nameIdentifier(nameIdFormat, nameId)
                 .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
 
         String sessionIndex = SamlSessionUtils.getSessionIndex(clientSession);
@@ -452,6 +440,7 @@ public class SamlProtocol implements LoginProtocol {
         List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers = new LinkedList<>();
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
         AtomicReference<ProtocolMapperProcessor<SAMLRoleListMapper>> roleListMapper = new AtomicReference<>(null);
+        List<ProtocolMapperProcessor<SAMLNameIdMapper>> samlNameIdMappers = new LinkedList<>();
 
         ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
                 .forEach(entry -> {
@@ -467,6 +456,9 @@ public class SamlProtocol implements LoginProtocol {
                     if (mapper instanceof SAMLRoleListMapper) {
                         roleListMapper.set(new ProtocolMapperProcessor<>((SAMLRoleListMapper) mapper, mapping));
                     }
+                    if (mapper instanceof SAMLNameIdMapper) {
+                        samlNameIdMappers.add(new ProtocolMapperProcessor<>((SAMLNameIdMapper) mapper, mapping));
+                    }
                 });
 
         Document samlDocument = null;
@@ -475,6 +467,20 @@ public class SamlProtocol implements LoginProtocol {
         KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
         boolean postBinding = isPostBinding(authSession);
         String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+        String nameId = getSAMLNameId(samlNameIdMappers, nameIdFormat, session, userSession, clientSession);
+
+        if (nameId == null) {
+            return samlErrorMessage(null, samlClient, isPostBinding(authSession), redirectUri,
+                    JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, relayState);
+        }
+
+        builder.nameIdentifier(nameIdFormat, nameId);
+
+        // save NAME_ID and format in clientSession as they may be persistent or
+        // transient or email and not username
+        // we'll need to send this back on a logout
+        clientSession.setNote(SAML_NAME_ID, nameId);
+        clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
         try {
             if ((!postBinding) && samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
@@ -585,6 +591,17 @@ public class SamlProtocol implements LoginProtocol {
         if (roleListMapper == null)
             return;
         roleListMapper.mapper.mapRoles(existingAttributeStatement, roleListMapper.model, session, userSession, clientSessionCtx);
+    }
+
+    protected String getSAMLNameId(
+            List<ProtocolMapperProcessor<SAMLNameIdMapper>> samlNameIdMappers, String nameIdFormat, KeycloakSession session,
+                                    UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+        for (ProtocolMapperProcessor<SAMLNameIdMapper> nameIdMap : samlNameIdMappers) {
+            if(nameIdFormat.equals(nameIdMap.model.getConfig().get(NameIdMapperHelper.MAPPER_NAMEID_FORMAT))) {
+                return nameIdMap.mapper.mapperNameId(nameIdFormat, nameIdMap.model, session, userSession, clientSession);
+            }
+        }
+        return getNameId(nameIdFormat, clientSession, userSession);
     }
 
     public static String getLogoutServiceUrl(KeycloakSession session, ClientModel client, String bindingType, boolean backChannelLogout) {
