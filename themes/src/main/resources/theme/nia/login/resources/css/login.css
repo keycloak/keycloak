@@ -10,19 +10,19 @@
     color: #333333;
 }
 
-a.social.nia {
+a.zocial.nia {
     background: url("../img/nia-logo.png") no-repeat left top;
     height: 70px;
     width: auto;
     padding-top: 60px;
 }
-a.social.nia:hover {
+a.zocial.nia:hover {
     background:  url("../img/nia-logo.png") no-repeat left top !important;
     height: 70px;
     width: auto;
 }
 
-a.social.nia span {
+a.zocial.nia span {
     display:none;
 }
 
