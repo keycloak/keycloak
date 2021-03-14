@@ -659,7 +659,7 @@
                               ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
                               ~ See KEYCLOAK-15692, ELY-1891 issues & PRs of EAP7-1219 issue for details.
                               -->
-                            <wildfly.config.url>${project.build.directory}/dependency/wildfly-config.xml</wildfly.config.url>
+                            <wildfly-client.config.path>${project.build.directory}${file.separator}dependency${file.separator}wildfly-config.xml</wildfly-client.config.path>
                         </systemPropertyVariables>
                         <properties>
                             <property>
