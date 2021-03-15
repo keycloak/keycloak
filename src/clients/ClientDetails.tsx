@@ -254,7 +254,11 @@ export const ClientDetails = () => {
               eventKey="roles"
               title={<TabTitleText>{t("roles")}</TabTitleText>}
             >
-              <RolesList loader={loader} paginated={false} />
+              <RolesList
+                loader={loader}
+                paginated={false}
+                messageBundle="clients"
+              />
             </Tab>
             <Tab
               id="clientScopes"
