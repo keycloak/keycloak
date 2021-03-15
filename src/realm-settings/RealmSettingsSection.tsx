@@ -324,7 +324,7 @@ export const RealmSettingsSection = () => {
                   {t("common:save")}
                 </Button>
                 <Button variant="link" onClick={() => setupForm(realm!)}>
-                  {t("common:reload")}
+                  {t("common:revert")}
                 </Button>
               </ActionGroup>
             </FormAccess>

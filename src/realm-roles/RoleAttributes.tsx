@@ -146,7 +146,7 @@ export const RoleAttributes = ({
             {t("common:save")}
           </Button>
           <Button onClick={reset} variant="link">
-            {t("common:reload")}
+            {t("common:revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

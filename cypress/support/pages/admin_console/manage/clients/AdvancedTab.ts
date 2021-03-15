@@ -15,7 +15,7 @@ export default class AdvancedTab {
 
   private accessTokenSignatureAlgorithm = "#accessTokenSignatureAlgorithm";
   private fineGrainSave = "#fineGrainSave";
-  private fineGrainReload = "#fineGrainReload";
+  private fineGrainRevert = "#fineGrainRevert";
 
   private advancedTab = "#pf-tab-advanced-advanced";
 
@@ -98,8 +98,8 @@ export default class AdvancedTab {
     return this;
   }
 
-  clickReloadFineGrain() {
-    cy.get(this.fineGrainReload).click();
+  clickRevertFineGrain() {
+    cy.get(this.fineGrainRevert).click();
     return this;
   }
 }
