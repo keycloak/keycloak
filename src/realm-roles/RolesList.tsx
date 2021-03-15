@@ -15,6 +15,7 @@ import { emptyFormatter, boolFormatter } from "../util";
 type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
+  messageBundle?: string;
   loader?: (
     first?: number,
     max?: number,
@@ -35,8 +36,9 @@ export const RolesList = ({
   loader,
   paginated = true,
   parentRoleId,
+  messageBundle = "roles",
 }: RolesListProps) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation(messageBundle);
   const history = useHistory();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
@@ -121,8 +123,8 @@ export const RolesList = ({
         emptyState={
           <ListEmptyState
             hasIcon={true}
-            message={t("noRolesInThisRealm")}
-            instructions={t("noRolesInThisRealmInstructions")}
+            message={t("noRoles")}
+            instructions={t("noRolesInstructions")}
             primaryActionText={t("createRole")}
             onPrimaryAction={goToCreate}
           />
