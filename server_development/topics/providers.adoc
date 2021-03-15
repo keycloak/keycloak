@@ -5,6 +5,7 @@
 {project_name} is designed to cover most use-cases without requiring custom code, but we also want it to be customizable.
 To achieve this {project_name} has a number of Service Provider Interfaces (SPI) for which you can implement your own providers.
 
+[[_implementing_spi]]
 === Implementing an SPI
 
 To implement an SPI you need to implement its ProviderFactory and Provider interfaces. You also need to create a service configuration file.
@@ -152,6 +153,37 @@ public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFact
     }
 }
 ----
+
+[[_use_available_providers]]
+=== Use available providers
+
+In your provider implementation, you can use other providers available in {project_name}. The existing providers can be typically retrieved with the
+usage of the `KeycloakSession`, which is available to your provider as described in the section <<_implementing_spi,Implementing an SPI>>.
+
+{project_name} has two provider types:
+
+* *Single-implementation provider types* - There can be only a single active implementation of the particular provider type in {project_name} runtime.
+For example `HostnameProvider` specifies the hostname to be used by {project_name} and that is shared for the whole {project_name} server.
+Hence there can be only single implementation of this provider active for the {project_name} server. If there are multiple provider implementations available to the server runtime,
+one of them needs to be specified in the keycloak subsystem configuration in the `standalone.xml` as the default one. For example such as:
+[source,xml]
+----
+<spi name="hostname">
+    <default-provider>default</default-provider>
+    ...
+</spi>
+----
+The value `default` used as the value of `default-provider` must match the ID returned by the `ProviderFactory.getId()` of the particular provider factory implementation.
+In the code, you can obtain the provider such as `keycloakSession.getProvider(HostnameProvider.class)`
+
+* *Multiple implementation provider types* - Those are provider types, that allow multiple implementations available and working together
+in the {project_name} runtime. For example `EventListener` provider allows to have multiple implementations available and registered, which means
+that particular event can be sent to all the listeners (jboss-logging, sysout etc). In the code, you can obtain a specified instance of the provider
+for example such as `session.getProvider(EventListener.class, "jboss-logging")` . You need to specify `provider_id` of the provider as the second argument
+as there can be multiple instances of this provider type as described above. The provider ID must match the ID returned by the `ProviderFactory.getId()` of the
+particular provider factory implementation. Some provider types can be retrieved with the usage of `ComponentModel` as the second argument and some (for example `Authenticator`) even
+need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recommended to implement your own providers this way as it may be deprecated in the future.
+
 
 === Registering provider implementations
 

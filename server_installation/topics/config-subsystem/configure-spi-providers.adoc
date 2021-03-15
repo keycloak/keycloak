@@ -56,3 +56,5 @@ the value will be passed to the provider as a list.  In this example, the system
 provider a list with two element values _EVENT1_ and _EVENT2_. To add more values
 to the list, just separate each list element with a comma. Unfortunately,
 you do need to escape the quotes surrounding each list element with `\&quot;`.
+
+Follow the steps in link:{developerguide_link}#_providers[{developerguide_name}] for more details on custom providers and the configuration of providers.
