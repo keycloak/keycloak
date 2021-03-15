@@ -33,6 +33,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="fedusersInRole", query="select u.userId from FederatedUserRoleMappingEntity m where m.roleId=:roleId and m.realmId=:realmId"),
         @NamedQuery(name="feduserHasRole", query="select m from FederatedUserRoleMappingEntity m where m.userId = :userId and m.roleId = :roleId"),
         @NamedQuery(name="feduserRoleMappings", query="select m from FederatedUserRoleMappingEntity m where m.userId = :userId"),
         @NamedQuery(name="deleteFederatedUserRoleMappingsByRealm", query="delete from  FederatedUserRoleMappingEntity mapping where mapping.realmId=:realmId"),

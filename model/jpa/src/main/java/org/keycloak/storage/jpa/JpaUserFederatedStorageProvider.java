@@ -475,6 +475,15 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max) {
+        TypedQuery<String> query = em.createNamedQuery("fedusersInRole", String.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("roleId", role.getId());
+
+        return closing(paginateQuery(query, firstResult, max).getResultStream());
+    }
+
+    @Override
     public Stream<String> getRequiredActionsStream(RealmModel realm, String userId) {
         return this.getRequiredActionEntitiesStream(realm, userId, LockModeType.NONE).
                 map(FederatedUserRequiredActionEntity::getAction).distinct();

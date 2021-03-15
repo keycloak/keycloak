@@ -280,7 +280,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             } else if (provider instanceof UserFederatedStorageProvider) {
                 return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, -1, -1).
                         map(id -> getUserById(realm, id));
-           }
+            }
             return Stream.empty();
         }, realm, firstResult, maxResults);
 
@@ -292,6 +292,9 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
                 return ((UserQueryProvider)provider).getRoleMembersStream(realm, role);
+            } else if (provider instanceof UserFederatedStorageProvider) {
+                return ((UserFederatedStorageProvider)provider).getRoleMembersStream(realm, role, firstResult, maxResults).
+                        map(id -> getUserById(realm, id));
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);
