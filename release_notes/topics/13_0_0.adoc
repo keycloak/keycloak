@@ -6,3 +6,8 @@ Default roles are now internally stored as composite roles of a new role usually
 both realm and all client default roles directly to newly created users or users imported through Identity Brokering, just the role is 
 assigned to them and the rest of default roles are assigned as effective roles. This change improves performance of default roles processing,
 especially with larger number of clients, because it is no longer necessary to go through all clients.
+
+== OAuth 2.0 Device Authorization Grant (RFC 8628)
+
+Support for OAuth 2.0 Device Authorization Grant is now available. Thanks to https://github.com/wadahiro[Hiroyuki Wada], https://github.com/splatch[Łukasz Dywicki]
+and https://github.com/Michito-Okai[Michito Okai].
