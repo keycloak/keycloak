@@ -296,7 +296,7 @@ export const UserFederationLdapSettings = () => {
           <LdapSettingsAdvanced form={form} />
         </ScrollForm>
         <Form onSubmit={form.handleSubmit(save)}>
-          <ActionGroup>
+          <ActionGroup className="keycloak__form_actions">
             <Button
               isDisabled={!form.formState.isDirty}
               variant="primary"

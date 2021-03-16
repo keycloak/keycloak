@@ -143,7 +143,7 @@ export const ClientSettings = ({ save }: ClientSettingsProps) => {
               ref={register}
             />
           </FormGroup>
-          <ActionGroup>
+          <ActionGroup className="keycloak__form_actions">
             <Button variant="primary" onClick={save}>
               {t("common:save")}
             </Button>
