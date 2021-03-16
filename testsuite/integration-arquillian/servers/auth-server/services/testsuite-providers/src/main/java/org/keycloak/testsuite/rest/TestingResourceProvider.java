@@ -761,7 +761,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             RealmModel realm = getRealmByName(realmName);
             ClientModel serviceClient = realm.getClientByClientId(clientId);
             if (serviceClient == null) {
-                throw new NotFoundException("Referenced service client doesn't exists");
+                throw new NotFoundException("Referenced service client doesn't exist");
             }
 
             ClientScopeModel clientScopeModel = realm.addClientScope(clientId);

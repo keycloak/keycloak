@@ -1316,10 +1316,10 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
         AuthenticationFlowRepresentation flowRepresentation = AbstractAuthenticationTest.findFlowByAlias(flowToDeleteAlias, flows);
 
-        // Throw error if flow doesn't exists to ensure we did not accidentally use different alias of non-existing flow when
+        // Throw error if flow doesn't exist to ensure we did not accidentally use different alias of non-existing flow when
         // calling this method
         if (flowRepresentation == null) {
-            throw new IllegalArgumentException("The flow with alias " + flowToDeleteAlias + " did not exists");
+            throw new IllegalArgumentException("The flow with alias " + flowToDeleteAlias + " did not exist");
         }
 
         realmResource.flows().deleteFlow(flowRepresentation.getId());

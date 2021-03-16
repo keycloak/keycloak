@@ -301,7 +301,7 @@ public class AuthenticationManager {
         RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
 
-        // Try to lookup current authSessionId from browser cookie. If doesn't exists, use the same as current userSession
+        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession
         if (browserCookie) {
             rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
         }

@@ -119,7 +119,7 @@ public class GroupTreeResolverTest {
             resolver.resolveGroupTree(groups, false);
             Assert.fail("Exception expected because of missing referenced group");
         } catch (GroupTreeResolver.GroupTreeResolveException gre) {
-            Assert.assertEquals("Group 'group3' referenced as member of group 'group2' doesn't exists", gre.getMessage());
+            Assert.assertEquals("Group 'group3' referenced as member of group 'group2' doesn't exist", gre.getMessage());
         }
 
         List<GroupTreeResolver.GroupTreeEntry> groupTree = resolver.resolveGroupTree(groups, true);
