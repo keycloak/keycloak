@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.map.client;
 
+import java.util.Collections;
+import java.util.Map;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -49,9 +51,22 @@ public abstract class AbstractClientModel<E extends AbstractEntity> implements C
 
     @Override
     public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
-        for (ClientScopeModel cs : clientScopes) {
-            addClientScope(cs, defaultScope);
-        }
+        session.clients().addClientScopes(getRealm(), this, clientScopes, defaultScope);
+    }
+
+    @Override
+    public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
+        addClientScopes(Collections.singleton(clientScope), defaultScope);
+    }
+
+    @Override
+    public void removeClientScope(ClientScopeModel clientScope) {
+        session.clients().removeClientScope(getRealm(), this, clientScope);
+    }
+
+    @Override
+    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope) {
+        return session.clients().getClientScopes(getRealm(), this, defaultScope);
     }
 
     @Override
