@@ -102,7 +102,7 @@ public class MigrateTo4_0_0 implements Migration {
                 realm.getClientsStream()
                         .filter(MigrationUtils::isOIDCNonBearerOnlyClient)
                         .filter(c -> c.hasScope(offlineAccessRole))
-                        .filter(c -> !c.getClientScopes(false, true).containsKey(OAuth2Constants.OFFLINE_ACCESS))
+                        .filter(c -> !c.getClientScopes(false).containsKey(OAuth2Constants.OFFLINE_ACCESS))
                         .peek(c -> {
                             LOG.debugf("Adding client scope 'offline_access' as optional scope to client '%s' in realm '%s'.", c.getClientId(), realm.getName());
                             c.addClientScope(offlineAccessScope, false);
@@ -119,7 +119,7 @@ public class MigrateTo4_0_0 implements Migration {
         // Clients with consentRequired, which don't have any client scopes will be added itself to require consent, so that consent screen is shown when users authenticate
         realm.getClientsStream()
                 .filter(ClientModel::isConsentRequired)
-                .filter(c -> c.getClientScopes(true, true).isEmpty())
+                .filter(c -> c.getClientScopes(true).isEmpty())
                 .forEach(c -> {
                     LOG.debugf("Adding client '%s' of realm '%s' to display itself on consent screen", c.getClientId(), realm.getName());
                     c.setDisplayOnConsentScreen(true);

@@ -548,14 +548,14 @@ public class TokenManager {
     public static Stream<ClientScopeModel> getRequestedClientScopes(String scopeParam, ClientModel client) {
         // Add all default client scopes automatically and client itself
         Stream<ClientScopeModel> clientScopes = Stream.concat(
-                client.getClientScopes(true, true).values().stream(),
+                client.getClientScopes(true).values().stream(),
                 Stream.of(client)).distinct();
 
         if (scopeParam == null) {
             return clientScopes;
         }
 
-        Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false, true);
+        Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam).map(allOptionalScopes::get).filter(Objects::nonNull),
                 clientScopes).distinct();

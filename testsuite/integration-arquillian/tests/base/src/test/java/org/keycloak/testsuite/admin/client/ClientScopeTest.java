@@ -341,6 +341,7 @@ public class ClientScopeTest extends AbstractClientTest {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("foo-scope");
+        scopeRep.setProtocol("openid-connect");
         String scopeId = createClientScope(scopeRep);
 
         // Add client with the clientScope

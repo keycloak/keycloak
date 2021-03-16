@@ -1462,12 +1462,12 @@ public class RepresentationToModel {
 
         if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
             // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(true, false).values()) {
+            for (ClientScopeModel clientScope : client.getClientScopes(true).values()) {
                 client.removeClientScope(clientScope);
             }
 
             // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(false, false).values()) {
+            for (ClientScopeModel clientScope : client.getClientScopes(false).values()) {
                 client.removeClientScope(clientScope);
             }
         }
@@ -2039,7 +2039,7 @@ public class RepresentationToModel {
         // Backwards compatibility. If user had consent for "offline_access" role, we treat it as he has consent for "offline_access" client scope
         if (consentRep.getGrantedRealmRoles() != null) {
             if (consentRep.getGrantedRealmRoles().contains(OAuth2Constants.OFFLINE_ACCESS)) {
-                ClientScopeModel offlineScope = client.getClientScopes(false, true).get(OAuth2Constants.OFFLINE_ACCESS);
+                ClientScopeModel offlineScope = client.getClientScopes(false).get(OAuth2Constants.OFFLINE_ACCESS);
                 if (offlineScope == null) {
                     logger.warn("Unable to find offline_access scope referenced in grantedRoles of user");
                 }

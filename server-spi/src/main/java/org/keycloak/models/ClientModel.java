@@ -58,6 +58,10 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         KeycloakSession getKeycloakSession();
     }
 
+    interface ClientProtocolUpdatedEvent extends ProviderEvent {
+        ClientModel getClient();
+    }
+
     /**
      * Notifies other providers that this client has been updated.
      * <p>
@@ -221,10 +225,9 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      * Return all default scopes (if 'defaultScope' is true) or all optional scopes (if 'defaultScope' is false) linked with this client
      *
      * @param defaultScope
-     * @param filterByProtocol if true, then just client scopes of same protocol like current client will be returned
      * @return map where key is the name of the clientScope, value is particular clientScope. Returns empty map if no scopes linked (never returns null).
      */
-    Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol);
+    Map<String, ClientScopeModel> getClientScopes(boolean defaultScope);
 
     /**
      * <p>Returns a {@link ClientScopeModel} associated with this client.

@@ -592,8 +592,8 @@ public class ModelToRepresentation {
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
-        rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true, false).keySet()));
-        rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false, false).keySet()));
+        rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true).keySet()));
+        rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false).keySet()));
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

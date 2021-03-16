@@ -72,8 +72,8 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {
         if (explicitScopes == null) explicitScopes = "";
         Collection<String> explicitSpecifiedScopes = new HashSet<>(Arrays.asList(explicitScopes.split(" ")));
-        Set<String> defaultScopes = client.getClientScopes(true, true).keySet();
-        Set<String> optionalScopes = client.getClientScopes(false, true).keySet();
+        Set<String> defaultScopes = client.getClientScopes(true).keySet();
+        Set<String> optionalScopes = client.getClientScopes(false).keySet();
         Set<String> expectedScopes = getScopesForMatching();
         if (expectedScopes == null) expectedScopes = new HashSet<>();
 

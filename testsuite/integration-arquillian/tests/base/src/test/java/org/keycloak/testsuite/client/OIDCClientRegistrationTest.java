@@ -520,7 +520,9 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     public void testClientWithoutScope() throws ClientRegistrationException {
         Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes()
-                .stream().map(i->i.getName()).collect(Collectors.toList()));
+                .stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(i->i.getName()).collect(Collectors.toList()));
 
         OIDCClientRepresentation clientRep = null;
         OIDCClientRepresentation response = null;
@@ -535,7 +537,9 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation rep = clientResource.toRepresentation();
 
         Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes()
-                .stream().map(i->i.getName()).collect(Collectors.toList()));
+                .stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(i->i.getName()).collect(Collectors.toList()));
 
         Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
         assertTrue(realmDefaultClientScopes.equals(new HashSet<>(registeredDefaultClientScopes)));

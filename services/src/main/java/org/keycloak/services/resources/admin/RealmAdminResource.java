@@ -249,6 +249,7 @@ public class RealmAdminResource {
             ClientScopeRepresentation rep = new ClientScopeRepresentation();
             rep.setId(clientScope.getId());
             rep.setName(clientScope.getName());
+            rep.setProtocol(clientScope.getProtocol());
             return rep;
         });
     }
