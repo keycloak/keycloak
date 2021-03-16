@@ -159,8 +159,15 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         // existing User Handle means that the authenticator used Resident Key supported public key credential
         if (userHandle == null || userHandle.isEmpty()) {
             // Resident Key not supported public key credential was used
-            // so rely on the user that has already been authenticated
-            userId = context.getUser().getId();
+            // so rely on the user set in a previous step (if available)
+            if (context.getUser() != null) {
+                userId = context.getUser().getId();
+            }
+            else {
+                setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND,
+                        "Webauthn credential provided doesn't include user id and user id wasn't provided in a previous step");
+                return;
+            }
         } else {
             // decode using the same charset as it has been encoded (see: WebAuthnRegister.java)
             userId = new String(Base64Url.decode(userHandle), StandardCharsets.UTF_8);
