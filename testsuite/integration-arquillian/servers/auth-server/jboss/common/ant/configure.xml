@@ -49,7 +49,9 @@
             <fileset dir="${cli.tmp.dir}" includes="*.cli"/>
         </concat>
         <bin-chmod/>
-        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
+        <!-- Workaround for WFCORE-5335 issue -->
+        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="bash" failonerror="true">
+            <arg value="${jboss.cli.executable}"/>
             <arg value="--file=${cli.tmp.dir}/result.cli"/>
         </exec>
         <exec osfamily="windows" executable="powershell" failonerror="true">
