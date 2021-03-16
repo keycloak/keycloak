@@ -129,11 +129,16 @@ NOTE: If you want to see how you can send a custom value for a `scope` parameter
 link:{adapterguide_link}#_params_forwarding[parameters forwarding section], if your application uses the servlet adapter, or the
 link:{adapterguide_link}#_javascript_adapter[javascript adapter section], if your application uses the javascript adapter.
 
-===== Generating Example Tokens
+===== Generating Example Tokens and User Info
 
-To see an example of a real access token, generated for the particular user and issued for the particular client, with the specified
-value of `scope` parameter, select the user from the `Evaluate` screen. This will generate an example token that includes all of the
-claims and role mappings used.
+If you select a user in the `Evaluate` screen, the following example data is generated:
+
+* Generated Access Token: An access token that will be generated and sent to the client when the selected user is authenticated.
+* Generated ID Token: An ID Token that will be generated and sent to the client when the selected user is authenticated.
+* Generated User Info: The information about the user that is returned by the UserInfo Endpoint.
+
+All examples are generated for the particular user and issued for the particular client, with the specified
+value of `scope` parameter. The examples include all of the claims and role mappings used.
 
 ==== Client Scopes Permissions
 
