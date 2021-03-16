@@ -12,16 +12,19 @@ import {
 } from "@patternfly/react-table";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
-import { FormAccess } from "../components/form-access/FormAccess";
-import { RoleFormType } from "./RealmRoleTabs";
+import { FormAccess } from "../form-access/FormAccess";
 
-import "./RealmRolesSection.css";
+import "./attribute-form.css";
 
 export type KeyValueType = { key: string; value: string };
 
-type RoleAttributesProps = {
-  form: UseFormMethods<RoleFormType>;
-  save: (role: RoleFormType) => void;
+export type AttributeForm = {
+  attributes: KeyValueType[];
+};
+
+export type AttributesFormProps = {
+  form: UseFormMethods<AttributeForm>;
+  save: (model: AttributeForm) => void;
   reset: () => void;
   array: {
     fields: Partial<ArrayField<Record<string, any>, "id">>[];
@@ -33,12 +36,32 @@ type RoleAttributesProps = {
   };
 };
 
-export const RoleAttributes = ({
+export const arrayToAttributes = (attributeArray: KeyValueType[]) => {
+  const initValue: { [index: string]: string[] } = {};
+  return attributeArray.reduce((acc, attribute) => {
+    acc[attribute.key] = [attribute.value];
+    return acc;
+  }, initValue);
+};
+
+export const attributesToArray = (attributes?: {
+  [key: string]: string[];
+}): KeyValueType[] => {
+  if (!attributes || Object.keys(attributes).length == 0) {
+    return [];
+  }
+  return Object.keys(attributes).map((key) => ({
+    key: key,
+    value: attributes[key][0],
+  }));
+};
+
+export const AttributesForm = ({
   form: { handleSubmit, register, formState, errors, watch },
   save,
   array: { fields, append, remove },
   reset,
-}: RoleAttributesProps) => {
+}: AttributesFormProps) => {
   const { t } = useTranslation("roles");
 
   const columns = ["Key", "Value"];
@@ -48,7 +71,7 @@ export const RoleAttributes = ({
     <>
       <FormAccess role="manage-realm" onSubmit={handleSubmit(save)}>
         <TableComposable
-          className="kc-role-attributes__table"
+          className="kc-attributes__table"
           aria-label="Role attribute keys and values"
           variant="compact"
           borders={false}
@@ -93,7 +116,6 @@ export const RoleAttributes = ({
                     ref={register()}
                     aria-label="value-input"
                     defaultValue={attribute.value}
-                    validated={errors.description ? "error" : "default"}
                   />
                 </Td>
                 {rowIndex !== fields.length - 1 && fields.length - 1 !== 0 && (
@@ -106,7 +128,7 @@ export const RoleAttributes = ({
                       id={`minus-button-${rowIndex}`}
                       aria-label={`remove ${attribute.key} with value ${attribute.value} `}
                       variant="link"
-                      className="kc-role-attributes__minus-icon"
+                      className="kc-attributes__minus-icon"
                       onClick={() => remove(rowIndex)}
                     >
                       <MinusCircleIcon />
@@ -120,7 +142,7 @@ export const RoleAttributes = ({
                         id={`minus-button-${rowIndex}`}
                         aria-label={`remove ${attribute.key} with value ${attribute.value} `}
                         variant="link"
-                        className="kc-role-attributes__minus-icon"
+                        className="kc-attributes__minus-icon"
                         onClick={() => remove(rowIndex)}
                       >
                         <MinusCircleIcon />
@@ -130,7 +152,7 @@ export const RoleAttributes = ({
                       aria-label={t("roles:addAttributeText")}
                       id="plus-icon"
                       variant="link"
-                      className="kc-role-attributes__plus-icon"
+                      className="kc-attributes__plus-icon"
                       onClick={() => append({ key: "", value: "" })}
                       icon={<PlusCircleIcon />}
                       isDisabled={!formState.isValid}
@@ -141,7 +163,7 @@ export const RoleAttributes = ({
             ))}
           </Tbody>
         </TableComposable>
-        <ActionGroup className="kc-role-attributes__action-group">
+        <ActionGroup className="kc-attributes__action-group">
           <Button variant="primary" type="submit" isDisabled={!watchFirstKey}>
             {t("common:save")}
           </Button>

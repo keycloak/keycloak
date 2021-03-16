@@ -7,6 +7,7 @@ import {
   ButtonVariant,
   Checkbox,
   PageSection,
+  ToolbarItem,
 } from "@patternfly/react-core";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -193,31 +194,36 @@ export const AssociatedRolesTab = ({
           }}
           toolbarItem={
             <>
-              <Checkbox
-                label="Hide inherited roles"
-                key="associated-roles-check"
-                id="kc-hide-inherited-roles-checkbox"
-                onChange={() => setIsInheritedHidden(!isInheritedHidden)}
-                isChecked={isInheritedHidden}
-              />
-              <Button
-                className="kc-add-role-button"
-                key="add-role-button"
-                onClick={() => toggleModal()}
-                data-testid="add-role-button"
-              >
-                {t("addRole")}
-              </Button>
-              <Button
-                variant="link"
-                isDisabled={selectedRows.length === 0}
-                key="remove-role-button"
-                onClick={() => {
-                  toggleDeleteAssociatedRolesDialog();
-                }}
-              >
-                {t("removeRoles")}
-              </Button>
+              <ToolbarItem>
+                <Checkbox
+                  label="Hide inherited roles"
+                  key="associated-roles-check"
+                  id="kc-hide-inherited-roles-checkbox"
+                  onChange={() => setIsInheritedHidden(!isInheritedHidden)}
+                  isChecked={isInheritedHidden}
+                />
+              </ToolbarItem>
+              <ToolbarItem>
+                <Button
+                  key="add-role-button"
+                  onClick={() => toggleModal()}
+                  data-testid="add-role-button"
+                >
+                  {t("addRole")}
+                </Button>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Button
+                  variant="link"
+                  isDisabled={selectedRows.length === 0}
+                  key="remove-role-button"
+                  onClick={() => {
+                    toggleDeleteAssociatedRolesDialog();
+                  }}
+                >
+                  {t("removeRoles")}
+                </Button>
+              </ToolbarItem>
             </>
           }
           actions={[

@@ -1,6 +1,7 @@
 {
   "groups": {
     "groups": "Groups",
+    "childGroups": "Child groups",
     "createGroup": "Create group",
     "groupName": "Group name",
     "searchForGroups": "Search for groups",
@@ -10,6 +11,9 @@
     "deleteGroup": "Delete group",
     "search": "Search",
     "members": "Members",
+    "searchMembers": "Search members",
+    "addMember": "Add member",
+    "includeSubGroups": "Include sub-group users",
     "path": "Path",
     "moveTo": "Move to",
     "tableOfGroups": "Table of groups",
@@ -18,6 +22,10 @@
     "couldNotCreateGroup": "Could not create group {{error}}",
     "createAGroup": "Create a group",
     "create": "Create",
+    "email": "Email",
+    "lastName": "Last name",
+    "firstName": "First name",
+    "membership": "Membership",
     "noSearchResults": "No search results",
     "noSearchResultsInstructions": "Click on the search bar above to search for groups",
     "noGroupsInThisRealm": "No groups in this realm",
@@ -26,6 +34,9 @@
     "noGroupsInThisSubGroupInstructions": "You haven't created any groups in this sub group.",
     "groupDelete": "Group deleted",
     "groupsDeleted": "Groups deleted",
-    "groupDeleteError": "Error deleting group {error}"
+    "groupDeleteError": "Error deleting group {error}",
+    "attributes": "Attributes",
+    "groupUpdated": "Group updated",
+    "groupUpdateError": "Error updating group {error}"
   }
 }

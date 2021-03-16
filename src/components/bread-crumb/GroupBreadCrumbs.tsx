@@ -3,7 +3,7 @@ import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
-import { useSubGroups } from "../../groups/GroupsSection";
+import { useSubGroups } from "../../groups/SubGroupsContext";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 export const GroupBreadCrumbs = () => {

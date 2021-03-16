@@ -19,7 +19,7 @@ import { AccessContextProvider, useAccess } from "./context/access/Access";
 import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
-import { SubGroups } from "./groups/GroupsSection";
+import { SubGroups } from "./groups/SubGroupsContext";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";

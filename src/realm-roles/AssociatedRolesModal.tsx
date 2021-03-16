@@ -9,13 +9,14 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
 import { AliasRendererComponent } from "./AliasRendererComponent";
+import _ from "lodash";
+import { useErrorHandler } from "react-error-boundary";
 
 export type AssociatedRolesModalProps = {
   open: boolean;
@@ -24,27 +25,12 @@ export type AssociatedRolesModalProps = {
   existingCompositeRoles: RoleRepresentation[];
 };
 
-const attributesToArray = (attributes: { [key: string]: string }): any => {
-  if (!attributes || Object.keys(attributes).length === 0) {
-    return [
-      {
-        key: "",
-        value: "",
-      },
-    ];
-  }
-  return Object.keys(attributes).map((key) => ({
-    key: key,
-    value: attributes[key],
-  }));
-};
-
 export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   const { t } = useTranslation("roles");
-  const form = useForm<RoleRepresentation>({ mode: "onChange" });
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
+  const errorHandler = useErrorHandler();
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState("roles");
@@ -54,18 +40,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   const { id } = useParams<{ id: string }>();
 
   const alphabetize = (rolesList: RoleRepresentation[]) => {
-    return rolesList.sort((r1, r2) => {
-      const r1Name = r1.name?.toUpperCase();
-      const r2Name = r2.name?.toUpperCase();
-      if (r1Name! < r2Name!) {
-        return -1;
-      }
-      if (r1Name! > r2Name!) {
-        return 1;
-      }
-
-      return 0;
-    });
+    return _.sortBy(rolesList, (role) => role.name?.toUpperCase());
   };
 
   const loader = async () => {
@@ -127,25 +102,16 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   }, [filterType]);
 
   useEffect(() => {
-    (async () => {
-      if (id) {
-        const fetchedRole = await adminClient.roles.findOneById({ id });
-        setName(fetchedRole.name!);
-        setupForm(fetchedRole);
-      } else {
-        setName(t("createRole"));
-      }
-    })();
+    if (id) {
+      return asyncStateFetch(
+        () => adminClient.roles.findOneById({ id }),
+        (fetchedRole) => setName(fetchedRole.name!),
+        errorHandler
+      );
+    } else {
+      setName(t("createRole"));
+    }
   }, []);
-
-  const setupForm = (role: RoleRepresentation) =>
-    Object.entries(role).map((entry) => {
-      if (entry[0] === "attributes") {
-        form.setValue(entry[0], attributesToArray(entry[1]));
-      } else {
-        form.setValue(entry[0], entry[1]);
-      }
-    });
 
   const onFilterDropdownToggle = () => {
     setIsFilterDropdownOpen(!isFilterDropdownOpen);
@@ -224,7 +190,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           />
         }
         canSelectAll
-        isPaginated
         onSelect={(rows) => {
           setSelectedRows([...rows]);
         }}
@@ -245,7 +210,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
             message={t("noRolesInThisRealm")}
             instructions={t("noRolesInThisRealmInstructions")}
             primaryActionText={t("createRole")}
-            // onPrimaryAction={goToCreate}
           />
         }
       />

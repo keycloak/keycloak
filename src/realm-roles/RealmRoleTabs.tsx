@@ -15,7 +15,12 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import Composites from "keycloak-admin/lib/defs/roleRepresentation";
-import { KeyValueType, RoleAttributes } from "./RoleAttributes";
+import {
+  KeyValueType,
+  AttributesForm,
+  attributesToArray,
+  arrayToAttributes,
+} from "../components/attribute-form/AttributeForm";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RealmRoleForm } from "./RealmRoleForm";
@@ -24,26 +29,6 @@ import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
 import { UsersInRoleTab } from "./UsersInRoleTab";
-
-const arrayToAttributes = (attributeArray: KeyValueType[]) => {
-  const initValue: { [index: string]: string[] } = {};
-  return attributeArray.reduce((acc, attribute) => {
-    acc[attribute.key] = [attribute.value];
-    return acc;
-  }, initValue);
-};
-
-const attributesToArray = (attributes?: {
-  [key: string]: string[];
-}): KeyValueType[] => {
-  if (!attributes || Object.keys(attributes).length === 0) {
-    return [];
-  }
-  return Object.keys(attributes).map((key) => ({
-    key: key,
-    value: attributes[key][0],
-  }));
-};
 
 export type RoleFormType = Omit<RoleRepresentation, "attributes"> & {
   attributes: KeyValueType[];
@@ -329,7 +314,7 @@ export const RealmRoleTabs = () => {
               eventKey="attributes"
               title={<TabTitleText>{t("attributes")}</TabTitleText>}
             >
-              <RoleAttributes
+              <AttributesForm
                 form={form}
                 save={save}
                 array={{ fields, append, remove }}

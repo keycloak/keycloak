@@ -3,7 +3,7 @@ import { mount } from "enzyme";
 import { MemoryRouter } from "react-router-dom";
 
 import { GroupBreadCrumbs } from "../GroupBreadCrumbs";
-import { SubGroups, useSubGroups } from "../../../groups/GroupsSection";
+import { SubGroups, useSubGroups } from "../../../groups/SubGroupsContext";
 
 const GroupCrumbs = () => {
   const { setSubGroups } = useSubGroups();
