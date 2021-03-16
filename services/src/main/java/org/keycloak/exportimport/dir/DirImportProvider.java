@@ -54,7 +54,7 @@ public class DirImportProvider implements ImportProvider {
         // Delete and recreate directory inside tmp
         this.rootDirectory = new File(tempDir + "/keycloak-export");
         if (!this.rootDirectory .exists()) {
-            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exists");
+            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
         }
 
         logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
@@ -64,7 +64,7 @@ public class DirImportProvider implements ImportProvider {
         this.rootDirectory = rootDirectory;
 
         if (!this.rootDirectory.exists()) {
-            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exists");
+            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
         }
 
         logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());

@@ -211,7 +211,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // Check deleting flow second time will fail
         try {
             authMgmtResource.deleteFlow("id-123-notExistent");
-            Assert.fail("Not expected to delete flow, which doesn't exists");
+            Assert.fail("Not expected to delete flow, which doesn't exist");
         } catch (NotFoundException nfe) {
             // Expected
         }
