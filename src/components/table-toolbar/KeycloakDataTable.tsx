@@ -17,6 +17,7 @@ import _ from "lodash";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { TableToolbar } from "./TableToolbar";
 import { asyncStateFetch } from "../../context/auth/AdminClient";
+import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 
 type Row<T> = {
   data: T;
@@ -212,11 +213,10 @@ export function KeycloakDataTable<T>({
     });
 
   const searchOnChange = (value: string) => {
-    if (isPaginated) {
-      setSearch(value);
-    } else {
-      filter(value);
+    if (value === "") {
+      refresh();
     }
+    setSearch(value);
   };
 
   const Loading = () => (
@@ -242,7 +242,7 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
-      {rows && (rows.length > 0 || !emptyState) && isPaginated && (
+      {rows && isPaginated && (
         <PaginatingTableToolbar
           count={rows.length}
           first={first}
@@ -262,7 +262,7 @@ export function KeycloakDataTable<T>({
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
         >
-          {!loading && (
+          {!loading && rows.length > 0 && (
             <DataTable
               canSelectAll={canSelectAll}
               onSelect={onSelect ? _onSelect : undefined}
@@ -271,6 +271,14 @@ export function KeycloakDataTable<T>({
               rows={rows}
               columns={columns}
               ariaLabelKey={ariaLabelKey}
+            />
+          )}
+          {!loading && rows.length === 0 && search !== "" && (
+            <ListEmptyState
+              hasIcon={true}
+              isSearchVariant={true}
+              message={t("noSearchResults")}
+              instructions={t("noSearchResultsInstructions")}
             />
           )}
           {loading && <Loading />}
@@ -282,12 +290,12 @@ export function KeycloakDataTable<T>({
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
           inputGroupOnChange={searchOnChange}
-          inputGroupOnClick={() => {}}
+          inputGroupOnClick={() => filter(search)}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           toolbarItem={toolbarItem}
           searchTypeComponent={searchTypeComponent}
         >
-          {!loading && (
+          {!loading && (filteredData || rows).length > 0 && (
             <DataTable
               canSelectAll={canSelectAll}
               onSelect={onSelect ? _onSelect : undefined}
@@ -298,10 +306,18 @@ export function KeycloakDataTable<T>({
               ariaLabelKey={ariaLabelKey}
             />
           )}
+          {!loading && filteredData && filteredData.length === 0 && (
+            <ListEmptyState
+              hasIcon={true}
+              isSearchVariant={true}
+              message={t("noSearchResults")}
+              instructions={t("noSearchResultsInstructions")}
+            />
+          )}
           {loading && <Loading />}
         </TableToolbar>
       )}
-      <>{!loading && rows?.length === 0 && emptyState}</>
+      <>{!loading && rows?.length === 0 && search === "" && emptyState}</>
     </>
   );
 }
