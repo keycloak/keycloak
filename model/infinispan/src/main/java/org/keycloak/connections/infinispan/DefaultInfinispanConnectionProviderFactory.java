@@ -22,6 +22,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.client.hotrod.ProtocolVersion;
+import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.cache.CacheMode;
@@ -212,14 +213,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         logger.debug("Started embedded Infinispan cache container");
 
-        ConfigurationBuilder modelCacheConfigBuilder = new ConfigurationBuilder();
+        ConfigurationBuilder modelCacheConfigBuilder = createCacheConfigurationBuilder();
         Configuration modelCacheConfiguration = modelCacheConfigBuilder.build();
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, modelCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, modelCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, modelCacheConfiguration);
 
-        ConfigurationBuilder sessionConfigBuilder = new ConfigurationBuilder();
+        ConfigurationBuilder sessionConfigBuilder = createCacheConfigurationBuilder();
         if (clustered) {
             String sessionsMode = config.get("sessionsMode", "distributed");
             if (sessionsMode.equalsIgnoreCase("replicated")) {
@@ -251,7 +252,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         boolean jdgEnabled = config.getBoolean("remoteStoreEnabled", false);
 
         if (jdgEnabled) {
-            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder = createCacheConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
             configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, true);
         }
@@ -259,7 +260,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
         if (jdgEnabled) {
-            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder = createCacheConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
             configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, true);
         }
@@ -267,7 +268,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
         if (jdgEnabled) {
-            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder = createCacheConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
             configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, true);
         }
@@ -275,7 +276,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
         if (jdgEnabled) {
-            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder = createCacheConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
             configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, true);
         }
@@ -283,7 +284,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
         if (jdgEnabled) {
-            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder = createCacheConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
             configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, true);
         }
@@ -300,7 +301,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
 
-        ConfigurationBuilder replicationConfigBuilder = new ConfigurationBuilder();
+        ConfigurationBuilder replicationConfigBuilder = createCacheConfigurationBuilder();
         if (clustered) {
             replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
@@ -352,13 +353,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
-        ConfigurationBuilder cb = new ConfigurationBuilder();
+        ConfigurationBuilder cb = createCacheConfigurationBuilder();
         cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
 
         // Use Embedded manager even in managed ( wildfly/eap ) environment. We don't want infinispan to participate in global transaction
         cb.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
 
         cb.transaction().lockingMode(LockingMode.PESSIMISTIC);
+        if (cb.memory().storage().canStoreReferences()) {
+            cb.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
+        }
 
         cb.memory()
                 .evictionStrategy(EvictionStrategy.REMOVE)
@@ -366,6 +370,15 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .size(maxEntries);
 
         return cb.build();
+    }
+
+    private ConfigurationBuilder createCacheConfigurationBuilder() {
+        ConfigurationBuilder builder = new ConfigurationBuilder();
+
+        // need to force the encoding to application/x-java-object to avoid unnecessary conversion of keys/values. See WFLY-14356.
+        builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
+
+        return builder;
     }
 
     // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
@@ -435,7 +448,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     protected Configuration getKeysCacheConfig() {
-        ConfigurationBuilder cb = new ConfigurationBuilder();
+        ConfigurationBuilder cb = createCacheConfigurationBuilder();
 
         cb.memory()
                 .evictionStrategy(EvictionStrategy.REMOVE)
@@ -448,7 +461,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private ConfigurationBuilder getActionTokenCacheConfig() {
-        ConfigurationBuilder cb = new ConfigurationBuilder();
+        ConfigurationBuilder cb = createCacheConfigurationBuilder();
 
         cb.memory()
                 .evictionStrategy(EvictionStrategy.NONE)
