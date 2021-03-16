@@ -52,10 +52,10 @@
         <product.rhsso.version>7.4.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
-        <wildfly.version>22.0.1.Final</wildfly.version>
+        <wildfly.version>23.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <eap.version>7.4.0.CD20-redhat-00001</eap.version>
-        <wildfly.core.version>14.0.1.Final</wildfly.core.version>
+        <wildfly.core.version>15.0.0.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -67,18 +67,18 @@
         <apache.httpcomponents.httpcore.version>4.4.14</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
-        <bouncycastle.version>1.67</bouncycastle.version>
-        <cxf.version>3.3.7</cxf.version>
-        <cxf.jetty.version>3.3.7</cxf.jetty.version>
-        <cxf.jaxrs.version>3.3.7</cxf.jaxrs.version>
-        <cxf.undertow.version>3.3.7</cxf.undertow.version>
+        <bouncycastle.version>1.68</bouncycastle.version>
+        <cxf.version>3.3.9</cxf.version>
+        <cxf.jetty.version>3.3.9</cxf.jetty.version>
+        <cxf.jaxrs.version>3.3.9</cxf.jaxrs.version>
+        <cxf.undertow.version>3.3.9</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>1.4.197</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate.core.version>5.3.20.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
-        <infinispan.version>11.0.8.Final</infinispan.version>
-        <jackson.version>2.11.3</jackson.version>
+        <infinispan.version>11.0.9.Final</infinispan.version>
+        <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
@@ -89,7 +89,7 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.14.0.Final</resteasy.version>
+        <resteasy.version>3.15.1.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
@@ -100,19 +100,19 @@
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.2.4.Final</undertow.version>
-        <elytron.version>1.14.1.Final</elytron.version>
-        <elytron.undertow-server.version>1.8.0.Final</elytron.undertow-server.version>
+        <undertow.version>2.2.5.Final</undertow.version>
+        <elytron.version>1.15.1.Final</elytron.version>
+        <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.9.v20160517</jetty93.version>
         <jetty94.version>9.4.29.v20200521</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <xmlsec.version>2.1.4</xmlsec.version>
+        <xmlsec.version>2.1.6</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
-        <wildfly.common.version>1.5.2.Final</wildfly.common.version>
+        <wildfly.common.version>1.5.4.Final</wildfly.common.version>
         <ua-parser.version>1.4.3</ua-parser.version>
         <picketbox.version>5.0.3.Final-redhat-00007</picketbox.version>
-        <google.guava.version>25.0-jre</google.guava.version>
+        <google.guava.version>30.1-jre</google.guava.version>
 
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>8.0.0.Final</version.com.openshift.openshift-restclient-java>
@@ -148,6 +148,9 @@
         <selenium.version>2.35.0</selenium.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
+        <!-- KEYCLOAK-17585 Prevent microprofile-metrics-api upgrades from version "2.3" due to:
+             https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
+        -->
         <microprofile-metrics-api.version>2.3</microprofile-metrics-api.version>
 
         <!-- Maven Plugins -->
