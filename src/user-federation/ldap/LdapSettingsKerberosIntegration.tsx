@@ -23,7 +23,7 @@ export const LdapSettingsKerberosIntegration = ({
   const allowKerberosAuth: [string] = useWatch({
     control: form.control,
     name: "config.allowKerberosAuthentication",
-    defaultValue: ["true"],
+    defaultValue: ["false"],
   });
 
   return (
