@@ -232,4 +232,8 @@ public class ClientScopeAdapter implements ClientScopeModel {
         return getId().hashCode();
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getId(), hashCode());
+    }
 }

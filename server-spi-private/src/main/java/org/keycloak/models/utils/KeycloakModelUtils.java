@@ -704,8 +704,8 @@ public final class KeycloakModelUtils {
 
     public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
         return realm.getClientsStream()
-                .filter(c -> (c.getClientScopes(true, false).containsKey(clientScope.getName())) ||
-                (c.getClientScopes(false, false).containsKey(clientScope.getName())))
+                .filter(c -> (c.getClientScopes(true).containsKey(clientScope.getName())) ||
+                (c.getClientScopes(false).containsKey(clientScope.getName())))
                 .findFirst().isPresent();
     }
 

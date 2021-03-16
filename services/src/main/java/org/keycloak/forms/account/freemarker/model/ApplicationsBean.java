@@ -183,8 +183,8 @@ public class ApplicationsBean {
 
         // Construct scope parameter with all optional scopes to see all potentially available roles
         Stream<ClientScopeModel> allClientScopes = Stream.concat(
-                client.getClientScopes(true, true).values().stream(),
-                client.getClientScopes(false, true).values().stream());
+                client.getClientScopes(true).values().stream(),
+                client.getClientScopes(false).values().stream());
         allClientScopes = Stream.concat(allClientScopes, Stream.of(client)).distinct();
 
         Set<RoleModel> availableRoles = TokenManager.getAccess(user, client, allClientScopes);

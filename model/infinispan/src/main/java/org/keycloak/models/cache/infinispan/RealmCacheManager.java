@@ -97,6 +97,8 @@ public class RealmCacheManager extends CacheManager {
 
     public void clientUpdated(String realmId, String clientUuid, String clientId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getClientByClientIdCacheKey(clientId, realmId));
+        invalidations.add(RealmCacheSession.getClientScopesCacheKey(clientUuid, true));
+        invalidations.add(RealmCacheSession.getClientScopesCacheKey(clientUuid, false));
     }
 
     // Client roles invalidated separately

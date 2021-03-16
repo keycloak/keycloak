@@ -19,6 +19,6 @@ package org.keycloak.models.cache.infinispan.entities;
 
 import java.util.Set;
 
-public interface ClientScopeQuery extends InRealm {
+public interface ClientScopeQuery extends InClient {
     Set<String> getClientScopes();
 }

@@ -318,7 +318,7 @@ public class ClientResource {
     private Stream<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
         auth.clients().requireView(client);
 
-        return client.getClientScopes(defaultScope, true).values().stream().map(ClientResource::toRepresentation);
+        return client.getClientScopes(defaultScope).values().stream().map(ClientResource::toRepresentation);
     }
 
 

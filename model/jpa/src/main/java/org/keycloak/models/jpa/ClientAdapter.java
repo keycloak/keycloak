@@ -26,20 +26,17 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 
 import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -265,7 +262,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public void setProtocol(String protocol) {
         entity.setProtocol(protocol);
-
+        session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> ClientAdapter.this);
     }
 
     @Override
@@ -349,57 +346,22 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
-        if (getClientScopes(defaultScope, false).containsKey(clientScope.getName())) return;
-
-        persist(clientScope, defaultScope);
+        addClientScopes(Collections.singleton(clientScope), defaultScope);
     }
 
     @Override
     public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
-        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(defaultScope, false);
-        clientScopes.stream()
-                .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
-                .forEach(clientScope -> persist(clientScope, defaultScope));
-    }
-
-    private void persist(ClientScopeModel clientScope, boolean defaultScope) {
-        ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
-        entity.setClientScopeId(clientScope.getId());
-        entity.setClient(getEntity());
-        entity.setDefaultScope(defaultScope);
-        em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        session.clients().addClientScopes(getRealm(), this, clientScopes, defaultScope);
     }
 
     @Override
     public void removeClientScope(ClientScopeModel clientScope) {
-        int numRemoved = em.createNamedQuery("deleteClientScopeClientMapping")
-                .setParameter("clientScopeId", clientScope.getId())
-                .setParameter("client", getEntity())
-                .executeUpdate();
-        em.flush();
+        session.clients().removeClientScope(getRealm(), this, clientScope);
     }
 
     @Override
-    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
-        TypedQuery<String> query = em.createNamedQuery("clientScopeClientMappingIdsByClient", String.class);
-        query.setParameter("client", getEntity());
-        query.setParameter("defaultScope", defaultScope);
-        List<String> ids = query.getResultList();
-
-        // Defaults to openid-connect
-        String clientProtocol = getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : getProtocol();
-
-        Map<String, ClientScopeModel> clientScopes = new HashMap<>();
-        for (String clientScopeId : ids) {
-            ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
-            if (clientScope == null) continue;
-            if (!filterByProtocol || clientScope.getProtocol().equals(clientProtocol)) {
-                clientScopes.put(clientScope.getName(), clientScope);
-            }
-        }
-        return clientScopes;
+    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope) {
+        return session.clients().getClientScopes(getRealm(), this, defaultScope);
     }
 
 

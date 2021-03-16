@@ -97,6 +97,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected static final Logger logger = Logger.getLogger(RealmCacheSession.class);
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
     public static final String ROLES_QUERY_SUFFIX = ".roles";
+    private static final String SCOPE_KEY_DEFAULT = "default";
+    private static final String SCOPE_KEY_OPTIONAL = "optional";
     protected RealmCacheManager cache;
     protected KeycloakSession session;
     protected RealmProvider realmDelegate;
@@ -540,6 +542,10 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     static String getClientScopesCacheKey(String realm) {
         return realm + ".clientscopes";
+    }
+
+    static String getClientScopesCacheKey(String client, boolean defaultScope) {
+        return client + "." + (defaultScope ? SCOPE_KEY_DEFAULT : SCOPE_KEY_OPTIONAL) + ".clientscopes";
     }
 
     static String getTopGroupsQueryCacheKey(String realm) {
@@ -1303,6 +1309,51 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public void removeClientScopes(RealmModel realm) {
         realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(id -> removeClientScope(realm, id));
+    }
+
+    @Override
+    public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
+        getClientDelegate().addClientScopes(realm, client, clientScopes, defaultScope);
+        registerClientInvalidation(client.getId(), client.getId(), realm.getId());
+    }
+
+    @Override
+    public void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope) {
+        getClientDelegate().removeClientScope(realm, client, clientScope);
+        registerClientInvalidation(client.getId(), client.getId(), realm.getId());
+    }
+
+    @Override
+    public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
+        String cacheKey = getClientScopesCacheKey(client.getId(), defaultScopes);
+        boolean queryDB = invalidations.contains(cacheKey) || invalidations.contains(client.getId()) || listInvalidations.contains(realm.getId());
+        if (queryDB) {
+            return getClientDelegate().getClientScopes(realm, client, defaultScopes);
+        }
+        ClientScopeListQuery query = cache.get(cacheKey, ClientScopeListQuery.class);
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            Map<String, ClientScopeModel> model = getClientDelegate().getClientScopes(realm, client, defaultScopes);
+            if (model == null) return null;
+            Set<String> ids = model.values().stream().map(ClientScopeModel::getId).collect(Collectors.toSet());
+            query = new ClientScopeListQuery(loaded, cacheKey, realm, client.getId(), ids);
+            logger.tracev("adding assigned client scopes cache miss: client {0} key {1}", client.getClientId(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        Map<String, ClientScopeModel> assignedScopes = new HashMap<>();
+        for (String id : query.getClientScopes()) {
+            ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
+            if (clientScope == null) {
+                invalidations.add(cacheKey);
+                return getClientDelegate().getClientScopes(realm, client, defaultScopes);
+            }
+            if (clientScope.getProtocol().equals((client.getProtocol() == null) ? "openid-connect" : client.getProtocol())) {
+                assignedScopes.put(clientScope.getName(), clientScope);
+            }
+        }
+        return assignedScopes;
     }
 
     // Don't cache ClientInitialAccessModel for now

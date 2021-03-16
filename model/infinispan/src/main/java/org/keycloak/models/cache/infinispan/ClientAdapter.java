@@ -27,8 +27,8 @@ import org.keycloak.models.cache.infinispan.entities.CachedClient;
 import org.keycloak.models.utils.RoleUtils;
 
 import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -99,41 +99,22 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
-        getDelegateForUpdate();
-        updated.addClientScope(clientScope, defaultScope);
+        cacheSession.addClientScopes(getRealm(), this, Collections.singleton(clientScope), defaultScope);
     }
 
     @Override
     public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
-        for (ClientScopeModel clientScope : clientScopes) {
-            addClientScope(clientScope, defaultScope);
-        }
+        cacheSession.addClientScopes(getRealm(), this, clientScopes, defaultScope);
     }
 
     @Override
     public void removeClientScope(ClientScopeModel clientScope) {
-        getDelegateForUpdate();
-        updated.removeClientScope(clientScope);
+        cacheSession.removeClientScope(getRealm(), this, clientScope);
     }
 
     @Override
-    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
-        if (isUpdated()) return updated.getClientScopes(defaultScope, filterByProtocol);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultClientScopesIds() : cached.getOptionalClientScopesIds();
-
-        // Defaults to openid-connect
-        String clientProtocol = getProtocol() == null ? "openid-connect" : getProtocol();
-
-        Map<String, ClientScopeModel> clientScopes = new HashMap<>();
-        for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = cacheSession.getClientScopeById(cachedRealm, scopeId);
-            if (clientScope != null) {
-                if (!filterByProtocol || clientScope.getProtocol().equals(clientProtocol)) {
-                    clientScopes.put(clientScope.getName(), clientScope);
-                }
-            }
-        }
-        return clientScopes;
+    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope) {
+        return cacheSession.getClientScopes(getRealm(), this, defaultScope);
     }
 
     public void addWebOrigin(String webOrigin) {

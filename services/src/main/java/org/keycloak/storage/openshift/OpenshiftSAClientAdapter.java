@@ -275,7 +275,7 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     @Override
-    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
+    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope) {
         if (defaultScope) {
             return Collections.emptyMap();
         }

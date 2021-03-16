@@ -55,6 +55,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
 import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
 
@@ -558,10 +559,12 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void registerClientAsAdminWithoutScope() throws ClientRegistrationException {
-        Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes()
-                .stream().map(i->i.getName()).collect(Collectors.toList()));
-        Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes()
-                .stream().map(i->i.getName()).collect(Collectors.toList()));
+        Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes().stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(i->i.getName()).collect(Collectors.toList()));
+        Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes().stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(i->i.getName()).collect(Collectors.toList()));
 
         authManageClients();
         ClientRepresentation client = new ClientRepresentation();
