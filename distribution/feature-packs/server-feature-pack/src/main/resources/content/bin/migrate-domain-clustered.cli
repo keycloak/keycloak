@@ -729,4 +729,25 @@ if (outcome == failed) of /profile=$clusteredProfile/subsystem=elytron/server-ss
     echo
 end-if
 
+## Convert type of 'hung-task-termination-period' attribute for 'managed-executor-service' from INT to LONG
+if (result == 0) of /profile=$clusteredProfile/subsystem=ee/managed-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed executor service to default value (0 miliseconds)
+    /profile=$clusteredProfile/subsystem=ee/managed-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-scheduled-executor-service' from INT to LONG
+if (result == 0) of /profile=$clusteredProfile/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed scheduled executor service to default value (0 miliseconds)
+    /profile=$clusteredProfile/subsystem=ee/managed-scheduled-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Set value of JPA default-datasource from empty string to 'undefined'
+if (outcome == success) && (result == "") of /profile=$clusteredProfile/subsystem=jpa:read-attribute(name=default-datasource)
+    echo Setting value of to default-datasource attribute in JPA subsystem to 'undefined'
+    /profile=$clusteredProfile/subsystem=jpa:undefine-attribute(name=default-datasource)
+    echo
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***
