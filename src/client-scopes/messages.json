@@ -28,7 +28,6 @@
     "createError": "Could not create client scope: '{{error}}'",
     "updateSuccess": "Client scope updated",
     "updateError": "Could not update client scope: '{{error}}'",
-    "mappers": "Mappers",
     "mappersSearchFor": "Search for mapper",
     "addMapper": "Add mapper",
     "addMapperExplain": "If you want more fine-grain control, you can create protocol mapper on this client",

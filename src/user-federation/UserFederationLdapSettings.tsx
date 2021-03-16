@@ -8,6 +8,9 @@ import {
   DropdownSeparator,
   Form,
   PageSection,
+  Tab,
+  TabTitleText,
+  Text,
 } from "@patternfly/react-core";
 
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
@@ -30,6 +33,8 @@ import { useTranslation } from "react-i18next";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useHistory, useParams } from "react-router-dom";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
+
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 
 type LdapSettingsHeaderProps = {
   onChange: (value: string) => void;
@@ -276,44 +281,60 @@ export const UserFederationLdapSettings = () => {
         )}
       />
       <PageSection variant="light" isFilled>
-        <ScrollForm
-          sections={[
-            t("generalOptions"),
-            t("connectionAndAuthenticationSettings"),
-            t("ldapSearchingAndUpdatingSettings"),
-            t("synchronizationSettings"),
-            t("kerberosIntegration"),
-            t("cacheSettings"),
-            t("advancedSettings"),
-          ]}
-        >
-          <LdapSettingsGeneral form={form} />
-          <LdapSettingsConnection form={form} />
-          <LdapSettingsSearching form={form} />
-          <LdapSettingsSynchronization form={form} />
-          <LdapSettingsKerberosIntegration form={form} />
-          <SettingsCache form={form} />
-          <LdapSettingsAdvanced form={form} />
-        </ScrollForm>
-        <Form onSubmit={form.handleSubmit(save)}>
-          <ActionGroup className="keycloak__form_actions">
-            <Button
-              isDisabled={!form.formState.isDirty}
-              variant="primary"
-              type="submit"
-              data-testid="ldap-save"
+        <KeycloakTabs isBox>
+          <Tab
+            id="settings"
+            eventKey="settings"
+            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+          >
+            <ScrollForm
+              sections={[
+                t("generalOptions"),
+                t("connectionAndAuthenticationSettings"),
+                t("ldapSearchingAndUpdatingSettings"),
+                t("synchronizationSettings"),
+                t("kerberosIntegration"),
+                t("cacheSettings"),
+                t("advancedSettings"),
+              ]}
             >
-              {t("common:save")}
-            </Button>
-            <Button
-              variant="link"
-              onClick={() => history.push(`/${realm}/user-federation`)}
-              data-testid="ldap-cancel"
-            >
-              {t("common:cancel")}
-            </Button>
-          </ActionGroup>
-        </Form>
+              <LdapSettingsGeneral form={form} />
+              <LdapSettingsConnection form={form} />
+              <LdapSettingsSearching form={form} />
+              <LdapSettingsSynchronization form={form} />
+              <LdapSettingsKerberosIntegration form={form} />
+              <SettingsCache form={form} />
+              <LdapSettingsAdvanced form={form} />
+            </ScrollForm>
+            <Form onSubmit={form.handleSubmit(save)}>
+              <ActionGroup className="keycloak__form_actions">
+                <Button
+                  isDisabled={!form.formState.isDirty}
+                  variant="primary"
+                  type="submit"
+                  data-testid="ldap-save"
+                >
+                  {t("common:save")}
+                </Button>
+                <Button
+                  variant="link"
+                  onClick={() => history.push(`/${realm}/user-federation`)}
+                  data-testid="ldap-cancel"
+                >
+                  {t("common:cancel")}
+                </Button>
+              </ActionGroup>
+            </Form>
+          </Tab>
+          <Tab
+            id="mappers"
+            eventKey="mappers"
+            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+          >
+            {/* <MapperList clientScope={clientScope} refresh={refresh} /> */}
+            <Text>Coming soon!</Text>
+          </Tab>
+        </KeycloakTabs>
       </PageSection>
     </>
   );

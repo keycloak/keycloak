@@ -64,6 +64,7 @@
     "groups": "Groups",
     "sessions": "Sessions",
     "events": "Events",
+    "mappers": "Mappers",
 
     "configure": "Configure",
     "realmSettings": "Realm settings",
