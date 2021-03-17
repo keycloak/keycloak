@@ -199,7 +199,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     long count = auth.getCount();
                     CredentialModel credModel = getCredentialStore().getStoredCredentialById(realm, user, auth.getCredentialDBId());
                     WebAuthnCredentialModel webAuthnCredModel = getCredentialFromModel(credModel);
-                    webAuthnCredModel.updateCounter(count + 1);
+                    webAuthnCredModel.updateCounter(count);
                     getCredentialStore().updateCredential(realm, user, webAuthnCredModel);
 
                     logger.debugf("Successfully validated WebAuthn credential for user %s", user.getUsername());
