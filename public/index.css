@@ -9,6 +9,15 @@
   max-width: 1024px;
 }
 
+label.pf-c-form__label {
+  display: inline-flex;
+}
+
+.pf-c-form__group-label {
+  display: flex;
+  align-items: end;
+}
+
 .keycloak__form_actions {
   position: fixed;
   bottom: 0px;
