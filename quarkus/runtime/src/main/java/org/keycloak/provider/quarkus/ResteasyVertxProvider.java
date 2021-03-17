@@ -17,14 +17,24 @@
 
 package org.keycloak.provider.quarkus;
 
+import io.vertx.ext.web.RoutingContext;
 import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.util.ResteasyProvider;
 
-public class Resteasy4Provider implements ResteasyProvider {
+/**
+ * TODO: we should probably rely on the vert.x routing context instead of resteasy context data
+ */
+public class ResteasyVertxProvider implements ResteasyProvider {
 
     @Override
     public <R> R getContextData(Class<R> type) {
-        return ResteasyContext.getContextData(type);
+        R data = ResteasyContext.getContextData(type);
+
+        if (data == null) {
+            return (R) ResteasyContext.getContextData(RoutingContext.class).data().get(type.getName());
+        }
+
+        return data;
     }
 
     @Override
