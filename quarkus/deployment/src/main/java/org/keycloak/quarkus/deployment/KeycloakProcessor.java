@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.deployment;
 
+import static java.util.Collections.emptyList;
 import static org.keycloak.configuration.Configuration.getPropertyNames;
 import static org.keycloak.configuration.Configuration.getRawValue;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
@@ -147,7 +148,7 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors) {
-        PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition().getActualHibernateDescriptor();
+        PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition(emptyList()).getActualHibernateDescriptor();
 
         unit.getProperties().setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
         unit.getProperties().setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
