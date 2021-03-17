@@ -134,6 +134,8 @@
     "notBefore": "Not before",
     "setToNow": "Set to now",
     "noAdminUrlSet": "No push sent. No admin URI configured or no registered cluster nodes available",
+    "notBeforeSetToNow": "Not Before set for client",
+    "notBeforeNowClear": "Not Before cleared for client",
     "notBeforePushFail": "Failed to push \"not before\" to: {{failedNodes}}",
     "notBeforePushSuccess": "Successfully push \"not before\" to: {{successNodes}}",
     "testClusterFail": "Failed verified availability for: {{failedNodes}}. Fix or unregister failed cluster nodes and try again",

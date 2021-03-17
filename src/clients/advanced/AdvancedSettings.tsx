@@ -126,7 +126,7 @@ export const AdvancedSettings = ({
           >
             <Controller
               name="attributes.pkce-code-challenge-method"
-              defaultValue={false}
+              defaultValue=""
               control={control}
               render={({ onChange, value }) => (
                 <Select
@@ -138,10 +138,12 @@ export const AdvancedSettings = ({
                     onChange(value);
                     setOpen(false);
                   }}
-                  selections={[value]}
+                  selections={[value || t("common:choose")]}
                 >
                   {["", "S256", "plain"].map((v) => (
-                    <SelectOption key={v} value={v} />
+                    <SelectOption key={v} value={v}>
+                      {v || t("common:choose")}
+                    </SelectOption>
                   ))}
                 </Select>
               )}

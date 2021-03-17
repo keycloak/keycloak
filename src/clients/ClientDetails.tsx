@@ -110,6 +110,11 @@ export type ClientForm = Omit<
   webOrigins: MultiLine[];
 };
 
+export type SaveOptions = {
+  confirmed?: boolean;
+  messageKey?: string;
+};
+
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
@@ -180,7 +185,12 @@ export const ClientDetails = () => {
     );
   }, [clientId]);
 
-  const save = async (confirmed: boolean | undefined = false) => {
+  const save = async (
+    { confirmed = false, messageKey = "clientSaveSuccess" }: SaveOptions = {
+      confirmed: false,
+      messageKey: "clientSaveSuccess",
+    }
+  ) => {
     if (await form.trigger()) {
       if (
         client?.publicClient &&
@@ -208,7 +218,7 @@ export const ClientDetails = () => {
         await adminClient.clients.update({ id: clientId }, newClient);
         setupForm(newClient);
         setClient(newClient);
-        addAlert(t("clientSaveSuccess"), AlertVariant.success);
+        addAlert(t(messageKey), AlertVariant.success);
       } catch (error) {
         addAlert(`${t("clientSaveError")} '${error}'`, AlertVariant.danger);
       }
@@ -231,7 +241,7 @@ export const ClientDetails = () => {
         })}
         open={changeAuthenticatorOpen}
         toggleDialog={toggleChangeAuthenticator}
-        onConfirm={() => save(true)}
+        onConfirm={() => save({ confirmed: true })}
       >
         <>
           {t("changeAuthenticatorConfirm", {
@@ -272,7 +282,7 @@ export const ClientDetails = () => {
               eventKey="settings"
               title={<TabTitleText>{t("common:settings")}</TabTitleText>}
             >
-              <ClientSettings save={save} />
+              <ClientSettings save={() => save()} />
             </Tab>
             {publicClient && (
               <Tab
@@ -280,7 +290,7 @@ export const ClientDetails = () => {
                 eventKey="credentials"
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
               >
-                <Credentials clientId={clientId} save={save} />
+                <Credentials clientId={clientId} save={() => save()} />
               </Tab>
             )}
             <Tab

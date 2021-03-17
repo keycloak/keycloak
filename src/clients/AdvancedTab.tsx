@@ -8,8 +8,6 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Card,
-  CardBody,
   ExpandableSection,
   FormGroup,
   Split,
@@ -37,9 +35,10 @@ import { AddHostDialog } from "./advanced/AddHostDialog";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { SaveOptions } from "./ClientDetails";
 
 type AdvancedProps = {
-  save: () => void;
+  save: (options?: SaveOptions) => void;
   client: ClientRepresentation;
 };
 
@@ -68,9 +67,9 @@ export const AdvancedTab = ({
   const refresh = () => setKey(new Date().getTime());
   const [nodes, setNodes] = useState(registeredNodes || {});
 
-  const setNotBefore = (time: number) => {
+  const setNotBefore = (time: number, messageKey: string) => {
     setValue(revocationFieldName, time);
-    save();
+    save({ messageKey });
   };
 
   const parseResult = (result: GlobalRequestResult, prefixKey: string) => {
@@ -178,96 +177,95 @@ export const AdvancedTab = ({
 
   return (
     <ScrollForm sections={sections}>
-      <Card>
-        <CardBody>
-          <Text>
-            <Trans i18nKey="clients-help:notBeforeIntro">
-              In order to successfully push setup url on
-              <Link to={`/${realm}/clients/${id}/settings`}>
-                {t("settings")}
-              </Link>
-              tab
-            </Trans>
-          </Text>
-        </CardBody>
-        <CardBody>
-          <FormAccess role="manage-clients" isHorizontal>
-            <FormGroup
-              label={t("notBefore")}
-              fieldId="kc-not-before"
-              labelIcon={
-                <HelpItem
-                  helpText="clients-help:notBefore"
-                  forLabel={t("notBefore")}
-                  forID="kc-not-before"
-                />
-              }
-            >
-              <TextInput
-                type="text"
-                id="kc-not-before"
-                name="notBefore"
-                isReadOnly
-                value={formatDate()}
+      <>
+        <Text className="pf-u-py-lg">
+          <Trans i18nKey="clients-help:notBeforeIntro">
+            In order to successfully push setup url on
+            <Link to={`/${realm}/clients/${id}/settings`}>{t("settings")}</Link>
+            tab
+          </Trans>
+        </Text>
+        <FormAccess role="manage-clients" isHorizontal>
+          <FormGroup
+            label={t("notBefore")}
+            fieldId="kc-not-before"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:notBefore"
+                forLabel={t("notBefore")}
+                forID="kc-not-before"
               />
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                id="setToNow"
-                variant="tertiary"
-                onClick={() => setNotBefore(moment.now() / 1000)}
-              >
-                {t("setToNow")}
-              </Button>
-              <Button
-                id="clear"
-                variant="tertiary"
-                onClick={() => setNotBefore(0)}
-              >
-                {t("clear")}
-              </Button>
-              <Button id="push" variant="secondary" onClick={push}>
-                {t("push")}
-              </Button>
-            </ActionGroup>
-          </FormAccess>
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody>
-          <FormAccess role="manage-clients" isHorizontal>
-            <FormGroup
-              label={t("nodeReRegistrationTimeout")}
-              fieldId="kc-node-reregistration-timeout"
-              labelIcon={
-                <HelpItem
-                  helpText="clients-help:nodeReRegistrationTimeout"
-                  forLabel={t("nodeReRegistrationTimeout")}
-                  forID="nodeReRegistrationTimeout"
-                />
-              }
+            }
+          >
+            <TextInput
+              type="text"
+              id="kc-not-before"
+              name="notBefore"
+              isReadOnly
+              value={formatDate()}
+            />
+          </FormGroup>
+          <ActionGroup>
+            <Button
+              id="setToNow"
+              variant="tertiary"
+              onClick={() => {
+                setNotBefore(moment.now() / 1000, "notBeforeSetToNow");
+              }}
             >
-              <Split hasGutter>
-                <SplitItem>
-                  <Controller
-                    name="nodeReRegistrationTimeout"
-                    defaultValue=""
-                    control={control}
-                    render={({ onChange, value }) => (
-                      <TimeSelector value={value} onChange={onChange} />
-                    )}
-                  />
-                </SplitItem>
-                <SplitItem>
-                  <Button variant={ButtonVariant.secondary} onClick={save}>
-                    {t("common:save")}
-                  </Button>
-                </SplitItem>
-              </Split>
-            </FormGroup>
-          </FormAccess>
-        </CardBody>
-        <CardBody>
+              {t("setToNow")}
+            </Button>
+            <Button
+              id="clear"
+              variant="tertiary"
+              onClick={() => {
+                setNotBefore(0, "notBeforeNowClear");
+              }}
+            >
+              {t("clear")}
+            </Button>
+            <Button id="push" variant="secondary" onClick={push}>
+              {t("push")}
+            </Button>
+          </ActionGroup>
+        </FormAccess>
+      </>
+      <>
+        <FormAccess role="manage-clients" isHorizontal>
+          <FormGroup
+            label={t("nodeReRegistrationTimeout")}
+            fieldId="kc-node-reregistration-timeout"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:nodeReRegistrationTimeout"
+                forLabel={t("nodeReRegistrationTimeout")}
+                forID="nodeReRegistrationTimeout"
+              />
+            }
+          >
+            <Split hasGutter>
+              <SplitItem>
+                <Controller
+                  name="nodeReRegistrationTimeout"
+                  defaultValue=""
+                  control={control}
+                  render={({ onChange, value }) => (
+                    <TimeSelector value={value} onChange={onChange} />
+                  )}
+                />
+              </SplitItem>
+              <SplitItem>
+                <Button
+                  variant={ButtonVariant.secondary}
+                  onClick={() => save()}
+                >
+                  {t("common:save")}
+                </Button>
+              </SplitItem>
+            </Split>
+          </FormGroup>
+        </FormAccess>
+        <>
           <DeleteNodeConfirm />
           <AddHostDialog
             clientId={id!}
@@ -345,105 +343,90 @@ export const AdvancedTab = ({
               ]}
             />
           </ExpandableSection>
-        </CardBody>
-      </Card>
-      <Card>
+        </>
+      </>
+      <>
         {protocol === openIdConnect && (
           <>
-            <CardBody>
-              <Text>
-                {t("clients-help:fineGrainOpenIdConnectConfiguration")}
-              </Text>
-            </CardBody>
-            <CardBody>
-              <FineGrainOpenIdConnect
-                control={control}
-                save={save}
-                reset={() =>
-                  convertToFormValues(attributes, "attributes", setValue)
-                }
-              />
-            </CardBody>
+            <Text className="pf-u-py-lg">
+              {t("clients-help:fineGrainOpenIdConnectConfiguration")}
+            </Text>
+            <FineGrainOpenIdConnect
+              control={control}
+              save={() => save()}
+              reset={() =>
+                convertToFormValues(attributes, "attributes", setValue)
+              }
+            />
           </>
         )}
         {protocol !== openIdConnect && (
           <>
-            <CardBody>
-              <Text>{t("clients-help:fineGrainSamlEndpointConfig")}</Text>
-            </CardBody>
-
-            <CardBody>
-              <FineGrainSamlEndpointConfig
-                control={control}
-                save={save}
-                reset={() =>
-                  convertToFormValues(attributes, "attributes", setValue)
-                }
-              />
-            </CardBody>
-          </>
-        )}
-      </Card>
-      {protocol === openIdConnect && (
-        <Card>
-          <CardBody>
-            <Text>{t("clients-help:openIdConnectCompatibilityModes")}</Text>
-          </CardBody>
-          <CardBody>
-            <OpenIdConnectCompatibilityModes
+            <Text className="pf-u-py-lg">
+              {t("clients-help:fineGrainSamlEndpointConfig")}
+            </Text>
+            <FineGrainSamlEndpointConfig
               control={control}
-              save={save}
+              save={() => save()}
               reset={() =>
-                resetFields(["exclude-session-state-from-auth-response"])
+                convertToFormValues(attributes, "attributes", setValue)
               }
             />
-          </CardBody>
-        </Card>
-      )}
-      <Card>
-        <CardBody>
-          <Text>
-            {t("clients-help:advancedSettings" + toUpperCase(protocol!))}
+          </>
+        )}
+      </>
+      {protocol === openIdConnect && (
+        <>
+          <Text className="pf-u-py-lg">
+            {t("clients-help:openIdConnectCompatibilityModes")}
           </Text>
-        </CardBody>
-        <CardBody>
-          <AdvancedSettings
-            protocol={protocol}
+          <OpenIdConnectCompatibilityModes
             control={control}
-            save={save}
-            reset={() => {
-              resetFields([
-                "saml-assertion-lifespan",
-                "access-token-lifespan",
-                "tls-client-certificate-bound-access-tokens",
-                "pkce-code-challenge-method",
-              ]);
-            }}
+            save={() => save()}
+            reset={() =>
+              resetFields(["exclude-session-state-from-auth-response"])
+            }
           />
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody>
-          <Text>{t("clients-help:authenticationOverrides")}</Text>
-        </CardBody>
-        <CardBody>
-          <AuthenticationOverrides
-            protocol={protocol}
-            control={control}
-            save={save}
-            reset={() => {
-              setValue(
-                "authenticationFlowBindingOverrides.browser",
-                authenticationFlowBindingOverrides?.browser
-              );
-              setValue(
-                "authenticationFlowBindingOverrides.direct_grant",
-                authenticationFlowBindingOverrides?.direct_grant
-              );
-            }}
-          />
-        </CardBody>
-      </Card>
+        </>
+      )}
+      <>
+        <Text className="pf-u-py-lg">
+          {t("clients-help:advancedSettings" + toUpperCase(protocol!))}
+        </Text>
+        <AdvancedSettings
+          protocol={protocol}
+          control={control}
+          save={() => save()}
+          reset={() => {
+            resetFields([
+              "saml-assertion-lifespan",
+              "access-token-lifespan",
+              "tls-client-certificate-bound-access-tokens",
+              "pkce-code-challenge-method",
+            ]);
+          }}
+        />
+      </>
+      <>
+        <Text className="pf-u-py-lg">
+          {t("clients-help:authenticationOverrides")}
+        </Text>
+        <AuthenticationOverrides
+          protocol={protocol}
+          control={control}
+          save={() => save()}
+          reset={() => {
+            setValue(
+              "authenticationFlowBindingOverrides.browser",
+              authenticationFlowBindingOverrides?.browser
+            );
+            setValue(
+              "authenticationFlowBindingOverrides.direct_grant",
+              authenticationFlowBindingOverrides?.direct_grant
+            );
+          }}
+        />
+      </>
     </ScrollForm>
   );
 };

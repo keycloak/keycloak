@@ -24,8 +24,7 @@ import { useRealm } from "./context/realm-context/RealmContext";
 import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
 
-// This must match the id given as scrollableSelector in scroll-form
-const mainPageContentId = "kc-main-content-page-container";
+export const mainPageContentId = "kc-main-content-page-container";
 
 const AppContexts = ({ children }: { children: ReactNode }) => (
   <AccessContextProvider>

@@ -8,6 +8,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 
+import { mainPageContentId } from "../../App";
 import { FormPanel } from "./FormPanel";
 import "./scroll-form.css";
 
@@ -15,9 +16,6 @@ type ScrollFormProps = {
   sections: string[];
   children: React.ReactNode;
 };
-
-// This must match the page id created in App.tsx unless another page section has been given hasScrollableContent
-const mainPageContentId = "#kc-main-content-page-container";
 
 const spacesToHyphens = (string: string): string => {
   return string.replace(/\s+/g, "-");
@@ -42,7 +40,7 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
             isVertical
             // scrollableSelector has to point to the id of the element whose scrollTop changes
             // to scroll the entire main section, it has to be the pf-c-page__main
-            scrollableSelector={mainPageContentId}
+            scrollableSelector={`#${mainPageContentId}`}
             label={t("jumpToSection")}
             offset={100}
           >
