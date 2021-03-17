@@ -7,6 +7,8 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { ClientForm } from "../ClientDetails";
 
 export type ClientSecretProps = {
   secret: string;
@@ -15,6 +17,7 @@ export type ClientSecretProps = {
 
 export const ClientSecret = ({ secret, toggle }: ClientSecretProps) => {
   const { t } = useTranslation("clients");
+  const { formState } = useFormContext<ClientForm>();
   return (
     <FormGroup label={t("clientSecret")} fieldId="kc-client-secret">
       <Split hasGutter>
@@ -24,7 +27,11 @@ export const ClientSecret = ({ secret, toggle }: ClientSecretProps) => {
           </ClipboardCopy>
         </SplitItem>
         <SplitItem>
-          <Button variant="secondary" onClick={toggle}>
+          <Button
+            variant="secondary"
+            onClick={toggle}
+            isDisabled={formState.isDirty}
+          >
             {t("regenerate")}
           </Button>
         </SplitItem>

@@ -234,7 +234,11 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
                 </ClipboardCopy>
               </SplitItem>
               <SplitItem>
-                <Button variant="secondary" onClick={toggleAccessTokenConfirm}>
+                <Button
+                  variant="secondary"
+                  onClick={toggleAccessTokenConfirm}
+                  isDisabled={isDirty}
+                >
                   {t("regenerate")}
                 </Button>
               </SplitItem>

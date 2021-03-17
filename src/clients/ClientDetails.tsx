@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   AlertVariant,
   ButtonVariant,
   DropdownItem,
@@ -18,7 +19,10 @@ import _ from "lodash";
 
 import { ClientSettings } from "./ClientSettings";
 import { useAlerts } from "../components/alert/Alerts";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import {
+  ConfirmDialogModal,
+  useConfirmDialog,
+} from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
@@ -114,6 +118,9 @@ export const ClientDetails = () => {
   const { addAlert } = useAlerts();
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const toggleDownloadDialog = () => setDownloadDialogOpen(!downloadDialogOpen);
+  const [changeAuthenticatorOpen, setChangeAuthenticatorOpen] = useState(false);
+  const toggleChangeAuthenticator = () =>
+    setChangeAuthenticatorOpen(!changeAuthenticatorOpen);
   const [activeTab2, setActiveTab2] = useState(30);
 
   const form = useForm<ClientForm>();
@@ -173,8 +180,17 @@ export const ClientDetails = () => {
     );
   }, [clientId]);
 
-  const save = async () => {
+  const save = async (confirmed: boolean | undefined = false) => {
     if (await form.trigger()) {
+      if (
+        client?.publicClient &&
+        client?.clientAuthenticatorType !==
+          form.getValues("clientAuthenticatorType") &&
+        !confirmed
+      ) {
+        toggleChangeAuthenticator();
+        return;
+      }
       const redirectUris = toValue(form.getValues()["redirectUris"]);
       const webOrigins = toValue(form.getValues()["webOrigins"]);
       const attributes = convertFormValuesToObject(
@@ -208,6 +224,24 @@ export const ClientDetails = () => {
   }
   return (
     <>
+      <ConfirmDialogModal
+        continueButtonLabel="common:yes"
+        titleKey={t("changeAuthenticatorConfirmTitle", {
+          clientAuthenticatorType: form.getValues("clientAuthenticatorType"),
+        })}
+        open={changeAuthenticatorOpen}
+        toggleDialog={toggleChangeAuthenticator}
+        onConfirm={() => save(true)}
+      >
+        <>
+          {t("changeAuthenticatorConfirm", {
+            clientAuthenticatorType: form.getValues("clientAuthenticatorType"),
+          })}
+          {form.getValues("clientAuthenticatorType") === "client-jwt" && (
+            <Alert variant="info" isInline title={t("signedJWTConfirm")} />
+          )}
+        </>
+      </ConfirmDialogModal>
       <DeleteConfirm />
       <DownloadDialog
         id={client.id!}
