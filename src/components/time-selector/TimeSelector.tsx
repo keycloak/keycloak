@@ -33,7 +33,9 @@ export const TimeSelector = ({
     { unit: "days", label: t("times.days"), multiplier: 86400 },
   ];
 
-  const times = allTimes.filter((t) => units.includes(t.unit));
+  const times = units.map(
+    (unit) => allTimes.find((time) => time.unit === unit)!
+  );
   const defaultMultiplier = allTimes.find((time) => time.unit === units[0])
     ?.multiplier;
 

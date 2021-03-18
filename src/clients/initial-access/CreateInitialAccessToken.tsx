@@ -51,6 +51,7 @@ export const CreateInitialAccessToken = () => {
           token={token}
           toggleDialog={() => {
             setToken("");
+            addAlert(t("tokenSaveSuccess"), AlertVariant.success);
             history.push(`/${realm}/clients/initialAccessToken`);
           }}
         />
@@ -78,13 +79,14 @@ export const CreateInitialAccessToken = () => {
           >
             <Controller
               name="expiration"
-              defaultValue=""
+              defaultValue={86400}
               control={control}
               render={({ onChange, value }) => (
                 <TimeSelector
                   data-testid="expiration"
                   value={value}
                   onChange={onChange}
+                  units={["days", "hours", "minutes", "seconds"]}
                 />
               )}
             />

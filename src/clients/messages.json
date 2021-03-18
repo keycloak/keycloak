@@ -92,6 +92,7 @@
     "expiration": "Expiration",
     "noTokens": "No initial access tokens",
     "noTokensInstructions": "You haven't created any initial access tokens. Create an initial access token by clicking \"Create\".",
+    "tokenSaveSuccess": "New initial access token has been created",
     "tokenSaveError": "Could not create initial access token {{error}}",
     "initialAccessTokenDetails": "Initial access token details",
     "copyInitialAccessToken": "Please copy and paste the initial access token before closing as it can not be retrieved later.",
