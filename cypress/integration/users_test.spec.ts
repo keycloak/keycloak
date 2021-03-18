@@ -5,6 +5,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import UserDetailsPage from "../support/pages/admin_console/manage/users/UserDetailsPage";
 import ModalUtils from "../support/util/ModalUtils";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 describe("Users test", () => {
   const loginPage = new LoginPage();
@@ -19,16 +20,7 @@ describe("Users test", () => {
 
   describe("User creation", () => {
     beforeEach(() => {
-      /* 
-        Prevent unpredictable 401 errors from failing individual tests.
-        These are most often occurring during the login process:
-           GET /admin/serverinfo/
-           GET /admin/master/console/whoami
-      */
-      cy.on("uncaught:exception", () => {
-        return false;
-      });
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToUsers();
     });

@@ -3,6 +3,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ProviderPage from "../support/pages/admin_console/manage/providers/ProviderPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -41,19 +42,10 @@ const disableModalTitle = "Disable user federation provider?";
 
 describe("User Fed Kerberos tests", () => {
   beforeEach(() => {
-    /* 
-      Prevent unpredictable 401 errors from failing individual tests.
-      These are most often occurring during the login process:
-         GET /admin/serverinfo/
-         GET /admin/master/console/whoami
-    */
-      cy.on("uncaught:exception", (err, runnable) => {
-        return false;
-      });
-      cy.visit("");
-      loginPage.logIn();
-      sidebarPage.goToUserFederation();
-    });
+    keycloakBefore();
+    loginPage.logIn();
+    sidebarPage.goToUserFederation();
+  });
 
   it("Create Kerberos provider from empty state", () => {
     // if tests don't start at empty state, e.g. user has providers configured locally,

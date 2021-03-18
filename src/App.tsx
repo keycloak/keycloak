@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect } from "react";
 import { Page } from "@patternfly/react-core";
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Route,
   Switch,
   useParams,

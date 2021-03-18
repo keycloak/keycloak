@@ -3,6 +3,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 let itemId = "client_scope_crud";
 const loginPage = new LoginPage();
@@ -12,10 +13,9 @@ const listingPage = new ListingPage();
 const createClientScopePage = new CreateClientScopePage();
 
 describe("Client Scopes test", function () {
-
   describe("Client Scope creation", function () {
     beforeEach(function () {
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClientScopes();
     });
@@ -44,14 +44,14 @@ describe("Client Scopes test", function () {
 
       createClientScopePage.fillClientScopeData(itemId).save();
 
-        masthead.checkNotificationMessage("Client scope created");
+      masthead.checkNotificationMessage("Client scope created");
 
       sidebarPage.goToClientScopes();
 
       // Delete
       listingPage.itemExist(itemId).deleteItem(itemId); // There should be a confirmation pop-up
 
-        masthead.checkNotificationMessage("The client scope has been deleted");
+      masthead.checkNotificationMessage("The client scope has been deleted");
 
       listingPage // It is not refreshing after delete
         .itemExist(itemId, false);

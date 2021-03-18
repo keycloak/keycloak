@@ -7,6 +7,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
 import AdminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -19,7 +20,7 @@ const modalUtils = new ModalUtils();
 describe("Clients test", function () {
   describe("Client creation", function () {
     beforeEach(function () {
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClients();
     });
@@ -107,7 +108,7 @@ describe("Clients test", function () {
     let client: string;
 
     beforeEach(() => {
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClients();
 

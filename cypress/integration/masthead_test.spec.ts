@@ -2,6 +2,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import Masthead from "../support/pages/admin_console/Masthead";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -24,7 +25,7 @@ const goToAcctMgtTest = () => {
 
 describe("Masthead tests in desktop mode", () => {
   beforeEach(() => {
-    cy.visit("");
+    keycloakBefore();
     loginPage.logIn();
   });
 
@@ -51,7 +52,7 @@ describe("Masthead tests in desktop mode", () => {
 
 describe("Masthead tests with kebab menu", () => {
   beforeEach(() => {
-    cy.visit("");
+    keycloakBefore();
     loginPage.logIn();
     masthead.setMobileMode(true);
   });

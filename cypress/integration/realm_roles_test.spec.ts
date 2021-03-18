@@ -5,6 +5,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
 import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 let itemId = "realm_role_crud";
 const loginPage = new LoginPage();
@@ -18,7 +19,7 @@ const associatedRolesPage = new AssociatedRolesPage();
 describe("Realm roles test", function () {
   describe("Realm roles creation", function () {
     beforeEach(function () {
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToRealmRoles();
     });

@@ -39,7 +39,7 @@ const EmptyDashboard = () => {
     <PageSection variant="light">
       <EmptyState variant="large">
         <Brand
-          src="/icon.svg"
+          src="./icon.svg"
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />

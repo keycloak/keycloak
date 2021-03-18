@@ -7,6 +7,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import ViewHeaderPage from "../support/pages/ViewHeaderPage";
 import AdminClient from "../support/util/AdminClient";
+import { keycloakBefore } from "../support/util/keycloak_before";
 
 describe("Group test", () => {
   const loginPage = new LoginPage();
@@ -20,7 +21,7 @@ describe("Group test", () => {
 
   describe("Group creation", () => {
     beforeEach(function () {
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToGroups();
     });

@@ -129,7 +129,7 @@ export const Header = () => {
             <UserDropdown />
           </PageHeaderToolsItem>
         </PageHeaderToolsGroup>
-        <Avatar src="/img_avatar.svg" alt="Avatar image" />
+        <Avatar src="./img_avatar.svg" alt="Avatar image" />
       </PageHeaderTools>
     );
   };
@@ -183,7 +183,7 @@ export const Header = () => {
       logo={
         <Link to="/">
           <Brand
-            src="/logo.svg"
+            src="./logo.svg"
             id="masthead-logo"
             alt="Logo"
             className="keycloak__pageheader_brand"
