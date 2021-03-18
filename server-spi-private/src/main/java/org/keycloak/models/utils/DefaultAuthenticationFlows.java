@@ -20,7 +20,6 @@ package org.keycloak.models.utils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.CIBAPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;

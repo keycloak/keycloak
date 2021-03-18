@@ -654,6 +654,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public CibaConfig getCibaPolicy() {
+        if (isUpdated()) return updated.getCibaPolicy();
+        return cached.getCibaConfig(modelSupplier);
+    }
+
+    @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         if (isUpdated()) return updated.getRequiredCredentials();
         return cached.getRequiredCredentials();
@@ -712,18 +718,6 @@ public class RealmAdapter implements CachedRealmModel {
     public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
         getDelegateForUpdate();
         updated.setWebAuthnPolicyPasswordless(policy);
-    }
-
-    @Override
-    public CIBAPolicy getCIBAPolicy() {
-        if (isUpdated()) return updated.getCIBAPolicy();
-        return cached.getCIBAPolicy();
-    }
-
-    @Override
-    public void setCIBAPolicy(CIBAPolicy policy) {
-        getDelegateForUpdate();
-        updated.setCIBAPolicy(policy);
     }
 
     @Override

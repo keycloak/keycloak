@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.ciba.resolvers;
+package org.keycloak.protocol.oidc.grants.ciba.resolvers;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -63,7 +63,7 @@ public interface CIBALoginUserResolver extends Provider {
      * @return its corresponding user identifier
      */
     default String getInfoUsedByAuthentication(UserModel user) {
-        return null;
+        return user.getUsername();
     }
 
     /**
@@ -72,8 +72,6 @@ public interface CIBALoginUserResolver extends Provider {
      * @param info
      * @return UserModel
      */
-    default UserModel getUserFromInfoUsedByAuthentication(String info) {
-        return null;
-    }
+    UserModel getUserFromInfoUsedByAuthentication(String info);
 
 }

@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,7 +65,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.CIBAPolicy;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -139,7 +138,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 
 public class RepresentationToModel {
@@ -296,8 +294,7 @@ public class RepresentationToModel {
         webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
         newRealm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
-        CIBAPolicy cibaPolicy = convertCIBARepresentationToPolicy(rep);
-        newRealm.setCIBAPolicy(cibaPolicy);
+        updateCibaSettings(rep, newRealm);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -556,29 +553,6 @@ public class RepresentationToModel {
         if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
         return webAuthnPolicy;
-    }
-
-    private static CIBAPolicy convertCIBARepresentationToPolicy(RealmRepresentation rep) {
-        CIBAPolicy cibaPolicy = new CIBAPolicy();
-        if (rep != null && rep.getAttributes() != null) {
-            Map<String, String> attrMap = rep.getAttributes();
-            cibaPolicy.setBackchannelTokenDeliveryMode(Optional.ofNullable(attrMap.get(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE))
-                    .filter(StringUtil::isNotBlank)
-                    .orElse(CIBAPolicy.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE));
-            cibaPolicy.setExpiresIn(Integer.parseInt(Optional.ofNullable(attrMap.get(CIBAPolicy.CIBA_EXPIRES_IN))
-                    .orElse(String.valueOf(CIBAPolicy.DEFAULT_CIBA_POLICY_EXPIRES_IN))));
-            cibaPolicy.setInterval(Integer.parseInt(Optional.ofNullable(attrMap.get(CIBAPolicy.CIBA_INTERVAL))
-                    .orElse(String.valueOf(CIBAPolicy.DEFAULT_CIBA_POLICY_INTERVAL))));
-            cibaPolicy.setAuthRequestedUserHint(Optional.ofNullable(attrMap.get(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT))
-                    .filter(StringUtil::isNotBlank)
-                    .orElse(CIBAPolicy.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT));
-        } else {
-            cibaPolicy.setBackchannelTokenDeliveryMode(CIBAPolicy.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE);
-            cibaPolicy.setExpiresIn(CIBAPolicy.DEFAULT_CIBA_POLICY_EXPIRES_IN);
-            cibaPolicy.setInterval(CIBAPolicy.DEFAULT_CIBA_POLICY_INTERVAL);
-            cibaPolicy.setAuthRequestedUserHint(CIBAPolicy.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT);
-        }
-        return cibaPolicy;
     }
 
     public static void importUserFederationProvidersAndMappers(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
@@ -1206,8 +1180,7 @@ public class RepresentationToModel {
         webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
         realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
-        CIBAPolicy cibaPolicy = convertCIBARepresentationToPolicy(rep);
-        realm.setCIBAPolicy(cibaPolicy);
+        updateCibaSettings(rep, realm);
 
         if (rep.getSmtpServer() != null) {
             Map<String, String> config = new HashMap(rep.getSmtpServer());
@@ -1250,6 +1223,16 @@ public class RepresentationToModel {
             realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
         }
 
+    }
+
+    private static void updateCibaSettings(RealmRepresentation rep, RealmModel realm) {
+        Map<String, String> newAttributes = rep.getAttributesOrEmpty();
+        CibaConfig cibaPolicy = realm.getCibaPolicy();
+
+        cibaPolicy.setBackchannelTokenDeliveryMode(newAttributes.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE));
+        cibaPolicy.setExpiresIn(newAttributes.get(CibaConfig.CIBA_EXPIRES_IN));
+        cibaPolicy.setPoolingInterval(newAttributes.get(CibaConfig.CIBA_INTERVAL));
+        cibaPolicy.setAuthRequestedUserHint(newAttributes.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT));
     }
 
     // Basic realm stuff

@@ -14,10 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.ciba.channel;
+package org.keycloak.protocol.oidc.grants.ciba.channel;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-public interface AuthenticationChannelProviderFactory extends ProviderFactory<AuthenticationChannelProvider> {
+public class AuthenticationChannelSpi implements Spi {
+
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "ciba-auth-channel";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return AuthenticationChannelProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return AuthenticationChannelProviderFactory.class;
+    }
 
 }

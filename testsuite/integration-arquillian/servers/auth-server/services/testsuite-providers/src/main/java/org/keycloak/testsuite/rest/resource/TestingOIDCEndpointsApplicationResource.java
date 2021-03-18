@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.rest.resource;
 
+import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.BINDING_MESSAGE;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -40,8 +42,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.Constants;
-import org.keycloak.protocol.ciba.CIBAConstants;
-import org.keycloak.protocol.ciba.channel.HttpAuthenticationChannelProvider;
+import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testsuite.ciba.AuthenticationChannelRequest;
@@ -526,15 +527,14 @@ public class TestingOIDCEndpointsApplicationResource {
                 throw new BadRequestException("missing parameter : " + HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED);
             entry.setConsentRequired(Boolean.valueOf(request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED)).booleanValue());
 
-            String scope = request.getFirst(CIBAConstants.SCOPE);
-            if (scope == null) throw new BadRequestException("missing parameter : " + CIBAConstants.SCOPE);
-            entry.setScope(request.getFirst(CIBAConstants.SCOPE));
+            String scope = request.getFirst(OAuth2Constants.SCOPE);
+            if (scope == null) throw new BadRequestException("missing parameter : " + OAuth2Constants.SCOPE);
+            entry.setScope(request.getFirst(OAuth2Constants.SCOPE));
 
             // optional
-            entry.setDefaultClientScope(request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_DEFAULT_CLIENT_SCOPE));
-            entry.setBindingMessage(request.getFirst(CIBAConstants.BINDING_MESSAGE));
+            entry.setBindingMessage(request.getFirst(BINDING_MESSAGE));
             // for testing purpose
-            if (request.getFirst(CIBAConstants.BINDING_MESSAGE).equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
+            if (request.getFirst(BINDING_MESSAGE).equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
         try {
             authenticationChannelRequests.put(entry);
         } catch (InterruptedException e) {

@@ -30,7 +30,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
-import org.keycloak.models.CIBAPolicy;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -181,11 +181,10 @@ public class RealmTest extends AbstractAdminTest {
         try {
             RealmRepresentation rep2 = adminClient.realm("attributes").toRepresentation();
             if (rep2.getAttributes() != null) {
-                Arrays.asList(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS,
-                        CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE,
-                        CIBAPolicy.CIBA_EXPIRES_IN,
-                        CIBAPolicy.CIBA_INTERVAL,
-                        CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT).stream().forEach(i -> rep2.getAttributes().remove(i));
+                Arrays.asList(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE,
+                        CibaConfig.CIBA_EXPIRES_IN,
+                        CibaConfig.CIBA_INTERVAL,
+                        CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT).stream().forEach(i -> rep2.getAttributes().remove(i));
             }
 
             Map<String, String> attributes = rep2.getAttributes();

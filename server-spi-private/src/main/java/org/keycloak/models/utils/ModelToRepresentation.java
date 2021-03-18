@@ -400,12 +400,12 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
 
-        CIBAPolicy cibaPolicy = realm.getCIBAPolicy();
+        CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-        attrMap.put(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, cibaPolicy.getBackchannelTokenDeliveryMode());
-        attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, String.valueOf(cibaPolicy.getExpiresIn()));
-        attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(cibaPolicy.getInterval()));
-        attrMap.put(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT, cibaPolicy.getAuthRequestedUserHint());
+        attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, cibaPolicy.getBackchannelTokenDeliveryMode());
+        attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(cibaPolicy.getExpiresIn()));
+        attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(cibaPolicy.getPoolingInterval()));
+        attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, cibaPolicy.getAuthRequestedUserHint());
         rep.setAttributes(attrMap);
 
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());

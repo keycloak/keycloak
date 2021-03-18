@@ -14,23 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.ciba.channel;
+package org.keycloak.protocol.oidc.grants.ciba.channel;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
-import org.keycloak.protocol.oidc.ext.OIDCExtProviderFactory;
+import org.keycloak.provider.ProviderFactory;
 
-public class HttpAuthenticationChannelCallbackEndpointFactory implements OIDCExtProviderFactory {
+public interface AuthenticationChannelProviderFactory extends ProviderFactory<AuthenticationChannelProvider> {
 
-    public static final String PROVIDER_ID = "ciba-http-auth-channel-callback";
-
-    @Override
-    public OIDCExtProvider create(KeycloakSession session) {
-        return new HttpAuthenticationChannelProvider(session, null);
-    }
-
-    @Override
-    public String getId() {
-        return PROVIDER_ID;
-    }
 }

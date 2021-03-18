@@ -206,7 +206,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .session(sessionId);
+                .session(isUUID());
     }
 
     public ExpectedEvent expect(EventType event) {

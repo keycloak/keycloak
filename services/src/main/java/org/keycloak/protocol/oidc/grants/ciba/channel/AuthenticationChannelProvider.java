@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.ciba.channel;
+package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.protocol.ciba.endpoints.request.BackchannelAuthenticationRequest;
 import org.keycloak.provider.Provider;
 
 /**
@@ -29,12 +28,9 @@ public interface AuthenticationChannelProvider extends Provider {
 
     /**
      * Request the authentication(AuthN) and authorization(AuthZ) by an authentication device (AD) to the external entity via Authentication Channel.
-     * @param client the client as Consumption Device (CD)
      * @param request the representation of Authentication Request received on Backchannel Authentication Endpoint
-     * @param expiresIn the duration in second for the active AuthN and Authz by AD
-     * @param authResultId identifies the result of AuthN and Authz by AD
-     * @param userSessionIdWillBeCreated the id for UserSessionModel that will be created after completing AuthN and Authz by AD
+     * @param infoUsedByAuthenticator some value to help the AD to identify the user
+     * @return
      */
-    void requestAuthentication(ClientModel client, BackchannelAuthenticationRequest request, int expiresIn, String authResultId, String userSessionIdWillBeCreated);
-
+    boolean requestAuthentication(AuthenticationRequest request, String infoUsedByAuthenticator);
 }

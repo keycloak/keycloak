@@ -155,5 +155,12 @@
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
         }
+    },
+
+    "ciba-auth-channel": {
+        "provider": "${keycloak.ciba.auth.channel.provider:ciba-http-auth-channel}",
+        "ciba-http-auth-channel": {
+            "httpAuthenticationChannelUri": "${keycloak.ciba.http.auth.channel.uri:https://localhost:8543/auth/realms/master/app/oidc-client-endpoints/request-authentication-channel}"
+        }
     }
 }

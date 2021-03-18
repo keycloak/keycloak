@@ -25,5 +25,4 @@ package org.keycloak.models;
 public interface AuthenticationFlowBindings {
     String BROWSER_BINDING = "browser";
     String DIRECT_GRANT_BINDING = "direct_grant";
-    String CIBA_BINDING = "ciba";
 }

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.ciba.resolvers;
+package org.keycloak.protocol.oidc.grants.ciba.resolvers;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;

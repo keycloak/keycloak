@@ -14,25 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.ciba;
+package org.keycloak.protocol.oidc.grants.ciba.resolvers;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import org.keycloak.provider.ProviderFactory;
 
-public class EarlyAccessBlockerValueEntity {
+public interface CIBALoginUserResolverFactory extends ProviderFactory<CIBALoginUserResolver> {
 
-    private final Map<String, String> notes;
-
-    public EarlyAccessBlockerValueEntity(Map<String, String> notes) {
-        this.notes = notes == null ? Collections.emptyMap() : new HashMap<>(notes);
-    }
-
-    public Map<String, String> getNotes() {
-        return Collections.unmodifiableMap(notes);
-    }
-
-    public String getNote(String name) {
-        return notes.get(name);
-    }
 }

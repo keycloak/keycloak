@@ -26,10 +26,10 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
@@ -64,7 +64,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE,
         OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS,
         OAuth2Constants.DEVICE_CODE_GRANT_TYPE,
-        CIBAConstants.GRANT_TYPE_VALUE);
+        OAuth2Constants.CIBA_GRANT_TYPE);
 
     public static final List<String> DEFAULT_RESPONSE_TYPES_SUPPORTED = list(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, OIDCResponseType.TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
 
@@ -82,7 +82,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
 
-    public static final List<String> DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED= list("poll");
+    public static final List<String> DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED= list(CibaConfig.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE);
 
     private KeycloakSession session;
 

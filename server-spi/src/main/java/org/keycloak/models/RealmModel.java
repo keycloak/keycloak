@@ -251,6 +251,8 @@ public interface RealmModel extends RoleContainerModel {
 
     OAuth2DeviceConfig getOAuth2DeviceConfig();
 
+    CibaConfig getCibaPolicy();
+
     /**
      * This method will return a map with all the lifespans available
      * or an empty map, but never null.
@@ -317,10 +319,6 @@ public interface RealmModel extends RoleContainerModel {
      * @param policy
      */
     void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy);
-
-    CIBAPolicy getCIBAPolicy();
-
-    void setCIBAPolicy(CIBAPolicy policy);
 
     RoleModel getRoleById(String id);
 

@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.util;
 
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
+import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.AUTH_REQ_ID;
+import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.BINDING_MESSAGE;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.oauth2DeviceAuthUrl;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -59,12 +62,10 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.ciba.CIBAConstants;
-import org.keycloak.protocol.ciba.channel.HttpAuthenticationChannelCallbackEndpointFactory;
-import org.keycloak.protocol.ciba.channel.HttpAuthenticationChannelProvider;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -73,7 +74,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -721,8 +721,8 @@ public class OAuthClient {
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
-            if (userid != null) parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT, userid));
-            parameters.add(new BasicNameValuePair(CIBAConstants.BINDING_MESSAGE, bindingMessage));
+            if (userid != null) parameters.add(new BasicNameValuePair(LOGIN_HINT_PARAM, userid));
+            parameters.add(new BasicNameValuePair(BINDING_MESSAGE, bindingMessage));
             if (scope != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID + " " + scope));
             } else {
@@ -751,7 +751,7 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_USER_INFO, userid));
             parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_ID, authenticationChannelId));
-            parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_RESULT, authResult));
+            parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_STATUS, authResult));
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -777,8 +777,8 @@ public class OAuthClient {
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(CIBAConstants.GRANT_TYPE, CIBAConstants.GRANT_TYPE_VALUE));
-            parameters.add(new BasicNameValuePair(CIBAConstants.AUTH_REQ_ID, authReqId));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CIBA_GRANT_TYPE));
+            parameters.add(new BasicNameValuePair(AUTH_REQ_ID, authReqId));
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -1303,18 +1303,13 @@ public class OAuthClient {
     }
 
     public String getBackchannelAuthenticationUrl() {
-        UriBuilder b = OIDCLoginProtocolService.backchannelAuthnUrl(UriBuilder.fromUri(baseUrl));
+        UriBuilder b = CibaGrantType.authorizationUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
     public String getAuthenticationChannelCallbackUrl() {
-        String url = AuthServerTestEnricher.getHttpsAuthServerContextRoot()
-                + "/auth/realms/"
-                + realm
-                + "/protocol/openid-connect/ext/"
-                + HttpAuthenticationChannelCallbackEndpointFactory.PROVIDER_ID
-                + "/";
-        return url;
+        UriBuilder b = CibaGrantType.authenticationUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
     }
 
     public String getBackchannelAuthenticationTokenRequestUrl() {

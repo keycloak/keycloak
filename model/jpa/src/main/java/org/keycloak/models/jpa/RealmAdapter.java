@@ -27,9 +27,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.utils.StringUtil;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
@@ -474,12 +472,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     @Override
     public boolean isOfflineSessionMaxLifespanEnabled() {
-        return getAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, false);
+    	return getAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, false);
     }
 
     @Override
     public void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
-        setAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, offlineSessionMaxLifespanEnabled);
+    	setAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, offlineSessionMaxLifespanEnabled);
     }
 
     @Override
@@ -557,6 +555,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public OAuth2DeviceConfig getOAuth2DeviceConfig() {
         return new OAuth2DeviceConfig(this);
+    }
+
+    @Override
+    public CibaConfig getCibaPolicy() {
+        return new CibaConfig(this);
     }
 
     @Override
@@ -1018,48 +1021,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS + attributePrefix);
         }
-    }
-
-    @Override
-    public CIBAPolicy getCIBAPolicy() {
-        CIBAPolicy policy = new CIBAPolicy();
-
-        policy.setBackchannelTokenDeliveryMode(getAttribute(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE,
-                CIBAPolicy.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE));
-
-        String expiresIn = getAttribute(CIBAPolicy.CIBA_EXPIRES_IN);
-        if (StringUtil.isNotBlank(expiresIn)) {
-            policy.setExpiresIn(Integer.parseInt(expiresIn));
-        } else {
-            policy.setExpiresIn(CIBAPolicy.DEFAULT_CIBA_POLICY_EXPIRES_IN);
-        }
-
-        String interval = getAttribute(CIBAPolicy.CIBA_INTERVAL);
-        if (StringUtil.isNotBlank(interval)) {
-            policy.setInterval(Integer.parseInt(interval));
-        } else {
-            policy.setInterval(CIBAPolicy.DEFAULT_CIBA_POLICY_INTERVAL);
-        }
-
-        policy.setAuthRequestedUserHint(getAttribute(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT,
-                CIBAPolicy.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT));
-
-        return policy;
-    }
-
-    @Override
-    public void setCIBAPolicy(CIBAPolicy policy) {
-        String backchannelTokenDeliveryMode = policy.getBackchannelTokenDeliveryMode();
-        setAttribute(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, backchannelTokenDeliveryMode);
-
-        int expiresIn = policy.getExpiresIn();
-        setAttribute(CIBAPolicy.CIBA_EXPIRES_IN, Integer.toString(expiresIn));
-
-        int interval = policy.getInterval();
-        setAttribute(CIBAPolicy.CIBA_INTERVAL, Integer.toString(interval));
-
-        String authRequestedUserHint = policy.getAuthRequestedUserHint();
-        setAttribute(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT, authRequestedUserHint);
     }
 
     @Override

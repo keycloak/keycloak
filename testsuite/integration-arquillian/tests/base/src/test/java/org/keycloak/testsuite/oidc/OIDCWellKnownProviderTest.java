@@ -28,7 +28,6 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
@@ -172,7 +171,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // CIBA
             assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getBackchannelAuthenticationUrl());
-            assertContains(oidcConfig.getGrantTypesSupported(), CIBAConstants.GRANT_TYPE_VALUE);
+            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.CIBA_GRANT_TYPE);
             Assert.assertNames(oidcConfig.getBackchannelTokenDeliveryModesSupported(), "poll");
 
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSupported());

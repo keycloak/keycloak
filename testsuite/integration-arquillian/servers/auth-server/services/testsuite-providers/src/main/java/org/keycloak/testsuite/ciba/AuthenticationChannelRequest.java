@@ -22,7 +22,6 @@ public class AuthenticationChannelRequest {
     private String userInfo;
     private boolean isConsentRequred;
     private String scope;
-    private String defaultClientScope;
     private String bindingMessage;
 
     public String getAuthenticationChannelId() {
@@ -55,14 +54,6 @@ public class AuthenticationChannelRequest {
 
     public void setScope(String scope) {
         this.scope = scope;
-    }
-
-    public String getDefaultClientScope() {
-        return defaultClientScope;
-    }
-
-    public void setDefaultClientScope(String defaultClientScope) {
-        this.defaultClientScope = defaultClientScope;
     }
 
     public String getBindingMessage() {

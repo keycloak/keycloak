@@ -54,5 +54,4 @@ public class AuthenticationFlowResolver {
         }
         return authSession.getRealm().getDirectGrantFlow();
     }
-
 }

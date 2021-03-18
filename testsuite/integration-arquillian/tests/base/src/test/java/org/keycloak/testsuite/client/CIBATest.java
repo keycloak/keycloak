@@ -25,16 +25,23 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 import static org.junit.Assert.assertThat;
+import static org.keycloak.OAuthErrorException.INVALID_REQUEST;
+import static org.keycloak.protocol.oidc.grants.ciba.endpoints.BackchannelAuthenticationCallbackEndpoint.CANCELLED;
+import static org.keycloak.protocol.oidc.grants.ciba.endpoints.BackchannelAuthenticationCallbackEndpoint.SUCCEEDED;
+import static org.keycloak.protocol.oidc.grants.ciba.endpoints.BackchannelAuthenticationCallbackEndpoint.UNAUTHORIZED;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -44,12 +51,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.models.CIBAPolicy;
-import org.keycloak.protocol.ciba.AuthenticationChannelStatus;
-import org.keycloak.protocol.ciba.CIBAConstants;
-import org.keycloak.protocol.ciba.CIBAErrorCodes;
-import org.keycloak.protocol.ciba.channel.HttpAuthenticationChannelProviderFactory;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
@@ -75,6 +80,7 @@ import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgem
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.testsuite.util.WaitUtils;
 
 @EnableCiba
 @EnableFeature(value = Profile.Feature.CIBA, skipRestart = true)
@@ -138,7 +144,6 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         System.setProperty("keycloak.ciba.http.auth.channel.uri", TestApplicationResourceUrls.clientAuthenticationChannelRequestUri());
     }
 
-    private String cibaFlow;
     private String cibaBackchannelTokenDeliveryMode;
     private Integer cibaExpiresIn;
     private Integer cibaInterval;
@@ -174,13 +179,23 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         int statusCode = oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, authenticationChannelReq.getUserInfo(), authenticationChannelReq.getAuthenticationChannelId(), authenticationChannelStatus);
         Assert.assertThat(statusCode, is(equalTo(200)));
         // check login event : ignore user id and other details except for username
-        return events.expectLogin().clearDetails().detail(Details.USERNAME, username).user(AssertEvents.isUUID()).client(clientIdAsConsumerDevice).assertEvent();
+        EventRepresentation representation = new EventRepresentation();
+
+        representation.setDetails(Collections.emptyMap());
+
+        return representation;
     }
 
     private EventRepresentation doAuthenticationChannelCallback(String clientId, AuthenticationChannelRequest authenticationChannelReq, String authenticationChannelStatus, String username, String error) throws Exception {
         int statusCode = oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, authenticationChannelReq.getUserInfo(), authenticationChannelReq.getAuthenticationChannelId(), authenticationChannelStatus);
         Assert.assertThat(statusCode, is(equalTo(200)));
-        return events.expect(EventType.LOGIN_ERROR).clearDetails().client(clientId).error(error).user((String)null).session(AssertEvents.isUUID()).assertEvent();
+        return events.expect(EventType.LOGIN_ERROR).clearDetails().client(clientId).error(error).user((String)null).session(CoreMatchers.nullValue(String.class)).assertEvent();
+    }
+
+    private EventRepresentation doAuthenticationChannelCallbackError(Status status, String clientId, AuthenticationChannelRequest authenticationChannelReq, String authenticationChannelStatus, String username, String error) throws Exception {
+        int statusCode = oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, authenticationChannelReq.getUserInfo(), authenticationChannelReq.getAuthenticationChannelId(), authenticationChannelStatus);
+        Assert.assertThat(statusCode, is(equalTo(status.getStatusCode())));
+        return events.expect(EventType.LOGIN_ERROR).clearDetails().client(clientId).error(error).user((String)null).session(CoreMatchers.nullValue(String.class)).assertEvent();
     }
 
     private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String codeId, String sessionId, String username, String authReqId, boolean isOfflineAccess) throws Exception {
@@ -266,7 +281,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         Assert.assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
         Assert.assertThat(idToken.getExp().longValue(), is(equalTo(idToken.getIat().longValue() + tokenRes.getExpiresIn())));
 
-        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).user(AssertEvents.isUUID()).clearDetails().assertEvent();
+        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).session(CoreMatchers.notNullValue(String.class)).user(AssertEvents.isUUID()).clearDetails().assertEvent();
 
         return tokenRes;
     }
@@ -283,7 +298,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         if (isOfflineAccess) Assert.assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else Assert.assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
-        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(userId).clearDetails().assertEvent();
+        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(AssertEvents.isUUID()).session(AssertEvents.isUUID()).clearDetails().assertEvent();
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException{
@@ -298,7 +313,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         if (isOfflineAccess) Assert.assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
         else Assert.assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
-        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(userId).assertEvent();
+        return events.expect(EventType.REVOKE_GRANT).clearDetails().client(TEST_CLIENT_NAME).user(AssertEvents.isUUID()).assertEvent();
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess) throws Exception {
@@ -324,7 +339,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
 
             // user Authentication Channel completed
-            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
@@ -377,7 +392,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest victimClientAuthenticationChannelReq = doAuthenticationChannelRequest();
 
             // victim client Authentication Channel completed
-            EventRepresentation victimClientloginEvent = doAuthenticationChannelCallback(victimClientName, victimClientAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            EventRepresentation victimClientloginEvent = doAuthenticationChannelCallback(victimClientName, victimClientAuthenticationChannelReq, SUCCEEDED, username);
 
             // attacker client Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(attackerClientName, attackerClientPassword, victimClientAuthReqId);
@@ -406,13 +421,13 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, signal);
-            Assert.assertThat(response.getStatusCode(), is(equalTo(200)));
+            Assert.assertThat(response.getStatusCode(), is(equalTo(503)));
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             Assert.assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
-            Assert.assertThat(tokenRes.getErrorDescription(), is(equalTo("unknown authentication result")));
+            Assert.assertThat(tokenRes.getErrorDescription(), is(equalTo("Invalid Auth Req ID")));
         } finally {
             revertCIBASettings(clientResource, clientRep);
         }
@@ -434,7 +449,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, null);
             Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(response.getError(), is(CIBAErrorCodes.UNKNOWN_USER_ID));
+            Assert.assertThat(response.getError(), is(INVALID_REQUEST));
         } finally {
             revertCIBASettings(clientResource, clientRep);
         }
@@ -457,7 +472,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
             Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(response.getError(), is(CIBAErrorCodes.UNKNOWN_USER_ID));
+            Assert.assertThat(response.getError(), is(INVALID_REQUEST));
         } finally {
             revertCIBASettings(clientResource, clientRep);
         }
@@ -480,7 +495,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
             Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(response.getError(), is(CIBAErrorCodes.INVALID_REQUEST));
+            Assert.assertThat(response.getError(), is(INVALID_REQUEST));
         } finally {
             revertCIBASettings(clientResource, clientRep);
         }
@@ -497,14 +512,14 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             prepareCIBASettings(clientResource, clientRep);
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT, CIBAConstants.LOGIN_HINT_TOKEN);
+            attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, CibaGrantType.LOGIN_HINT_TOKEN);
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, null);
             Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(response.getError(), is(CIBAErrorCodes.INVALID_REQUEST));
+            Assert.assertThat(response.getError(), is(INVALID_REQUEST));
         } finally {
             revertCIBASettings(clientResource, clientRep);
             restoreCIBAPolicy();
@@ -535,7 +550,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
 
             // different user Authentication Channel completed
-            oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, usernameAuthenticated, authenticationChannelReq.getAuthenticationChannelId(), AuthenticationChannelStatus.SUCCEEDED);
+            oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, usernameAuthenticated, authenticationChannelReq.getAuthenticationChannelId(), SUCCEEDED);
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
@@ -569,7 +584,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
 
             // user Authentication Channel completed
-            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
@@ -595,71 +610,33 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @Ignore
     public void testChangeInterval() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
             final String firstUsername = "nutzername-schwarz";
             final String secondUsername = "nutzername-rot";
-            String firstUserAuthReqId = null;
-            String secondUserAuthReqId = null;
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
             // first user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(firstUsername);
-            firstUserAuthReqId = response.getAuthReqId();
-            Assert.assertThat(response.getInterval(), is(equalTo(-1)));
+            Assert.assertThat(response.getInterval(), is(equalTo(5)));
 
             // set interval
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, String.valueOf(1200));
-            attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(599));
+            attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(1200));
+            attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(10));
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
-            // first user Authentication Channel Request
-            AuthenticationChannelRequest firstUserAuthenticationChannelReq = doAuthenticationChannelRequest();
-
-            // first user Authentication Channel completed
-            EventRepresentation firstUserloginEvent = doAuthenticationChannelCallback(firstUserAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, firstUsername);
-            String firstUserSessionId = firstUserloginEvent.getSessionId();
-            String firstUserSessionCodeId = firstUserloginEvent.getDetails().get(Details.CODE_ID);
-
             // first user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(firstUserSessionCodeId, firstUserSessionId, firstUsername, firstUserAuthReqId, false);
-
             // second user Backchannel Authentication Request
             response = doBackchannelAuthenticationRequest(secondUsername);
-            secondUserAuthReqId = response.getAuthReqId();
-            Assert.assertThat(response.getInterval(), is(equalTo(599)));
-
-            // second user Authentication Channel Request
-            AuthenticationChannelRequest secondUserAuthenticationChannelReq = doAuthenticationChannelRequest();
-
-            // second user Authentication Channel completed
-            EventRepresentation secondUserloginEvent = doAuthenticationChannelCallback(secondUserAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, secondUsername);
-            String secondUserSessionId = secondUserloginEvent.getSessionId();
-            String secondUserSessionCodeId = secondUserloginEvent.getDetails().get(Details.CODE_ID);
-
-            // second user Token Request
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.SLOW_DOWN)); // +5 sec
-
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.SLOW_DOWN)); // +5 sec
-
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.SLOW_DOWN)); // +5 sec
-
-            setTimeOffset(603); // upperlimit 600 sec
-            tokenRes = doBackchannelAuthenticationTokenRequest(secondUserSessionCodeId, secondUserSessionId, secondUsername, secondUserAuthReqId, false);
-
+            Assert.assertThat(response.getInterval(), is(equalTo(10)));
         } finally {
             revertCIBASettings(clientResource, clientRep);
             restoreCIBAPolicy();
@@ -680,7 +657,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             prepareCIBASettings(clientResource, clientRep);
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(10));
+            attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(3));
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
@@ -691,30 +668,27 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
             Assert.assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
 
+            // user Token Request
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.AUTHORIZATION_PENDING)); // 10+5+5 sec
+
+            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.SLOW_DOWN)); // 10+5+5 sec
+
+            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.SLOW_DOWN)); // 10+5+5+5 sec
+
             // user Authentication Channel completed
-            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
 
-            // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.SLOW_DOWN)); // 10+5 sec
+            WaitUtils.pause(3000);
 
-            setTimeOffset(11);
-
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.SLOW_DOWN)); // 10+5+5 sec
-
-            setTimeOffset(16);
-
-            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.SLOW_DOWN)); // 10+5+5+5 sec
-
-            setTimeOffset(70);
             tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), false);
 
             // token introspection
@@ -749,31 +723,34 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             prepareCIBASettings(clientResource, clientRep);
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(10));
+            attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(5));
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
 
+            // user Token Request but not yet user being authenticated
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.AUTHORIZATION_PENDING));
+
+            // user Token Request but not yet user being authenticated
+            tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.SLOW_DOWN));
+
             // user Authentication Channel Request
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
             Assert.assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
 
-            setTimeOffset(15); // interval 10
-
-            // user Token Request but not yet user being authenticated
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.AUTHORIZATION_PENDING));
-
             // user Authentication Channel completed
-            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            EventRepresentation loginEvent = doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
 
-            setTimeOffset(30); // interval 10+5
+            WaitUtils.pause(5000);
 
             // user Token Request again
             tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), false);
@@ -799,22 +776,20 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     private RealmRepresentation backupCIBAPolicy() {
         RealmRepresentation rep = testRealm().toRepresentation();
         Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-        cibaFlow = attrMap.get(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS);
-        cibaBackchannelTokenDeliveryMode = attrMap.get(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE);
-        cibaExpiresIn = Integer.parseInt(attrMap.get(CIBAPolicy.CIBA_EXPIRES_IN));
-        cibaInterval = Integer.parseInt(attrMap.get(CIBAPolicy.CIBA_INTERVAL));
-        cibaAuthRequestedUserHint = attrMap.get(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT);
+        cibaBackchannelTokenDeliveryMode = attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE);
+        cibaExpiresIn = Integer.parseInt(attrMap.get(CibaConfig.CIBA_EXPIRES_IN));
+        cibaInterval = Integer.parseInt(attrMap.get(CibaConfig.CIBA_INTERVAL));
+        cibaAuthRequestedUserHint = attrMap.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT);
         return rep;
     }
 
     private void restoreCIBAPolicy() {
         RealmRepresentation rep = testRealm().toRepresentation();
         Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-        attrMap.put(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS, cibaFlow);
-        attrMap.put(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, cibaBackchannelTokenDeliveryMode);
-        attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, String.valueOf(cibaExpiresIn));
-        attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(cibaInterval));
-        attrMap.put(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT, cibaAuthRequestedUserHint);
+        attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, cibaBackchannelTokenDeliveryMode);
+        attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(cibaExpiresIn));
+        attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(cibaInterval));
+        attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, cibaAuthRequestedUserHint);
         rep.setAttributes(attrMap);
         testRealm().update(rep);
     }
@@ -825,36 +800,35 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // null input - default values used
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_AUTHENTICATION_FLOW_ALIAS, null);
-            attrMap.put(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, null);
-            attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, null);
-            attrMap.put(CIBAPolicy.CIBA_INTERVAL, null);
-            attrMap.put(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT, null);
+            attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, null);
+            attrMap.put(CibaConfig.CIBA_EXPIRES_IN, null);
+            attrMap.put(CibaConfig.CIBA_INTERVAL, null);
+            attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, null);
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
             rep = testRealm().toRepresentation();
             attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            Assert.assertThat(attrMap.get(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE), is(equalTo("poll")));
-            Assert.assertThat(Integer.parseInt(attrMap.get(CIBAPolicy.CIBA_EXPIRES_IN)), is(equalTo(120)));
-            Assert.assertThat(Integer.parseInt(attrMap.get(CIBAPolicy.CIBA_INTERVAL)), is(equalTo(0)));
-            Assert.assertThat(attrMap.get(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT), is(equalTo("login_hint")));
+            Assert.assertThat(attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE), is(equalTo("poll")));
+            Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_EXPIRES_IN)), is(equalTo(120)));
+            Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_INTERVAL)), is(equalTo(5)));
+            Assert.assertThat(attrMap.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT), is(equalTo("login_hint")));
 
             // valid input
             rep = backupCIBAPolicy();
             attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, "poll");
-            attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, String.valueOf(736));
-            attrMap.put(CIBAPolicy.CIBA_INTERVAL, String.valueOf(7));
-            attrMap.put(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT, "login_hint");
+            attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, "poll");
+            attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(736));
+            attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(7));
+            attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, "login_hint");
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
             rep = testRealm().toRepresentation();
-            Assert.assertThat(attrMap.get(CIBAPolicy.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE), is(equalTo("poll")));
-            Assert.assertThat(Integer.parseInt(attrMap.get(CIBAPolicy.CIBA_EXPIRES_IN)), is(equalTo(736)));
-            Assert.assertThat(Integer.parseInt(attrMap.get(CIBAPolicy.CIBA_INTERVAL)), is(equalTo(7)));
-            Assert.assertThat(attrMap.get(CIBAPolicy.CIBA_AUTH_REQUESTED_USER_HINT), is(equalTo("login_hint")));
+            Assert.assertThat(attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE), is(equalTo("poll")));
+            Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_EXPIRES_IN)), is(equalTo(736)));
+            Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_INTERVAL)), is(equalTo(7)));
+            Assert.assertThat(attrMap.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT), is(equalTo("login_hint")));
         } finally {
             restoreCIBAPolicy();
         }
@@ -901,7 +875,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest firstUserAuthenticationChannelReq = doAuthenticationChannelRequest();
 
             // first user Authentication Channel completed
-            EventRepresentation firstUserloginEvent = doAuthenticationChannelCallback(firstUserAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, firstUsername);
+            EventRepresentation firstUserloginEvent = doAuthenticationChannelCallback(firstUserAuthenticationChannelReq, SUCCEEDED, firstUsername);
             String firstUserSessionId = firstUserloginEvent.getSessionId();
             String firstUserSessionCodeId = firstUserloginEvent.getDetails().get(Details.CODE_ID);
 
@@ -913,7 +887,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest secondUserAuthenticationChannelReq = doAuthenticationChannelRequest();
 
             // second user Authentication Channel completed
-            EventRepresentation secondUserloginEvent = doAuthenticationChannelCallback(secondUserAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, secondUsername);
+            EventRepresentation secondUserloginEvent = doAuthenticationChannelCallback(secondUserAuthenticationChannelReq, SUCCEEDED, secondUsername);
             String secondUserSessionId = secondUserloginEvent.getSessionId();
             String secondUserSessionCodeId = secondUserloginEvent.getDetails().get(Details.CODE_ID);
 
@@ -949,12 +923,12 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest clientAuthenticationChannelReq = doAuthenticationChannelRequest();
             Assert.assertTrue(clientAuthenticationChannelReq.isConsentRequired());
             Assert.assertThat(clientAuthenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
-            Assert.assertThat(clientAuthenticationChannelReq.getDefaultClientScope(), is(containsString("email")));
-            Assert.assertThat(clientAuthenticationChannelReq.getDefaultClientScope(), is(containsString("profile")));
-            Assert.assertThat(clientAuthenticationChannelReq.getDefaultClientScope(), is(containsString("roles")));
+            Assert.assertThat(clientAuthenticationChannelReq.getScope(), is(containsString("email")));
+            Assert.assertThat(clientAuthenticationChannelReq.getScope(), is(containsString("profile")));
+            Assert.assertThat(clientAuthenticationChannelReq.getScope(), is(containsString("roles")));
 
             // client Authentication Channel completed
-            EventRepresentation clientloginEvent = doAuthenticationChannelCallback(clientName, clientAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            EventRepresentation clientloginEvent = doAuthenticationChannelCallback(clientName, clientAuthenticationChannelReq, SUCCEEDED, username);
             String clientSessionId = clientloginEvent.getSessionId();
             String clientSessionCodeId = clientloginEvent.getDetails().get(Details.CODE_ID);
 
@@ -995,9 +969,9 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest firstClientAuthenticationChannelReq = doAuthenticationChannelRequest();
 
             // first client Authentication Channel completed
-            EventRepresentation firstClientloginEvent = doAuthenticationChannelCallback(firstClientName, firstClientAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
-            String firstClientSessionId = firstClientloginEvent.getSessionId();
-            String firstClientSessionCodeId = firstClientloginEvent.getDetails().get(Details.CODE_ID);
+            EventRepresentation firstClientloginEvent = doAuthenticationChannelCallback(firstClientName, firstClientAuthenticationChannelReq, SUCCEEDED, username);
+            String firstClientSessionId = null;
+            String firstClientSessionCodeId = null;
 
             // second client Backchannel Authentication Request
             response = doBackchannelAuthenticationRequest(secondClientName, secondClientPassword, username, "qwertyui");
@@ -1007,9 +981,9 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest secondClientAuthenticationChannelReq = doAuthenticationChannelRequest();
 
             // second client Authentication Channel completed
-            EventRepresentation secondClientloginEvent = doAuthenticationChannelCallback(secondClientName, secondClientAuthenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
-            String secondClientSessionId = secondClientloginEvent.getSessionId();
-            String secondClientSessionCodeId = secondClientloginEvent.getDetails().get(Details.CODE_ID);
+            EventRepresentation secondClientloginEvent = doAuthenticationChannelCallback(secondClientName, secondClientAuthenticationChannelReq, SUCCEEDED, username);
+            String secondClientSessionId = null;
+            String secondClientSessionCodeId = null;
 
             // second client Token Request
             OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, secondClientSessionCodeId, secondClientSessionId, username, secondClientAuthReqId, false);
@@ -1038,16 +1012,18 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(username);
 
-            // user Authentication Channel Request
-            AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
-
             // user Token Request before Authentication Channel completion
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.AUTHORIZATION_PENDING));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.AUTHORIZATION_PENDING));
+
+            // user Authentication Channel Request
+            AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
 
             // user Authentication Channel completed
-            doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
+
+            WaitUtils.pause(6000);
 
             // user Token Request after Authentication Channel completion
             tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
@@ -1077,7 +1053,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CIBAPolicy.CIBA_EXPIRES_IN, String.valueOf(60));
+            attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(60));
             rep.setAttributes(attrMap);
             testRealm().update(rep);
 
@@ -1088,14 +1064,14 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
 
             // user Authentication Channel completed
-            doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
 
             setTimeOffset(70);
 
             // user Token Request before Authentication Channel completion
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.EXPIRED_TOKEN));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.EXPIRED_TOKEN));
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -1122,7 +1098,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
 
             // user Authentication Channel completed
-            doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
@@ -1136,7 +1112,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // duplicate user Token Request
             tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.AUTHORIZATION_PENDING));
+            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -1162,7 +1138,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
 
             // user Authentication Channel completed
-            doAuthenticationChannelCallback(authenticationChannelReq, AuthenticationChannelStatus.SUCCEEDED, username);
+            doAuthenticationChannelCallback(authenticationChannelReq, SUCCEEDED, username);
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, response.getAuthReqId());
@@ -1175,26 +1151,16 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testAuthenticationChannelFailed() throws Exception {
-        testAuthenticationChannelErrorCase(AuthenticationChannelStatus.FAILED, OAuthErrorException.ACCESS_DENIED, Errors.NOT_LOGGED_IN);
-    }
-
-    @Test
     public void testAuthenticationChannelUnauthorized() throws Exception {
-        testAuthenticationChannelErrorCase(AuthenticationChannelStatus.UNAUTHORIZED, OAuthErrorException.ACCESS_DENIED, Errors.CONSENT_DENIED);
+        testAuthenticationChannelErrorCase(Status.FORBIDDEN, UNAUTHORIZED, OAuthErrorException.ACCESS_DENIED, Errors.CONSENT_DENIED);
     }
 
     @Test
     public void testAuthenticationChannelCancelled() throws Exception {
-        testAuthenticationChannelErrorCase(AuthenticationChannelStatus.CANCELLED, OAuthErrorException.ACCESS_DENIED, Errors.NOT_ALLOWED);
+        testAuthenticationChannelErrorCase(Status.FORBIDDEN, CANCELLED, OAuthErrorException.ACCESS_DENIED, Errors.NOT_ALLOWED);
     }
 
-    @Test
-    public void testAuthenticationChannelUnknownEventHappened() throws Exception {
-        testAuthenticationChannelErrorCase(AuthenticationChannelStatus.UNKNOWN, OAuthErrorException.INVALID_GRANT, Errors.INVALID_INPUT);
-    }
-
-    private void testAuthenticationChannelErrorCase(String authnResult, String error, String errorEvent) throws Exception {
+    private void testAuthenticationChannelErrorCase(Status status, String authnResult, String error, String errorEvent) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -1212,11 +1178,11 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
 
             // user Authentication Channel completed
-            doAuthenticationChannelCallback(TEST_CLIENT_NAME, authenticationChannelReq, authnResult, username, errorEvent);
+            doAuthenticationChannelCallbackError(Status.BAD_REQUEST, TEST_CLIENT_NAME, authenticationChannelReq, authnResult, username, errorEvent);
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
-            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(status.getStatusCode())));
             Assert.assertThat(tokenRes.getError(), is(error));
 
         } finally {
