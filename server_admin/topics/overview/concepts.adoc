@@ -1,8 +1,7 @@
 
-=== Core Concepts and Terms
+=== Core concepts and terms
 
-There are some key concepts and terms you should be aware of before attempting to use {project_name} to secure your web applications
-and REST services.
+Consider these core concepts and terms before attempting to use {project_name} to secure your web applications and REST services.
 
 users::
   Users are entities that are able to log into your system.  They can have attributes associated with themselves like email,
