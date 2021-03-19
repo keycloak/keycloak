@@ -82,6 +82,7 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
 
         if (!certificateChain.isEmpty()) {
             if (certificate != null && !certificate.equals(certificateChain.get(0))) {
+                // just in case the chain does not contain the end-user certificate
                 certificateChain.add(0, certificate);
             }
             key.setCertificateChain(certificateChain);
