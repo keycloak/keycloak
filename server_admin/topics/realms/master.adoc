@@ -7,7 +7,7 @@ In the Admin Console, two types of realms exist:
 * `Other realms` - These realms are created by the administrator in the master realm. In these realms, administrators manage the users in your organization and the applications they need. The applications are owned by the users.
 
 .Realms and applications
-image:../../../getting_started/images/master_realm.png[Realms and applications]
+image:../../../../getting_started/images/master_realm.png[Realms and applications]
 
 Realms are isolated from one another and can only manage and authenticate the users that they control. Following this security model helps prevent accidental changes and follows the tradition
 of permitting user accounts access to only those privileges and powers necessary

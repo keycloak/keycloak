@@ -1,4 +1,5 @@
 
+[[_facebook]]
 ==== Facebook
 
 There are a number of steps you have to complete to be able to enable login with Facebook.  First, go to the `Identity Providers` left menu item

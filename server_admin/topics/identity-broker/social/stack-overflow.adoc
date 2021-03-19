@@ -1,4 +1,6 @@
 
+[[_stackoverflow]]
+
 ==== Stack Overflow
 
 There are a number of steps you have to complete to be able to enable login with Stack Overflow.  First, go to the `Identity Providers` left menu item
@@ -24,4 +26,3 @@ image:images/stack-overflow-app-settings.png[]
 
 Finally, you will need to obtain the client ID, secret, and key from this page so you can enter them back on the {project_name} `Add identity provider` page.
 Go back to {project_name} and specify those items.
-

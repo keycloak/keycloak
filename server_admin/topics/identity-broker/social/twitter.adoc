@@ -1,4 +1,6 @@
 
+[[_twitter]]
+
 ==== Twitter
 
 There are a number of steps you have to complete to be able to enable login with Twitter.  First, go to the `Identity Providers` left menu item
@@ -40,4 +42,3 @@ Next go to the `Keys and Access Tokens` tab.
 image:images/twitter-keys.png[]
 
 Finally, you will need to obtain the API Key and secret from this page and copy them back into the `Client ID` and `Client Secret` fields on the {project_name} `Add identity provider` page.
-

@@ -1,3 +1,4 @@
+
 [[_identity_broker]]
 == Integrating identity providers
 
@@ -25,4 +26,3 @@ In the next sections we'll see how to configure and use {project_name} as an ide
 * `OpenID Connect v1.0 Brokering`            
 * `SAML v2.0 Brokering`            
 * `Identity Federation`            
-
