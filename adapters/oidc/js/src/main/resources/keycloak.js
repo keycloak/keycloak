@@ -679,7 +679,7 @@
 
                                     kc.onAuthRefreshError && kc.onAuthRefreshError();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
-                                        p.setError(true);
+                                        p.setError();
                                     }
                                 }
                             }
