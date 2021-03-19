@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import {
@@ -8,12 +8,6 @@ import {
   DropdownItem,
   DropdownToggle,
 } from "@patternfly/react-core";
-import {
-  Table,
-  TableBody,
-  TableHeader,
-  TableVariant,
-} from "@patternfly/react-table";
 import { CaretDownIcon } from "@patternfly/react-icons";
 
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
@@ -21,19 +15,18 @@ import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapper
 import { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
-import { TableToolbar } from "../../components/table-toolbar/TableToolbar";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { useAlerts } from "../../components/alert/Alerts";
 import { AddMapperDialog } from "../add/MapperDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 
 type MapperListProps = {
   clientScope: ClientScopeRepresentation;
   refresh: () => void;
 };
 
-type Row = {
-  name: JSX.Element;
+type Row = ProtocolMapperRepresentation & {
   category: string;
   type: string;
   priority: number;
@@ -46,14 +39,14 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   const history = useHistory();
   const { url } = useRouteMatch();
 
-  const [filteredData, setFilteredData] = useState<
-    { mapper: ProtocolMapperRepresentation; cells: Row }[]
-  >();
   const [mapperAction, setMapperAction] = useState(false);
   const mapperList = clientScope.protocolMappers!;
   const mapperTypes = useServerInfo().protocolMapperTypes![
     clientScope.protocol!
   ];
+
+  const [key, setKey] = useState(0);
+  useEffect(() => setKey(new Date().getTime()), [mapperList]);
 
   const [addMapperDialogOpen, setAddMapperDialogOpen] = useState(false);
   const [filter, setFilter] = useState(clientScope.protocolMappers);
@@ -86,98 +79,31 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
     }
   };
 
-  if (!mapperList) {
-    return (
-      <>
-        <AddMapperDialog
-          protocol={clientScope.protocol!}
-          filter={filter}
-          onConfirm={addMappers}
-          open={addMapperDialogOpen}
-          toggleDialog={() => setAddMapperDialogOpen(!addMapperDialogOpen)}
-        />
-        <ListEmptyState
-          message={t("emptyMappers")}
-          instructions={t("emptyMappersInstructions")}
-          primaryActionText={t("emptyPrimaryAction")}
-          onPrimaryAction={() => toggleAddMapperDialog(true)}
-          secondaryActions={[
-            {
-              text: t("emptySecondaryAction"),
-              onClick: () => toggleAddMapperDialog(false),
-              type: ButtonVariant.secondary,
-            },
-          ]}
-        />
-      </>
+  const loader = async () =>
+    Promise.resolve(
+      (mapperList || [])
+        .map((mapper) => {
+          const mapperType = mapperTypes.filter(
+            (type) => type.id === mapper.protocolMapper
+          )[0];
+          return {
+            ...mapper,
+            category: mapperType.category,
+            type: mapperType.name,
+            priority: mapperType.priority,
+          } as Row;
+        })
+        .sort((a, b) => a.priority - b.priority)
     );
-  }
 
-  const data = mapperList
-    .map((mapper) => {
-      const mapperType = mapperTypes.filter(
-        (type) => type.id === mapper.protocolMapper
-      )[0];
-      return {
-        mapper,
-        cells: {
-          name: (
-            <>
-              <Link to={`${url}/${mapper.id}`}>{mapper.name}</Link>
-            </>
-          ),
-          category: mapperType.category,
-          type: mapperType.name,
-          priority: mapperType.priority,
-        } as Row,
-      };
-    })
-    .sort((a, b) => a.cells.priority - b.cells.priority);
-
-  const filterData = (search: string) => {
-    setFilteredData(
-      data.filter((column) =>
-        column.mapper.name!.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  };
+  const MapperLink = (mapper: Row) => (
+    <>
+      <Link to={`${url}/${mapper.id}`}>{mapper.name}</Link>
+    </>
+  );
 
   return (
-    <TableToolbar
-      inputGroupName="clientsScopeToolbarTextInput"
-      inputGroupPlaceholder={t("mappersSearchFor")}
-      inputGroupOnChange={filterData}
-      toolbarItem={
-        <Dropdown
-          onSelect={() => setMapperAction(false)}
-          toggle={
-            <DropdownToggle
-              isPrimary
-              id="mapperAction"
-              onToggle={() => setMapperAction(!mapperAction)}
-              toggleIndicator={CaretDownIcon}
-            >
-              {t("addMapper")}
-            </DropdownToggle>
-          }
-          isOpen={mapperAction}
-          dropdownItems={[
-            <DropdownItem
-              key="predefined"
-              onClick={() => toggleAddMapperDialog(true)}
-            >
-              {t("fromPredefinedMapper")}
-            </DropdownItem>,
-            <DropdownItem
-              key="byConfiguration"
-              onClick={() => toggleAddMapperDialog(false)}
-            >
-              {t("byConfiguration")}
-            </DropdownItem>,
-          ]}
-        />
-      }
-    >
+    <>
       <AddMapperDialog
         protocol={clientScope.protocol!}
         filter={filter}
@@ -185,42 +111,92 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         open={addMapperDialogOpen}
         toggleDialog={() => setAddMapperDialogOpen(!addMapperDialogOpen)}
       />
-      <Table
-        variant={TableVariant.compact}
-        cells={[
-          t("common:name"),
-          t("common:category"),
-          t("common:type"),
-          t("common:priority"),
-        ]}
-        rows={(filteredData || data).map((cell) => {
-          return { cells: Object.values(cell.cells), mapper: cell.mapper };
-        })}
-        aria-label={t("clientScopeList")}
+
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        ariaLabelKey="client-scopes:clientScopeList"
+        searchPlaceholderKey="client-scopes:mappersSearchFor"
+        toolbarItem={
+          <Dropdown
+            onSelect={() => setMapperAction(false)}
+            toggle={
+              <DropdownToggle
+                isPrimary
+                id="mapperAction"
+                onToggle={() => setMapperAction(!mapperAction)}
+                toggleIndicator={CaretDownIcon}
+              >
+                {t("addMapper")}
+              </DropdownToggle>
+            }
+            isOpen={mapperAction}
+            dropdownItems={[
+              <DropdownItem
+                key="predefined"
+                onClick={() => toggleAddMapperDialog(true)}
+              >
+                {t("fromPredefinedMapper")}
+              </DropdownItem>,
+              <DropdownItem
+                key="byConfiguration"
+                onClick={() => toggleAddMapperDialog(false)}
+              >
+                {t("byConfiguration")}
+              </DropdownItem>,
+            ]}
+          />
+        }
         actions={[
           {
             title: t("common:delete"),
-            onClick: async (_, rowId) => {
+            onRowClick: async (mapper) => {
               try {
                 await adminClient.clientScopes.delProtocolMapper({
                   id: clientScope.id!,
-                  mapperId: data[rowId].mapper.id!,
+                  mapperId: mapper.id!,
                 });
-                refresh();
                 addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+                refresh();
               } catch (error) {
                 addAlert(
                   t("mappingDeletedError", { error }),
                   AlertVariant.danger
                 );
               }
+              return true;
             },
           },
         ]}
-      >
-        <TableHeader />
-        <TableBody />
-      </Table>
-    </TableToolbar>
+        columns={[
+          {
+            name: "name",
+            cellRenderer: MapperLink,
+          },
+          { name: "category" },
+          {
+            name: "type",
+          },
+          {
+            name: "priority",
+          },
+        ]}
+        emptyState={
+          <ListEmptyState
+            message={t("emptyMappers")}
+            instructions={t("emptyMappersInstructions")}
+            primaryActionText={t("emptyPrimaryAction")}
+            onPrimaryAction={() => toggleAddMapperDialog(true)}
+            secondaryActions={[
+              {
+                text: t("emptySecondaryAction"),
+                onClick: () => toggleAddMapperDialog(false),
+                type: ButtonVariant.secondary,
+              },
+            ]}
+          />
+        }
+      />
+    </>
   );
 };

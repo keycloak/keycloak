@@ -1,24 +1,23 @@
-import React, { Fragment, useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Table,
-  TableBody,
-  TableHeader,
-  TableVariant,
-} from "@patternfly/react-table";
 import { Badge, Button, Checkbox, ToolbarItem } from "@patternfly/react-core";
 
-import { useAdminClient } from "../../context/auth/AdminClient";
-import { DataLoader } from "../../components/data-loader/DataLoader";
-import { TableToolbar } from "../../components/table-toolbar/TableToolbar";
-import { RealmContext } from "../../context/realm-context/RealmContext";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { RealmContext } from "../../context/realm-context/RealmContext";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../../util";
 
 import "./service-account.css";
 
 type ServiceAccountProps = {
   clientId: string;
+};
+
+type Row = {
+  client: ClientRepresentation;
+  role: CompositeRole;
 };
 
 type CompositeRole = RoleRepresentation & {
@@ -66,6 +65,7 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
     };
 
     const clientRolesFlat = clientRoles.map((row) => row.roles).flat();
+    console.log(clientRolesFlat);
 
     const addInherentData = await (async () =>
       Promise.all(
@@ -92,35 +92,34 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
     ] as CompositeRole[])
       .sort((r1, r2) => r1.name!.localeCompare(r2.name!))
       .map((role) => {
-        const client = findClient(role);
         return {
-          cells: [
-            <Fragment key={role.id}>
-              {client && (
-                <Badge
-                  key={client.id}
-                  isRead
-                  className="keycloak-admin--service-account__client-name"
-                >
-                  {client.clientId}
-                </Badge>
-              )}
-              {role.name}
-            </Fragment>,
-            role.parent ? role.parent.name : "",
-            role.description,
-          ],
-        };
+          client: findClient(role),
+          role,
+        } as Row;
       });
   };
 
-  const filterData = () => {};
+  const RoleLink = ({ role, client }: Row) => (
+    <>
+      {client && (
+        <Badge
+          key={client.id}
+          isRead
+          className="keycloak-admin--service-account__client-name"
+        >
+          {client.clientId}
+        </Badge>
+      )}
+      {role.name}
+    </>
+  );
 
   return (
-    <TableToolbar
-      inputGroupName="clientsServiceAccountRoleToolbarTextInput"
-      inputGroupPlaceholder={t("searchByName")}
-      inputGroupOnChange={filterData}
+    <KeycloakDataTable
+      loader={loader}
+      onSelect={() => {}}
+      searchPlaceholderKey="clients:searchByName"
+      ariaLabelKey="clients:clientScopeList"
       toolbarItem={
         <>
           <ToolbarItem>
@@ -136,34 +135,23 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
           </ToolbarItem>
         </>
       }
-    >
-      <DataLoader loader={loader} deps={[clientId]}>
-        {(clientRoles) => (
-          <>
-            {hide ? "" : " "}
-            <Table
-              onSelect={() => {}}
-              variant={TableVariant.compact}
-              cells={[
-                t("roles:roleName"),
-                {
-                  title: t("inherentFrom"),
-                  cellFormatters: [emptyFormatter()],
-                },
-                {
-                  title: t("common:description"),
-                  cellFormatters: [emptyFormatter()],
-                },
-              ]}
-              rows={clientRoles}
-              aria-label="roleList"
-            >
-              <TableHeader />
-              <TableBody />
-            </Table>
-          </>
-        )}
-      </DataLoader>
-    </TableToolbar>
+      columns={[
+        {
+          name: "role.name",
+          displayKey: t("name"),
+          cellRenderer: RoleLink,
+        },
+        {
+          name: "role.parent.name",
+          displayKey: t("inherentFrom"),
+          cellFormatters: [emptyFormatter()],
+        },
+        {
+          name: "role.description",
+          displayKey: t("description"),
+          cellFormatters: [emptyFormatter()],
+        },
+      ]}
+    />
   );
 };

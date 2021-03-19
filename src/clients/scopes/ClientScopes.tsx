@@ -1,14 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
-import {
-  IFormatter,
-  IFormatterValueType,
-  Table,
-  TableBody,
-  TableHeader,
-  TableVariant,
-} from "@patternfly/react-table";
 import {
   AlertVariant,
   Button,
@@ -17,19 +8,14 @@ import {
   DropdownToggle,
   KebabToggle,
   Select,
-  Spinner,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import KeycloakAdminClient from "keycloak-admin";
 
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { toUpperCase } from "../../util";
-import { TableToolbar } from "../../components/table-toolbar/TableToolbar";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { AddScopeDialog } from "./AddScopeDialog";
 import {
@@ -38,10 +24,16 @@ import {
   ClientScope,
 } from "./ClientScopeTypes";
 import { useAlerts } from "../../components/alert/Alerts";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 
 export type ClientScopesProps = {
   clientId: string;
   protocol: string;
+};
+
+type Row = ClientScopeRepresentation & {
+  type: ClientScopeType;
+  description: string;
 };
 
 const castAdminClient = (adminClient: KeycloakAdminClient) =>
@@ -124,7 +116,6 @@ type TableRow = {
 export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
 
   const [searchToggle, setSearchToggle] = useState(false);
@@ -133,100 +124,73 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [kebabOpen, setKebabOpen] = useState(false);
 
-  const [rows, setRows] = useState<TableRow[]>();
   const [rest, setRest] = useState<ClientScopeRepresentation[]>();
+  const [selectedRows, setSelectedRows] = useState<Row[]>([]);
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        const defaultClientScopes = await adminClient.clients.listDefaultClientScopes(
-          { id: clientId }
-        );
-        const optionalClientScopes = await adminClient.clients.listOptionalClientScopes(
-          { id: clientId }
-        );
-        const clientScopes = await adminClient.clientScopes.find();
-
-        const find = (id: string) =>
-          clientScopes.find((clientScope) => id === clientScope.id)!;
-
-        const optional = optionalClientScopes.map((c) => {
-          const scope = find(c.id!);
-          return {
-            selected: false,
-            clientScope: c,
-            type: ClientScope.optional,
-            cells: [c.name, c.id, scope.description],
-          };
-        });
-
-        const defaultScopes = defaultClientScopes.map((c) => {
-          const scope = find(c.id!);
-          return {
-            selected: false,
-            clientScope: c,
-            type: ClientScope.default,
-            cells: [c.name, c.id, scope.description],
-          };
-        });
-
-        const rows = [...optional, ...defaultScopes];
-        const names = rows.map((row) => row.cells[0]);
-
-        const rest = clientScopes
-          .filter((scope) => !names.includes(scope.name))
-          .filter((scope) => scope.protocol === protocol);
-        return { rows, rest };
-      },
-      ({ rows, rest }) => {
-        setRows(rows);
-        setRest(rest);
-      },
-      handleError
+  const loader = async () => {
+    const defaultClientScopes = await adminClient.clients.listDefaultClientScopes(
+      { id: clientId }
     );
-  }, [key]);
+    const optionalClientScopes = await adminClient.clients.listOptionalClientScopes(
+      { id: clientId }
+    );
+    const clientScopes = await adminClient.clientScopes.find();
 
-  const dropdown = (): IFormatter => (data?: IFormatterValueType) => {
-    if (!data) {
-      return <></>;
-    }
-    const row = rows?.find((row) => row.clientScope.id === data.toString())!;
-    return (
+    const find = (id: string) =>
+      clientScopes.find((clientScope) => id === clientScope.id)!;
+
+    const optional = optionalClientScopes.map((c) => {
+      const scope = find(c.id!);
+      return {
+        ...c,
+        type: ClientScope.optional,
+        description: scope.description,
+      } as Row;
+    });
+
+    const defaultScopes = defaultClientScopes.map((c) => {
+      const scope = find(c.id!);
+      return {
+        ...c,
+        type: ClientScope.default,
+        description: scope.description,
+      } as Row;
+    });
+
+    const rows = [...optional, ...defaultScopes];
+    const names = rows.map((row) => row.name);
+    setRest(
+      clientScopes
+        .filter((scope) => !names.includes(scope.name))
+        .filter((scope) => scope.protocol === protocol)
+    );
+
+    return rows;
+  };
+
+  const TypeSelector = (scope: Row) => (
+    <>
       <CellDropdown
-        clientScope={row.clientScope}
-        type={row.type}
+        clientScope={scope}
+        type={scope.type}
         onSelect={async (value) => {
           try {
-            await changeScope(
-              adminClient,
-              clientId,
-              row.clientScope,
-              row.type,
-              value
-            );
+            await changeScope(adminClient, clientId, scope, scope.type, value);
             addAlert(t("clientScopeSuccess"), AlertVariant.success);
-            await refresh();
+            refresh();
           } catch (error) {
             addAlert(t("clientScopeError", { error }), AlertVariant.danger);
           }
         }}
       />
-    );
-  };
-
-  const filterData = () => {};
+    </>
+  );
 
   return (
     <>
-      {!rows && (
-        <div className="pf-u-text-align-center">
-          <Spinner />
-        </div>
-      )}
-
       {rest && (
         <AddScopeDialog
           clientScopes={rest}
@@ -254,202 +218,154 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
         />
       )}
 
-      {rows && rows.length > 0 && (
-        <TableToolbar
-          searchTypeComponent={
-            <Dropdown
-              toggle={
-                <DropdownToggle
-                  id="toggle-id"
-                  onToggle={() => setSearchToggle(!searchToggle)}
-                >
-                  <FilterIcon /> {t(`clientScopeSearch.${searchType}`)}
-                </DropdownToggle>
-              }
-              aria-label="Select Input"
-              isOpen={searchToggle}
-              dropdownItems={[
-                <DropdownItem
-                  key="client"
-                  onClick={() => {
-                    setSearchType("client");
-                    setSearchToggle(false);
-                  }}
-                >
-                  {t("clientScopeSearch.client")}
-                </DropdownItem>,
-                <DropdownItem
-                  key="assigned"
-                  onClick={() => {
-                    setSearchType("assigned");
-                    setSearchToggle(false);
-                  }}
-                >
-                  {t("clientScopeSearch.assigned")}
-                </DropdownItem>,
-              ]}
-            />
-          }
-          inputGroupName="clientsScopeToolbarTextInput"
-          inputGroupPlaceholder={t("searchByName")}
-          inputGroupOnChange={filterData}
-          toolbarItem={
-            <>
-              <ToolbarItem>
-                <Button onClick={() => setAddDialogOpen(true)}>
-                  {t("addClientScope")}
-                </Button>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Select
-                  id="add-dropdown"
-                  key="add-dropdown"
-                  isOpen={addToggle}
-                  selections={[]}
-                  placeholderText={t("changeTypeTo")}
-                  onToggle={() => setAddToggle(!addToggle)}
-                  onSelect={async (_, value) => {
-                    try {
-                      await Promise.all(
-                        rows.map((row) => {
-                          if (row.selected) {
-                            return changeScope(
-                              adminClient,
-                              clientId,
-                              row.clientScope,
-                              row.type,
-                              value as ClientScope
-                            );
-                          }
-                          return Promise.resolve();
-                        })
-                      );
-                      setAddToggle(false);
-                      await refresh();
-                      addAlert(t("clientScopeSuccess"), AlertVariant.success);
-                    } catch (error) {
-                      addAlert(
-                        t("clientScopeError", { error }),
-                        AlertVariant.danger
-                      );
-                    }
-                  }}
-                >
-                  {clientScopeTypesSelectOptions(t)}
-                </Select>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Dropdown
-                  onSelect={() => {}}
-                  toggle={
-                    <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
-                  }
-                  isOpen={kebabOpen}
-                  isPlain
-                  dropdownItems={[
-                    <DropdownItem
-                      key="deleteAll"
-                      isDisabled={
-                        rows.filter((row) => row.selected).length === 0
-                      }
-                      onClick={async () => {
-                        try {
-                          await Promise.all(
-                            rows.map(async (row) => {
-                              if (row.selected) {
-                                await removeScope(
-                                  adminClient,
-                                  clientId,
-                                  row.clientScope,
-                                  row.type
-                                );
-                              }
-                            })
-                          );
-
-                          setKebabOpen(false);
-                          addAlert(
-                            t("clientScopeRemoveSuccess"),
-                            AlertVariant.success
-                          );
-                          refresh();
-                        } catch (error) {
-                          addAlert(
-                            t("clientScopeRemoveError", { error }),
-                            AlertVariant.danger
-                          );
-                        }
-                      }}
-                    >
-                      {t("common:remove")}
-                    </DropdownItem>,
-                  ]}
-                />
-              </ToolbarItem>
-            </>
-          }
-        >
-          <Table
-            onSelect={(_, isSelected, rowIndex) => {
-              if (rowIndex === -1) {
-                setRows(
-                  rows.map((row) => {
-                    row.selected = isSelected;
-                    return row;
-                  })
-                );
-              } else {
-                rows[rowIndex].selected = isSelected;
-                setRows([...rows]);
-              }
-            }}
-            variant={TableVariant.compact}
-            cells={[
-              t("common:name"),
-              { title: t("assignedType"), cellFormatters: [dropdown()] },
-              t("common:description"),
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        ariaLabelKey="clients:clientScopeList"
+        searchPlaceholderKey="clients:searchByName"
+        onSelect={(rows) => setSelectedRows([...rows])}
+        searchTypeComponent={
+          <Dropdown
+            toggle={
+              <DropdownToggle
+                id="toggle-id"
+                onToggle={() => setSearchToggle(!searchToggle)}
+              >
+                <FilterIcon /> {t(`clientScopeSearch.${searchType}`)}
+              </DropdownToggle>
+            }
+            aria-label="Select Input"
+            isOpen={searchToggle}
+            dropdownItems={[
+              <DropdownItem
+                key="client"
+                onClick={() => {
+                  setSearchType("client");
+                  setSearchToggle(false);
+                }}
+              >
+                {t("clientScopeSearch.client")}
+              </DropdownItem>,
+              <DropdownItem
+                key="assigned"
+                onClick={() => {
+                  setSearchType("assigned");
+                  setSearchToggle(false);
+                }}
+              >
+                {t("clientScopeSearch.assigned")}
+              </DropdownItem>,
             ]}
-            rows={rows}
-            actions={[
-              {
-                title: t("common:remove"),
-                onClick: async (_, rowId) => {
+          />
+        }
+        toolbarItem={
+          <>
+            <ToolbarItem>
+              <Button onClick={() => setAddDialogOpen(true)}>
+                {t("addClientScope")}
+              </Button>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Select
+                id="add-dropdown"
+                key="add-dropdown"
+                isOpen={addToggle}
+                selections={[]}
+                placeholderText={t("changeTypeTo")}
+                onToggle={() => setAddToggle(!addToggle)}
+                onSelect={async (_, value) => {
                   try {
-                    await removeScope(
-                      adminClient,
-                      clientId,
-                      rows[rowId].clientScope,
-                      rows[rowId].type
+                    await Promise.all(
+                      selectedRows.map((row) => {
+                        return changeScope(
+                          adminClient,
+                          clientId,
+                          { ...row },
+                          row.type,
+                          value as ClientScope
+                        );
+                      })
                     );
-                    addAlert(
-                      t("clientScopeRemoveSuccess"),
-                      AlertVariant.success
-                    );
+                    setAddToggle(false);
                     refresh();
+                    addAlert(t("clientScopeSuccess"), AlertVariant.success);
                   } catch (error) {
                     addAlert(
-                      t("clientScopeRemoveError", { error }),
+                      t("clientScopeError", { error }),
                       AlertVariant.danger
                     );
                   }
-                },
-              },
-            ]}
-            aria-label={t("clientScopeList")}
-          >
-            <TableHeader />
-            <TableBody />
-          </Table>
-        </TableToolbar>
-      )}
-      {rows && rows.length === 0 && (
-        <ListEmptyState
-          message={t("clients:emptyClientScopes")}
-          instructions={t("clients:emptyClientScopesInstructions")}
-          primaryActionText={t("clients:emptyClientScopesPrimaryAction")}
-          onPrimaryAction={() => setAddDialogOpen(true)}
-        />
-      )}
+                }}
+              >
+                {clientScopeTypesSelectOptions(t)}
+              </Select>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Dropdown
+                onSelect={() => {}}
+                toggle={
+                  <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
+                }
+                isOpen={kebabOpen}
+                isPlain
+                dropdownItems={[
+                  <DropdownItem
+                    key="deleteAll"
+                    isDisabled={selectedRows.length === 0}
+                    onClick={async () => {
+                      try {
+                        await Promise.all(
+                          selectedRows.map(async (row) => {
+                            await removeScope(
+                              adminClient,
+                              clientId,
+                              { ...row },
+                              row.type
+                            );
+                          })
+                        );
+
+                        setKebabOpen(false);
+                        addAlert(
+                          t("clientScopeRemoveSuccess"),
+                          AlertVariant.success
+                        );
+                        refresh();
+                      } catch (error) {
+                        addAlert(
+                          t("clientScopeRemoveError", { error }),
+                          AlertVariant.danger
+                        );
+                      }
+                    }}
+                  >
+                    {t("common:remove")}
+                  </DropdownItem>,
+                ]}
+              />
+            </ToolbarItem>
+          </>
+        }
+        columns={[
+          {
+            name: "name",
+          },
+          {
+            name: "type",
+            displayKey: "clients:assignedType",
+            cellRenderer: TypeSelector,
+          },
+          { name: "description" },
+        ]}
+        emptyState={
+          <ListEmptyState
+            message={t("clients:emptyClientScopes")}
+            instructions={t("clients:emptyClientScopesInstructions")}
+            primaryActionText={t("clients:emptyClientScopesPrimaryAction")}
+            onPrimaryAction={() => setAddDialogOpen(true)}
+          />
+        }
+      />
     </>
   );
 };
