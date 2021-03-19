@@ -30,7 +30,7 @@ import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider {
+public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureSessionEnforceExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -42,11 +42,6 @@ public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvide
 
     public SecureSessionEnforceExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Object config) {
-        // no setup configuration item
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

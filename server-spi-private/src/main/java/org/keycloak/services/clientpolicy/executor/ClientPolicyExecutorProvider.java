@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -28,7 +29,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  * It is sufficient for the implementer of this executor to implement methods in which they are interested
  * and {@link isEvaluatedOnEvent} method.
  */
-public interface ClientPolicyExecutorProvider extends Provider {
+public interface ClientPolicyExecutorProvider<CONFIG extends ClientPolicyExecutorConfiguration> extends Provider {
 
     @Override
     default void close() {
@@ -39,7 +40,14 @@ public interface ClientPolicyExecutorProvider extends Provider {
      *
      * @param config
      */
-    default void setupConfiguration(Object config) {
+    default void setupConfiguration(CONFIG config) {
+    }
+
+    /**
+     * @return Class, which should match the "config" argument of the {@link #setupConfiguration(ClientPolicyExecutorConfiguration)}
+     */
+    default Class<CONFIG> getExecutorConfigurationClass() {
+        return (Class<CONFIG>) ClientPolicyExecutorConfiguration.class;
     }
 
     /**

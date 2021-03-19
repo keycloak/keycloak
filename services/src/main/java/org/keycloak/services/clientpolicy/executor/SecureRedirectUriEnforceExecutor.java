@@ -35,7 +35,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider {
+public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureRedirectUriEnforceExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -47,11 +47,6 @@ public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorPro
 
     public SecureRedirectUriEnforceExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Object config) {
-        // no setup configuration item
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

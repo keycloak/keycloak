@@ -45,7 +45,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider {
+public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforceExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(HolderOfKeyEnforceExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -61,18 +61,17 @@ public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider 
     }
 
     @Override
-    public void setupConfiguration(Object config) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            configuration = mapper.convertValue(config, Configuration.class);
-        } catch (IllegalArgumentException iae) {
-            ClientPolicyLogger.logv(logger, "{0} :: failed for Configuration Setup :: error = {1}", logMsgPrefix(), iae.getMessage());
-            return;
-        }
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration {
+    public static class Configuration extends ClientPolicyExecutorConfiguration {
         @JsonProperty("is-augment")
         protected Boolean augment;
 

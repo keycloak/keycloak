@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorConfiguration;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -144,8 +145,14 @@ public class ClientPoliciesUtil {
                             // executor's provider not found. just skip it.
                             return;
                         }
-                        provider.setupConfiguration(executor.getValue());
-                        executors.add(provider);
+
+                        try {
+                            ClientPolicyExecutorConfiguration configuration =  (ClientPolicyExecutorConfiguration) JsonSerialization.mapper.convertValue(executor.getValue(), provider.getExecutorConfigurationClass());
+                            provider.setupConfiguration(configuration);
+                            executors.add(provider);
+                        } catch (IllegalArgumentException iae) {
+                            logger.warnv("{0} :: failed for Configuration Setup :: error = {1}", LOGMSG_PREFIX, iae.getMessage());
+                        }
                     });
                 });
             }

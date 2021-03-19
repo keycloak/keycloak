@@ -29,7 +29,7 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider {
+public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureResponseTypeExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -41,11 +41,6 @@ public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider 
 
     public SecureResponseTypeExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Object config) {
-        // no setup configuration item
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

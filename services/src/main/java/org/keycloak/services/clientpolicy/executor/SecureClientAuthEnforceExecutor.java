@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProvider {
+public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProvider<SecureClientAuthEnforceExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(SecureClientAuthEnforceExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -48,18 +48,17 @@ public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProv
     }
 
     @Override
-    public void setupConfiguration(Object config) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            configuration = mapper.convertValue(config, Configuration.class);
-        } catch (IllegalArgumentException iae) {
-            ClientPolicyLogger.logv(logger, "{0} :: failed for Configuration Setup :: error = {1}", logMsgPrefix(), iae.getMessage());
-            return;
-        }
+    public void setupConfiguration(SecureClientAuthEnforceExecutor.Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration {
+    public static class Configuration extends ClientPolicyExecutorConfiguration {
         @JsonProperty("client-authns")
         protected List<String> clientAuthns;
         @JsonProperty("client-authns-augment")

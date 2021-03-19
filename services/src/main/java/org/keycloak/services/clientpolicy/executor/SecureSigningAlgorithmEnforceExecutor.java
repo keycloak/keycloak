@@ -37,7 +37,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider {
+public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -58,11 +58,6 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
 
     public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Object config) {
-        // no setup configuration item
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

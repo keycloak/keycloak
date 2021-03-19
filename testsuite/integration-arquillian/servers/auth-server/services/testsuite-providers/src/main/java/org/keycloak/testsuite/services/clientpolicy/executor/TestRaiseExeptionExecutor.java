@@ -23,9 +23,10 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorConfiguration;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
-public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider {
+public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(TestRaiseExeptionExecutor.class);
     private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
@@ -37,11 +38,6 @@ public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider {
 
     public TestRaiseExeptionExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Object config) {
-        // no setup configuration item
     }
 
     @Override
