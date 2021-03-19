@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
 import { Button, Checkbox, ToolbarItem } from "@patternfly/react-core";
@@ -19,6 +20,7 @@ type MembersOf = UserRepresentation & {
 export const Members = () => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
+  const location = useLocation();
   const id = getLastId(location.pathname);
   const [includeSubGroup, setIncludeSubGroup] = useState(false);
   const { currentGroup, subGroups } = useSubGroups();

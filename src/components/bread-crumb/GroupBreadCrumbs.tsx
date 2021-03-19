@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
@@ -12,6 +12,7 @@ export const GroupBreadCrumbs = () => {
   const { realm } = useRealm();
 
   const history = useHistory();
+  const location = useLocation();
 
   useEffect(() => {
     return history.listen(({ pathname }) => {

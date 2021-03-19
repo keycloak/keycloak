@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useErrorHandler } from "react-error-boundary";
 import {
@@ -37,6 +37,7 @@ export const GroupsSection = () => {
   const errorHandler = useErrorHandler();
 
   const history = useHistory();
+  const location = useLocation();
   const id = getLastId(location.pathname);
 
   const deleteGroup = async (group: GroupRepresentation) => {
