@@ -1,14 +1,14 @@
-import React, { useEffect } from "react";
-import { useFieldArray, useFormContext } from "react-hook-form";
+import React, { Fragment, useEffect } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import {
   TextInput,
-  Split,
-  SplitItem,
   Button,
   ButtonVariant,
   TextInputProps,
+  InputGroup,
 } from "@patternfly/react-core";
-import { MinusIcon, PlusIcon } from "@patternfly/react-icons";
+import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { useTranslation } from "react-i18next";
 
 export type MultiLine = {
   value: string;
@@ -26,14 +26,24 @@ export function toValue(formValue: MultiLine[]): string[] {
 
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   name: string;
+  addButtonLabel?: string;
 };
 
-export const MultiLineInput = ({ name, ...rest }: MultiLineInputProps) => {
+export const MultiLineInput = ({
+  name,
+  addButtonLabel,
+  ...rest
+}: MultiLineInputProps) => {
+  const { t } = useTranslation();
   const { register, control, reset } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     name,
     control,
   });
+  const currentValues:
+    | { [name: string]: { value: string } }
+    | undefined = useWatch({ control, name });
+
   useEffect(() => {
     reset({
       [name]: [{ value: "" }],
@@ -42,8 +52,8 @@ export const MultiLineInput = ({ name, ...rest }: MultiLineInputProps) => {
   return (
     <>
       {fields.map(({ id, value }, index) => (
-        <Split key={id}>
-          <SplitItem>
+        <Fragment key={id}>
+          <InputGroup>
             <TextInput
               id={id}
               ref={register()}
@@ -51,29 +61,29 @@ export const MultiLineInput = ({ name, ...rest }: MultiLineInputProps) => {
               defaultValue={value}
               {...rest}
             />
-          </SplitItem>
-          <SplitItem>
-            {index === fields.length - 1 && (
-              <Button
-                variant={ButtonVariant.link}
-                onClick={() => append({})}
-                tabIndex={-1}
-                isDisabled={rest.isDisabled}
-              >
-                <PlusIcon />
-              </Button>
-            )}
-            {index !== fields.length - 1 && (
-              <Button
-                variant={ButtonVariant.link}
-                onClick={() => remove(index)}
-                tabIndex={-1}
-              >
-                <MinusIcon />
-              </Button>
-            )}
-          </SplitItem>
-        </Split>
+            <Button
+              variant={ButtonVariant.link}
+              onClick={() => remove(index)}
+              tabIndex={-1}
+              isDisabled={index === fields.length - 1}
+            >
+              <MinusCircleIcon />
+            </Button>
+          </InputGroup>
+          {index === fields.length - 1 && (
+            <Button
+              variant={ButtonVariant.link}
+              onClick={() => append({})}
+              tabIndex={-1}
+              isDisabled={
+                rest.isDisabled ||
+                !(currentValues && currentValues[index]?.value)
+              }
+            >
+              <PlusCircleIcon /> {t(addButtonLabel || "common:add")}
+            </Button>
+          )}
+        </Fragment>
       ))}
     </>
   );

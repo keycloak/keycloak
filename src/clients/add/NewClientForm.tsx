@@ -34,8 +34,8 @@ export const NewClientForm = () => {
     authorizationServicesEnabled: false,
     serviceAccountsEnabled: false,
     implicitFlowEnabled: false,
-    directAccessGrantsEnabled: false,
-    standardFlowEnabled: false,
+    directAccessGrantsEnabled: true,
+    standardFlowEnabled: true,
   });
   const { addAlert } = useAlerts();
   const methods = useForm<ClientRepresentation>({ defaultValues: client });

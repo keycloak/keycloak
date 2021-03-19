@@ -27,7 +27,6 @@ export type ViewHeaderProps = {
   badge?: string;
   badgeId?: string;
   badgeIsRead?: boolean;
-  dividerComponent?: "div" | "hr" | "li" | undefined;
   subKey: string;
   actionsDropdownId?: string;
   subKeyLinkProps?: FormattedLinkProps;
@@ -44,7 +43,6 @@ export const ViewHeader = ({
   titleKey,
   badge,
   badgeIsRead,
-  dividerComponent,
   subKey,
   subKeyLinkProps,
   dropdownItems,
@@ -92,7 +90,7 @@ export const ViewHeader = ({
           </LevelItem>
           <LevelItem></LevelItem>
           <LevelItem>
-            <Toolbar>
+            <Toolbar className="pf-u-p-0">
               <ToolbarContent>
                 {onToggle && (
                   <ToolbarItem>
@@ -163,7 +161,7 @@ export const ViewHeader = ({
           />
         )}
       </PageSection>
-      {divider && <Divider component={dividerComponent} />}
+      {divider && <Divider component="div" />}
     </>
   );
 };

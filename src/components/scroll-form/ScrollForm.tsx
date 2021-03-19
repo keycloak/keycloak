@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   Grid,
   GridItem,
+  GridProps,
   JumpLinks,
   JumpLinksItem,
   PageSection,
@@ -12,7 +13,7 @@ import { mainPageContentId } from "../../App";
 import { FormPanel } from "./FormPanel";
 import "./scroll-form.css";
 
-type ScrollFormProps = {
+type ScrollFormProps = GridProps & {
   sections: string[];
   children: React.ReactNode;
 };
@@ -21,12 +22,16 @@ const spacesToHyphens = (string: string): string => {
   return string.replace(/\s+/g, "-");
 };
 
-export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
+export const ScrollForm = ({
+  sections,
+  children,
+  ...rest
+}: ScrollFormProps) => {
   const { t } = useTranslation("common");
 
   const nodes = Children.toArray(children);
   return (
-    <Grid hasGutter>
+    <Grid hasGutter {...rest}>
       <GridItem span={8}>
         {sections.map((cat, index) => (
           <FormPanel scrollId={spacesToHyphens(cat)} key={cat} title={cat}>

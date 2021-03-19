@@ -48,11 +48,7 @@ export const UsersTabs = () => {
 
   return (
     <>
-      <ViewHeader
-        titleKey={id! || t("users:createUser")}
-        subKey=""
-        dividerComponent="div"
-      />
+      <ViewHeader titleKey={id! || t("users:createUser")} subKey="" />
       <PageSection variant="light">
         {id && (
           <KeycloakTabs isBox>

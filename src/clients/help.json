@@ -1,10 +1,18 @@
 {
   "clients-help": {
+    "serviceAccount": "Allows you to authenticate this client to Keycloak and retrieve access token dedicated to this client. In terms of OAuth2 specification, this enables support of 'Client Credentials Grant' for this client.",
+    "directAccess": "This enables support for Direct Access Grants, which means that client has access to username/password of user and exchange it directly with Keycloak server for access token. In terms of OAuth2 specification, this enables support of 'Resource Owner Password Credentials Grant' for this client.",
+    "standardFlow": "This enables standard OpenID Connect redirect based authentication with authorization code. In terms of OpenID Connect or OAuth2 specifications, this enables support of 'Authorization Code Flow' for this client.",
+    "implicitFlow": "This enables support for OpenID Connect redirect based authentication without authorization code. In terms of OpenID Connect or OAuth2 specifications, this enables support of 'Implicit Flow' for this client.",
+    "rootURL": "Root URL appended to relative URLs",
+    "validRedirectURIs": "Valid URI pattern a browser can redirect to after a successful login or logout. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used. For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request.",
     "webOrigins": "Allowed CORS origins. To permit all origins of Valid Redirect URIs, add '+'. This does not include the '*' wildcard though. To permit all origins, explicitly add '*'.",
+    "homeURL": "Default URL to use when the auth server needs to redirect or link back to the client.",
     "adminURL": "URL to the admin interface of the client. Set this if the client supports the adapter REST API. This REST API allows the auth server to push revocation policies and other administrative tasks. Usually this is set to the base URL of the client.",
     "clientID": "Specifies ID referenced in URI and tokens. For example 'my-client'. For SAML this is also the expected issuer value from authn requests",
     "clientName": "Specifies display name of the client. For example 'My Client'. Supports keys for localized values as well. For example: ${my_client}",
     "description": "Specifies description of the client. For example 'My Client for TimeSheets'. Supports keys for localized values as well. For example: ${my_client_description}",
+    "loginTheme": "Select theme for login, OTP, grant, registration, and forgot password pages.",
     "encryptAssertions": "Should SAML assertions be encrypted with client's public key using AES?",
     "clientSignature": "Will the client sign their saml requests and responses? And should they be validated?",
     "downloadType": "this is information about the download type",

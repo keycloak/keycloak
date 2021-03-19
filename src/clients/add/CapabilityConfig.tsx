@@ -6,6 +6,7 @@ import {
   Checkbox,
   Grid,
   GridItem,
+  InputGroup,
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -22,8 +23,10 @@ export const CapabilityConfig = ({
   protocol: type,
 }: CapabilityConfigProps) => {
   const { t } = useTranslation("clients");
-  const { control, watch } = useFormContext<ClientForm>();
+  const { control, watch, setValue } = useFormContext<ClientForm>();
   const protocol = type || watch("protocol");
+  const clientAuthentication = watch("publicClient");
+  const clientAuthorization = watch("authorizationServicesEnabled");
 
   return (
     <FormAccess isHorizontal role="manage-clients" unWrap={unWrap}>
@@ -67,7 +70,13 @@ export const CapabilityConfig = ({
                     label={t("common:on")}
                     labelOff={t("common:off")}
                     isChecked={value}
-                    onChange={onChange}
+                    onChange={(value) => {
+                      onChange(value);
+                      if (value) {
+                        setValue("serviceAccountsEnabled", true);
+                      }
+                    }}
+                    isDisabled={!clientAuthentication}
                   />
                 )}
               />
@@ -78,67 +87,98 @@ export const CapabilityConfig = ({
               fieldId="kc-flow"
             >
               <Grid>
-                <GridItem lg={4} sm={6}>
+                <GridItem lg={3} sm={6}>
                   <Controller
                     name="standardFlowEnabled"
-                    defaultValue={false}
+                    defaultValue={true}
                     control={control}
                     render={({ onChange, value }) => (
-                      <Checkbox
-                        label={t("standardFlow")}
-                        id="kc-flow-standard"
-                        name="standardFlowEnabled"
-                        isChecked={value}
-                        onChange={onChange}
-                      />
+                      <InputGroup>
+                        <Checkbox
+                          label={t("standardFlow")}
+                          id="kc-flow-standard"
+                          name="standardFlowEnabled"
+                          isChecked={value}
+                          onChange={onChange}
+                        />
+                        <HelpItem
+                          helpText="clients-help:standardFlow"
+                          forLabel={t("standardFlow")}
+                          forID="kc-flow-standard"
+                        />
+                      </InputGroup>
                     )}
                   />
                 </GridItem>
-                <GridItem lg={8} sm={6}>
+                <GridItem lg={9} sm={6}>
                   <Controller
                     name="directAccessGrantsEnabled"
-                    defaultValue={false}
+                    defaultValue={true}
                     control={control}
                     render={({ onChange, value }) => (
-                      <Checkbox
-                        label={t("directAccess")}
-                        id="kc-flow-direct"
-                        name="directAccessGrantsEnabled"
-                        isChecked={value}
-                        onChange={onChange}
-                      />
+                      <InputGroup>
+                        <Checkbox
+                          label={t("directAccess")}
+                          id="kc-flow-direct"
+                          name="directAccessGrantsEnabled"
+                          isChecked={value}
+                          onChange={onChange}
+                        />
+                        <HelpItem
+                          helpText="clients-help:directAccess"
+                          forLabel={t("directAccess")}
+                          forID="kc-flow-direct"
+                        />
+                      </InputGroup>
                     )}
                   />
                 </GridItem>
-                <GridItem lg={4} sm={6}>
+                <GridItem lg={3} sm={6}>
                   <Controller
                     name="implicitFlowEnabled"
                     defaultValue={false}
                     control={control}
                     render={({ onChange, value }) => (
-                      <Checkbox
-                        label={t("implicitFlow")}
-                        id="kc-flow-implicit"
-                        name="implicitFlowEnabled"
-                        isChecked={value}
-                        onChange={onChange}
-                      />
+                      <InputGroup>
+                        <Checkbox
+                          label={t("implicitFlow")}
+                          id="kc-flow-implicit"
+                          name="implicitFlowEnabled"
+                          isChecked={value}
+                          onChange={onChange}
+                        />
+                        <HelpItem
+                          helpText="clients-help:implicitFlow"
+                          forLabel={t("implicitFlow")}
+                          forID="kc-flow-implicit"
+                        />
+                      </InputGroup>
                     )}
                   />
                 </GridItem>
-                <GridItem lg={8} sm={6}>
+                <GridItem lg={9} sm={6}>
                   <Controller
                     name="serviceAccountsEnabled"
                     defaultValue={false}
                     control={control}
                     render={({ onChange, value }) => (
-                      <Checkbox
-                        label={t("serviceAccount")}
-                        id="kc-flow-service-account"
-                        name="serviceAccountsEnabled"
-                        isChecked={value}
-                        onChange={onChange}
-                      />
+                      <InputGroup>
+                        <Checkbox
+                          label={t("serviceAccount")}
+                          id="kc-flow-service-account"
+                          name="serviceAccountsEnabled"
+                          isChecked={value}
+                          onChange={onChange}
+                          isDisabled={
+                            !clientAuthentication || clientAuthorization
+                          }
+                        />
+                        <HelpItem
+                          helpText="clients-help:serviceAccount"
+                          forLabel={t("serviceAccount")}
+                          forID="kc-flow-service-account"
+                        />
+                      </InputGroup>
                     )}
                   />
                 </GridItem>

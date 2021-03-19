@@ -3,6 +3,7 @@ import {
   Alert,
   AlertVariant,
   ButtonVariant,
+  Divider,
   DropdownItem,
   PageSection,
   Spinner,
@@ -13,7 +14,7 @@ import {
 import { useParams } from "react-router-dom";
 import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import _ from "lodash";
 
@@ -77,6 +78,8 @@ const ClientDetailHeader = ({
       <ViewHeader
         titleKey={client ? client.clientId! : ""}
         subKey="clients:clientsExplain"
+        badge={client.protocol}
+        divider={false}
         dropdownItems={[
           <DropdownItem key="download" onClick={() => toggleDownloadDialog()}>
             {t("downloadAdapterConfig")}
@@ -84,6 +87,7 @@ const ClientDetailHeader = ({
           <DropdownItem key="export" onClick={() => exportClient(client)}>
             {t("common:export")}
           </DropdownItem>,
+          <Divider key="divider" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("common:delete")}
           </DropdownItem>,
@@ -129,12 +133,6 @@ export const ClientDetails = () => {
   const [activeTab2, setActiveTab2] = useState(30);
 
   const form = useForm<ClientForm>();
-  const publicClient = useWatch({
-    control: form.control,
-    name: "publicClient",
-    defaultValue: false,
-  });
-
   const { clientId } = useParams<{ clientId: string }>();
 
   const [client, setClient] = useState<ClientRepresentation>();
@@ -274,17 +272,28 @@ export const ClientDetails = () => {
           />
         )}
       />
-      <PageSection variant="light">
+      <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <KeycloakTabs isBox>
+          <KeycloakTabs
+            isBox
+            inset={{
+              default: "insetNone",
+              md: "insetSm",
+              xl: "inset2xl",
+              "2xl": "insetLg",
+            }}
+          >
             <Tab
               id="settings"
               eventKey="settings"
               title={<TabTitleText>{t("common:settings")}</TabTitleText>}
             >
-              <ClientSettings save={() => save()} />
+              <ClientSettings
+                save={() => save()}
+                reset={() => setupForm(client)}
+              />
             </Tab>
-            {publicClient && (
+            {client.publicClient && (
               <Tab
                 id="credentials"
                 eventKey="credentials"
