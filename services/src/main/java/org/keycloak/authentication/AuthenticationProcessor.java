@@ -1116,6 +1116,7 @@ public class AuthenticationProcessor {
     }
     
     protected Response authenticationComplete() {
+        AuthenticationManager.updateExpiredRequiredActions(session, realm, authenticationSession.getAuthenticatedUser());
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(authenticationSession);
 

@@ -11,7 +11,10 @@ You can enable a required action that new users must accept the terms and condit
 . Click *Authentication* in the menu.
 . Click the *Required Actions* tab.
 . Enable the *Terms and Conditions* action.
-. Edit the `terms.ftl` file in the base login theme.  
+. Edit the `terms.ftl` file in the base login theme.
+
+If *Terms and Conditions* action is enabled, you can additionally set a time interval that after it users must reaccept *Terms and Conditions*.
+This can be done from *Terms and Conditions* line in *Required Actions* tab.
 
 .Additional resources
 * For more information on extending and creating themes, see the link:{developerguide_link}[{developerguide_name}]. 

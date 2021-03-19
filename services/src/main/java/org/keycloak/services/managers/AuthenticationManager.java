@@ -100,13 +100,16 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1605,5 +1608,38 @@ public class AuthenticationManager {
 
         return null;
     }
+
+    //KEYCLOAK-17622
+    /**
+     * This function checks whether any of the required actions set by the realm admin to expire after a certain time period
+     * (i.e. the terms of use might have been set to expire at an interval)
+     */
+    public static void updateExpiredRequiredActions(KeycloakSession session, RealmModel realm, UserModel user){
+
+        final String RESET_EVERY_UNIT = "reset_every_unit";
+        final String RESET_EVERY_VALUE = "reset_every_value";
+
+        final Set<String> userRequiredActions = user.getRequiredActionsStream().collect(Collectors.toCollection(HashSet::new));
+
+        realm.getRequiredActionProvidersStream()
+                .filter(RequiredActionProviderModel::isEnabled)
+                .forEach(requiredActionProviderModel -> {
+                    String providerId = requiredActionProviderModel.getProviderId(); //this is assumed to be the required action name
+                    if(userRequiredActions.contains(providerId))
+                        return; //means this is already a pending required action
+                    Map<String, String> config = requiredActionProviderModel.getConfig();
+                    if(config == null)
+                        return;
+                    if(config.get(RESET_EVERY_UNIT) == null || config.get(RESET_EVERY_VALUE) == null || Long.parseLong(config.get(RESET_EVERY_VALUE)) == 0L)
+                        return; //means the admin has not set any expiry interval for this required action
+                    long lastAcceptedSecs = user.getAttributes().get(providerId) != null ?
+                            user.getAttributes().get(providerId).stream().map(Long::valueOf).findFirst().orElse(0L) : 0L;
+                    long validityMillis = TimeUnit.valueOf(config.get(RESET_EVERY_UNIT)).toMillis(Long.parseLong(config.get(RESET_EVERY_VALUE)));
+                    if(lastAcceptedSecs * 1000 + validityMillis < Instant.now().toEpochMilli())
+                        user.addRequiredAction(providerId);
+                });
+
+    }
+
 
 }
