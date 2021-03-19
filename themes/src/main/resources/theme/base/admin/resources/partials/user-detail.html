@@ -97,6 +97,42 @@
                 </div>
                 <kc-tooltip>{{:: 'email-verified.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-if="create">
+                <label class="col-md-2 control-label" for="selected-groups">{{:: 'groups-joining' | translate}}</label>
+                <div class="col-sm-6">
+                    <table class="table table-striped table-bordered" style="margin-top: 0px" id="selected-groups">
+                        <thead>
+                        <tr>
+                            <th class="kc-table-actions" colspan="2">
+                                <div class="form-inline col-md-12 select2-container-single">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <input type="hidden" ui-select2="groupsUiSelect" id="groups" data-ng-change="selectGroup(groupSearch.selectedGroup);" data-ng-model="groupSearch.selectedGroup" data-placeholder="{{:: 'groups-joining-select.placeholder' | translate}}..."/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr data-ng-hide="!selectedGroups || selectedGroups.length == 0">
+                            <th>{{:: 'groups-joining-path' | translate}}</th>
+                            <th width="20%">{{:: 'actions' | translate}}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="group in selectedGroups">
+                            <td>{{group.path}}</td>
+                            <td class="kc-action-cell" ng-click="removeGroup(selectedGroups, group);" style="vertical-align: middle">
+                                {{:: 'remove' | translate}}
+                            </td>
+                        </tr>
+                        <tr data-ng-show="!selectedGroups || selectedGroups.length == 0">
+                            <td class="text-muted" colspan="2">{{:: 'groups-joining-no-selected' | translate}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <kc-tooltip>{{:: 'groups-joining.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'required-user-actions' | translate}}</label>
 
