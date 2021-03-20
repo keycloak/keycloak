@@ -296,7 +296,7 @@ a.zocial.nia {
     white-space: normal;
 }
 a.zocial.nia:hover {
-    background:  url("../img/nia-logo-02.png") no-repeat left top !important;
+    background:  url("../img/nia-logo-02.png") no-repeat left top;
     height: 70px;
     width: auto;
 }
