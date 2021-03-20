@@ -283,6 +283,18 @@ ul#kc-totp-supported-apps {
     border-color: transparent black transparent transparent;
 }
 
+.zocial,
+a.zocial  {
+    width: 100%;
+    font-weight: normal;
+    font-size: 14px;
+    text-shadow: none;
+    border: 0;
+    background: #f5f5f5;
+    color: #72767b;
+    border-radius: 0;
+    white-space: normal;
+}
 a.zocial.nia {
     background: url("../img/nia-logo-01.png") no-repeat left top;
     width: 100%;
@@ -300,32 +312,9 @@ a.zocial.nia:hover {
     background: url("../img/nia-logo-02.png") no-repeat left top !important;
 }
 
-a.zocial.nia:before {
-    border-right: 0;
-    margin-right: 0;
-}
-
-a.zocial.nia span:before {
-    padding: 7px 10px;
-    font-size: 14px;
-}
-
 a.zocial.nia span {
     padding: 7px 10px;
     font-size: 14px;
-}
-
-.zocial,
-a.zocial  {
-    width: 100%;
-    font-weight: normal;
-    font-size: 14px;
-    text-shadow: none;
-    border: 0;
-    background: #f5f5f5;
-    color: #72767b;
-    border-radius: 0;
-    white-space: normal;
 }
 .zocial:before {
     border-right: 0;
