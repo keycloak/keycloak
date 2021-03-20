@@ -120,6 +120,13 @@ declare namespace Keycloak {
 		timeSkew?: number;
 
 		/**
+		 * Set an initial value in seconds, what time in advance token will be
+		 * refreshed before it expires.
+		 * @default 0
+		 */
+		timeRefreshInAdvance?: number;
+
+		/**
 		 * Set to enable/disable monitoring login state.
 		 * @default true
 		 */
@@ -389,6 +396,12 @@ declare namespace Keycloak {
 		 * enough when determining if a token is expired or not.
 		 */
 		timeSkew?: number;
+
+		/**
+		 * Value in seconds, what time in advance token will be
+		 * refreshed before it expires. Works only with onTokenExpired.
+		 */
+		timeRefreshInAdvance?: number;
 
 		/**
 		 * @private Undocumented.

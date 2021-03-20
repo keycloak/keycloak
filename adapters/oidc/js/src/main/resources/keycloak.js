@@ -165,6 +165,12 @@
                     kc.timeSkew = initOptions.timeSkew;
                 }
 
+                if (typeof initOptions.timeRefreshInAdvance === 'number') {
+                    kc.timeRefreshInAdvance = initOptions.timeRefreshInAdvance;
+                } else {
+                    kc.timeRefreshInAdvance = 0;
+                }
+
                 if(initOptions.redirectUri) {
                     kc.redirectUri = initOptions.redirectUri;
                 }
@@ -1016,7 +1022,7 @@
                     logInfo('[KEYCLOAK] Estimated time difference between browser and server is ' + kc.timeSkew + ' seconds');
 
                     if (kc.onTokenExpired) {
-                        var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
+                        var expiresIn = ((kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) - kc.timeRefreshInAdvance) * 1000;
                         logInfo('[KEYCLOAK] Token expires in ' + Math.round(expiresIn / 1000) + ' s');
                         if (expiresIn <= 0) {
                             kc.onTokenExpired();
