@@ -10,7 +10,7 @@ export default class CreateRealmRolePage {
     this.realmRoleNameError = "#kc-name-helper";
     this.realmRoleDescriptionInput = "#kc-role-description";
 
-    this.saveBtn = '[type="submit"]';
+    this.saveBtn = 'realm-roles-save-button';
     this.cancelBtn = '[type="button"]';
   }
 
@@ -37,7 +37,7 @@ export default class CreateRealmRolePage {
   //#endregion
 
   save() {
-    cy.get(this.saveBtn).click();
+    cy.getId(this.saveBtn).click();
 
     return this;
   }

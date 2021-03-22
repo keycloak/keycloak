@@ -28,3 +28,8 @@
   padding-right: var(--pf-global--spacer--xs);
 }
 
+.pf-c-chip-group.kc-filter-chip-group__table {
+  margin-left: var(--pf-global--spacer--md);
+  margin-bottom: var(--pf-global--spacer--md);
+}
+

@@ -66,6 +66,7 @@
     "userName": "Username",
     "email": "Email",
     "lastName": "Last name",
-    "firstName": "First name"
+    "firstName": "First name",
+    "clearAllFilters": "Clear all filters"
   }
 }

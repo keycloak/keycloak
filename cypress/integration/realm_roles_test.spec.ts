@@ -73,8 +73,6 @@ describe("Realm roles test", function () {
 
       masthead.checkNotificationMessage("Role created");
 
-      cy.wait(100);
-
       // Add associated realm role
 
       associatedRolesPage.addAssociatedRealmRole();

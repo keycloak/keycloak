@@ -79,6 +79,7 @@ export const RolesList = ({
   });
 
   const goToCreate = () => history.push(`${url}/add-role`);
+
   return (
     <>
       <DeleteConfirm />

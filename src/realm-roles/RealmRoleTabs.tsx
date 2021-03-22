@@ -93,8 +93,21 @@ export const RealmRoleTabs = () => {
 
   useEffect(() => append({ key: "", value: "" }), [append, role]);
 
-  const save = async (role: RoleFormType) => {
+  const save = async () => {
     try {
+      const role = form.getValues();
+      if (
+        role.attributes &&
+        role.attributes[role.attributes.length - 1].key === ""
+      ) {
+        form.setValue(
+          "attributes",
+          role.attributes.slice(0, role.attributes.length - 1)
+        );
+      }
+      if (!(await form.trigger())) {
+        return;
+      }
       const { attributes, ...rest } = role;
       const roleRepresentation: RoleRepresentation = rest;
       if (id) {

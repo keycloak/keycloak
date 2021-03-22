@@ -1,4 +1,4 @@
-import React, { MouseEventHandler } from "react";
+import React from "react";
 import {
   Pagination,
   ToggleTemplateProps,
@@ -22,7 +22,7 @@ type TableToolbarProps = {
     newInput: string,
     event: React.FormEvent<HTMLInputElement>
   ) => void;
-  inputGroupOnClick?: MouseEventHandler;
+  inputGroupOnEnter?: (value: string) => void;
 };
 
 export const PaginatingTableToolbar = ({
@@ -38,7 +38,7 @@ export const PaginatingTableToolbar = ({
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnChange,
-  inputGroupOnClick,
+  inputGroupOnEnter,
 }: TableToolbarProps) => {
   const page = Math.round(first / max);
   const pagination = (variant: "top" | "bottom" = "top") => (
@@ -59,24 +59,23 @@ export const PaginatingTableToolbar = ({
     />
   );
 
+  if (count === 0) {
+    <>{children}</>;
+  }
   return (
     <TableToolbar
       searchTypeComponent={searchTypeComponent}
       toolbarItem={
         <>
           {toolbarItem}
-          {count !== 0 && (
-            <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
-          )}
+          <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
         </>
       }
-      toolbarItemFooter={
-        count !== 0 && <ToolbarItem>{pagination("bottom")}</ToolbarItem>
-      }
+      toolbarItemFooter={<ToolbarItem>{pagination("bottom")}</ToolbarItem>}
       inputGroupName={inputGroupName}
       inputGroupPlaceholder={inputGroupPlaceholder}
       inputGroupOnChange={inputGroupOnChange}
-      inputGroupOnClick={inputGroupOnClick}
+      inputGroupOnEnter={inputGroupOnEnter}
     >
       {children}
     </TableToolbar>

@@ -139,7 +139,7 @@ export function KeycloakDataTable<T>({
 
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>("");
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -172,7 +172,7 @@ export function KeycloakDataTable<T>({
       },
       handleError
     );
-  }, [key, first, max]);
+  }, [key, first, max, search]);
 
   const getNodeText = (node: keyof T | JSX.Element): string => {
     if (["string", "number"].includes(typeof node)) {
@@ -197,6 +197,7 @@ export function KeycloakDataTable<T>({
         )
       )
     );
+    setSearch;
   };
 
   const convertAction = () =>
@@ -213,13 +214,6 @@ export function KeycloakDataTable<T>({
       };
       return action;
     });
-
-  const searchOnChange = (value: string) => {
-    if (value === "") {
-      refresh();
-    }
-    setSearch(value);
-  };
 
   const Loading = () => (
     <div className="pf-u-text-align-center">
@@ -258,8 +252,7 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnChange={searchOnChange}
-          inputGroupOnClick={refresh}
+          inputGroupOnEnter={setSearch}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
@@ -291,8 +284,7 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnChange={searchOnChange}
-          inputGroupOnClick={() => filter(search)}
+          inputGroupOnEnter={(search) => filter(search)}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           toolbarItem={toolbarItem}
           searchTypeComponent={searchTypeComponent}
