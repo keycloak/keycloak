@@ -10,7 +10,6 @@ import {
   PageSection,
   Tab,
   TabTitleText,
-  Text,
 } from "@patternfly/react-core";
 
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
@@ -35,6 +34,7 @@ import { useHistory, useParams } from "react-router-dom";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import {LdapMapperList} from "./ldap/mappers/LdapMapperList";
 
 type LdapSettingsHeaderProps = {
   onChange: (value: string) => void;
@@ -331,8 +331,7 @@ export const UserFederationLdapSettings = () => {
             eventKey="mappers"
             title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
           >
-            {/* <MapperList clientScope={clientScope} refresh={refresh} /> */}
-            <Text>Coming soon!</Text>
+            <LdapMapperList />
           </Tab>
         </KeycloakTabs>
       </PageSection>
