@@ -309,7 +309,7 @@ a.zocial.nia {
 }
 
 a.zocial.nia:hover {
-    background: url("../img/nia-logo-02.png") no-repeat left top;
+    background: url("../img/nia-logo-02.png") no-repeat left top !important;
     background: #dddddd;
 }
 
