@@ -814,6 +814,54 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         assertTrue(permissions.isEmpty());
     }
 
+    @Test
+    public void testDoNotGrantPermissionWhenObtainAllEntitlements() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection().resource().create(resource);
+
+        UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
+
+        permission.setName("Custom User-Managed Permission");
+        permission.addScope("Scope A", "Scope B");
+        permission.addUser("kolo");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        protection.policy(resource.getId()).create(permission);
+
+        AuthorizationResource authorization = getAuthzClient().authorization("kolo", "password");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "Scope A", "Scope B");
+
+        AuthorizationResponse authzResponse = authorization.authorize(request);
+        assertNotNull(authzResponse);
+
+        AccessToken token = toAccessToken(authzResponse.getToken());
+        assertNotNull(token.getAuthorization());
+
+        Collection<Permission> permissions = token.getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        assertTrue(permissions
+                .iterator().next().getScopes().containsAll(Arrays.asList("Scope A", "Scope B")));
+
+        try {
+            // policy engine does not evaluate custom policies when obtaining all entitlements
+            getAuthzClient().authorization("kolo", "password").authorize();
+            fail("User should not have permission");
+        } catch (Exception e) {
+            assertTrue(AuthorizationDeniedException.class.isInstance(e));
+        }
+    }
+
     private List<PolicyRepresentation> getAssociatedPolicies(UmaPermissionRepresentation permission) {
         return getClient(getRealm()).authorization().policies().policy(permission.getId()).associatedPolicies();
     }
