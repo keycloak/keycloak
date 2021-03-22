@@ -2,54 +2,19 @@
 [[_facebook]]
 ==== Facebook
 
-There are a number of steps you have to complete to be able to enable login with Facebook.  First, go to the `Identity Providers` left menu item
-and select `Facebook` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Facebook`. {project_name} displays the configuration page for the Facebook identity provider.
++
 .Add Identity Provider
-image:{project_images}/facebook-add-identity-provider.png[]
+image:{project_images}/facebook-add-identity-provider.png[Add Identity Provider]
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, follow the https://developers.facebook.com/docs/development/[Facebook Developer Guide's] instructions to create a project and client in Facebook.
+.. Ensure your app is a website-type app.
+.. Enter the *Redirect URI's* value into the `Site URL` of the Facebook `Website` settings block.
+.. Ensure the app is public.
++
+. Enter the https://developers.facebook.com/docs/facebook-login/access-tokens/[`Client ID` and `Client Secret`] values from your Facebook app into the `Client ID` and `Client Secret` fields in {project_name}.
+. Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the `email` scope. See https://developers.facebook.com/docs/graph-api[Graph API] for more information about Facebook scopes. 
 
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Facebook.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to Facebook when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with Facebook you first have to create a project and a client in the https://developers.facebook.com/[Facebook Developer Console].
-
-NOTE: Facebook often changes the look and feel of the Facebook Developer Console, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
-
-Once you've logged into the console there is a pull down menu in the top right corner of the screen that says `My Apps`.  Select the `Add a New App`
-menu item.
-
-.Add a New App
-image:images/facebook-add-new-app.png[]
-
-
-Select the `Website` icon.  Click the `Skip and Create App ID` button.
-
-.Create a New App ID
-image:images/facebook-create-app-id.png[]
-
-The email address and app category are required fields.  Once you're done with that, you will be brought to the dashboard
-for the application.  Click the `Settings` left menu item.
-
-.Create a New App ID
-image:images/facebook-app-settings.png[]
-
-Click on the `+ Add Platform` button at the end of this page and select the `Website` icon.  Copy and paste the `Redirect URI` from the
-{project_name} `Add identity provider` page into the `Site URL` of the Facebook `Website` settings block.
-
-.Specify Website
-image:images/facebook-app-settings-website.png[]
-
-After this it is necessary to make the Facebook app public. Click `App Review` left menu item and switch button to "Yes".
-
-You will need also to obtain the App ID and App Secret from this page so you can enter them into the {project_name} `Add identity provider` page. To obtain this click on the `Dashboard` left menu item and click on `Show` under `App Secret`. Go back to {project_name} and specify those items and finally save your Facebook Identity Provider.
-
-One config option to note on the `Add identity provider` page for Facebook is the `Default Scopes` field.
-This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
-For a complete list of scopes, please take a look at https://developers.facebook.com/docs/graph-api. By default, {project_name}
-uses the following scopes: `email`.
-
-Another thing to note is that {project_name} sends a profile request to `graph.facebook.com/me?fields=id,name,email,first_name,last_name` by default, and the response only contains the specified fields.
-If you want to fetch additional fields (e.g. birthday) from the Facebook profile then you have to add a corresponding scope as described in a paragraph above and add the field name in `Additional user's profile fields` configuration option field.
-You can discover available field names and corresponding scopes by exploring the https://developers.facebook.com/tools/explorer[Facebook GraphQL API Explorer].
+{project_name} sends profile requests to `graph.facebook.com/me?fields=id,name,email,first_name,last_name` by default. The response contains the id, name, email, first_name, and last_name fields only. To fetch additional fields from the Facebook profile, add a corresponding scope and add the field name in the `Additional user's profile fields` configuration option field. 

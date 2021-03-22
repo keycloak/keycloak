@@ -1,25 +1,22 @@
+
 [[_client_suggested_idp]]
 === Client-suggested Identity Provider
 
-OIDC applications can bypass the {project_name} login page by specifying a hint on which
-identity provider they want to use.
+OIDC applications can bypass the {project_name} login page by hinting at the identity provider they want to use. You can enable this by setting the `kc_idp_hint` query parameter in the Authorization Code Flow authorization endpoint.
 
-This is done by setting the `kc_idp_hint` query parameter in the Authorization Code Flow authorization endpoint.
-
-{project_name} OIDC client adapters also allow you to specify this query parameter when you access a secured resource
-at the application.
+With {project_name} OIDC client adapters, you can specify this query parameter when you access a secured resource in the application.
 
 For example:
 
-[source]
+[source,bash,subs=+attributes]
 ----
 GET /myapplication.com?kc_idp_hint=facebook HTTP/1.1
 Host: localhost:8080
 ----
 
-In this case, it is expected that your realm has an identity provider with an alias `facebook`. If this provider doesn't exist the login form will be displayed.
+In this case, your realm must have an identity provider with a `facebook` alias. If this provider does not exist,  the login form is displayed.
 
-If you are using `keycloak.js` adapter, you can also achieve the same behavior:
+If you are using the `keycloak.js` adapter, you can also achieve the same behavior as follows:
 
 [source,javascript]
 ----
@@ -30,5 +27,4 @@ keycloak.createLoginUrl({
 });
 ----
 
-The `kc_idp_hint` query parameter also allows the client to override the default identity provider if one is configured for the `Identity Provider Redirector` authenticator. The client can also disable the automatic redirecting by setting the `kc_idp_hint` query parameter to an empty value.
-
+With the `kc_idp_hint` query parameter, the client can override the default identity provider if you configure one for the `Identity Provider Redirector` authenticator. The client can  disable the automatic redirecting by setting the `kc_idp_hint` query parameter to an empty value.

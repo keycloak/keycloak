@@ -1,103 +1,80 @@
+
 [[_identity_broker_oidc]]
 === OpenID Connect v1.0 Identity Providers
 
-{project_name} can broker identity providers based on the OpenID Connect protocol.  These IDPs must support the xref:proc-creating-oidc-client_{context}[Authorization Code Flow]
-as defined by the specification in order to authenticate the user and authorize access.
+{project_name} brokers identity providers based on the OpenID Connect protocol. These identity providers (IDPs) must support the xref:proc-creating-oidc-client_{context}[Authorization Code Flow] defined in the specification to authenticate users and authorize access.
 
-To begin configuring an OIDC provider, go to the `Identity Providers` left menu item
-and select `OpenID Connect v1.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `OpenID Connect v1.0`.
++
 .Add Identity Provider
-image:{project_images}/oidc-add-identity-provider.png[]
-
-The initial configuration options on this page are described in <<_general-idp-config, General IDP Configuration>>.
-You must define the OpenID Connect configuration options as well.  They basically describe the OIDC IDP you are communicating with.
-
+image:{project_images}/oidc-add-identity-provider.png[Add Identity Provider]
++
+. Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
++
 .OpenID Connect Config
 |===
 |Configuration|Description
 
 |Authorization URL
-|Authorization URL endpoint required by the OIDC protocol.
+|The authorization URL endpoint the OIDC protocol requires.
 
 |Token URL
-|Token URL endpoint required by the OIDC protocol.
+|The token URL endpoint the OIDC protocol requires.
 
 |Logout URL
-|Logout URL endpoint defined in the OIDC protocol.  This value is optional.
+|The logout URL endpoint in the OIDC protocol. This value is optional.
 
 |Backchannel Logout
-|Backchannel logout is a background, out-of-band, REST invocation to the IDP to logout the user.  Some IDPs can only perform logout through browser redirects as they may
- only be able to identity sessions via a browser cookie.
+|A background, out-of-band, REST request to the IDP to log out the user. Some IDPs perform logout through browser redirects only, as they may identify sessions using a browser cookie.
 
 |User Info URL
-|User Info URL endpoint defined by the OIDC protocol.  This is an endpoint from which user profile information can be downloaded.
+|An endpoint the OIDC protocol defines. This endpoint points to user profile information.
 
 |Client Authentication
-|Switch to define the Client Authentication method to be used with the Authorization Code Flow.  In the case of JWT signed with private key, the realm private key
- is used.  In the other cases, a client secret has to be defined.
- For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications].
+|Defines the Client Authentication method {project_name} uses with the Authorization Code Flow. In the case of JWT signed with a private key, {project_name} uses the realm private key. In the other cases, define a client secret. See the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications] for more information.
 
 |Client ID
-|This realm will act as an OIDC client to the external IDP.  Your realm will need an OIDC client ID when using the Authorization Code Flow
- to interact with the external IDP.
+|A realm acting as an OIDC client to the external IDP. The realm must have an OIDC client ID if you use the Authorization Code Flow to interact with the external IDP.
 
 |Client Secret
-|This realm will need a client secret to use when using the Authorization Code Flow. The value of this field can refer a value from an external <<_vault-administration,vault>>.
+|Client secret from an external <<_vault-administration,vault>>. This secret is necessary if you are using the Authorization Code Flow.
 
 |Client Assertion Signature Algorithm
 |Signature algorithm to create JWT assertion as client authentication.
 In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. `RS256` is adapted in the case of JWT signed with private key.  `HS256` is adapted in the case of Client secret as jwt.
 
 |Issuer
-|Responses from the IDP may contain an issuer claim.  This config value is optional.  If specified, this claim will be validated against the value you provide.
+|{project_name} validates issuer claims, in responses from the IDP, against this value.
 
 |Default Scopes
-|Space-separated list of OIDC scopes to send with the authentication request.  The default is `openid`.
+|A list of OIDC scopes {project_name} sends with the authentication request. The default value is `openid`. A space separates each scope.
 
 |Prompt
-|Another optional switch.  This is the prompt parameter defined by the OIDC specification. Through it you can force re-authentication and other options.  See the specification for
- more details.
+|The prompt parameter in the OIDC specification. Through this parameter, you can force re-authentication and other options. See the specification for more details.
 
 |Accepts prompt=none forward from client
-|Specifies whether the IDP accepts forwarded authentication requests that contain the prompt=none query parameter or not. When a realm receives an auth request with `prompt=none` it checks
- if the user is currently authenticated and normally returns a `login_required` error if the user is not logged in. However, when a default IDP can be determined
- for the auth request (either via `kc_idp_hint` query param or by setting up a default IDP for the realm) we should be able to forward the auth request with
- `prompt=none` to the default IDP so that it checks if the user is currently authenticated there. Because not all IDPs support requests with `prompt=none` this switch
- is used to indicate if the default IDP supports the param before redirecting the auth request.
+|Specifies if the IDP accepts forwarded authentication requests containing the `prompt=none` query parameter. If a realm receives an auth request with `prompt=none`, the realm checks if the user is currently authenticated and returns a `login_required` error if the user has not logged in. When {project_name} determines a default IDP for the auth request (using the `kc_idp_hint` query parameter or having a default IDP for the realm), you can forward the auth request with `prompt=none` to the default IDP. The default IDP checks the authentication of the user there. Because not all IDPs support requests with `prompt=none`, {project_name} uses this switch to indicate that the default IDP supports the parameter before redirecting the authentication request.
 
- It is important to note that if the user is not authenticated in the IDP, the client will still get a `login_required` error. Even if the user is currently authenticated in the IDP,
- the client might still get an `interaction_required` error if authentication or consent pages requiring user interaction would be otherwise displayed. This includes required actions
- (e.g. change password), consent screens and any screens set to be displayed by the `first broker login` flow or `post broker login` flow.
+If the user is unauthenticated in the IDP, the client still receives a `login_required` error. If the user is authentic in the IDP, the client can still receive an `interaction_required` error if {project_name} must display authentication pages that require user interaction. This authentication includes required actions (for example, password change), consent screens, and screens set to display by the `first broker login` flow or `post broker login` flow.
 
 |Validate Signatures
-|Another optional switch. This is to specify if {project_name} will verify the signatures on the external ID Token signed by this identity provider. If this is on,
-the {project_name} will need to know the public key of the external OIDC identity provider. See below for how to set it up.
-WARNING: For the performance purposes, {project_name} caches the public key of the external OIDC identity provider. If you think that private key of your identity provider
-was compromised, it is obviously good to update your keys, but it's also good to clear the keys cache. See
-<<_clear-cache, Clearing the cache>> section for more details.
+|Specifies if {project_name} verifies signatures on the external ID Token signed by this IDP. If *ON*, {project_name} must know the public key of the external OIDC IDP. For performance purposes, {project_name} caches the public key of the external OIDC identity provider. If your identity provider's private key is compromised, update your keys and clear the keys cache. See <<_clear-cache, Clearing the cache>> section for more details.
 
 |Use JWKS URL
-|Applicable if `Validate Signatures` is on. If the switch is on, then identity provider public keys will be downloaded from given JWKS URL.
- This allows great flexibility because new keys will be always re-downloaded when the identity provider generates new keypair. If the switch is off,
- then public key (or certificate) from the {project_name} DB is used, so whenever the identity provider keypair changes, you will always need to import the new key to the {project_name} DB as well.
+|This switch is applicable if `Validate Signatures` is *ON*. If *Use JWKS URL* is *ON*, {project_name} downloads the IDP's public keys from the JWKS URL. New keys download when the identity provider generates a new keypair. If *OFF*, {project_name} uses the public key (or certificate) from its database, so when the IDP keypair changes, import the new key to the {project_name} database as well.
 
 |JWKS URL
-|URL where the identity provider JWK keys are stored. See the https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification] for more details.
- If you use an external {project_name} as an identity provider, then you can use URL like http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs assuming your brokered
- {project_name} is running on http://broker-keycloak:8180 and it's realm is `test`.
+|The URL pointing to the location of the IDP JWK keys. For more information, see the https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification]. If you use an external {project_name} as an IDP, you can use a URL such as http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs if your brokered {project_name} is running on http://broker-keycloak:8180 and its realm is `test`.
 
 |Validating Public Key
-|Applicable if `Use JWKS URL` is off. Here is the public key in PEM format that must be used to verify external IDP signatures.
+|The public key in PEM format that {project_name} uses to verify external IDP signatures. This key applies if `Use JWKS URL` is *OFF*. 
 
 |Validating Public Key Id
-|Applicable if `Use JWKS URL` is off. This field specifies ID of the public key in PEM format. This config value is optional. As there is no standard way
- for computing key ID from key, various external identity providers might use different algorithm from {project_name}. If the value of this field
- is not specified, the validating public key specified above is used for all requests regardless of key ID sent by external IDP. When set, value of this
- field serves as key ID used by {project_name} for validating signatures from such providers and must match the key ID specified by the IDP.
+|This setting applies if *Use JWKS URL* is *OFF*. This setting specifies the ID of the public key in PEM format. Because there is no standard way for computing key ID from the key, external identity providers can use different algorithms from what {project_name} uses. If this field's value is not specified, {project_name} uses the validating public key for all requests, regardless of the key ID sent by the external IDP. When *ON*, this field's value is the key ID used by {project_name} for validating signatures from providers and must match the key ID specified by the IDP. 
 
 |===
 
-You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification).
-If you are connecting to a {project_name} external IDP, you can import the IDP settings from the url `<root>/auth/realms/{realm-name}/.well-known/openid-configuration`.
-This link is a JSON document describing metadata about the IDP.
+You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>/auth/realms/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.

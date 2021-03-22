@@ -3,26 +3,26 @@
 
 ==== Stack Overflow
 
-There are a number of steps you have to complete to be able to enable login with Stack Overflow.  First, go to the `Identity Providers` left menu item
-and select `Stack Overflow` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Stack Overflow`.
++
 .Add Identity Provider
-image:{project_images}/stack-overflow-add-identity-provider.png[]
-
-To enable login with Stack Overflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
-Go to https://stackapps.com/apps/oauth/register[registering your application on Stack Apps] URL and login.
-
-NOTE: Stack Overflow often changes the look and feel of application registration, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
-
+image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
++
+. In a separate browser tab, log into https://stackapps.com/apps/oauth/register[registering your application on Stack Apps].
++
 .Register Application
-image:images/stack-overflow-app-register.png[]
-
-Enter in the application name and the OAuth Domain Name of your application and click `Register your Application`.  Type in anything you want
-for the other items.
-
+image:images/stack-overflow-app-register.png[Register Application]
++
+.. Enter your application name into the *Application Name* field.
+.. Enter the OAuth domain into the *OAuth Domain* field.
+.. Click *Register Your Application*.
++
 .Settings
-image:images/stack-overflow-app-settings.png[]
-
-Finally, you will need to obtain the client ID, secret, and key from this page so you can enter them back on the {project_name} `Add identity provider` page.
-Go back to {project_name} and specify those items.
+image:images/stack-overflow-app-settings.png[Settings]
++
+. Note the *Client ID* and *Client Secret*.
+. In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+. Click *Save*.

@@ -2,72 +2,23 @@
 [[_google]]
 ==== Google
 
-There are a number of steps you have to complete to be able to enable login with Google.  First, go to the `Identity Providers` left menu item
-and select `Google` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Google`.
++
 .Add Identity Provider
-image:{project_images}/google-add-identity-provider.png[]
-
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Google.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to Google when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with Google you first have to create a project and a client in the https://console.cloud.google.com/project[Google Developer Console].
-Then you need to copy the client ID and secret into the {project_name} Admin Console.
-
-NOTE: Google often changes the look and feel of the Google Developer Console, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
-
-Let's see first how to create a project with Google.
-
-Log in to the link:https://console.cloud.google.com/project[Google Developer Console].
-
-.Google Developer Console
-image:images/google-developer-console.png[]
-
-Click the `Create Project` button.
-Use any value for `Project name` and `Project ID` you want, then click the `Create` button.
-Wait for the project to be created (this may take a while).  Once created you will be brought to the project's dashboard.
-
-.Dashboard
-image:images/google-dashboard.png[]
-
-Then navigate to the `APIs & Services` section in the Google Developer Console. On that screen, navigate to `Credentials` administration.
-
-When users log into Google from {project_name} they will see a consent screen from Google which will ask the user
-if {project_name} is allowed to view information about their user profile. Thus Google requires some basic information about the product before creating any secrets for it. For a new project, you have first to configure `OAuth consent screen`.
-
-For the very basic setup, filling in the Application name is sufficient. You can also set additional details like scopes for Google APIs in this page.
-
-.Fill in OAuth consent screen details
-image:images/google-oauth-consent-screen.png[]
-
-The next step is to create OAuth client ID and client secret. Back in `Credentials` administration, navigate to `Credentials` tab and select `OAuth client ID` under the `Create credentials` button.
-
-.Create credentials
-image:images/google-create-credentials.png[]
-
-You will then be brought to the `Create OAuth client ID` page. Select `Web application` as the application type. Specify the name you want for your client.  You'll also need to
-copy and paste the `Redirect URI` from the {project_name} `Add Identity Provider` page into the
-`Authorized redirect URIs` field.  After you do this, click the `Create` button.
-
-.Create OAuth client ID
-image:images/google-create-oauth-id.png[]
-
-After you click `Create` you will be brought to the `Credentials` page. Click on your new OAuth 2.0 Client ID to view
-the settings of your new Google Client.
-
-.Google Client Credentials
-image:images/google-client-credentials.png[]
-
-
-You will need to obtain the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page.
-Go back to {project_name} and specify those items.
-
-One config option to note on the `Add identity provider` page for Google is the `Default Scopes` field.
-This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
-For a complete list of scopes, please take a look at https://developers.google.com/oauthplayground/ . By default, {project_name}
-uses the following scopes: `openid` `profile` `email`.
-
-If your organization uses the G Suite and you want to restrict access to only members of your organization,
-you must enter the domain that is used for the G Suite into the `Hosted Domain` field to enable it.
+image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
++
+. In a separate browser tab, https://support.google.com/googleapi/answer/6251787[create a google project].
+. In the Google dashboard for your Google app, click the *OAuth consent screen* menu. Create a consent screen, ensuring that the user type of the consent screen is external.
+. In the Google dashboard:
+.. Click the *Credentials* menu. 
+.. Click *CREATE CREDENTIALS* - *OAuth Client ID*.
+.. From the *Application type* list, select *Web application*.
+.. Click *Create*.
+.. Note *Your Client ID* and *Your Client Secret*.
+. In {project_name}, paste the value of the *Your Client ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Your Client Secret* into the *Client Secret* field.
+. Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the following scopes: `openid` `profile` `email`. See the https://developers.google.com/oauthplayground/[OAuth Playground] for a list of Google scopes.
+. To restrict access to your GSuite organization's members only, enter the G Suite domain into the `Hosted Domain` field.
+. Click *Save*.

@@ -1,60 +1,59 @@
 
 ==== Instagram
 
-There are a number of steps you have to complete to be able to enable login with Instagram.  First, go to the `Identity Providers` left menu item
-and select `Instagram` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Instagram`. {project_name} displays the configuration page for the Instagram identity provider.
++
 .Add Identity Provider
-image:{project_images}/instagram-add-identity-provider.png[]
-
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Instagram.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to Instagram when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with Instagram you first have to create a project and a client. Instagram API is managed through the https://developers.facebook.com/[Facebook Developer Console].
-
-NOTE: Facebook often changes the look and feel of the Facebook Developer Console, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
-
-Once you've logged into the console there is a menu in the top right corner of the screen that says `My Apps`.  Select the `Add a New App`
-menu item.
-
+image:{project_images}/instagram-add-identity-provider.png[Add Identity Provider]
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, open the https://developers.facebook.com/[Facebook Developer Console].
+.. Click *My Apps*.
+.. Select *Add a New App*.
++
 .Add a New App
-image:images/instagram-add-new-app.png[]
-
-Select `For Everything Else`.
-
+image:images/instagram-add-new-app.png[Add a New App]
++
+.. Select `For Everything Else`.
++
 .Create a New App ID
 image:images/instagram-create-app-id.png[]
-
-Fill all required fields. Once you're done with that, you will be brought to the dashboard
-for the application. In the menu in the left navigation panel select `Basic` under `Settings`.
-
++
+.. Fill in all required fields. 
+.. Click *Create App*. Facebook then brings you to the dashboard.
+.. In the navigation panel, select *Settings* - *Basic*.
++
 .Add Platform
-image:images/instagram-add-platform.png[]
-
-Select `+ Add Platform` at the bottom and then click `[Website]` with the globe icon. Specify URL of your site.
-
+image:images/instagram-add-platform.png[Add Platform]
++
+.. Select *+ Add Platform*.
+.. Click *[Website]*.
+.. Enter a URL for your site.
++
 .Add a Product
 image:images/instagram-add-product.png[]
-
-Select `Dashboard` from the left menu and click `Set Up` in the Instagram box. In the left menu then select `Basic Display` under `Instagram`
-and click `Create New App`.
-
++
+.. Select `Dashboard` from the menu.
+.. Click *Set Up* in the Instagram box. 
+.. Select *Instagram* - *Basic Display* from the menu.
+.. Click *Create New App*.
++
 .Create a New Instagram App ID
-image:images/instagram-create-instagram-app-id.png[]
-
-Specify `Display Name`.
-
+image:images/instagram-create-instagram-app-id.png[Create a New Instagram App ID]
++
+.. Enter a value into *Display Name*.
++
 .Setup the App
-image:images/instagram-app-settings.png[]
-
-Copy and paste the `Redirect URI` from the {project_name} `Add identity provider` page into the `Valid OAuth Redirect URIs` of the Instagram `Client OAuth Settings` settings block.
-
-You can use this URL also for `Deauthorize Callback URL` and `Data Deletion Request URL`. {project_name} currently doesn't support either of them,
-but the Facebook Developer Console requires both of them to be filled.
-
-You will need also to obtain the App ID and App Secret from this page so you can enter them into the {project_name} `Add identity provider` page.
-To obtain this click on `Show` under `App Secret`. Go back to {project_name} and specify those items and finally save your Instagram Identity Provider.
-
-Now you can make the Instagram app public. Click `App Review` left menu item and then `Requests`. After that follow the instructions on screen.
+image:images/instagram-app-settings.png[Setup the App]
++
+.. Paste the *Redirect URL* from {project_name} into the *Valid OAuth Redirect URIs* field.
+.. Paste the *Redirect URL* from {project_name} into the *Deauthorize Callback URL* field.
+.. Paste the *Redirect URL* from {project_name} into the *Data Deletion Request URL* field.
+.. Click *Show* in the *Instagram App Secret* field.
+.. Note the *Instagram App ID* and the *Instagram App Secret*.
+.. Click *App Review* - *Requests*.
+.. Follow the instructions on the screen.
+. In {project_name}, paste the value of the *Instagram App ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Instagram App Secret* into the *Client Secret* field.
+. Click *Save*.

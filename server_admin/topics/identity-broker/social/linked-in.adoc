@@ -3,37 +3,18 @@
 
 ==== LinkedIn
 
-There are a number of steps you have to complete to be able to enable login with LinkedIn.  First, go to the `Identity Providers` left menu item
-and select `LinkedIn` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `LinkedIn`.
++
 .Add Identity Provider
-image:{project_images}/linked-in-add-identity-provider.png[]
-
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from LinkedIn.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to LinkedIn when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with LinkedIn you first have to create an application in https://www.linkedin.com/developer/apps[LinkedIn Developer Network].
-
-NOTE: LinkedIn may change the look and feel of application registration, so these directions may not always be up to date.
-
-.Developer Network
-image:images/linked-in-developer-network.png[]
-
-Click on the `Create Application` button.  This will bring you to the `Create a New Application` Page.
-
-.Create App
-image:images/linked-in-create-app.png[]
-
-Fill in the form with the appropriate values, then click the `Submit` button.  This will bring you to the new application's settings page.
-
-.App Settings
-image:images/linked-in-app-settings.png[]
-
-Select `r_basicprofile` and `r_emailaddress` in the `Default Application Permissions` section.
-You'll have to copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the
-`OAuth 2.0` `Authorized Redirect URLs` field on the LinkedIn app settings page.  Don't forget to click the `Update` button after
-you do this!
-
-You will then need to obtain the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page.
-Go back to {project_name} and specify those items.
+image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, https://www.linkedin.com/developer/apps[create an app].
+.. After you create the app, click the *Auth* tab.
+.. Enter the value of *Redirect URI* into the *Authorized redirect URLs for your app* field.
+.. Note *Your Client ID* and *Your Client Secret*.
+. In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+. Click *Save*.

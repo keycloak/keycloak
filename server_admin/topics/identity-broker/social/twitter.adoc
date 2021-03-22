@@ -3,42 +3,22 @@
 
 ==== Twitter
 
-There are a number of steps you have to complete to be able to enable login with Twitter.  First, go to the `Identity Providers` left menu item
-and select `Twitter` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+.Prerequisites
+. A Twitter developer account.
 
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Twitter`.
++
 .Add Identity Provider
-image:{project_images}/twitter-add-identity-provider.png[]
-
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Twitter.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to Twitter when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with Twtter you first have to create an application in the https://developer.twitter.com/apps/[Twitter Application Management].
-
-.Register Application
-image:images/twitter-app-register.png[]
-
-
-Click on the `Create New App` button.  This will bring you to the `Create an Application` page.
-
-.Register Application
-image:images/twitter-app-create.png[]
-
-
-Enter in a Name and Description.  The Website can be anything, but cannot have a `localhost` address.  For the
-`Callback URL` you must copy the `Redirect URI` from the {project_name} `Add Identity Provider` page.
-
-WARNING: You cannot use `localhost` in the `Callback URL`.  Instead replace it with `127.0.0.1` if you are trying to test drive Twitter login on your laptop.
-
-After clicking save you will be brought to the `Details` page.
-
-.App Details
-image:images/twitter-details.png[]
-
-
-Next go to the `Keys and Access Tokens` tab.
-
-.Keys and Access Tokens
-image:images/twitter-keys.png[]
-
-Finally, you will need to obtain the API Key and secret from this page and copy them back into the `Client ID` and `Client Secret` fields on the {project_name} `Add identity provider` page.
+image:{project_images}/twitter-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, create an app in https://developer.twitter.com/apps/[Twitter Application Management].
+.. Enter any value for name and description.
+.. The value for *Website* can be any valid URL except `localhost`.
+.. Paste the value of the *Redirect URL* into the *Callback URL* field.
+.. When you create your Twitter app, note the value of *Consumer Key* and *Consumer Secret* in the *Keys and Access Tokens* section.
+. In {project_name}, paste the value of the *Consumer Key* into the *Client ID* field.
+. In {project_name}, paste the value of the *Consumer Secret* into the *Client Secret* field.
+. Click *Save*.

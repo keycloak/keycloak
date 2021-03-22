@@ -1,9 +1,16 @@
+
 [[default_identity_provider]]
 
 === Default Identity Provider
 
-It is possible to automatically redirect to a identity provider instead of displaying the login form. To enable this go to the `Authentication` page in the administration console and select the `Browser` flow. Then click on config for the `Identity Provider Redirector` authenticator. Set `Default Identity Provider` to the alias of the identity provider you want to automatically redirect users to.
+{project_name} can redirect to an identity provider rather than displaying the login form. To enable this redirection:
 
-If the configured default identity provider is not found the login form will be displayed instead.
+.Procedure
+. Click *Authentication* in the menu.
+. Click the *Browser* flow.
+. Select *Identity Provider Redirector* from the drop-down list. 
+. Set *Default Identity Provider* to the identity provider you want to redirect users to.
 
-This authenticator is also responsible for dealing with the `kc_idp_hint` query parameter. See <<_client_suggested_idp, client suggested identity provider>> section for more details.
+If {project_name} does not find the configured default identity provider, the login form is displayed.
+
+This authenticator is responsible for processing the `kc_idp_hint` query parameter. See the <<_client_suggested_idp, client suggested identity provider>> section for more information.

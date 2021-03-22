@@ -3,50 +3,17 @@
 
 ==== Microsoft
 
-There are a number of steps you have to complete to be able to enable login with Microsoft.  First, go to the `Identity Providers` left menu item
-and select `Microsoft` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Microsoft`.
++
 .Add Identity Provider
-image:{project_images}/microsoft-add-identity-provider.png[]
-
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Microsoft.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to Microsoft when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with Microsoft account you first have to register an OAuth application at Microsoft.
-Go to the https://account.live.com/developers/applications/create[Microsoft Application Registration] url.
-
-NOTE: Microsoft often changes the look and feel of application registration, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
-
-.Register Application
-image:images/microsoft-app-register.png[]
-
-Enter in the application name and click `Create application`.  This will bring you to the application settings page of your
-new application.
-
-.Settings
-image:images/microsoft-app-settings.png[]
-
-You'll have to copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and add it to the
-`Redirect URIs` field on the Microsoft application page.  Be sure to click the `Add Url` button and `Save` your changes.
-
-Finally, you will need to obtain the Application ID and secret from this page so you can enter them back on the {project_name} `Add identity provider` page.
-Go back to {project_name} and specify those items.
-
-ifeval::[{project_community}==true]
-WARNING: From November 2018 onwards, Microsoft is removing support for the Live SDK API in favor of the new Microsoft Graph API.
-         The {project_name} Microsoft identity provider has been updated to use the new endpoints so make sure to upgrade to
-         {project_name} version 4.6.0 or later in order to use this provider.
-         Furthermore, client applications registered with Microsoft under "Live SDK applications" will need to be re-registered
-         in the https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain an application id that
-         is compatible with the Microsoft Graph API.
-endif::[]
-ifeval::[{project_product}==true]
-WARNING: From November 2018 onwards, Microsoft is removing support for the Live SDK API in favor of the new Microsoft Graph API.
-         The {project_name} Microsoft identity provider has been updated to use the new endpoints so make sure to upgrade to
-         {project_name} version 7.2.5 or later in order to use this provider.
-         Furthermore, client applications registered with Microsoft under "Live SDK applications" will need to be re-registered
-         in the https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain an application id that
-         is compatible with the Microsoft Graph API.
-endif::[]
+image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, https://account.live.com/developers/applications/create[create a Microsoft app].
+.. Click *Add URL* to add the redirect URL to the Microsoft app.
+.. Note the *Application ID* and *Application Secret*.
+. In {project_name}, paste the value of the *Application ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Application Secret* into the *Client Secret* field.
+. Click *Save*.

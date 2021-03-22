@@ -3,37 +3,19 @@
 
 ==== GitHub
 
-There are a number of steps you have to complete to be able to enable login with GitHub.  First, go to the `Identity Providers` left menu item
-and select `GitHub` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+To log in with Github, perform the following procedure. 
 
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Github`.
++
 .Add Identity Provider
-image:{project_images}/github-add-identity-provider.png[]
-
-You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from GitHub.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to GitHub when you register {project_name} as a client there, so
-copy this URI to your clipboard.
-
-To enable login with GitHub you first have to register an application project in
-https://github.com/settings/developers[GitHub Developer applications].
-
-NOTE: GitHub often changes the look and feel of application registration, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
-
-
-.Add a New App
-image:images/github-developer-applications.png[]
-
-Click the `Register a new application` button.
-
-.Register App
-image:images/github-register-app.png[]
-
-You'll have to copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the
-`Authorization callback URL` field on the GitHub `Register a new OAuth application` page.  Once you've completed this
-page you will be brought to the application's management page.
-
-.GitHub App Page
-image:images/github-app-page.png[]
-
-You will need to obtain the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page.
-Go back to {project_name} and specify those items.
+image:{project_images}/github-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, https://docs.github.com/en/developers/apps/creating-an-oauth-app[create an OAUTH app].
+.. Enter the value of *Redirect URI* into the `Authorization callback URL` field when creating the app.
+.. Note the Client ID and Client secret on the management page of your OAUTH app.
+. In {project_name}, paste the value of the `Client ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Client Secret` into the *Client Secret* field.
+. Click *Save*.

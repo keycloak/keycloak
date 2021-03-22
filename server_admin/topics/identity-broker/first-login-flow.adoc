@@ -1,97 +1,97 @@
+
 [[_identity_broker_first_login]]
 
 === First Login Flow
 
-When a user logs in through identity brokering some aspects of the user are imported and linked within the realm's local database.
-When {project_name} successfully authenticates users through an external identity provider
-there can be two situations:
+When users log in through identity brokering, {project_name} imports and links aspects of the user within the realm's local database. When {project_name} successfully authenticates users through an external identity provider, two situations can exist:
 
-* There is already a {project_name} user account imported and linked with the authenticated identity provider account.
-  In this case, {project_name} will just authenticate as the existing user and redirect back to application.
-* There is not yet an existing {project_name} user account imported and linked for this external user.
-  Usually you just want to register and import the new account into {project_name} database, but what if there is an existing
-  {project_name} account with the same email? Automatically linking the existing local account to the external
-  identity provider is a potential security hole as you can't always trust the information you get from the external identity provider.
+* {project_name} has already imported and linked a user account with the authenticated identity provider account. In this case, {project_name} authenticates as the existing user and redirects back to the application.
+* No account exists for this user in {project_name}. Usually, you register and import a new account into the {project_name} database, but there may be an existing {project_name} account with the same email address. Automatically linking the existing local account to the external identity provider is a potential security hole. You cannot always trust the information you get from the external identity provider.
 
-Different organizations have different requirements when dealing with some of the conflicts and situations listed above.
-For this, there is a `First Login Flow` option in the IDP settings which allows you to choose a <<_authentication-flows, workflow>> that will be
-used after a user logs in from an external IDP the first time.
-By default it points to `first broker login` flow, but you can configure and use your own flow and use different flows for different identity providers.
+Different organizations have different requirements when dealing with some of these situations. With {project_name}, you can use the `First Login Flow` option in the IDP settings to choose a <<_authentication-flows, workflow>> for a user logging in from an external IDP for the first time. By default, the `First Login Flow` option points to the `first broker login` flow, but you can use your flow or different flows for different identity providers.
 
-The flow itself is configured in admin console under `Authentication` tab.
-When you choose `First Broker Login` flow, you will see what authenticators are used by default.
-You can re-configure the existing flow. (For example you can disable some authenticators, mark some of them as `required`, configure some authenticators, etc).
+The flow is in the Admin Console under the *Authentication* tab. When you choose the `First Broker Login` flow, you see the authenticators used by default. You can re-configure the existing flow. For example, you can disable some authenticators, mark some of them as `required`, or configure some authenticators.
 
 ifeval::[{project_community}==true]
-You can also create a new authentication flow and/or write your own Authenticator implementations and use it in your flow.
-See link:{developerguide_link}[{developerguide_name}] for more details.
+You can also create a new authentication flow, write your own Authenticator implementations, and use it in your flow. See link:{developerguide_link}[{developerguide_name}] for more information.
 endif::[]
 
-==== Default First Login Flow
-
-Let's describe the default behavior provided by `First Broker Login` flow.
+==== Default First Login Flow Authenticators
 
 Review Profile::
-  This authenticator might display the profile info page, where the user can review their profile retrieved from an identity provider.
-  The authenticator is configurable.
-  You can set the `Update Profile On First Login` option.
-  When `On`, users will be always presented with the profile page asking for additional information in order to federate their identities.
-  When `missing`, users will be presented with the profile page only if some mandatory information (email, first name, last name) is not provided by the identity provider.
-  If `Off`, the profile page won't be displayed, unless user clicks in later phase on `Review profile info` link (page displayed in later phase
-  by `Confirm Link Existing Account` authenticator).
+* This authenticator displays the profile information page, so the users can review their profile that {project_name} retrieves from an identity provider.
+* You can set the `Update Profile On First Login` option in the *Actions* menu.
+* When *ON*, users are presented with the profile page requesting additional information to federate the user's identities.
+* When *missing*, users are presented with the profile page if the identity provider does not provide mandatory information, such as email, first name, or last name.
+* When *OFF*, the profile page does not display unless the user clicks in a later phase on the `Review profile info` link in the page displayed by the `Confirm Link Existing Account` authenticator.
 
 Create User If Unique::
+<<<<<<< HEAD
   This authenticator checks if there is already an existing {project_name} account with the same email or username like the account from the identity provider.
   If it's not, then the authenticator just creates a new local {project_name} account and links it with the identity provider and the whole flow is finished.
   Otherwise it goes to the next `Handle Existing Account` subflow.
   If you always want to ensure that there is no duplicated account, you can mark this authenticator as `REQUIRED`. In this case, the user
   will see the error page if there is an existing {project_name} account and the user will need to link the identity provider account through Account management.
+=======
+* This authenticator verifies that there is already a {project_name} account with the same email or username as the identity provider's account.
+* If an account does not exist, the authenticator creates a local {project_name} account, links this account with the identity provider, and terminates the flow. 
+* If an account exists, the authenticator implements the next `Handle Existing Account` sub-flow.
+* To ensure there is no duplicated account, you can mark this authenticator as `REQUIRED`. The user sees the error page if a {project_name} account exists, and users must link their identity provider account through Account management.
+>>>>>>> KEYCLOAK-15756 Initial wording (#58)
 
 NOTE: If you want to skip the ability to create new users, but you want that users authenticated from identity provider must already exists in {project_name} with same username or email like the user from identity provider, you can create new flow and replace `Create User If Exists` authenticator with `Detect Existing Broker User` . More details in the <<Detect Existing User First Login Flow,examples below>>.
   
 Confirm Link Existing Account::
-  On the info page, the user will see that there is an existing {project_name} account with the same email.
-  They can review their profile again and use different email or username (flow is restarted and goes back to `Review Profile` authenticator).
-  Or they can confirm that they want to link their identity provider account with their existing {project_name} account.
-  Disable this authenticator if you don't want users to see this confirmation page, but go straight to linking identity provider account by email verification or re-authentication.
+* On the information page, users see a {project_name} account with the same email. Users can review their profile again and use a different email or username. The flow restarts and goes back to the `Review Profile` authenticator.
+* Alternatively, users can confirm that they want to link their identity provider account with their existing {project_name} account. 
+* Disable this authenticator if you do not want users to see this confirmation page and go straight to linking identity provider account by email verification or re-authentication.
 
 Verify Existing Account By Email::
-  This authenticator is `ALTERNATIVE` by default, so it's used only if the realm has SMTP setup configured.
-  It will send email to the user, where they can confirm that they want to link the identity provider with their {project_name} account.
-  Disable this if you don't want to confirm linking by email, but instead you always want users to reauthenticate with their password (and alternatively OTP).
+* This authenticator is `ALTERNATIVE` by default. {project_name} uses this authenticator if the realm has an SMTP setup configured.
+* The authenticator sends an email to users to confirm that they want to link the identity provider with their {project_name} account.
+* Disable this authenticator if you do not want to confirm linking by email, but want users to reauthenticate with their password.
 
 Verify Existing Account By Re-authentication::
-  This authenticator is used if email authenticator is disabled or not available (SMTP not configured for realm). It will display a login screen
-  where the user needs to authenticate to link their {project_name} account with the Identity provider.
-  User can also re-authenticate with some different identity provider, which is already linked to their {project_name} account.
-  You can also force users to use OTP. Otherwise it's optional and used only if OTP is already set for the user account.
+* Use this authenticator if the email authenticator is not available. For example, you have not configured SMTP for your realm. This authenticator displays a login screen for users to authenticate to link their {project_name} account with the Identity Provider.
+* Users can also re-authenticate with another identity provider already linked to their {project_name} account.
+* You can force users to use OTP. Otherwise, it is optional and used if you have set OTP for the user account.
 
 ==== Automatically Link Existing First Login Flow
-WARNING: The AutoLink authenticator would be dangerous in a generic environment where users can register themselves using arbitrary usernames/email addresses. Do not use this authenticator unless registration of users is carefully curated and usernames/email addresses are assigned, not requested.
+[WARNING]
+====
+The AutoLink authenticator is dangerous in a generic environment where users can register themselves using arbitrary usernames or email addresses. Do not use this authenticator unless you are carefully curating user registration and assigning usernames and email addresses.
+====
 
-In order to configure a first login flow in which users are automatically linked without being prompted, create a new flow with the following two authenticators:
+To configure a first login flow that links users automatically without prompting, create a new flow with the following two authenticators:
 
 Create User If Unique::
-This authenticator ensures that unique users are handled. Set the authenticator requirement to "Alternative".
+This authenticator ensures {project_name} handles unique users. Set the authenticator requirement to *Alternative*.
 
 Automatically Set Existing User::
-Automatically sets an existing user to the authentication context without any verification. Set the authenticator requirement to "Alternative".
+This authenticator sets an existing user to the authentication context without verification. Set the authenticator requirement to "Alternative".
 
-NOTE: The described setup uses two authenticators. This setup is the simplest one, but it is possible to use other
-authenticators according to your needs. For example, you can add the Review Profile authenticator to the beginning of the flow if you still want
-end users to confirm their profile information. You can also add authentication mechanisms to this flow, forcing a user to verify his credentials. This
-would require a more complex flow, for example setting the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.
+[NOTE]
+====
+This setup is the simplest setup available, but it is possible to use other authenticators. For example:
+* You can add the Review Profile authenticator to the beginning of the flow if you want end users to confirm their profile information.
+* You can add authentication mechanisms to this flow, forcing a user to verify their credentials. Adding authentication mechanisms requires a complex flow. For example, you can set the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.
+====
 
 [[_disabling_automatic_user_creation]]
 ==== Disabling Automatic User Creation
-The Default first login flow will look up a Keycloak account matching the external identity, and will then offer to link them; if there is no matching Keycloak account, it will automatically create one.
-This default behavior may be unsuitable for some setups, for example, when using read-only LDAP user store (which means all users are pre-created).
-In this case, automatic user creation should be turned off. To disable user creation:
+The Default first login flow looks up the {project_name} account matching the external identity and offers to link them. If no matching {project_name} account exists, the flow  automatically creates one.
 
-* open the `First Broker Login` flow configuration;
-* set `Create User If Unique` to `DISABLED`;
-* set `Confirm Link Existing Account` to `DISABLED`.
+This default behavior may be unsuitable for some setups. One example is when you use a read-only LDAP user store, where all users are pre-created. In this case, you must switch off automatic user creation.
 
+To disable user creation:
+
+.Procedure
+. Click *Authentication* in the menu.
+. Select *First Broker Login* from the list.
+. Set *Create User If Unique* to *DISABLED*.
+. Set *Confirm Link Existing Account* to *DISABLED*.
+
+<<<<<<< HEAD
 This configuration also implies that Keycloak itself won't be able to determine which internal account would correspond to the external identity.
 Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
 
@@ -113,3 +113,6 @@ You have to set the `First Login Flow` of the identity provider configuration to
 You could set the also set `Sync Mode` to `force` if you want to update the user profile (Last Name, First Name...) with the identity provider attributes.
 
 NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as github, facebook ...) but you want to manage which users that can log in.
+=======
+With this configuration, {project_name} is unable to determine which internal account corresponds to the external identity. The *Verify Existing Account By Re-authentication* authenticator asks the provider for the username and password.
+>>>>>>> KEYCLOAK-15756 Initial wording (#58)

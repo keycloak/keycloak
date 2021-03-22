@@ -1,36 +1,32 @@
+
 [[_mappers]]
 === Mapping Claims and Assertions
 
-You can import the SAML and OpenID Connect metadata provided by the external IDP you are authenticating with into the environment
-of the realm.  This allows you to extract user profile metadata and other information so that you can make it available to your
-applications.
+You can import the SAML and OpenID Connect metadata, provided by the external IDP you are authenticating with, into the realm. After importing, you can extract user profile metadata and other information, so you can make it available to your applications.
 
-Each new user that logs into your realm via an external identity provider will have an entry for them created in the local
-{project_name} database, based on the metadata from the SAML or OIDC assertions and claims.
+Each user logging into your realm using an external identity provider has an entry in the local {project_name} database, based on the metadata from the SAML or OIDC assertions and claims.
 
-If you click on an identity provider listed in the `Identity Providers` page for your realm, you will be brought to the IDPs
-`Settings` tab.  On this page there is also a `Mappers` tab.  Click on that tab to start mapping your incoming IDP metadata.
+.Procedure
+. Click *Identity Providers* in the menu.
+. Select one of the identity providers in the list.
+. Click the *Mappers* tab.
++
+.identity provider mappers
+image:{project_images}/identity-provider-mappers.png[identity provider mappers]
++
+. Click *Create*.
++
+.identity provider mapper
+image:{project_images}/identity-provider-mapper.png[identity provider mapper]
++
+. Select a value for *Sync Mode Override*. The mapper updates user information when users log in repeatedly according to this setting.
+.. Select *legacy* to use the behavior of the previous {project_name} version.
+.. Select *import* to import data from when the user was first created in {project_name} during the first login to {project_name} with a particular identity provider. 
+.. Select *force* to update user data at each user login.
+.. Select *inherit* to use the sync mode configured in the identity provider. All other options will override this sync mode.
+. Select a mapper from the *Mapper Type* list. Hover over the *Mapper Type* for a description of the mapper and configuration to enter for the mapper.
+. Click *Save*.
 
-image:{project_images}/identity-provider-mappers.png[]
+For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, `contact.address[0].country`.
 
-There is a `Create` button on this page.
-Clicking on this create button allows you to create a broker mapper.
-Broker mappers can import SAML attributes or OIDC ID/Access token claims into user attributes and user role mappings.
-
-image:{project_images}/identity-provider-mapper.png[]
-
-Select a mapper from the `Mapper Type` list.  Hover over the tooltip to see a description of what the mapper does.  The
-tooltips also describe what configuration information you need to enter. Click `Save` and your new mapper will be added.
-
-The mapper will update user information when the user logs in repeatedly according to the `Sync Mode Override`:
-
-* Choose `legacy` to use the behavior in the previous {project_name} version.
-* Choose `import` to import only data from when the user was first created in {project_name} during the first login to {project_name} with a particular identity provider. 
-* Choose `force` to update user data at each user login.
-* Choose `inherit` to use the sync mode configured in the identity provider, all other options will override this sync mode.
-
-For JSON based claims, you can use dot notation for nesting and square brackets to access array fields by index.
-For example 'contact.address[0].country'.
-
-To investigate the structure of user profile JSON data provided by social providers you can enable the `DEBUG` level logger `org.keycloak.social.user_profile_dump`.
-This is done in the server's app-server configuration file (domain.xml or standalone.xml).
+To investigate the structure of user profile JSON data provided by social providers, you can enable the `DEBUG` level logger `org.keycloak.social.user_profile_dump` in the server's app-server configuration file (domain.xml or standalone.xml).

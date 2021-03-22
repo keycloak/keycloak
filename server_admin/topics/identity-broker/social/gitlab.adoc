@@ -1,30 +1,17 @@
 
 ==== GitLab
 
-There are a number of steps you have to complete to be able to enable login with GitLab.
-
-First, go to the `Identity Providers` left menu item and select `GitLab` from the `Add provider` drop down list. This will bring you to the `Add identity provider` page.
-
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `GitLab`.
++
 .Add Identity Provider
-image:{project_images}/gitlab-add-identity-provider.png[]
-
-Before you can click `Save`, you must obtain a `Client ID` and `Client Secret` from GitLab.
-
-NOTE: You will use the `Redirect URI` from this page in a later step, which you will provide to GitLab when you register {project_name} as a client there.
-
-To enable login with GitLab you first have to register an application in
-https://docs.gitlab.com/ee/integration/oauth_provider.html[GitLab as OAuth2 authentication service provider].
-
-NOTE: GitLab often changes the look and feel of application registration, so what you see on the GitLab site may differ. If in doubt, see the GitLab documentation.
-
-.Add a New App
-image:images/gitlab-developer-applications.png[]
-
-Copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the Redirect URI field on the GitLab Add new application page.
-
-.GitLab App Page
-image:images/gitlab-app-page.png[]
-
-When you are done registering, click `Save application`. This will open the application management page in GitLab. Find the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page.
-
-To finish, return to {project_name} and enter them. Click `Save`.
+image:{project_images}/github-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, https://docs.gitlab.com/ee/integration/oauth_provider.html[add a new GitLab application].
+.. Use the *Redirect URI* in your clipboard as the *Redirect URI*.
+.. Note the `Client ID` and `Client Secret` when you save the application.
+. In {project_name}, paste the value of the `Client ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Client Secret` into the *Client Secret* field.
+. Click *Save*.

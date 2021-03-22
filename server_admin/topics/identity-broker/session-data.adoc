@@ -1,15 +1,12 @@
 
 === Available User Session Data
 
-After a user logs in from the external IDP, there is some additional user session note data that {project_name} stores that you can access.
-This data can be propagated to the client requesting a login via the token or SAML assertion being passed back to it by using an appropriate client mapper.
+After a user login from an external IDP, {project_name} stores user session note data that you can access. This data can be propagated to the client requesting log in using the token or SAML assertion passed back to the client using an appropriate client mapper.
 
 identity_provider::
-  This is the IDP alias of the broker used to perform the login.
+  The IDP alias of the broker used to perform the login.
 
 identity_provider_identity::
-  This is the IDP username of the currently authenticated user. This is often the same as the {project_name} username, but doesn't necessarily needs to be.
-  For example {project_name} user `john` can be linked to the Facebook user `john123@gmail.com`, so in that case value of user session note will be `john123@gmail.com` .
+  The IDP username of the currently authenticated user. Often, but not always, the same as the {project_name} username. For example, {project_name} can link a user john` to a Facebook user `john123@gmail.com`. In that case, the value of the user session note is `john123@gmail.com`.
 
 You can use a <<_protocol-mappers, Protocol Mapper>> of type `User Session Note` to propagate this information to your clients.
-
