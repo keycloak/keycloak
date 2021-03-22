@@ -58,7 +58,7 @@
     },
 
     "authorizationPersister": {
-        "provider": "${keycloak.authorization.provider:}"
+        "provider": "${keycloak.authorization.provider:jpa}"
     },
 
     "theme": {

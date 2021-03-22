@@ -35,7 +35,7 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "RESOURCE_SERVER_PERM_TICKET", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"OWNER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
+        @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
 })
 @NamedQueries(
     {

@@ -48,16 +48,14 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
@@ -173,17 +171,6 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         return paginatedStream(providersStream.flatMap(pagedQuery::query), firstResult, maxResults);
-    }
-
-    /**
-     * distinctByKey is not supposed to be used with parallel streams
-     *
-     * To make this method synchronized use {@code ConcurrentHashMap<Object, Boolean>} instead of HashSet
-     *
-      */
-    private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
-        Set<Object> seen = new HashSet<>();
-        return t -> seen.add(keyExtractor.apply(t));
     }
 
     // removeDuplicates method may cause concurrent issues, it should not be used on parallel streams

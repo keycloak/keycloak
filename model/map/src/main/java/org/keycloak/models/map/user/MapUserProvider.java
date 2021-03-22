@@ -50,6 +50,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -691,9 +692,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
             HashSet<String> authorizedGroups = new HashSet<>(userGroups);
             authorizedGroups.removeIf(id -> {
-                Map<String, String[]> values = new HashMap<>();
-                values.put(Resource.EXACT_NAME, new String[] { "true" });
-                values.put("name", new String[] { "group.resource." + id });
+                Map<Resource.FilterOption, String[]> values = new EnumMap<>(Resource.FilterOption.class);
+                values.put(Resource.FilterOption.EXACT_NAME, new String[] { "group.resource." + id });
                 return resourceStore.findByResourceServer(values, null, 0, 1).isEmpty();
             });
 
