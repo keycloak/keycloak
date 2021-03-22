@@ -1330,6 +1330,6 @@ public class RealmRepresentation {
 
     @JsonIgnore
     public Map<String, String> getAttributesOrEmpty() {
-        return attributes == null ? Collections.emptyMap() : attributes;
+        return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
     }
 }

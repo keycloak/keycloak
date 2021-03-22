@@ -610,7 +610,6 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @Ignore
     public void testChangeInterval() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -624,6 +623,8 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // first user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(firstUsername);
             Assert.assertThat(response.getInterval(), is(equalTo(5)));
+            // dequeue user Authentication Channel Request by first user to revert the initial setting of the queue
+            doAuthenticationChannelRequest();
 
             // set interval
             RealmRepresentation rep = backupCIBAPolicy();
@@ -637,6 +638,8 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // second user Backchannel Authentication Request
             response = doBackchannelAuthenticationRequest(secondUsername);
             Assert.assertThat(response.getInterval(), is(equalTo(10)));
+            // dequeue user Authentication Channel Request by second user to revert the initial setting of the queue
+            doAuthenticationChannelRequest();
         } finally {
             revertCIBASettings(clientResource, clientRep);
             restoreCIBAPolicy();
