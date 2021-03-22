@@ -905,9 +905,10 @@ public class AuthenticationManager {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
 
         // Update userSession note with authTime. But just if flag SSO_AUTH is not set
-        boolean isSSOAuthentication = "true".equals(session.getAttribute(SSO_AUTH));
+        boolean isSSOAuthentication = "true".equals(authSession.getAuthNote(SSO_AUTH));
         if (isSSOAuthentication) {
             clientSession.setNote(SSO_AUTH, "true");
+            authSession.removeAuthNote(SSO_AUTH);
         } else {
             int authTime = Time.currentTime();
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
