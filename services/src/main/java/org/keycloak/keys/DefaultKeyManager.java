@@ -31,8 +31,15 @@ import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -55,20 +62,22 @@ public class DefaultKeyManager implements KeyManager {
             return activeKey;
         }
 
-        logger.debugv("Failed to find active key for realm, trying fallback: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
+        logger.debugv("Failed to find active key for realm, trying fallback: realm={0} algorithm={1} use={2}",
+                realm.getName(), algorithm, use.name());
 
-        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(KeyProvider.class)) {
-            KeyProviderFactory kf = (KeyProviderFactory) f;
-            if (kf.createFallbackKeys(session, use, algorithm)) {
-                providersMap.remove(realm.getId());
-                List<KeyProvider> providers = getProviders(realm);
-                activeKey = getActiveKey(providers, realm, use, algorithm);
-                if (activeKey != null) {
-                    logger.infov("No keys found for realm={0} and algorithm={1} for use={2}. Generating keys.", realm.getName(), algorithm, use.name());
-                    return activeKey;
-                } else {
-                    break;
-                }
+        Optional<KeyProviderFactory> keyProviderFactory = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(KeyProvider.class)
+                .map(KeyProviderFactory.class::cast)
+                .filter(kf -> kf.createFallbackKeys(session, use, algorithm))
+                .findFirst();
+        if (keyProviderFactory.isPresent()) {
+            providersMap.remove(realm.getId());
+            List<KeyProvider> providers = getProviders(realm);
+            activeKey = getActiveKey(providers, realm, use, algorithm);
+            if (activeKey != null) {
+                logger.infov("No keys found for realm={0} and algorithm={1} for use={2}. Generating keys.",
+                        realm.getName(), algorithm, use.name());
+                return activeKey;
             }
         }
 
@@ -77,15 +86,20 @@ public class DefaultKeyManager implements KeyManager {
     }
 
     private KeyWrapper getActiveKey(List<KeyProvider> providers, RealmModel realm, KeyUse use, String algorithm) {
-        for (KeyProvider p : providers) {
-            for (KeyWrapper key : p .getKeys()) {
-                if (key.getStatus().isActive() && matches(key, use, algorithm)) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Active key found: realm={0} kid={1} algorithm={2} use={3}", realm.getName(), key.getKid(), algorithm, use.name());
-                    }
+        Consumer<KeyWrapper> loggerConsumer = key -> {
+            if (logger.isTraceEnabled()) {
+                logger.tracev("Active key found: realm={0} kid={1} algorithm={2} use={3}",
+                        realm.getName(), key.getKid(), algorithm, use.name());
+            }
+        };
 
-                    return key;
-                }
+        for (KeyProvider p : providers) {
+            Optional<KeyWrapper> keyWrapper = p.getKeysStream()
+                    .filter(key -> key.getStatus().isActive() && matches(key, use, algorithm))
+                    .peek(loggerConsumer)
+                    .findFirst();
+            if (keyWrapper.isPresent()) {
+                return keyWrapper.get();
             }
         }
         return null;
@@ -94,19 +108,25 @@ public class DefaultKeyManager implements KeyManager {
     @Override
     public KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm) {
         if (kid == null) {
-            logger.warnv("kid is null, can't find public key", realm.getName(), kid);
+            logger.warnv("kid is null, can't find public key: realm={0}", realm.getName());
             return null;
         }
 
-        for (KeyProvider p : getProviders(realm)) {
-            for (KeyWrapper key : p.getKeys()) {
-                if (key.getKid().equals(kid) && key.getStatus().isEnabled() && matches(key, use, algorithm)) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracev("Found key: realm={0} kid={1} algorithm={2} use={3}", realm.getName(), key.getKid(), algorithm, use.name());
-                    }
+        Consumer<KeyWrapper> loggerConsumer = key -> {
+            if (logger.isTraceEnabled()) {
+                logger.tracev("Found key: realm={0} kid={1} algorithm={2} use={3}",
+                        realm.getName(), key.getKid(), algorithm, use.name());
+            }
+        };
 
-                    return key;
-                }
+        for (KeyProvider p : getProviders(realm)) {
+            Optional<KeyWrapper> keyWrapper = p.getKeysStream()
+                    .filter(key -> Objects.equals(key.getKid(), kid) && key.getStatus().isEnabled() && matches(key, use, algorithm))
+                    .peek(loggerConsumer)
+                    .findFirst();
+
+            if (keyWrapper.isPresent()) {
+                return keyWrapper.get();
             }
         }
 
@@ -118,25 +138,15 @@ public class DefaultKeyManager implements KeyManager {
     }
 
     @Override
-    public List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm) {
-        List<KeyWrapper> keys = new LinkedList<>();
-        for (KeyProvider p : getProviders(realm)) {
-            for (KeyWrapper key : p .getKeys()) {
-                if (key.getStatus().isEnabled() && matches(key, use, algorithm)) {
-                    keys.add(key);
-                }
-            }
-        }
-        return keys;
+    public Stream<KeyWrapper> getKeysStream(RealmModel realm, KeyUse use, String algorithm) {
+        return getProviders(realm).stream()
+                .flatMap(p -> p.getKeysStream()
+                                .filter(key -> key.getStatus().isEnabled() && matches(key, use, algorithm)));
     }
 
     @Override
-    public List<KeyWrapper> getKeys(RealmModel realm) {
-        List<KeyWrapper> keys = new LinkedList<>();
-        for (KeyProvider p : getProviders(realm)) {
-            keys.addAll(p.getKeys());
-        }
-        return keys;
+    public Stream<KeyWrapper> getKeysStream(RealmModel realm) {
+        return getProviders(realm).stream().flatMap(KeyProvider::getKeysStream);
     }
 
     @Override
@@ -191,49 +201,46 @@ public class DefaultKeyManager implements KeyManager {
     @Override
     @Deprecated
     public List<RsaKeyMetadata> getRsaKeys(RealmModel realm) {
-        List<RsaKeyMetadata> keys = new LinkedList<>();
-        for (KeyWrapper key : getKeys(realm, KeyUse.SIG, Algorithm.RS256)) {
-            RsaKeyMetadata m = new RsaKeyMetadata();
-            m.setCertificate(key.getCertificate());
-            m.setPublicKey((PublicKey) key.getPublicKey());
-            m.setKid(key.getKid());
-            m.setProviderId(key.getProviderId());
-            m.setProviderPriority(key.getProviderPriority());
-            m.setStatus(key.getStatus());
-
-            keys.add(m);
-        }
-        return keys;
+        return getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+                .map(key -> {
+                    RsaKeyMetadata m = new RsaKeyMetadata();
+                    m.setCertificate(key.getCertificate());
+                    m.setPublicKey((PublicKey) key.getPublicKey());
+                    m.setKid(key.getKid());
+                    m.setProviderId(key.getProviderId());
+                    m.setProviderPriority(key.getProviderPriority());
+                    m.setStatus(key.getStatus());
+                    return m;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<SecretKeyMetadata> getHmacKeys(RealmModel realm) {
-        List<SecretKeyMetadata> keys = new LinkedList<>();
-        for (KeyWrapper key : getKeys(realm, KeyUse.SIG, Algorithm.HS256)) {
-            SecretKeyMetadata m = new SecretKeyMetadata();
-            m.setKid(key.getKid());
-            m.setProviderId(key.getProviderId());
-            m.setProviderPriority(key.getProviderPriority());
-            m.setStatus(key.getStatus());
-
-            keys.add(m);
-        }
-        return keys;
+        return getKeysStream(realm, KeyUse.SIG, Algorithm.HS256)
+                .map(key -> {
+                    SecretKeyMetadata m = new SecretKeyMetadata();
+                    m.setKid(key.getKid());
+                    m.setProviderId(key.getProviderId());
+                    m.setProviderPriority(key.getProviderPriority());
+                    m.setStatus(key.getStatus());
+                    return m;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<SecretKeyMetadata> getAesKeys(RealmModel realm) {
-        List<SecretKeyMetadata> keys = new LinkedList<>();
-        for (KeyWrapper key : getKeys(realm, KeyUse.ENC, Algorithm.AES)) {
-            SecretKeyMetadata m = new SecretKeyMetadata();
-            m.setKid(key.getKid());
-            m.setProviderId(key.getProviderId());
-            m.setProviderPriority(key.getProviderPriority());
-            m.setStatus(key.getStatus());
-
-            keys.add(m);
-        }
-        return keys;
+        return getKeysStream(realm, KeyUse.ENC, Algorithm.AES)
+                .map(key -> {
+                    SecretKeyMetadata m = new SecretKeyMetadata();
+                    m.setKid(key.getKid());
+                    m.setProviderId(key.getProviderId());
+                    m.setProviderPriority(key.getProviderPriority());
+                    m.setStatus(key.getStatus());
+                    return m;
+                })
+                .collect(Collectors.toList());
     }
 
     private boolean matches(KeyWrapper key, KeyUse use, String algorithm) {

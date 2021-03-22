@@ -93,41 +93,42 @@ public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    @Test(timeout = 4000)
-    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
-    public void testSearchTimeout() {
-        String hardcodedRole = HardcodedRoleStorageProviderFactory.PROVIDER_ID;
-        String delayedSearch = HardcodedRoleStorageProviderFactory.DELAYED_SEARCH;
-        String providerId = this.providerId;
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+    @Test
+    public void testSearchTimeout() throws Exception{
+        runTestWithTimeout(4000, () -> {
+            String hardcodedRole = HardcodedRoleStorageProviderFactory.PROVIDER_ID;
+            String delayedSearch = HardcodedRoleStorageProviderFactory.DELAYED_SEARCH;
+            String providerId = this.providerId;
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            assertThat(session.roleStorageManager()
-                        .searchForRolesStream(realm, "role", null, null)
-                        .map(RoleModel::getName)
-                        .collect(Collectors.toList()), 
-                    allOf(
-                        hasItem(hardcodedRole),
-                        hasItem("sample-realm-role"))
-                    );
+                assertThat(session.roleStorageManager()
+                            .searchForRolesStream(realm, "role", null, null)
+                            .map(RoleModel::getName)
+                            .collect(Collectors.toList()),
+                        allOf(
+                            hasItem(hardcodedRole),
+                            hasItem("sample-realm-role"))
+                        );
 
-            //update the provider to simulate delay during the search
-            ComponentModel memoryProvider = realm.getComponent(providerId);
-            memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));
-            realm.updateComponent(memoryProvider);
-        });
+                //update the provider to simulate delay during the search
+                ComponentModel memoryProvider = realm.getComponent(providerId);
+                memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));
+                realm.updateComponent(memoryProvider);
+            });
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
-            // search for roles and check hardcoded-role is not present
-            assertThat(session.roleStorageManager()
-                        .searchForRolesStream(realm, "role", null, null)
-                        .map(RoleModel::getName)
-                        .collect(Collectors.toList()),
-                    allOf(
-                        not(hasItem(hardcodedRole)), 
-                        hasItem("sample-realm-role")
-                    ));
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                // search for roles and check hardcoded-role is not present
+                assertThat(session.roleStorageManager()
+                            .searchForRolesStream(realm, "role", null, null)
+                            .map(RoleModel::getName)
+                            .collect(Collectors.toList()),
+                        allOf(
+                            not(hasItem(hardcodedRole)),
+                            hasItem("sample-realm-role")
+                        ));
+            });
         });
     }
 

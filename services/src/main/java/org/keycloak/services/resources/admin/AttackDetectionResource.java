@@ -79,7 +79,7 @@ public class AttackDetectionResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> bruteForceUserStatus(@PathParam("userId") String userId) {
-        UserModel user = session.users().getUserById(userId, realm);
+        UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
             auth.users().requireView();
         } else {
@@ -123,7 +123,7 @@ public class AttackDetectionResource {
     @Path("brute-force/users/{userId}")
     @DELETE
     public void clearBruteForceForUser(@PathParam("userId") String userId) {
-        UserModel user = session.users().getUserById(userId, realm);
+        UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
             auth.users().requireManage();
         } else {

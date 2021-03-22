@@ -18,13 +18,18 @@
 package org.keycloak.testsuite.ui.account2.page;
 
 import org.keycloak.representations.idm.UserRepresentation;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIAssert.assertElementDisabled;
 import static org.keycloak.testsuite.util.UIAssert.assertInputElementValid;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
+import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 
 import static org.junit.Assert.assertEquals;
@@ -47,6 +52,8 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     private WebElement saveBtn;
     @FindBy(id = "cancel-btn")
     private WebElement cancelBtn;
+    @FindBy(id = "delete-account")
+    private WebElement deleteAccountSection;
 
     @Override
     public String getPageId() {
@@ -109,6 +116,14 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
         assertElementDisabled(expected, saveBtn);
     }
 
+    public void assertDeleteAccountSectionVisible(boolean expected) {
+      if (deleteAccountSection == null) {
+        assertFalse(expected);
+        return;
+      }
+        assertEquals(expected, isElementVisible(deleteAccountSection));
+    }
+
     public void clickSave() {
         clickSave(true);
     }
@@ -122,6 +137,14 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     public void clickCancel() {
         cancelBtn.click();
+    }
+
+    public void clickOpenDeleteExapandable() {
+        clickLink(driver.findElement(By.cssSelector(".pf-c-expandable__toggle")));
+    }
+
+    public void clickDeleteAccountButton() {
+      clickLink(driver.findElement(By.id("delete-account-btn")));
     }
 
     public void setValues(UserRepresentation user, boolean includeUsername) {

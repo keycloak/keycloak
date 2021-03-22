@@ -1,0 +1,61 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="#/realms/{{realm.realm}}/localization">{{:: 'lookup' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/localization/upload">{{:: 'localization-upload-file' | translate}}</a></li>
+    </ul>
+
+    <form class="form-horizontal" name="realmForm" novalidate>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="selectedRealmSpecificLocales">{{:: 'locale' | translate}}</label>
+            <div class="col-md-6" ng-show="realmSpecificLocales.length > 0">
+                <select class="form-control" id="selectedRealmSpecificLocales"
+                        ng-model="selectedRealmSpecificLocales"
+                        ng-options="o as o for o in realmSpecificLocales">
+                    <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
+                </select>
+            </div>
+            <div class="col-md-6" ng-show="realmSpecificLocales.length < 1">
+                {{:: 'no-localizations-configured' | translate}}
+            </div>
+        </div>
+        <div class="form-group clearfix">
+            <label class="col-md-2 control-label"></label>
+            <div class="col-md-6">
+                <input class="form-control ng-pristine ng-untouched ng-empty ng-invalid" id="newLocale" type="text" ng-model="newLocale" placeholder="locale">
+            </div>
+            <div class="col-sm-4">
+                <button class="btn btn-primary ng-binding" type="submit" data-ng-click="createLocale()">Create</button>
+            </div>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered" data-ng-show="localizationTexts">
+        <thead>
+        <tr>
+            <th class="kc-table-actions" colspan="4">
+                <div class="form-inline">
+                    <div class="pull-right" data-ng-show="access.manageRealm">
+                        <a id="createLocalizationText" class="btn btn-default" href="#/create/localization/{{realm.realm}}/{{selectedRealmSpecificLocales}}">{{:: 'add-localization-text' | translate}}</a>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        <tr >
+            <th>{{:: 'key' | translate}}</th>
+            <th>{{:: 'value' | translate}}</th>
+            <th colspan="2">{{:: 'actions' | translate}}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="(key, value) in localizationTexts">
+            <td>{{key}}</td>
+            <td>{{value}}</td>
+            <td class="kc-action-cell"  kc-open="/realms/{{realm.realm}}/localization/{{selectedRealmSpecificLocales}}/{{key}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeLocalizationText(key)">{{:: 'delete' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

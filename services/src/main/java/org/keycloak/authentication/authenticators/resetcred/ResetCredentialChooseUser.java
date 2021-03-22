@@ -31,8 +31,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -63,7 +65,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
 
         String actionTokenUserId = context.getAuthenticationSession().getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
         if (actionTokenUserId != null) {
-            UserModel existingUser = context.getSession().users().getUserById(actionTokenUserId, context.getRealm());
+            UserModel existingUser = context.getSession().users().getUserById(context.getRealm(), actionTokenUserId);
 
             // Action token logics handles checks for user ID validity and user being enabled
 
@@ -85,7 +87,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         if (username == null || username.isEmpty()) {
             event.error(Errors.USERNAME_MISSING);
             Response challenge = context.form()
-                    .setError(Messages.MISSING_USERNAME)
+                    .addError(new FormMessage(Validation.FIELD_USERNAME, Messages.MISSING_USERNAME))
                     .createPasswordReset();
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
             return;
@@ -94,9 +96,9 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         username = username.trim();
         
         RealmModel realm = context.getRealm();
-        UserModel user = context.getSession().users().getUserByUsername(username, realm);
+        UserModel user = context.getSession().users().getUserByUsername(realm, username);
         if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
-            user =  context.getSession().users().getUserByEmail(username, realm);
+            user =  context.getSession().users().getUserByEmail(realm, username);
         }
 
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);

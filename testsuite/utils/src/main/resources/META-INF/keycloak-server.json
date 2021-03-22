@@ -22,12 +22,20 @@
         "provider": "${keycloak.client.provider:jpa}"
     },
 
+    "clientScope": {
+        "provider": "${keycloak.clientScope.provider:jpa}"
+    },
+
     "group": {
         "provider": "${keycloak.group.provider:jpa}"
     },
 
     "role": {
         "provider": "${keycloak.role.provider:jpa}"
+    },
+
+    "authenticationSessions": {
+        "provider": "${keycloak.authSession.provider:infinispan}"
     },
 
     "mapStorage": {
@@ -38,7 +46,7 @@
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:}"
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
     "userFederatedStorage": {
@@ -105,6 +113,13 @@
                 "http=${auth.server.http.port}",
                 "https=${auth.server.https.port}"
             ]
+        }
+    },
+
+    "userProfile": {
+        "legacy-user-profile": {
+            "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
+            "admin-read-only-attributes": [ "deniedSomeAdmin" ]
         }
     },
 

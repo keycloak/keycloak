@@ -48,6 +48,18 @@ public interface ClientPolicyConditionProvider extends Provider {
         return ClientPolicyVote.ABSTAIN;
     }
 
+    /**
+     * tells whether the result of applyPolicy method is inverted or not as follows.
+     *  ClientPolicyVote.YES is inverted to ClientPolicyVote.NO
+     *  ClientPolicyVote.NO is inverted to ClientPolicyVote.YES
+     *  ClientPolicyVote.ABSTAIN remains unchanged
+     *
+     * @return true if the result of applyPolicy method is inverted.
+     */
+    default boolean isNegativeLogic() {
+        return false;
+    }
+
     String getName();
 
     String getProviderId();

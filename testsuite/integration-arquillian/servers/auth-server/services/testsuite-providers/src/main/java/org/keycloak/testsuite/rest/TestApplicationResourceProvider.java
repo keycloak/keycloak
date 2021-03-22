@@ -19,11 +19,12 @@ package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -39,6 +40,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -54,15 +56,22 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private KeycloakSession session;
 
     private final BlockingQueue<LogoutAction> adminLogoutActions;
+    private final BlockingQueue<LogoutToken> backChannelLogoutTokens;
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
+    @Context
+    HttpRequest request;
+
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
+            BlockingQueue<LogoutToken> backChannelLogoutTokens,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
-            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction, TestApplicationResourceProviderFactory.OIDCClientData oidcClientData) {
+            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
+            TestApplicationResourceProviderFactory.OIDCClientData oidcClientData) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
+        this.backChannelLogoutTokens = backChannelLogoutTokens;
         this.adminPushNotBeforeActions = adminPushNotBeforeActions;
         this.adminTestAvailabilityAction = adminTestAvailabilityAction;
         this.oidcClientData = oidcClientData;
@@ -73,6 +82,13 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/admin/k_logout")
     public void adminLogout(String data) throws JWSInputException {
         adminLogoutActions.add(new JWSInput(data).readJsonContent(LogoutAction.class));
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path("/admin/backchannelLogout")
+    public void backchannelLogout() throws JWSInputException {
+        backChannelLogoutTokens.add(new JWSInput(request.getDecodedFormParameters().getFirst(OAuth2Constants.LOGOUT_TOKEN)).readJsonContent(LogoutToken.class));
     }
 
     @POST
@@ -94,6 +110,13 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/poll-admin-logout")
     public LogoutAction getAdminLogoutAction() throws InterruptedException {
         return adminLogoutActions.poll(10, TimeUnit.SECONDS);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-backchannel-logout")
+    public LogoutToken getBackChannelLogoutAction() throws InterruptedException {
+        return backChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
     }
 
     @GET
@@ -122,7 +145,11 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Consumes(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
-    public String post(@PathParam("action") String action, MultivaluedMap<String, String> formParams) {
+    public Response post(@PathParam("action") String action) {
+        if ("clear-admin-actions".equals(action)) {
+            return clearAdminActions();
+        }
+        MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         String title = "APP_REQUEST";
         if (action.equals("auth")) {
             title = "AUTH_RESPONSE";
@@ -146,7 +173,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
-        return sb.toString();
+        return Response.ok(sb.toString()).build();
     }
 
     @GET

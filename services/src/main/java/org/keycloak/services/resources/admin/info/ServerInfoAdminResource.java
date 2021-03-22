@@ -27,7 +27,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyProviderFactory;
@@ -41,7 +40,6 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
-import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
@@ -61,6 +59,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -68,6 +67,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -163,15 +164,15 @@ public class ServerInfoAdminResource {
     }
 
     private void setThemes(ServerInfoRepresentation info) {
-        info.setThemes(new HashMap<String, List<ThemeInfoRepresentation>>());
+        info.setThemes(new HashMap<>());
 
         for (Theme.Type type : Theme.Type.values()) {
             List<String> themeNames = new LinkedList<>(session.theme().nameSet(type));
             Collections.sort(themeNames);
 
             if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-                themeNames.remove("keycloak-preview");
-                themeNames.remove("rh-sso-preview");
+                themeNames.remove("keycloak.v2");
+                themeNames.remove("rh-sso.v2");
             }
 
             List<ThemeInfoRepresentation> themes = new LinkedList<>();
@@ -197,99 +198,123 @@ public class ServerInfoAdminResource {
     }
 
     private void setSocialProviders(ServerInfoRepresentation info) {
-        info.setSocialProviders(new LinkedList<Map<String, String>>());
-        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
+        info.setSocialProviders(new LinkedList<>());
+        Stream<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class);
         setIdentityProviders(providerFactories, info.getSocialProviders(), "Social");
     }
 
     private void setIdentityProviders(ServerInfoRepresentation info) {
-        info.setIdentityProviders(new LinkedList<Map<String, String>>());
-        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class);
+        info.setIdentityProviders(new LinkedList<>());
+        Stream<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class);
         setIdentityProviders(providerFactories, info.getIdentityProviders(), "User-defined");
 
-        providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
+        providerFactories = session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class);
         setIdentityProviders(providerFactories, info.getIdentityProviders(), "Social");
     }
 
-    public void setIdentityProviders(List<ProviderFactory> factories, List<Map<String, String>> providers, String groupName) {
-        for (ProviderFactory providerFactory : factories) {
-            IdentityProviderFactory factory = (IdentityProviderFactory) providerFactory;
-            Map<String, String> data = new HashMap<>();
-            data.put("groupName", groupName);
-            data.put("name", factory.getName());
-            data.put("id", factory.getId());
+    public void setIdentityProviders(Stream<ProviderFactory> factories, List<Map<String, String>> providers, String groupName) {
+        List<Map<String, String>> providerMaps = factories
+                .map(IdentityProviderFactory.class::cast)
+                .map(factory -> {
+                    Map<String, String> data = new HashMap<>();
+                    data.put("groupName", groupName);
+                    data.put("name", factory.getName());
+                    data.put("id", factory.getId());
+                    return data;
+                })
+                .collect(Collectors.toList());
 
-            providers.add(data);
-        }
+        providers.addAll(providerMaps);
     }
 
     private void setClientInstallations(ServerInfoRepresentation info) {
-        info.setClientInstallations(new HashMap<String, List<ClientInstallationRepresentation>>());
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ClientInstallationProvider.class)) {
-            ClientInstallationProvider provider = (ClientInstallationProvider)p;
-            List<ClientInstallationRepresentation> types = info.getClientInstallations().get(provider.getProtocol());
-            if (types == null) {
-                types = new LinkedList<>();
-                info.getClientInstallations().put(provider.getProtocol(), types);
-            }
-            ClientInstallationRepresentation rep = new ClientInstallationRepresentation();
-            rep.setId(p.getId());
-            rep.setHelpText(provider.getHelpText());
-            rep.setDisplayType( provider.getDisplayType());
-            rep.setProtocol( provider.getProtocol());
-            rep.setDownloadOnly( provider.isDownloadOnly());
-            rep.setFilename(provider.getFilename());
-            rep.setMediaType(provider.getMediaType());
-            types.add(rep);
-        }
+        HashMap<String, List<ClientInstallationRepresentation>> clientInstallations = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(ClientInstallationProvider.class)
+                .map(ClientInstallationProvider.class::cast)
+                .collect(
+                        Collectors.toMap(
+                                ClientInstallationProvider::getProtocol,
+                                this::toClientInstallationRepresentation,
+                                (l1, l2) -> listCombiner(l1, l2),
+                                HashMap::new
+                        )
+                );
+        info.setClientInstallations(clientInstallations);
+
     }
 
     private void setProtocolMapperTypes(ServerInfoRepresentation info) {
-        info.setProtocolMapperTypes(new HashMap<String, List<ProtocolMapperTypeRepresentation>>());
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ProtocolMapper.class)) {
-            ProtocolMapper mapper = (ProtocolMapper)p;
-            List<ProtocolMapperTypeRepresentation> types = info.getProtocolMapperTypes().get(mapper.getProtocol());
-            if (types == null) {
-                types = new LinkedList<>();
-                info.getProtocolMapperTypes().put(mapper.getProtocol(), types);
-            }
-            ProtocolMapperTypeRepresentation rep = new ProtocolMapperTypeRepresentation();
-            rep.setId(mapper.getId());
-            rep.setName(mapper.getDisplayType());
-            rep.setHelpText(mapper.getHelpText());
-            rep.setCategory(mapper.getDisplayCategory());
-            rep.setPriority(mapper.getPriority());
-            rep.setProperties(new LinkedList<ConfigPropertyRepresentation>());
-            List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
-            rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
-            types.add(rep);
-        }
+        HashMap<String, List<ProtocolMapperTypeRepresentation>> protocolMappers = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(ProtocolMapper.class)
+                .map(ProtocolMapper.class::cast)
+                .collect(
+                        Collectors.toMap(
+                                ProtocolMapper::getProtocol,
+                                this::toProtocolMapperTypeRepresentation,
+                                (l1, l2) -> listCombiner(l1, l2),
+                                HashMap::new
+                        )
+                );
+        info.setProtocolMapperTypes(protocolMappers);
     }
 
     private void setBuiltinProtocolMappers(ServerInfoRepresentation info) {
-        info.setBuiltinProtocolMappers(new HashMap<String, List<ProtocolMapperRepresentation>>());
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
-            LoginProtocolFactory factory = (LoginProtocolFactory)p;
-            List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
-            for (ProtocolMapperModel mapper : factory.getBuiltinMappers().values()) {
-                mappers.add(ModelToRepresentation.toRepresentation(mapper));
-            }
-            info.getBuiltinProtocolMappers().put(p.getId(), mappers);
-        }
+        Map<String, List<ProtocolMapperRepresentation>> protocolMappers = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(LoginProtocol.class)
+                .collect(Collectors.toMap(
+                        p -> p.getId(),
+                        p -> {
+                            LoginProtocolFactory factory = (LoginProtocolFactory) p;
+                            return factory.getBuiltinMappers().values().stream()
+                                    .map(ModelToRepresentation::toRepresentation)
+                                    .collect(Collectors.toList());
+                        })
+                );
+        info.setBuiltinProtocolMappers(protocolMappers);
     }
 
     private void setPasswordPolicies(ServerInfoRepresentation info) {
-        info.setPasswordPolicies(new LinkedList<>());
-        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(PasswordPolicyProvider.class)) {
-            PasswordPolicyProviderFactory factory = (PasswordPolicyProviderFactory) f;
-            PasswordPolicyTypeRepresentation rep = new PasswordPolicyTypeRepresentation();
-            rep.setId(factory.getId());
-            rep.setDisplayName(factory.getDisplayName());
-            rep.setConfigType(factory.getConfigType());
-            rep.setDefaultValue(factory.getDefaultConfigValue());
-            rep.setMultipleSupported(factory.isMultiplSupported());
-            info.getPasswordPolicies().add(rep);
-        }
+        List<PasswordPolicyTypeRepresentation> passwordPolicyTypes= session.getKeycloakSessionFactory().getProviderFactoriesStream(PasswordPolicyProvider.class)
+                .map(PasswordPolicyProviderFactory.class::cast)
+                .map(factory -> {
+                    PasswordPolicyTypeRepresentation rep = new PasswordPolicyTypeRepresentation();
+                    rep.setId(factory.getId());
+                    rep.setDisplayName(factory.getDisplayName());
+                    rep.setConfigType(factory.getConfigType());
+                    rep.setDefaultValue(factory.getDefaultConfigValue());
+                    rep.setMultipleSupported(factory.isMultiplSupported());
+                    return rep;
+                })
+                .collect(Collectors.toList());
+        info.setPasswordPolicies(passwordPolicyTypes);
+    }
+
+    private List<ClientInstallationRepresentation> toClientInstallationRepresentation(ClientInstallationProvider provider) {
+        ClientInstallationRepresentation rep = new ClientInstallationRepresentation();
+        rep.setId(provider.getId());
+        rep.setHelpText(provider.getHelpText());
+        rep.setDisplayType( provider.getDisplayType());
+        rep.setProtocol( provider.getProtocol());
+        rep.setDownloadOnly( provider.isDownloadOnly());
+        rep.setFilename(provider.getFilename());
+        rep.setMediaType(provider.getMediaType());
+        return Arrays.asList(rep);
+    }
+
+    private List<ProtocolMapperTypeRepresentation> toProtocolMapperTypeRepresentation(ProtocolMapper mapper) {
+        ProtocolMapperTypeRepresentation rep = new ProtocolMapperTypeRepresentation();
+        rep.setId(mapper.getId());
+        rep.setName(mapper.getDisplayType());
+        rep.setHelpText(mapper.getHelpText());
+        rep.setCategory(mapper.getDisplayCategory());
+        rep.setPriority(mapper.getPriority());
+        List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
+        rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
+        return Arrays.asList(rep);
+    }
+
+    private static <T> List<T> listCombiner(List<T> list1, List<T> list2) {
+        return Stream.concat(list1.stream(), list2.stream()).collect(Collectors.toList());
     }
 
     private static Map<String, List<String>> createEnumsMap(Class... enums) {

@@ -60,13 +60,15 @@
     </target>
 
     <target name="scenario-standalone-generate" depends="io-worker-threads,
-                                                         inject-provider-and-truststore,
+                                                         inject-provider,
+                                                         inject-truststore,
                                                          log-level">
         <echo>cli scripts for standalone prepared</echo>
     </target>
 
     <target name="scenario-cluster-generate" depends="io-worker-threads, 
-                                                      inject-provider-and-truststore, 
+                                                      inject-provider,
+                                                      inject-truststore,
                                                       undertow-subsystem-cluster,
                                                       ispn-cache-owners,
                                                       log-level">
@@ -74,7 +76,8 @@
     </target>
 
     <target name="scenario-crossdc-generate" depends="io-worker-threads, 
-                                                      inject-provider-and-truststore, 
+                                                      inject-provider,
+                                                      inject-truststore,
                                                       cross-dc-setup,
                                                       log-level">
         <echo>cli scripts for crossdc prepared</echo>
@@ -92,10 +95,18 @@
         </copy>
     </target>
 
-    <target name="inject-provider-and-truststore">
+    <target name="inject-provider">
         <copy todir="${cli.tmp.dir}">
             <resources>
                 <file file="${common.resources}/jboss-cli/keycloak-server-subsystem.cli"/>
+            </resources>
+        </copy>
+    </target>
+
+    <target name="inject-truststore">
+        <copy todir="${cli.tmp.dir}">
+            <resources>
+                <file file="${common.resources}/jboss-cli/truststore.cli"/>
             </resources>
         </copy>
     </target>

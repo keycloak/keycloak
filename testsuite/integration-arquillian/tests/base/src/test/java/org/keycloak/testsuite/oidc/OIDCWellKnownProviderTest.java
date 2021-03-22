@@ -42,13 +42,13 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
@@ -58,7 +58,6 @@ import java.net.URI;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -101,7 +100,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testDiscovery() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
 
@@ -122,7 +121,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
-            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT);
+            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
+                OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
@@ -139,6 +139,11 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // Client authentication
             Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt", "tls_client_auth");
             Assert.assertNames(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+            Assert.assertNames(oidcConfig.getIntrospectionEndpointAuthMethodsSupported(), "client_secret_basic",
+                "client_secret_post", "private_key_jwt", "client_secret_jwt", "tls_client_auth");
+            Assert.assertNames(oidcConfig.getIntrospectionEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256,
+                Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256,
+                Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
 
             // Claims
             assertContains(oidcConfig.getClaimsSupported(), IDToken.NAME, IDToken.EMAIL, IDToken.PREFERRED_USERNAME, IDToken.FAMILY_NAME, IDToken.ACR);
@@ -153,6 +158,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // Request and Request_Uri
             Assert.assertTrue(oidcConfig.getRequestParameterSupported());
             Assert.assertTrue(oidcConfig.getRequestUriParameterSupported());
+            Assert.assertTrue(oidcConfig.getRequireRequestUriRegistration());
 
             // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
             // PKCE support
@@ -172,6 +178,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256,
                 Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256,
                 Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+
+            assertEquals(oidcConfig.getDeviceAuthorizationEndpoint(), oauth.getDeviceAuthorizationUrl());
         } finally {
             client.close();
         }
@@ -179,7 +187,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testHttpDiscovery() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, "http://localhost:8180/auth");
 
@@ -201,7 +209,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
 
@@ -214,7 +222,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void corsTest() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", OIDCWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
@@ -240,7 +248,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testIntrospectionEndpointClaim() throws IOException {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             ObjectNode oidcConfig = JsonSerialization
                 .readValue(getOIDCDiscoveryConfiguration(client, OAuthClient.AUTH_SERVER_ROOT), ObjectNode.class);

@@ -83,7 +83,7 @@ final class BrokerRunOnServerUtil {
             RealmModel realm = session.getContext().getRealm();
             ClientModel brokerClient = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
             RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             user.grantRole(readTokenRole);
         };
     }
@@ -93,7 +93,7 @@ final class BrokerRunOnServerUtil {
             RealmModel realm = session.getContext().getRealm();
             ClientModel brokerClient = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
             RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             user.deleteRoleMapping(readTokenRole);
         };
     }
@@ -134,9 +134,8 @@ final class BrokerRunOnServerUtil {
     static RunOnServer assertHardCodedSessionNote() {
         return (session) -> {
             RealmModel realm = session.realms().getRealmByName("consumer");
-            UserModel user = session.users().getUserByUsername("testuser", realm);
-            List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-            UserSessionModel sessions = userSessions.get(0);
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            UserSessionModel sessions = session.sessions().getUserSessionsStream(realm, user).findFirst().get();
             assertEquals("sessionvalue", sessions.getNote("user-session-attr"));
         };
     }

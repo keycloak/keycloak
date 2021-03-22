@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-    <@layout.registrationLayout; section>
+    <@layout.registrationLayout displayMessage=!messagesPerField.existsError('totp'); section>
         <#if section="header">
             ${msg("doLogIn")}
             <#elseif section="form">
@@ -9,13 +9,13 @@
                         <div class="${properties.kcFormGroupClass!}">
                             <div class="${properties.kcInputWrapperClass!}">
                                 <#list otpLogin.userOtpCredentials as otpCredential>
-                                    <div class="${properties.kcSelectOTPListClass!}">
+                                    <div class="${properties.kcLoginOTPListClass!}" tabindex="${otpCredential?index}">
                                     <input type="hidden" value="${otpCredential.id}">
-                                        <div class="${properties.kcSelectOTPListItemClass!}">
-                                            <span class="${properties.kcAuthenticatorOtpCircleClass!}"></span>
-                                            <h2 class="${properties.kcSelectOTPItemHeadingClass!}">
-                                                ${otpCredential.userLabel}
-                                            </h2>
+                                        <div class="${properties.kcLoginOTPListItemHeaderClass!}">
+                                            <div class="${properties.kcLoginOTPListItemIconBodyClass!}">
+                                              <i class="${properties.kcLoginOTPListItemIconClass!}" aria-hidden="true"></i>
+                                            </div>
+                                            <div class="${properties.kcLoginOTPListItemTitleClass!}">${otpCredential.userLabel}</div>
                                         </div>
                                     </div>
                                 </#list>
@@ -28,11 +28,18 @@
                             <label for="otp" class="${properties.kcLabelClass!}">${msg("loginOtpOneTime")}</label>
                         </div>
 
-                        <div class="${properties.kcInputWrapperClass!}">
-                            <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
-                            autofocus/>
-                        </div>
+                    <div class="${properties.kcInputWrapperClass!}">
+                        <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
+                               autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"/>
+
+                        <#if messagesPerField.existsError('totp')>
+                            <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}"
+                                  aria-live="polite">
+                                ${kcSanitize(messagesPerField.get('totp'))?no_esc}
+                            </span>
+                        </#if>
                     </div>
+                </div>
 
                     <div class="${properties.kcFormGroupClass!}">
                         <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
@@ -51,16 +58,16 @@
             <script type="text/javascript">
             $(document).ready(function() {
                 // Card Single Select
-                $('.card-pf-view-single-select').click(function() {
-                  if ($(this).hasClass('active'))
-                  { $(this).removeClass('active'); $(this).children().removeAttr('name'); }
+                $('.otp-tile').click(function() {
+                  if ($(this).hasClass('pf-m-selected'))
+                  { $(this).removeClass('pf-m-selected'); $(this).children().removeAttr('name'); }
                   else
-                  { $('.card-pf-view-single-select').removeClass('active');
-                  $('.card-pf-view-single-select').children().removeAttr('name');
-                  $(this).addClass('active'); $(this).children().attr('name', 'selectedCredentialId'); }
+                  { $('.otp-tile').removeClass('pf-m-selected');
+                  $('.otp-tile').children().removeAttr('name');
+                  $(this).addClass('pf-m-selected'); $(this).children().attr('name', 'selectedCredentialId'); }
                 });
 
-                var defaultCred = $('.card-pf-view-single-select')[0];
+                var defaultCred = $('.otp-tile')[0];
                 if (defaultCred) {
                     defaultCred.click();
                 }

@@ -57,7 +57,7 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
         testingClient.server().run( session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             session.sessions().removeUserSessions(realm);
-            UserModel user1 = session.users().getUserByUsername("user1", realm);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
 
             UserManager um = new UserManager(session);
             if (user1 != null) {
@@ -78,7 +78,7 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
         UserSessionModel userSessionModel =
             session.sessions().createUserSession(
                                                  realm,
-                                                 session.users().getUserByUsername("user1", realm),
+                                                 session.users().getUserByUsername(realm, "user1"),
                                                  "user1", "127.0.0.1", "form", true, null, null
                                                  );
 

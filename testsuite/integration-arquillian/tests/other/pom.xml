@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -60,7 +60,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <classifier>tests</classifier>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
+                                        <includes>arquillian.xml,wildfly-config.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>

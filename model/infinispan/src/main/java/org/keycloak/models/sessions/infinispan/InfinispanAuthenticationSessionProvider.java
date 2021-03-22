@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import org.keycloak.cluster.ClusterProvider;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
@@ -39,7 +40,6 @@ import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.infinispan.AdvancedCache;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -69,18 +69,19 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
         String id = keyGenerator.generateKeyString(session, cache);
-        return createRootAuthenticationSession(id, realm);
+        return createRootAuthenticationSession(realm, id);
     }
 
 
     @Override
-    public RootAuthenticationSessionModel createRootAuthenticationSession(String id, RealmModel realm) {
+    public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm, String id) {
         RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity();
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
-        tx.put(cache, id, entity);
+        int expirationSeconds = RealmInfoUtil.getDettachedClientSessionLifespan(realm);
+        tx.put(cache, id, entity, expirationSeconds, TimeUnit.SECONDS);
 
         return wrap(realm, entity);
     }
@@ -94,28 +95,17 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(String authSessionId) {
         // Chance created in this transaction
         RootAuthenticationSessionEntity entity = tx.get(cache, authSessionId);
-
-        if (entity == null) {
-            entity = cache.get(authSessionId);
-        }
-
         return entity;
     }
 
+    @Override
+    public void removeAllExpired() {
+        // Rely on expiration of cache entries provided by infinispan. Nothing needed here
+    }
 
     @Override
     public void removeExpired(RealmModel realm) {
-        log.debugf("Removing expired sessions");
-
-        int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
-
-        final AdvancedCache<String, RootAuthenticationSessionEntity> localCache = CacheDecorators.localCache(cache);
-        int localCacheSizePre = localCache.size();
-        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
-        localCache.entrySet()
-                .removeIf(RootAuthenticationSessionPredicate.create(realm.getId()).expired(expired));
-
-        log.debugf("Removed %d expired authentication sessions for realm '%s'", localCache.size() - localCacheSizePre, realm.getName());
+        // Rely on expiration of cache entries provided by infinispan. Nothing needed here
     }
 
     @Override

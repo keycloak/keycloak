@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
+import org.keycloak.migration.migrators.MigrateTo12_0_0;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
@@ -51,6 +52,7 @@ import org.keycloak.migration.migrators.MigrateTo8_0_2;
 import org.keycloak.migration.migrators.MigrateTo9_0_0;
 import org.keycloak.migration.migrators.MigrateTo9_0_4;
 import org.keycloak.migration.migrators.Migration;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -90,10 +92,13 @@ public class MigrationModelManager {
             new MigrateTo8_0_0(),
             new MigrateTo8_0_2(),
             new MigrateTo9_0_0(),
-            new MigrateTo9_0_4()
+            new MigrateTo9_0_4(),
+            new MigrateTo12_0_0()
     };
 
     public static void migrate(KeycloakSession session) {
+        session.setAttribute(Constants.STORAGE_BATCH_ENABLED, Boolean.getBoolean("keycloak.migration.batch-enabled"));
+        session.setAttribute(Constants.STORAGE_BATCH_SIZE, Integer.getInteger("keycloak.migration.batch-size"));
         MigrationModel model = session.realms().getMigrationModel();
 
         ModelVersion currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK);

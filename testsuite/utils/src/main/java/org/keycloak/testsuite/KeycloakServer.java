@@ -31,12 +31,14 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
+import io.undertow.servlet.api.InstanceHandle;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 
@@ -58,6 +60,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import javax.servlet.Filter;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -282,7 +285,7 @@ public class KeycloakServer {
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
         try {
-          File tempKeycloakFolder = Files.createTempDirectory("keycloak-server-").toFile();
+          File tempKeycloakFolder = Platform.getPlatform().getTmpDirectory();
           File tmpDataDir = new File(tempKeycloakFolder, "/data");
 
           if (tmpDataDir.mkdirs()) {
@@ -406,7 +409,17 @@ public class KeycloakServer {
             // KEYCLOAK-14178
             deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
-            FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class);
+            InstanceHandle<Filter> filterInstance = new InstanceHandle<Filter>() {
+                @Override
+                public Filter getInstance() {
+                    return new UndertowRequestFilter(sessionFactory);
+                }
+
+                @Override
+                public void release() {
+                }
+            };
+            FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class, () -> filterInstance);
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);

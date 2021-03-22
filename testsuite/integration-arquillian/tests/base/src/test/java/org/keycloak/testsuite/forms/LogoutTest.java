@@ -17,10 +17,16 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -28,20 +34,30 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,8 +77,16 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected AccountManagement accountManagementPage;
 
+    @Page
+    private ErrorPage errorPage;
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @Before
+    public void clientConfiguration() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
     }
 
     @Test
@@ -93,6 +117,42 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
     }
 
+
+    // KEYCLOAK-16517 Make sure that just real clients with standardFlow or implicitFlow enabled are considered for redirectUri
+    @Test
+    public void logoutRedirectWithStarRedirectUriForDirectGrantClient() {
+        // Set "*" as redirectUri for some directGrant client
+        ClientResource clientRes = ApiUtil.findClientByClientId(testRealm(), "direct-grant");
+        ClientRepresentation clientRepOrig = clientRes.toRepresentation();
+        ClientRepresentation clientRep = clientRes.toRepresentation();
+        clientRep.setStandardFlowEnabled(false);
+        clientRep.setImplicitFlowEnabled(false);
+        clientRep.setRedirectUris(Collections.singletonList("*"));
+        clientRes.update(clientRep);
+
+        try {
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            assertTrue(appPage.isCurrent());
+
+            events.expectLogin().assertEvent();
+
+            String invalidRedirectUri = ServerURLs.getAuthServerContextRoot() + "/bar";
+
+            String logoutUrl = oauth.getLogoutUrl().redirectUri(invalidRedirectUri).build();
+            driver.navigate().to(logoutUrl);
+
+            events.expectLogoutError(Errors.INVALID_REDIRECT_URI).assertEvent();
+
+            assertCurrentUrlDoesntStartWith(invalidRedirectUri);
+            errorPage.assertCurrent();
+            Assert.assertEquals("Invalid redirect uri", errorPage.getError());
+        } finally {
+            // Revert
+            clientRes.update(clientRepOrig);
+        }
+    }
+
     @Test
     public void logoutSession() {
         loginPage.open();
@@ -114,6 +174,37 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String sessionId2 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
+    }
+
+    @Test
+    public void logoutWithExpiredSession() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))
+                .updateWith(r -> r.setSsoSessionMaxLifespan(2))
+                .update()) {
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            oauth.clientSessionState("client-session");
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+
+            // wait for a timeout
+            // setTimeOffset doesn't work because session cookie is not invalidated thus the logout flow would continue with browser logout
+            TimeUnit.SECONDS.sleep(3);
+
+            String logoutUrl = oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).idTokenHint(idTokenString).build();
+            driver.navigate().to(logoutUrl);
+
+            // should not throw an internal server error
+            appPage.assertCurrent();
+
+            // check if the back channel logout succeeded
+            driver.navigate().to(oauth.getLoginFormUrl());
+            WaitUtils.waitForPageToLoad();
+            loginPage.assertCurrent();
+        }
     }
 
     @Test
@@ -153,6 +244,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-2741
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void logoutWithRememberMe() {
         setRememberMe(true);
         

@@ -28,9 +28,10 @@ import org.keycloak.services.resources.account.AccountFormService;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -47,15 +48,13 @@ public class AccountFederatedIdentityBean {
     public AccountFederatedIdentityBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
         this.session = session;
 
-        Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
-
         AtomicInteger availableIdentities = new AtomicInteger(0);
         this.identities = realm.getIdentityProvidersStream()
                 .filter(IdentityProviderModel::isEnabled)
                 .map(provider -> {
                     String providerId = provider.getAlias();
 
-                    FederatedIdentityModel identity = getIdentity(identities, providerId);
+                    FederatedIdentityModel identity = getIdentity(session.users().getFederatedIdentitiesStream(realm, user), providerId);
 
                     if (identity != null) {
                         availableIdentities.getAndIncrement();
@@ -72,13 +71,9 @@ public class AccountFederatedIdentityBean {
         this.removeLinkPossible = availableIdentities.get() > 1 || user.getFederationLink() != null || AccountFormService.isPasswordSet(session, realm, user);
     }
 
-    private FederatedIdentityModel getIdentity(Set<FederatedIdentityModel> identities, String providerId) {
-        for (FederatedIdentityModel link : identities) {
-            if (providerId.equals(link.getIdentityProvider())) {
-                return link;
-            }
-        }
-        return null;
+    private FederatedIdentityModel getIdentity(Stream<FederatedIdentityModel> identities, String providerId) {
+        return identities.filter(federatedIdentityModel -> Objects.equals(federatedIdentityModel.getIdentityProvider(), providerId))
+                .findFirst().orElse(null);
     }
 
     public List<FederatedIdentityEntry> getIdentities() {

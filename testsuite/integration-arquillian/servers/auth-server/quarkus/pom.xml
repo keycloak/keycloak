@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,13 +18,13 @@
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
-        <auth.server.quarkus.config>local</auth.server.quarkus.config>
+        <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
     </properties>
     
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-x</artifactId>
+            <artifactId>keycloak-server-x-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -98,6 +98,7 @@
                                         <include>keycloak.truststore</include>
                                         <include>client.jks</include>
                                         <include>client-ca.jks</include>
+                                        <include>test-user-cert-intermediary-ca.jks</include>
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
@@ -125,7 +126,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-x</artifactId>
+                                    <artifactId>keycloak-server-x-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
@@ -199,7 +200,7 @@
         <profile>
             <id>auth-server-cluster-quarkus</id>
             <properties>
-                <auth.server.quarkus.config>ha</auth.server.quarkus.config>
+                <auth.server.quarkus.cluster.config>ha</auth.server.quarkus.cluster.config>
             </properties>
         </profile>
     </profiles>

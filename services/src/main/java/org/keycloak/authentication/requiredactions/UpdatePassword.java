@@ -38,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
@@ -46,7 +47,9 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -110,7 +113,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
                     .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
-                    .setError(Messages.MISSING_PASSWORD)
+                    .addError(new FormMessage(Validation.FIELD_PASSWORD, Messages.MISSING_PASSWORD))
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             errorEvent.error(Errors.PASSWORD_MISSING);
@@ -118,7 +121,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
                     .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
-                    .setError(Messages.NOTMATCH_PASSWORD)
+                    .addError(new FormMessage(Validation.FIELD_PASSWORD_CONFIRM, Messages.NOTMATCH_PASSWORD))
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
@@ -128,12 +131,11 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         if (getId().equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
                 && "on".equals(formData.getFirst("logout-sessions")))
         {
-            List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-            for (UserSessionModel s : sessions) {
-                if (!s.getId().equals(authSession.getParentSession().getId())) {
-                    AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(), context.getConnection(), context.getHttpRequest().getHttpHeaders(), true);
-                }
-            }
+            session.sessions().getUserSessionsStream(realm, user)
+                    .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
+                    .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                    .forEach(s -> AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
+                            context.getConnection(), context.getHttpRequest().getHttpHeaders(), true));
         }
 
         try {

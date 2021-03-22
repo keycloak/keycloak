@@ -120,7 +120,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
             Assert.assertNotNull(john.getFederationLink());
             assertDnStartsWith(session, ctx, john, "cn=johnkeycloak");
 
@@ -143,7 +143,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
             assertUser(session, ctx, john, "johnkeycloak", "Johny", "Anthony", true, "cn=Johny Anthony");
 
             session.users().removeUser(appRealm, john);
@@ -167,7 +167,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
             assertUser(session, ctx, john, "johnkeycloak", "Johnyyy", "", true, "cn=Johnyyy");
 
             session.users().removeUser(appRealm, john);
@@ -191,7 +191,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
             assertUser(session, ctx, john, "johnkeycloak", "", "Anthonyy", true, "cn=Anthonyy");
 
             session.users().removeUser(appRealm, john);
@@ -213,7 +213,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
             assertUser(session, ctx, john, "johnkeycloak", "Jož,o", "Baříč", true, "cn=Jož\\,o Baříč");
 
             session.users().removeUser(appRealm, john);
@@ -243,7 +243,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc", "Password1", "Password1");
-        Assert.assertEquals("Username already exists.", registerPage.getError());
+        Assert.assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc2", "Password1", "Password1");
         appPage.logout();
@@ -257,16 +257,16 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel existingKc = session.users().getUserByUsername("existingkc", appRealm);
+            UserModel existingKc = session.users().getUserByUsername(appRealm, "existingkc");
             assertUser(session, ctx, existingKc, "existingkc", "John", "Existing", true, "cn=John Existing");
 
-            UserModel existingKc1 = session.users().getUserByUsername("existingkc1", appRealm);
+            UserModel existingKc1 = session.users().getUserByUsername(appRealm, "existingkc1");
             assertUser(session, ctx, existingKc1, "existingkc1", "", "", true, "cn=existingkc1");
 
-            UserModel existingKc2 = session.users().getUserByUsername("existingkc2", appRealm);
+            UserModel existingKc2 = session.users().getUserByUsername(appRealm, "existingkc2");
             assertUser(session, ctx, existingKc2, "existingkc2", "John", "Existing", true, "cn=John Existing0");
 
-            UserModel existingKc3 = session.users().getUserByUsername("existingkc3", appRealm);
+            UserModel existingKc3 = session.users().getUserByUsername(appRealm, "existingkc3");
             assertUser(session, ctx, existingKc3, "existingkc3", "John", "Existing", true, "cn=John Existing1");
 
             session.users().removeUser(appRealm, existingKc);

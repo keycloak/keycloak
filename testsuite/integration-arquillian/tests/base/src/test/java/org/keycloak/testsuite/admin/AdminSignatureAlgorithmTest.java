@@ -47,6 +47,8 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
 
     @Test
     public void changeRealmTokenAlgorithm() throws Exception {
+        String defaultSignatureAlgorithm = adminClient.realm("master").toRepresentation().getDefaultSignatureAlgorithm();
+
         TokenSignatureUtil.changeRealmTokenSignatureProvider("master", adminClient, Algorithm.ES256);
 
         try (Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), suiteContext.getAuthServerInfo().getContextRoot().toString())) {
@@ -61,6 +63,8 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
             JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
             assertNotNull(jsonNode.get("realm"));
             assertNotNull(jsonNode.get("userId"));
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider("master", adminClient, defaultSignatureAlgorithm);
         }
     }
 

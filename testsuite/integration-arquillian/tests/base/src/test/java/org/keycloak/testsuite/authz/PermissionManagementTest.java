@@ -448,4 +448,24 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
       assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
     }
+
+    @Test
+    public void testPermissionCount() throws Exception {
+        String[] scopes = {"ScopeA", "ScopeB", "ScopeC", "ScopeD"};
+        ResourceRepresentation resource = addResource("Resource A", "kolo", true, scopes);
+        AuthzClient authzClient = getAuthzClient();
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), scopes));
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception ignored) {
+
+        }
+
+        Long ticketCount = getAuthzClient().protection().permission().count(resource.getId(), null, null, null, null, true);
+        assertEquals("Returned number of permissions tickets must match the amount of permission tickets.", Long.valueOf(4), ticketCount);
+    }
 }

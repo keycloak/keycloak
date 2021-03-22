@@ -91,6 +91,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
     private List<String> tokenEndpointAuthSigningAlgValuesSupported;
 
+    @JsonProperty("introspection_endpoint_auth_methods_supported")
+    private List<String> introspectionEndpointAuthMethodsSupported;
+
+    @JsonProperty("introspection_endpoint_auth_signing_alg_values_supported")
+    private List<String> introspectionEndpointAuthSigningAlgValuesSupported;
+
     @JsonProperty("claims_supported")
     private List<String> claimsSupported;
 
@@ -108,6 +114,9 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("request_uri_parameter_supported")
     private Boolean requestUriParameterSupported;
+
+    @JsonProperty("require_request_uri_registration")
+    private Boolean requireRequestUriRegistration;
 
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     @JsonProperty("code_challenge_methods_supported")
@@ -132,6 +141,9 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("backchannel_logout_session_supported")
     private Boolean backchannelLogoutSessionSupported;
+
+    @JsonProperty("device_authorization_endpoint")
+    private String deviceAuthorizationEndpoint;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -295,6 +307,23 @@ public class OIDCConfigurationRepresentation {
         this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
     }
 
+    public List<String> getIntrospectionEndpointAuthMethodsSupported() {
+        return introspectionEndpointAuthMethodsSupported;
+    }
+
+    public void setIntrospectionEndpointAuthMethodsSupported(List<String> introspectionEndpointAuthMethodsSupported) {
+        this.introspectionEndpointAuthMethodsSupported = introspectionEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getIntrospectionEndpointAuthSigningAlgValuesSupported() {
+        return introspectionEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setIntrospectionEndpointAuthSigningAlgValuesSupported(
+        List<String> introspectionEndpointAuthSigningAlgValuesSupported) {
+        this.introspectionEndpointAuthSigningAlgValuesSupported = introspectionEndpointAuthSigningAlgValuesSupported;
+    }
+
     public List<String> getClaimsSupported() {
         return claimsSupported;
     }
@@ -341,6 +370,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setRequestUriParameterSupported(Boolean requestUriParameterSupported) {
         this.requestUriParameterSupported = requestUriParameterSupported;
+    }
+
+    public Boolean getRequireRequestUriRegistration() {
+        return requireRequestUriRegistration;
+    }
+
+    public void setRequireRequestUriRegistration(Boolean requireRequestUriRegistration) {
+        this.requireRequestUriRegistration = requireRequestUriRegistration;
     }
 
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
@@ -410,5 +447,13 @@ public class OIDCConfigurationRepresentation {
     @JsonAnySetter
     public void setOtherClaims(String name, Object value) {
         otherClaims.put(name, value);
+    }
+
+    public void setDeviceAuthorizationEndpoint(String deviceAuthorizationEndpoint) {
+        this.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint;
+    }
+
+    public String getDeviceAuthorizationEndpoint() {
+        return deviceAuthorizationEndpoint;
     }
 }

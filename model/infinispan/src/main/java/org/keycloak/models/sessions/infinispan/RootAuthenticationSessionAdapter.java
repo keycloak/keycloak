@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.keycloak.common.util.Time;
@@ -27,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -52,7 +54,8 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     }
 
     void update() {
-        provider.tx.replace(cache, entity.getId(), entity);
+        int expirationSeconds = RealmInfoUtil.getDettachedClientSessionLifespan(realm);
+        provider.tx.replace(cache, entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
     }
 
 

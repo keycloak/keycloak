@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -38,6 +39,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -79,6 +81,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -784,7 +787,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             // Browser 2: Log in
             driver2.navigate().to(accountPage.buildUri().toString());
 
-            assertThat(driver2.getTitle(), is("Log in to " + testRealmName));
+            assertThat(driver2.getTitle(), is("Sign in to " + testRealmName));
             driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
             driver2.findElement(By.id("password")).sendKeys("password");
             driver2.findElement(By.id("password")).submit();
@@ -954,7 +957,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         // login page should be shown in the second browser
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
-        assertThat(driver2.getPageSource(), Matchers.containsString("Log In"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Sign in"));
 
         // email should be verified and required actions empty
         UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
@@ -964,5 +967,36 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // after refresh in the first browser the account console should be shown
         driver.navigate().refresh();
         accountPage.assertCurrent();
+    }
+
+    @Test
+    public void verifyEmailExpiredRegistration() throws IOException, MessagingException {
+        final String COMMON_ATTR = "verifyEmailRegistrationUser";
+
+        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
+        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations");
+        driver.navigate().to(appInitiatedRegisterUrl);
+
+        registerPage.assertCurrent();
+        registerPage.register(COMMON_ATTR, COMMON_ATTR, COMMON_ATTR + "@" + COMMON_ATTR, COMMON_ATTR, COMMON_ATTR, COMMON_ATTR);
+
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        try {
+            setTimeOffset(3600);
+
+            driver.navigate().to(verificationUrl.trim());
+
+            loginPage.assertCurrent();
+            assertEquals("Action expired. Please start again.", loginPage.getError());
+        } finally {
+            setTimeOffset(0);
+        }
     }
 }

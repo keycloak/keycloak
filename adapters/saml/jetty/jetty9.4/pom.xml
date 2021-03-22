@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -29,7 +29,7 @@
     <artifactId>keycloak-saml-jetty94-adapter</artifactId>
     <name>Keycloak Jetty 9.4.x SAML Integration</name>
     <properties>
-        <jetty9.version>9.4.2.v20170220</jetty9.version>
+        <jetty9.version>${jetty94.version}</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.jetty.*
         </keycloak.osgi.export>

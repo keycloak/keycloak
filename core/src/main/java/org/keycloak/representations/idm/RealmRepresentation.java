@@ -59,6 +59,8 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespanLogin;
     protected Integer actionTokenGeneratedByAdminLifespan;
     protected Integer actionTokenGeneratedByUserLifespan;
+    protected Integer oauth2DeviceCodeLifespan;
+    protected Integer oauth2DevicePollingInterval;
     protected Boolean enabled;
     protected String sslRequired;
     @Deprecated
@@ -98,7 +100,9 @@ public class RealmRepresentation {
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
+    @Deprecated
     protected List<String> defaultRoles;
+    protected RoleRepresentation defaultRole;
     protected List<String> defaultGroups;
     @Deprecated
     protected Set<String> requiredCredentials;
@@ -474,6 +478,22 @@ public class RealmRepresentation {
         this.actionTokenGeneratedByAdminLifespan = actionTokenGeneratedByAdminLifespan;
     }
 
+    public void setOAuth2DeviceCodeLifespan(Integer oauth2DeviceCodeLifespan) {
+        this.oauth2DeviceCodeLifespan = oauth2DeviceCodeLifespan;
+    }
+
+    public Integer getOAuth2DeviceCodeLifespan() {
+        return oauth2DeviceCodeLifespan;
+    }
+
+    public void setOAuth2DevicePollingInterval(Integer oauth2DevicePollingInterval) {
+        this.oauth2DevicePollingInterval = oauth2DevicePollingInterval;
+    }
+
+    public Integer getOAuth2DevicePollingInterval() {
+        return oauth2DevicePollingInterval;
+    }
+
     public Integer getActionTokenGeneratedByUserLifespan() {
         return actionTokenGeneratedByUserLifespan;
     }
@@ -482,12 +502,22 @@ public class RealmRepresentation {
         this.actionTokenGeneratedByUserLifespan = actionTokenGeneratedByUserLifespan;
     }
 
+    @Deprecated
     public List<String> getDefaultRoles() {
         return defaultRoles;
     }
 
+    @Deprecated
     public void setDefaultRoles(List<String> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public RoleRepresentation getDefaultRole() {
+        return defaultRole;
+    }
+
+    public void setDefaultRole(RoleRepresentation defaultRole) {
+        this.defaultRole = defaultRole;
     }
 
     public List<String> getDefaultGroups() {

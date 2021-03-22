@@ -20,9 +20,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
 /**
+ * This is an optional capability interface that is intended to be implemented by any
+ * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports bulk operations.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserBulkUpdateProvider {
+    
+    /**
+     * Grants the given role to all users from particular realm. The role has to
+     * belong to the realm. 
+     * @param realm Realm
+     * @param role Role to be granted
+     */
     void grantToAllUsers(RealmModel realm, RoleModel role);
 }

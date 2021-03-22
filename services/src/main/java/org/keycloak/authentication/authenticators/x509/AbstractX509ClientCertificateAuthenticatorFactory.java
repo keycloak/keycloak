@@ -103,14 +103,14 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         canonicalDn.setType(BOOLEAN_TYPE);
         canonicalDn.setName(CANONICAL_DN);
         canonicalDn.setLabel("Canonical DN representation enabled");
-        canonicalDn.setDefaultValue(false);
+        canonicalDn.setDefaultValue(Boolean.toString(false));
         canonicalDn.setHelpText("Use the canonical format to determine the distinguished name. This option is relevant for authenticators using a distinguished name.");
 
         ProviderConfigProperty serialnumberHex = new ProviderConfigProperty();
         serialnumberHex.setType(BOOLEAN_TYPE);
         serialnumberHex.setName(SERIALNUMBER_HEX);
         serialnumberHex.setLabel("Enable Serial Number hexadecimal representation");
-        serialnumberHex.setDefaultValue(false);
+        serialnumberHex.setDefaultValue(Boolean.toString(false));
         serialnumberHex.setHelpText("Use the hex representation of the serial number. This option is relevant for authenticators using serial number.");
 
         
@@ -144,7 +144,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         timestampValidationValue.setType(BOOLEAN_TYPE);
         timestampValidationValue.setName(TIMESTAMP_VALIDATION);
         timestampValidationValue.setLabel("Check certificate validity");
-        timestampValidationValue.setDefaultValue(true);
+        timestampValidationValue.setDefaultValue(Boolean.toString(true));
         timestampValidationValue.setHelpText("Will verify that the certificate has not expired yet and is already valid by checking the attributes 'notBefore' and 'notAfter'.");
 
         ProviderConfigProperty crlCheckingEnabled = new ProviderConfigProperty();
@@ -156,7 +156,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         ProviderConfigProperty crlDPEnabled = new ProviderConfigProperty();
         crlDPEnabled.setType(BOOLEAN_TYPE);
         crlDPEnabled.setName(ENABLE_CRLDP);
-        crlDPEnabled.setDefaultValue(false);
+        crlDPEnabled.setDefaultValue(Boolean.toString(false));
         crlDPEnabled.setLabel("Enable CRL Distribution Point to check certificate revocation status");
         crlDPEnabled.setHelpText("CRL Distribution Point is a starting point for CRL. If this is ON, then CRL checking will be done based on the CRL distribution points included" +
                 " in the checked certificates. CDP is optional, but most PKI authorities include CDP in their certificates.");

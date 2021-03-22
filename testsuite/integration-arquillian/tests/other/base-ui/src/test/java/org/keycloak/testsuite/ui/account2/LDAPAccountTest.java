@@ -18,16 +18,29 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.*;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.ClassRule;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -39,6 +52,9 @@ public class LDAPAccountTest extends AbstractAccountTest {
 
     @Page
     private SigningInPage signingInPage;
+
+    @Page
+    private PersonalInfoPage personalInfoPage;
 
     private SigningInPage.CredentialType passwordCredentialType;
     @ClassRule
@@ -83,7 +99,66 @@ public class LDAPAccountTest extends AbstractAccountTest {
 
         SigningInPage.UserCredential userCredential = passwordCredentialType.getUserCredential("password");
 
-        Assert.assertTrue("ROW is not present", userCredential.isPresent());
-        Assert.assertFalse("Created at is present", userCredential.hasCreatedAt());
+        assertTrue("ROW is not present", userCredential.isPresent());
+        assertFalse("Created at is present", userCredential.hasCreatedAt());
+    }
+
+    // KEYCLOAK-15634
+    @Test
+    public void updateProfileWithAttributePresent() {
+
+        RealmResource testRealm = adminClient.realm("test");
+        assertEquals("keycloak.v2", testRealm.toRepresentation().getAccountTheme());
+
+        UserRepresentation userRepBefore = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
+        assertNull("User should not exist", userRepBefore);
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            ldapFedProvider.getModel().put(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.toString());
+            appRealm.updateComponent(ldapFedProvider.getModel());
+
+            LDAPObject testUser = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(),
+                    appRealm, "keycloak-15634",
+                    "firstName",
+                    "lastName",
+                    "keycloak-15634@test.local",
+                    null,
+                    "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), testUser, PASSWORD);
+        });
+
+        // Check our test user is ok before updating profile
+        userRepBefore = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
+        assertEquals("Test user should have an email address set", "keycloak-15634@test.local", userRepBefore.getEmail());
+        assertTrue("Test user should have the LDAP_ID attribute set", userRepBefore.getAttributes().containsKey("LDAP_ID"));
+        assertFalse("Test user should not have locale attribute set", userRepBefore.getAttributes().containsKey("locale"));
+
+        personalInfoPage.navigateTo();
+        loginPage.assertCurrent();
+        loginPage.form().login("keycloak-15634","password");
+        personalInfoPage.assertCurrent();
+        assertEquals("keycloak-15634@test.local", personalInfoPage.getEmail());
+
+        // Trigger the JS involved in KEYCLOAK-15634
+        personalInfoPage.setEmail("keycloak-15634@domain.local");
+        personalInfoPage.clickSave();
+
+        // Check if updateProfile went well and if user is still there
+        UserRepresentation userRepAfter = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
+        assertNotNull("Test user should still be there", userRepAfter);
+        assertEquals("Email should have been updated","keycloak-15634@domain.local", userRepAfter.getEmail());
+        assertTrue("LDAP_ID attribute should still be there", userRepAfter.getAttributes().containsKey("LDAP_ID"));
+
+        // Clean up
+        ApiUtil.removeUserByUsername(testRealm, "keycloak-15634");
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
+        });
     }
 }

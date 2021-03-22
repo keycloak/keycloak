@@ -63,6 +63,7 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -70,7 +71,6 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -100,6 +100,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     public static final String PARENT_IDP = "parent-idp";
     public static final String PARENT_USERNAME = "parent";
     public static final String PARENT2_USERNAME = "parent2";
+    public static final String PARENT3_USERNAME = "parent3";
     public static final String UNAUTHORIZED_CHILD_CLIENT = "unauthorized-child-client";
     public static final String PARENT_CLIENT = "parent-client";
 
@@ -221,7 +222,13 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         user.setUsername(PARENT2_USERNAME);
         user.setEnabled(true);
         createUserAndResetPasswordWithAdminClient(realm, user, "password");
-
+        user = new UserRepresentation();
+        user.setUsername(PARENT3_USERNAME);
+        user.setFirstName("first name");
+        user.setLastName("last name");
+        user.setEmail("email");
+        user.setEnabled(true);
+        createUserAndResetPasswordWithAdminClient(realm, user, "password");        
     }
 
     private String childUserId = null;
@@ -350,7 +357,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         // do exchange
 
         String accessToken = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, ClientApp.DEPLOYMENT_NAME, "password").getAccessToken();
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
             System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
@@ -519,7 +526,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         String accessToken = oauth.doGrantAccessTokenRequest(PARENT_IDP, PARENT2_USERNAME, "password", null, PARENT_CLIENT, "password").getAccessToken();
         Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
             System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
@@ -700,7 +707,55 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             httpClient.close();
         }
     }
+    
+    /**
+     * KEYCLOAK-14577, see also KEYCLOAK-10932
+     */
+    @Test
+    public void testExternalExchange_extractIdentityFromProfile() throws Exception {
+        RealmResource childRealm = adminClient.realms().realm(CHILD_IDP);
 
+        String accessToken = oauth.doGrantAccessTokenRequest(PARENT_IDP, PARENT3_USERNAME, "password", null, PARENT_CLIENT, "password").getAccessToken();
+        Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+        try {
+            WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
+            IdentityProviderRepresentation rep = adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).toRepresentation();
+            rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, String.valueOf(false));
+            adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
+
+            AccessToken token;
+            try (Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
+                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
+                    ))) {
+                Assert.assertEquals(200, response.getStatus());
+
+                AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+                JWSInput jws = new JWSInput(tokenResponse.getToken());
+                token = jws.readJsonContent(AccessToken.class);
+            }
+
+            Assert.assertNotNull(token);
+            Assert.assertNotNull(token.getSubject());
+            Assert.assertEquals(PARENT3_USERNAME, token.getPreferredUsername());
+            Assert.assertEquals("first name", token.getGivenName());
+            Assert.assertEquals("last name", token.getFamilyName());
+            Assert.assertEquals("email", token.getEmail());
+
+            // cleanup remove the user
+            childRealm.users().get(token.getSubject()).remove();
+        } finally {
+            httpClient.close();
+        }
+    }
 
     public void logoutAll() {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
@@ -721,7 +776,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
         }
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
             {

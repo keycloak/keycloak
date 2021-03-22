@@ -29,7 +29,7 @@ public class BypassKerberosPage extends AbstractPage {
     private WebElement continueButton;
 
    public boolean isCurrent() {
-        return driver.getTitle().equals("Log in to test") || driver.getTitle().equals("Anmeldung bei test");
+        return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
 
     public void clickContinue() {

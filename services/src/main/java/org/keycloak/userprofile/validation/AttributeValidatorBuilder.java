@@ -35,7 +35,23 @@ public class AttributeValidatorBuilder {
         this.validationChainBuilder = validationChainBuilder;
     }
 
-    public AttributeValidatorBuilder addValidationFunction(String messageKey, BiFunction<String, UserProfileContext, Boolean> validationFunction) {
+    /**
+     * This method is for validating first value of the specified attribute. It is sufficient for all the single-valued attributes
+     *
+     * @param messageKey Key of the error message to be displayed when validation fails
+     * @param validationFunction Function, which does the actual validation logic. The "String" argument is the new value of the particular attribute.
+     * @return this
+     */
+    public AttributeValidatorBuilder addSingleAttributeValueValidationFunction(String messageKey, BiFunction<String, UserProfileContext, Boolean> validationFunction) {
+        BiFunction<List<String>, UserProfileContext, Boolean> wrappedValidationFunction = (attrValues, context) -> {
+            String singleValue = attrValues == null ? null : attrValues.get(0);
+            return validationFunction.apply(singleValue, context);
+        };
+        this.validations.add(new Validator(messageKey, wrappedValidationFunction));
+        return this;
+    }
+
+    public AttributeValidatorBuilder addValidationFunction(String messageKey, BiFunction<List<String>, UserProfileContext, Boolean> validationFunction) {
         this.validations.add(new Validator(messageKey, validationFunction));
         return this;
     }

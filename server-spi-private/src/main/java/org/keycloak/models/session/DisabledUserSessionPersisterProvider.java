@@ -27,8 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Persistence of userSessions is disabled . Useful just if you never need survive of userSessions/clientSessions
@@ -111,8 +110,9 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
-        return Collections.emptyList();
+    public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
+                                                           Integer lastCreatedOn, String lastUserSessionId) {
+        return Stream.empty();
     }
 
     @Override

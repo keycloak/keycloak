@@ -25,7 +25,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -46,13 +45,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -201,20 +198,20 @@ public class GroupResource {
     /**
      * Get users
      *
-     * Returns a list of users, filtered according to query parameters
+     * Returns a stream of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
      *  email, enabled state, email verification state, federation link, and access.
      *  Note that it means that namely user attributes, required actions, and not before are not returned.)
-     * @return
+     * @return a non-null {@code Stream} of users
      */
     @GET
     @NoCache
     @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
+    public Stream<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
                                                @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         this.auth.groups().requireViewMembers(group);
@@ -223,17 +220,10 @@ public class GroupResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        List<UserRepresentation> results = new ArrayList<UserRepresentation>();
-        List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
-
-        for (UserModel user : userModels) {
-            UserRepresentation userRep = briefRepresentationB
-                    ? ModelToRepresentation.toBriefRepresentation(user)
-                    : ModelToRepresentation.toRepresentation(session, realm, user);
-
-            results.add(userRep);
-        }
-        return results;
+        return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
+                .map(user -> briefRepresentationB
+                        ? ModelToRepresentation.toBriefRepresentation(user)
+                        : ModelToRepresentation.toRepresentation(session, realm, user));
     }
 
     /**

@@ -89,7 +89,7 @@ public interface ClientLookupProvider {
      *   identifier ({@code client_id} in OIDC or {@code entityID} in SAML.)
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of ClientModel or an empty stream if no client is found.
+     * @return Stream of ClientModel or an empty stream if no client is found. Never returns {@code null}.
      */
     Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
 }

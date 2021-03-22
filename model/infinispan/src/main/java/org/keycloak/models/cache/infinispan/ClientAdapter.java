@@ -126,7 +126,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = cacheSession.getClientScopeById(scopeId, cachedRealm);
+            ClientScopeModel clientScope = cacheSession.getClientScopeById(cachedRealm, scopeId);
             if (clientScope != null) {
                 if (!filterByProtocol || clientScope.getProtocol().equals(clientProtocol)) {
                     clientScopes.put(clientScope.getName(), clientScope);
@@ -357,9 +357,9 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (isUpdated()) return updated.getProtocolMappers();
-        return cached.getProtocolMappers();
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        if (isUpdated()) return updated.getProtocolMappersStream();
+        return cached.getProtocolMappers().stream();
     }
 
     @Override
@@ -483,28 +483,28 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    @Deprecated
     public Stream<String> getDefaultRolesStream() {
         if (isUpdated()) return updated.getDefaultRolesStream();
-        return cached.getDefaultRoles().stream();
+        return getRealm().getDefaultRole().getCompositesStream().filter(this::isClientRole).map(RoleModel::getName);
+    }
+
+    private boolean isClientRole(RoleModel role) {
+        return role.isClientRole() && Objects.equals(role.getContainerId(), this.getId());
     }
 
     @Override
+    @Deprecated
     public void addDefaultRole(String name) {
         getDelegateForUpdate();
         updated.addDefaultRole(name);
     }
 
     @Override
-    public void updateDefaultRoles(String... defaultRoles) {
-        getDelegateForUpdate();
-        updated.updateDefaultRoles(defaultRoles);
-    }
-
-    @Override
+    @Deprecated
     public void removeDefaultRoles(String... defaultRoles) {
         getDelegateForUpdate();
         updated.removeDefaultRoles(defaultRoles);
-
     }
 
     @Override
@@ -667,5 +667,10 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getClientId(), System.identityHashCode(this));
     }
 }

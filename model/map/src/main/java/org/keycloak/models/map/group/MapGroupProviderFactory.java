@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.group;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.models.KeycloakSession;
@@ -33,12 +34,12 @@ import java.util.UUID;
  */
 public class MapGroupProviderFactory extends AbstractMapProviderFactory<GroupProvider> implements GroupProviderFactory {
 
-    private MapStorage<UUID, MapGroupEntity> store;
+    private MapStorage<UUID, MapGroupEntity, GroupModel> store;
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("groups", UUID.class, MapGroupEntity.class);
+        this.store = sp.getStorage("groups", UUID.class, MapGroupEntity.class, GroupModel.class);
     }
 
 

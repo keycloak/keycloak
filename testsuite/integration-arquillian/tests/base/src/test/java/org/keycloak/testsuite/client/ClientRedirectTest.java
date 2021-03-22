@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -28,6 +29,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -65,6 +68,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
      * @throws Exception
      */
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testClientRedirectEndpoint() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -84,7 +88,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
 
-        Client client = javax.ws.rs.client.ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         String redirectUrl = getAuthServerRoot().toString() + "realms/test/clients/launchpad-test/redirect";
         Response response = client.target(redirectUrl).request().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         assertEquals(303, response.getStatus());

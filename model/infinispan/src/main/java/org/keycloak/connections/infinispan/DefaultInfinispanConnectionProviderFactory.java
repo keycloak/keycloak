@@ -21,10 +21,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.configuration.Builder;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.cache.CacheMode;
@@ -178,20 +175,17 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", false);
-        boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, true);
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
             configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr);
-            gcb.globalJmxStatistics()
-              .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName());
+            gcb.jmx()
+              .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();
+        } else {
+            gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         }
-
-        gcb.globalJmxStatistics()
-          .allowDuplicateDomains(allowDuplicateJMXDomains)
-          .enable();
 
         // For Infinispan 10, we go with the JBoss marshalling.
         // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
@@ -468,8 +462,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, jgroupsUdpMcastAddr);
                 }
                 try {
-                    // Compatibility with Wildfly
-                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
+                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-keycloak-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
                     channel.setName(nodeName);
                     JGroupsTransport transport = new JGroupsTransport(channel);
 
@@ -484,8 +477,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     }
 
 
-                    transportBuilder.globalJmxStatistics()
-                        .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
+                    transportBuilder.jmx()
+                        .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
                         .enable();
 
                     logger.infof("Configured jgroups transport with the channel name: %s", nodeName);

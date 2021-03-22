@@ -110,7 +110,7 @@ public class UserEntity {
     @BatchSize(size = 20)
     protected Collection<CredentialEntity> credentials;
 
-    @OneToMany(mappedBy="user")
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     protected Collection<FederatedIdentityEntity> federatedIdentities;

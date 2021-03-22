@@ -18,9 +18,7 @@
 package org.keycloak.protocol.saml;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
@@ -88,6 +86,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -420,22 +422,23 @@ public class SamlProtocol implements LoginProtocol {
 
         List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers = new LinkedList<>();
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
-        ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper = null;
+        AtomicReference<ProtocolMapperProcessor<SAMLRoleListMapper>> roleListMapper = new AtomicReference<>(null);
 
-        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
-            ProtocolMapperModel mapping = entry.getKey();
-            ProtocolMapper mapper = entry.getValue();
+        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
+                .forEach(entry -> {
+                    ProtocolMapperModel mapping = entry.getKey();
+                    ProtocolMapper mapper = entry.getValue();
 
-            if (mapper instanceof SAMLAttributeStatementMapper) {
-                attributeStatementMappers.add(new ProtocolMapperProcessor<SAMLAttributeStatementMapper>((SAMLAttributeStatementMapper) mapper, mapping));
-            }
-            if (mapper instanceof SAMLLoginResponseMapper) {
-                loginResponseMappers.add(new ProtocolMapperProcessor<SAMLLoginResponseMapper>((SAMLLoginResponseMapper) mapper, mapping));
-            }
-            if (mapper instanceof SAMLRoleListMapper) {
-                roleListMapper = new ProtocolMapperProcessor<SAMLRoleListMapper>((SAMLRoleListMapper) mapper, mapping);
-            }
-        }
+                    if (mapper instanceof SAMLAttributeStatementMapper) {
+                        attributeStatementMappers.add(new ProtocolMapperProcessor<>((SAMLAttributeStatementMapper) mapper, mapping));
+                    }
+                    if (mapper instanceof SAMLLoginResponseMapper) {
+                        loginResponseMappers.add(new ProtocolMapperProcessor<>((SAMLLoginResponseMapper) mapper, mapping));
+                    }
+                    if (mapper instanceof SAMLRoleListMapper) {
+                        roleListMapper.set(new ProtocolMapperProcessor<>((SAMLRoleListMapper) mapper, mapping));
+                    }
+                });
 
         Document samlDocument = null;
         KeyManager keyManager = session.keys();
@@ -450,7 +453,7 @@ public class SamlProtocol implements LoginProtocol {
 
             ResponseType samlModel = builder.buildModel();
             final AttributeStatementType attributeStatement = populateAttributeStatements(attributeStatementMappers, session, userSession, clientSession);
-            populateRoles(roleListMapper, session, userSession, clientSessionCtx, attributeStatement);
+            populateRoles(roleListMapper.get(), session, userSession, clientSessionCtx, attributeStatement);
 
             // SAML Spec 2.7.3 AttributeStatement must contain one or more Attribute or EncryptedAttribute
             if (attributeStatement.getAttributes().size() > 0) {
@@ -692,7 +695,7 @@ public class SamlProtocol implements LoginProtocol {
             return Response.serverError().build();
         }
 
-        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         for (int i = 0; i < 2; i++) { // follow redirects once
             try {
                 List<NameValuePair> formparams = new ArrayList<NameValuePair>();
@@ -703,25 +706,20 @@ public class SamlProtocol implements LoginProtocol {
                 UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
                 HttpPost post = new HttpPost(logoutUrl);
                 post.setEntity(form);
-                HttpResponse response = httpClient.execute(post);
-                try {
-                    int status = response.getStatusLine().getStatusCode();
-                    if (status == 302 && !logoutUrl.endsWith("/")) {
-                        String redirect = response.getFirstHeader(HttpHeaders.LOCATION).getValue();
-                        String withSlash = logoutUrl + "/";
-                        if (withSlash.equals(redirect)) {
-                            logoutUrl = withSlash;
-                            continue;
+                try (CloseableHttpResponse response = httpClient.execute(post)) {
+                    try {
+                        int status = response.getStatusLine().getStatusCode();
+                        if (status == 302 && !logoutUrl.endsWith("/")) {
+                            String redirect = response.getFirstHeader(HttpHeaders.LOCATION).getValue();
+                            String withSlash = logoutUrl + "/";
+                            if (withSlash.equals(redirect)) {
+                                logoutUrl = withSlash;
+                                continue;
+                            }
                         }
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
                     }
-                } finally {
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        InputStream is = entity.getContent();
-                        if (is != null)
-                            is.close();
-                    }
-
                 }
             } catch (IOException e) {
                 logger.warn("failed to send saml logout", e);

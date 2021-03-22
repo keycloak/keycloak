@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -29,12 +30,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.Cors;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,17 +45,26 @@ public class AuthorizeClientUtil {
 
     private static final Logger logger = Logger.getLogger(AuthorizeClientUtil.class);
 
-    public static ClientAuthResult authorizeClient(KeycloakSession session, EventBuilder event) {
+    public static ClientAuthResult authorizeClient(KeycloakSession session, EventBuilder event, Cors cors) {
         AuthenticationProcessor processor = getAuthenticationProcessor(session, event);
 
         Response response = processor.authenticateClient();
         if (response != null) {
+            if (cors != null) {
+                cors.allowAllOrigins();
+                HttpResponse httpResponse = session.getContext().getContextObject(HttpResponse.class);
+                cors.build(httpResponse);
+            }
             throw new WebApplicationException(response);
         }
 
         ClientModel client = processor.getClient();
         if (client == null) {
-            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST, cors.allowAllOrigins());
+        }
+
+        if (cors != null) {
+            cors.allowedOrigins(session, client);
         }
 
         String protocol = client.getProtocol();
@@ -65,7 +75,7 @@ public class AuthorizeClientUtil {
 
         if (!protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST, cors);
         }
 
         session.getContext().setClient(client);
@@ -92,15 +102,20 @@ public class AuthorizeClientUtil {
     }
 
     public static ClientAuthenticatorFactory findClientAuthenticatorForOIDCAuthMethod(KeycloakSession session, String oidcAuthMethod) {
-        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
-        for (ProviderFactory factory : providerFactories) {
-            ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
-            if (clientAuthFactory.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL).contains(oidcAuthMethod)) {
-                return clientAuthFactory;
-            }
-        }
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
+                .map(ClientAuthenticatorFactory.class::cast)
+                .filter(caf -> caf.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL).contains(oidcAuthMethod))
+                .findFirst()
+                .orElse(null);
+    }
 
-        return null;
+    private static void throwErrorResponseException(String error, String errorDescription, Response.Status status, Cors cors) {
+        if (cors == null) {
+            throw new ErrorResponseException(error, errorDescription, status);
+        } else {
+            cors.allowAllOrigins();
+            throw new CorsErrorResponseException(cors, error, errorDescription, status);
+        }
     }
 
     public static class ClientAuthResult {

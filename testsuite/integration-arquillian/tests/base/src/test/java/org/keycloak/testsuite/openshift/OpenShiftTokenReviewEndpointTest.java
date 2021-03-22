@@ -317,6 +317,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
             new Review().invoke().assertError(401, "Public client is not permitted to invoke token review endpoint");
         } finally {
             clientRep.setPublicClient(false);
+            clientRep.setSecret("password");
             testRealm().clients().get(clientRep.getId()).update(clientRep);
         }
     }

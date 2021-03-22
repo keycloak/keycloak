@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-model-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -29,6 +29,18 @@
     <name>Keycloak Model JPA</name>
     <description/>
 
+    <properties>
+        <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
+        <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+        <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+        <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
+        <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
+        <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
+        <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -61,10 +73,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
@@ -92,6 +100,46 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${jdbc.mvn.groupId}</groupId>
+            <artifactId>${jdbc.mvn.artifactId}</artifactId>
+            <version>${jdbc.mvn.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <keycloak.connectionsJpa.default.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.default.driver>
+                        <keycloak.connectionsJpa.default.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.default.database>
+                        <keycloak.connectionsJpa.default.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.default.user>
+                        <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
+                        <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
+                        <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

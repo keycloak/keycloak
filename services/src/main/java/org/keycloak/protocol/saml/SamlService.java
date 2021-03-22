@@ -77,12 +77,11 @@ import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -93,6 +92,8 @@ import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
@@ -140,26 +141,31 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             return null;
         }
+        
+        protected boolean isDestinationRequired() {
+            return true;
+        }
 
         protected Response handleSamlResponse(String samlResponse, String relayState) {
             event.event(EventType.LOGOUT);
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
 
             if (! (holder.getSamlObject() instanceof StatusResponseType)) {
-                event.detail(Details.REASON, "invalid_saml_response");
+                event.detail(Details.REASON, Errors.INVALID_SAML_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
-                event.detail(Details.REASON, "missing_required_destination");
+            if (isDestinationRequired() &&
+                    statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
+                event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             if (! destinationValidator.validate(this.getExpectedDestinationUri(session), statusResponse.getDestination())) {
-                event.detail(Details.REASON, "invalid_destination");
+                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -267,8 +273,9 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             logger.debug("verified request");
 
-            if (requestAbstractType.getDestination() == null && containsUnencryptedSignature(documentHolder)) {
-                event.detail(Details.REASON, "missing_required_destination");
+            if (isDestinationRequired() &&
+                    requestAbstractType.getDestination() == null && containsUnencryptedSignature(documentHolder)) {
+                event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -342,7 +349,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 if (isSupportedNameIdFormat(nameIdFormat)) {
                     authSession.setClientNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
                 } else {
-                    event.detail(Details.REASON, "unsupported_nameid_format");
+                    event.detail(Details.REASON, Errors.UNSUPPORTED_NAMEID_FORMAT);
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.UNSUPPORTED_NAME_ID_FORMAT);
                 }
@@ -500,6 +507,9 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         private boolean validateDestination(RequestAbstractType req, SamlClient samlClient, String errorCode) {
+            if (!isDestinationRequired() && req.getDestination() == null) {
+                return true;
+            }
             // validate destination
             if (req.getDestination() == null && samlClient.requiresClientSignature()) {
                 event.detail(Details.REASON, "missing_destination_required");
@@ -507,7 +517,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 return false;
             }
             if (! destinationValidator.validate(this.getExpectedDestinationUri(session), req.getDestination())) {
-                event.detail(Details.REASON, "invalid_destination");
+                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                 event.error(errorCode);
                 return false;
             }
@@ -653,16 +663,18 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
-        Set<KeyWrapper> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
-          ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-          : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getKeys(realm, KeyUse.SIG, Algorithm.RS256));
-
         try {
-            List<Element> signingKeys = new ArrayList<Element>();
-            for (KeyWrapper key : keys) {
-                signingKeys.add(IDPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
-            }
+            List<Element> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+                    .sorted(SamlService::compareKeys)
+                    .map(key -> {
+                        try {
+                            return IDPMetadataDescriptor
+                                    .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
+                        } catch (ParserConfigurationException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
 
             return IDPMetadataDescriptor.getIDPDescriptor(
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
@@ -670,11 +682,17 @@ public class SamlService extends AuthorizationEndpointBase {
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
                 true, 
-                signingKeys, null);
+                signingKeys);
         } catch (Exception ex) {
             logger.error("Cannot generate IdP metadata", ex);
             return "";
         }
+    }
+
+    public static int compareKeys(KeyWrapper o1, KeyWrapper o2) {
+        return o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+                ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+                : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1);
     }
 
     private boolean isClientProtocolCorrect(ClientModel clientModel) {

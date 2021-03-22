@@ -31,8 +31,6 @@ import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
@@ -56,8 +54,8 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
 public class IDPMetadataDescriptor {
 
     public static String getIDPDescriptor(URI loginPostEndpoint, URI loginRedirectEndpoint, URI logoutEndpoint,
-        String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts, List<Element> encryptionCerts) 
-        throws XMLStreamException, ProcessingException, ParserConfigurationException
+        String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts)
+        throws ProcessingException
     {
       
         StringWriter sw = new StringWriter();

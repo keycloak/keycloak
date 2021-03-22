@@ -17,12 +17,14 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -40,6 +42,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class TestApplicationResourceProviderFactory implements RealmResourceProviderFactory {
 
     private BlockingQueue<LogoutAction> adminLogoutActions = new LinkedBlockingDeque<>();
+    private BlockingQueue<LogoutToken> backChannelLogoutTokens = new LinkedBlockingDeque<>();
     private BlockingQueue<PushNotBeforeAction> pushNotBeforeActions = new LinkedBlockingDeque<>();
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
 
@@ -47,7 +50,12 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TestApplicationResourceProvider(session, adminLogoutActions, pushNotBeforeActions, testAvailabilityActions, oidcClientData);
+        TestApplicationResourceProvider provider = new TestApplicationResourceProvider(session, adminLogoutActions,
+                backChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData);
+
+        ResteasyProviderFactory.getInstance().injectProperties(provider);
+
+        return provider;
     }
 
     @Override

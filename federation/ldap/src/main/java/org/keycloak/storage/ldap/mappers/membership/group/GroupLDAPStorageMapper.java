@@ -287,7 +287,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             });
         }
 
-        // Possibly remove keycloak groups, which doesn't exists in LDAP
+        // Possibly remove keycloak groups, which don't exist in LDAP
         if (config.isDropNonExistingGroupsDuringSync()) {
             dropNonExistingKcGroups(realm, syncResult, visitedGroupIds);
         }
@@ -300,7 +300,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             updateKeycloakGroupTreeEntry(realm, groupEntry, ldapGroups, null, syncResult, visitedGroupIds);
         }
 
-        // Possibly remove keycloak groups, which doesn't exists in LDAP
+        // Possibly remove keycloak groups, which don't exist in LDAP
         if (config.isDropNonExistingGroupsDuringSync()) {
             dropNonExistingKcGroups(realm, syncResult, visitedGroupIds);
         }
@@ -337,7 +337,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     private void dropNonExistingKcGroups(RealmModel realm, SynchronizationResult syncResult, Set<String> visitedGroupIds) {
-        // Remove keycloak groups, which doesn't exists in LDAP
+        // Remove keycloak groups, which don't exist in LDAP
         getAllKcGroups(realm)
                 .filter(kcGroup -> !visitedGroupIds.contains(kcGroup.getId()))
                 .forEach(kcGroup -> {
@@ -398,7 +398,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             // Could theoretically happen on some LDAP servers if 'memberof' style is used and 'memberof' attribute of user references non-existing group
             if (kcGroup == null) {
                 String groupName = ldapGroup.getAttributeAsString(config.getGroupNameLdapAttribute());
-                logger.warnf("User '%s' is member of group '%s', which doesn't exists in LDAP", user.getUsername(), groupName);
+                logger.warnf("User '%s' is member of group '%s', which doesn't exist in LDAP", user.getUsername(), groupName);
             }
         }
 
@@ -445,7 +445,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         }
 
 
-        // Map to track all LDAP groups also exists in Keycloak
+        // Map to track all LDAP groups also exist in Keycloak
         Set<String> ldapGroupNames = new HashSet<>();
 
         // Create or update KC groups to LDAP including their attributes
@@ -538,7 +538,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     // Recursively check if parent group exists in LDAP. If yes, then return current group. If not, then recursively call this method
-    // for the predecessor. Result is the highest group, which doesn't yet exists in LDAP (and hence requires sync to LDAP)
+    // for the predecessor. Result is the highest group, which doesn't yet exist in LDAP (and hence requires sync to LDAP)
     private GroupModel getHighestPredecessorNotExistentInLdap(GroupModel groupsPathGroup, GroupModel group) {
         GroupModel parentGroup = group.getParent();
         if (parentGroup == groupsPathGroup) {
@@ -550,7 +550,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             // Parent exists in LDAP. Let's return current group
             return group;
         } else {
-            // Parent doesn't exists in LDAP. Let's recursively go up.
+            // Parent doesn't exist in LDAP. Let's recursively go up.
             return getHighestPredecessorNotExistentInLdap(groupsPathGroup, parentGroup);
         }
     }
@@ -737,7 +737,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                         super.leaveGroup(group);
                     }
                 } else {
-                    // Group mappings exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
+                    // Group mapping exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
                     if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
                         throw new ModelException("Not possible to delete LDAP group mappings as mapper mode is READ_ONLY");
                     } else {

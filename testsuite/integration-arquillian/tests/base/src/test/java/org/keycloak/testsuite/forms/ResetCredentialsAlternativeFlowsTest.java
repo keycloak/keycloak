@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -340,6 +342,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetCredentialsVerifyCustomOtpLabelSetProperly() {
         try {
             // Make a copy of the default Reset Credentials flow, but:
@@ -398,6 +401,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
     // KEYCLOAK-12168 Verify the 'Device Name' label is optional for the first OTP credential created
     // (either via Account page or by registering new user), but required for each next created OTP credential
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void deviceNameOptionalForFirstOTPCredentialButRequiredForEachNextOne() {
         // Enable 'Default Action' on 'Configure OTP' RA for the 'test' realm
         RequiredActionProviderRepresentation otpRequiredAction = testRealm().flows().getRequiredAction("CONFIGURE_TOTP");
@@ -464,11 +468,10 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
             // Create OTP credential with empty label
             totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
-            try {
-                Assert.assertTrue(totpPage.getError().isEmpty());
-            } catch (org.openqa.selenium.NoSuchElementException nsee) {
-                // OK to ignore if 'alert-error' element wasn't found
-            }
+
+            Assert.assertNull(totpPage.getAlertError());
+            Assert.assertNull(totpPage.getInputCodeError());
+            Assert.assertNull(totpPage.getInputLabelError());
 
             // Assert user authenticated
             appPage.assertCurrent();
@@ -508,16 +511,15 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // should fail with error since OTP label is required in this case already
             final String deviceNameLabelRequiredErrorMessage = "Please specify device name.";
             totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
-            Assert.assertTrue(totpPage.getError().equals(deviceNameLabelRequiredErrorMessage));
+            Assert.assertTrue(totpPage.getInputLabelError().equals(deviceNameLabelRequiredErrorMessage));
 
             // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
             totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), secondOtpLabel);
-            try {
-                Assert.assertTrue(totpPage.getError().isEmpty());
-            } catch (org.openqa.selenium.NoSuchElementException nsee) {
-                // OK to ignore if 'alert-error' element wasn't found
-            }
+
+            Assert.assertNull(totpPage.getAlertError());
+            Assert.assertNull(totpPage.getInputCodeError());
+            Assert.assertNull(totpPage.getInputLabelError());
 
             // Assert user authenticated
             appPage.assertCurrent();
@@ -549,7 +551,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // Remove the within test registered 'bwilson' user
             testingClient.server("test").run(session -> {
                 UserManager um = new UserManager(session);
-                UserModel user = session.users().getUserByUsername("bwilson", session.getContext().getRealm());
+                UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "bwilson");
                 if (user != null) {
                     um.removeUser(session.getContext().getRealm(), user);
                 }

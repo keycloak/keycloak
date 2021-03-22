@@ -20,6 +20,8 @@ package org.keycloak.testsuite.console.realm;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.console.page.realm.BruteForceDetection;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
@@ -40,6 +42,7 @@ import static org.keycloak.testsuite.util.WaitUtils.*;
  * @author mhajas
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SecurityDefensesTest extends AbstractRealmTest {
     
     public static final String INVALID_PWD_MSG = "Invalid username or password.";

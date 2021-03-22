@@ -71,6 +71,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Provider;
+import java.security.Security;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,12 +83,19 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.NotFoundException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.shrinkwrap.api.importer.ZipImporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Assert;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
@@ -361,6 +370,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            initializeTLS(suiteContext.getMigratedAuthServerInfo());
         }
     }
 
@@ -539,15 +549,201 @@ public class AuthServerTestEnricher {
     public static void initializeTLS(ContainerInfo containerInfo) {
         if (ServerURLs.AUTH_SERVER_SSL_REQUIRED && containerInfo.isJBossBased()) {
             log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
-            try {
-                OnlineManagementClient client = getManagementClient(containerInfo);
+            try (OnlineManagementClient client = getManagementClient(containerInfo)) {
                 AuthServerTestEnricher.enableTLS(client);
-                client.close();
             } catch (Exception e) {
                 log.warn("Failed to set up TLS for container '" + containerInfo.getQualifier() + "'. This may lead to unexpected behavior unless the test" +
                         " sets it up manually", e);
             }
 
+        }
+    }
+
+    /** KEYCLOAK-15692 Work-around the OpenJSSE TlsMasterSecretGenerator error:
+     *
+     *      https://github.com/openjsse/openjsse/issues/11
+     *
+     *  To prevent above TLS handshake error when initiating a TLS connection
+     *  ensure:
+     *  * Either both server and client endpoints of the future TLS connection
+     *    simultaneously utilize a JSSE security provider using the OpenJSSE
+     *    extension,
+     *
+     *  * Or both server and client endpoints simultaneously use a JSSE
+     *    security provider, which doesn't depend on the OpenJSSE extension.
+     *
+     *  Do this by performing the following:
+     *  * On platforms where implementation of the SunJSSE provider depends on
+     *  OpenJSSE extension ensure only SunJSSE provider is used to define the
+     *  SSL context of the Elytron client used for outbound SSL connections.
+     *
+     *  * On other platforms, use any suitable JSSE provider by querying all
+     *  the platform providers for respective property.
+     *
+     */
+    public static void setJsseSecurityProviderForOutboundSslConnectionsOfElytronClient(@Observes(precedence = 100) StartSuiteContainers event) {
+        log.info(
+            "Determining the JSSE security provider to use for outbound " +
+            "SSL/TLS connections of the Elytron client..."
+        );
+        /** First locate the wildfly-config.xml to use. Per:
+         *  https://docs.wildfly.org/21/Client_Guide.html#wildfly-config-xml-discovery
+         *
+         *  1) try to load it from the 'wildfly.config.url' property
+         */
+        String wildflyConfigXmlPath = System.getProperty("wildfly.config.url");
+
+        //  2) If not set, scan the classpath
+        if (wildflyConfigXmlPath == null) {
+            log.debug("Scanning classpath to locate wildfly-config.xml...");
+            final String javaClassPath = System.getProperty("java.class.path");
+            for (String dir : javaClassPath.split(":")) {
+                if (!dir.isEmpty()) {
+                    String candidatePath = dir + File.separator +
+                        "wildfly-config.xml";
+                    if (new File(candidatePath).exists()) {
+                        wildflyConfigXmlPath = candidatePath;
+                        log.debugf(
+                            "Using wildfly-config.xml at '%s' location!",
+                            wildflyConfigXmlPath
+                        );
+                        break;
+                    }
+                }
+            }
+        } else {
+            log.debugf(
+                "Using wildfly-config.xml from 'wildfly.config.url' " +
+                "property at '%s' location",
+                wildflyConfigXmlPath
+            );
+        }
+        // If still not found, that's an error
+        if (wildflyConfigXmlPath == null) {
+            throw new RuntimeException(
+                "Failed to locate the wildfly-config.xml to use for " +
+                "the configuration of Elytron client!"
+            );
+        }
+        /** Determine the name of the system property from wildfly-config.xml
+         *  holding the name of the security provider which is used by Elytron
+         *  client to define its SSL context for outbound SSL connections.
+         */
+        final File wildflyConfigXml = new File(wildflyConfigXmlPath);
+
+        String jsseSecurityProviderSystemProperty = null;
+        try {
+            DocumentBuilder documentBuilder = DocumentBuilderFactory
+                .newInstance().newDocumentBuilder();
+
+            Document xmlDoc = documentBuilder.parse(wildflyConfigXml);
+            NodeList nodeList = xmlDoc.getElementsByTagName("provider-name");
+            // Sanity check
+            if (nodeList.getLength() != 1) {
+                throw new RuntimeException(
+                    "Failed to locate the 'provider-name' element " +
+                    "in wildfly-config.xml XML file!"
+                );
+            }
+            String providerNameElement = nodeList.item(0).getAttributes()
+                .getNamedItem("name").getNodeValue();
+
+            // Drop Wildfly's expressions notation from the attribute's value
+            jsseSecurityProviderSystemProperty = providerNameElement
+                .replaceAll("(\\$|\\{|\\}|(:.*$))", new String());
+
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                "Error reading the '%s' file. Please make sure the provided " +
+                "path is correct and retry!",
+                wildflyConfigXml.getAbsolutePath()
+            ));
+        } catch (ParserConfigurationException|SAXException e) {
+            throw new RuntimeException(String.format(
+                "Failed to parse the '%s' XML file!",
+                wildflyConfigXml.getAbsolutePath()
+            ));
+        }
+
+        boolean determineJsseSecurityProviderName = false;
+        if (jsseSecurityProviderSystemProperty != null) {
+            // Does JSSE security provider system property already exist?
+            if (
+                System.getProperty(jsseSecurityProviderSystemProperty) == null
+            ) {
+                // If not, determine it
+                determineJsseSecurityProviderName = true;
+            }
+        } else {
+            throw new RuntimeException(
+                "Failed to determine the name of system property " +
+                "holding JSSE security provider's name for Elytron client!"
+            );
+        }
+
+        if (determineJsseSecurityProviderName) {
+
+            /** Detect if OpenJSSE extension is present on the platform
+             *
+             *  Since internal 'com.sun.net.ssl.*' classes of the SunJSSE
+             *  provider have identical names regardless if the OpenJSSE
+             *  extension is used or not:
+             *
+             *    https://github.com/openjsse/openjsse/blob/master/pom.xml#L125
+             *
+             *  detect the presence of the OpenJSSE extension by checking the
+             *  presence of the 'openjsse.jar' file within the JRE extensions
+             *  directory.
+             *
+             */
+            final String jreExtensionsDir = System.getProperty("java.home") +
+                File.separator + "lib" + File.separator + "ext" +
+                File.separator + "openjsse.jar";
+
+            boolean openJsseExtensionPresent = new File(
+                jreExtensionsDir).exists();
+
+            Provider platformJsseProvider = Security
+                .getProviders("SSLContext.TLSv1.2")[0];
+
+            if (platformJsseProvider != null) {
+                // If OpenJSSE extension is present
+                if (openJsseExtensionPresent) {
+                    // Sanity check - confirm SunJSSE provider is present on
+                    // the platform (if OpenJSSE extension is present, it
+                    // shouldn't ever happen SunJSSE won't be, but double-check
+                    // for any case)
+                    Provider sunJsseProvider = Stream.of(
+                            Security.getProviders()
+                        ).filter(p -> p.getName().equals("SunJSSE"))
+                        .collect(Collectors.toList())
+                        .get(0);
+
+                    // Use it or throw an error if absent
+                    if (sunJsseProvider != null) {
+                        platformJsseProvider = sunJsseProvider;
+                    } else {
+                        throw new RuntimeException(
+                            "The SunJSSE provider is not present " +
+                            "on the platform!"
+                        );
+                    }
+                }
+                // Propagate the final provider name to system property used by
+                // wildfly-config.xml to configure the JSSE provider name
+                System.setProperty(
+                    jsseSecurityProviderSystemProperty,
+                    platformJsseProvider.getName()
+                );
+            } else {
+                throw new RuntimeException(
+                    "Cannot identify a security provider for Elytron client " +
+                    "offering the TLSv1.2 capability!"
+                );
+            }
+            log.infof(
+                "Using the '%s' JSSE provider!", platformJsseProvider.getName()
+            );
         }
     }
 

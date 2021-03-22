@@ -51,7 +51,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -65,6 +64,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -261,7 +261,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
@@ -343,7 +343,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
@@ -381,7 +381,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @UncaughtServerErrorExpected
     public void testDirectImpersonation() throws Exception {
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
@@ -516,11 +516,11 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         realm.removeClient(realm.getClientByClientId("direct-exchanger").getId());
         realm.removeClient(realm.getClientByClientId("target").getId());
         realm.removeRole(realm.getRole("example"));
-        session.users().removeUser(realm, session.users().getUserByUsername("impersonated-user", realm));
+        session.users().removeUser(realm, session.users().getUserByUsername(realm, "impersonated-user"));
     }
 
     private Response checkTokenExchange() {
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
                 .path(TEST)

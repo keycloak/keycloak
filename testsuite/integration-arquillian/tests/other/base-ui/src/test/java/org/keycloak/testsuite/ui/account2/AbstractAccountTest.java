@@ -34,10 +34,9 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ACCOUNT_API, skipRestart = true)
 public abstract class AbstractAccountTest extends AbstractUiTest {
-    public static final String ACCOUNT_THEME_NAME_KC = "keycloak-preview";
-    public static final String ACCOUNT_THEME_NAME_RHSSO = "rh-sso-preview";
+    public static final String ACCOUNT_THEME_NAME_KC = "keycloak.v2";
+    public static final String ACCOUNT_THEME_NAME_RHSSO = "rh-sso.v2";
 
     @Page
     protected WelcomeScreen accountWelcomeScreen;

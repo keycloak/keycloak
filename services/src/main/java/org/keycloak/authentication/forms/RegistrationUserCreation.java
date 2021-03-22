@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.forms;
 
+import static org.keycloak.userprofile.profile.UserProfileContextFactory.forRegistrationUserCreation;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -37,12 +39,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -71,16 +70,19 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
-        UserProfile newProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
+
+        UserProfileValidationResult result = forRegistrationUserCreation(context.getSession(), formData).validate();
+        UserProfile newProfile = result.getProfile();
         String email = newProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
+
         String username = newProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
+        String firstName = newProfile.getAttributes().getFirstAttribute(UserModel.FIRST_NAME);
+        String lastName = newProfile.getAttributes().getFirstAttribute(UserModel.LAST_NAME);
         context.getEvent().detail(Details.EMAIL, email);
+
         context.getEvent().detail(Details.USERNAME, username);
-
-        UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-
-        context.getEvent().detail(Details.REGISTER_METHOD, "form");
-        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forRegistrationUserCreation(), newProfile);
+        context.getEvent().detail(Details.FIRST_NAME, firstName);
+        context.getEvent().detail(Details.LAST_NAME, lastName);
 
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
         if (context.getRealm().isRegistrationEmailAsUsername()) {

@@ -79,9 +79,6 @@ public class ClientModelTest extends AbstractKeycloakTest {
         assertThat(expected.getDescription(), is(actual.getDescription()));
         assertThat(expected.getBaseUrl(), is(actual.getBaseUrl()));
         assertThat(expected.getManagementUrl(), is(actual.getManagementUrl()));
-        assertThat(expected.getDefaultRolesStream().collect(Collectors.toSet()),
-                is(actual.getDefaultRolesStream().collect(Collectors.toSet())));
-
         assertThat(expected.getRedirectUris().containsAll(actual.getRedirectUris()), is(true));
         assertThat(expected.getWebOrigins().containsAll(actual.getWebOrigins()), is(true));
         assertThat(expected.getRegisteredNodes(), is(actual.getRegisteredNodes()));
@@ -99,8 +96,6 @@ public class ClientModelTest extends AbstractKeycloakTest {
         client.addRole("role-1");
         client.addRole("role-2");
         client.addRole("role-3");
-        client.addDefaultRole("role-1");
-        client.addDefaultRole("role-2");
         client.addRedirectUri("redirect-1");
         client.addRedirectUri("redirect-2");
         client.addWebOrigin("origin-1");
@@ -288,7 +283,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
             }
 
             realm = currentSession.realms().createRealm("copy");
-            ClientModel copyClient = RepresentationToModel.createClient(currentSession, realm, representation, true);
+            ClientModel copyClient = RepresentationToModel.createClient(currentSession, realm, representation);
 
             assertEquals(client, copyClient);
 

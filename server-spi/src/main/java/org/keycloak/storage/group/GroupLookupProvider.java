@@ -56,7 +56,7 @@ public interface GroupLookupProvider {
      * @param search Case sensitive searched string.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of groups with the given string in name.
+     * @return Stream of groups with the given string in name. Never returns {@code null}.
      */
     Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
 

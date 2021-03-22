@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -157,5 +158,23 @@ public class RoleRepresentation {
 
         attributes.put(name, Arrays.asList(value));
         return this;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 29 * hash + Objects.hashCode(this.id);
+        hash = 29 * hash + Objects.hashCode(this.name);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || (!(obj instanceof RoleRepresentation))) {
+            return false;
+        }
+        final RoleRepresentation other = (RoleRepresentation) obj;
+        return Objects.equals(this.id, other.id) && Objects.equals(this.name, other.name);
     }
 }

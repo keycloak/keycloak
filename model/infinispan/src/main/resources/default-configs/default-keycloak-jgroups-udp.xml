@@ -1,0 +1,61 @@
+<config xmlns="urn:org:jgroups"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups-4.2.xsd">
+   <!-- This file has been adpoted from https://github.com/infinispan/infinispan/blob/master/core/src/main/resources/default-configs/default-jgroups-udp.xml -->
+   <!-- jgroups.udp.address is deprecated and will be removed, see ISPN-11867 -->
+   <UDP bind_addr="${jgroups.bind.address,jgroups.udp.address:127.0.0.1}"
+        bind_port="${jgroups.bind.port,jgroups.udp.port:0}"
+        mcast_addr="${jgroups.udp.mcast_addr,jgroups.mcast_addr:228.6.7.8}"
+        mcast_port="${jgroups.udp.mcast_port,jgroups.mcast_port:46655}"
+        tos="0"
+        ucast_send_buf_size="1m"
+        mcast_send_buf_size="1m"
+        ucast_recv_buf_size="20m"
+        mcast_recv_buf_size="25m"
+        ip_ttl="${jgroups.ip_ttl:2}"
+        thread_naming_pattern="pl"
+        enable_diagnostics="false"
+        bundler_type="no-bundler"
+        max_bundle_size="8500"
+
+        thread_pool.min_threads="${jgroups.thread_pool.min_threads:0}"
+        thread_pool.max_threads="${jgroups.thread_pool.max_threads:200}"
+        thread_pool.keep_alive_time="60000"
+   />
+   <PING num_discovery_runs="3"/>
+   <MERGE3 min_interval="10000"
+           max_interval="30000"
+   />
+   <FD_SOCK/>
+   <!-- Suspect node `timeout` to `timeout + timeout_check_interval` millis after the last heartbeat -->
+   <FD_ALL timeout="10000"
+           interval="2000"
+           timeout_check_interval="1000"
+   />
+   <VERIFY_SUSPECT timeout="1000"/>
+   <pbcast.NAKACK2 xmit_interval="100"
+                   xmit_table_num_rows="50"
+                   xmit_table_msgs_per_row="1024"
+                   xmit_table_max_compaction_time="30000"
+                   resend_last_seqno="true"
+   />
+   <UNICAST3 xmit_interval="100"
+             xmit_table_num_rows="50"
+             xmit_table_msgs_per_row="1024"
+             xmit_table_max_compaction_time="30000"
+   />
+   <pbcast.STABLE stability_delay="500"
+                  desired_avg_gossip="5000"
+                  max_bytes="1M"
+   />
+   <pbcast.GMS print_local_addr="false"
+               join_timeout="${jgroups.join_timeout:500}"
+   />
+   <UFC max_credits="4m"
+        min_threshold="0.40"
+   />
+   <MFC max_credits="4m"
+        min_threshold="0.40"
+   />
+   <FRAG3 frag_size="8000"/>
+</config>

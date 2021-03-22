@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.map.storage.ConcurrentHashMapStorageProvider
+org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProvider

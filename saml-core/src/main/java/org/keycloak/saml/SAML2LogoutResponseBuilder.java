@@ -21,6 +21,7 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.saml.SAML2NameIDBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -42,7 +43,7 @@ public class SAML2LogoutResponseBuilder implements SamlProtocolExtensionsAwareBu
 
     protected String logoutRequestID;
     protected String destination;
-    protected String issuer;
+    protected NameIDType issuer;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2LogoutResponseBuilder logoutRequestID(String logoutRequestID) {
@@ -55,9 +56,13 @@ public class SAML2LogoutResponseBuilder implements SamlProtocolExtensionsAwareBu
         return this;
     }
 
-    public SAML2LogoutResponseBuilder issuer(String issuer) {
+    public SAML2LogoutResponseBuilder issuer(NameIDType issuer) {
         this.issuer = issuer;
         return this;
+    }
+
+    public SAML2LogoutResponseBuilder issuer(String issuer) {
+        return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
     @Override
@@ -77,9 +82,6 @@ public class SAML2LogoutResponseBuilder implements SamlProtocolExtensionsAwareBu
 
         statusResponse.setStatus(statusType);
         statusResponse.setInResponseTo(logoutRequestID);
-        NameIDType issuer = new NameIDType();
-        issuer.setValue(this.issuer);
-
         statusResponse.setIssuer(issuer);
         statusResponse.setDestination(destination);
 

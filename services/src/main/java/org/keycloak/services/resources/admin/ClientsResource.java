@@ -34,15 +34,13 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.validation.ClientValidator;
-import org.keycloak.services.validation.PairwiseClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
-import org.keycloak.validation.ClientValidationUtil;
+import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -57,10 +55,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -141,12 +139,7 @@ public class ClientsResource {
                 .filter(Objects::nonNull);
 
         if (!canView) {
-            if (firstResult != null && firstResult > 0) {
-                s = s.skip(firstResult);
-            }
-            if (maxResults != null && maxResults > 0) {
-                s = s.limit(maxResults);
-            }
+            s = paginatedStream(s, firstResult, maxResults);
         }
 
         return s;
@@ -169,24 +162,10 @@ public class ClientsResource {
     public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
-        ValidationMessages validationMessages = new ValidationMessages();
-        if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(
-                    validationMessages.getStringMessages(),
-                    validationMessages.getStringMessages(messages),
-                    Response.Status.BAD_REQUEST
-            );
-        }
-
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
-        } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
 
-        try {
-            ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
                 UserModel serviceAccount = session.users().getServiceAccount(clientModel);
@@ -210,14 +189,21 @@ public class ClientsResource {
                 }
             }
 
-            ClientValidationUtil.validate(session, clientModel, true, c -> {
+            ValidationUtil.validateClient(session, clientModel, true, r -> {
                 session.getTransactionManager().setRollbackOnly();
-                throw new ErrorResponseException(Errors.INVALID_INPUT, c.getError(), Response.Status.BAD_REQUEST);
+                throw new ErrorResponseException(
+                        Errors.INVALID_INPUT,
+                        r.getAllLocalizedErrorsAsString(AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale())),
+                        Response.Status.BAD_REQUEST);
             });
+
+            session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
 

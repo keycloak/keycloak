@@ -101,10 +101,6 @@ public class ExportImportUtil {
         Assert.assertEquals(1, creds.size());
         String cred = (String)creds.iterator().next();
         Assert.assertEquals("password", cred);
-        Assert.assertEquals(4, realm.getDefaultRoles().size());
-
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "foo"));
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "bar"));
 
         RealmResource realmRsc = adminClient.realm(realm.getRealm());
 
@@ -478,7 +474,7 @@ public class ExportImportUtil {
 
     // Workaround for KEYCLOAK-3104.  For this realm, search() only works if username is null.
     private static UserRepresentation findByUsername(RealmResource realmRsc, String username) {
-        for (UserRepresentation user : realmRsc.users().search(null, 0, Integer.MAX_VALUE)) {
+        for (UserRepresentation user : realmRsc.users().search(null, 0, -1)) {
             if (user.getUsername().equalsIgnoreCase(username)) return user;
         }
         return null;

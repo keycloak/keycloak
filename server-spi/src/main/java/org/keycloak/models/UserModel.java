@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import org.keycloak.storage.SearchableModelField;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,52 @@ public interface UserModel extends RoleMapperModel {
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
 
+    Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
+
+    public static class SearchableFields {
+        public static final SearchableModelField<UserModel> ID              = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<UserModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
+        public static final SearchableModelField<UserModel> FIRST_NAME      = new SearchableModelField<>("firstName", String.class);
+        public static final SearchableModelField<UserModel> LAST_NAME       = new SearchableModelField<>("lastName", String.class);
+        public static final SearchableModelField<UserModel> EMAIL           = new SearchableModelField<>("email", String.class);
+        public static final SearchableModelField<UserModel> ENABLED         = new SearchableModelField<>("enabled", Boolean.class);
+        public static final SearchableModelField<UserModel> EMAIL_VERIFIED  = new SearchableModelField<>("emailVerified", Boolean.class);
+        public static final SearchableModelField<UserModel> FEDERATION_LINK = new SearchableModelField<>("federationLink", String.class);
+
+        /**
+         * This field can only searched either for users coming from an IDP, then the operand is (idp_alias),
+         * or as user coming from a particular IDP with given username there, then the operand is a pair (idp_alias, idp_user_id).
+         * It is also possible to search regardless of {@code idp_alias}, then the pair is {@code (null, idp_user_id)}.
+         */
+        public static final SearchableModelField<UserModel> IDP_AND_USER    = new SearchableModelField<>("idpAlias:idpUserId", String.class);
+
+        public static final SearchableModelField<UserModel> ASSIGNED_ROLE   = new SearchableModelField<>("assignedRole", String.class);
+        public static final SearchableModelField<UserModel> ASSIGNED_GROUP  = new SearchableModelField<>("assignedGroup", String.class);
+        /**
+         * Search for users that have consent set for a particular client.
+         */
+        public static final SearchableModelField<UserModel> CONSENT_FOR_CLIENT = new SearchableModelField<>("clientConsent", String.class);
+        /**
+         * Search for users that have consent set for a particular client that originates in the given client provider.
+         */
+        public static final SearchableModelField<UserModel> CONSENT_CLIENT_FEDERATION_LINK = new SearchableModelField<>("clientConsentFederationLink", String.class);
+        /**
+         * Search for users that have consent that has given client scope.
+         */
+        public static final SearchableModelField<UserModel> CONSENT_WITH_CLIENT_SCOPE = new SearchableModelField<>("consentWithClientScope", String.class);
+        /**
+         * ID of the client corresponding to the service account
+         */
+        public static final SearchableModelField<UserModel> SERVICE_ACCOUNT_CLIENT = new SearchableModelField<>("serviceAccountClientId", String.class);
+        /**
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * is always checked for equality, and the value (which can be any numbert of values, none for operators like EXISTS
+         * or potentially many for e.g. IN) is checked per the operator.
+         */
+        public static final SearchableModelField<UserModel> ATTRIBUTE       = new SearchableModelField<>("attribute", String[].class);
+    }
+
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         UserModel getUser();
@@ -56,7 +104,13 @@ public interface UserModel extends RoleMapperModel {
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();
 
-    // No default method here to allow Abstract subclasses where the username is provided in a different manner
+    /**
+     * Sets username for this user.
+     *
+     * No default method here to allow Abstract subclasses where the username is provided in a different manner
+     *
+     * @param username username string
+     */
     void setUsername(String username);
 
     /**
@@ -91,20 +145,55 @@ public interface UserModel extends RoleMapperModel {
     /**
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
      */
+    @Deprecated
     List<String> getAttribute(String name);
+
+    /**
+     * Obtains all values associated with the specified attribute name.
+     *
+     * @param name the name of the attribute.
+     * @return a non-null {@link Stream} of attribute values.
+     */
+    default Stream<String> getAttributeStream(final String name) {
+        List<String> value = this.getAttribute(name);
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     Map<String, List<String>> getAttributes();
 
+    /**
+     * @deprecated Use {@link #getRequiredActionsStream() getRequiredActionsStream} instead.
+     */
+    @Deprecated
     Set<String> getRequiredActions();
+
+    /**
+     * Obtains the names of required actions associated with the user.
+     *
+     * @return a non-null {@link Stream} of required action names.
+     */
+    default Stream<String> getRequiredActionsStream() {
+        Set<String> value = this.getRequiredActions();
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     void addRequiredAction(String action);
 
     void removeRequiredAction(String action);
 
-    void addRequiredAction(RequiredAction action);
+    default void addRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        addRequiredAction(actionName);
+    }
 
-    void removeRequiredAction(RequiredAction action);
+    default void removeRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        removeRequiredAction(actionName);
+    }
 
     String getFirstName();
 
@@ -116,24 +205,44 @@ public interface UserModel extends RoleMapperModel {
 
     String getEmail();
 
+    /**
+     * Sets email for this user.
+     *
+     * @param email the email
+     */
     void setEmail(String email);
 
     boolean isEmailVerified();
 
     void setEmailVerified(boolean verified);
 
+    /**
+     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
+     */
     @Deprecated
-    default Set<GroupModel> getGroups() {
-        return getGroupsStream().collect(Collectors.toSet());
+    Set<GroupModel> getGroups();
+
+    /**
+     * Obtains the groups associated with the user.
+     *
+     * @return a non-null {@link Stream} of groups.
+     */
+    default Stream<GroupModel> getGroupsStream() {
+        Set<GroupModel> value = this.getGroups();
+        return value != null ? value.stream() : Stream.empty();
     }
 
-    Stream<GroupModel> getGroupsStream();
-
+    /**
+     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
+     */
     @Deprecated
     default Set<GroupModel> getGroups(int first, int max) {
         return getGroupsStream(null, first, max).collect(Collectors.toSet());
     }
 
+    /**
+     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
+     */
     @Deprecated
     default Set<GroupModel> getGroups(String search, int first, int max) {
         return getGroupsStream(search, first, max)
@@ -141,12 +250,12 @@ public interface UserModel extends RoleMapperModel {
     }
 
     /**
-     * Returns a paginated stream of groups within this.realm with search in the name
+     * Returns a paginated stream of groups within this realm with search in the name
      *
      * @param search Case insensitive string which will be searched for. Ignored if null.
      * @param first Index of first group to return. Ignored if negative or {@code null}.
      * @param max Maximum number of records to return. Ignored if negative or {@code null}.
-     * @return Stream of desired groups.
+     * @return Stream of desired groups. Never returns {@code null}.
      */
     default Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
         if (search != null) search = search.toLowerCase();
@@ -190,5 +299,38 @@ public interface UserModel extends RoleMapperModel {
 
     enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS
+    }
+
+    /**
+     * The {@link UserModel.Streams} interface makes all collection-based methods in {@link UserModel} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends UserModel, RoleMapperModel.Streams {
+        @Override
+        default List<String> getAttribute(String name) {
+            return this.getAttributeStream(name).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<String> getAttributeStream(final String name);
+
+        @Override
+        default Set<String> getRequiredActions() {
+            return this.getRequiredActionsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<String> getRequiredActionsStream();
+
+        @Override
+        default Set<GroupModel> getGroups() {
+            return this.getGroupsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<GroupModel> getGroupsStream();
     }
 }

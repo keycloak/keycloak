@@ -24,7 +24,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 
 import java.util.Objects;
 
-public abstract class AbstractGroupModel<E extends AbstractEntity> implements GroupModel {
+public abstract class AbstractGroupModel<E extends AbstractEntity> implements GroupModel.Streams {
 
     protected final KeycloakSession session;
     protected final RealmModel realm;

@@ -26,6 +26,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
 /**
@@ -93,6 +94,18 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
         return token;
     }
 
+    public AccessTokenResponse transformAccessTokenResponse(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel,
+                                                            KeycloakSession session, UserSessionModel userSession,
+                                                            ClientSessionContext clientSessionCtx) {
+
+        if (!OIDCAttributeMapperHelper.includeInAccessTokenResponse(mappingModel)) {
+            return accessTokenResponse;
+        }
+
+        setClaim(accessTokenResponse, mappingModel, userSession, session, clientSessionCtx);
+        return accessTokenResponse;
+    }
+
     /**
      * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
      * @param token
@@ -117,5 +130,18 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
                             ClientSessionContext clientSessionCtx) {
         // we delegate to the old #setClaim(...) method for backwards compatibility
         setClaim(token, mappingModel, userSession);
+    }
+
+    /**
+     * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     * @param accessTokenResponse
+     * @param mappingModel
+     * @param userSession
+     * @param keycloakSession
+     * @param clientSessionCtx
+     */
+    protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
+                            ClientSessionContext clientSessionCtx) {
+
     }
 }

@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.Map;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
@@ -29,7 +30,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, GroupProvider, RoleProvider /* up to here */ {
+public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider /* up to here */ {
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
     MigrationModel getMigrationModel();
@@ -38,26 +39,44 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
 
-    ClientScopeModel getClientScopeById(String id, RealmModel realm);
+    /**
+     * @deprecated Use the corresponding method from {@link ClientScopeProvider}. */
+    default ClientScopeModel getClientScopeById(String id, RealmModel realm) {
+        return getClientScopeById(realm, id);
+    }
 
     /**
-     * @deprecated Use {@link #getRealmsStream()  getRealmsStream} instead.
+     * @deprecated Use the corresponding method from {@link ClientScopeProvider}. */
+    @Override
+    ClientScopeModel getClientScopeById(RealmModel realm, String id);
+
+    /**
+     * @deprecated Use {@link #getRealmsStream() getRealmsStream} instead.
      */
     @Deprecated
     default List<RealmModel> getRealms() {
         return getRealmsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns realms as a stream.
+     * @return Stream of {@link RealmModel}. Never returns {@code null}.
+     */
     Stream<RealmModel> getRealmsStream();
 
     /**
-     * @deprecated Use {@link #getRealmsWithProviderTypeStream(Class)}   getRealmsWithProviderTypeStream} instead.
+     * @deprecated Use {@link #getRealmsWithProviderTypeStream(Class) getRealmsWithProviderTypeStream} instead.
      */
     @Deprecated
     default List<RealmModel> getRealmsWithProviderType(Class<?> type) {
         return getRealmsWithProviderTypeStream(type).collect(Collectors.toList());
     }
 
+    /**
+     * Returns realms with the given provider type as a stream.
+     * @param type {@code Class<?>} Type of the provider.
+     * @return Stream of {@link RealmModel}. Never returns {@code null}.
+     */
     Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type);
 
 
@@ -68,17 +87,34 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     void removeClientInitialAccessModel(RealmModel realm, String id);
 
     /**
-     * @deprecated Use {@link #listClientInitialAccessStream(RealmModel)}   listClientInitialAccessStream} instead.
+     * @deprecated Use {@link #listClientInitialAccessStream(RealmModel) listClientInitialAccessStream} instead.
      */
     @Deprecated
     default List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
         return listClientInitialAccessStream(realm).collect(Collectors.toList());
     }
 
+    /**
+     * Returns client's initial access as a stream.
+     * @param realm {@link RealmModel} The realm where to list client's initial access.
+     * @return Stream of {@link ClientInitialAccessModel}. Never returns {@code null}.
+     */
     Stream<ClientInitialAccessModel> listClientInitialAccessStream(RealmModel realm);
 
     void removeExpiredClientInitialAccess();
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
+
+    void saveLocalizationText(RealmModel realm, String locale, String key, String text);
+
+    void saveLocalizationTexts(RealmModel realm, String locale, Map<String, String> localizationTexts);
+
+    boolean updateLocalizationText(RealmModel realm, String locale, String key, String text);
+
+    boolean deleteLocalizationTextsByLocale(RealmModel realm, String locale);
+
+    boolean deleteLocalizationText(RealmModel realm, String locale, String key);
+
+    String getLocalizationTextsById(RealmModel realm, String locale, String key);
 
     // The methods below are going to be removed in future version of Keycloak
     // Sadly, we have to copy-paste the declarations from the respective interfaces

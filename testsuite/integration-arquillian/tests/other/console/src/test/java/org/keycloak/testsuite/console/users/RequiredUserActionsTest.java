@@ -3,6 +3,8 @@ package org.keycloak.testsuite.console.users;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
@@ -26,6 +28,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  * @author tkyjovsk
  * @author mhajas
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class RequiredUserActionsTest extends AbstractUserTest {
 
     @Page

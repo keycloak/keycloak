@@ -36,7 +36,7 @@ public class TokenCallable implements Callable<String> {
     private final Http http;
     private final Configuration configuration;
     private final ServerConfiguration serverConfiguration;
-    private AccessTokenResponse clientToken;
+    private AccessTokenResponse tokenResponse;
 
     public TokenCallable(String userName, String password, Http http, Configuration configuration, ServerConfiguration serverConfiguration) {
         this.userName = userName;
@@ -52,55 +52,49 @@ public class TokenCallable implements Callable<String> {
 
     @Override
     public String call() {
-        if (clientToken == null) {
-            if (userName == null || password == null) {
-                clientToken = obtainAccessToken();
-            } else {
-                clientToken = obtainAccessToken(userName, password);
-            }
-        } else {
-            String refreshTokenValue = clientToken.getRefreshToken();
-            try {
-                RefreshToken refreshToken = JsonSerialization.readValue(new JWSInput(refreshTokenValue).getContent(), RefreshToken.class);
-                if (!refreshToken.isActive() || !isTokenTimeToLiveSufficient(refreshToken)) {
-                    log.debug("Refresh token is expired.");
-                    if (userName == null || password == null) {
-                        clientToken = obtainAccessToken();
-                    } else {
-                        clientToken = obtainAccessToken(userName, password);
-                    }
-                }
-            } catch (Exception e) {
-                clientToken = null;
-                throw new RuntimeException(e);
-            }
+        if (tokenResponse == null) {
+            tokenResponse = obtainTokens();
         }
 
-        String token = clientToken.getToken();
-
         try {
-            AccessToken accessToken = JsonSerialization.readValue(new JWSInput(token).getContent(), AccessToken.class);
+            String rawAccessToken = tokenResponse.getToken();
+            AccessToken accessToken = JsonSerialization.readValue(new JWSInput(rawAccessToken).getContent(), AccessToken.class);
 
             if (accessToken.isActive() && this.isTokenTimeToLiveSufficient(accessToken)) {
-                return token;
+                return rawAccessToken;
             } else {
                 log.debug("Access token is expired.");
             }
-
-            clientToken = http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
-                    .authentication().client()
-                    .form()
-                    .param("grant_type", "refresh_token")
-                    .param("refresh_token", clientToken.getRefreshToken())
-                    .response()
-                    .json(AccessTokenResponse.class)
-                    .execute();
-        } catch (Exception e) {
-            clientToken = null;
-            throw new RuntimeException(e);
+        } catch (Exception cause) {
+            clearTokens();
+            throw new RuntimeException("Failed to parse access token", cause);
         }
 
-        return clientToken.getToken();
+        tokenResponse = tryRefreshToken();
+
+        return tokenResponse.getToken();
+    }
+
+    private AccessTokenResponse tryRefreshToken() {
+        String rawRefreshToken = tokenResponse.getRefreshToken();
+
+        if (rawRefreshToken == null) {
+            log.debug("Refresh token not found, obtaining new tokens");
+            return obtainTokens();
+        }
+
+        try {
+            RefreshToken refreshToken = JsonSerialization.readValue(new JWSInput(rawRefreshToken).getContent(), RefreshToken.class);
+            if (!refreshToken.isActive() || !isTokenTimeToLiveSufficient(refreshToken)) {
+                log.debug("Refresh token is expired.");
+                return obtainTokens();
+            }
+        } catch (Exception cause) {
+            clearTokens();
+            throw new RuntimeException("Failed to parse refresh token", cause);
+        }
+
+        return refreshToken(rawRefreshToken);
     }
 
     public boolean isTokenTimeToLiveSufficient(AccessToken token) {
@@ -112,7 +106,7 @@ public class TokenCallable implements Callable<String> {
      *
      * @return an {@link AccessTokenResponse}
      */
-    AccessTokenResponse obtainAccessToken() {
+    AccessTokenResponse clientCredentialsGrant() {
         return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
                 .authentication()
                 .client()
@@ -126,13 +120,33 @@ public class TokenCallable implements Callable<String> {
      *
      * @return an {@link AccessTokenResponse}
      */
-    AccessTokenResponse obtainAccessToken(String userName, String password) {
+    AccessTokenResponse resourceOwnerPasswordGrant(String userName, String password) {
         return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
                 .authentication()
                 .oauth2ResourceOwnerPassword(userName, password)
                 .response()
                 .json(AccessTokenResponse.class)
                 .execute();
+    }
+
+    private AccessTokenResponse refreshToken(String rawRefreshToken) {
+        log.debug("Refreshing tokens");
+        return http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
+                .authentication().client()
+                .form()
+                .param("grant_type", "refresh_token")
+                .param("refresh_token", rawRefreshToken)
+                .response()
+                .json(AccessTokenResponse.class)
+                .execute();
+    }
+
+    private AccessTokenResponse obtainTokens() {
+        if (userName == null || password == null) {
+            return clientCredentialsGrant();
+        } else {
+            return resourceOwnerPasswordGrant(userName, password);
+        }
     }
 
     Http getHttp() {
@@ -151,7 +165,7 @@ public class TokenCallable implements Callable<String> {
         return serverConfiguration;
     }
 
-    void clearToken() {
-        clientToken = null;
+    void clearTokens() {
+        tokenResponse = null;
     }
 }

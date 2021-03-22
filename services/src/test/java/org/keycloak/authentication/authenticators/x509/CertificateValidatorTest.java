@@ -47,9 +47,12 @@ public class CertificateValidatorTest {
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
-        CertificateValidator validator = builder.build(new X509Certificate[] { certificate });
+        CertificateValidator validator = builder
+          .timestampValidation()
+            .enabled(true)
+          .build(new X509Certificate[] { certificate });
         try {
-            validator.validateTimestamps(true);
+            validator.validateTimestamps();
         } catch (Exception ex) {
             ex.printStackTrace();
             Assert.fail(ex.getMessage());
@@ -70,9 +73,12 @@ public class CertificateValidatorTest {
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
-        CertificateValidator validator = builder.build(new X509Certificate[] { certificate });
+        CertificateValidator validator = builder
+          .timestampValidation()
+            .enabled(true)
+          .build(new X509Certificate[] { certificate });
         try {
-            validator.validateTimestamps(true);
+            validator.validateTimestamps();
             Assert.fail("certificate validation must fail for certificate is not valid yet");
         } catch (Exception ex) {
             MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString("not valid yet"));
@@ -94,9 +100,12 @@ public class CertificateValidatorTest {
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
-        CertificateValidator validator = builder.build(new X509Certificate[] { certificate });
+        CertificateValidator validator = builder
+          .timestampValidation()
+            .enabled(true)
+          .build(new X509Certificate[] { certificate });
         try {
-            validator.validateTimestamps(true);
+            validator.validateTimestamps();
             Assert.fail("certificate validation must fail for certificate has expired");
         } catch (Exception ex) {
             MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString("has expired"));

@@ -28,7 +28,11 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -73,6 +77,7 @@ public abstract class RoleResource {
 
     protected void addComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
+            if (rep.getId() == null) throw new NotFoundException("Could not find composite role");
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role");

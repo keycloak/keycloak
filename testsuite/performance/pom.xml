@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -40,12 +40,20 @@
         <infinispan.jstat>${jstat}</infinispan.jstat>
         <lb.jstat>${jstat}</lb.jstat>
     </properties>
-            
+
     <modules>
         <module>keycloak</module>
         <module>load-balancer/wildfly-modcluster</module>
-        <module>infinispan</module>
         <module>tests</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>crossdc</id>
+            <modules>
+                <module>infinispan</module>
+            </modules>
+        </profile>
+    </profiles>
     
 </project>

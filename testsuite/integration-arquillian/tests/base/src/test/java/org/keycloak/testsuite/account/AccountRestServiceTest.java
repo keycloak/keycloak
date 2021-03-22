@@ -78,14 +78,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
-@EnableFeature(value = ACCOUNT_API, skipRestart = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test

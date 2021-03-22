@@ -17,6 +17,7 @@
 
 package org.keycloak.userprofile;
 
+import org.keycloak.userprofile.validation.UserProfileValidationResult;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 /**
@@ -26,4 +27,5 @@ public interface UserProfileContext {
 
     UserUpdateEvent getUpdateEvent();
     UserProfile getCurrentProfile();
+    UserProfileValidationResult validate();
 }

@@ -23,11 +23,15 @@ import org.junit.Test;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -325,6 +329,74 @@ public class LogoutTest extends AbstractKeycloakTest {
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+        }
+    }
+
+    @Test
+    public void successfulKLogoutAfterEmptyBackChannelUrl() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+
+        rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+
+        clients.get(rep.getId()).update(rep);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.clientSessionState("client-session");
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String idTokenString = tokenResponse.getIdToken();
+        String logoutUrl = oauth.getLogoutUrl()
+                .idTokenHint(idTokenString)
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                .build();
+
+        try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+                CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+        }
+
+        assertNotNull(testingClient.testApp().getAdminLogoutAction());
+    }
+
+    @Test
+    public void backChannelPreferenceOverKLogout() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+
+        rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
+
+        ClientResource clientResource = clients.get(rep.getId());
+        clientResource.update(rep);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            oauth.clientSessionState("client-session");
+
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+            String logoutUrl = oauth.getLogoutUrl()
+                    .idTokenHint(idTokenString)
+                    .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                    .build();
+
+            try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+                    CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+                assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+                assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            }
+
+            assertNotNull(testingClient.testApp().getBackChannelLogoutToken());
+        } finally {
+            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+            clientResource.update(rep);
         }
     }
 

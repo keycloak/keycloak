@@ -128,7 +128,10 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
         }
 
         public String getLastAccess() {
-            return getTextFromItem("last-access").split("Last accessed on ")[1];
+            String lastAccessedText = getTextFromElement(
+                    driver.findElement(By.cssSelector("[id*='last-access'] strong")));
+
+            return getTextFromItem("last-access").substring(lastAccessedText.length()).trim();
         }
 
         public String getClients() {

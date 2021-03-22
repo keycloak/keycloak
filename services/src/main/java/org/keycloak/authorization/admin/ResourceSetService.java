@@ -387,7 +387,7 @@ public class ResourceSetService {
             if (clientModel != null) {
                 owner = clientModel.getId();
             } else {
-                UserModel user = authorization.getKeycloakSession().users().getUserByUsername(owner, realm);
+                UserModel user = authorization.getKeycloakSession().users().getUserByUsername(realm, owner);
 
                 if (user != null) {
                     owner = user.getId();

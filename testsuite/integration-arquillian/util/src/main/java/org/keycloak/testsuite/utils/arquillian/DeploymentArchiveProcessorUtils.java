@@ -241,12 +241,7 @@ public class DeploymentArchiveProcessorUtils {
     public static void modifySAMLAdapterConfig(Archive<?> archive, String adapterConfigPath) {
         Document doc = IOUtil.loadXML(archive.get(adapterConfigPath).getAsset().openStream());
 
-        modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
-        modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
-        modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
-
-        modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
-        modifyDocElementAttribute(doc, "SP", "logoutPage", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
+        modifySAMLDocument(doc);
 
         archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
 
@@ -258,6 +253,15 @@ public class DeploymentArchiveProcessorUtils {
         }
 
         ((WebArchive) archive).addAsResource(truststore);
+    }
+
+    public static void modifySAMLDocument(Document doc) {
+        modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
+        modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
+        modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
+
+        modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
+        modifyDocElementAttribute(doc, "SP", "logoutPage", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
     }
 
     private static String getAuthServerUrl() {

@@ -22,6 +22,14 @@
         <script type="text/javascript">
 
             function registerSecurityKey() {
+
+                // Check if WebAuthn is supported by this browser
+                if (!window.PublicKeyCredential) {
+                    $("#error").val("${msg("webauthn-unsupported-browser-text")?no_esc}");
+                    $("#register").submit();
+                    return;
+                }
+
                 // mandatory parameters
                 let challenge = "${challenge}";
                 let userid = "${userid}";

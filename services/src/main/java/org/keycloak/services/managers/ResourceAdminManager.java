@@ -16,9 +16,7 @@
  */
 package org.keycloak.services.managers;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
@@ -37,7 +35,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -61,6 +58,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -118,38 +117,6 @@ public class ResourceAdminManager {
 
         return result;
     }
-
-    public void logoutUser(RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
-        keycloakSession.users().setNotBeforeForUser(realm, user, Time.currentTime());
-
-        List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
-        logoutUserSessions(realm, userSessions);
-    }
-
-    protected void logoutUserSessions(RealmModel realm, List<UserSessionModel> userSessions) {
-        // Map from "app" to clientSessions for this app
-        MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions = new MultivaluedHashMap<>();
-        for (UserSessionModel userSession : userSessions) {
-            putClientSessions(clientSessions, userSession);
-        }
-
-        logger.debugv("logging out {0} resources ", clientSessions.size());
-        //logger.infov("logging out resources: {0}", clientSessions);
-
-        for (Map.Entry<String, List<AuthenticatedClientSessionModel>> entry : clientSessions.entrySet()) {
-            if (entry.getValue().size() == 0) {
-                continue;
-            }
-            logoutClientSessions(realm, entry.getValue().get(0).getClient(), entry.getValue());
-        }
-    }
-
-    private void putClientSessions(MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions, UserSessionModel userSession) {
-        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : userSession.getAuthenticatedClientSessions().entrySet()) {
-            clientSessions.add(entry.getKey(), entry.getValue());
-        }
-    }
-
 
     public Response logoutClientSession(RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(realm, resource, Arrays.asList(clientSession));
@@ -245,22 +212,27 @@ public class ResourceAdminManager {
             if (logoutToken != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, token));
             }
-            HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+            CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
             UrlEncodedFormEntity formEntity;
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             post.setEntity(formEntity);
-            HttpResponse response = httpClient.execute(post);
-            int status = response.getStatusLine().getStatusCode();
-            EntityUtils.consumeQuietly(response.getEntity());
-            boolean success = status == 204 || status == 200;
-            logger.debugf("logout success for %s: %s", managementUrl, success);
-            return Response.status(status).build();
+            try (CloseableHttpResponse response = httpClient.execute(post)) {
+                try {
+                    int status = response.getStatusLine().getStatusCode();
+                    EntityUtils.consumeQuietly(response.getEntity());
+                    boolean success = status == 204 || status == 200;
+                    logger.debugf("logout success for %s: %s", managementUrl, success);
+                    return Response.status(status).build();
+                } finally {
+                    EntityUtils.consumeQuietly(response.getEntity());
+                }
+            }
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return Response.serverError().build();
         } finally {
             if (post != null) {
-                post.releaseConnection();
+                post.reset();
             }
         }
     }

@@ -19,7 +19,6 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -47,21 +46,24 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javax.ws.rs.ClientErrorException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.keycloak.models.Constants;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -87,10 +89,10 @@ public class RealmRolesTest extends AbstractAdminTest {
 
         
         ClientRepresentation clientRep = ClientBuilder.create().clientId("client-a").build();
-        Response response = adminClient.realm(REALM_NAME).clients().create(clientRep);
-        clientUuid = ApiUtil.getCreatedId(response);
-        getCleanup().addClientUuid(clientUuid);
-        response.close();
+        try (Response response = adminClient.realm(REALM_NAME).clients().create(clientRep)) {
+            clientUuid = ApiUtil.getCreatedId(response);
+            getCleanup().addClientUuid(clientUuid);
+        }
 
         RoleRepresentation roleC = RoleBuilder.create().name("role-c").description("Role C").build();
         adminClient.realm(REALM_NAME).clients().get(clientUuid).roles().create(roleC);
@@ -143,7 +145,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         role.setName(name);
         return role;
     }
-    
+
     @Test
     public void getRole() {
         RoleRepresentation role = resource.get("role-a").toRepresentation();
@@ -151,6 +153,11 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertEquals("role-a", role.getName());
         assertEquals("Role A", role.getDescription());
         assertFalse(role.isComposite());
+    }
+
+    @Test(expected = ClientErrorException.class)
+    public void createRoleWithSameName() {
+        resource.create(RoleBuilder.create().name("role-a").build());
     }
 
     @Test
@@ -366,17 +373,17 @@ public class RealmRolesTest extends AbstractAdminTest {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);          
         }  
         
-        String roleNameA = "abcdef";
+        String roleNameA = "abcdefg";
         RoleRepresentation roleA = makeRole(roleNameA);
         resource.create(roleA);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleNameA), roleA, ResourceType.REALM_ROLE);       
         
-        String roleNameB = "defghi";
+        String roleNameB = "defghij";
         RoleRepresentation roleB = makeRole(roleNameB);
         resource.create(roleB);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleNameB), roleB, ResourceType.REALM_ROLE);       
         
-        List<RoleRepresentation> resultSearch = resource.list("def", -1, -1);
+        List<RoleRepresentation> resultSearch = resource.list("defg", -1, -1);
         assertEquals(2,resultSearch.size());
         
         List<RoleRepresentation> resultSearch2 = resource.list("testrole", -1, -1);
@@ -482,5 +489,50 @@ public class RealmRolesTest extends AbstractAdminTest {
         
         List<RoleRepresentation> roles = resource.list("attributesrolebrief", true);
         assertNull(roles.get(0).getAttributes());
+    }
+
+    @Test
+    public void testDefaultRoles() {
+        RoleResource defaultRole = adminClient.realm(REALM_NAME).roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
+
+        UserRepresentation user = adminClient.realm(REALM_NAME).users().search("test-role-member").get(0);
+
+        UserResource userResource = adminClient.realm(REALM_NAME).users().get(user.getId());
+        assertThat(convertRolesToNames(userResource.roles().realmLevel().listAll()), hasItem(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME));
+        assertThat(convertRolesToNames(userResource.roles().realmLevel().listEffective()), allOf(
+                hasItem(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME),
+                hasItem(Constants.OFFLINE_ACCESS_ROLE),
+                hasItem(Constants.AUTHZ_UMA_AUTHORIZATION)
+        ));
+
+        defaultRole.addComposites(Collections.singletonList(resource.get("role-a").toRepresentation()));
+
+        userResource = adminClient.realm(REALM_NAME).users().get(user.getId());
+        assertThat(convertRolesToNames(userResource.roles().realmLevel().listAll()), allOf(
+                hasItem(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME),
+                not(hasItem("role-a"))
+        ));
+        assertThat(convertRolesToNames(userResource.roles().realmLevel().listEffective()), allOf(
+                hasItem(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME),
+                hasItem(Constants.OFFLINE_ACCESS_ROLE),
+                hasItem(Constants.AUTHZ_UMA_AUTHORIZATION),
+                hasItem("role-a")
+        ));
+
+        assertThat(userResource.roles().clientLevel(clientUuid).listAll(), empty());
+        assertThat(userResource.roles().clientLevel(clientUuid).listEffective(), empty());
+
+        defaultRole.addComposites(Collections.singletonList(adminClient.realm(REALM_NAME).clients().get(clientUuid).roles().get("role-c").toRepresentation()));
+
+        userResource = adminClient.realm(REALM_NAME).users().get(user.getId());
+
+        assertThat(userResource.roles().clientLevel(clientUuid).listAll(), empty());
+        assertThat(convertRolesToNames(userResource.roles().clientLevel(clientUuid).listEffective()), 
+                hasItem("role-c")
+        );
+    }
+
+    private List<String> convertRolesToNames(List<RoleRepresentation> roles) {
+        return roles.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
     }
 }

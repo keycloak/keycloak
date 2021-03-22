@@ -58,13 +58,12 @@ public class DefaultHttpClientFactoryTest {
 		factory.init(scope(values));
 		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
 		HttpClientProvider provider = factory.create(session);
-		CloseableHttpResponse response;
-		try(CloseableHttpClient httpClient = (CloseableHttpClient) provider.getHttpClient()){
-			Optional<String> testURL = getTestURL();
-			Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
-			response = httpClient.execute(new HttpGet(testURL.get()));
+        Optional<String> testURL = getTestURL();
+        Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
+		try (CloseableHttpClient httpClient = (CloseableHttpClient) provider.getHttpClient();
+          CloseableHttpResponse response = httpClient.execute(new HttpGet(testURL.get()))) {
+    		assertEquals(HttpStatus.SC_NOT_FOUND,response.getStatusLine().getStatusCode());
 		}
-		assertEquals(HttpStatus.SC_NOT_FOUND,response.getStatusLine().getStatusCode());
 	}
 
 	@Test(expected = SSLPeerUnverifiedException.class)

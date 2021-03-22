@@ -103,7 +103,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logFailure(event);
 
         String userId = event.userId;
-        UserModel user = session.users().getUserById(userId, realm);
+        UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
             return;
         }
@@ -251,7 +251,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     private void success(KeycloakSession session, LoginEvent event) {
         String userId = event.userId;
-        UserModel model = session.users().getUserById(userId, getRealmModel(session, event));
+        UserModel model = session.users().getUserById(getRealmModel(session, event), userId);
 
         UserLoginFailureModel user = getUserModel(session, event);
         if(user == null) return;

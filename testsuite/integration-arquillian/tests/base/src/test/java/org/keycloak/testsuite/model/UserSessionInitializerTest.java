@@ -32,6 +32,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -42,6 +43,7 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -70,8 +72,8 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName("test");
             session.sessions().removeUserSessions(realm);
 
-            UserModel user1 = session.users().getUserByUsername("user1", realm);
-            UserModel user2 = session.users().getUserByUsername("user2", realm);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            UserModel user2 = session.users().getUserByUsername(realm, "user2");
 
             UserManager um = new UserManager(session);
             if (user1 != null)
@@ -116,12 +118,13 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
             assertThat("Count of offline sesions for client 'test-app'", currentSession.sessions().getOfflineSessionsCount(realm, testApp), is((long) 3));
             assertThat("Count of offline sesions for client 'third-party'", currentSession.sessions().getOfflineSessionsCount(realm, thirdparty), is((long) 1));
 
-            List<UserSessionModel> loadedSessions = currentSession.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
+            List<UserSessionModel> loadedSessions = currentSession.sessions().getOfflineUserSessionsStream(realm, testApp, 0, 10)
+                    .collect(Collectors.toList());
             UserSessionProviderTest.assertSessions(loadedSessions, origSessions);
 
-            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "test-app", "third-party");
-            assertSessionLoaded(loadedSessions, origSessions[1].getId(), currentSession.users().getUserByUsername("user1", realm), "127.0.0.2", started, started, "test-app");
-            assertSessionLoaded(loadedSessions, origSessions[2].getId(), currentSession.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");
+            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
+            assertSessionLoaded(loadedSessions, origSessions[1].getId(), currentSession.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
+            assertSessionLoaded(loadedSessions, origSessions[2].getId(), currentSession.users().getUserByUsername(realm, "user2"), "127.0.0.3", started, started, "test-app");
         });
     }
 
@@ -166,10 +169,11 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
             ClientModel thirdparty = realm.getClientByClientId("third-party");
 
             assertThat("Count of offline sesions for client 'third-party'", currentSession.sessions().getOfflineSessionsCount(realm, thirdparty), is((long) 1));
-            List<UserSessionModel> loadedSessions = currentSession.sessions().getOfflineUserSessions(realm, thirdparty, 0, 10);
+            List<UserSessionModel> loadedSessions = currentSession.sessions().getOfflineUserSessionsStream(realm, thirdparty, 0, 10)
+                    .collect(Collectors.toList());
 
             assertThat("Size of loaded Sessions", loadedSessions.size(), is(1));
-            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "third-party");
+            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "third-party");
 
             // Revert client
             realm.addClient("test-app");
@@ -207,13 +211,13 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = inheritClientConnection(session, createSessionPersister3);
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
-            // Delete cache (persisted sessions are still kept)
-            currentSession.sessions().onRealmRemoved(realm);
+            // Delete local user cache (persisted sessions are still kept)
+            InfinispanUserSessionProvider userSessionProvider = (InfinispanUserSessionProvider) currentSession.getProvider(UserSessionProvider.class);
+            userSessionProvider.removeLocalUserSessions(realm.getId(), true);
 
             // Clear ispn cache to ensure initializerState is removed as well
             InfinispanConnectionProvider infinispan = currentSession.getProvider(InfinispanConnectionProvider.class);
             infinispan.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).clear();
-
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession createSessionPersister4) -> {
@@ -243,15 +247,15 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
         RealmModel realm = session.realms().getRealmByName(realmName);
 
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null);
 
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
         createClientSession(session, realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.2", "form", true, null, null);
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.3", "form", true, null, null);
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         return sessions;

@@ -260,6 +260,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         String clientId = response.getClientId();
         ClientRepresentation kcClientRep = getKeycloakClient(clientId);
         Assert.assertTrue(kcClientRep.isPublicClient());
+        Assert.assertNull(kcClientRep.getSecret());
 
         // Update client to hybrid and check it's not public client anymore
         reg.auth(Auth.token(response));
@@ -409,21 +410,30 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void testOIDCEndpointGetWithSamlClient() {
+    public void testOIDCEndpointGetWithSamlClient() throws Exception {
+        OIDCClientRepresentation response = create();
+        reg.auth(Auth.token(response));
+        assertNotNull(reg.oidc().get(response.getClientId()));
         ClientsResource clientsResource = adminClient.realm(TEST).clients();
-        ClientRepresentation samlClient = clientsResource.findByClientId("saml-client").get(0);
-
-        reg.auth(Auth.client("saml-client", "secret"));
+        ClientRepresentation client = clientsResource.findByClientId(response.getClientId()).get(0);
 
         // change client to saml
-        samlClient.setProtocol("saml");
-        clientsResource.get(samlClient.getId()).update(samlClient);
+        client.setProtocol("saml");
+        clientsResource.get(client.getId()).update(client);
 
-        assertGetFail(samlClient.getClientId(), 400, Errors.INVALID_CLIENT);
+        assertGetFail(client.getClientId(), 400, Errors.INVALID_CLIENT);
+    }
 
-        // revert client
-        samlClient.setProtocol("openid-connect");
-        clientsResource.get(samlClient.getId()).update(samlClient);
+    @Test
+    public void testOIDCEndpointGetWithToken() throws Exception {
+        OIDCClientRepresentation response = create();
+        reg.auth(Auth.token(response));
+        assertNotNull(reg.oidc().get(response.getClientId()));
+    }
+
+    @Test
+    public void testOIDCEndpointGetWithoutToken() throws Exception {
+        assertGetFail(create().getClientId(), 401, null);
     }
 
     @Test
@@ -530,5 +540,22 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
         assertTrue(realmDefaultClientScopes.equals(new HashSet<>(registeredDefaultClientScopes)));
 
+    }
+
+    @Test
+    public void testRequestUris() throws Exception {
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+
+        clientRep = createRep();
+        clientRep.setRequestUris(Arrays.asList("http://host/foo", "https://host2/bar"));
+
+        response = reg.oidc().create(clientRep);
+        Assert.assertNames(response.getRequestUris(), "http://host/foo", "https://host2/bar");
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertNames(config.getRequestUris(), "http://host/foo", "https://host2/bar");
     }
 }

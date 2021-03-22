@@ -17,8 +17,8 @@
                         <select id="available" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
                                 ng-model="selectedRealmRoles">
-                            <option ng-repeat="r in availableRealmRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
-                                {{r.toString()}}
+                            <option ng-repeat="r in availableRealmRoles | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
                             </option>
                         </select>
                         <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()">
@@ -31,8 +31,8 @@
                         <select id="assigned" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
                                 ng-model="selectedRealmDefRoles">
-                            <option ng-repeat="r in realm.defaultRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
-                                {{r.toString()}}
+                            <option ng-repeat="r in realmMappings | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
                             </option>
                         </select>
                         <button ng-disabled="selectedRealmDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()">
@@ -57,8 +57,8 @@
                         <select id="available-client" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
                                 ng-model="selectedClientRoles">
-                            <option ng-repeat="r in availableClientRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
-                                {{r.toString()}}
+                            <option ng-repeat="r in availableClientRoles | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
                             </option>
                         </select>
                         <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientDefaultRole()">
@@ -71,8 +71,8 @@
                         <select id="assigned-client" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
                                 ng-model="selectedClientDefRoles">
-                            <option ng-repeat="r in selectedClient.defaultRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
-                                {{r.toString()}}
+                            <option ng-repeat="r in clientMappings | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
                             </option>
                         </select>
                         <button ng-disabled="selectedClientDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="rmClientDefaultRole()">

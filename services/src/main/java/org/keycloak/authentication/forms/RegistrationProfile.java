@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.forms;
 
+import static org.keycloak.userprofile.profile.UserProfileContextFactory.forRegistrationProfile;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -34,12 +36,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -65,18 +64,17 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
     @Override
     public void validate(org.keycloak.authentication.ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        UserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(formData);
-
-        UserProfileProvider userProfile = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
 
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
-        UserProfileValidationResult result = userProfile.validate(DefaultUserProfileContext.forRegistrationProfile(), updatedProfile);
+        UserProfileValidationResult result = forRegistrationProfile(context.getSession(), formData).validate();
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
 
         if (errors.size() > 0) {
-            if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL))
+            if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                UserProfile updatedProfile = result.getProfile();
                 context.getEvent().detail(Details.EMAIL, updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL));
+            }
 
             if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);

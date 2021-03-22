@@ -16,30 +16,117 @@
  */
 package org.keycloak.models.map.storage;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import org.keycloak.models.map.common.AbstractEntity;
+import java.util.stream.Stream;
 
 /**
+ * Implementation of this interface interacts with a persistence storage storing various entities, e.g. users, realms.
+ * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.ModelCriteriaBuilder)}
+ * and bulk {@link #delete(org.keycloak.models.map.storage.ModelCriteriaBuilder)} operations, 
+ * and operation for determining the number of the objects satisfying given criteria
+ * ({@link #getCount(org.keycloak.models.map.storage.ModelCriteriaBuilder)}).
  *
  * @author hmlnarik
+ * @param <K> Type of the primary key. Various storages can
+ * @param <V> Type of the stored values that contains all the data stripped of session state. In other words, in the entities
+ *            there are only IDs and mostly primitive types / {@code String}, never references to {@code *Model} instances.
+ *            See the {@code Abstract*Entity} classes in this module.
+ * @param <M> Type of the {@code *Model} corresponding to the stored value, e.g. {@code UserModel}. This is used for
+ *            filtering via model fields in {@link ModelCriteriaBuilder} which is necessary to abstract from physical
+ *            layout and thus to support no-downtime upgrade.
  */
-public interface MapStorage<K, V> {
+public interface MapStorage<K, V extends AbstractEntity<K>, M> {
 
-    V get(K key);
+    /**
+     * Creates an object in the store identified by given {@code key}.
+     * @param key Key of the object as seen in the logical level
+     * @param value Entity
+     * @return Reference to the entity created in the store
+     * @throws NullPointerException if object or its {@code key} is {@code null}
+     */
+    V create(K key, V value);
 
-    V put(K key, V value);
+    /**
+     * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
+     * @param key Key of the object. Must not be {@code null}.
+     * @return See description
+     * @throws NullPointerException if the {@code key} is {@code null}
+     */
+    V read(K key);
 
-    V putIfAbsent(K key, V value);
+    /**
+     * Returns stream of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param criteria Criteria filtering out the object, originally obtained 
+     *   from {@link #createCriteriaBuilder()} method of this object.
+     *   If {@code null}, it returns an empty stream.
+     * @return Stream of objects. Never returns {@code null}.
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
+    Stream<V> read(ModelCriteriaBuilder<M> criteria);
 
-    V remove(K key);
+    /**
+     * Returns the number of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param criteria
+     * @return Number of objects. Never returns {@code null}.
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
+    long getCount(ModelCriteriaBuilder<M> criteria);
 
-    V replace(K key, V value);
+    /**
+     * Updates the object with the given {@code id} in the storage if it already exists.
+     * @param key Primary key of the object to update
+     * @param value Updated value
+     * @throws NullPointerException if object or its {@code id} is {@code null}
+     */
+    V update(K key, V value);
 
-    Set<K> keySet();
+    /**
+     * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.
+     * @param key
+     * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
+     */
+    boolean delete(K key);
 
-    Set<Map.Entry<K,V>> entrySet();
+    /**
+     * Deletes objects that match the given criteria.
+     * @param criteria
+     * @return Number of removed objects (might return {@code -1} if not supported)
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
+    long delete(ModelCriteriaBuilder<M> criteria);
 
-    Collection<V> values();
+    
+    /**
+     * Returns criteria builder for the storage engine.
+     * The criteria are specified in the given criteria builder based on model properties.
+     * <br>
+     * <b>Note:</b> While the criteria are formulated in terms of model properties,
+     * the storage engine may in turn process them into the best form that suits the
+     * underlying storage engine query language, e.g. to conditions on storage
+     * attributes or REST query parameters.
+     * If possible, do <i>not</i> delay filtering after the models are reconstructed from
+     * storage entities, in most cases this would be highly inefficient.
+     *
+     * @return See description
+     */
+    ModelCriteriaBuilder<M> createCriteriaBuilder();
+
+    
+    /**
+     * Creates a {@code MapKeycloakTransaction} object that tracks a new transaction related to this storage.
+     * In case of JPA or similar, the transaction object might be supplied by the container (via JTA) or
+     * shared same across storages accessing the same database within the same session; in other cases
+     * (e.g. plain map) a separate transaction handler might be created per each storage.
+     *
+     * @return See description.
+     */
+    public MapKeycloakTransaction<K, V, M> createTransaction();
 
 }

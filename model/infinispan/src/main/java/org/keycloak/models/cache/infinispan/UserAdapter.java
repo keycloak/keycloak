@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAdapter implements CachedUserModel {
+public class UserAdapter implements CachedUserModel.Streams {
 
     private final Supplier<UserModel> modelSupplier;
     protected final CachedUser cached;
@@ -178,7 +178,7 @@ public class UserAdapter implements CachedUserModel {
         getDelegateForUpdate();
         if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
             String lowerCasedFirstValue = KeycloakModelUtils.toLowerCaseSafe((values != null && values.size() > 0) ? values.get(0) : null);
-            if (lowerCasedFirstValue != null) values=Collections.singletonList(lowerCasedFirstValue);
+            if (lowerCasedFirstValue != null) values = Collections.singletonList(lowerCasedFirstValue);
         }
         updated.setAttribute(name, values);
     }
@@ -196,10 +196,10 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        if (updated != null) return updated.getAttribute(name);
+    public Stream<String> getAttributeStream(String name) {
+        if (updated != null) return updated.getAttributeStream(name);
         List<String> result = cached.getAttributes(modelSupplier).get(name);
-        return (result == null) ? Collections.emptyList() : result;
+        return (result == null) ? Stream.empty() : result.stream();
     }
 
     @Override
@@ -209,9 +209,9 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        if (updated != null) return updated.getRequiredActions();
-        return cached.getRequiredActions(modelSupplier);
+    public Stream<String> getRequiredActionsStream() {
+        if (updated != null) return updated.getRequiredActionsStream();
+        return cached.getRequiredActions(modelSupplier).stream();
     }
 
     @Override
@@ -289,10 +289,9 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         if (updated != null) return updated.hasRole(role);
-        if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
-
-        return getRoleMappingsStream().anyMatch(r -> r.hasRole(role)) ?
-                true : RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
+        return cached.getRoleMappings(modelSupplier).contains(role.getId()) ||
+                getRoleMappingsStream().anyMatch(r -> r.hasRole(role)) ||
+                RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override
@@ -363,8 +362,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         if (updated != null) return updated.isMemberOf(group);
-        if (cached.getGroups(modelSupplier).contains(group.getId())) return true;
-        return RoleUtils.isMember(getGroupsStream(), group);
+        return cached.getGroups(modelSupplier).contains(group.getId()) || RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override
@@ -382,6 +380,6 @@ public class UserAdapter implements CachedUserModel {
     }
 
     private UserModel getUserModel() {
-        return userProviderCache.getDelegate().getUserById(cached.getId(), realm);
+        return userProviderCache.getDelegate().getUserById(realm, cached.getId());
     }
 }
