@@ -1442,8 +1442,8 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientCredentialsCtrl'
         })
-        .when('/realms/:realm/clients/:client/credentials/client-jwt/:keyType/import/:attribute', {
-            templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-import.html',
+        .when('/realms/:realm/clients/:client/oidc/:keyType/import/:attribute', {
+            templateUrl : resourceUrl + '/partials/client-oidc-key-import.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -1452,13 +1452,13 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return ClientLoader();
                 },
                 callingContext : function() {
-                    return "jwt-credentials";
+                    return "oidc";
                 }
             },
             controller : 'ClientCertificateImportCtrl'
         })
-        .when('/realms/:realm/clients/:client/credentials/client-jwt/:keyType/export/:attribute', {
-            templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-export.html',
+        .when('/realms/:realm/clients/:client/oidc/:keyType/export/:attribute', {
+            templateUrl : resourceUrl + '/partials/client-oidc-key-export.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -1467,7 +1467,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return ClientLoader();
                 },
                 callingContext : function() {
-                    return "jwt-credentials";
+                    return "oidc";
                 }
             },
             controller : 'ClientCertificateExportCtrl'
@@ -1561,6 +1561,18 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientCertificateExportCtrl'
+        })
+        .when('/realms/:realm/clients/:client/oidc/keys', {
+            templateUrl : resourceUrl + '/partials/client-oidc-keys.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientOidcKeyCtrl'
         })
         .when('/realms/:realm/clients/:client/roles', {
             templateUrl : resourceUrl + '/partials/client-role-list.html',
