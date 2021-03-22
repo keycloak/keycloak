@@ -40,7 +40,6 @@ public class ClientRepresentation {
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationAccessToken;
-    @Deprecated
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
@@ -51,7 +50,6 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
-    protected Boolean oauth2DeviceAuthorizationGrantEnabled;
     protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;
@@ -202,12 +200,10 @@ public class ClientRepresentation {
         this.webOrigins = webOrigins;
     }
 
-    @Deprecated
     public String[] getDefaultRoles() {
         return defaultRoles;
     }
 
-    @Deprecated
     public void setDefaultRoles(String[] defaultRoles) {
         this.defaultRoles = defaultRoles;
     }

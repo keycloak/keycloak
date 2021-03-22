@@ -21,11 +21,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.login.LoginError;
 import org.keycloak.testsuite.auth.page.login.Registration;
 import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
@@ -177,7 +175,6 @@ public class TermsAndConditionsTest extends AbstractConsoleTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testTermsAndConditionsOnAccountPage() {
         String userId = createUser(REALM, FLANDERS, FLANDERS_PASS);
 

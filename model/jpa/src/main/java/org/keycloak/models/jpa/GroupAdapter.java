@@ -31,10 +31,12 @@ import org.keycloak.models.utils.RoleUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
@@ -44,7 +46,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel.Streams , JpaModel<GroupEntity> {
+public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     protected GroupEntity group;
     protected EntityManager em;

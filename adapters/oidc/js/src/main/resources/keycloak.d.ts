@@ -182,8 +182,7 @@ declare namespace Keycloak {
 
 	interface KeycloakLoginOptions {
 		/**
-		 * Specifies the scope parameter for the login url
-		 * The scope 'openid' will be added to the scope if it is missing or undefined.
+		 * @private Undocumented.
 		 */
 		scope?: string;
 

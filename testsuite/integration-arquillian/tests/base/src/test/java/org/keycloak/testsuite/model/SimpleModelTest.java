@@ -29,7 +29,6 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
 import java.util.List;
-import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -62,8 +61,7 @@ public class SimpleModelTest extends AbstractKeycloakTest {
         // Transaction 1
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
 
-            RealmModel realm = session1.realms().createRealm("foo");
-            realm.setDefaultRole(session1.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+            session1.realms().createRealm("foo");
 
         });
 

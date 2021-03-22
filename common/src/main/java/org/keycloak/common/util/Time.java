@@ -65,7 +65,7 @@ public class Time {
      * @param time Time in seconds since the epoch
      * @return Time in milliseconds
      */
-    public static long toMillis(long time) {
+    public static long toMillis(int time) {
         return time * 1000L;
     }
 

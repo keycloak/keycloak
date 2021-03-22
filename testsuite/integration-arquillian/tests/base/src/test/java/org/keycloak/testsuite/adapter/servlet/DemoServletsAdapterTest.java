@@ -29,6 +29,7 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +39,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -76,7 +76,6 @@ import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.adapter.page.TokenRefreshPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Applications;
@@ -85,6 +84,7 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+import org.keycloak.testsuite.util.FollowRedirectsEngine;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
@@ -95,6 +95,7 @@ import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -106,6 +107,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -130,8 +132,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.AdminClientUtil.NUMBER_OF_CONNECTIONS;
-import static org.keycloak.testsuite.util.AdminClientUtil.createResteasyClient;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -150,7 +150,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703
@@ -450,7 +449,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     }
     
     @Test
-    public void testSavedPostRequest() throws Exception {
+    public void testSavedPostRequest() throws InterruptedException {
         // test login to customer-portal which does a bearer request to customer-db
         inputPortal.navigateTo();
         assertCurrentUrlEquals(inputPortal);
@@ -473,15 +472,12 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // test unsecured POST KEYCLOAK-901
-        Client client = createResteasyClient(true, false);
-        try {
-            Form form = new Form();
-            form.param("parameter", "hello");
-            String text = client.target(inputPortal + "/unsecured").request().post(Entity.form(form), String.class);
-            assertThat(text, containsString("parameter=hello"));
-        } finally {
-            client.close();
-        }
+        Client client = ClientBuilder.newClient();
+        Form form = new Form();
+        form.param("parameter", "hello");
+        String text = client.target(inputPortal + "/unsecured").request().post(Entity.form(form), String.class);
+        assertThat(text, containsString("parameter=hello"));
+        client.close();
     }
 
     @Test
@@ -646,48 +642,47 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     //KEYCLOAK-518
     @Test
-    public void testNullBearerToken() throws Exception {
-        Client client = createResteasyClient(true, true);
+    public void testNullBearerToken() {
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDb.toString());
-        try {
-            try (Response response = target.request().get()) {
-                assertEquals(401, response.getStatus());
-            }
-            try (Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get()) {
-                assertEquals(401, response.getStatus());
-            }
-        } finally {
-            client.close();
-        }
+        Response response = target.request().get();
+        assertEquals(401, response.getStatus());
+        response.close();
+        response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
+        assertEquals(401, response.getStatus());
+        response.close();
+        client.close();
     }
 
     //KEYCLOAK-1368
     @Test
-    public void testNullBearerTokenCustomErrorPage() throws Exception {
-        Client client = createResteasyClient(true, true);
+    public void testNullBearerTokenCustomErrorPage() {
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDbErrorPage.toString());
 
-        try (Response response = target.request().get()) {
-            assertEquals(401, response.getStatus());
-            String errorPageResponse = response.readEntity(String.class);
-            assertThat(errorPageResponse, containsString("Error Page"));
-            assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN.toString()));
-        }
+        Response response = target.request().get();
 
-        try (Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get()) {
-            assertEquals(401, response.getStatus());
-            String errorPageResponse = response.readEntity(String.class);
-            assertThat(errorPageResponse, containsString("Error Page"));
-            assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.INVALID_TOKEN.toString()));
-        }
+        assertEquals(401, response.getStatus());
+        String errorPageResponse = response.readEntity(String.class);
+        assertThat(errorPageResponse, containsString("Error Page"));
+        assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN.toString()));
+        response.close();
+
+        response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
+
+        assertEquals(401, response.getStatus());
+        errorPageResponse = response.readEntity(String.class);
+        assertThat(errorPageResponse, containsString("Error Page"));
+        assertThat(errorPageResponse, containsString(OIDCAuthenticationError.Reason.INVALID_TOKEN.toString()));
+        response.close();
         
         client.close();
     }
 
     //KEYCLOAK-518
     @Test
-    public void testBadUser() throws Exception {
-        Client client = createResteasyClient(true, true);
+    public void testBadUser() {
+        Client client = ClientBuilder.newClient();
         URI uri = OIDCLoginProtocolService.tokenUrl(authServerPage.createUriBuilder()).build("demo");
         WebTarget target = client.target(uri);
         String header = BasicAuthHelper.createHeader("customer-portal", "password");
@@ -695,11 +690,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", "monkey@redhat.com")
                 .param("password", "password");
-        try (Response response = target.request()
+        Response response = target.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
-                .post(Entity.form(form))) {
-            assertEquals(401, response.getStatus());
-        }
+                .post(Entity.form(form));
+        assertEquals(401, response.getStatus());
+        response.close();
         client.close();
     }
 
@@ -966,9 +961,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
 
     @Test
-    public void testBasicAuth() throws Exception {
+    public void testBasicAuth() {
         String value = "hello";
-        Client client = createResteasyClient(true, true);
+        Client client = ClientBuilder.newClient();
 
         //pause(1000000);
 
@@ -1172,8 +1167,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     }
     
     @Test
-    public void testAutodetectBearerOnly() throws Exception {
-        Client client = createResteasyClient(true, false);
+    public void testAutodetectBearerOnly() {
+        Client client = ClientBuilder.newClient();
         
         // Do not redirect client to login page if it's an XHR
         System.out.println(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
@@ -1224,14 +1219,15 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // KEYCLOAK-3016
     @Test
-    public void testBasicAuthErrorHandling() throws Exception {
-        Client client = createResteasyClient(true, true);
+    public void testBasicAuthErrorHandling() {
+        int numberOfConnections = 10;
+        Client client = new ResteasyClientBuilder().connectionPoolSize(numberOfConnections).httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
         Assert.assertEquals(401, response.getStatus());
         response.close();
 
-        final int LIMIT = NUMBER_OF_CONNECTIONS + 1;
+        final int LIMIT = numberOfConnections + 1;
         for (int i = 0; i < LIMIT; i++) {
             System.out.println("Testing Basic Auth with bad credentials " + i);
             response = target.request().header(HttpHeaders.AUTHORIZATION, "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").get();
@@ -1244,8 +1240,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     
     // KEYCLOAK-1733
     @Test
-    public void testNullQueryParameterAccessToken() throws Exception {
-        Client client = createResteasyClient(true, true);
+    public void testNullQueryParameterAccessToken() {
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
@@ -1262,9 +1258,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     
     // KEYCLOAK-1733
     @Test
-    public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
+    public void testRestCallWithAccessTokenAsQueryParameter() {
 
-        Client client = createResteasyClient(true, true);
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         try {
             WebTarget webTarget = client.target(testRealmPage.toString() + "/protocol/openid-connect/token");
 

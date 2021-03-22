@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -90,7 +89,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ldapFedProvider, bruce, "Password1");
 
             // Create ldap-portal client
-            ClientModel ldapClient = appRealm.addClient("ldap-portal");
+            ClientModel ldapClient = KeycloakModelUtils.createClient(appRealm, "ldap-portal");
             ldapClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             ldapClient.addRedirectUri("/ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal/*");
@@ -111,8 +110,8 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Test user imported in local storage now
-            UserModel user = session.users().getUserByUsername(appRealm, "jbrown");
-            Assert.assertNotNull(session.userLocalStorage().getUserById(appRealm, user.getId()));
+            UserModel user = session.users().getUserByUsername("jbrown", appRealm);
+            Assert.assertNotNull(session.userLocalStorage().getUserById(user.getId(), appRealm));
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
         });
     }
@@ -125,7 +124,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             session.userCache().clear();
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
+            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
             Assert.assertEquals("bwilson@keycloak.org", user.getEmail());
             Assert.assertEquals("Bruce", user.getFirstName());
 
@@ -133,7 +132,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             Assert.assertTrue("Wilson".equals(user.getLastName()) || "Schneider".equals(user.getLastName()));
 
             // Actually there are 2 postalCodes
-            List<String> postalCodes = user.getAttributeStream("postal_code").collect(Collectors.toList());
+            List<String> postalCodes = user.getAttribute("postal_code");
             assertPostalCodes(postalCodes, "88441", "77332");
             List<String> tmp = new LinkedList<>();
             tmp.addAll(postalCodes);
@@ -147,8 +146,8 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
-            List<String> postalCodes = user.getAttributeStream("postal_code").collect(Collectors.toList());
+            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
+            List<String> postalCodes = user.getAttribute("postal_code");
             assertPostalCodes(postalCodes, "88441");
             List<String> tmp = new LinkedList<>();
             tmp.addAll(postalCodes);
@@ -161,8 +160,8 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
-            assertPostalCodes(user.getAttributeStream("postal_code").collect(Collectors.toList()), "88441", "77332");
+            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
+            assertPostalCodes(user.getAttribute("postal_code"), "88441", "77332");
         });
     }
 

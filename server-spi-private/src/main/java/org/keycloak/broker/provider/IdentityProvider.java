@@ -38,39 +38,18 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
     String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
 
     interface AuthenticationCallback {
-
-        /**
-         * Common method to return current authenticationSession and verify if it is not expired
-         *
-         * @param encodedCode
-         * @return see description
-         */
-        AuthenticationSessionModel getAndVerifyAuthenticationSession(String encodedCode);
-
         /**
          * This method should be called by provider after the JAXRS callback endpoint has finished authentication
-         * with the remote IDP. There is an assumption that authenticationSession is set in the context when this method is called
+         * with the remote IDP
          *
          * @param context
-         * @return see description
+         * @return
          */
         Response authenticated(BrokeredIdentityContext context);
 
-        /**
-         * Called when user cancelled authentication on the IDP side - for example user didn't approve consent page on the IDP side.
-         * Assumption is that authenticationSession is set in the {@link org.keycloak.models.KeycloakContext} when this method is called
-         *
-         * @return see description
-         */
-        Response cancelled();
+        Response cancelled(String code);
 
-        /**
-         * Called when error happened on the IDP side.
-         * Assumption is that authenticationSession is set in the {@link org.keycloak.models.KeycloakContext} when this method is called
-         *
-         * @return see description
-         */
-        Response error(String message);
+        Response error(String code, String message);
     }
 
 

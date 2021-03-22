@@ -16,8 +16,6 @@
  */
 package org.keycloak.services.resources.account;
 
-import static org.keycloak.userprofile.profile.UserProfileContextFactory.forAccountService;
-
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -35,19 +33,24 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
-import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
+import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.profile.DefaultUserProfileContext;
+import org.keycloak.userprofile.profile.representations.AccountUserRepresentationUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
@@ -76,7 +79,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -158,7 +160,9 @@ public class AccountRestService {
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
-        UserProfileValidationResult result = forAccountService(user, rep, session).validate();
+        UserProfile updatedUser = new AccountUserRepresentationUserProfile(rep);
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
+        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forAccountService(user), updatedUser);
 
         if (result.hasFailureOfErrorType(Messages.READ_ONLY_USERNAME))
             return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
@@ -166,14 +170,9 @@ public class AccountRestService {
             return ErrorResponse.exists(Messages.USERNAME_EXISTS);
         if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS))
             return ErrorResponse.exists(Messages.EMAIL_EXISTS);
-        if (!result.getErrors().isEmpty()) {
-            // Here should be possibility to somehow return all errors?
-            String firstErrorMessage = result.getErrors().get(0).getFailedValidations().get(0).getErrorType();
-            return ErrorResponse.error(firstErrorMessage, Response.Status.BAD_REQUEST);
-        }
 
         try {
-            UserUpdateHelper.updateAccount(realm, user, result.getProfile());
+            UserUpdateHelper.updateAccount(realm, user, updatedUser);
             event.success();
 
             return Response.noContent().build();
@@ -206,6 +205,8 @@ public class AccountRestService {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return new ResourcesService(session, user, auth, request);
     }
+
+    // TODO Federated identities
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
@@ -287,7 +288,8 @@ public class AccountRestService {
             return ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
-        UserConsentManager.revokeConsentToClient(session, client, user);
+        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
+        new UserSessionManager(session).revokeOfflineToken(user, client);
         event.success();
 
         return Response.noContent().build();
@@ -401,36 +403,52 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<ClientRepresentation> applications(@QueryParam("name") String name) {
+    public List<ClientRepresentation> applications(@QueryParam("name") String name) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
 
-        Set<ClientModel> clients = new HashSet<>();
-        List<String> inUseClients = new LinkedList<>();
-        clients.addAll(session.sessions().getUserSessionsStream(realm, user)
-                .flatMap(s -> s.getAuthenticatedClientSessions().values().stream())
-                .map(AuthenticatedClientSessionModel::getClient)
-                .peek(client -> inUseClients.add(client.getClientId()))
-                .collect(Collectors.toSet()));
+        Set<ClientModel> clients = new HashSet<ClientModel>();
+        List<String> inUseClients = new LinkedList<String>();
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
+        for(UserSessionModel s : sessions) {
+            for (AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
+                ClientModel client = a.getClient();
+                clients.add(client);
+                inUseClients.add(client.getClientId());
+            }
+        }
 
-        List<String> offlineClients = new LinkedList<>();
-        clients.addAll(session.sessions().getOfflineUserSessionsStream(realm, user)
-                .flatMap(s -> s.getAuthenticatedClientSessions().values().stream())
-                .map(AuthenticatedClientSessionModel::getClient)
-                .peek(client -> offlineClients.add(client.getClientId()))
-                .collect(Collectors.toSet()));
+        List<String> offlineClients = new LinkedList<String>();
+        List<UserSessionModel> offlineSessions = session.sessions().getOfflineUserSessions(realm, user);
+        for(UserSessionModel s : offlineSessions) {
+            for(AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
+                ClientModel client = a.getClient();
+                clients.add(client);
+                offlineClients.add(client.getClientId());
+            }
+        }
 
-        Map<String, UserConsentModel> consentModels = new HashMap<>();
-        clients.addAll(session.users().getConsentsStream(realm, user.getId())
-                .peek(consent -> consentModels.put(consent.getClient().getClientId(), consent))
-                .map(UserConsentModel::getClient)
-                .collect(Collectors.toSet()));
+        Map<String, UserConsentModel> consentModels = new HashMap<String, UserConsentModel>();
+        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
+        for (UserConsentModel consent : consents) {
+            ClientModel client = consent.getClient();
+            clients.add(client);
+            consentModels.put(client.getClientId(), consent);
+        }
 
         realm.getAlwaysDisplayInConsoleClientsStream().forEach(clients::add);
 
-        return clients.stream().filter(client -> !client.isBearerOnly() && client.getBaseUrl() != null && !client.getClientId().isEmpty())
-                .filter(client -> matches(client, name))
-                .map(client -> modelToRepresentation(client, inUseClients, offlineClients, consentModels));
+        List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();
+        for (ClientModel client : clients) {
+            if (client.isBearerOnly() || client.getBaseUrl() == null || client.getBaseUrl().isEmpty()) {
+                continue;
+            }
+            else if (matches(client, name)) {
+                apps.add(modelToRepresentation(client, inUseClients, offlineClients, consentModels));
+            }
+        }
+
+        return apps;
     }
 
     private boolean matches(ClientModel client, String name) {
@@ -447,6 +465,6 @@ public class AccountRestService {
     private static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
-}
+        }
     }
 }

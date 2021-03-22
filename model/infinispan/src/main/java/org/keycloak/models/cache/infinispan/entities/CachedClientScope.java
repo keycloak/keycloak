@@ -48,7 +48,9 @@ public class CachedClientScope extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         this.realm = realm.getId();
         protocol = model.getProtocol();
-        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
+        for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
+            this.protocolMappers.add(mapper);
+        }
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
         attributes.putAll(model.getAttributes());
     }

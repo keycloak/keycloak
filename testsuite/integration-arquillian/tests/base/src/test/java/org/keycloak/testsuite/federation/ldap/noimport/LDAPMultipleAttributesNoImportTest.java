@@ -48,9 +48,9 @@ public class LDAPMultipleAttributesNoImportTest extends LDAPMultipleAttributesTe
             RealmModel appRealm = ctx.getRealm();
 
             // Test user NOT imported in local storage now. He is available just through "session.users()"
-            UserModel user = session.users().getUserByUsername(appRealm, "jbrown");
+            UserModel user = session.users().getUserByUsername("jbrown", appRealm);
             Assert.assertNotNull(user);
-            Assert.assertNull(session.userLocalStorage().getUserById(appRealm, user.getId()));
+            Assert.assertNull(session.userLocalStorage().getUserById(user.getId(), appRealm));
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
         });
     }

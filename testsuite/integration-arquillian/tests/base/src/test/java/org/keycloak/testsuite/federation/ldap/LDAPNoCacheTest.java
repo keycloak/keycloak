@@ -20,7 +20,6 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -228,21 +227,19 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
 
             // assume no user imported
-            UserModel user = localStorage.getUserByUsername(realm, "johnkeycloak");
+            UserModel user = localStorage.getUserByUsername("johnkeycloak", realm);
             assumeThat(user, is(nullValue()));
 
             // trigger import
-            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttributeStream(realm, "email", "john_old@email.org")
-                    .collect(Collectors.toList());
+            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttribute("email", "john_old@email.org", realm);
             assumeThat(byEmail, hasSize(1));
 
             // assume that user has been imported
-            user = localStorage.getUserByUsername(realm, "johnkeycloak");
+            user = localStorage.getUserByUsername("johnkeycloak", realm);
             assumeThat(user, is(not(nullValue())));
 
             // search a second time
-            byEmail = ldapProvider.searchForUserByUserAttributeStream(realm, "email", "john_old@email.org")
-                    .collect(Collectors.toList());
+            byEmail = ldapProvider.searchForUserByUserAttribute("email", "john_old@email.org", realm);
             assertThat(byEmail, hasSize(1));
         });
     }

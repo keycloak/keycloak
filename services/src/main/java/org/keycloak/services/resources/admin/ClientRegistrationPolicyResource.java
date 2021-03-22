@@ -35,7 +35,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * @resource Client Registration Policy
@@ -67,17 +67,23 @@ public class ClientRegistrationPolicyResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<ComponentTypeRepresentation> getProviders() {
-        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientRegistrationPolicy.class)
-                .map((ProviderFactory factory) -> {
-                    ClientRegistrationPolicyFactory clientRegFactory = (ClientRegistrationPolicyFactory) factory;
-                    List<ProviderConfigProperty> configProps = clientRegFactory.getConfigProperties(session);
+    public List<ComponentTypeRepresentation> getProviders() {
+        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientRegistrationPolicy.class);
 
-                    ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
-                    rep.setId(clientRegFactory.getId());
-                    rep.setHelpText(clientRegFactory.getHelpText());
-                    rep.setProperties(ModelToRepresentation.toRepresentation(configProps));
-                    return rep;
-                });
+        return providerFactories.stream().map((ProviderFactory factory) -> {
+
+            ClientRegistrationPolicyFactory clientRegFactory = (ClientRegistrationPolicyFactory) factory;
+            List<ProviderConfigProperty> configProps = clientRegFactory.getConfigProperties(session);
+
+            ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+            rep.setId(clientRegFactory.getId());
+            rep.setHelpText(clientRegFactory.getHelpText());
+            rep.setProperties(ModelToRepresentation.toRepresentation(configProps));
+            return rep;
+
+        }).collect(Collectors.toList());
     }
+
+
+
 }

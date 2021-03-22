@@ -120,11 +120,6 @@ public class BasicAuthAuthenticator extends AbstractUsernameFormAuthenticator im
     }
 
     @Override
-    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
-        return challenge(context, error);
-    }
-
-    @Override
     public void action(AuthenticationFlowContext context) {
 
     }

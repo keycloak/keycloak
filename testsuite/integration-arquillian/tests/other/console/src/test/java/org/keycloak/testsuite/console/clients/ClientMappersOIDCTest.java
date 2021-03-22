@@ -389,7 +389,6 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         clientMappersPage.mapperTable().createMapper();
 
         createClientMappersPage.form().setName("test");
-        createClientMappersPage.form().setMapperType(USER_ATTRIBUTE);
         createClientMappersPage.form().setTokenClaimName("test");
         createClientMappersPage.form().save();
         assertAlertSuccess();

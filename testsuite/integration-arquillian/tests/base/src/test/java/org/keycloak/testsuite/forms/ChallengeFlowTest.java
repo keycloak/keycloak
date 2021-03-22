@@ -38,6 +38,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -49,7 +50,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
@@ -129,7 +129,7 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
     public void testChallengeFlow() throws Exception {
         oauth.clientId(TEST_APP_FLOW);
         String loginFormUrl = oauth.getLoginFormUrl();
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = ClientBuilder.newClient();
         WebTarget loginTarget = client.target(loginFormUrl);
         Response response = loginTarget.request().get();
         Assert.assertEquals(401, response.getStatus());
@@ -142,7 +142,7 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
         // respin Client to make absolutely sure no cookie caching.  need to test that it works with null auth_session_id cookie.
         client.close();
-        client = AdminClientUtil.createResteasyClient();
+        client = ClientBuilder.newClient();
 
 
         authenticateHeader = authenticateHeader.trim();

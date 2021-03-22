@@ -29,71 +29,46 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
- * @author Martin Bartos <mabartos@redhat.com>
  */
 public class FeedbackMessage {
-
-    private final String SUCCESS = "success";
-    private final String WARNING = "warning";
-    private final String ERROR = "error";
-    private final String INFO = "info";
-
-    @FindBy(css = "div[class^='alert']")
+    @FindBy(css = ".alert")
     private WebElement alertRoot;
-
-    @FindBy(css = "span[id^='input-error']")
-    private WebElement inputErrorRoot;
 
     public boolean isPresent() {
         try {
             return alertRoot.isDisplayed();
-        } catch (NoSuchElementException e) {
-            return getInputError() != null && !getInputError().isEmpty();
         }
-    }
-
-    public String getInputError() {
-        try {
-            return getTextFromElement(inputErrorRoot);
-        } catch (NoSuchElementException e) {
-            return null;
+        catch (NoSuchElementException e) {
+            return false;
         }
     }
 
     public String getText() {
-        try {
-            return getTextFromElement(alertRoot.findElement(By.className("kc-feedback-text")));
-        } catch (NoSuchElementException e) {
-            return getInputError();
-        }
+        return getTextFromElement(alertRoot.findElement(By.className("kc-feedback-text")));
     }
 
     public String getType() {
-        try {
-            String cssClass = alertRoot.getAttribute("class");
-            Matcher classMatcher = Pattern.compile("alert-(.+)").matcher(cssClass);
-            if (!classMatcher.find()) {
-                throw new RuntimeException("Failed to identify feedback message type");
-            }
-            return classMatcher.group(1);
-        } catch (NoSuchElementException e) {
-            return getInputError() != null ? ERROR : null;
+        String cssClass = alertRoot.getAttribute("class");
+        Matcher classMatcher = Pattern.compile("alert-(.+)").matcher(cssClass);
+        if (!classMatcher.find()) {
+            throw new RuntimeException("Failed to identify feedback message type");
         }
+        return classMatcher.group(1);
     }
 
     public boolean isSuccess() {
-        return getType().contains(SUCCESS);
+        return getType().equals("success");
     }
 
     public boolean isWarning() {
-        return getType().contains(WARNING);
+        return getType().equals("warning");
     }
 
     public boolean isError() {
-        return getType().contains(ERROR);
+        return getType().equals("error");
     }
 
     public boolean isInfo() {
-        return getType().contains(INFO);
+        return getType().equals("info");
     }
 }

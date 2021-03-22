@@ -67,7 +67,6 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -89,7 +88,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -97,10 +98,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 import static org.keycloak.services.util.CookieHelper.getCookie;
 
 /**
@@ -301,7 +300,7 @@ public class AuthenticationManager {
         RootAuthenticationSessionModel rootLogoutSession = null;
         boolean browserCookiePresent = false;
 
-        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession
+        // Try to lookup current authSessionId from browser cookie. If doesn't exists, use the same as current userSession
         if (browserCookie) {
             rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
         }
@@ -314,7 +313,7 @@ public class AuthenticationManager {
         }
 
         if (rootLogoutSession == null) {
-            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm, authSessionId);
+            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
         }
         if (browserCookie && !browserCookiePresent) {
             // Update cookie if needed
@@ -548,15 +547,15 @@ public class AuthenticationManager {
      * @param headers
      */
     public static void backchannelLogoutUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
-        session.sessions().getUserSessionsStream(realm, user)
-                .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()) // collect to avoid concurrent modification.
-                .forEach(clientSession -> {
-                    backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
-                    clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-                    TokenManager.dettachClientSession(clientSession);
-                });
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel userSession : userSessions) {
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+            if (clientSession != null) {
+                backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
+                clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+                org.keycloak.protocol.oidc.TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+            }
+        }
     }
 
     public static Response browserLogout(KeycloakSession session,
@@ -572,7 +571,7 @@ public class AuthenticationManager {
             UserModel user = userSession.getUser();
             logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
         }
-
+        
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
@@ -925,7 +924,7 @@ public class AuthenticationManager {
         String actionTokenKeyToInvalidate = authSession.getAuthNote(INVALIDATE_ACTION_TOKEN);
         if (actionTokenKeyToInvalidate != null) {
             ActionTokenKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
-
+            
             if (actionTokenKey != null) {
                 ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
                 actionTokenStore.put(actionTokenKey, null); // Token is invalidated
@@ -970,9 +969,8 @@ public class AuthenticationManager {
 
         evaluateRequiredActionTriggers(session, authSession, request, event, realm, user);
 
-        Optional<String> reqAction = user.getRequiredActionsStream().findFirst();
-        if (reqAction.isPresent()) {
-            return reqAction.get();
+        if (!user.getRequiredActions().isEmpty()) {
+            return user.getRequiredActions().iterator().next();
         }
         if (!authSession.getRequiredActions().isEmpty()) {
             return authSession.getRequiredActions().iterator().next();
@@ -983,7 +981,7 @@ public class AuthenticationManager {
             return kcAction;
         }
 
-        if (client.isConsentRequired() || isOAuth2DeviceVerificationFlow(authSession)) {
+        if (client.isConsentRequired()) {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
@@ -1004,13 +1002,6 @@ public class AuthenticationManager {
 
 
     private static UserConsentModel getEffectiveGrantedConsent(KeycloakSession session, AuthenticationSessionModel authSession) {
-        // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-5.4
-        // The spec says "The authorization server SHOULD display information about the device",
-        // so we ignore existing persistent consent to display the consent screen always.
-        if (isOAuth2DeviceVerificationFlow(authSession)) {
-            return null;
-        }
-
         // If prompt=consent, we ignore existing persistent consent
         String prompt = authSession.getClientNote(OIDCLoginProtocol.PROMPT_PARAM);
         if (TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_CONSENT)) {
@@ -1037,18 +1028,16 @@ public class AuthenticationManager {
 
         event.detail(Details.CODE_ID, authSession.getParentSession().getId());
 
-        Stream<String> requiredActions = user.getRequiredActionsStream();
+        Set<String> requiredActions = user.getRequiredActions();
         Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);
         if (action != null) return action;
 
         // executionActions() method should remove any duplicate actions that might be in the clientSession
-        action = executionActions(session, authSession, request, event, realm, user, authSession.getRequiredActions().stream());
+        requiredActions = authSession.getRequiredActions();
+        action = executionActions(session, authSession, request, event, realm, user, requiredActions);
         if (action != null) return action;
 
-        // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-5.4
-        // The spec says "The authorization server SHOULD display information about the device",
-        // so the consent is required when running a verification flow of OAuth 2.0 Device Authorization Grant.
-        if (client.isConsentRequired() || isOAuth2DeviceVerificationFlow(authSession)) {
+        if (client.isConsentRequired()) {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
@@ -1108,9 +1097,10 @@ public class AuthenticationManager {
         // todo scope param protocol independent
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
 
-        Set<String> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, client)
-                .map(ClientScopeModel::getId).collect(Collectors.toSet());
-
+        Set<String> requestedClientScopes = new HashSet<String>();
+        for (ClientScopeModel clientScope : org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes(scopeParam, client)) {
+            requestedClientScopes.add(clientScope.getId());
+        }
         authSession.setClientScopes(requestedClientScopes);
     }
 
@@ -1136,13 +1126,16 @@ public class AuthenticationManager {
 
     protected static Response executionActions(KeycloakSession session, AuthenticationSessionModel authSession,
                                                HttpRequest request, EventBuilder event, RealmModel realm, UserModel user,
-                                               Stream<String> requiredActions) {
+                                               Set<String> requiredActions) {
 
-        Optional<Response> response = sortRequiredActionsByPriority(realm, requiredActions)
-                .map(model -> executeAction(session, authSession, model, request, event, realm, user, false))
-                .filter(Objects::nonNull).findFirst();
-        if (response.isPresent())
-            return response.get();
+        List<RequiredActionProviderModel> sortedRequiredActions = sortRequiredActionsByPriority(realm, requiredActions);
+
+        for (RequiredActionProviderModel model : sortedRequiredActions) {
+            Response response = executeAction(session, authSession, model, request, event, realm, user, false);
+            if (response != null) {
+                return response;
+            }
+        }
 
         String kcAction = authSession.getClientNote(Constants.KC_ACTION);
         if (kcAction != null) {
@@ -1218,17 +1211,21 @@ public class AuthenticationManager {
         return null;
     }
 
-    private static Stream<RequiredActionProviderModel> sortRequiredActionsByPriority(RealmModel realm, Stream<String> requiredActions) {
-        return requiredActions.map(action -> {
-                    RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
-                    if (model == null) {
-                        logger.warnv("Could not find configuration for Required Action {0}, did you forget to register it?", action);
-                    }
-                    return model;
-                })
-                .filter(Objects::nonNull)
-                .filter(RequiredActionProviderModel::isEnabled)
-                .sorted(RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
+    private static List<RequiredActionProviderModel> sortRequiredActionsByPriority(RealmModel realm, Set<String> requiredActions) {
+        List<RequiredActionProviderModel> actions = new ArrayList<>();
+        for (String action : requiredActions) {
+            RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            if (model == null) {
+                logger.warnv("Could not find configuration for Required Action {0}, did you forget to register it?", action);
+                continue;
+            }
+            if (!model.isEnabled()) {
+                continue;
+            }
+            actions.add(model);
+        }
+        Collections.sort(actions, RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
+        return actions;
     }
     
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final AuthenticationSessionModel authSession,
@@ -1308,24 +1305,23 @@ public class AuthenticationManager {
                 }
             }
 
-            UserSessionModel userSession = null;
+            UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
             UserModel user = null;
-            if (token.getSessionState() == null) {
-                user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
-                if (!isUserValid(session, realm, user, token)) {
+            if (userSession != null) {
+                user = userSession.getUser();
+                if (user == null || !user.isEnabled()) {
+                    logger.debug("Unknown user in identity token");
                     return null;
                 }
-            } else {
-                userSession = session.sessions().getUserSession(realm, token.getSessionState());
-                if (userSession != null) {
-                    user = userSession.getUser();
-                    if (!isUserValid(session, realm, user, token)) {
-                        return null;
-                    }
+
+                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+                if (token.getIssuedAt() < userNotBefore) {
+                    logger.debug("User notBefore newer than token");
+                    return null;
                 }
             }
 
-            if (token.getSessionState() != null && !isSessionValid(realm, userSession)) {
+            if (!isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
@@ -1347,21 +1343,6 @@ public class AuthenticationManager {
             logger.debugf("Failed to verify identity token: %s", e.getMessage());
         }
         return null;
-    }
-
-    private static boolean isUserValid(KeycloakSession session, RealmModel realm, UserModel user, AccessToken token) {
-        if (user == null || !user.isEnabled()) {
-            logger.debug("Unknown user in identity token");
-            return false;
-        }
-
-        int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
-        if (token.getIssuedAt() < userNotBefore) {
-            logger.debug("User notBefore newer than token");
-            return false;
-        }
-
-        return true;
     }
 
     public enum AuthenticationStatus {

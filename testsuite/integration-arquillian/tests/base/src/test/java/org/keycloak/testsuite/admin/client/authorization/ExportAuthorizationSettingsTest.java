@@ -33,7 +33,6 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 
 /**
  *
@@ -119,16 +118,13 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     public void testRoleBasedPolicyWithMultipleRoles() {
         ClientResource clientResource = getClientResource();
         AuthorizationResource authorizationResource = clientResource.authorization();
-
-        testRealmResource().clients().create(ClientBuilder.create().clientId("test-client-1").build()).close();
-        testRealmResource().clients().create(ClientBuilder.create().clientId("test-client-2").build()).close();
-
+        
+        testRealmResource().clients().create(ClientBuilder.create().clientId("test-client-1").defaultRoles("client-role").build()).close();
+        testRealmResource().clients().create(ClientBuilder.create().clientId("test-client-2").defaultRoles("client-role").build()).close();
+                
         ClientRepresentation client1 = getClientByClientId("test-client-1");
         ClientRepresentation client2 = getClientByClientId("test-client-2");
-
-        testRealmResource().clients().get(client1.getId()).roles().create(RoleBuilder.create().name("client-role").build());
-        testRealmResource().clients().get(client2.getId()).roles().create(RoleBuilder.create().name("client-role").build());
-
+        
         RoleRepresentation role1 = testRealmResource().clients().get(client1.getId()).roles().get("client-role").toRepresentation();
         RoleRepresentation role2 = testRealmResource().clients().get(client2.getId()).roles().get("client-role").toRepresentation();
         
@@ -138,8 +134,11 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         Map<String, String> config = new HashMap<>();
         config.put("roles", "[{\"id\":\"" + role1.getId() +"\"},{\"id\":\"" + role2.getId() +"\"}]");
         policy.setConfig(config);
-        try (Response create = authorizationResource.policies().create(policy)) {
+        Response create = authorizationResource.policies().create(policy);
+        try {
             Assert.assertEquals(Status.CREATED, create.getStatusInfo());
+        } finally {
+            create.close();
         }
         
         //export authorization settings

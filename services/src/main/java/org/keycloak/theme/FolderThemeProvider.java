@@ -84,15 +84,7 @@ public class FolderThemeProvider implements ThemeProvider {
     }
 
     private File getThemeDir(String name, Theme.Type type) {
-        File f = new File(themesDir, name + File.separator + type.name().toLowerCase());
-        try {
-            if (!f.getCanonicalPath().startsWith(themesDir.getCanonicalPath() + File.separator)) {
-                return null;
-            }
-        } catch (IOException e) {
-            return null;
-        }
-        return f;
+        return new File(themesDir, name + File.separator + type.name().toLowerCase());
     }
 
 }

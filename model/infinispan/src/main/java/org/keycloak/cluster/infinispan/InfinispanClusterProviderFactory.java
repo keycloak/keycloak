@@ -19,6 +19,10 @@ package org.keycloak.cluster.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.commons.util.concurrent.ConcurrentHashSet;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
@@ -36,16 +40,26 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -136,8 +150,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
             try {
                 V result;
                 if (taskTimeoutInSeconds > 0) {
-                    long lifespanMs = InfinispanUtil.toHotrodTimeMs(crossDCAwareCacheFactory.getCache(), Time.toMillis(taskTimeoutInSeconds));
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
+                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, taskTimeoutInSeconds, TimeUnit.SECONDS);
                 } else {
                     result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
                 }

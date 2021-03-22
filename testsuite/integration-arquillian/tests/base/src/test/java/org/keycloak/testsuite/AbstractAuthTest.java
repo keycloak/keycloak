@@ -109,7 +109,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForTestRealm() {
-        deleteAllCookiesForRealm(testRealmAccountPage.getAuthRealm());
+        deleteAllCookiesForRealm(testRealmAccountPage);
     }
 
     protected void deleteAllSessionsInTestRealm() {

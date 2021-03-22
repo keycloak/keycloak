@@ -36,7 +36,6 @@ public class UMAPolicyProvider extends AbstractPermissionProvider {
 
             // no need to evaluate UMA permissions to resource owner resources
             if (resource.getOwner().equals(identity.getId())) {
-                evaluation.grant();
                 return;
             }
         }

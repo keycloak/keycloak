@@ -41,10 +41,6 @@ public class CorsErrorResponseException extends WebApplicationException {
         this.status = status;
     }
 
-    public String getErrorDescription() {
-        return errorDescription;
-    }
-
     @Override
     public Response getResponse() {
         OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);

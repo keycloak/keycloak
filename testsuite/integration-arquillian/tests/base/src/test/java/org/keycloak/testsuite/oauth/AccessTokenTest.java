@@ -65,7 +65,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -193,7 +192,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
 
-        assertEquals("Bearer", response.getTokenType());
+        assertEquals("bearer", response.getTokenType());
 
         String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
 
@@ -395,7 +394,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(200, response.getStatusCode());
         String accessToken = response.getAccessToken();
 
-        Client jaxrsClient = AdminClientUtil.createResteasyClient();
+        Client jaxrsClient = javax.ws.rs.client.ClientBuilder.newClient();
         try {
             // Check that userInfo can be invoked
             Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessToken);
@@ -493,7 +492,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void testGrantAccessToken() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = javax.ws.rs.client.ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
@@ -578,16 +577,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            // 401 because the client is now a bearer without a secret
-            assertEquals(401, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
                 ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
                 ClientRepresentation clientRepresentation = clientResource.toRepresentation();
                 clientRepresentation.setBearerOnly(false);
-                // reset to the old secret
-                clientRepresentation.setSecret("password");
                 clientResource.update(clientRepresentation);
             }
 
@@ -709,7 +705,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void testKeycloak2221() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = javax.ws.rs.client.ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
@@ -793,7 +789,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         realm.clients().get(clientRep.getId()).update(clientRep);
 
         {
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -822,7 +818,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         clientScopeResource.getScopeMappings().realmLevel().add(addRole1);
 
         {
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -847,7 +843,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         realm.clients().get(clientRep.getId()).getScopeMappings().realmLevel().add(addRole2);
 
         {
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -873,7 +869,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         realm.clients().get(clientRep.getId()).getScopeMappings().realmLevel().remove(addRole2);
 
         {
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -897,7 +893,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         clientScopeResource.getScopeMappings().realmLevel().add(addRole2);
 
         {
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -925,7 +921,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         clientScopeResource.remove();
 
         {
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -1311,7 +1307,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, response.getStatusCode());
 
-        assertEquals("Bearer", response.getTokenType());
+        assertEquals("bearer", response.getTokenType());
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals(expectedAccessAlg, header.getAlgorithm().name());
@@ -1339,36 +1335,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
-    }
-
-    // KEYCLOAK-16009
-    @Test
-    public void tokenRequestParamsMoreThanOnce() throws Exception {
-        oauth.doLogin("test-user@localhost", "password");
-
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
-
-            List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "foo"));
-
-            String authorization = BasicAuthHelper.createHeader(OAuth2Constants.CLIENT_ID, "password");
-            post.setHeader("Authorization", authorization);
-
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            post.setEntity(formEntity);
-
-            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
-            assertEquals(400, response.getStatusCode());
-            assertEquals("invalid_request", response.getError());
-            assertEquals("duplicated parameter", response.getErrorDescription());
-        }
     }
 
 }

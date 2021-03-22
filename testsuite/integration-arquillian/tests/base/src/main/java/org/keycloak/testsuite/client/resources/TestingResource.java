@@ -89,9 +89,9 @@ public interface TestingResource {
     void clearEventStore(@QueryParam("realmId") String realmId);
 
     @GET
-    @Path("/clear-expired-events")
+    @Path("/clear-event-store-older-than")
     @Produces(MediaType.APPLICATION_JSON)
-    void clearExpiredEvents();
+    void clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
 
     /**
      * Query events
@@ -195,20 +195,6 @@ public interface TestingResource {
     @Path("/remove-expired")
     @Produces(MediaType.APPLICATION_JSON)
     void removeExpired(@QueryParam("realm") final String realm);
-
-    /**
-     * Will set {@link org.keycloak.testsuite.model.infinispan.KeycloakTestTimeService} to the infinispan CacheManager before the test.
-     * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}
-     */
-    @POST
-    @Path("/set-testing-infinispan-time-service")
-    @Produces(MediaType.APPLICATION_JSON)
-    void setTestingInfinispanTimeService();
-
-    @POST
-    @Path("/revert-testing-infinispan-time-service")
-    @Produces(MediaType.APPLICATION_JSON)
-    void revertTestingInfinispanTimeService();
 
     @GET
     @Path("/get-client-sessions-count")

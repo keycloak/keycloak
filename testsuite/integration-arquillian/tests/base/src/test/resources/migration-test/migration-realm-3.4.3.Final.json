@@ -287,7 +287,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access", "uma_authorization", "migration-test-realm-role" ],
+  "defaultRoles" : [ "offline_access", "uma_authorization" ],
   "requiredCredentials" : [ "password" ],
   "otpPolicyType" : "totp",
   "otpPolicyAlgorithm" : "HmacSHA1",
@@ -708,7 +708,6 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "secret",
-    "defaultRoles" : [ "migration-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -1684,12 +1683,6 @@
       "composite" : false,
       "clientRole" : false,
       "containerId" : "Migration2"
-    }, {
-      "id" : "a495da40-f44c-4e28-8f82-75bb5677e597",
-      "name" : "default-roles-migration2",
-      "description" : "${role_default-roles}",
-      "scopeParamRequired" : true,
-      "composite" : false
     } ],
     "client" : {
       "realm-management" : [ {
@@ -3560,7 +3553,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access", "uma_authorization", "master-test-realm-role" ],
+  "defaultRoles" : [ "offline_access", "uma_authorization" ],
   "requiredCredentials" : [ "password" ],
   "otpPolicyType" : "totp",
   "otpPolicyAlgorithm" : "HmacSHA1",
@@ -4273,7 +4266,6 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "932dd4b7-42e8-44d6-9791-651bec2a757b",
-    "defaultRoles" : [ "master-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,

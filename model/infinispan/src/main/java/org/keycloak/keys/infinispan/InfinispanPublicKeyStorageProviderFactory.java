@@ -32,7 +32,6 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageProviderFactory;
 import org.keycloak.keys.PublicKeyStorageUtils;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -118,15 +117,15 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
     private SessionAndKeyHolder getCacheKeyToInvalidate(ProviderEvent event) {
         ArrayList<String> cacheKeys = new ArrayList<>();
         String cacheKey = null;
-        if (event instanceof ClientModel.ClientUpdatedEvent) {
-            ClientModel.ClientUpdatedEvent eventt = (ClientModel.ClientUpdatedEvent) event;
+        if (event instanceof RealmModel.ClientUpdatedEvent) {
+            RealmModel.ClientUpdatedEvent eventt = (RealmModel.ClientUpdatedEvent) event;
             cacheKey = PublicKeyStorageUtils.getClientModelCacheKey(eventt.getUpdatedClient().getRealm().getId(), eventt.getUpdatedClient().getId(), JWK.Use.SIG);
             cacheKeys.add(cacheKey);
             cacheKey = PublicKeyStorageUtils.getClientModelCacheKey(eventt.getUpdatedClient().getRealm().getId(), eventt.getUpdatedClient().getId(), JWK.Use.ENCRYPTION);
             cacheKeys.add(cacheKey);
             return new SessionAndKeyHolder(eventt.getKeycloakSession(), cacheKeys);
-        } else if (event instanceof ClientModel.ClientRemovedEvent) {
-            ClientModel.ClientRemovedEvent eventt = (ClientModel.ClientRemovedEvent) event;
+        } else if (event instanceof RealmModel.ClientRemovedEvent) {
+            RealmModel.ClientRemovedEvent eventt = (RealmModel.ClientRemovedEvent) event;
             cacheKey = PublicKeyStorageUtils.getClientModelCacheKey(eventt.getClient().getRealm().getId(), eventt.getClient().getId(), JWK.Use.SIG);
             cacheKeys.add(cacheKey);
             cacheKey = PublicKeyStorageUtils.getClientModelCacheKey(eventt.getClient().getRealm().getId(), eventt.getClient().getId(), JWK.Use.ENCRYPTION);

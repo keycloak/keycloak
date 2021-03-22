@@ -17,26 +17,20 @@
 
 package org.keycloak.cli;
 
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.IntFunction;
 
-import org.jboss.logging.Logger;
+import io.quarkus.runtime.Quarkus;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.PropertyMapper;
 import org.keycloak.configuration.PropertyMappers;
-import org.keycloak.platform.Platform;
-import org.keycloak.provider.quarkus.InitializationException;
-import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.util.Environment;
 import picocli.CommandLine;
 
 final class Picocli {
-
-    private static final Logger logger = Logger.getLogger(Picocli.class);
 
     static CommandLine createCommandLine() {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new MainCommand())
@@ -125,84 +119,36 @@ final class Picocli {
         return parseResult.expandedArgs();
     }
 
-    static void error(List<String> cliArgs, PrintWriter errorWriter, String message, Throwable throwable) {
-        logError(errorWriter, "ERROR: " + message);
-
-        if (throwable != null) {
-            boolean verbose = cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg));
-
-            if (throwable instanceof InitializationException) {
-                InitializationException initializationException = (InitializationException) throwable;
-                if (initializationException.getSuppressed() == null || initializationException.getSuppressed().length == 0) {
-                    dumpException(errorWriter, initializationException, verbose);
-                } else if (initializationException.getSuppressed().length == 1) {
-                    dumpException(errorWriter, initializationException.getSuppressed()[0], verbose);
-                } else {
-                    logError(errorWriter, "ERROR: Multiple configuration errors during startup");
-                    int counter = 0;
-                    for (Throwable inner : initializationException.getSuppressed()) {
-                        counter++;
-                        logError(errorWriter, "ERROR " + counter);
-                        dumpException(errorWriter, inner, verbose);
-                    }
-                }
-            } else {
-                dumpException(errorWriter, throwable, verbose);
-            }
-
-            if (!verbose) {
-                logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
-            }
-        }
-
-        System.exit(1);
+    static void errorAndExit(CommandLine cmd, String message) {
+        error(cmd, message, null);
     }
 
     static void error(CommandLine cmd, String message, Throwable throwable) {
-        error(getCliArgs(cmd), cmd.getErr(), message, throwable);
-    }
+        List<String> cliArgs = getCliArgs(cmd);
 
-    static void error(CommandLine cmd, String message) {
-        error(getCliArgs(cmd), cmd.getErr(), message, null);
+        cmd.getErr().println("ERROR: " + message);
+
+        if (throwable != null) {
+            Throwable cause = throwable;
+
+            do {
+                if (cause.getMessage() != null) {
+                    cmd.getErr().println(String.format("ERROR: %s", cause.getMessage()));
+                }
+            } while ((cause = cause.getCause())!= null);
+
+            if (cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg))) {
+                cmd.getErr().println("ERROR: Details:");
+                throwable.printStackTrace();
+            } else {
+                cmd.getErr().println("For more details run the same command passing the '--verbose' option.");
+            }
+        }
+
+        System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
     }
 
     static void println(CommandLine cmd, String message) {
         cmd.getOut().println(message);
-    }
-
-    private static void dumpException(PrintWriter errorWriter, Throwable cause, boolean verbose) {
-        if (verbose) {
-            logError(errorWriter, "ERROR: Details:", cause);
-        } else {
-            do {
-                if (cause.getMessage() != null) {
-                    logError(errorWriter, String.format("ERROR: %s", cause.getMessage()));
-                }
-            } while ((cause = cause.getCause())!= null);
-        }
-    }
-
-    private static void logError(PrintWriter errorWriter, String errorMessage) {
-        logError(errorWriter, errorMessage, null);
-    }
-
-    // The "cause" can be null
-    private static void logError(PrintWriter errorWriter, String errorMessage, Throwable cause) {
-        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
-        if (platform.isStarted()) {
-            // Can delegate to proper logger once the platform is started
-            if (cause == null) {
-                logger.error(errorMessage);
-            } else {
-                logger.error(errorMessage, cause);
-            }
-        } else {
-            if (cause == null) {
-                errorWriter.println(errorMessage);
-            } else {
-                errorWriter.println(errorMessage);
-                cause.printStackTrace();
-            }
-        }
     }
 }

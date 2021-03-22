@@ -18,8 +18,8 @@
 package org.keycloak.storage.ldap.mappers;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -73,11 +73,11 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
         delegate = new UserModelDelegate(delegate) {
 
             @Override
-            public Stream<String> getAttributeStream(String name) {
+            public List<String> getAttribute(String name) {
                 if(userModelAttrName.equals(name)){
-                    return Stream.of(attributeValue);
+                    return Arrays.asList(attributeValue);
                 }
-                return super.getAttributeStream(name);
+                return super.getAttribute(name);
             }
 
             @Override

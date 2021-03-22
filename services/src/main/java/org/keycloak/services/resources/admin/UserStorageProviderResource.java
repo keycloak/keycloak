@@ -244,4 +244,8 @@ public class UserStorageProviderResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
         return syncResult;
     }
+
+
+
+
 }

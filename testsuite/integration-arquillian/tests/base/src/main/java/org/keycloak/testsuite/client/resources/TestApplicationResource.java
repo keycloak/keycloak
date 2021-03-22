@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -39,11 +38,6 @@ public interface TestApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/poll-admin-logout")
     LogoutAction getAdminLogoutAction();
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/poll-backchannel-logout")
-    LogoutToken getBackChannelLogoutToken();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

@@ -154,7 +154,7 @@ public class KeycloakIdentity implements Identity {
             clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
         }
 
-        UserModel userSession = getUserFromToken();
+        UserModel userSession = getUserFromSessionState();
 
         this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
 
@@ -229,7 +229,7 @@ public class KeycloakIdentity implements Identity {
                 clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
             }
 
-            UserModel userSession = getUserFromToken();
+            UserModel userSession = getUserFromSessionState();
 
             this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
 
@@ -276,11 +276,7 @@ public class KeycloakIdentity implements Identity {
         return null;
     }
 
-    private UserModel getUserFromToken() {
-        if (accessToken.getSessionState() == null) {
-            return TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
-        }
-
+    private UserModel getUserFromSessionState() {
         UserSessionProvider sessions = keycloakSession.sessions();
         UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
 

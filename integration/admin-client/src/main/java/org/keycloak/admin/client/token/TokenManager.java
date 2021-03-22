@@ -94,10 +94,6 @@ public class TokenManager {
     }
 
     public synchronized AccessTokenResponse refreshToken() {
-        if (currentToken.getRefreshToken() == null) {
-            return grantToken();
-        }
-
         Form form = new Form().param(GRANT_TYPE, REFRESH_TOKEN)
                               .param(REFRESH_TOKEN, currentToken.getRefreshToken());
 

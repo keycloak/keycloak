@@ -51,7 +51,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -83,8 +82,7 @@ public class ClientScopeTest extends AbstractClientTest {
 
     @Test (expected = NotFoundException.class)
     public void testGetUnknownScope() {
-        String unknownId = UUID.randomUUID().toString();
-        clientScopes().get(unknownId).toRepresentation();
+        clientScopes().get("unknown-id").toRepresentation();
     }
 
 

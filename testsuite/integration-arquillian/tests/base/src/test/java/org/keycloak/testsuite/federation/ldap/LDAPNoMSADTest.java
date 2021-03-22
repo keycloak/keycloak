@@ -126,7 +126,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel johnkeycloak2 = session.users().getUserByUsername(appRealm, "johnkeycloak2");
+            UserModel johnkeycloak2 = session.users().getUserByUsername("johnkeycloak2", appRealm);
             Assert.assertNotNull(johnkeycloak2);
 
             johnkeycloak2.setFirstName("foo2");

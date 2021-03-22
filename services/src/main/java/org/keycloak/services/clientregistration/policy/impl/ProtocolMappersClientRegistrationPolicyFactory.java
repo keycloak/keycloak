@@ -61,9 +61,12 @@ public class ProtocolMappersClientRegistrationPolicyFactory extends AbstractClie
     }
 
     private List<String> getProtocolMapperFactoryIds() {
-        return sessionFactory.getProviderFactoriesStream(ProtocolMapper.class)
-                .map(ProviderFactory::getId)
-                .collect(Collectors.toList());
+        List<ProviderFactory> protocolMapperFactories = sessionFactory.getProviderFactories(ProtocolMapper.class);
+        return protocolMapperFactories.stream().map((ProviderFactory factory) -> {
+
+            return factory.getId();
+
+        }).collect(Collectors.toList());
     }
 
     @Override

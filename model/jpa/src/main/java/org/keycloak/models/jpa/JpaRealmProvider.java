@@ -17,22 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.Root;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -41,12 +25,10 @@ import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
@@ -57,15 +39,28 @@ import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.models.ModelException;
+
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.utils.StreamsUtil.closing;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider {
+public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupProvider, RoleProvider {
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
@@ -164,8 +159,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         num = em.createNamedQuery("deleteDefaultClientScopeRealmMappingByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
-        session.clientScopes().removeClientScopes(adapter);
-        session.roles().removeRoles(adapter);
+        for (ClientScopeEntity a : new LinkedList<>(realm.getClientScopes())) {
+            adapter.removeClientScope(a.getId());
+        }
+
+        removeRoles(adapter);
 
         adapter.getTopLevelGroupsStream().forEach(adapter::removeGroup);
 
@@ -286,7 +284,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     protected Stream<RoleModel> getRolesStream(TypedQuery<RoleEntity> query, RealmModel realm, Integer first, Integer max) {
-        Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
+        if(Objects.nonNull(first) && Objects.nonNull(max)
+                && first >= 0 && max >= 0) {
+            query= query.setFirstResult(first).setMaxResults(max);
+        }
+
+        Stream<RoleEntity> results = query.getResultStream();
 
         return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
     }
@@ -307,8 +310,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     protected Stream<RoleModel> searchForRoles(TypedQuery<RoleEntity> query, RealmModel realm, String search, Integer first, Integer max) {
+
         query.setParameter("search", "%" + search.trim().toLowerCase() + "%");
-        Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
+        if(Objects.nonNull(first) && Objects.nonNull(max)
+                && first >= 0 && max >= 0) {
+            query= query.setFirstResult(first).setMaxResults(max);
+        }
+
+        Stream<RoleEntity> results = query.getResultStream();
 
         return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
     }
@@ -324,6 +333,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new IllegalStateException("RoleModel's container isn not instance of either RealmModel or ClientModel");
         }
         session.users().preRemove(realm, role);
+        RoleContainerModel container = role.getContainer();
+        if (container.getDefaultRolesStream().anyMatch(r -> Objects.equals(r, role.getName()))) {
+            container.removeDefaultRoles(role.getName());
+        }
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         if (roleEntity == null || !roleEntity.getRealmId().equals(realm.getId())) {
             // Throw model exception to ensure transaction rollback and revert previous operations (removing default roles) as well
@@ -438,6 +451,18 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         return closing(paginateQuery(query, first, max).getResultStream())
                 .map(g -> session.groups().getGroupById(realm, g));
     }
+    
+    private static <T> TypedQuery<T> paginateQuery(TypedQuery<T> query, Integer first, Integer max) {
+        if (first != null && first > 0) {
+            query = query.setFirstResult(first);
+        }
+
+        if (max != null && max >= 0) {
+            query = query.setMaxResults(max);
+        }
+
+        return query;
+    }
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids) {
@@ -490,8 +515,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
         query.setParameter("roleId", role.getId());
-
-        Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
+        if (firstResult != null && firstResult > 0) {
+            query = query.setFirstResult(firstResult);
+        }
+        if (maxResults != null && maxResults > 0) {
+            query = query.setMaxResults(maxResults);
+        }
+        Stream<GroupEntity> results = query.getResultStream();
 
         return closing(results
         		.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
@@ -594,10 +624,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
-        if (id == null) {
-            id = KeycloakModelUtils.generateId();
-        }
-
         if (clientId == null) {
             clientId = id;
         }
@@ -612,10 +638,16 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmEntity realmRef = em.getReference(RealmEntity.class, realm.getId());
         entity.setRealm(realmRef);
         em.persist(entity);
-
+        em.flush();
         final ClientModel resource = new ClientAdapter(realm, em, session, entity);
 
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientCreationEvent) () -> resource);
+        em.flush();
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientCreationEvent() {
+            @Override
+            public ClientModel getCreatedClient() {
+                return resource;
+            }
+        });
         return resource;
     }
 
@@ -627,9 +659,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
-
+        if (firstResult != null && firstResult > 0) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != null && maxResults > 0) {
+            query.setMaxResults(maxResults);
+        }
         query.setParameter("realm", realm.getId());
-        Stream<String> clients = paginateQuery(query, firstResult, maxResults).getResultStream();
+        Stream<String> clients = query.getResultStream();
 
         return closing(clients.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull));
     }
@@ -671,10 +708,15 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = em.createNamedQuery("searchClientsByClientId", String.class);
+        if (firstResult != null && firstResult > 0) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != null && maxResults > 0) {
+            query.setMaxResults(maxResults);
+        }
         query.setParameter("clientId", clientId);
         query.setParameter("realm", realm.getId());
-
-        Stream<String> results = paginateQuery(query, firstResult, maxResults).getResultStream();
+        Stream<String> results = query.getResultStream();
         return closing(results.map(c -> session.clients().getClientById(realm, c)));
     }
 
@@ -698,11 +740,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (client == null) return false;
 
         session.users().preRemove(realm, client);
-        session.roles().removeRoles(client);
+
+        removeRoles(client);
 
         ClientEntity clientEntity = em.find(ClientEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
-        session.getKeycloakSessionFactory().publish(new ClientModel.ClientRemovedEvent() {
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
             @Override
             public ClientModel getClient() {
                 return client;
@@ -730,64 +773,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public ClientScopeModel getClientScopeById(RealmModel realm, String id) {
-        ClientScopeEntity clientScope = em.find(ClientScopeEntity.class, id);
+    public ClientScopeModel getClientScopeById(String id, RealmModel realm) {
+        ClientScopeEntity app = em.find(ClientScopeEntity.class, id);
 
-        // Check if client scope belongs to this realm
-        if (clientScope == null || !realm.getId().equals(clientScope.getRealm().getId())) return null;
-        ClientScopeAdapter adapter = new ClientScopeAdapter(realm, em, session, clientScope);
+        // Check if application belongs to this realm
+        if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
+        ClientScopeAdapter adapter = new ClientScopeAdapter(realm, em, session, app);
         return adapter;
-    }
-
-    @Override
-    public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
-        TypedQuery<String> query = em.createNamedQuery("getClientScopeIds", String.class);
-        query.setParameter("realm", realm.getId());
-        Stream<String> scopes = query.getResultStream();
-
-        return closing(scopes.map(realm::getClientScopeById));
-    }
-
-    @Override
-    public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
-        if (id == null) {
-            id = KeycloakModelUtils.generateId();
-        }
-        ClientScopeEntity entity = new ClientScopeEntity();
-        entity.setId(id);
-        name = KeycloakModelUtils.convertClientScopeName(name);
-        entity.setName(name);
-        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
-        entity.setRealm(ref);
-        em.persist(entity);
-        em.flush();
-        return new ClientScopeAdapter(realm, em, session, entity);
-    }
-
-    @Override
-    public boolean removeClientScope(RealmModel realm, String id) {
-        if (id == null) return false;
-        ClientScopeModel clientScope = getClientScopeById(realm, id);
-        if (clientScope == null) return false;
-
-        if (KeycloakModelUtils.isClientScopeUsed(realm, clientScope)) {
-            throw new ModelException("Cannot remove client scope, it is currently in use");
-        }
-
-        session.users().preRemove(clientScope);
-        realm.removeDefaultClientScope(clientScope);
-        ClientScopeEntity clientScopeEntity = em.find(ClientScopeEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-
-        em.createNamedQuery("deleteClientScopeRoleMappingByClientScope").setParameter("clientScope", clientScopeEntity).executeUpdate();
-        em.remove(clientScopeEntity);
-        em.flush();
-        return true;
-    }
-
-    @Override
-    public void removeClientScopes(RealmModel realm) {
-        // No need to go through cache. Client scopes were already invalidated
-        realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(id -> this.removeClientScope(realm, id));
     }
 
     @Override
@@ -867,88 +859,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         em.createNamedQuery("decreaseClientInitialAccessRemainingCount")
                 .setParameter("id", clientInitialAccess.getId())
                 .executeUpdate();
-    }
-
-    private RealmLocalizationTextsEntity getRealmLocalizationTextsEntity(String locale, String realmId) {
-        RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey key = new RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey();
-        key.setRealmId(realmId);
-        key.setLocale(locale);
-        return em.find(RealmLocalizationTextsEntity.class, key);
-    }
-
-    @Override
-    public boolean updateLocalizationText(RealmModel realm, String locale, String key, String text) {
-        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
-        if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            Map<String, String> keys = new HashMap<>(entity.getTexts());
-            keys.put(key, text);
-            entity.setTexts(keys);
-            em.persist(entity);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public void saveLocalizationText(RealmModel realm, String locale, String key, String text) {
-        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
-        if(entity == null) {
-            entity = new RealmLocalizationTextsEntity();
-            entity.setRealmId(realm.getId());
-            entity.setLocale(locale);
-            entity.setTexts(new HashMap<>());
-        }
-        Map<String, String> keys = new HashMap<>(entity.getTexts());
-        keys.put(key, text);
-        entity.setTexts(keys);
-        em.persist(entity);
-    }
-
-    @Override
-    public void saveLocalizationTexts(RealmModel realm, String locale, Map<String, String> localizationTexts) {
-        RealmLocalizationTextsEntity entity = new RealmLocalizationTextsEntity();
-        entity.setTexts(localizationTexts);
-        entity.setLocale(locale);
-        entity.setRealmId(realm.getId());
-        em.merge(entity);
-    }
-
-    @Override
-    public boolean deleteLocalizationTextsByLocale(RealmModel realm, String locale) {
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaDelete<RealmLocalizationTextsEntity> criteriaDelete =
-                builder.createCriteriaDelete(RealmLocalizationTextsEntity.class);
-        Root<RealmLocalizationTextsEntity> root = criteriaDelete.from(RealmLocalizationTextsEntity.class);
-
-        criteriaDelete.where(builder.and(
-                builder.equal(root.get("realmId"), realm.getId()),
-                builder.equal(root.get("locale"), locale)));
-        int linesUpdated = em.createQuery(criteriaDelete).executeUpdate();
-        return linesUpdated == 1?true:false;
-    }
-
-    @Override
-    public String getLocalizationTextsById(RealmModel realm, String locale, String key) {
-        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
-        if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            return entity.getTexts().get(key);
-        }
-        return null;
-    }
-
-    @Override
-    public boolean deleteLocalizationText(RealmModel realm, String locale, String key) {
-        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
-        if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            Map<String, String> keys = new HashMap<>(entity.getTexts());
-            keys.remove(key);
-            entity.setTexts(keys);
-            em.persist(entity);
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private ClientInitialAccessModel entityToModel(ClientInitialAccessEntity entity) {

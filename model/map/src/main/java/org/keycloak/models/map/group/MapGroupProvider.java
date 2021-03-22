@@ -19,7 +19,6 @@ package org.keycloak.models.map.group;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.GroupModel.SearchableFields;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -29,41 +28,47 @@ import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapGroupProvider implements GroupProvider {
 
     private static final Logger LOG = Logger.getLogger(MapGroupProvider.class);
+    private static final Predicate<MapGroupEntity> ALWAYS_FALSE = c -> { return false; };
     private final KeycloakSession session;
-    final MapKeycloakTransaction<UUID, MapGroupEntity, GroupModel> tx;
-    private final MapStorage<UUID, MapGroupEntity, GroupModel> groupStore;
+    final MapKeycloakTransaction<UUID, MapGroupEntity> tx;
+    private final MapStorage<UUID, MapGroupEntity> groupStore;
 
-    public MapGroupProvider(KeycloakSession session, MapStorage<UUID, MapGroupEntity, GroupModel> groupStore) {
+    public MapGroupProvider(KeycloakSession session, MapStorage<UUID, MapGroupEntity> groupStore) {
         this.session = session;
         this.groupStore = groupStore;
-        this.tx = groupStore.createTransaction();
+        this.tx = new MapKeycloakTransaction<>(groupStore);
         session.getTransactionManager().enlist(tx);
     }
 
     private MapGroupEntity registerEntityForChanges(MapGroupEntity origEntity) {
         final MapGroupEntity res = Serialization.from(origEntity);
-        tx.updateIfChanged(origEntity.getId(), res, MapGroupEntity::isUpdated);
+        tx.putIfChanged(origEntity.getId(), res, MapGroupEntity::isUpdated);
         return res;
     }
 
     private Function<MapGroupEntity, GroupModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
         return origEntity -> new MapGroupAdapter(session, realm, registerEntityForChanges(origEntity));
+    }
+
+    private Predicate<MapGroupEntity> entityRealmFilter(RealmModel realm) {
+        if (realm == null || realm.getId() == null) {
+            return MapGroupProvider.ALWAYS_FALSE;
+        }
+        String realmId = realm.getId();
+        return entity -> Objects.equals(realmId, entity.getRealmId());
     }
 
     @Override
@@ -82,28 +87,28 @@ public class MapGroupProvider implements GroupProvider {
             return null;
         }
         
-        MapGroupEntity entity = tx.read(uid);
-        String realmId = realm.getId();
-        return (entity == null || ! Objects.equals(realmId, entity.getRealmId()))
+        MapGroupEntity entity = tx.get(uid, groupStore::get);
+        return (entity == null || ! entityRealmFilter(realm).test(entity))
                 ? null
                 : entityToAdapterFunc(realm).apply(entity);
     }
 
-    @Override
-    public Stream<GroupModel> getGroupsStream(RealmModel realm) {
-        return getGroupsStreamInternal(realm, null);
+    private Stream<MapGroupEntity> getNotRemovedUpdatedGroupsStream() {
+        Stream<MapGroupEntity> updatedAndNotRemovedGroupsStream = groupStore.entrySet().stream()
+                .map(tx::getUpdated)    // If the group has been removed, tx.get will return null, otherwise it will return me.getValue()
+                .filter(Objects::nonNull);
+        return Stream.concat(tx.createdValuesStream(groupStore.keySet()), updatedAndNotRemovedGroupsStream);
     }
 
-    private Stream<GroupModel> getGroupsStreamInternal(RealmModel realm, UnaryOperator<ModelCriteriaBuilder<GroupModel>> modifier) {
+    private Stream<MapGroupEntity> getUnsortedGroupEntitiesStream(RealmModel realm) {
+        return getNotRemovedUpdatedGroupsStream()
+                .filter(entityRealmFilter(realm));
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream(RealmModel realm) {
         LOG.tracef("getGroupsStream(%s)%s", realm, getShortStackTrace());
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
-
-        if (modifier != null) {
-            mcb = modifier.apply(mcb);
-        }
-
-        return tx.getUpdatedNotRemoved(mcb)
+        return getUnsortedGroupEntitiesStream(realm)
                 .map(entityToAdapterFunc(realm))
                 .sorted(GroupModel.COMPARE_BY_NAME)
                 ;
@@ -111,78 +116,96 @@ public class MapGroupProvider implements GroupProvider {
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.ID, Operator.IN, ids.map(UUID::fromString))
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        Stream<GroupModel> groupModelStream = ids.map(id -> session.groups().getGroupById(realm, id))
+                .sorted(Comparator.comparing(GroupModel::getName));
 
         if (search != null) {
-            mcb = mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+            String s = search.toLowerCase();
+            groupModelStream = groupModelStream.filter(groupModel -> groupModel.getName().toLowerCase().contains(s));
         }
 
-        Stream<GroupModel> groupModelStream = tx.getUpdatedNotRemoved(mcb)
-          .map(entityToAdapterFunc(realm))
-          .sorted(Comparator.comparing(GroupModel::getName));
+        if (first != null && first > 0) {
+            groupModelStream = groupModelStream.skip(first);
+        }
 
-        return paginatedStream(groupModelStream, first, max);
+        if (max != null && max >= 0) {
+            groupModelStream = groupModelStream.limit(max);
+        }
+
+        return groupModelStream;
     }
 
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         LOG.tracef("getGroupsCount(%s, %s)%s", realm, onlyTopGroups, getShortStackTrace());
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        Stream<MapGroupEntity> groupModelStream = getUnsortedGroupEntitiesStream(realm);
 
-        if (Objects.equals(onlyTopGroups, Boolean.TRUE)) {
-            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null);
+        if (onlyTopGroups) {
+            groupModelStream = groupModelStream.filter(groupEntity -> Objects.isNull(groupEntity.getParentId()));
         }
-
-        return tx.getCount(mcb);
+        
+        return groupModelStream.count();
     }
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
-
-        return tx.getCount(mcb);
+        return searchForGroupByNameStream(realm, search, null, null).count();
     }
 
     @Override
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         LOG.tracef("getGroupsByRole(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
-        Stream<GroupModel> groupModelStream = getGroupsStreamInternal(realm,
-          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId())
-        );
+        Stream<GroupModel> groupModelStream = getGroupsStream(realm).filter(groupModel -> groupModel.hasRole(role));
 
-        return paginatedStream(groupModelStream, firstResult, maxResults);
+        if (firstResult != null && firstResult > 0) {
+            groupModelStream = groupModelStream.skip(firstResult);
+        }
+        
+        if (maxResults != null && maxResults >= 0) {
+            groupModelStream = groupModelStream.limit(maxResults);
+        }
+
+        return groupModelStream;
     }
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
         LOG.tracef("getTopLevelGroupsStream(%s)%s", realm, getShortStackTrace());
-        return getGroupsStreamInternal(realm,
-          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null)
-        );
+        return getGroupsStream(realm)
+                .filter(groupModel -> Objects.isNull(groupModel.getParentId()));
     }
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> groupModelStream = getTopLevelGroupsStream(realm);
         
-        return paginatedStream(groupModelStream, firstResult, maxResults);
+        if (firstResult != null && firstResult > 0) {
+            groupModelStream = groupModelStream.skip(firstResult);
+        }
+        
+        if (maxResults != null && maxResults >= 0) {
+            groupModelStream = groupModelStream.limit(maxResults);
+        }
+        
+        return groupModelStream;
         
     }
 
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForGroupByNameStream(%s, %s, %d, %d)%s", realm, search, firstResult, maxResults, getShortStackTrace());
-        Stream<GroupModel> groupModelStream = getGroupsStreamInternal(realm,
-          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%")
-        );
+        Stream<GroupModel> groupModelStream = getGroupsStream(realm)
+                .filter(groupModel -> groupModel.getName().contains(search));
 
+        if (firstResult != null && firstResult > 0) {
+            groupModelStream = groupModelStream.skip(firstResult);
+        }
 
-        return paginatedStream(groupModelStream, firstResult, maxResults);
+        if (maxResults != null && maxResults >= 0) {
+            groupModelStream = groupModelStream.limit(maxResults);
+        }
+
+        return groupModelStream;
     }
 
     @Override
@@ -191,23 +214,20 @@ public class MapGroupProvider implements GroupProvider {
         final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
 
         // Check Db constraint: uniqueConstraints = { @UniqueConstraint(columnNames = {"REALM_ID", "PARENT_GROUP", "NAME"})}
-        String parentId = toParent == null ? null : toParent.getId();
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
-          .compare(SearchableFields.NAME, Operator.EQ, name);
-
-        if (tx.getCount(mcb) > 0) {
+        if (getUnsortedGroupEntitiesStream(realm)
+                .anyMatch(groupEntity -> 
+                        Objects.equals(groupEntity.getParentId(), toParent == null ? null : toParent.getId()) &&
+                        Objects.equals(groupEntity.getName(), name))) {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
         }
 
         MapGroupEntity entity = new MapGroupEntity(entityId, realm.getId());
         entity.setName(name);
         entity.setParentId(toParent == null ? null : toParent.getId());
-        if (tx.read(entity.getId()) != null) {
+        if (tx.get(entity.getId(), groupStore::get) != null) {
             throw new ModelDuplicateException("Group exists: " + entityId);
         }
-        tx.create(entity.getId(), entity);
+        tx.putIfAbsent(entity.getId(), entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
@@ -243,7 +263,7 @@ public class MapGroupProvider implements GroupProvider {
 
         // TODO: ^^^^^^^ Up to here
 
-        tx.delete(UUID.fromString(group.getId()));
+        tx.remove(UUID.fromString(group.getId()));
         
         return true;
     }
@@ -259,15 +279,11 @@ public class MapGroupProvider implements GroupProvider {
         }
         
         String parentId = toParent == null ? null : toParent.getId();
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
-          .compare(SearchableFields.NAME, Operator.EQ, group.getName());
+        Stream<MapGroupEntity> possibleSiblings = getUnsortedGroupEntitiesStream(realm)
+                .filter(mapGroupEntity -> Objects.equals(mapGroupEntity.getParentId(), parentId));
 
-        try (Stream<MapGroupEntity> possibleSiblings = tx.getUpdatedNotRemoved(mcb)) {
-            if (possibleSiblings.findAny().isPresent()) {
-                throw new ModelDuplicateException("Parent already contains subgroup named '" + group.getName() + "'");
-            }
+        if (possibleSiblings.map(MapGroupEntity::getName).anyMatch(Predicate.isEqual(group.getName()))) {
+            throw new ModelDuplicateException("Parent already contains subgroup named '" + group.getName() + "'");
         }
 
         if (group.getParentId() != null) {
@@ -281,15 +297,11 @@ public class MapGroupProvider implements GroupProvider {
     public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
         LOG.tracef("addTopLevelGroup(%s, %s)%s", realm, subGroup, getShortStackTrace());
 
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null)
-          .compare(SearchableFields.NAME, Operator.EQ, subGroup.getName());
+        Stream<MapGroupEntity> possibleSiblings = getUnsortedGroupEntitiesStream(realm)
+                .filter(mapGroupEntity -> mapGroupEntity.getParentId() == null);
 
-        try (Stream<MapGroupEntity> possibleSiblings = tx.getUpdatedNotRemoved(mcb)) {
-            if (possibleSiblings.findAny().isPresent()) {
-                throw new ModelDuplicateException("There is already a top level group named '" + subGroup.getName() + "'");
-            }
+        if (possibleSiblings.map(MapGroupEntity::getName).anyMatch(Predicate.isEqual(subGroup.getName()))) {
+            throw new ModelDuplicateException("There is already a top level group named '" + subGroup.getName() + "'");
         }
 
         subGroup.setParent(null);
@@ -298,14 +310,11 @@ public class MapGroupProvider implements GroupProvider {
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         LOG.tracef("preRemove(%s, %s)%s", realm, role, getShortStackTrace());
-        ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
-        try (Stream<MapGroupEntity> toRemove = tx.getUpdatedNotRemoved(mcb)) {
-            toRemove
+        final String roleId = role.getId();
+        getUnsortedGroupEntitiesStream(realm)
+                .filter(groupEntity -> groupEntity.getGrantedRoles().contains(roleId))
                 .map(groupEntity -> session.groups().getGroupById(realm, groupEntity.getId().toString()))
                 .forEach(groupModel -> groupModel.deleteRoleMapping(role));
-        }
     }
 
     @Override

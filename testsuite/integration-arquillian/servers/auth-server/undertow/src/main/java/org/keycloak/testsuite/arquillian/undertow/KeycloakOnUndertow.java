@@ -39,6 +39,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
@@ -56,7 +57,6 @@ import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
 import org.keycloak.util.JsonSerialization;
 
-import io.undertow.servlet.api.InstanceHandle;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -64,7 +64,6 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.Filter;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 
@@ -104,20 +103,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
-        // This is needed as in case of clustered undertow, several undertow instances share the same JVM, hence the default
-        // way accessing the factory in the UndertowRequestFilter via static reference to KeycloakApplication does not work:
-        // There are several KeycloakApplication instances in the JVM with no classloader separation as in a full-blown server.
-        InstanceHandle<Filter> filterInstance = new InstanceHandle<Filter>() {
-            @Override
-            public Filter getInstance() {
-                return new UndertowRequestFilter(sessionFactory);
-            }
-
-            @Override
-            public void release() {
-            }
-        };
-        FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class, () -> filterInstance);
+        FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
         filter.setAsyncSupported(true);

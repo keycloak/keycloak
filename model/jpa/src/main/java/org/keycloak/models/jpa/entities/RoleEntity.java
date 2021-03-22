@@ -38,6 +38,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -104,7 +105,7 @@ public class RoleEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected List<RoleAttributeEntity> attributes;
+    protected Collection<RoleAttributeEntity> attributes;
 
     public String getId() {
         return id;
@@ -122,14 +123,14 @@ public class RoleEntity {
         this.realmId = realmId;
     }
 
-    public List<RoleAttributeEntity> getAttributes() {
+    public Collection<RoleAttributeEntity> getAttributes() {
         if (attributes == null) {
             attributes = new LinkedList<>();
         }
         return attributes;
     }
 
-    public void setAttributes(List<RoleAttributeEntity> attributes) {
+    public void setAttributes(Collection<RoleAttributeEntity> attributes) {
         this.attributes = attributes;
     }
 

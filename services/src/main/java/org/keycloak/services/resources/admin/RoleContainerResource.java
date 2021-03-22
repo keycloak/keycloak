@@ -23,11 +23,13 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -52,8 +54,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -332,7 +336,7 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Return object stating whether role Authorization permissions have been initialized or not and a reference
+     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
      *
      *
      * @param roleName
@@ -357,7 +361,7 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Return object stating whether role Authorization permissions have been initialized or not and a reference
+     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
      *
      *
      * @param roleName
@@ -385,19 +389,19 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Returns a stream of users that have the specified role name.
+     * Return List of Users that have the specified role name 
      *
      *
-     * @param roleName the role name.
-     * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
-     * @return a non-empty {@code Stream} of users.
+     * @param roleName
+     * @param firstResult
+     * @param maxResults
+     * @return initialized manage permissions reference
      */
     @Path("{role-name}/users")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName,
+    public  List<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName, 
                                                     @QueryParam("first") Integer firstResult,
                                                     @QueryParam("max") Integer maxResults) {
         
@@ -406,29 +410,36 @@ public class RoleContainerResource extends RoleResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         
         RoleModel role = roleContainer.getRole(roleName);
+        
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        
+        List<UserRepresentation> results = new ArrayList<UserRepresentation>();
+        List<UserModel> userModels = session.users().getRoleMembers(realm, role, firstResult, maxResults);
 
-        return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
-                .map(user -> ModelToRepresentation.toRepresentation(session, realm, user));
-    }
+        for (UserModel user : userModels) {
+            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
+        }
+        return results; 
+        
+    }    
     
     /**
-     * Returns a stream of groups that have the specified role name
+     * Return List of Groups that have the specified role name 
      *
      *
-     * @param roleName the role name.
-     * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
-     * @param briefRepresentation if false, return a full representation of the {@code GroupRepresentation} objects.
-     * @return a non-empty {@code Stream} of groups.
+     * @param roleName
+     * @param firstResult
+     * @param maxResults
+     * @param briefRepresentation if false, return a full representation of the GroupRepresentation objects
+     * @return
      */
     @Path("{role-name}/groups")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
+    public  Stream<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
                                                     @QueryParam("first") Integer firstResult,
                                                     @QueryParam("max") Integer maxResults,
                                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
@@ -438,11 +449,13 @@ public class RoleContainerResource extends RoleResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         
         RoleModel role = roleContainer.getRole(roleName);
+        
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
         
-        return session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults)
-                .map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
+        Stream<GroupModel> groupsModel = session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults);
+
+        return groupsModel.map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
     }   
 }

@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
@@ -32,7 +30,7 @@ import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.util.SystemPropertiesJsonParserFactory;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * <p>This is class serves as an entry point for clients looking for access to Keycloak Authorization Services.
@@ -74,11 +72,7 @@ public class AuthzClient {
         }
 
         try {
-            ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
-
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
-
-            return create(mapper.readValue(configStream, Configuration.class));
+            return create(JsonSerialization.readValue(configStream, Configuration.class));
         } catch (IOException e) {
             throw new RuntimeException("Could not parse configuration.", e);
         }

@@ -122,11 +122,11 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         // Fail login with wildcard
         loginPage.open();
         loginPage.login("john*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         // Fail login with wildcard
         loginPage.login("j*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");
@@ -145,7 +145,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
-            UserModel specialUser = session.users().getUserByUsername(appRealm, "jamees,key*cložak)ppp");
+            UserModel specialUser = session.users().getUserByUsername("jamees,key*cložak)ppp", appRealm);
             Assert.assertNotNull(specialUser);
 
             // 1 - Grant some groups in LDAP
@@ -168,14 +168,12 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             Assert.assertTrue(userGroups.contains(specialGroup));
 
             // 3 - Check through userProvider
-            List<UserModel> groupMembers = session.users().getGroupMembersStream(appRealm, specialGroup, 0, 10)
-                    .collect(Collectors.toList());
+            List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, specialGroup, 0, 10);
 
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
 
-            groupMembers = session.users().getGroupMembersStream(appRealm, groupWithSlashes, 0, 10)
-                    .collect(Collectors.toList());
+            groupMembers = session.users().getGroupMembers(appRealm, groupWithSlashes, 0, 10);
 
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());

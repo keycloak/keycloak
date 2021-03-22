@@ -81,11 +81,9 @@ public abstract class AbstractIdentityProviderMapperTest extends AbstractBaseBro
         user.setRealmRoles(realmRoles);
 
         Map<String, List<String>> clientRoles = new HashMap<>();
-        if (roles.getClientMappings() != null) {
-            roles.getClientMappings().forEach((key, value) -> clientRoles.put(key, value.getMappings().stream()
+        roles.getClientMappings().forEach((key, value) -> clientRoles.put(key, value.getMappings().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toList())));
-        }
         user.setClientRoles(clientRoles);
 
         return user;

@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import static org.hamcrest.Matchers.equalTo;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -70,7 +69,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             List<ObjectNode> roles = loadJson(exe.stdout(), LIST_OF_JSON);
-            Assert.assertThat("expected three realm roles available", roles.size(), equalTo(3));
+            Assert.assertTrue("expect two realm roles available", roles.size() == 2);
 
             // create realm role
             exe = execute("create roles --config '" + configFile.getName() + "' -s name=testrole -s 'description=Test role' -o");
@@ -85,7 +84,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             roles = loadJson(exe.stdout(), LIST_OF_JSON);
-            Assert.assertThat("expected four realm roles available", roles.size(), equalTo(4));
+            Assert.assertTrue("expect three realm roles available", roles.size() == 3);
 
             // create client
             exe = execute("create clients --config '" + configFile.getName() + "' -s clientId=testclient -i");
@@ -105,7 +104,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             roles = loadJson(exe.stdout(), LIST_OF_JSON);
-            Assert.assertThat("expected one role", roles.size(), equalTo(1));
+            Assert.assertTrue("expect one role", roles.size() == 1);
             Assert.assertEquals("clientrole", roles.get(0).get("name").asText());
 
             // add created role to user - we are realm admin so we can add role to ourself
@@ -123,13 +122,17 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             List<String> realmMappings = StreamSupport.stream(node.get("realmMappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("default-roles-demorealm"), realmMappings);
+            Assert.assertEquals(Arrays.asList("offline_access", "uma_authorization"), realmMappings);
 
             ObjectNode clientRoles = (ObjectNode) node.get("clientMappings");
             //List<String> fields = asSortedList(clientRoles.fieldNames());
             List<String> fields = StreamSupport.stream(clientRoles.spliterator(), false)
                     .map(o -> o.get("client").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("realm-management", "testclient"), fields);
+            Assert.assertEquals(Arrays.asList("account", "realm-management", "testclient"), fields);
+
+            realmMappings = StreamSupport.stream(clientRoles.get("account").get("mappings").spliterator(), false)
+                    .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
+            Assert.assertEquals(Arrays.asList("manage-account", "view-profile"), realmMappings);
 
             realmMappings = StreamSupport.stream(clientRoles.get("realm-management").get("mappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
@@ -156,7 +159,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             realmMappings = StreamSupport.stream(node.get("realmMappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("default-roles-demorealm", "testrole"), realmMappings);
+            Assert.assertEquals(Arrays.asList("offline_access", "testrole", "uma_authorization"), realmMappings);
 
             // create a group
             exe = execute("create groups --config '" + configFile.getName() + "' -s name=TestUsers -i");

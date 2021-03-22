@@ -61,6 +61,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -112,7 +113,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = PersistenceExceptionConverter.create(session, em);
+        em = PersistenceExceptionConverter.create(em);
         if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         return new DefaultJpaConnectionProvider(em);
     }
@@ -168,7 +169,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
 
-            logger.infof("Database info: %s", operationalInfo.toString());
+            logger.debugf("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
         }
@@ -496,7 +497,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
                             UserProvider users = session.users();
 
-                            if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
+                            if (users.getUserByUsername(userRep.getUsername(), realm) != null) {
                                 ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                             } else {
                                 UserModel user = users.addUser(realm, userRep.getUsername());

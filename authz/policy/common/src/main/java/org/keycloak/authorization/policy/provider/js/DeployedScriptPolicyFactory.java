@@ -30,14 +30,10 @@ import org.keycloak.scripting.ScriptingProvider;
  */
 public final class DeployedScriptPolicyFactory extends JSPolicyProviderFactory {
 
-    private ScriptProviderMetadata metadata;
+    private final ScriptProviderMetadata metadata;
 
     public DeployedScriptPolicyFactory(ScriptProviderMetadata metadata) {
         this.metadata = metadata;
-    }
-
-    public DeployedScriptPolicyFactory() {
-        // for reflection
     }
 
     @Override
@@ -84,13 +80,5 @@ public final class DeployedScriptPolicyFactory extends JSPolicyProviderFactory {
         representation.setDescription(metadata.getDescription());
         policy.setDescription(metadata.getDescription());
         super.onCreate(policy, representation, authorization);
-    }
-
-    public ScriptProviderMetadata getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(ScriptProviderMetadata metadata) {
-        this.metadata = metadata;
     }
 }

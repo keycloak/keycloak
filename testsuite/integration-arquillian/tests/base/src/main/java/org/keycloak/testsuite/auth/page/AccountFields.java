@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.auth.page;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.NoSuchElementException;
@@ -31,9 +30,6 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class AccountFields extends FieldsBase {
-
-    @Page
-    private AccountErrors inputErrors;
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -123,69 +119,19 @@ public class AccountFields extends FieldsBase {
     }
 
     public boolean hasUsernameError() {
-        return inputErrors.getUsernameError() != null;
+        return hasFieldError(usernameInput);
     }
 
     public boolean hasEmailError() {
-        return inputErrors.getEmailError() != null;
+        return hasFieldError(emailInput);
     }
 
     public boolean hasFirstNameError() {
-        return inputErrors.getFirstNameError() != null;
+        return hasFieldError(firstNameInput);
     }
 
     public boolean hasLastNameError() {
-        return inputErrors.getLastNameError() != null;
+        return hasFieldError(lastNameInput);
     }
 
-    public AccountErrors getInputErrors(){
-        return inputErrors;
-    }
-
-    public static class AccountErrors{
-
-        @FindBy(id = "input-error-firstname")
-        private WebElement firstNameError;
-
-        @FindBy(id = "input-error-lastname")
-        private WebElement lastNameError;
-
-        @FindBy(id = "input-error-email")
-        private WebElement emailError;
-
-        @FindBy(id = "input-error-username")
-        private WebElement usernameError;
-
-        public String getFirstNameError() {
-            try {
-                return getTextFromElement(firstNameError);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        }
-
-        public String getLastNameError() {
-            try {
-                return getTextFromElement(lastNameError);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        }
-
-        public String getEmailError() {
-            try {
-                return getTextFromElement(emailError);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        }
-
-        public String getUsernameError() {
-            try {
-                return getTextFromElement(usernameError);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        }
-    }
 }

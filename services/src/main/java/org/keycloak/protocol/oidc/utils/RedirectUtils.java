@@ -24,7 +24,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
@@ -73,13 +72,13 @@ public class RedirectUtils {
 
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
         return session.getContext().getRealm().getClientsStream()
-                .filter(client -> client.isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && !client.isBearerOnly() && (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()))
+                .filter(ClientModel::isEnabled)
                 .map(c -> resolveValidRedirects(session, c.getRootUrl(), c.getRedirectUris()))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
     }
 
-    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+    private static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
@@ -116,7 +115,7 @@ public class RedirectUtils {
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
 
-            if (!valid && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
+            if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
                 StringBuilder sb = new StringBuilder();

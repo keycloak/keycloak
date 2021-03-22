@@ -26,6 +26,7 @@ import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -47,8 +48,8 @@ public class ClientScopeAdapter implements ClientScopeModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerClientScopeInvalidation(cached.getId(), cachedRealm.getId());
-            updated = cacheSession.getClientScopeDelegate().getClientScopeById(cachedRealm, cached.getId());
+            cacheSession.registerClientScopeInvalidation(cached.getId());
+            updated = cacheSession.getRealmDelegate().getClientScopeById(cached.getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -61,7 +62,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getClientScopeDelegate().getClientScopeById(cachedRealm, cached.getId());
+        updated = cacheSession.getRealmDelegate().getClientScopeById(cached.getId(), cachedRealm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -73,15 +74,14 @@ public class ClientScopeAdapter implements ClientScopeModel {
         return cached.getId();
     }
 
-    @Override
     public RealmModel getRealm() {
         return cachedRealm;
     }
 
     @Override
-    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        if (isUpdated()) return updated.getProtocolMappersStream();
-        return cached.getProtocolMappers().stream();
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        if (isUpdated()) return updated.getProtocolMappers();
+        return cached.getProtocolMappers();
     }
 
     @Override
@@ -156,26 +156,22 @@ public class ClientScopeAdapter implements ClientScopeModel {
         updated.setProtocol(protocol);
     }
 
-    @Override
     public Stream<RoleModel> getScopeMappingsStream() {
         if (isUpdated()) return updated.getScopeMappingsStream();
         return cached.getScope().stream()
           .map(id -> cacheSession.getRoleById(cachedRealm, id));
     }
 
-    @Override
     public void addScopeMapping(RoleModel role) {
         getDelegateForUpdate();
         updated.addScopeMapping(role);
     }
 
-    @Override
     public void deleteScopeMapping(RoleModel role) {
         getDelegateForUpdate();
         updated.deleteScopeMapping(role);
     }
 
-    @Override
     public Stream<RoleModel> getRealmScopeMappingsStream() {
         return getScopeMappingsStream().filter(r -> RoleUtils.isRealmRole(r, cachedRealm));
     }

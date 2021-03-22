@@ -30,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -47,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -74,8 +74,8 @@ public class ClientManager {
      * @param addDefaultRoles
      * @return
      */
-    public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
-        ClientModel client = RepresentationToModel.createClient(session, realm, rep);
+    public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep, boolean addDefaultRoles) {
+        ClientModel client = RepresentationToModel.createClient(session, realm, rep, addDefaultRoles);
 
         if (rep.getProtocol() != null) {
             LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, rep.getProtocol());
@@ -85,7 +85,8 @@ public class ClientManager {
 
         // remove default mappers if there is a template
         if (rep.getProtocolMappers() == null && rep.getClientTemplate() != null) {
-            client.getProtocolMappersStream().collect(Collectors.toList()).forEach(client::removeProtocolMapper);
+            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
         }
         return client;
 
@@ -97,6 +98,11 @@ public class ClientManager {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
                 sessions.onClientRemoved(realm, client);
+            }
+
+            UserSessionPersisterProvider sessionsPersister = realmManager.getSession().getProvider(UserSessionPersisterProvider.class);
+            if (sessionsPersister != null) {
+                sessionsPersister.onClientRemoved(realm, client);
             }
 
             AuthenticationSessionProvider authSessions = realmManager.getSession().authenticationSessions();

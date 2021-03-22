@@ -165,13 +165,13 @@ public class DefaultEvaluation implements Evaluation {
 
             private UserModel getUser(String id, KeycloakSession session) {
                 RealmModel realm = session.getContext().getRealm();
-                UserModel user = session.users().getUserById(realm, id);
+                UserModel user = session.users().getUserById(id, realm);
 
                 if (Objects.isNull(user)) {
-                    user = session.users().getUserByUsername(realm ,id);
+                    user = session.users().getUserByUsername(id, realm);
                 }
                 if (Objects.isNull(user)) {
-                    user = session.users().getUserByEmail(realm, id);
+                    user = session.users().getUserByEmail(id, realm);
                 }
                 if (Objects.isNull(user)) {
                     user = session.users().getServiceAccount(realm.getClientById(id));

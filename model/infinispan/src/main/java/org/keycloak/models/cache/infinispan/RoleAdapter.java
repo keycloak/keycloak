@@ -25,6 +25,7 @@ import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +182,7 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public void setAttribute(String name, List<String> values) {
+    public void setAttribute(String name, Collection<String> values) {
         getDelegateForUpdate();
         updated.setAttribute(name, values);
     }

@@ -36,7 +36,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel.Streams {
+public class GroupAdapter implements GroupModel {
 
     protected final CachedGroup cached;
     protected final RealmCacheSession cacheSession;

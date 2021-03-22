@@ -171,11 +171,8 @@ public class UserStorageSyncManager {
             return;
 
         }
-        final ClusterProvider cp = session.getProvider(ClusterProvider.class);
-        if (cp != null) {
-            UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
-            cp.notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
-        }
+        UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
+        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
     }
 
 

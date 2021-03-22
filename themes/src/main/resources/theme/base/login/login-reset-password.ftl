@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayInfo=true displayMessage=!messagesPerField.existsError('username'); section>
+<@layout.registrationLayout displayInfo=true; section>
     <#if section = "header">
         ${msg("emailForgotTitle")}
     <#elseif section = "form">
@@ -10,15 +10,9 @@
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <#if auth?has_content && auth.showUsername()>
-                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus value="${auth.attemptedUsername}" aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
+                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus value="${auth.attemptedUsername}"/>
                     <#else>
-                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
-                    </#if>
-
-                    <#if messagesPerField.existsError('username')>
-                        <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                                    ${kcSanitize(messagesPerField.get('username'))?no_esc}
-                        </span>
+                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus/>
                     </#if>
                 </div>
             </div>

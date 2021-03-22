@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -79,12 +78,11 @@ public class MigrateTo8_0_0  implements Migration {
     }
 
     protected void migrateRealmMFA(RealmModel realm) {
-        realm.getAuthenticationFlowsStream().collect(Collectors.toList())
+        realm.getAuthenticationFlowsStream()
                 .forEach(authFlow ->
                         realm.getAuthenticationExecutionsStream(authFlow.getId())
                             .filter(exe -> exe.getRequirement() == AuthenticationExecutionModel.Requirement.CONDITIONAL)
-                            .collect(Collectors.toList())
-                            .forEach(exe -> migrateOptionalAuthenticationExecution(realm, authFlow, exe, true)));
+                            .forEachOrdered(exe -> migrateOptionalAuthenticationExecution(realm, authFlow, exe, true)));
     }
 
     public static void migrateOptionalAuthenticationExecution(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionModel optionalExecution, boolean updateOptionalExecution) {

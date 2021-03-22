@@ -25,11 +25,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
+import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +41,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
+public class InMemoryUserAdapter extends UserModelDefaultMethods {
     private Long createdTimestamp = Time.currentTimeMillis();
     private boolean emailVerified;
     private boolean enabled;
@@ -75,7 +77,7 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     }
 
     public void addDefaults() {
-        this.grantRole(realm.getDefaultRole());
+        DefaultRoles.addDefaultRoles(realm, this);
 
         realm.getDefaultGroupsStream().forEach(this::joinGroup);
     }
@@ -150,9 +152,12 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     }
 
     @Override
-    public Stream<String> getAttributeStream(String name) {
-        List<String> value = this.attributes.get(name);
-        return value != null ? value.stream() : Stream.empty();
+    public List<String> getAttribute(String name) {
+        List<String> value = attributes.get(name);
+        if (value == null) {
+            return new LinkedList<>();
+        }
+        return value;
     }
 
     @Override
@@ -161,8 +166,8 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     }
 
     @Override
-    public Stream<String> getRequiredActionsStream() {
-        return this.requiredActions.stream();
+    public Set<String> getRequiredActions() {
+        return requiredActions;
     }
 
     @Override

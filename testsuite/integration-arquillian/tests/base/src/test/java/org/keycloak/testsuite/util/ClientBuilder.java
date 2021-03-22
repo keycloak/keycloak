@@ -73,7 +73,6 @@ public class ClientBuilder {
         return this;
     }
 
-    @Deprecated
     public ClientBuilder defaultRoles(String... roles) {
         rep.setDefaultRoles(roles);
         return this;

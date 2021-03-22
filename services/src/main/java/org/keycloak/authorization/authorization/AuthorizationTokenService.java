@@ -56,8 +56,6 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Tokens;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -67,10 +65,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
@@ -174,27 +170,19 @@ public class AuthorizationTokenService {
     }
 
     private static void fireErrorEvent(EventBuilder event, String error, Exception cause) {
-        if (cause instanceof CorsErrorResponseException) {
-            // cast the exception to populate the event with a more descriptive reason
-            CorsErrorResponseException originalCause = (CorsErrorResponseException) cause;
-            event.detail(Details.REASON, originalCause.getErrorDescription() == null ? "<unknown>" : originalCause.getErrorDescription())
-                    .error(error);
-        } else {
-            event.detail(Details.REASON, cause == null || cause.getMessage() == null ? "<unknown>" : cause.getMessage())
-                    .error(error);
-        }
-
+        event.detail(Details.REASON, cause == null || cause.getMessage() == null ? "<unknown>" : cause.getMessage())
+                .error(error);
         logger.debug(event.getEvent().getType(), cause);
     }
-
+    
     public Response authorize(KeycloakAuthorizationRequest request) {
-        EventBuilder event = request.getEvent();
+        if (request == null) {
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_GRANT, "Invalid authorization request.", Status.BAD_REQUEST);
+        }
 
         // it is not secure to allow public clients to push arbitrary claims because message can be tampered
         if (isPublicClientRequestingEntitlementWithClaims(request)) {
-            CorsErrorResponseException forbiddenClientException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_GRANT, "Public clients are not allowed to send claims", Status.FORBIDDEN);
-            fireErrorEvent(event, Errors.INVALID_REQUEST, forbiddenClientException);
-            throw forbiddenClientException;
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_GRANT, "Public clients are not allowed to send claims", Status.FORBIDDEN);
         }
 
         try {
@@ -202,15 +190,9 @@ public class AuthorizationTokenService {
 
             request.setClaims(ticket.getClaims());
 
+            ResourceServer resourceServer = getResourceServer(ticket, request);
             EvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
-
-            if (identity != null) {
-                event.user(identity.getId());
-            }
-            
-            ResourceServer resourceServer = getResourceServer(ticket, request);
-
             Collection<Permission> permissions;
 
             if (request.getTicket() != null) {
@@ -237,9 +219,7 @@ public class AuthorizationTokenService {
                     } else if (RESPONSE_MODE_PERMISSIONS.equals(metadata.getResponseMode())) {
                         return createSuccessfulResponse(permissions, request);
                     } else {
-                        CorsErrorResponseException invalidResponseModeException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Invalid response_mode", Status.BAD_REQUEST);
-                        fireErrorEvent(event, Errors.INVALID_REQUEST, invalidResponseModeException);
-                        throw invalidResponseModeException;
+                        throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Invalid response_mode", Status.BAD_REQUEST);
                     }
                 } else {
                     return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), request);
@@ -247,13 +227,9 @@ public class AuthorizationTokenService {
             }
 
             if (request.isSubmitRequest()) {
-                CorsErrorResponseException submittedRequestException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.ACCESS_DENIED, "request_submitted", Status.FORBIDDEN);
-                fireErrorEvent(event, Errors.ACCESS_DENIED, submittedRequestException);
-                throw submittedRequestException;
+                throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.ACCESS_DENIED, "request_submitted", Status.FORBIDDEN);
             } else {
-                CorsErrorResponseException notAuthorizedException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
-                fireErrorEvent(event, Errors.ACCESS_DENIED, notAuthorizedException);
-                throw notAuthorizedException;
+                throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
             }
         } catch (ErrorResponseException | CorsErrorResponseException cause) {
             if (logger.isDebugEnabled()) {
@@ -303,18 +279,10 @@ public class AuthorizationTokenService {
         AccessToken accessToken = identity.getAccessToken();
         RealmModel realm = request.getRealm();
         UserSessionProvider sessions = keycloakSession.sessions();
-        UserSessionModel userSessionModel;
-        if (accessToken.getSessionState() == null) {
-            // Create temporary (request-scoped) transient session
-            UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
-            userSessionModel = sessions.createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
-                    ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
-        } else {
-            userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
+        UserSessionModel userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
 
-            if (userSessionModel == null) {
-                userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
-            }
+        if (userSessionModel == null) {
+            userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
         }
 
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
@@ -326,7 +294,7 @@ public class AuthorizationTokenService {
 
             if (rootAuthSession == null) {
                 if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
-                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm, userSessionModel.getId());
+                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
                 } else {
                     // if the user session is associated with a service account
                     rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
@@ -348,8 +316,8 @@ public class AuthorizationTokenService {
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
         AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
-                .generateAccessToken();
-
+                .generateAccessToken()
+                .generateRefreshToken();
         AccessToken rpt = responseBuilder.getAccessToken();
         Authorization authorization = new Authorization();
 
@@ -357,16 +325,10 @@ public class AuthorizationTokenService {
 
         rpt.setAuthorization(authorization);
 
-        if (accessToken.getSessionState() == null) {
-            // Skip generating refresh token for accessToken without sessionState claim. This is "stateless" accessToken not pointing to any real persistent userSession
-            rpt.setSessionState(null);
-        } else {
-            responseBuilder.generateRefreshToken();
-            RefreshToken refreshToken = responseBuilder.getRefreshToken();
+        RefreshToken refreshToken = responseBuilder.getRefreshToken();
 
-            refreshToken.issuedFor(client.getClientId());
-            refreshToken.setAuthorization(authorization);
-        }
+        refreshToken.issuedFor(client.getClientId());
+        refreshToken.setAuthorization(authorization);
 
         if (!rpt.hasAudience(targetClient.getClientId())) {
             rpt.audience(targetClient.getClientId());
@@ -422,25 +384,19 @@ public class AuthorizationTokenService {
         String issuedFor = ticket.getIssuedFor();
 
         if (issuedFor == null) {
-            CorsErrorResponseException missingIssuedForException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the issuedFor", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, missingIssuedForException);
-            throw missingIssuedForException;
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the issuedFor", Status.BAD_REQUEST);
         }
 
         ClientModel clientModel = request.getRealm().getClientByClientId(issuedFor);
 
         if (clientModel == null) {
-            CorsErrorResponseException unknownServerIdException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Unknown resource server id: [" + issuedFor + "]", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, unknownServerIdException);
-            throw unknownServerIdException;
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
         }
 
         ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
         if (resourceServer == null) {
-            CorsErrorResponseException unsupportedPermissionsException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, unsupportedPermissionsException);
-            throw unsupportedPermissionsException;
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.BAD_REQUEST);
         }
 
         return resourceServer;
@@ -456,9 +412,7 @@ public class AuthorizationTokenService {
         BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
 
         if (evaluationContextProvider == null) {
-            CorsErrorResponseException unsupportedClaimTokenFormatException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, unsupportedClaimTokenFormatException);
-            throw unsupportedClaimTokenFormatException;
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
         }
 
         return evaluationContextProvider.apply(request, request.getAuthorization());
@@ -664,9 +618,7 @@ public class AuthorizationTokenService {
         }
 
         if (permissionsToEvaluate.isEmpty()) {
-            CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
-            throw invalidResourceException;
+            throw new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
         }
     }
 
@@ -687,9 +639,7 @@ public class AuthorizationTokenService {
                 Objects::nonNull).collect(Collectors.toSet());
 
         if (!requestedScopes.isEmpty() && requestedScopesModel.isEmpty()) {
-            CorsErrorResponseException invalidScopeException = new CorsErrorResponseException(request.getCors(), "invalid_scope", "One of the given scopes " + permission.getScopes() + " is invalid", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidScopeException);
-            throw invalidScopeException;
+            throw new CorsErrorResponseException(request.getCors(), "invalid_scope", "One of the given scopes " + permission.getScopes() + " is invalid", Status.BAD_REQUEST);
         }
         return requestedScopesModel;
     }
@@ -722,15 +672,11 @@ public class AuthorizationTokenService {
 
         PermissionTicketToken ticket = request.getKeycloakSession().tokens().decode(ticketString, PermissionTicketToken.class);
         if (ticket == null) {
-            CorsErrorResponseException ticketVerificationException = new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_PERMISSION_TICKET, ticketVerificationException);
-            throw ticketVerificationException;
+            throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 
         if (!ticket.isActive()) {
-            CorsErrorResponseException invalidTicketException = new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_PERMISSION_TICKET, invalidTicketException);
-            throw invalidTicketException;
+            throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
         }
 
         return ticket;
@@ -754,15 +700,13 @@ public class AuthorizationTokenService {
         private final EventBuilder event;
         private final HttpRequest httpRequest;
         private final Cors cors;
-        private final ClientConnection clientConnection;
 
-        public KeycloakAuthorizationRequest(AuthorizationProvider authorization, TokenManager tokenManager, EventBuilder event, HttpRequest request, Cors cors, ClientConnection clientConnection) {
+        public KeycloakAuthorizationRequest(AuthorizationProvider authorization, TokenManager tokenManager, EventBuilder event, HttpRequest request, Cors cors) {
             this.authorization = authorization;
             this.tokenManager = tokenManager;
             this.event = event;
             httpRequest = request;
             this.cors = cors;
-            this.clientConnection = clientConnection;
         }
 
         TokenManager getTokenManager() {
@@ -791,10 +735,6 @@ public class AuthorizationTokenService {
 
         RealmModel getRealm() {
             return getKeycloakSession().getContext().getRealm();
-        }
-
-        ClientConnection getClientConnection() {
-            return clientConnection;
         }
     }
 }

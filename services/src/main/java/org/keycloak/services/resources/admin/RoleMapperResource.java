@@ -55,7 +55,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -121,25 +120,25 @@ public class RoleMapperResource {
         List<RoleRepresentation> realmRolesRepresentation = new ArrayList<>();
         Map<String, ClientMappingsRepresentation> appMappings = new HashMap<>();
 
-        final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
+        ClientModel clientModel;
+        ClientMappingsRepresentation mappings;
 
-        roleMapper.getRoleMappingsStream().forEach(roleMapping -> {
+        for (RoleModel roleMapping : roleMapper.getRoleMappingsStream().collect(Collectors.toSet())) {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             } else if (container instanceof ClientModel) {
-                ClientModel clientModel = (ClientModel) container;
-                mappings.set(appMappings.get(clientModel.getClientId()));
-                if (mappings.get() == null) {
-                    mappings.set(new ClientMappingsRepresentation());
-                    mappings.get().setId(clientModel.getId());
-                    mappings.get().setClient(clientModel.getClientId());
-                    mappings.get().setMappings(new ArrayList<>());
-                    appMappings.put(clientModel.getClientId(), mappings.get());
+                clientModel = (ClientModel) container;
+                if ((mappings = appMappings.get(clientModel.getClientId())) == null) {
+                    mappings = new ClientMappingsRepresentation();
+                    mappings.setId(clientModel.getId());
+                    mappings.setClient(clientModel.getClientId());
+                    mappings.setMappings(new ArrayList<>());
+                    appMappings.put(clientModel.getClientId(), mappings);
                 }
-                mappings.get().getMappings().add(ModelToRepresentation.toBriefRepresentation(roleMapping));
+                mappings.getMappings().add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             }
-        });
+        }
 
         MappingsRepresentation all = new MappingsRepresentation();
         if (!realmRolesRepresentation.isEmpty()) all.setRealmMappings(realmRolesRepresentation);
@@ -181,9 +180,7 @@ public class RoleMapperResource {
 
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        return realm.getRolesStream()
-                .filter(roleMapper::hasRole)
-                .map(toBriefRepresentation);
+        return realm.getRolesStream().filter(roleMapper::hasRole).map(toBriefRepresentation);
     }
 
     /**

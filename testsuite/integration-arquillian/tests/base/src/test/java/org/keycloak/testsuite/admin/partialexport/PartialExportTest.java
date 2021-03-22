@@ -48,6 +48,9 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNull("Groups are empty", rep.getGroups());
 
+        Assert.assertNotNull("Default roles not empty", rep.getDefaultRoles());
+        checkDefaultRoles(rep.getDefaultRoles());
+
         Assert.assertNull("Realm and client roles are empty", rep.getRoles());
         Assert.assertNull("Clients are empty", rep.getClients());
 
@@ -61,6 +64,9 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNotNull("Groups not empty", rep.getGroups());
         checkGroups(rep.getGroups());
+
+        Assert.assertNotNull("Default roles not empty", rep.getDefaultRoles());
+        checkDefaultRoles(rep.getDefaultRoles());
 
         Assert.assertNotNull("Realm and client roles not empty", rep.getRoles());
         Assert.assertNotNull("Realm roles not empty", rep.getRoles().getRealm());
@@ -80,6 +86,8 @@ public class PartialExportTest extends AbstractAdminTest {
         checkServiceAccountRoles(rep.getUsers().get(0), false); // export but without roles
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNull("Groups are empty", rep.getGroups());
+        Assert.assertNotNull("Default roles not empty", rep.getDefaultRoles());
+        checkDefaultRoles(rep.getDefaultRoles());
 
         Assert.assertNull("Realm and client roles are empty", rep.getRoles());
         Assert.assertNotNull("Clients not empty", rep.getClients());
@@ -99,6 +107,8 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertNotNull("Groups not empty", rep.getGroups());
         checkGroups(rep.getGroups());
 
+        Assert.assertNotNull("Default roles not empty", rep.getDefaultRoles());
+        checkDefaultRoles(rep.getDefaultRoles());
 
         Assert.assertNotNull("Realm and client roles not empty", rep.getRoles());
         Assert.assertNotNull("Realm roles not empty", rep.getRoles().getRealm());
@@ -141,9 +151,7 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // Client secret
         for (ClientRepresentation client: rep.getClients()) {
-            if (Boolean.FALSE.equals(client.isPublicClient()) && Boolean.FALSE.equals(client.isBearerOnly())) {
-                Assert.assertEquals("Client secret masked", ComponentRepresentation.SECRET_VALUE, client.getSecret());
-            }
+            Assert.assertEquals("Client secret masked", ComponentRepresentation.SECRET_VALUE, client.getSecret());
         }
 
         // IdentityProvider clientSecret

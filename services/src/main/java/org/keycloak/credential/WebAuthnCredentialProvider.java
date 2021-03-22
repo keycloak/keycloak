@@ -157,7 +157,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return false;
-        return session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, credentialType).count() > 0;
+        return !session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType).isEmpty();
     }
 
 
@@ -224,7 +224,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
 
     private List<WebAuthnCredentialModelInput> getWebAuthnCredentialModelList(RealmModel realm, UserModel user) {
-        return session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, getType())
+        List<CredentialModel> credentialModels = session.userCredentialManager().getStoredCredentialsByType(realm, user, getType());
+
+        return credentialModels.stream()
                 .map(this::getCredentialInputFromCredentialModel)
                 .collect(Collectors.toList());
     }

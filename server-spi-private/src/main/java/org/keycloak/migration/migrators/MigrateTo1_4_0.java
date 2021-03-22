@@ -79,16 +79,17 @@ public class MigrateTo1_4_0 implements Migration {
     }
 
     private void migrateUsers(KeycloakSession session, RealmModel realm) {
-        session.userLocalStorage().getUsersStream(realm, false)
-                .forEach(user -> {
-                    String email = KeycloakModelUtils.toLowerCaseSafe(user.getEmail());
-                    if (email != null && !email.equals(user.getEmail())) {
-                        user.setEmail(email);
-                        UserCache userCache = session.userCache();
-                        if (userCache != null) {
-                            userCache.evict(realm, user);
-                        }
-                    }
-                });
+        List<UserModel> users = session.userLocalStorage().getUsers(realm, false);
+        for (UserModel user : users) {
+            String email = user.getEmail();
+            email = KeycloakModelUtils.toLowerCaseSafe(email);
+            if (email != null && !email.equals(user.getEmail())) {
+                user.setEmail(email);
+                UserCache userCache = session.userCache();
+                if (userCache != null) {
+                    userCache.evict(realm, user);
+                }
+            }
+        }
     }
 }

@@ -21,6 +21,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,16 +34,18 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider.Streams, UserQueryProvider.Streams,
-        ImportedUserValidation, CredentialInputUpdater.Streams, CredentialInputValidator {
+public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, UserQueryProvider, ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
 
     public static String username = "billb";
     public static String password = "password";
@@ -95,9 +98,9 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
         checkForceFail();
-        return Stream.empty();
+        return Collections.EMPTY_SET;
     }
 
     @Override
@@ -172,16 +175,16 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public UserModel getUserById(RealmModel realm, String id) {
+    public UserModel getUserById(String id, RealmModel realm) {
         checkForceFail();
         throw new RuntimeException("THIS IMPORTS  SHOULD NEVER BE CALLED");
     }
 
     @Override
-    public UserModel getUserByUsername(RealmModel realm, String uname) {
+    public UserModel getUserByUsername(String uname, RealmModel realm) {
         checkForceFail();
         if (!username.equals(uname)) return null;
-        UserModel local = session.userLocalStorage().getUserByUsername(realm, uname);
+        UserModel local = session.userLocalStorage().getUserByUsername(uname, realm);
         if (local != null && !model.getId().equals(local.getFederationLink())) {
             throw new RuntimeException("local storage has wrong federation link");
         }
@@ -201,7 +204,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         checkForceFail();
         return null;
     }
@@ -221,67 +224,79 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
+    public List<UserModel> getUsers(RealmModel realm) {
         checkForceFail();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
         checkForceFail();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
+    public List<UserModel> searchForUser(String search, RealmModel realm) {
         checkForceFail();
-        if (!search.equals(username)) return Stream.empty();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
+        if (!search.equals(username)) return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
         checkForceFail();
-        if (!search.equals(username)) return Stream.empty();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
+        if (!search.equals(username)) return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params) {
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
         checkForceFail();
-        if (!username.equals(params.get("username")))return Stream.empty();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
+        if (!username.equals(params.get("username")))return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
         checkForceFail();
-        if (!username.equals(params.get("username")))return Stream.empty();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
+        if (!username.equals(params.get("username")))return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         checkForceFail();
-        return Stream.empty();
+        return Collections.EMPTY_LIST;
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
         checkForceFail();
-        return Stream.empty();
+        return Collections.EMPTY_LIST;
     }
 
     @Override
-    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
         checkForceFail();
-        return Stream.empty();
+        return Collections.EMPTY_LIST;
     }
 
     @Override

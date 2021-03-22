@@ -119,7 +119,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
             UserProvider userProvider = authorizationProvider.getKeycloakSession().users();
             RealmModel realm = authorizationProvider.getRealm();
 
-            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(realm, id).getUsername()).collect(Collectors.toList())));
+            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(id, realm).getUsername()).collect(Collectors.toList())));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
         }
@@ -142,12 +142,12 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 UserModel user = null;
 
                 try {
-                    user = userProvider.getUserByUsername(realm, userId);
+                    user = userProvider.getUserByUsername(userId, realm);
                 } catch (Exception ignore) {
                 }
 
                 if (user == null) {
-                    user = userProvider.getUserById(realm, userId);
+                    user = userProvider.getUserById(userId, realm);
                 }
 
                 if (user == null) {

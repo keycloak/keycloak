@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Stream;
 
 public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
 
@@ -262,6 +261,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
                         if (spi.isInternal() && !isInternal(factory)) {
                             ServicesLogger.LOGGER.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
                         }
+
                         factories.put(factory.getId(), factory);
                     } else {
                         logger.debugv("SPI {0} provider {1} disabled", spi.getName(), factory.getId());
@@ -315,11 +315,13 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     }
 
     @Override
-    public Stream<ProviderFactory> getProviderFactoriesStream(Class<? extends Provider> clazz) {
-        if (factoriesMap == null) return Stream.empty();
+    public List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz) {
+        if (factoriesMap == null) return Collections.emptyList();
+        List<ProviderFactory> list = new LinkedList<ProviderFactory>();
         Map<String, ProviderFactory> providerFactoryMap = factoriesMap.get(clazz);
-        if (providerFactoryMap == null) return Stream.empty();
-        return providerFactoryMap.values().stream();
+        if (providerFactoryMap == null) return list;
+        list.addAll(providerFactoryMap.values());
+        return list;
     }
 
     <T extends Provider> Set<String> getAllProviderIds(Class<T> clazz) {

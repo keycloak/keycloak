@@ -20,11 +20,7 @@ package org.keycloak.services.clientpolicy;
 public enum ClientPolicyEvent {
 
     REGISTER,
-    REGISTERED,
     UPDATE,
-    UPDATED,
-    VIEW,
-    UNREGISTER,
     AUTHORIZATION_REQUEST,
     TOKEN_REQUEST,
     TOKEN_REFRESH,

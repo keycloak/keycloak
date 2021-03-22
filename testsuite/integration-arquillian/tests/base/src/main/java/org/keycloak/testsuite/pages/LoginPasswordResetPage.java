@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.util.UIUtils;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -28,9 +26,6 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
-
-    @FindBy(id = "input-error-username")
-    private WebElement usernameError;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -67,20 +62,8 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         return emailSuccessMessage != null ? emailSuccessMessage.getText() : null;
     }
 
-    public String getUsernameError() {
-        try {
-            return UIUtils.getTextFromElement(usernameError);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
-    }
-
     public String getErrorMessage() {
-        try {
-            return UIUtils.getTextFromElement(emailErrorMessage);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
+        return emailErrorMessage != null ? emailErrorMessage.getText() : null;
     }
 
     public String getUsername() {

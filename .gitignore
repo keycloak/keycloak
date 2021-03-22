@@ -77,7 +77,3 @@ target
 # testsuite #
 #############
 *offline-token.txt
-
-# Quarkus ephemeral data #
-##########################
-quarkus/data/*.db

@@ -36,7 +36,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -277,12 +276,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processFlow() {
-
-        // KEYCLOAK-16143: Propagate forwarded error messages if present
-        FormMessage forwardedErrorMessage = processor.getAndRemoveForwardedErrorMessage();
-        List<FormMessage> errors = forwardedErrorMessage != null ? Collections.singletonList(forwardedErrorMessage) : null;
-
-        return renderForm(null, errors);
+        return renderForm(null, null);
     }
 
     public Response renderForm(MultivaluedMap<String, String> formData, List<FormMessage> errors) {

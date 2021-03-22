@@ -17,11 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.keycloak.testsuite.auth.page.AccountFields;
-import org.keycloak.testsuite.auth.page.PasswordFields;
-import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -30,12 +26,6 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RegisterPage extends AbstractPage {
-
-    @Page
-    private AccountFields.AccountErrors accountErrors;
-
-    @Page
-    private PasswordFields.PasswordErrors passwordErrors;
 
     @FindBy(id = "firstName")
     private WebElement firstNameInput;
@@ -59,7 +49,7 @@ public class RegisterPage extends AbstractPage {
     private WebElement submitButton;
 
     @FindBy(className = "alert-error")
-    private WebElement loginAlertErrorMessage;
+    private WebElement loginErrorMessage;
 
     @FindBy(className = "instruction")
     private WebElement loginInstructionMessage;
@@ -142,17 +132,13 @@ public class RegisterPage extends AbstractPage {
         backToLoginLink.click();
     }
 
-    public String getAlertError() {
-        try {
-            return UIUtils.getTextFromElement(loginAlertErrorMessage);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
+    public String getError() {
+        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
     public String getInstruction() {
         try {
-            return UIUtils.getTextFromElement(loginInstructionMessage);
+            return loginInstructionMessage != null ? loginInstructionMessage.getText() : null;
         } catch (NoSuchElementException e){
             // OK
         }
@@ -185,14 +171,6 @@ public class RegisterPage extends AbstractPage {
 
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Register");
-    }
-
-    public AccountFields.AccountErrors getInputAccountErrors(){
-        return accountErrors;
-    }
-
-    public PasswordFields.PasswordErrors getInputPasswordErrors(){
-        return passwordErrors;
     }
 
     @Override

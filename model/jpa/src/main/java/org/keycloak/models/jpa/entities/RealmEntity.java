@@ -27,7 +27,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.MapKey;
+import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -148,7 +148,6 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers;
 
-    @Deprecated
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientScopeEntity> clientScopes;
 
@@ -157,6 +156,10 @@ public class RealmEntity {
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> smtpConfig;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    protected Collection<RoleEntity> defaultRoles;
 
     @ElementCollection
     @Column(name="GROUP_ID")
@@ -186,9 +189,6 @@ public class RealmEntity {
 
     @Column(name="MASTER_ADMIN_CLIENT")
     protected String masterAdminClient;
-
-    @Column(name="DEFAULT_ROLE")
-    protected String defaultRoleId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     protected List<IdentityProviderEntity> identityProviders;
@@ -241,9 +241,6 @@ public class RealmEntity {
     @Column(name="ALLOW_USER_MANAGED_ACCESS")
     private boolean allowUserManagedAccess;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId")
-    @MapKey(name="locale")
-    Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts;
 
     public String getId() {
         return id;
@@ -457,6 +454,17 @@ public class RealmEntity {
         this.smtpConfig = smtpConfig;
     }
 
+    public Collection<RoleEntity> getDefaultRoles() {
+        if (defaultRoles == null) {
+            defaultRoles = new LinkedList<>();
+        }
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
+        this.defaultRoles = defaultRoles;
+    }
+
     public Set<String> getDefaultGroupIds() {
         if (defaultGroupIds == null) {
             defaultGroupIds = new HashSet<>();
@@ -576,14 +584,6 @@ public class RealmEntity {
 
     public void setMasterAdminClient(String masterAdminClient) {
         this.masterAdminClient = masterAdminClient;
-    }
-
-    public String getDefaultRoleId() {
-        return defaultRoleId;
-    }
-
-    public void setDefaultRoleId(String defaultRoleId) {
-        this.defaultRoleId = defaultRoleId;
     }
 
     public List<UserFederationProviderEntity> getUserFederationProviders() {
@@ -814,7 +814,6 @@ public class RealmEntity {
         return this;
     }
 
-    @Deprecated
     public Collection<ClientScopeEntity> getClientScopes() {
         if (clientScopes == null) {
             clientScopes = new LinkedList<>();
@@ -822,7 +821,6 @@ public class RealmEntity {
         return clientScopes;
     }
 
-    @Deprecated
     public void setClientScopes(Collection<ClientScopeEntity> clientScopes) {
         this.clientScopes = clientScopes;
     }
@@ -833,17 +831,6 @@ public class RealmEntity {
 
     public boolean isAllowUserManagedAccess() {
         return allowUserManagedAccess;
-    }
-
-    public Map<String, RealmLocalizationTextsEntity> getRealmLocalizationTexts() {
-        if (realmLocalizationTexts == null) {
-            realmLocalizationTexts = new HashMap<>();
-        }
-        return realmLocalizationTexts;
-    }
-
-    public void setRealmLocalizationTexts(Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts) {
-        this.realmLocalizationTexts = realmLocalizationTexts;
     }
 
     @Override

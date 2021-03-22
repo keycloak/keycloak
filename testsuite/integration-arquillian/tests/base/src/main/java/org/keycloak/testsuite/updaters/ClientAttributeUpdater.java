@@ -136,9 +136,4 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         rep.getDefaultClientScopes().add(clientScope);
         return this;
     }
-
-    public ClientAttributeUpdater setDirectAccessGrantsEnabled(Boolean directAccessGranted) {
-        rep.setDirectAccessGrantsEnabled(directAccessGranted);
-        return this;
-    }
 }

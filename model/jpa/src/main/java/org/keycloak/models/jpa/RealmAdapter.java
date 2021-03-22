@@ -588,11 +588,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public OAuth2DeviceConfig getOAuth2DeviceConfig() {
-        return new OAuth2DeviceConfig(this);
-    }
-
-    @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
 
         Map<String, Integer> userActionTokens = new HashMap<>();
@@ -710,36 +705,75 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return realm.getRequiredCredentials().stream().map(this::toRequiredCredentialModel);
     }
 
+
     @Override
-    @Deprecated
     public Stream<String> getDefaultRolesStream() {
-        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
-    }
-
-    private boolean isRealmRole(RoleModel role) {
-        return ! role.isClientRole();
+        Collection<RoleEntity> entities = realm.getDefaultRoles();
+        if (entities == null || entities.isEmpty()) return Stream.empty();
+        return entities.stream().map(RoleEntity::getName);
     }
 
     @Override
-    @Deprecated
     public void addDefaultRole(String name) {
-        getDefaultRole().addCompositeRole(getOrAddRoleId(name));
-    }
-
-    private RoleModel getOrAddRoleId(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
             role = addRole(name);
         }
-        return role;
+        Collection<RoleEntity> entities = realm.getDefaultRoles();
+        for (RoleEntity entity : entities) {
+            if (entity.getId().equals(role.getId())) {
+                return;
+            }
+        }
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        entities.add(roleEntity);
+        em.flush();
+    }
+
+    public static boolean contains(String str, String[] array) {
+        for (String s : array) {
+            if (str.equals(s)) return true;
+        }
+        return false;
     }
 
     @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        for (String defaultRole : defaultRoles) {
-            getDefaultRole().removeCompositeRole(getRole(defaultRole));
+    public void updateDefaultRoles(String[] defaultRoles) {
+        Collection<RoleEntity> entities = realm.getDefaultRoles();
+        Set<String> already = new HashSet<String>();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (!contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            } else {
+                already.add(rel.getName());
+            }
         }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+        for (String roleName : defaultRoles) {
+            if (!already.contains(roleName)) {
+                addDefaultRole(roleName);
+            }
+        }
+        em.flush();
+    }
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        Collection<RoleEntity> entities = realm.getDefaultRoles();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            }
+        }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
     }
 
     @Override
@@ -1194,19 +1228,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         String appEntityId = client !=null ? em.getReference(ClientEntity.class, client.getId()).getId() : null;
         realm.setMasterAdminClient(appEntityId);
         em.flush();
-    }
-
-    @Override
-    public void setDefaultRole(RoleModel role) {
-        realm.setDefaultRoleId(role.getId());
-    }
-
-    @Override
-    public RoleModel getDefaultRole() {
-        if (realm.getDefaultRoleId() == null) {
-            return null;
-        }
-        return session.roles().getRoleById(this, realm.getDefaultRoleId());
     }
 
     @Override
@@ -1963,33 +1984,72 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
-        return session.clientScopes().getClientScopesStream(this);
+        return realm.getClientScopes().stream().map(ClientScopeEntity::getId).map(this::getClientScopeById);
     }
 
     @Override
     public ClientScopeModel addClientScope(String name) {
-        return session.clientScopes().addClientScope(this, name);
+        return this.addClientScope(KeycloakModelUtils.generateId(), name);
     }
 
     @Override
     public ClientScopeModel addClientScope(String id, String name) {
-        return session.clientScopes().addClientScope(this, id, name);
+        ClientScopeEntity entity = new ClientScopeEntity();
+        entity.setId(id);
+        name = KeycloakModelUtils.convertClientScopeName(name);
+        entity.setName(name);
+        entity.setRealm(realm);
+        realm.getClientScopes().add(entity);
+        em.persist(entity);
+        em.flush();
+        final ClientScopeModel resource = new ClientScopeAdapter(this, em, session, entity);
+        em.flush();
+        return resource;
     }
 
     @Override
     public boolean removeClientScope(String id) {
-        return session.clientScopes().removeClientScope(this, id);
+        if (id == null) return false;
+        ClientScopeModel clientScope = getClientScopeById(id);
+        if (clientScope == null) return false;
+        if (KeycloakModelUtils.isClientScopeUsed(this, clientScope)) {
+            throw new ModelException("Cannot remove client scope, it is currently in use");
+        }
+
+        ClientScopeEntity clientScopeEntity = null;
+        Iterator<ClientScopeEntity> it = realm.getClientScopes().iterator();
+        while (it.hasNext()) {
+            ClientScopeEntity ae = it.next();
+            if (ae.getId().equals(id)) {
+                clientScopeEntity = ae;
+                it.remove();
+                break;
+            }
+        }
+        if (clientScope == null) {
+            return false;
+        }
+
+        session.users().preRemove(clientScope);
+
+        em.createNamedQuery("deleteClientScopeRoleMappingByClientScope").setParameter("clientScope", clientScopeEntity).executeUpdate();
+        em.flush();
+        em.remove(clientScopeEntity);
+        em.flush();
+
+
+        return true;
     }
 
     @Override
     public ClientScopeModel getClientScopeById(String id) {
-        return session.clientScopes().getClientScopeById(this, id);
+        return session.realms().getClientScopeById(id, this);
     }
 
     @Override
     public void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         DefaultClientScopeRealmMappingEntity entity = new DefaultClientScopeRealmMappingEntity();
-        entity.setClientScopeId(clientScope.getId());
+        entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
         entity.setRealm(getEntity());
         entity.setDefaultScope(defaultScope);
         em.persist(entity);
@@ -2000,7 +2060,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void removeDefaultClientScope(ClientScopeModel clientScope) {
         int numRemoved = em.createNamedQuery("deleteDefaultClientScopeRealmMapping")
-                .setParameter("clientScopeId", clientScope.getId())
+                .setParameter("clientScope", ClientScopeAdapter.toClientScopeEntity(clientScope, em))
                 .setParameter("realm", getEntity())
                 .executeUpdate();
         em.flush();
@@ -2189,56 +2249,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (c == null) return null;
         if (!c.getRealm().equals(getEntity())) return null;
         return c;
-    }
-
-    @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
-        Map<String, RealmLocalizationTextsEntity> currentLocalizationTexts = realm.getRealmLocalizationTexts();
-        if(currentLocalizationTexts.containsKey(locale)) {
-            RealmLocalizationTextsEntity localizationTextsEntity = currentLocalizationTexts.get(locale);
-            Map<String, String> keys = new HashMap<>(localizationTextsEntity.getTexts());
-            keys.putAll(localizationTexts);
-            localizationTextsEntity.setTexts(keys);
-            localizationTextsEntity.getTexts().putAll(localizationTexts);
-
-            em.persist(localizationTextsEntity);
-        }
-        else {
-            RealmLocalizationTextsEntity realmLocalizationTextsEntity = new RealmLocalizationTextsEntity();
-            realmLocalizationTextsEntity.setRealmId(realm.getId());
-            realmLocalizationTextsEntity.setLocale(locale);
-            realmLocalizationTextsEntity.setTexts(localizationTexts);
-
-            em.persist(realmLocalizationTextsEntity);
-        }
-    }
-
-    @Override
-    public boolean removeRealmLocalizationTexts(String locale) {
-        if (locale == null) return false;
-        if (realm.getRealmLocalizationTexts().containsKey(locale))
-        {
-            em.remove(realm.getRealmLocalizationTexts().get(locale));
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public Map<String, Map<String, String>> getRealmLocalizationTexts() {
-        Map<String, Map<String, String>> localizationTexts = new HashMap<>();
-        realm.getRealmLocalizationTexts().forEach((locale, localizationTextsEntity) -> {
-            localizationTexts.put(localizationTextsEntity.getLocale(), localizationTextsEntity.getTexts());
-        });
-        return localizationTexts;
-    }
-
-    @Override
-    public Map<String, String> getRealmLocalizationTextsByLocale(String locale) {
-        if (realm.getRealmLocalizationTexts().containsKey(locale)) {
-            return realm.getRealmLocalizationTexts().get(locale).getTexts();
-        }
-        return Collections.emptyMap();
     }
 
     @Override

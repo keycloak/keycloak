@@ -55,7 +55,7 @@ public interface EventQuery {
 
     /**
      * Returns requested results that match given criteria as a stream.
-     * @return Stream of events. Never returns {@code null}.
+     * @return Stream of events
      */
     Stream<Event> getResultStream();
 }

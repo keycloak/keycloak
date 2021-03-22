@@ -49,7 +49,7 @@ public class ExpectedParamAuthenticator implements Authenticator {
             if (loggedUser == null) {
                 logger.info("Successfully authenticated, but don't set any authenticated user");
             } else {
-                UserModel user = context.getSession().users().getUserByUsername(context.getRealm(), loggedUser);
+                UserModel user = context.getSession().users().getUserByUsername(loggedUser, context.getRealm());
                 logger.info("Successfully authenticated as user " + user.getUsername());
                 context.setUser(user);
             }

@@ -84,7 +84,7 @@ public class PersistSessionsCommand extends AbstractCommand {
 
                 for (int i = 0; i < countInThisBatch; i++) {
                     String username = "john-" + userCounter.incrementAndGet();
-                    UserModel john = session.users().getUserByUsername(realm, username);
+                    UserModel john = session.users().getUserByUsername(username, realm);
                     if (john == null) {
                         john = session.users().addUser(realm, username);
                     }

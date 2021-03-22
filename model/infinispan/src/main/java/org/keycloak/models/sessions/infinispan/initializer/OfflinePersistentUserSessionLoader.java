@@ -29,7 +29,6 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -100,9 +99,7 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
         log.tracef("Loading sessions for segment=%d createdOn=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastCreatedOn(), ctx.getLastSessionId());
 
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        List<UserSessionModel> sessions = persister
-                .loadUserSessionsStream(first, sessionsPerSegment, true, ctx.getLastCreatedOn(), ctx.getLastSessionId())
-                .collect(Collectors.toList());
+        List<UserSessionModel> sessions = persister.loadUserSessions(first, sessionsPerSegment, true, ctx.getLastCreatedOn(), ctx.getLastSessionId());
 
         log.tracef("Sessions loaded from DB - segment=%d createdOn=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastCreatedOn(), ctx.getLastSessionId());
 

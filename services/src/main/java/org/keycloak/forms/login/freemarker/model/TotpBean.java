@@ -28,7 +28,6 @@ import org.keycloak.utils.TotpUtils;
 import javax.ws.rs.core.UriBuilder;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Used for UpdateTotp required action
@@ -50,8 +49,7 @@ public class TotpBean {
         this.uriBuilder = uriBuilder;
         this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE);
         if (enabled) {
-            otpCredentials = session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, OTPCredentialModel.TYPE)
-                    .collect(Collectors.toList());
+            otpCredentials = session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE);
         } else {
             otpCredentials = Collections.EMPTY_LIST;
         }

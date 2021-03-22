@@ -19,7 +19,6 @@ package org.keycloak.userprofile.validation;
 
 import org.keycloak.userprofile.UserProfileContext;
 
-import java.util.List;
 import java.util.function.BiFunction;
 
 /**
@@ -27,9 +26,9 @@ import java.util.function.BiFunction;
  */
 public class Validator {
     String errorType;
-    BiFunction<List<String>, UserProfileContext, Boolean> function;
+    BiFunction<String, UserProfileContext, Boolean> function;
 
-    public Validator(String errorType, BiFunction<List<String>, UserProfileContext, Boolean> function) {
+    public Validator(String errorType, BiFunction<String, UserProfileContext, Boolean> function) {
         this.function = function;
         this.errorType = errorType;
     }

@@ -20,7 +20,6 @@ package org.keycloak.models.session;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -37,7 +36,6 @@ import java.util.Set;
  */
 public class PersistentAuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
-    private final KeycloakSession session;
     private final PersistentClientSessionModel model;
     private final RealmModel realm;
     private final ClientModel client;
@@ -45,7 +43,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     private PersistentClientSessionData data;
 
-    public PersistentAuthenticatedClientSessionAdapter(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
+    public PersistentAuthenticatedClientSessionAdapter(AuthenticatedClientSessionModel clientSession) {
         data = new PersistentClientSessionData();
         data.setAction(clientSession.getAction());
         data.setAuthMethod(clientSession.getProtocol());
@@ -58,14 +56,12 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
 
-        this.session = session;
         realm = clientSession.getRealm();
         client = clientSession.getClient();
         userSession = clientSession.getUserSession();
     }
 
-    public PersistentAuthenticatedClientSessionAdapter(KeycloakSession session, PersistentClientSessionModel model, RealmModel realm, ClientModel client, UserSessionModel userSession) {
-        this.session = session;
+    public PersistentAuthenticatedClientSessionAdapter(PersistentClientSessionModel model, RealmModel realm, ClientModel client, UserSessionModel userSession) {
         this.model = model;
         this.realm = realm;
         this.client = client;
@@ -119,9 +115,6 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public void detachFromUserSession() {
-        if (this.userSession.isOffline()) {
-            session.getProvider(UserSessionPersisterProvider.class).removeClientSession(userSession.getId(), client.getId(), true);
-        }
         setUserSession(null);
     }
 

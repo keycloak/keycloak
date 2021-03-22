@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
@@ -62,7 +63,7 @@ public class ThemeResource {
         try {
             String contentType = MimeTypeUtil.getContentType(path);
             Theme theme = session.theme().getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
-            ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
+            ResourceEncodingProvider encodingProvider = ResourceEncodingHelper.getResourceEncodingProvider(session, contentType);
 
             InputStream resource;
             if (encodingProvider != null) {

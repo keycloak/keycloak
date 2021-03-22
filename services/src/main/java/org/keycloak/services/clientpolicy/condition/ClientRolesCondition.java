@@ -32,12 +32,15 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientRolesCondition extends AbstractClientPolicyConditionProvider {
-
+public class ClientRolesCondition implements ClientPolicyConditionProvider {
     private static final Logger logger = Logger.getLogger(ClientRolesCondition.class);
 
+    private final KeycloakSession session;
+    private final ComponentModel componentModel;
+
     public ClientRolesCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+        this.session = session;
+        this.componentModel = componentModel;
     }
 
     @Override
@@ -86,6 +89,16 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider 
         List<String> roles = componentModel.getConfig().get(ClientRolesConditionFactory.ROLES);
         if (roles == null) return null;
         return new HashSet<>(roles);
+    }
+
+    @Override
+    public String getName() {
+        return componentModel.getName();
+    }
+
+    @Override
+    public String getProviderId() {
+        return componentModel.getProviderId();
     }
 
 }

@@ -37,8 +37,6 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.api.util.KeyInfoTools;
 import java.security.cert.CertificateException;
-import java.util.UUID;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * This class defines a {@link KeyLocator} that looks up public keys and certificates in IdP's
@@ -150,25 +148,18 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
         for (KeyInfo ki : signingCerts) {
             KeyName keyName = KeyInfoTools.getKeyName(ki);
             X509Certificate x509certificate = KeyInfoTools.getX509Certificate(ki);
-            if (x509certificate == null) {
-                continue;
-            }
             try {
                 x509certificate.checkValidity();
             } catch (CertificateException ex) {
-                continue;
+                x509certificate = null;
             }
-
-            if (keyName != null) {
+            if (x509certificate != null && keyName != null) {
                 LOG.tracef("Registering signing certificate %s", keyName.getName());
                 this.publicKeyCache.put(keyName.getName(), x509certificate.getPublicKey());
             } else {
-                final X500Principal principal = x509certificate.getSubjectX500Principal();
-                String name = (principal == null ? "unnamed" : principal.getName())
-                  + "@" + x509certificate.getSerialNumber() + "$" + UUID.randomUUID();
-                this.publicKeyCache.put(name, x509certificate.getPublicKey());
-                LOG.tracef("Adding certificate %s without a specific key name: %s", name, x509certificate);
+                LOG.tracef("Ignoring certificate %s: %s", keyName, x509certificate);
             }
+
         }
 
         return (kid == null ? null : this.publicKeyCache.get(kid));

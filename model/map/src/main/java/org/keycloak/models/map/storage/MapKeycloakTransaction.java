@@ -18,32 +18,76 @@ package org.keycloak.models.map.storage;
 
 import org.keycloak.models.KeycloakTransaction;
 
-import org.keycloak.models.map.common.AbstractEntity;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 
-public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implements KeycloakTransaction {
+public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
 
     private final static Logger log = Logger.getLogger(MapKeycloakTransaction.class);
 
     private enum MapOperation {
-        CREATE, UPDATE, DELETE,
+        PUT {
+            @Override
+            protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
+                return new MapTaskWithValue<K, V>(value) {
+                    @Override
+                    public void execute(MapStorage<K, V> map) {
+                        map.put(key, getValue());
+                    }
+                };
+            }
+        },
+        PUT_IF_ABSENT {
+            @Override
+            protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
+                return new MapTaskWithValue<K, V>(value) {
+                    @Override
+                    public void execute(MapStorage<K, V> map) {
+                        map.putIfAbsent(key, getValue());
+                    }
+                };
+            }
+        },
+        REMOVE {
+            @Override
+            protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
+                return new MapTaskWithValue<K, V>(null) {
+                    @Override
+                    public void execute(MapStorage<K, V> map) {
+                        map.remove(key);
+                    }
+                };
+            }
+        },
+        REPLACE {
+            @Override
+            protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
+                return new MapTaskWithValue<K, V>(value) {
+                    @Override
+                    public void execute(MapStorage<K, V> map) {
+                        map.replace(key, getValue());
+                    }
+                };
+            }
+        },
+        ;
+
+        protected abstract <K, V> MapTaskWithValue<K, V> taskFor(K key, V value);
+
     }
 
     private boolean active;
     private boolean rollback;
-    private final Map<K, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    private final MapStorage<K, V, M> map;
+    private final Map<K, MapTaskWithValue<K, V>> tasks = new LinkedHashMap<>();
+    private final MapStorage<K, V> map;
 
-    public MapKeycloakTransaction(MapStorage<K, V, M> map) {
+    public MapKeycloakTransaction(MapStorage<K, V> map) {
         this.map = map;
     }
 
@@ -54,14 +98,12 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
 
     @Override
     public void commit() {
-        log.trace("Commit");
-
         if (rollback) {
             throw new RuntimeException("Rollback only!");
         }
 
-        for (MapTaskWithValue value : tasks.values()) {
-            value.execute();
+        for (MapTaskWithValue<K, V> value : tasks.values()) {
+            value.execute(map);
         }
     }
 
@@ -88,175 +130,78 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
     /**
      * Adds a given task if not exists for the given key
      */
-    protected void addTask(K key, MapTaskWithValue task) {
-        log.tracef("Adding operation %s for %s @ %08x", task.getOperation(), key, System.identityHashCode(task.getValue()));
+    private void addTask(MapOperation op, K key, V value) {
+        log.tracev("Adding operation {0} for {1}", op, key);
 
         K taskKey = key;
-        tasks.merge(taskKey, task, MapTaskCompose::new);
+        tasks.merge(taskKey, op.taskFor(key, value), MapTaskCompose::new);
     }
 
     // This is for possibility to lookup for session by id, which was created in this transaction
-    public V read(K key) {
-        return read(key, map::read);
-    }
-
-    public V read(K key, Function<K, V> defaultValueFunc) {
-        MapTaskWithValue current = tasks.get(key);
-        // If the key exists, then it has entered the "tasks" after bulk delete that could have 
-        // removed it, so looking through bulk deletes is irrelevant
-        if (tasks.containsKey(key)) {
+    public V get(K key, Function<K, V> defaultValueFunc) {
+        MapTaskWithValue<K, V> current = tasks.get(key);
+        if (current != null) {
             return current.getValue();
         }
 
-        // If the key does not exist, then it would be read fresh from the storage, but then it
-        // could have been removed by some bulk delete in the existing tasks. Check it.
-        final V value = defaultValueFunc.apply(key);
-        for (MapTaskWithValue val : tasks.values()) {
-            if (val instanceof MapKeycloakTransaction.BulkDeleteOperation) {
-                final BulkDeleteOperation delOp = (BulkDeleteOperation) val;
-                if (! delOp.getFilterForNonDeletedObjects().test(value)) {
-                    return null;
-                }
-            }
+        return defaultValueFunc.apply(key);
+    }
+
+    public V getUpdated(Map.Entry<K, V> keyDefaultValue) {
+        MapTaskWithValue<K, V> current = tasks.get(keyDefaultValue.getKey());
+        if (current != null) {
+            return current.getValue();
         }
 
-        return value;
+        return keyDefaultValue.getValue();
     }
 
-    /**
-     * Returns the stream of records that match given criteria and includes changes made in this transaction, i.e.
-     * the result contains updates and excludes records that have been deleted in this transaction.
-     *
-     * Note that returned stream might not reflect on the bulk delete. This is known limitation that can be fixed if necessary.
-     *
-     * @param mcb
-     * @return
-     */
-    public Stream<V> getUpdatedNotRemoved(ModelCriteriaBuilder<M> mcb) {
-        Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
-          .filter(BulkDeleteOperation.class::isInstance)
-          .map(BulkDeleteOperation.class::cast)
-          .map(BulkDeleteOperation::getFilterForNonDeletedObjects)
-          .reduce(Predicate::and)
-          .orElse(v -> true);
-
-        Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(mcb)
-          .filter(filterOutAllBulkDeletedObjects)
-          .map(this::getUpdated)      // If the object has been removed, tx.get will return null, otherwise it will return me.getValue()
-          .filter(Objects::nonNull);
-
-        // In case of created values stored in MapKeycloakTransaction, we need filter those according to the filter
-        MapModelCriteriaBuilder<K, V, M> mapMcb = mcb.unwrap(MapModelCriteriaBuilder.class);
-        Stream<V> res = mapMcb == null
-          ? updatedAndNotRemovedObjectsStream
-          : Stream.concat(
-              createdValuesStream(mapMcb.getKeyFilter(), mapMcb.getEntityFilter()),
-              updatedAndNotRemovedObjectsStream
-            );
-
-        return res;
+    public void put(K key, V value) {
+        addTask(MapOperation.PUT, key, value);
     }
 
-    /**
-     * Returns the stream of records that match given criteria and includes changes made in this transaction, i.e.
-     * the result contains updates and excludes records that have been deleted in this transaction.
-     *
-     * @param mcb
-     * @return
-     */
-    public long getCount(ModelCriteriaBuilder<M> mcb) {
-        return getUpdatedNotRemoved(mcb).count();
+    public void putIfAbsent(K key, V value) {
+        addTask(MapOperation.PUT_IF_ABSENT, key, value);
     }
 
-    /**
-     * Returns a updated version of the {@code orig} object as updated in this transaction.
-     * If the underlying store handles transactions on its own, this can return {@code orig} directly.
-     * @param orig
-     * @return The {@code orig} object as visible from this transaction, or {@code null} if the object has been removed.
-     */
-    public V getUpdated(V orig) {
-        MapTaskWithValue current = orig == null ? null : tasks.get(orig.getId());
-        return current == null ? orig : current.getValue();
-    }
-
-    public void update(K key, V value) {
-        addTask(key, new UpdateOperation(key, value));
-    }
-
-    public void create(K key, V value) {
-        addTask(key, new CreateOperation(key, value));
-    }
-
-    public void updateIfChanged(K key, V value, Predicate<V> shouldPut) {
-        log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
+    public void putIfChanged(K key, V value, Predicate<V> shouldPut) {
+        log.tracev("Adding operation PUT_IF_CHANGED for {0}", key);
 
         K taskKey = key;
-        MapTaskWithValue op = new MapTaskWithValue(value) {
+        MapTaskWithValue<K, V> op = new MapTaskWithValue<K, V>(value) {
             @Override
-            public void execute() {
+            public void execute(MapStorage<K, V> map) {
                 if (shouldPut.test(getValue())) {
-                    map.update(key, getValue());
+                    map.put(key, getValue());
                 }
             }
-            @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
         };
-        tasks.merge(taskKey, op, this::merge);
+        tasks.merge(taskKey, op, MapTaskCompose::new);
     }
 
-    public void delete(K key) {
-        addTask(key, new DeleteOperation(key));
+    public void replace(K key, V value) {
+        addTask(MapOperation.REPLACE, key, value);
     }
 
-    /**
-     * Bulk removal of items.
-     * 
-     * @param artificialKey Key to record the transaction with, must be a key that does not exist in this transaction to
-     *                      prevent collision with other operations in this transaction
-     * @param mcb
-     */
-    public long delete(K artificialKey, ModelCriteriaBuilder<M> mcb) {
-        log.tracef("Adding operation DELETE_BULK");
-
-        // Remove all tasks that create / update / delete objects deleted by the bulk removal.
-        final BulkDeleteOperation bdo = new BulkDeleteOperation(mcb);
-        Predicate<V> filterForNonDeletedObjects = bdo.getFilterForNonDeletedObjects();
-        long res = 0;
-        for (Iterator<Entry<K, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
-            Entry<K, MapTaskWithValue> me = it.next();
-            if (! filterForNonDeletedObjects.test(me.getValue().getValue())) {
-                log.tracef(" [DELETE_BULK] removing %s", me.getKey());
-                it.remove();
-                res++;
-            }
-        }
-
-        tasks.put(artificialKey, bdo);
-
-        return res + bdo.getCount();
+    public void remove(K key) {
+        addTask(MapOperation.REMOVE, key, null);
     }
 
-    private Stream<V> createdValuesStream(Predicate<? super K> keyFilter, Predicate<? super V> entityFilter) {
+    public Stream<V> valuesStream() {
+        return this.tasks.values().stream()
+          .map(MapTaskWithValue<K,V>::getValue)
+          .filter(Objects::nonNull);
+    }
+
+    public Stream<V> createdValuesStream(Collection<K> existingKeys) {
         return this.tasks.entrySet().stream()
-          .filter(me -> keyFilter.test(me.getKey()))
+          .filter(me -> ! existingKeys.contains(me.getKey()))
           .map(Map.Entry::getValue)
-          .filter(v -> v.containsCreate() && ! v.isReplace())
-          .map(MapTaskWithValue::getValue)
-          .filter(Objects::nonNull)
-          .filter(entityFilter)
-          // make a snapshot
-          .collect(Collectors.toList()).stream();
+          .map(MapTaskWithValue<K,V>::getValue)
+          .filter(Objects::nonNull);
     }
 
-    private MapTaskWithValue merge(MapTaskWithValue oldValue, MapTaskWithValue newValue) {
-        switch (newValue.getOperation()) {
-            case DELETE:
-                return oldValue.containsCreate() ? null : newValue;
-            default:
-                return new MapTaskCompose(oldValue, newValue);
-        }
-    }
-
-    protected abstract class MapTaskWithValue {
+    private static abstract class MapTaskWithValue<K, V> {
         protected final V value;
 
         public MapTaskWithValue(V value) {
@@ -267,37 +212,24 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
             return value;
         }
 
-        public boolean containsCreate() {
-            return MapOperation.CREATE == getOperation();
-        }
-
-        public boolean containsRemove() {
-            return MapOperation.DELETE == getOperation();
-        }
-
-        public boolean isReplace() {
-            return false;
-        }
-
-        public abstract MapOperation getOperation();
-        public abstract void execute();
+        public abstract void execute(MapStorage<K,V> map);
    }
 
-    private class MapTaskCompose extends MapTaskWithValue {
+    private static class MapTaskCompose<K, V> extends MapTaskWithValue<K, V> {
 
-        private final MapTaskWithValue oldValue;
-        private final MapTaskWithValue newValue;
+        private final MapTaskWithValue<K, V> oldValue;
+        private final MapTaskWithValue<K, V> newValue;
 
-        public MapTaskCompose(MapTaskWithValue oldValue, MapTaskWithValue newValue) {
+        public MapTaskCompose(MapTaskWithValue<K, V> oldValue, MapTaskWithValue<K, V> newValue) {
             super(null);
             this.oldValue = oldValue;
             this.newValue = newValue;
         }
 
         @Override
-        public void execute() {
-            oldValue.execute();
-            newValue.execute();
+        public void execute(MapStorage<K, V> map) {
+            oldValue.execute(map);
+            newValue.execute(map);
         }
 
         @Override
@@ -305,99 +237,5 @@ public class MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implement
             return newValue.getValue();
         }
 
-        @Override
-        public MapOperation getOperation() {
-            return null;
-        }
-
-        @Override
-        public boolean containsCreate() {
-            return oldValue.containsCreate() || newValue.containsCreate();
-        }
-
-        @Override
-        public boolean containsRemove() {
-            return oldValue.containsRemove() || newValue.containsRemove();
-        }
-
-        @Override
-        public boolean isReplace() {
-            return (newValue.getOperation() == MapOperation.CREATE && oldValue.containsRemove()) ||
-              (oldValue instanceof MapKeycloakTransaction.MapTaskCompose && ((MapTaskCompose) oldValue).isReplace());
-        }
-    }
-
-    private class CreateOperation extends MapTaskWithValue {
-        private final K key;
-
-        public CreateOperation(K key, V value) {
-            super(value);
-            this.key = key;
-        }
-
-        @Override public void execute() { map.create(key, getValue()); }
-        @Override public MapOperation getOperation() { return MapOperation.CREATE; }
-    }
-
-    private class UpdateOperation extends MapTaskWithValue {
-        private final K key;
-
-        public UpdateOperation(K key, V value) {
-            super(value);
-            this.key = key;
-        }
-
-        @Override public void execute() { map.update(key, getValue()); }
-        @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
-    }
-
-    private class DeleteOperation extends MapTaskWithValue {
-        private final K key;
-
-        public DeleteOperation(K key) {
-            super(null);
-            this.key = key;
-        }
-
-        @Override public void execute() { map.delete(key); }
-        @Override public MapOperation getOperation() { return MapOperation.DELETE; }
-    }
-
-    private class BulkDeleteOperation extends MapTaskWithValue {
-
-        private final ModelCriteriaBuilder<M> mcb;
-
-        public BulkDeleteOperation(ModelCriteriaBuilder<M> mcb) {
-            super(null);
-            this.mcb = mcb;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void execute() {
-            map.delete(mcb);
-        }
-
-        public Predicate<V> getFilterForNonDeletedObjects() {
-            if (! (mcb instanceof MapModelCriteriaBuilder)) {
-                return t -> true;
-            }
-
-            @SuppressWarnings("unchecked")
-            final MapModelCriteriaBuilder<K, V, M> mmcb = (MapModelCriteriaBuilder<K, V, M>) mcb;
-            
-            Predicate<? super V> entityFilter = mmcb.getEntityFilter();
-            Predicate<? super K> keyFilter = ((MapModelCriteriaBuilder) mcb).getKeyFilter();
-            return v -> v != null && ! (keyFilter.test(v.getId()) && entityFilter.test(v));
-        }
-
-        @Override
-        public MapOperation getOperation() {
-            return MapOperation.DELETE;
-        }
-
-        private long getCount() {
-            return map.getCount(mcb);
-        }
     }
 }

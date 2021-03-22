@@ -153,7 +153,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
-        commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
+        commands.add("--profile=" + System.getProperty("auth.server.quarkus.config", "local"));
 
         return commands.toArray(new String[commands.size()]);
     }

@@ -20,10 +20,12 @@ package org.keycloak.testsuite.federation;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -32,6 +34,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +44,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class DummyUserFederationProvider implements UserStorageProvider,
-        UserLookupProvider.Streams,
+        UserLookupProvider,
         UserRegistrationProvider,
         CredentialInputValidator {
 
@@ -80,17 +83,17 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public UserModel getUserById(RealmModel realm, String id) {
+    public UserModel getUserById(String id, RealmModel realm) {
         return null;
     }
 
     @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
+    public UserModel getUserByUsername(String username, RealmModel realm) {
         return users.get(username);
     }
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         return null;
     }
 

@@ -28,6 +28,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +54,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         this.session = session;
     }
 
-    @Override
     public RoleEntity getEntity() {
         return role;
     }
@@ -94,7 +94,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
+        RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
         for (RoleEntity composite : getEntity().getCompositeRoles()) {
             if (composite.equals(entity)) return;
         }
@@ -103,14 +103,13 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
+        RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
         getEntity().getCompositeRoles().remove(entity);
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        Stream<RoleModel> composites = getEntity().getCompositeRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
-        return composites.filter(Objects::nonNull);
+        return getEntity().getCompositeRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
     }
 
     @Override
@@ -134,7 +133,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     @Override
-    public void setAttribute(String name, List<String> values) {
+    public void setAttribute(String name, Collection<String> values) {
         removeAttribute(name);
 
         for (String value : values) {
@@ -144,7 +143,10 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        List<RoleAttributeEntity> attributes = role.getAttributes();
+        Collection<RoleAttributeEntity> attributes = role.getAttributes();
+        if (attributes == null) {
+            return;
+        }
 
         Query query = em.createNamedQuery("deleteRoleAttributesByNameAndUser");
         query.setParameter("name", name);
@@ -152,6 +154,11 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         query.executeUpdate();
 
         attributes.removeIf(attribute -> attribute.getName().equals(name));
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        return getAttributeStream(name).findFirst().orElse(null);
     }
 
     @Override
@@ -178,13 +185,19 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public String getContainerId() {
-        return isClientRole() ? role.getClientId() : role.getRealmId();
+        if (isClientRole()) return role.getClientId();
+        else return realm.getId();
     }
 
 
     @Override
     public RoleContainerModel getContainer() {
-        return isClientRole() ? realm.getClientById(role.getClientId()) : realm;
+        if (role.isClientRole()) {
+            return realm.getClientById(role.getClientId());
+
+        } else {
+            return realm;
+        }
     }
 
     @Override
@@ -201,7 +214,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         return getId().hashCode();
     }
 
-    private RoleEntity toRoleEntity(RoleModel model) {
+    public static RoleEntity toRoleEntity(RoleModel model, EntityManager em) {
         if (model instanceof RoleAdapter) {
             return ((RoleAdapter) model).getEntity();
         }

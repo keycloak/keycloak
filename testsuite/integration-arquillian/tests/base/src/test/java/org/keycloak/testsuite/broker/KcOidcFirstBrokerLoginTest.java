@@ -1,12 +1,10 @@
 package org.keycloak.testsuite.broker;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
@@ -19,9 +17,6 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
-
-    @Page
-    protected LoginUpdateProfilePage loginUpdateProfilePage;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -255,7 +250,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "sign in to", true);
+        waitForPage(driver, "log in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
@@ -265,7 +260,6 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("", "no-first-name@localhost.com", "FirstName", "LastName");
         updateAccountInformationPage.assertCurrent();
-
-        assertEquals("Please specify username.", loginUpdateProfilePage.getInputErrors().getUsernameError());
+        assertEquals("Please specify username.", accountUpdateProfilePage.getError());
     }
 }

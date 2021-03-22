@@ -27,8 +27,6 @@ public final class OIDCConfigAttributes {
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST = "request only";
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST_URI = "request_uri only";
 
-    public static final String REQUEST_URIS = "request.uris";
-
     public static final String JWKS_URL = "jwks.url";
 
     public static final String USE_JWKS_URL = "use.jwks.url";
@@ -59,8 +57,6 @@ public final class OIDCConfigAttributes {
     public static final String BACKCHANNEL_LOGOUT_SESSION_REQUIRED = "backchannel.logout.session.required";
     
     public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
-
-    public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
 
     private OIDCConfigAttributes() {
     }

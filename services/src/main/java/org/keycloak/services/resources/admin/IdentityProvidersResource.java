@@ -17,7 +17,6 @@
 
 package org.keycloak.services.resources.admin;
 
-import com.google.common.collect.Streams;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
@@ -51,6 +50,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -222,15 +222,23 @@ public class IdentityProvidersResource {
     }
 
     private IdentityProviderFactory getProviderFactorytById(String providerId) {
-        return getProviderFactories()
-                .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
-                .map(IdentityProviderFactory.class::cast)
-                .findFirst()
-                .orElse(null);
+        List<ProviderFactory> allProviders = getProviderFactories();
+
+        for (ProviderFactory providerFactory : allProviders) {
+            if (providerFactory.getId().equals(providerId)) {
+                return (IdentityProviderFactory) providerFactory;
+            }
+        }
+
+        return null;
     }
 
-    private Stream<ProviderFactory> getProviderFactories() {
-        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
-                session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class));
+    private List<ProviderFactory> getProviderFactories() {
+        List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
+
+        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class));
+        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class));
+
+        return allProviders;
     }
 }

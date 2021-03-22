@@ -17,9 +17,6 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,16 +25,21 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.ClientUpdateContext;
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
-public class ClientUpdateContextCondition extends AbstractClientPolicyConditionProvider {
+public class ClientUpdateContextCondition implements ClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);
 
+    private final KeycloakSession session;
+    private final ComponentModel componentModel;
+
     public ClientUpdateContextCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+        this.session = session;
+        this.componentModel = componentModel;
     }
 
     @Override
@@ -45,7 +47,7 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
-            if (isAuthMethodMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
+            if (isAuthMethodMatched((ClientUpdateContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;
@@ -55,15 +57,10 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
     private boolean isAuthMethodMatched(String authMethod) {
         if (authMethod == null) return false;
 
-        List<String> expectedAuthMethods = componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE);
-        if (expectedAuthMethods == null) expectedAuthMethods = Collections.emptyList();
+        ClientPolicyLogger.log(logger, "auth method = " + authMethod);
+        componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE).stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
 
-        if (logger.isTraceEnabled()) {
-            ClientPolicyLogger.log(logger, "auth method = " + authMethod);
-            expectedAuthMethods.stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
-        }
-
-        boolean isMatched = expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));
+        boolean isMatched = componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE).stream().anyMatch(i -> i.equals(authMethod));
         if (isMatched) {
             ClientPolicyLogger.log(logger, "auth method matched.");
         } else {
@@ -72,7 +69,7 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
         return isMatched;
     }
 
-    private boolean isAuthMethodMatched(ClientCRUDContext context) {
+    private boolean isAuthMethodMatched(ClientUpdateContext context) {
         String authMethod = null;
 
         if (context.getToken() == null) {
@@ -102,5 +99,15 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
 
     private boolean isBearerToken(JsonWebToken jwt) {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
+    }
+
+    @Override
+    public String getName() {
+        return componentModel.getName();
+    }
+
+    @Override
+    public String getProviderId() {
+        return componentModel.getProviderId();
     }
 }

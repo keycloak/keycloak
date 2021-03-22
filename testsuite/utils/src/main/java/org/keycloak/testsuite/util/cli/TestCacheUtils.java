@@ -19,10 +19,12 @@ package org.keycloak.testsuite.util.cli;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -45,18 +47,19 @@ public class TestCacheUtils {
 
         realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(realm::getClientScopeById);
 
-        session.users().getUsersStream(realm).forEach(user -> {
-            session.users().getUserById(realm, user.getId());
+        for (UserModel user : session.users().getUsers(realm)) {
+            session.users().getUserById(user.getId(), realm);
             if (user.getEmail() != null) {
-                session.users().getUserByEmail(realm, user.getEmail());
+                session.users().getUserByEmail(user.getEmail(), realm);
             }
-            session.users().getUserByUsername(realm, user.getUsername());
+            session.users().getUserByUsername(user.getUsername(), realm);
 
-            session.users().getConsentsStream(realm, user.getId());
+            session.users().getConsents(realm, user.getId());
 
-            session.users().getFederatedIdentitiesStream(realm, user)
-                    .forEach(identity -> session.users().getUserByFederatedIdentity(realm, identity));
-        });
+            for (FederatedIdentityModel fedIdentity : session.users().getFederatedIdentities(user, realm)) {
+                session.users().getUserByFederatedIdentity(fedIdentity, realm);
+            }
+        }
     }
 
     private static void cacheRoles(KeycloakSession session, RealmModel realm, RoleContainerModel roleContainer) {

@@ -1108,7 +1108,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     $scope.disableCredentialsTab = client.publicClient;
-    $scope.oauth2DeviceAuthorizationGrantEnabled = false;
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
@@ -1119,8 +1118,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.clientSessionMaxLifespan = TimeUnit2.asUnit(client.attributes['client.session.max.lifespan']);
     $scope.clientOfflineSessionIdleTimeout = TimeUnit2.asUnit(client.attributes['client.offline.session.idle.timeout']);
     $scope.clientOfflineSessionMaxLifespan = TimeUnit2.asUnit(client.attributes['client.offline.session.max.lifespan']);
-    $scope.oauth2DeviceCodeLifespan = TimeUnit2.asUnit(client.attributes['oauth2.device.code.lifespan']);
-    $scope.oauth2DevicePollingInterval = parseInt(client.attributes['oauth2.device.polling.interval']);
 
     if(client.origin) {
         if ($scope.access.viewRealm) {
@@ -1282,14 +1279,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             }
         }
 
-       if ($scope.client.attributes["oauth2.device.authorization.grant.enabled"]) {
-           if ($scope.client.attributes["oauth2.device.authorization.grant.enabled"] == "true") {
-               $scope.oauth2DeviceAuthorizationGrantEnabled = true;
-           } else {
-               $scope.oauth2DeviceAuthorizationGrantEnabled = false;
-           }
-       }
-
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
        if ($scope.client.attributes["tls.client.certificate.bound.access.tokens"]) {
@@ -1299,13 +1288,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                $scope.tlsClientCertificateBoundAccessTokens = false;
            }
        }
-
-        var useRefreshToken = $scope.client.attributes["client_credentials.use_refresh_token"];
-        if (useRefreshToken === "true") {
-            $scope.useRefreshTokenForClientCredentialsGrant = true;
-        } else {
-            $scope.useRefreshTokenForClientCredentialsGrant = false;
-        }
 
         if ($scope.client.attributes["display.on.consent.screen"]) {
             if ($scope.client.attributes["display.on.consent.screen"] == "true") {
@@ -1329,13 +1311,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             } else {
                 $scope.backchannelLogoutRevokeOfflineSessions = false;
             }
-        }
-
-
-        if ($scope.client.attributes["request.uris"] && $scope.client.attributes["request.uris"].length > 0) {
-            $scope.client.requestUris = $scope.client.attributes["request.uris"].split("##");
-        } else {
-            $scope.client.requestUris = [];
         }
     }
 
@@ -1474,9 +1449,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
             return true;
         }
-        if ($scope.newRequestUri && $scope.newRequestUri.length > 0) {
-            return true;
-        }
         return false;
     }
 
@@ -1532,22 +1504,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         }
     }
 
-    $scope.updateOauth2DeviceCodeLifespan = function() {
-        if ($scope.oauth2DeviceCodeLifespan.time) {
-            $scope.clientEdit.attributes['oauth2.device.code.lifespan'] = $scope.oauth2DeviceCodeLifespan.toSeconds();
-        } else {
-            $scope.clientEdit.attributes['oauth2.device.code.lifespan'] = null;
-        }
-    }
-
-    $scope.updateOauth2DevicePollingInterval = function() {
-        if ($scope.oauth2DevicePollingInterval) {
-            $scope.clientEdit.attributes['oauth2.device.polling.interval'] = $scope.oauth2DevicePollingInterval;
-        } else {
-            $scope.clientEdit.attributes['oauth2.device.polling.interval'] = null;
-        }
-    }
-
     function configureAuthorizationServices() {
         if ($scope.clientEdit.authorizationServicesEnabled) {
             if ($scope.accessType == 'public') {
@@ -1580,23 +1536,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.changed = isChanged();
     }, true);
 
-    $scope.$watch('newRequestUri', function() {
-        $scope.changed = isChanged();
-    }, true);
-
     $scope.deleteWebOrigin = function(index) {
         $scope.clientEdit.webOrigins.splice(index, 1);
     }
     $scope.addWebOrigin = function() {
         $scope.clientEdit.webOrigins.push($scope.newWebOrigin);
         $scope.newWebOrigin = "";
-    }
-    $scope.deleteRequestUri = function(index) {
-        $scope.clientEdit.requestUris.splice(index, 1);
-    }
-    $scope.addRequestUri = function() {
-        $scope.clientEdit.requestUris.push($scope.newRequestUri);
-        $scope.newRequestUri = "";
     }
     $scope.deleteRedirectUri = function(index) {
         $scope.clientEdit.redirectUris.splice(index, 1);
@@ -1615,16 +1560,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         if ($scope.newWebOrigin && $scope.newWebOrigin.length > 0) {
             $scope.addWebOrigin();
         }
-
-        if ($scope.newRequestUri && $scope.newRequestUri.length > 0) {
-            $scope.addRequestUri();
-        }
-        if ($scope.clientEdit.requestUris && $scope.clientEdit.requestUris.length > 0) {
-            $scope.clientEdit.attributes["request.uris"] = $scope.clientEdit.requestUris.join("##");
-        } else {
-            $scope.clientEdit.attributes["request.uris"] = null;
-        }
-        delete $scope.clientEdit.requestUris;
 
         if ($scope.samlServerSignature == true) {
             $scope.clientEdit.attributes["saml.server.signature"] = "true";
@@ -1691,26 +1626,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
         }
 
-        if ($scope.oauth2DeviceAuthorizationGrantEnabled == true) {
-            $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "true";
-        } else {
-            $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "false";
-        }
-
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if ($scope.tlsClientCertificateBoundAccessTokens == true) {
             $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "true";
         } else {
             $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "false";
-        }
-
-        // KEYCLOAK-9551 Client Credentials Grant generates refresh token
-        // https://tools.ietf.org/html/rfc6749#section-4.4.3
-        if ($scope.useRefreshTokenForClientCredentialsGrant === true) {
-            $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "true";
-        } else {
-            $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "false";
         }
 
         if ($scope.displayOnConsentScreen == true) {

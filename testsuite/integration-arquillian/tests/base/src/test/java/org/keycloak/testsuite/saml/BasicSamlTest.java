@@ -241,7 +241,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
           .assertResponse(Matchers.bodyHC(containsString(
             Objects.equals(reloginRequired, Boolean.TRUE)
-              ? "Sign in"
+              ? "Log in"
               : GeneralConstants.SAML_RESPONSE_KEY
           )))
 

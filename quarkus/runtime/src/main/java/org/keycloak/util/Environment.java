@@ -19,8 +19,8 @@ package org.keycloak.util;
 
 import java.util.Optional;
 
-import org.apache.commons.lang3.SystemUtils;
-import org.keycloak.configuration.Configuration;
+import io.smallrye.config.SmallRyeConfig;
+import org.keycloak.quarkus.KeycloakRecorder;
 
 public final class Environment {
 
@@ -39,9 +39,6 @@ public final class Environment {
             return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
         }
 
-        if (isWindows()) {
-            return "kc.bat";
-        }
         return "kc.sh";
     }
     
@@ -70,7 +67,7 @@ public final class Environment {
     }
 
     public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = Configuration.getBuiltTimeProperty(name);
+        String value = KeycloakRecorder.getBuiltTimeProperty(name);
 
         if (value == null) {
             return Optional.empty();
@@ -79,11 +76,7 @@ public final class Environment {
         return Optional.of(value);
     }
 
-    public static boolean isDevMode() {
-        return "dev".equalsIgnoreCase(getProfile());
-    }
-
-    public static boolean isWindows() {
-        return SystemUtils.IS_OS_WINDOWS;
+    public static SmallRyeConfig getConfig() {
+        return KeycloakRecorder.getConfig();
     }
 }

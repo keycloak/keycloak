@@ -63,5 +63,5 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * 
      * @return the provider specific instance
      */
-    IdentityProviderModel createConfig();
+    <C extends IdentityProviderModel> C createConfig();
 }

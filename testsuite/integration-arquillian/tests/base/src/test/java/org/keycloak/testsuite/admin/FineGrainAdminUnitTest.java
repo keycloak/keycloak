@@ -66,8 +66,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
-import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
 
 import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -330,7 +328,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         // test authorized
         {
-            UserModel user = session.users().getUserByUsername(realm, "authorized");
+            UserModel user = session.users().getUserByUsername("authorized", realm);
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
             Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
@@ -339,7 +337,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
         // test composite role
         {
-            UserModel user = session.users().getUserByUsername(realm, "authorizedComposite");
+            UserModel user = session.users().getUserByUsername("authorizedComposite", realm);
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
             Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
@@ -349,7 +347,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         // test unauthorized
         {
-            UserModel user = session.users().getUserByUsername(realm, "unauthorized");
+            UserModel user = session.users().getUserByUsername("unauthorized", realm);
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
             Assert.assertFalse(permissionsForAdmin.users().canManage());
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
@@ -358,7 +356,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
         // test unauthorized mapper
         {
-            UserModel user = session.users().getUserByUsername(realm, "unauthorizedMapper");
+            UserModel user = session.users().getUserByUsername("unauthorizedMapper", realm);
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
             Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
@@ -368,12 +366,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
         // test group management
         {
-            UserModel admin = session.users().getUserByUsername(realm, "groupManager");
+            UserModel admin = session.users().getUserByUsername("groupManager", realm);
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, admin);
-            UserModel user = session.users().getUserByUsername(realm, "authorized");
+            UserModel user = session.users().getUserByUsername("authorized", realm);
             Assert.assertFalse(permissionsForAdmin.users().canManage(user));
             Assert.assertFalse(permissionsForAdmin.users().canView(user));
-            UserModel member = session.users().getUserByUsername(realm, "groupMember");
+            UserModel member = session.users().getUserByUsername("groupMember", realm);
             Assert.assertTrue(permissionsForAdmin.users().canManage(member));
             Assert.assertTrue(permissionsForAdmin.users().canManageGroupMembership(member));
             Assert.assertTrue(permissionsForAdmin.users().canView(member));
@@ -384,9 +382,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
         // test client.mapRoles
         {
-            UserModel admin = session.users().getUserByUsername(realm, "clientMapper");
+            UserModel admin = session.users().getUserByUsername("clientMapper", realm);
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, admin);
-            UserModel user = session.users().getUserByUsername(realm, "authorized");
+            UserModel user = session.users().getUserByUsername("authorized", realm);
             Assert.assertTrue(permissionsForAdmin.users().canManage(user));
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
@@ -841,7 +839,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newRealm.setId("anotherRealm");
             newRealm.setEnabled(true);
             realmClient.realms().create(newRealm);
-            
+
             ClientRepresentation newClient = new ClientRepresentation();
 
             newClient.setName("newClient");
@@ -853,17 +851,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newClient.setEnabled(true);
             Response response = realmClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(403, response.getStatus());
-            response.close();
 
             realmClient.close();
-            //creating new client to refresh token
             realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
                     "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
-            assertThat(realmClient.realms().findAll().stream().map(RealmRepresentation::getRealm).collect(Collectors.toSet()),
-                    hasItem("anotherRealm"));
             response = realmClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(201, response.getStatus());
-            response.close();
         } finally {
             adminClient.realm("anotherRealm").remove();
             realmClient.close();
@@ -903,7 +896,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newClient.setEnabled(true);
             Response response = adminClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(201, response.getStatus());
-            response.close();            
         } finally {
             adminClient.realm("anotherRealm").remove();
 

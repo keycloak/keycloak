@@ -34,11 +34,6 @@ public interface EventStoreProvider extends EventListenerProvider {
 
     void clear(String realmId, long olderThan);
 
-    /**
-     * Clear all expired events in all realms
-     */
-    void clearExpiredEvents();
-
     void clearAdmin();
 
     void clearAdmin(String realmId);

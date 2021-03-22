@@ -35,7 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -153,7 +152,15 @@ public class JpaAdminEventQuery implements AdminEventQuery {
 
         TypedQuery<AdminEventEntity> query = em.createQuery(cq);
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
+        if (firstResult != null) {
+            query.setFirstResult(firstResult);
+        }
+
+        if (maxResults != null) {
+            query.setMaxResults(maxResults);
+        }
+
+        return closing(query.getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
     }
     
 }

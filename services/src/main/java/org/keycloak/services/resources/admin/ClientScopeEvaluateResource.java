@@ -19,8 +19,9 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
-import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -113,36 +114,43 @@ public class ClientScopeEvaluateResource {
     @Path("protocol-mappers")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
+    public List<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
-        return TokenManager.getRequestedClientScopes(scopeParam, client)
-                .flatMap(mapperContainer -> mapperContainer.getProtocolMappersStream()
-                    .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
-                    .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
-    }
+        List<ProtocolMapperEvaluationRepresentation> protocolMappers = new LinkedList<>();
 
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
 
-    private ProtocolMapperEvaluationRepresentation toProtocolMapperEvaluationRepresentation(ProtocolMapperModel mapper,
-                                                                                            ClientScopeModel mapperContainer) {
-        ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
-        rep.setMapperId(mapper.getId());
-        rep.setMapperName(mapper.getName());
-        rep.setProtocolMapper(mapper.getProtocolMapper());
+        for (ClientScopeModel mapperContainer : clientScopes) {
+            Set<ProtocolMapperModel> currentMappers = mapperContainer.getProtocolMappers();
+            for (ProtocolMapperModel current : currentMappers) {
+                if (isEnabled(session, current) && current.getProtocol().equals(client.getProtocol())) {
+                    ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
+                    rep.setMapperId(current.getId());
+                    rep.setMapperName(current.getName());
+                    rep.setProtocolMapper(current.getProtocolMapper());
 
-        if (mapperContainer.getId().equals(client.getId())) {
-            // Must be this client
-            rep.setContainerId(client.getId());
-            rep.setContainerName("");
-            rep.setContainerType("client");
-        } else {
-            ClientScopeModel clientScope = mapperContainer;
-            rep.setContainerId(clientScope.getId());
-            rep.setContainerName(clientScope.getName());
-            rep.setContainerType("client-scope");
+                    if (mapperContainer.getId().equals(client.getId())) {
+                        // Must be this client
+                        rep.setContainerId(client.getId());
+                        rep.setContainerName("");
+                        rep.setContainerType("client");
+                    } else {
+                        ClientScopeModel clientScope = (ClientScopeModel) mapperContainer;
+                        rep.setContainerId(clientScope.getId());
+                        rep.setContainerName(clientScope.getName());
+                        rep.setContainerType("client-scope");
+                    }
+
+                    protocolMappers.add(rep);
+                }
+            }
         }
-        return rep;
+
+        return protocolMappers;
     }
+
+
 
     /**
      * Create JSON with payload of example access token
@@ -160,7 +168,7 @@ public class ClientScopeEvaluateResource {
             throw new NotFoundException("No userId provided");
         }
 
-        UserModel user = session.users().getUserById(realm, userId);
+        UserModel user = session.users().getUserById(userId, realm);
         if (user == null) {
             throw new NotFoundException("No user found");
         }

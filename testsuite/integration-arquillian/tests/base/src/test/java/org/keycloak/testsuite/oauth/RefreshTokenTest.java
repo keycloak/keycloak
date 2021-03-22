@@ -49,7 +49,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -60,6 +59,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -122,7 +122,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         realmRepresentation.getClients().add(org.keycloak.testsuite.util.ClientBuilder.create()
                 .clientId("service-account-app")
                 .serviceAccount()
-                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .secret("secret")
                 .build());
 
@@ -141,7 +140,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
      */
     @Test
     public void nullRefreshToken() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI uri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget target = client.target(uri);
@@ -219,7 +218,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertNotNull(refreshTokenString);
 
-        assertEquals("Bearer", tokenResponse.getTokenType());
+        assertEquals("bearer", tokenResponse.getTokenType());
 
         Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
         int actual = refreshToken.getExpiration() - getCurrentTime();
@@ -251,7 +250,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
 
-        assertEquals("Bearer", response.getTokenType());
+        assertEquals("bearer", response.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
         Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
@@ -708,7 +707,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Need to reset not-before of user, which was updated during user.logout()
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
+                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
                 session.users().setNotBeforeForUser(realm, user, 0);
             });
         }
@@ -928,7 +927,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void testCheckSsl() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
+        Client client = ClientBuilder.newClient();
         try {
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
@@ -1248,7 +1247,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertNotNull(refreshTokenString);
 
-        assertEquals("Bearer", tokenResponse.getTokenType());
+        assertEquals("bearer", tokenResponse.getTokenType());
 
         assertEquals(sessionId, refreshToken.getSessionState());
 
@@ -1270,7 +1269,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
 
-        assertEquals("Bearer", response.getTokenType());
+        assertEquals("bearer", response.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
         Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());

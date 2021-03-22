@@ -69,10 +69,6 @@ public class DefaultThemeManagerFactory {
         return theme;
     }
 
-    public boolean isCacheEnabled() {
-        return themeCache != null;
-    }
-
     public void clearCache() {
         if (themeCache != null) {
             themeCache.clear();

@@ -150,7 +150,7 @@ public class AuthorizationBean {
         private boolean granted;
 
         public RequesterBean(PermissionTicket ticket, AuthorizationProvider authorization) {
-            this.requester = authorization.getKeycloakSession().users().getUserById(authorization.getRealm(), ticket.getRequester());
+            this.requester = authorization.getKeycloakSession().users().getUserById(ticket.getRequester(), authorization.getRealm());
             granted = ticket.isGranted();
             createdTimestamp = ticket.getCreatedTimestamp();
             grantedTimestamp = ticket.getGrantedTimestamp();
@@ -236,7 +236,7 @@ public class AuthorizationBean {
             RealmModel realm = authorization.getRealm();
             resourceServer = new ResourceServerBean(realm.getClientById(resource.getResourceServer()));
             this.resource = resource;
-            userOwner = authorization.getKeycloakSession().users().getUserById(realm, resource.getOwner());
+            userOwner = authorization.getKeycloakSession().users().getUserById(resource.getOwner(), realm);
             if (userOwner == null) {
                 clientOwner = realm.getClientById(resource.getOwner());
                 ownerName = clientOwner.getClientId();

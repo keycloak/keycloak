@@ -84,7 +84,7 @@ public class LDAPHardcodedAttributeTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername(appRealm, "johnkeycloak");
+            UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
             Assert.assertNotNull(user);
             Assert.assertTrue(user.isEmailVerified());
             Assert.assertEquals("en", user.getFirstAttribute("locale"));

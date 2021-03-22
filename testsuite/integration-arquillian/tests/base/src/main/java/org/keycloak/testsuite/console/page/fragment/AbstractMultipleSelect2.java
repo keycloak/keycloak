@@ -93,7 +93,7 @@ public abstract class AbstractMultipleSelect2<R> {
         }
 
         for (WebElement result : result) {
-            if (match(result.getText(), id)) {
+            if (result.getText().equalsIgnoreCase(id)) {
                 clickLink(result);
                 return;
             }
@@ -101,10 +101,6 @@ public abstract class AbstractMultipleSelect2<R> {
     }
 
     protected abstract Function<R, String> identity();
-
-    protected boolean match(String result, String search) {
-        return result != null && result.equalsIgnoreCase(search);
-    };
 
     public Set<R> getSelected() {
         Set<R> values = new HashSet<>();

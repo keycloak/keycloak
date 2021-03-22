@@ -258,7 +258,7 @@ public class Urls {
         return themeBase(baseUri).path(Version.RESOURCES_VERSION).build();
     }
 
-    public static UriBuilder loginActionsBase(URI baseUri) {
+    private static UriBuilder loginActionsBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getLoginActionsService");
     }
 

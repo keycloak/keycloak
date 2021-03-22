@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.userprofile.UserProfile;
-
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
@@ -30,12 +28,9 @@ public class UserProfileValidationResult {
 
 
     List<AttributeValidationResult> attributeValidationResults;
-    private final UserProfile updatedProfile;
 
-    public UserProfileValidationResult(List<AttributeValidationResult> attributeValidationResults,
-            UserProfile updatedProfile) {
+    public UserProfileValidationResult(List<AttributeValidationResult> attributeValidationResults) {
         this.attributeValidationResults = attributeValidationResults;
-        this.updatedProfile = updatedProfile;
     }
 
     public List<AttributeValidationResult> getValidationResults() {
@@ -54,14 +49,5 @@ public class UserProfileValidationResult {
 
     public boolean hasAttributeChanged(String attribute) {
         return this.attributeValidationResults.stream().filter(o -> o.getField().equals(attribute)).collect(Collectors.toList()).get(0).hasChanged();
-    }
-
-    /**
-     * Returns the {@link UserProfile} used during validations.
-     *
-     * @return the profile user during validations
-     */
-    public UserProfile getProfile() {
-        return updatedProfile;
     }
 }

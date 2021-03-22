@@ -32,7 +32,6 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptCompilationException;
@@ -46,13 +45,13 @@ import java.util.List;
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper,
-        OIDCAccessTokenResponseMapper, EnvironmentDependentProviderFactory {
+        EnvironmentDependentProviderFactory {
 
   public static final String PROVIDER_ID = "oidc-script-based-protocol-mapper";
 
   private static final Logger LOGGER = Logger.getLogger(ScriptBasedOIDCProtocolMapper.class);
 
-  public static final String SCRIPT = "script";
+  private static final String SCRIPT = "script";
 
   private static final List<ProviderConfigProperty> configProperties;
 
@@ -130,18 +129,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
 
   @Override
   protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-    Object claimValue = evaluateScript(token, mappingModel, userSession, keycloakSession);
-    OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
-  }
 
-  @Override
-  protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession,
-          KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-    Object claimValue = evaluateScript(accessTokenResponse, mappingModel, userSession, keycloakSession);
-    OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, claimValue);
-  }
-
-  private Object evaluateScript(Object tokenBinding, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession) {
     UserModel user = userSession.getUser();
     String scriptSource = getScriptCode(mappingModel);
     RealmModel realm = userSession.getRealm();
@@ -156,11 +144,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
       claimValue = script.eval((bindings) -> {
         bindings.put("user", user);
         bindings.put("realm", realm);
-        if (tokenBinding instanceof IDToken) {
-          bindings.put("token", tokenBinding);
-        } else if (tokenBinding instanceof AccessTokenResponse) {
-          bindings.put("tokenResponse", tokenBinding);
-        }
+        bindings.put("token", token);
         bindings.put("userSession", userSession);
         bindings.put("keycloakSession", keycloakSession);
       });
@@ -169,7 +153,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
       claimValue = null;
     }
 
-    return claimValue;
+    OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
   }
 
   @Override

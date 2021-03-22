@@ -18,8 +18,6 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -28,7 +26,6 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 /**
  *
  * @author Filip Kiss
- * @author Lukas Hanusovsky lhanusov@redhat.com
  */
 public class ThemeSettings extends RealmSettings {
 
@@ -51,12 +48,6 @@ public class ThemeSettings extends RealmSettings {
 
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='internationalizationEnabled']]")
     private OnOffSwitch internatEnabledSwitch;
-
-    @FindBy(className = "select2-input")
-    private WebElement supportedLocalesInput;
-
-    @FindBy(id = "defaultLocale")
-    private Select defaultLocaleSelect;
 
     public void changeLoginTheme(String themeName) {
         loginThemeSelect.selectByVisibleText(themeName);
@@ -81,17 +72,6 @@ public class ThemeSettings extends RealmSettings {
     public boolean isInternatEnabled() {
         return internatEnabledSwitch.isOn();
     }
-
-    public void addSupportedLocale(String supportedLocale) {
-        supportedLocalesInput.sendKeys(supportedLocale);
-        supportedLocalesInput.sendKeys(Keys.RETURN);
-    }
-
-    public void deleteSupportedLocale(String supportedLocale) {
-        supportedLocalesInput.sendKeys(Keys.chord(Keys.CONTROL, supportedLocale, Keys.BACK_SPACE, Keys.BACK_SPACE));
-    }
-
-    public void setDefaultLocale () { defaultLocaleSelect.selectByVisibleText("en"); }
 
     public void saveTheme() {
         clickLink(primaryButton);

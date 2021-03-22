@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.client;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientProviderFactory;
@@ -36,12 +35,12 @@ public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientP
 
     private final ConcurrentHashMap<UUID, ConcurrentMap<String, Integer>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
 
-    private MapStorage<UUID, MapClientEntity, ClientModel> store;
+    private MapStorage<UUID, MapClientEntity> store;
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("clients", UUID.class, MapClientEntity.class, ClientModel.class);
+        this.store = sp.getStorage("clients", UUID.class, MapClientEntity.class);
     }
 
 

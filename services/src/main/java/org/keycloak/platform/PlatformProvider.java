@@ -17,8 +17,6 @@
 
 package org.keycloak.platform;
 
-import java.io.File;
-
 public interface PlatformProvider {
     
     void onStartup(Runnable runnable);
@@ -26,11 +24,5 @@ public interface PlatformProvider {
     void onShutdown(Runnable runnable);
 
     void exit(Throwable cause);
-
-    /**
-     * @return tmp directory specific to target platform. Implementation can make sure to create "tmp" directory in case it does not exists.
-     * The directory should be usually inside the corresponding server directory. In production, it should not be system directory like "/tmp" .
-     */
-    File getTmpDirectory();
 
 }

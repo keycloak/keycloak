@@ -29,6 +29,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
@@ -153,10 +154,13 @@ public class ClientEntity {
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
-    @ElementCollection
-    @Column(name="ROLE_ID")
-    @CollectionTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")})
-    private Set<String> scopeMappingIds;
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    Collection<RoleEntity> defaultRoles;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    protected Set<RoleEntity> scopeMapping;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -371,6 +375,17 @@ public class ClientEntity {
         this.managementUrl = managementUrl;
     }
 
+    public Collection<RoleEntity> getDefaultRoles() {
+        if (defaultRoles == null) {
+            defaultRoles = new LinkedList<>();
+        }
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
+        this.defaultRoles = defaultRoles;
+    }
+
     public boolean isBearerOnly() {
         return bearerOnly;
     }
@@ -438,15 +453,15 @@ public class ClientEntity {
         this.registeredNodes = registeredNodes;
     }
 
-    public Set<String> getScopeMappingIds() {
-        if (scopeMappingIds == null) {
-            scopeMappingIds = new HashSet<>();
+    public Set<RoleEntity> getScopeMapping() {
+        if (scopeMapping == null) {
+            scopeMapping = new HashSet<>();
         }
-        return scopeMappingIds;
+        return scopeMapping;
     }
 
-    public void setScopeMapping(Set<String> scopeMappingIds) {
-        this.scopeMappingIds = scopeMappingIds;
+    public void setScopeMapping(Set<RoleEntity> scopeMapping) {
+        this.scopeMapping = scopeMapping;
     }
 
     @Override

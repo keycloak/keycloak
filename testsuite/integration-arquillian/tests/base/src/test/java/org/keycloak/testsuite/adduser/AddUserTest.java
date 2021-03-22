@@ -122,9 +122,9 @@ public class AddUserTest extends AbstractKeycloakTest {
 
         //--------------Roles-----------------------//
         try {
-            assertRoles(userResource.roles().realmLevel().listAll(), "admin", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" +  realmName);
-            assertRoles(userResource.roles().realmLevel().listEffective(), "create-realm", Constants.AUTHZ_UMA_AUTHORIZATION,
-                    Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realmName, Constants.OFFLINE_ACCESS_ROLE, "admin");
+            List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listAll();
+
+            assertRoles(realmRoles, "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
             List<ClientRepresentation> clients = realmResource.clients().findAll();
             String accountId = null;
@@ -134,9 +134,8 @@ public class AddUserTest extends AbstractKeycloakTest {
                 }
             }
 
-            assertTrue(userResource.roles().clientLevel(accountId).listAll().isEmpty());
-            List<RoleRepresentation> accountRoles = userResource.roles().clientLevel(accountId).listEffective();
-            assertRoles(accountRoles, "view-profile", "manage-account", "manage-account-links");
+            List<RoleRepresentation> accountRoles = userResource.roles().clientLevel(accountId).listAll();
+            assertRoles(accountRoles, "view-profile", "manage-account");
         } finally {
             userResource.remove();
         }

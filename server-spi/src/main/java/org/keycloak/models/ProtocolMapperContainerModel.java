@@ -18,28 +18,13 @@
 package org.keycloak.models;
 
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface ProtocolMapperContainerModel {
-    /**
-     * @deprecated Use {@link #getProtocolMappersStream() getProtocolMappersStream} instead.
-     * @return Set of protocol mappers
-     */
-    @Deprecated
-    default Set<ProtocolMapperModel> getProtocolMappers() {
-        return getProtocolMappersStream().collect(Collectors.toSet());
-    }
-
-    /**
-     * Returns protocol mappers as a stream.
-     * @return Stream of protocol mapper. Never returns {@code null}.
-     */
-    Stream<ProtocolMapperModel> getProtocolMappersStream();
+    Set<ProtocolMapperModel> getProtocolMappers();
 
     ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
 

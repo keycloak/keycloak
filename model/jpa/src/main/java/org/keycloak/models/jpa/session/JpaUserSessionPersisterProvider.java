@@ -37,7 +37,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,11 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.persistence.LockModeType;
-
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -85,7 +83,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline) {
-        PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(session, clientSession);
+        PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(clientSession);
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
         PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
@@ -242,8 +240,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                           Integer lastCreatedOn, String lastUserSessionId) {
+    public List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
         String offlineStr = offlineToString(offline);
 
         TypedQuery<PersistentUserSessionEntity> query = em.createNamedQuery("findUserSessions", PersistentUserSessionEntity.class);
@@ -251,8 +248,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setParameter("lastCreatedOn", lastCreatedOn);
         query.setParameter("lastSessionId", lastUserSessionId);
 
-        List<PersistentUserSessionAdapter> result = closing(paginateQuery(query, firstResult, maxResults).getResultStream()
-                .map(this::toAdapter))
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
+
+        List<PersistentUserSessionAdapter> result = query.getResultStream()
+                .map(this::toAdapter)
                 .collect(Collectors.toList());
 
         Map<String, PersistentUserSessionAdapter> sessionsById = result.stream()
@@ -266,7 +270,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             TypedQuery<PersistentClientSessionEntity> query2 = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
             query2.setParameter("userSessionIds", userSessionIds);
             query2.setParameter("offline", offlineStr);
-            closing(query2.getResultStream()).forEach(clientSession -> {
+            List<PersistentClientSessionEntity> clientSessions = query2.getResultList();
+
+            for (PersistentClientSessionEntity clientSession : clientSessions) {
                 PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());
 
                 PersistentAuthenticatedClientSessionAdapter clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSession);
@@ -278,14 +284,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 } else {
                     currentClientSessions.put(clientSession.getClientId(), clientSessAdapter);
                 }
-            });
+            }
         }
 
         for (String clientUUID : removedClientUUIDs) {
             onClientRemoved(clientUUID);
         }
 
-        return result.stream().map(UserSessionModel.class::cast);
+        return (List) result;
     }
 
     private PersistentUserSessionAdapter toAdapter(PersistentUserSessionEntity entity) {
@@ -318,7 +324,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setUserId(userSession.getUserId());
         model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
-        return new PersistentAuthenticatedClientSessionAdapter(session, model, realm, client, userSession);
+        return new PersistentAuthenticatedClientSessionAdapter(model, realm, client, userSession);
     }
 
     @Override

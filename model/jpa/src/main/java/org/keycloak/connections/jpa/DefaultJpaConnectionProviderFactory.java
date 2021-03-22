@@ -88,7 +88,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = PersistenceExceptionConverter.create(session, em);
+        em = PersistenceExceptionConverter.create(em);
         if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         return new DefaultJpaConnectionProvider(em);
     }
@@ -243,7 +243,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
 
-            logger.infof("Database info: %s", operationalInfo.toString());
+            logger.debugf("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
         }

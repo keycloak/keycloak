@@ -32,9 +32,11 @@ import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -98,22 +100,22 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
     }
 
     @Override
-    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        return this.entity.getProtocolMappers().stream()
-                .map(entity -> {
-                    ProtocolMapperModel mapping = new ProtocolMapperModel();
-                    mapping.setId(entity.getId());
-                    mapping.setName(entity.getName());
-                    mapping.setProtocol(entity.getProtocol());
-                    mapping.setProtocolMapper(entity.getProtocolMapper());
-                    Map<String, String> config = new HashMap<>();
-                    if (entity.getConfig() != null) {
-                        config.putAll(entity.getConfig());
-                    }
-                    mapping.setConfig(config);
-                    return mapping;
-                })
-                .distinct();
+    public Set<ProtocolMapperModel> getProtocolMappers() {
+        Set<ProtocolMapperModel> mappings = new HashSet<ProtocolMapperModel>();
+        for (ProtocolMapperEntity entity : this.entity.getProtocolMappers()) {
+            ProtocolMapperModel mapping = new ProtocolMapperModel();
+            mapping.setId(entity.getId());
+            mapping.setName(entity.getName());
+            mapping.setProtocol(entity.getProtocol());
+            mapping.setProtocolMapper(entity.getProtocolMapper());
+            Map<String, String> config = new HashMap<String, String>();
+            if (entity.getConfig() != null) {
+                config.putAll(entity.getConfig());
+            }
+            mapping.setConfig(config);
+            mappings.add(mapping);
+        }
+        return mappings;
     }
 
     @Override
@@ -214,19 +216,21 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
 
     @Override
     public Stream<RoleModel> getScopeMappingsStream() {
-        return entity.getScopeMappingIds().stream()
+        return getEntity().getScopeMapping().stream()
+                .map(RoleEntity::getId)
                 .map(realm::getRoleById)
                 .filter(Objects::nonNull);
     }
 
     @Override
     public void addScopeMapping(RoleModel role) {
-        entity.getScopeMappingIds().add(role.getId());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        getEntity().getScopeMapping().add(roleEntity);
     }
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        entity.getScopeMappingIds().remove(role.getId());
+        getEntity().getScopeMapping().remove(RoleAdapter.toRoleEntity(role, em));
     }
 
     @Override

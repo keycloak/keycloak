@@ -23,4 +23,3 @@ org.keycloak.authentication.requiredactions.TermsAndConditions
 org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory
 org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory
 org.keycloak.authentication.requiredactions.UpdateUserLocaleAction
-org.keycloak.authentication.requiredactions.DeleteAccount

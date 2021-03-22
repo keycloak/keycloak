@@ -17,7 +17,6 @@
 
 package org.keycloak.userprofile.profile.representations;
 
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 import javax.ws.rs.NotSupportedException;
@@ -29,12 +28,8 @@ import java.util.Map;
  */
 public class AttributeUserProfile extends AbstractUserProfile  {
 
-    public AttributeUserProfile(Map<String, List<String>> attributes, UserProfileProvider profileProvider) {
-        super(attributes, profileProvider);
-    }
-
     public AttributeUserProfile(Map<String, List<String>> attributes) {
-        super(attributes, null);
+        super(attributes);
     }
 
     @Override

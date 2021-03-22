@@ -25,9 +25,9 @@ import java.util.Map;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public enum AccountRestApiVersion {
-    V1_ALPHA1("v1alpha1");
+    V1("v1");
 
-    public static final AccountRestApiVersion DEFAULT = V1_ALPHA1;
+    public static final AccountRestApiVersion DEFAULT = V1;
     private static final Map<String,AccountRestApiVersion> ENUM_MAP;
 
     static {

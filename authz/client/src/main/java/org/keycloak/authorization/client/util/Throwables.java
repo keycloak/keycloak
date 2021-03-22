@@ -76,7 +76,7 @@ public final class Throwables {
                         .response().json(TokenIntrospectionResponse.class).execute();
 
                 if (!response.getActive()) {
-                    token.clearTokens();
+                    token.clearToken();
                     try {
                         return callable.call();
                     } catch (Exception e) {

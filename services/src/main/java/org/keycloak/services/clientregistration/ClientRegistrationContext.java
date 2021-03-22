@@ -19,6 +19,7 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.validation.ValidationMessages;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -30,5 +31,7 @@ public interface ClientRegistrationContext {
     KeycloakSession getSession();
 
     ClientRegistrationProvider getProvider();
+
+    boolean validateClient(ValidationMessages validationMessages);
 
 }

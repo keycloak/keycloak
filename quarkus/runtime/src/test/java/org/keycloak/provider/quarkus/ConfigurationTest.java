@@ -18,8 +18,8 @@
 package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +34,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.configuration.MicroProfileConfigProvider;
 
@@ -184,7 +185,7 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:~/data/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:~/data/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.url").getValue());
 
         System.setProperty("kc.config.args", "--db=h2-mem");
         config = createConfig();
@@ -199,7 +200,7 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:test-dir/data/keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
         System.setProperty("kc.config.args", "--db=mariadb");
@@ -233,6 +234,8 @@ public class ConfigurationTest {
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
         Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
+        System.setProperty("kc.profile", "dev");
+        Assert.assertEquals("cluster-local.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty("kc.profile");

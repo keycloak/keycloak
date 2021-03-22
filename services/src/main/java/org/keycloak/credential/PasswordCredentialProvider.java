@@ -32,16 +32,15 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PasswordCredentialProvider implements CredentialProvider<PasswordCredentialModel>, CredentialInputUpdater.Streams,
-        CredentialInputValidator, OnUserCache {
+public class PasswordCredentialProvider implements CredentialProvider<PasswordCredentialModel>, CredentialInputUpdater, CredentialInputValidator, OnUserCache {
 
     public static final String PASSWORD_CACHE_KEY = PasswordCredentialProvider.class.getName() + "." + PasswordCredentialModel.TYPE;
     private static final Logger logger = Logger.getLogger(PasswordCredentialProvider.class);
@@ -65,7 +64,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         }
         // if the model was marked for eviction while passwords were initialized, override it from credentialStore
         if (!(user instanceof CachedUserModel) || ((CachedUserModel) user).isMarkedForEviction()) {
-            passwords = getCredentialStore().getStoredCredentialsByTypeStream(realm, user, getType()).collect(Collectors.toList());
+            passwords = getCredentialStore().getStoredCredentialsByType(realm, user, getType());
         }
         if (passwords == null || passwords.isEmpty()) return null;
 
@@ -116,12 +115,14 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         }
         
         // 3) remove old password history items
+        List<CredentialModel> passwordHistoryList = getCredentialStore().getStoredCredentialsByType(realm, user, PasswordCredentialModel.PASSWORD_HISTORY);
         final int passwordHistoryListMaxSize = Math.max(0, expiredPasswordsPolicyValue - 1);
-        getCredentialStore().getStoredCredentialsByTypeStream(realm, user, PasswordCredentialModel.PASSWORD_HISTORY)
-                .sorted(CredentialModel.comparingByStartDateDesc())
-                .skip(passwordHistoryListMaxSize)
-                .collect(Collectors.toList())
-                .forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
+        if (passwordHistoryList.size() > passwordHistoryListMaxSize) {
+            passwordHistoryList.stream()
+                    .sorted(CredentialModel.comparingByStartDateDesc())
+                    .skip(passwordHistoryListMaxSize)
+                    .forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
+        }
 
         UserCache userCache = session.userCache();
         if (userCache != null) {
@@ -219,8 +220,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     @Override
-    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
-        return Stream.empty();
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.emptySet();
     }
 
     @Override
@@ -281,9 +282,11 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
     @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
-        List<CredentialModel> passwords = getCredentialStore().getStoredCredentialsByTypeStream(realm, user, getType())
-                .collect(Collectors.toList());
-        user.getCachedWith().put(PASSWORD_CACHE_KEY, passwords);
+        List<CredentialModel> passwords = getCredentialStore().getStoredCredentialsByType(realm, user, getType());
+        if (passwords != null) {
+            user.getCachedWith().put(PASSWORD_CACHE_KEY, passwords);
+        }
+
     }
 
     @Override

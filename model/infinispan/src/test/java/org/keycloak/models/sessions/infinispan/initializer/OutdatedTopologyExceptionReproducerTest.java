@@ -96,15 +96,26 @@ public class OutdatedTopologyExceptionReproducerTest {
     private EmbeddedCacheManager createManager() {
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("jgroups.tcp.port", "53715");
-
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-        gcb = gcb.clusteredDefault();
-        gcb.transport().clusterName("test-clustering");
-        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
+
+        boolean clustered = true;
+        boolean async = false;
+        boolean allowDuplicateJMXDomains = true;
+
+        if (clustered) {
+            gcb = gcb.clusteredDefault();
+            gcb.transport().clusterName("test-clustering");
+        }
+
+        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
+
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
+
         ConfigurationBuilder invalidationConfigBuilder = new ConfigurationBuilder();
-        invalidationConfigBuilder.clustering().cacheMode(CacheMode.INVALIDATION_SYNC);
+        if (clustered) {
+            invalidationConfigBuilder.clustering().cacheMode(async ? CacheMode.INVALIDATION_ASYNC : CacheMode.INVALIDATION_SYNC);
+        }
 
         // Uncomment this to have test fixed!!!
 //        invalidationConfigBuilder.customInterceptors()
@@ -113,9 +124,10 @@ public class OutdatedTopologyExceptionReproducerTest {
 //                .interceptorClass(StateTransferInterceptor.class);
 
         Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
 
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
         return cacheManager;
+
     }
 
     private class CacheOperations extends Thread {

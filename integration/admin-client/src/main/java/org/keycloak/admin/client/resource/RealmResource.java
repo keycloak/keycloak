@@ -279,7 +279,4 @@ public interface RealmResource {
     @Path("keys")
     KeyResource keys();
 
-    @Path("localization")
-    RealmLocalizationResource localization();
-
 }

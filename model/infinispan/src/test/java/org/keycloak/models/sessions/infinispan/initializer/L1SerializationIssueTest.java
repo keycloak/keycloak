@@ -30,7 +30,6 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
 /**
  * Reproducer for RHSSO-377 / ISPN-6806
@@ -133,12 +132,15 @@ public class L1SerializationIssueTest {
     private EmbeddedCacheManager createManager() {
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("jgroups.tcp.port", "53715");
-
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
+
         gcb = gcb.clusteredDefault();
         gcb.transport().clusterName("test-clustering");
-        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
+
+        gcb.globalJmxStatistics().allowDuplicateDomains(true);
+
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
+
 
         ConfigurationBuilder distConfigBuilder = new ConfigurationBuilder();
         ClusteringConfigurationBuilder clusterConfBuilder = distConfigBuilder.clustering();
@@ -147,9 +149,10 @@ public class L1SerializationIssueTest {
         clusterConfBuilder.l1().enabled(L1_ENABLED)
                 .lifespan(L1_LIFESPAN_MS)
                 .cleanupTaskFrequency(L1_CLEANER_MS);
-        Configuration distCacheConfiguration = distConfigBuilder.build();
-        cacheManager.defineConfiguration(CACHE_NAME, distCacheConfiguration);
 
+        Configuration distCacheConfiguration = distConfigBuilder.build();
+
+        cacheManager.defineConfiguration(CACHE_NAME, distCacheConfiguration);
         return cacheManager;
     }
 

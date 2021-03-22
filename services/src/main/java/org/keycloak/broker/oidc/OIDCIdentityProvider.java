@@ -17,7 +17,6 @@
 package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -67,9 +66,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.UUID;
 
 /**
  * @author Pedro Igor
@@ -168,7 +167,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     protected Response exchangeStoredToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        FederatedIdentityModel model = session.users().getFederatedIdentity(authorizedClient.getRealm(), tokenSubject, getConfig().getAlias());
+        FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
         if (model == null || model.getToken() == null) {
             event.detail(Details.REASON, "requested_issuer is not linked");
             event.error(Errors.INVALID_TOKEN);
@@ -318,11 +317,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             super(callback, realm, event);
         }
 
-        @Override
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
-            SimpleHttp simpleHttp = super.generateTokenRequest(authorizationCode);
-            return simpleHttp;
-        }
 
         @GET
         @Path("logout_response")
@@ -655,26 +649,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         String name = getJsonProperty(userInfo, "name");
         String preferredUsername = getUsernameFromUserInfo(userInfo);
-        String givenName = getJsonProperty(userInfo, "given_name");
-        String familyName = getJsonProperty(userInfo, "family_name");
         String email = getJsonProperty(userInfo, "email");
-
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
 
         identity.setId(id);
-        
-        if (givenName != null) {
-            identity.setFirstName(givenName);
-        }
-        
-        if (familyName != null) {
-            identity.setLastName(familyName);
-        }
-        
-        if (givenName == null && familyName == null) {
-            identity.setName(name);
-        }
-        
+        identity.setName(name);
         identity.setEmail(email);
 
         identity.setBrokerUserId(getConfig().getAlias() + "." + id);
@@ -781,7 +760,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
         uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-
+        
         return uriBuilder;
     }
 

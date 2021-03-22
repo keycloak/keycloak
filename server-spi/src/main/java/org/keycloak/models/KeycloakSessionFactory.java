@@ -24,8 +24,6 @@ import org.keycloak.provider.Spi;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -42,23 +40,7 @@ public interface KeycloakSessionFactory extends ProviderEventManager {
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id);
 
-    /**
-     * Returns list of provider factories for the given provider.
-     * @param clazz {@code Class<? extends Provider>}
-     * @return {@code List<ProviderFactory>} List of provider factories
-     * @deprecated Use {@link #getProviderFactoriesStream(Class) getProviderFactoriesStream} instead.
-     */
-    @Deprecated
-    default List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz) {
-        return getProviderFactoriesStream(clazz).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns stream of provider factories for the given provider.
-     * @param clazz {@code Class<? extends Provider>}
-     * @return {@code Stream<ProviderFactory>} Stream of provider factories. Never returns {@code null}.
-     */
-    Stream<ProviderFactory> getProviderFactoriesStream(Class<? extends Provider> clazz);
+    List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz);
     
     long getServerStartupTimestamp();
 

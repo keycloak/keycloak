@@ -191,10 +191,6 @@
                 } else {
                     kc.enableLogging = false;
                 }
-
-                if (typeof initOptions.scope === 'string') {
-                    kc.scope = initOptions.scope;
-                }
             }
 
             if (!kc.responseMode) {
@@ -437,13 +433,15 @@
                 baseUrl = kc.endpoints.authorize();
             }
 
-            var scope = options && options.scope || kc.scope;
-            if (!scope) {
-                // if scope is not set, default to "openid"
+            var scope;
+            if (options && options.scope) {
+                if (options.scope.indexOf("openid") != -1) {
+                    scope = options.scope;
+                } else {
+                    scope = "openid " + options.scope;
+                }
+            } else {
                 scope = "openid";
-            } else if (scope.indexOf("openid") === -1) {
-                // if openid scope is missing, prefix the given scopes with it
-                scope = "openid " + scope;
             }
 
             var url = baseUrl
@@ -1317,7 +1315,7 @@
                     }
 
                     if (event.data !== "supported" && event.data !== "unsupported") {
-                        return;
+                        promise.setError();
                     } else if (event.data === "unsupported") {
                         loginIframe.enable = false;
                         if (kc.silentCheckSsoFallback) {

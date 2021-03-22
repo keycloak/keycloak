@@ -48,6 +48,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import javax.ws.rs.BadRequestException;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -337,7 +338,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group12"));
 
             // Load user from LDAP to Keycloak DB
-            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+            UserModel john = session.users().getUserByUsername("johnkeycloak", realm);
             Set<GroupModel> johnGroups = john.getGroupsStream().collect(Collectors.toSet());
 
             // Assert just those groups, which john was memberOf exists because they were lazily created

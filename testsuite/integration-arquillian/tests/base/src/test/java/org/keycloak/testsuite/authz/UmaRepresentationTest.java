@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.authz;
 
+import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -15,6 +16,8 @@ import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
@@ -138,7 +141,7 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
 
         AuthorizationBean authorizationBean  = new AuthorizationBean(session, null, session.getContext().getUri());
         ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
-        UserModel user = session.userStorageManager().getUserByUsername(session.getContext().getRealm(), "marta");
+        UserModel user = session.userStorageManager().getUserByUsername("marta", session.getContext().getRealm());
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(
                 "Resource A", user.getId(), client.getId()

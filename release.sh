@@ -9,28 +9,21 @@ echo "--------------------------------------------------------------------------
 echo "Building:"
 echo ""
 
-mvn -Pjboss-release,distribution-downloads,nexus-staging -DskipTests -DskipTestsuite -DretryFailedDeploymentCount=10 -DautoReleaseAfterClose=true clean deploy
+mvn -Pjboss-release,distribution-downloads -DskipTests -DskipTestsuite clean install
 
 
 echo "------------------------------------------------------------------------------------------------------------"
-echo "Create tag:"
+echo "Deploying:"
 echo ""
 
-git tag $VERSION
-git push origin $VERSION
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"
-echo "Upload to GitHub releases:"
+echo "Upload to jboss.org:"
 echo ""
 
-hub release create -m "$VERSION" $VERSION
-cd distribution/downloads/target/$VERSION
-
-for i in *; do
-  echo "Uploading $i"
-  hub release edit -a $i -m "" $VERSION
-done
+rsync -rv --protocol=28 distribution/downloads/target/$VERSION keycloak@filemgmt.jboss.org:/downloads_htdocs/keycloak
 
 
 echo "------------------------------------------------------------------------------------------------------------"

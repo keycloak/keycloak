@@ -30,7 +30,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 public abstract class AbstractRequestFilter {
 
     protected void filter(ClientConnection clientConnection, Consumer<KeycloakSession> next) {
-        KeycloakSessionFactory sessionFactory = getSessionFactory();
+        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakSession session = sessionFactory.create();
 
         KeycloakTransactionManager tx = session.getTransactionManager();
@@ -49,10 +49,6 @@ public abstract class AbstractRequestFilter {
                 close(session);
             }
         }
-    }
-
-    protected KeycloakSessionFactory getSessionFactory() {
-        return KeycloakApplication.getSessionFactory();
     }
 
     protected void close(KeycloakSession session) {

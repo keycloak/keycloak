@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
-import com.google.common.collect.Streams;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
@@ -39,7 +38,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -60,10 +62,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -191,8 +190,7 @@ public class IdentityProviderResource {
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
             logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-            updateUsersAfterProviderAliasChange(session.users().getUsersStream(realm, false),
-                    oldProviderId, newProviderId, realm, session);
+            updateUsersAfterProviderAliasChange(session.users().getUsers(realm, false), oldProviderId, newProviderId, realm, session);
         }
     }
 
@@ -214,9 +212,9 @@ public class IdentityProviderResource {
         providerRep.setInternalId(identityProviderModel.getInternalId());
     }
 
-    private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
-        users.forEach(user -> {
-            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(realm, user, oldProviderId);
+    private static void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
+        for (UserModel user : users) {
+            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(user, oldProviderId, realm);
             if (federatedIdentity != null) {
                 // Remove old link first
                 session.users().removeFederatedIdentity(realm, user, oldProviderId);
@@ -226,17 +224,21 @@ public class IdentityProviderResource {
                         federatedIdentity.getToken());
                 session.users().addFederatedIdentity(realm, user, newFederatedIdentity);
             }
-        });
+        }
     }
 
 
     private IdentityProviderFactory getIdentityProviderFactory() {
-        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
-                session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
-                .filter(providerFactory -> Objects.equals(providerFactory.getId(), identityProviderModel.getProviderId()))
-                .map(IdentityProviderFactory.class::cast)
-                .findFirst()
-                .orElse(null);
+        List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
+
+        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class));
+        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class));
+
+        for (ProviderFactory providerFactory : allProviders) {
+            if (providerFactory.getId().equals(identityProviderModel.getProviderId())) return (IdentityProviderFactory)providerFactory;
+        }
+
+        return null;
     }
 
     /**
@@ -277,26 +279,28 @@ public class IdentityProviderResource {
         }
 
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        return sessionFactory.getProviderFactoriesStream(IdentityProviderMapper.class)
-                .map(IdentityProviderMapper.class::cast)
-                .map(mapper -> Arrays.stream(mapper.getCompatibleProviders())
-                        .filter(type -> Objects.equals(IdentityProviderMapper.ANY_PROVIDER, type) ||
-                                Objects.equals(identityProviderModel.getProviderId(), type))
-                        .map(type -> {
-                            IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
-                            rep.setId(mapper.getId());
-                            rep.setCategory(mapper.getDisplayCategory());
-                            rep.setName(mapper.getDisplayType());
-                            rep.setHelpText(mapper.getHelpText());
-                            rep.setProperties(mapper.getConfigProperties().stream()
-                                    .map(ModelToRepresentation::toRepresentation)
-                                    .collect(Collectors.toList()));
-                            return rep;
-                        })
-                        .findFirst()
-                        .orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(IdentityProviderMapperTypeRepresentation::getId, Function.identity()));
+        Map<String, IdentityProviderMapperTypeRepresentation> types = new HashMap<>();
+        List<ProviderFactory> factories = sessionFactory.getProviderFactories(IdentityProviderMapper.class);
+        for (ProviderFactory factory : factories) {
+            IdentityProviderMapper mapper = (IdentityProviderMapper)factory;
+            for (String type : mapper.getCompatibleProviders()) {
+                if (IdentityProviderMapper.ANY_PROVIDER.equals(type) || type.equals(identityProviderModel.getProviderId())) {
+                    IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
+                    rep.setId(mapper.getId());
+                    rep.setCategory(mapper.getDisplayCategory());
+                    rep.setName(mapper.getDisplayType());
+                    rep.setHelpText(mapper.getHelpText());
+                    List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
+                    for (ProviderConfigProperty prop : configProperties) {
+                        ConfigPropertyRepresentation propRep = ModelToRepresentation.toRepresentation(prop);
+                        rep.getProperties().add(propRep);
+                    }
+                    types.put(rep.getId(), rep);
+                    break;
+                }
+            }
+        }
+        return types;
     }
 
     /**
@@ -465,4 +469,9 @@ public class IdentityProviderResource {
             return new ManagementPermissionReference();
         }
     }
+
+
+
+
+
 }

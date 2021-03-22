@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.adapter.example.authorization;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -31,7 +32,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
@@ -81,7 +81,7 @@ public class ServletAuthzCIPAdapterTest extends AbstractServletAuthzAdapterTest 
         performTests(() -> {
             OAuthClient.AccessTokenResponse response = oauth.realm("servlet-authz").clientId("servlet-authz-app")
                     .doGrantAccessTokenRequest("secret", "alice", "alice");
-            Client client = AdminClientUtil.createResteasyClient();
+            Client client = ClientBuilder.newClient();
             Map<String, String> body = new HashMap();
             
             body.put("test", "test-value");

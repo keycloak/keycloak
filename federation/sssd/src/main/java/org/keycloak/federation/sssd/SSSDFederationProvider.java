@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.api.Sssd.User;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
@@ -31,10 +32,11 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
+import sun.security.util.Password;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * SPI provider implementation to retrieve data from SSSD and authenticate
@@ -44,8 +46,8 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class SSSDFederationProvider implements UserStorageProvider,
-        UserLookupProvider.Streams,
-        CredentialInputUpdater.Streams,
+        UserLookupProvider,
+        CredentialInputUpdater,
         CredentialInputValidator,
         ImportedUserValidation {
 
@@ -68,7 +70,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
 
 
     @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
+    public UserModel getUserByUsername(String username, RealmModel realm) {
         return findOrCreateAuthenticatedUser(realm, username);
     }
 
@@ -85,7 +87,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
          * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
          */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
+        UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("SSSD authenticated user " + username + " found in Keycloak storage");
 
@@ -130,12 +132,12 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public UserModel getUserById(RealmModel realm, String id) {
+    public UserModel getUserById(String id, RealmModel realm) {
         return null;
     }
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         return null;
     }
 
@@ -203,7 +205,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
-        return Stream.empty();
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
     }
 }

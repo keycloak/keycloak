@@ -40,7 +40,7 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "kc-feedback-text")
+    @FindBy(xpath = "//span[@class='kc-feedback-text']")
     private WebElement feedbackMessage;
 
     @FindBy(id = "logout-sessions")

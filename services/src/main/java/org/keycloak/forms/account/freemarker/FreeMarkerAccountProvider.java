@@ -129,8 +129,6 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale, attributes);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
-        messagesBundle.putAll(localizationTexts);
 
         URI baseUri = uriInfo.getBaseUri();
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();

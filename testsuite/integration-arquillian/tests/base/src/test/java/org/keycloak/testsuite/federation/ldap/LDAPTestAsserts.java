@@ -32,7 +32,7 @@ import org.keycloak.storage.user.SynchronizationResult;
 public class LDAPTestAsserts {
 
     public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
-        UserModel user = userProvider.getUserByUsername(realm, username);
+        UserModel user = userProvider.getUserByUsername(username, realm);
         assertLoaded(user, username, expectedFirstName, expectedLastName, expectedEmail, expectedPostalCode);
         return user;
     }

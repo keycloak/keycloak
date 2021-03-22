@@ -36,7 +36,6 @@ import java.util.Map;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -119,8 +118,6 @@ public class ResourceService extends AbstractResourceService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response revoke(List<Permission> permissions) {
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-
         if (permissions == null || permissions.isEmpty()) {
             throw new BadRequestException("invalid_permissions");    
         }
@@ -220,10 +217,10 @@ public class ResourceService extends AbstractResourceService {
 
     private UserModel getUser(String requester) {
         UserProvider users = provider.getKeycloakSession().users();
-        UserModel user = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel user = users.getUserByUsername(requester, provider.getRealm());
 
         if (user == null) {
-            user = users.getUserByEmail(provider.getRealm(), requester);
+            user = users.getUserByEmail(requester, provider.getRealm());
         }
 
         if (user == null) {

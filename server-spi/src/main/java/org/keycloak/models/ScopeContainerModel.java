@@ -27,25 +27,18 @@ import java.util.stream.Stream;
  */
 public interface ScopeContainerModel {
 
-    /**
-     * @deprecated Use {@link #getScopeMappingsStream() getScopeMappingsStream} instead.
-     */
     @Deprecated
     default Set<RoleModel> getScopeMappings() {
         return getScopeMappingsStream().collect(Collectors.toSet());
     }
 
-    /**
-     * Returns scope mappings for this scope container as a stream.
-     * @return Stream of {@link RoleModel}. Never returns {@code null}.
-     */
     Stream<RoleModel> getScopeMappingsStream();
 
     /**
      * From the scope mappings returned by {@link #getScopeMappings()} returns only those
      * that belong to the realm that owns this scope container.
      * @return set of {@link RealmModel}
-     * @deprecated Use {@link #getRealmScopeMappingsStream() getRealmScopeMappingsStream} instead.
+     * @deprecated Use {@link #getRealmScopeMappingsStream()} getRealmScopeMappingsStream} instead.
      */
     @Deprecated
     default Set<RoleModel> getRealmScopeMappings() {
@@ -53,9 +46,9 @@ public interface ScopeContainerModel {
     }
 
     /**
-     * From the scope mappings returned by {@link #getScopeMappingsStream()} returns only those
+     * From the scope mappings returned by {@link #getScopeMappingsStream()} ()} returns only those
      * that belong to the realm that owns this scope container.
-     * @return stream of {@link RoleModel}. Never returns {@code null}.
+     * @return stream of {@link RoleModel}
      */
     Stream<RoleModel> getRealmScopeMappingsStream();
 

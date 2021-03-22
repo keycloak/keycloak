@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.auth.page;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -29,9 +28,6 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class PasswordFields extends FieldsBase {
-
-    @Page
-    private PasswordErrors inputErrors;
 
     @FindBy(id = "password")
     private WebElement passwordInput;
@@ -88,7 +84,7 @@ public class PasswordFields extends FieldsBase {
     }
 
     public boolean hasPasswordError() {
-        return inputErrors.getPasswordError() != null;
+        return hasFieldError(passwordInput);
     }
 
     public boolean hasNewPasswordError() {
@@ -96,35 +92,6 @@ public class PasswordFields extends FieldsBase {
     }
 
     public boolean hasConfirmPasswordError() {
-        return inputErrors.getPasswordConfirmError() != null;
-    }
-
-    public PasswordErrors getInputErrors() {
-        return inputErrors;
-    }
-
-    public static class PasswordErrors {
-        @FindBy(id = "input-error-password")
-        private WebElement passwordError;
-
-        @FindBy(id = "input-error-password-confirm")
-        private WebElement passwordConfirmError;
-
-
-        public String getPasswordError() {
-            try {
-                return getTextFromElement(passwordError);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        }
-
-        public String getPasswordConfirmError() {
-            try {
-                return getTextFromElement(passwordConfirmError);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        }
+        return hasFieldError(confirmPasswordInput);
     }
 }

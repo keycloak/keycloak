@@ -43,11 +43,10 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
+import org.keycloak.services.clientpolicy.LogoutRequestContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
@@ -55,24 +54,16 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
-import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -96,18 +87,10 @@ public class LogoutEndpoint {
     private RealmModel realm;
     private EventBuilder event;
 
-    private Cors cors;
-
     public LogoutEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
         this.realm = realm;
         this.event = event;
-    }
-
-    @Path("/")
-    @OPTIONS
-    public Response issueUserInfoPreflight() {
-        return Cors.add(this.request, Response.ok()).auth().preflight().build();
     }
 
     /**
@@ -169,14 +152,10 @@ public class LogoutEndpoint {
             if (idToken != null && idToken.getSessionState().equals(AuthenticationManager.getSessionIdFromSessionCookie(session))) {
                 return initiateBrowserLogout(userSession, redirect, state, initiatingIdp);
             }
-            // check if the user session is not logging out or already logged out
-            // this might happen when a backChannelLogout is already initiated from AuthenticationManager.authenticateIdentityCookie
-            if (userSession.getState() != LOGGING_OUT && userSession.getState() != LOGGED_OUT) {
-                // non browser logout
-                event.event(EventType.LOGOUT);
-                AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
-                event.user(userSession.getUser()).session(userSession).success();
-            }
+            // non browser logout
+            event.event(EventType.LOGOUT);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
+            event.user(userSession.getUser()).session(userSession).success();
         }
 
         if (redirect != null) {
@@ -207,8 +186,6 @@ public class LogoutEndpoint {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response logoutToken() {
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
-
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         checkSsl();
 
@@ -218,13 +195,13 @@ public class LogoutEndpoint {
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         if (refreshToken == null) {
             event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
         }
 
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
         } catch (ClientPolicyException cpe) {
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            throw new ErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         RefreshToken token = null;
@@ -250,14 +227,14 @@ public class LogoutEndpoint {
             // KEYCLOAK-6771 Certificate Bound Token
             if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
                 event.error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
+                throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
             } else {
                 event.error(Errors.INVALID_TOKEN);
-                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+                throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
             }
         }
 
-        return cors.builder(Response.noContent()).build();
+        return Cors.add(request, Response.noContent()).auth().allowedOrigins(session, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     /**
@@ -368,29 +345,34 @@ public class LogoutEndpoint {
         BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
         backchannelLogoutResponse.setLocalLogoutSucceeded(true);
         identityProviderAliases.forEach(identityProviderAlias -> {
+            List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm,
+                    identityProviderAlias + "." + federatedUserId);
 
             if (logoutOfflineSessions) {
                 logoutOfflineUserSessions(identityProviderAlias + "." + federatedUserId);
             }
 
-            session.sessions().getUserSessionByBrokerUserIdStream(realm, identityProviderAlias + "." + federatedUserId)
-                    .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                    .forEach(userSession -> {
-                        BackchannelLogoutResponse userBackchannelLogoutResponse = this.logoutUserSession(userSession);
-                        backchannelLogoutResponse.setLocalLogoutSucceeded(backchannelLogoutResponse.getLocalLogoutSucceeded()
-                                && userBackchannelLogoutResponse.getLocalLogoutSucceeded());
-                        userBackchannelLogoutResponse.getClientResponses()
-                                .forEach(backchannelLogoutResponse::addClientResponses);
-                    });
+            for (UserSessionModel userSession : userSessions) {
+                BackchannelLogoutResponse userBackchannelLogoutResponse;
+                userBackchannelLogoutResponse = logoutUserSession(userSession);
+                backchannelLogoutResponse.setLocalLogoutSucceeded(backchannelLogoutResponse.getLocalLogoutSucceeded()
+                        && userBackchannelLogoutResponse.getLocalLogoutSucceeded());
+                userBackchannelLogoutResponse.getClientResponses()
+                        .forEach(backchannelLogoutResponse::addClientResponses);
+            }
         });
 
         return backchannelLogoutResponse;
     }
 
     private void logoutOfflineUserSessions(String brokerUserId) {
+        List<UserSessionModel> offlineUserSessions =
+                session.sessions().getOfflineUserSessionByBrokerUserId(realm, brokerUserId);
+
         UserSessionManager userSessionManager = new UserSessionManager(session);
-        session.sessions().getOfflineUserSessionByBrokerUserIdStream(realm, brokerUserId).collect(Collectors.toList())
-                .forEach(userSessionManager::revokeOfflineUserSession);
+        for (UserSessionModel offlineUserSession : offlineUserSessions) {
+            userSessionManager.revokeOfflineUserSession(offlineUserSession);
+        }
     }
 
     private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession) {
@@ -428,11 +410,10 @@ public class LogoutEndpoint {
     }
 
     private ClientModel authorizeClient() {
-        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, cors).getClient();
-        cors.allowedOrigins(session, client);
+        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
 
         if (client.isBearerOnly()) {
-            throw new CorsErrorResponseException(cors, Errors.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(Errors.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
 
         return client;
@@ -440,7 +421,7 @@ public class LogoutEndpoint {
 
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
-            throw new CorsErrorResponseException(cors.allowAllOrigins(), "invalid_request", "HTTPS required", Response.Status.FORBIDDEN);
+            throw new ErrorResponseException("invalid_request", "HTTPS required", Response.Status.FORBIDDEN);
         }
     }
 

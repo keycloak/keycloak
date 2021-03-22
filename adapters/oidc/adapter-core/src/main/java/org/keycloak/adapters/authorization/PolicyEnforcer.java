@@ -191,12 +191,8 @@ public class PolicyEnforcer {
 
             if (resource != null) {
                 pathConfig.setId(resource.getId());
-                // if the resource is staticly bound to a resource it means the config can not be invalidated
-                if (resourceName != null) {
-                    pathConfig.setStatic(true);
-                }
             }
-            
+
             PathConfig existingPath = null;
 
             for (PathConfig current : paths.values()) {
@@ -252,7 +248,7 @@ public class PolicyEnforcer {
                 cacheConfig = new PathCacheConfig();
             }
 
-            pathCache = new PathCache(cacheConfig.getMaxEntries(), cacheConfig.getLifespan(), paths);
+            pathCache = new PathCache(cacheConfig.getMaxEntries(), cacheConfig.getLifespan());
             this.authzClient = authzClient;
         }
 
@@ -267,35 +263,20 @@ public class PolicyEnforcer {
             pathConfig = super.matches(targetUri);
 
             if (enforcerConfig.getLazyLoadPaths() || enforcerConfig.getPathCacheConfig() != null) {
-                if ((pathConfig == null || pathConfig.isInvalidated() || pathConfig.getPath().contains("*"))) {
+                if ((pathConfig == null || (pathConfig.getPath().contains("*")))) {
                     try {
                         List<ResourceRepresentation> matchingResources = authzClient.protection().resource().findByMatchingUri(targetUri);
 
-                        if (matchingResources.isEmpty()) {
-                            // if this config is invalidated (e.g.: due to cache expiration) we remove and return null
-                            if (pathConfig != null && pathConfig.isInvalidated()) {
-                                paths.remove(targetUri);
-                                return null;
-                            }
-                        } else {
+                        if (!matchingResources.isEmpty()) {
                             Map<String, Map<String, Object>> cipConfig = null;
                             PolicyEnforcerConfig.EnforcementMode enforcementMode = PolicyEnforcerConfig.EnforcementMode.ENFORCING;
-                            ResourceRepresentation targetResource = matchingResources.get(0);
 
                             if (pathConfig != null) {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
                                 enforcementMode = pathConfig.getEnforcementMode();
-                            } else {
-                                for (PathConfig existingPath : paths.values()) {
-                                    if (existingPath.getId().equals(targetResource.getId()) 
-                                            && existingPath.isStatic()
-                                            && !PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(existingPath.getEnforcementMode())) {
-                                        return null;
-                                    }
-                                }
                             }
 
-                            pathConfig = PathConfig.createPathConfigs(targetResource).iterator().next();
+                            pathConfig = PathConfig.createPathConfigs(matchingResources.get(0)).iterator().next();
 
                             if (cipConfig != null) {
                                 pathConfig.setClaimInformationPointConfig(cipConfig);

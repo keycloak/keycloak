@@ -287,13 +287,13 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     protected void removeAllUsers() {
         RealmResource realm = testRealmResource();
-        List<UserRepresentation> users = realm.users().search("", 0, -1);
+        List<UserRepresentation> users = realm.users().search("", 0, Integer.MAX_VALUE);
         for (UserRepresentation user : users) {
             if (!user.getUsername().equals(AssertEvents.DEFAULT_USERNAME)) {
                 realm.users().get(user.getId()).remove();
             }
         }
-        Assert.assertEquals(1, realm.users().search("", 0, -1).size());
+        Assert.assertEquals(1, realm.users().search("", 0, Integer.MAX_VALUE).size());
     }
 
 
@@ -362,11 +362,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement) {
-        return updateKerberosAuthExecutionRequirement(requirement, testRealmResource());
-    }
-
-    public static AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement, RealmResource realmResource) {
-        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = realmResource
+        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = testRealmResource()
                 .flows()
                 .getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW)
                 .stream()
@@ -380,7 +376,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         AuthenticationExecutionModel.Requirement oldRequirement = AuthenticationExecutionModel.Requirement.valueOf(oldRequirementStr);
         kerberosAuthExecution.setRequirement(requirement.name());
 
-        realmResource
+        testRealmResource()
                 .flows()
                 .updateExecutions(DefaultAuthenticationFlows.BROWSER_FLOW, kerberosAuthExecution);
 

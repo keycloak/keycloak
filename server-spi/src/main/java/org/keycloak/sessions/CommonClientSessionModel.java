@@ -44,8 +44,7 @@ public interface CommonClientSessionModel {
         AUTHENTICATE,
         LOGGED_OUT,
         LOGGING_OUT,
-        REQUIRED_ACTIONS,
-        USER_CODE_VERIFICATION
+        REQUIRED_ACTIONS
     }
 
     enum ExecutionStatus {

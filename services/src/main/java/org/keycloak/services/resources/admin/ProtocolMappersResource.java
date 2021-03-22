@@ -49,10 +49,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.text.MessageFormat;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 /**
  * Base resource for managing users
@@ -100,12 +99,14 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("protocol/{protocol}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
+    public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         viewPermission.require();
 
-        return client.getProtocolMappersStream()
-                .filter(mapper -> isEnabled(session, mapper) && Objects.equals(mapper.getProtocol(), protocol))
-                .map(ModelToRepresentation::toRepresentation);
+        List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
+        for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
+            if (isEnabled(session, mapper) && mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
+        }
+        return mappers;
     }
 
     /**
@@ -162,12 +163,16 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("models")
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<ProtocolMapperRepresentation> getMappers() {
+    public List<ProtocolMapperRepresentation> getMappers() {
         viewPermission.require();
 
-        return client.getProtocolMappersStream()
-                .filter(mapper -> isEnabled(session, mapper))
-                .map(ModelToRepresentation::toRepresentation);
+        List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
+        for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
+            if (isEnabled(session, mapper)) {
+                mappers.add(ModelToRepresentation.toRepresentation(mapper));
+            }
+        }
+        return mappers;
     }
 
     /**

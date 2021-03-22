@@ -10,7 +10,6 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 
 public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
@@ -32,7 +31,11 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
             throw new AuthenticationFlowException("authenticator: " + ConditionalUserAttributeValueFactory.PROVIDER_ID, AuthenticationFlowError.UNKNOWN_USER);
         }
 
-        result =  user.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue));
+        List<String> lstValues = user.getAttribute(attributeName);
+        if (lstValues != null) {
+            result = lstValues.contains(attributeValue);
+        }
+
         if (negateOutput) {
             result = !result;
         }

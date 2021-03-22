@@ -31,7 +31,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.Constants;
-import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -52,7 +51,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
+import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -180,10 +179,7 @@ public class RealmTest extends AbstractAdminTest {
         try {
             RealmRepresentation rep2 = adminClient.realm("attributes").toRepresentation();
 
-            Map<String, String> attributes = rep2.getAttributes();
-            assertTrue("Attributes expected to be present oauth2DeviceCodeLifespan, oauth2DevicePollingInterval, found: " + String.join(", ", attributes.keySet()),
-                attributes.size() == 2 && attributes.containsKey(OAuth2DeviceConfig.OAUTH2_DEVICE_CODE_LIFESPAN)
-                    && attributes.containsKey(OAuth2DeviceConfig.OAUTH2_DEVICE_POLLING_INTERVAL));
+            assertTrue("Attributes was expected to be empty, but was: " + String.join(", ", rep2.getAttributes().keySet()), rep2.getAttributes().isEmpty());
         } finally {
             adminClient.realm("attributes").remove();
         }
@@ -244,15 +240,12 @@ public class RealmTest extends AbstractAdminTest {
     @Test
     public void createRealmFromJson() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/admin-test/testrealm.json"), RealmRepresentation.class);
-        try {
-            adminClient.realms().create(rep);
+        adminClient.realms().create(rep);
 
-            RealmRepresentation created = adminClient.realms().realm("admin-test-1").toRepresentation();
-            assertRealm(rep, created);
+        RealmRepresentation created = adminClient.realms().realm("admin-test-1").toRepresentation();
+        assertRealm(rep, created);
 
-        } finally {
-            adminClient.realms().realm("admin-test-1").remove();
-        }
+        adminClient.realms().realm("admin-test-1").remove();
     }
 
     //KEYCLOAK-6146
@@ -365,7 +358,7 @@ public class RealmTest extends AbstractAdminTest {
         RealmEventsConfigRepresentation repOrig = copyRealmEventsConfigRepresentation(rep);
 
         // the "event-queue" listener should be enabled by default
-        assertTrue("event-queue should be enabled initially", rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID));
+        assertTrue("event-queue should be enabled initially", rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID));
 
         // first modification => remove "event-queue", should be sent to the queue
         rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(), EventType.LOGIN_ERROR.name()));
@@ -538,12 +531,14 @@ public class RealmTest extends AbstractAdminTest {
         realm.roles().create(role);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role, ResourceType.REALM_ROLE);
 
-        role = realm.roles().get("test").toRepresentation();
-        assertNotNull(role);
+        assertNotNull(realm.roles().get("test").toRepresentation());
 
-        realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).addComposites(Collections.singletonList(role));
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setDefaultRoles(new LinkedList<String>());
+        rep.getDefaultRoles().add("test");
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         realm.roles().deleteRole("test");
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("test"), ResourceType.REALM_ROLE);
@@ -646,6 +641,13 @@ public class RealmTest extends AbstractAdminTest {
         if (realm.getEmailTheme() != null) assertEquals(realm.getEmailTheme(), storedRealm.getEmailTheme());
 
         if (realm.getPasswordPolicy() != null) assertEquals(realm.getPasswordPolicy(), storedRealm.getPasswordPolicy());
+
+        if (realm.getDefaultRoles() != null) {
+            assertNotNull(storedRealm.getDefaultRoles());
+            for (String role : realm.getDefaultRoles()) {
+                assertTrue(storedRealm.getDefaultRoles().contains(role));
+            }
+        }
 
         if (realm.getSmtpServer() != null) {
             assertEquals(realm.getSmtpServer(), storedRealm.getSmtpServer());
@@ -816,22 +818,6 @@ public class RealmTest extends AbstractAdminTest {
         sessionStats = realm.getClientSessionStats();
 
         assertEquals(0, sessionStats.size());
-    }
-
-    @Test
-    // KEYCLOAK-17342
-    public void testDefaultSignatureAlgorithm() {
-        RealmRepresentation rep = new RealmRepresentation();
-        rep.setRealm("new-realm");
-
-        try {
-            adminClient.realms().create(rep);
-
-            assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, adminClient.realm("master").toRepresentation().getDefaultSignatureAlgorithm());
-            assertEquals(Constants.DEFAULT_SIGNATURE_ALGORITHM, adminClient.realm("new-realm").toRepresentation().getDefaultSignatureAlgorithm());
-        } finally {
-            adminClient.realms().realm(rep.getRealm()).remove();
-        }
     }
 
     private void setupTestAppAndUser() {

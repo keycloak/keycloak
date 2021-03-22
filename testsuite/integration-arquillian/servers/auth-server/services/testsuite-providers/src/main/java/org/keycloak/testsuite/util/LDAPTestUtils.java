@@ -44,14 +44,7 @@ import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
+import java.util.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -67,18 +60,6 @@ public class LDAPTestUtils {
 
         session.userCredentialManager().updateCredential(realm, user, creds);
         return user;
-    }
-
-    public static void addLdapUser(KeycloakSession session, RealmModel appRealm, LDAPStorageProvider ldapFedProvider, String username, String password, Consumer<UserModel> userCustomizer) {
-
-        UserModel user = ldapFedProvider.addUser(appRealm, username);
-
-        userCustomizer.accept(user);
-
-        if (password == null) {
-            return;
-        }
-        session.userCredentialManager().updateCredential(appRealm, user, (UserCredentialModel) UserCredentialModel.password(username));
     }
 
     public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
@@ -120,21 +101,21 @@ public class LDAPTestUtils {
             }
 
             @Override
-            public Stream<String> getAttributeStream(String name) {
+            public List<String> getAttribute(String name) {
                 if (UserModel.LAST_NAME.equals(name)) {
-                    return Stream.of(lastName);
+                    return Collections.singletonList(lastName);
                 } else if (UserModel.FIRST_NAME.equals(name)) {
-                    return Stream.of(firstName);
+                    return Collections.singletonList(firstName);
                 } else if (UserModel.EMAIL.equals(name)) {
-                    return Stream.of(email);
+                    return Collections.singletonList(email);
                 } else if (UserModel.USERNAME.equals(name)) {
-                    return Stream.of(username);
+                    return Collections.singletonList(username);
                 } else if ("postal_code".equals(name) && postalCode != null && postalCode.length > 0) {
-                    return Stream.of(postalCode);
+                    return Arrays.asList(postalCode);
                 } else if ("street".equals(name) && street != null) {
-                    return Stream.of(street);
+                    return Collections.singletonList(street);
                 } else {
-                    return Stream.empty();
+                    return Collections.emptyList();
                 }
             }
         };

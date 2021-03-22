@@ -16,12 +16,11 @@
  */
 package org.keycloak.validation;
 
-import org.keycloak.models.ClientModel;
+import org.keycloak.provider.Provider;
 
-public interface ClientValidationProvider extends Validator<ClientModel> {
+public interface ClientValidationProvider extends Provider {
 
-    // for a special case when performing OIDC client registration
-    ValidationResult validate(ClientValidationContext.OIDCContext validationContext);
+    void validate(ClientValidationContext context);
 
     @Override
     default void close() {

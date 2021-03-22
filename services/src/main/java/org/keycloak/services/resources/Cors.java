@@ -23,10 +23,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
@@ -194,7 +196,11 @@ public class Cors {
             return;
         }
 
-        response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        if (allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)) {
+            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
+        } else {
+            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        }
 
         if (preflight) {
             if (allowedMethods != null) {

@@ -17,7 +17,9 @@
 
 package org.keycloak.authentication.forms;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
@@ -45,16 +47,13 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.InputStream;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -151,7 +150,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     }
 
     protected boolean validateRecaptcha(ValidationContext context, boolean success, String captcha, String secret) {
-        CloseableHttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
+        HttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
         HttpPost post = new HttpPost("https://www." + getRecaptchaDomain(context.getAuthenticatorConfig()) + "/recaptcha/api/siteverify");
         List<NameValuePair> formparams = new LinkedList<>();
         formparams.add(new BasicNameValuePair("secret", secret));
@@ -160,15 +159,14 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         try {
             UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
             post.setEntity(form);
-            try (CloseableHttpResponse response = httpClient.execute(post)) {
-                InputStream content = response.getEntity().getContent();
-                try {
-                    Map json = JsonSerialization.readValue(content, Map.class);
-                    Object val = json.get("success");
-                    success = Boolean.TRUE.equals(val);
-                } finally {
-                    EntityUtils.consumeQuietly(response.getEntity());
-                }
+            HttpResponse response = httpClient.execute(post);
+            InputStream content = response.getEntity().getContent();
+            try {
+                Map json = JsonSerialization.readValue(content, Map.class);
+                Object val = json.get("success");
+                success = Boolean.TRUE.equals(val);
+            } finally {
+                content.close();
             }
         } catch (Exception e) {
             ServicesLogger.LOGGER.recaptchaFailed(e);

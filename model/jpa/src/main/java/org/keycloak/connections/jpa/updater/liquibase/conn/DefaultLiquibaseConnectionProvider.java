@@ -18,10 +18,8 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Liquibase;
-import liquibase.change.ChangeFactory;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
-import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
@@ -40,7 +38,6 @@ import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
@@ -55,10 +52,6 @@ import java.sql.Connection;
 public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionProviderFactory, LiquibaseConnectionProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultLiquibaseConnectionProvider.class);
-
-    public static final String INDEX_CREATION_THRESHOLD_PARAM = "keycloak.indexCreationThreshold";
-
-    private int indexCreationThreshold;
 
     private volatile boolean initialized = false;
     
@@ -116,15 +109,12 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Use "SELECT FOR UPDATE" for locking database
         SqlGeneratorFactory.getInstance().register(new CustomLockDatabaseChangeLogGenerator());
-
-        // Adding CustomCreateIndexChange for handling conditional indices creation
-        ChangeFactory.getInstance().register(CustomCreateIndexChange.class);
     }
+
 
     @Override
     public void init(Config.Scope config) {
-        indexCreationThreshold = config.getInt("indexCreationThreshold", 100000);
-        logger.debugf("indexCreationThreshold is %d", indexCreationThreshold);
+
     }
 
     @Override
@@ -152,8 +142,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
-
-        ((AbstractJdbcDatabase) database).set(INDEX_CREATION_THRESHOLD_PARAM, indexCreationThreshold);
+        
         return new Liquibase(changelog, resourceAccessor, database);
     }
 

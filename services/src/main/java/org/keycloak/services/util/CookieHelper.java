@@ -25,10 +25,13 @@ import org.keycloak.common.util.ServerCookie;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 
@@ -97,7 +100,7 @@ public class CookieHelper {
         Set<String> ret = getInternalCookieValue(name);
         if (ret.size() == 0) {
             String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find any cookies with name '{0}', trying '{1}'", name, legacy);
+            logger.debugv("Couldn't find any cookies with name '{0}', trying '{1}'", name, legacy);
             ret = getInternalCookieValue(legacy);
         }
         return ret;
@@ -113,7 +116,7 @@ public class CookieHelper {
         // get cookies from the cookie field
         Cookie cookie = headers.getCookies().get(name);
         if (cookie != null) {
-            logger.debugv("{0} cookie found in the cookie field", name);
+            logger.debugv("{0} cookie found in the cookie's field", name);
             cookiesVal.add(cookie.getValue());
         }
 
@@ -131,7 +134,7 @@ public class CookieHelper {
 
         for (Cookie cookie : CookieParser.parseCookies(header)) {
             if (name.equals(cookie.getName())) {
-                logger.debugv("{0} cookie found in the request header", name);
+                logger.debugv("{0} cookie found in the request's header", name);
                 values.add(cookie.getValue());
             }
         }
@@ -146,7 +149,7 @@ public class CookieHelper {
         }
         else {
             String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find cookie {0}, trying {1}", name, legacy);
+            logger.debugv("Couldn't find cookie {0}, trying {1}", name, legacy);
             return cookies.get(legacy);
         }
     }

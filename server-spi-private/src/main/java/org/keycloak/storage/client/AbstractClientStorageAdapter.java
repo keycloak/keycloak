@@ -120,7 +120,7 @@ public abstract class AbstractClientStorageAdapter extends UnsupportedOperations
      */
     @Override
     public void updateClient() {
-        session.getKeycloakSessionFactory().publish(new ClientModel.ClientUpdatedEvent() {
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientUpdatedEvent() {
 
             @Override
             public ClientModel getUpdatedClient() {

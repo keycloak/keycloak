@@ -21,7 +21,6 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
@@ -32,7 +31,6 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.SAML2NameIDBuilder;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
@@ -59,7 +57,7 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected String destination;
-    protected NameIDType issuer;
+    protected String issuer;
     protected int subjectExpiration;
     protected int assertionExpiration;
     protected int sessionExpiration;
@@ -84,13 +82,9 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
         return this;
     }
 
-    public SAML2LoginResponseBuilder issuer(NameIDType issuer) {
+    public SAML2LoginResponseBuilder issuer(String issuer) {
         this.issuer = issuer;
         return this;
-    }
-
-    public SAML2LoginResponseBuilder issuer(String issuer) {
-        return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
     /**

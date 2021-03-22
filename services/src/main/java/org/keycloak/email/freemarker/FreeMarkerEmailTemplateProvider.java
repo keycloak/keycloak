@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -208,8 +209,6 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
             Properties rb = theme.getMessages(locale);
-            Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
-            rb.putAll(localizationTexts);
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
             attributes.put("properties", theme.getProperties());
             String subject = new MessageFormat(rb.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());

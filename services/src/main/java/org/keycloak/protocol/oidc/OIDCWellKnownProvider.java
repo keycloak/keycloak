@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc;
 
-import com.google.common.collect.Streams;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -29,12 +28,9 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
-import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
@@ -49,20 +45,17 @@ import javax.ws.rs.core.UriInfo;
 
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
 
-    public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE,
-        OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS,
-        OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
+    public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS);
 
     public static final List<String> DEFAULT_RESPONSE_TYPES_SUPPORTED = list(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, OIDCResponseType.TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
 
@@ -103,9 +96,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setIntrospectionEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "token").path(TokenEndpoint.class, "introspect").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setUserinfoEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "issueUserInfo").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setLogoutEndpoint(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "logout").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setDeviceAuthorizationEndpoint(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "auth")
-            .path(AuthorizationEndpoint.class, "authorizeDevice").path(DeviceEndpoint.class, "handleDeviceRequest")
-            .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         URI jwksUri = backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "certs").build(realm.getName(),
             OIDCLoginProtocol.LOGIN_PROTOCOL);
 
@@ -129,8 +119,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
         config.setTokenEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
-        config.setIntrospectionEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setIntrospectionEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
 
         config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
@@ -145,7 +133,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setRequestParameterSupported(true);
         config.setRequestUriParameterSupported(true);
-        config.setRequireRequestUriRegistration(true);
 
         // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
         config.setCodeChallengeMethodsSupported(DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED);
@@ -179,36 +166,58 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getClientAuthMethodsSupported() {
-        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
-                .map(ClientAuthenticatorFactory.class::cast)
-                .map(caf -> caf.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-    }
+        List<String> result = new LinkedList<>();
 
-    private List<String> getSupportedAlgorithms(Class<? extends Provider> clazz, boolean includeNone) {
-        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
-                .map(ProviderFactory::getId);
-
-        if (includeNone) {
-            supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
+        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
+        for (ProviderFactory factory : providerFactories) {
+            ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
+            result.addAll(clientAuthFactory.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL));
         }
-        return supportedAlgorithms.collect(Collectors.toList());
+
+        return result;
     }
 
     private List<String> getSupportedSigningAlgorithms(boolean includeNone) {
-        return getSupportedAlgorithms(SignatureProvider.class, includeNone);
+        List<String> result = new LinkedList<>();
+        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(SignatureProvider.class)) {
+            result.add(s.getId());
+        }
+        if (includeNone) {
+            result.add("none");
+        }
+        return result;
     }
 
     private List<String> getSupportedClientSigningAlgorithms(boolean includeNone) {
-        return getSupportedAlgorithms(ClientSignatureVerifierProvider.class, includeNone);
+        List<String> result = new LinkedList<>();
+        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(ClientSignatureVerifierProvider.class)) {
+            result.add(s.getId());
+        }
+        if (includeNone) {
+            result.add("none");
+        }
+        return result;
     }
 
     private List<String> getSupportedIdTokenEncryptionAlg(boolean includeNone) {
-        return getSupportedAlgorithms(CekManagementProvider.class, includeNone);
+        List<String> result = new LinkedList<>();
+        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(CekManagementProvider.class)) {
+            result.add(s.getId());
+        }
+        if (includeNone) {
+            result.add("none");
+        }
+        return result;
     }
 
     private List<String> getSupportedIdTokenEncryptionEnc(boolean includeNone) {
-        return getSupportedAlgorithms(ContentEncryptionProvider.class, includeNone);
+        List<String> result = new LinkedList<>();
+        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(ContentEncryptionProvider.class)) {
+            result.add(s.getId());
+        }
+        if (includeNone) {
+            result.add("none");
+        }
+        return result;
     }
 }

@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
 
     private final Function<S, D> loader;
-    private final Supplier<D> fallback;
+    private Supplier<D> fallback;
     private D data;
 
     public DefaultLazyLoader(Function<S, D> loader, Supplier<D> fallback) {

@@ -24,17 +24,11 @@ import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationExcepti
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ActionTokenKeyModel;
-import org.keycloak.models.ActionTokenStoreProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -42,6 +36,7 @@ import org.keycloak.sessions.CommonClientSessionModel.Action;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jboss.logging.Logger;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**
  *
@@ -123,7 +118,7 @@ public class LoginActionsServiceChecks {
 
         UserSessionModel userSession = context.getSession().sessions().getUserSession(context.getRealm(), authSessionId);
         boolean hasNoRequiredActions =
-          (userSession == null || userSession.getUser().getRequiredActionsStream().count() == 0)
+          (userSession == null || userSession.getUser().getRequiredActions() == null || userSession.getUser().getRequiredActions().isEmpty())
           &&
           (authSessionFromCookie == null || authSessionFromCookie.getRequiredActions() == null || authSessionFromCookie.getRequiredActions().isEmpty());
 
@@ -144,7 +139,7 @@ public class LoginActionsServiceChecks {
      *  it optionally also injects the user using the given function (e.g. into session context).
      */
     public static void checkIsUserValid(KeycloakSession session, RealmModel realm, String userId, Consumer<UserModel> userSetter) throws VerificationException {
-        UserModel user = userId == null ? null : session.users().getUserById(realm, userId);
+        UserModel user = userId == null ? null : session.users().getUserById(userId, realm);
 
         if (user == null) {
             throw new ExplainedVerificationException(Errors.USER_NOT_FOUND, Messages.INVALID_USER);

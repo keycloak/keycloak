@@ -33,7 +33,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -126,7 +125,16 @@ public class JpaEventQuery implements EventQuery {
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertEvent));
+        if (firstResult != null) {
+            query.setFirstResult(firstResult);
+        }
+
+        if (maxResults != null) {
+            query.setMaxResults(maxResults);
+        }
+
+
+        return closing(query.getResultStream().map(JpaEventStoreProvider::convertEvent));
     }
 
 }

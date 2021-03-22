@@ -17,9 +17,14 @@
 
 package org.keycloak.provider.quarkus;
 
-import java.net.URL;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -40,7 +45,8 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
     @Override
     public <C> C getCacheManager(Config.Scope config) {
         try {
-            ConfigurationBuilderHolder builder = new ParserRegistry().parse(loadConfiguration(config));
+            String configurationAsString = loadConfigurationToString(config);
+            ConfigurationBuilderHolder builder = new ParserRegistry().parse(configurationAsString);
 
             if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
                 configureTransportStack(config, builder);
@@ -52,12 +58,17 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
         }
     }
 
-    private URL loadConfiguration(Config.Scope config) {
+    private String loadConfigurationToString(Config.Scope config) throws FileNotFoundException {
+        BufferedReader configurationReader = new BufferedReader(new InputStreamReader(loadConfiguration(config), StandardCharsets.UTF_8));
+        return configurationReader.lines().collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    private InputStream loadConfiguration(Config.Scope config) throws FileNotFoundException {
         String pathPrefix;
         String homeDir = Environment.getHomeDir();
         
         if (homeDir == null) {
-            log.warn("Keycloak home directory not set");
+            log.warn("Keycloak home directory not set.");
             pathPrefix = "";
         } else {
             pathPrefix = homeDir + "/conf/";
@@ -67,24 +78,18 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
         String configFile = config.get("configFile");
         if (configFile != null) {
             Path configPath = Paths.get(pathPrefix + configFile);
-            String path;
 
             if (configPath.toFile().exists()) {
-                path = configPath.toFile().getAbsolutePath();
+                log.infof("Loading cache configuration from %s", configPath);
+                return FileLookupFactory.newInstance()
+                        .lookupFileStrict(configPath.toUri(), Thread.currentThread().getContextClassLoader());
             } else {
-                path = configPath.getFileName().toString();
+                log.infof("Loading cache configuration from %s", configPath);
+                return FileLookupFactory.newInstance()
+                        .lookupFileStrict(configPath.getFileName().toString(), Thread.currentThread().getContextClassLoader());
             }
-
-            log.infof("Loading cluster configuration from %s", configPath);
-            URL url = FileLookupFactory.newInstance().lookupFileLocation(path, Thread.currentThread().getContextClassLoader());
-            
-            if (url == null) {
-                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
-            }
-
-            return url;
         } else {
-            throw new IllegalArgumentException("Option 'configFile' needs to be specified");
+            throw new IllegalStateException("Option 'configFile' needs to be specified");
         }
     }
 

@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserModelDelegate implements UserModel.Streams {
+public class UserModelDelegate implements UserModel {
     protected UserModel delegate;
 
     public UserModelDelegate(UserModel delegate) {
@@ -86,8 +86,8 @@ public class UserModelDelegate implements UserModel.Streams {
     }
 
     @Override
-    public Stream<String> getAttributeStream(String name) {
-        return delegate.getAttributeStream(name);
+    public List<String> getAttribute(String name) {
+        return delegate.getAttribute(name);
     }
 
     @Override
@@ -96,8 +96,8 @@ public class UserModelDelegate implements UserModel.Streams {
     }
 
     @Override
-    public Stream<String> getRequiredActionsStream() {
-        return delegate.getRequiredActionsStream();
+    public Set<String> getRequiredActions() {
+        return delegate.getRequiredActions();
     }
 
     @Override

@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -38,8 +39,6 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.LockModeType;
-
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -150,9 +149,16 @@ public class JPAScopeStore implements ScopeStore {
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
 
-        TypedQuery query = entityManager.createQuery(querybuilder);
+        Query query = entityManager.createQuery(querybuilder);
 
-        List result = paginateQuery(query, firstResult, maxResult).getResultList();
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResult != -1) {
+            query.setMaxResults(maxResult);
+        }
+
+        List result = query.getResultList();
         List<Scope> list = new LinkedList<>();
         for (Object id : result) {
             list.add(provider.getStoreFactory().getScopeStore().findById((String)id, resourceServerId));

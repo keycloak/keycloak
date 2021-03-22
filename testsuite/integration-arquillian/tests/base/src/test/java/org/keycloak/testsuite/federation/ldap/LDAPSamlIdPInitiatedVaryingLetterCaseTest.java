@@ -29,7 +29,6 @@ import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -189,7 +188,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
           .clientId(EXT_SSO_URL)
           .baseUrl(EXT_SSO_URL)
           .attribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, EXT_SSO)
-          .attribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())
+          .attribute(SamlProtocol.SAML_NAME_ID_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())
           .attribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, DUMMY_URL)
           .build())
         );

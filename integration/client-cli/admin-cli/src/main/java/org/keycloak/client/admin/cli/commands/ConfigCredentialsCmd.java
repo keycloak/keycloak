@@ -20,7 +20,6 @@ import org.jboss.aesh.cl.CommandDefinition;
 import org.jboss.aesh.console.command.CommandException;
 import org.jboss.aesh.console.command.CommandResult;
 import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.client.admin.cli.config.ConfigData;
 import org.keycloak.client.admin.cli.config.RealmConfigData;
 import org.keycloak.client.admin.cli.util.AuthUtil;
@@ -121,10 +120,8 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
         boolean clientSet = clientId != null;
 
         applyDefaultOptionValues();
-        String grantTypeForAuthentication = null;
 
         if (user != null) {
-            grantTypeForAuthentication = OAuth2Constants.PASSWORD;
             printErr("Logging into " + server + " as user " + user + " of realm " + realm);
 
             // if user was set there needs to be a password so we can authenticate
@@ -136,7 +133,6 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
                 secret = readSecret("Enter client secret: ", commandInvocation);
             }
         } else if (keystore != null || secret != null || clientSet) {
-            grantTypeForAuthentication = OAuth2Constants.CLIENT_CREDENTIALS;
             printErr("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
             if (keystore == null) {
                 if (secret == null) {
@@ -194,7 +190,7 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
         Long sigExpiresAt = signedRequestToken == null ? null : System.currentTimeMillis() + sigLifetime * 1000;
 
         // save tokens to config file
-        saveTokens(tokens, server, realm, clientId, signedRequestToken, sigExpiresAt, secret, grantTypeForAuthentication);
+        saveTokens(tokens, server, realm, clientId, signedRequestToken, sigExpiresAt, secret);
 
         return CommandResult.SUCCESS;
     }

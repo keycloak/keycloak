@@ -21,7 +21,6 @@ package org.keycloak.userprofile.profile.representations;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.userprofile.UserProfileAttributes;
-import org.keycloak.userprofile.UserProfileProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,8 +32,8 @@ import java.util.Map;
  */
 public class AccountUserRepresentationUserProfile extends AttributeUserProfile {
 
-    public AccountUserRepresentationUserProfile(UserRepresentation user, UserProfileProvider profileProvider) {
-        super(flattenUserRepresentation(user), profileProvider);
+    public AccountUserRepresentationUserProfile(UserRepresentation user) {
+        super(flattenUserRepresentation(user));
     }
 
     private static UserProfileAttributes flattenUserRepresentation(UserRepresentation user) {

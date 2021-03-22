@@ -96,11 +96,12 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 		String lastName = getJsonProperty(profile, "last_name");
 
 		if (lastName == null) {
-		    lastName = "";
-		}
+            lastName = "";
+        } else {
+            lastName = " " + lastName;
+        }
 
-		user.setFirstName(firstName);
-		user.setLastName(lastName);
+		user.setName(firstName + lastName);
 		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 

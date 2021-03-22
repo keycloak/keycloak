@@ -35,7 +35,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserCredentialModel;
@@ -63,7 +62,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.models.AccountRoles;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -164,28 +162,13 @@ public final class KeycloakModelUtils {
         return UUID.randomUUID().toString();
     }
 
-    public static ClientModel createManagementClient(RealmModel realm, String name) {
-        ClientModel client = createClient(realm, name);
+    public static ClientModel createClient(RealmModel realm, String name) {
+        ClientModel app = realm.addClient(name);
+        app.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
+        generateSecret(app);
+        app.setFullScopeAllowed(true);
 
-        client.setBearerOnly(true);
-
-        return client;
-    }
-
-    public static ClientModel createPublicClient(RealmModel realm, String name) {
-        ClientModel client = createClient(realm, name);
-
-        client.setPublicClient(true);
-
-        return client;
-    }
-
-    private static ClientModel createClient(RealmModel realm, String name) {
-        ClientModel client = realm.addClient(name);
-
-        client.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
-
-        return client;
+        return app;
     }
 
     /**
@@ -221,13 +204,13 @@ public final class KeycloakModelUtils {
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
-            UserModel user = session.users().getUserByEmail(realm, username);
+            UserModel user = session.users().getUserByEmail(username, realm);
             if (user != null) {
                 return user;
             }
         }
 
-        return session.users().getUserByUsername(realm, username);
+        return session.users().getUserByUsername(username, realm);
     }
 
     /**
@@ -355,36 +338,18 @@ public final class KeycloakModelUtils {
         return str==null ? null : str.toLowerCase();
     }
 
-    /**
-     * Creates default role for particular realm with the given name.
-     * @param realm Realm
-     * @param defaultRoleName Name of the newly created defaultRole
-     */
-    public static void setupDefaultRole(RealmModel realm, String defaultRoleName) {
-        RoleModel defaultRole = realm.addRole(defaultRoleName);
-        defaultRole.setDescription("${role_default-roles}");
-        realm.setDefaultRole(defaultRole);
-    }
-
     public static RoleModel setupOfflineRole(RealmModel realm) {
         RoleModel offlineRole = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
 
         if (offlineRole == null) {
             offlineRole = realm.addRole(Constants.OFFLINE_ACCESS_ROLE);
             offlineRole.setDescription("${role_offline-access}");
-            realm.addToDefaultRoles(offlineRole);
+            realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
         }
 
         return offlineRole;
     }
 
-    public static void setupDeleteAccount(ClientModel accountClient) {
-        RoleModel deleteOwnAccount = accountClient.getRole(AccountRoles.DELETE_ACCOUNT);
-        if (deleteOwnAccount == null) {
-            deleteOwnAccount = accountClient.addRole(AccountRoles.DELETE_ACCOUNT);
-        }
-        deleteOwnAccount.setDescription("${role_" + AccountRoles.DELETE_ACCOUNT + "}");
-    }
 
     /**
      * Recursively find all AuthenticationExecutionModel from specified flow or all it's subflows
@@ -421,7 +386,7 @@ public final class KeycloakModelUtils {
 
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
-        List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
+        List<String> values = user.getAttribute(name);
         Set<String> aggrValues = new HashSet<String>();
         if (!values.isEmpty()) {
             if (!aggregateAttrs) {
@@ -660,7 +625,7 @@ public final class KeycloakModelUtils {
             if (realm.getRole(roleName) == null) {
                 RoleModel role = realm.addRole(roleName);
                 role.setDescription("${role_" + roleName + "}");
-                realm.addToDefaultRoles(role);
+                realm.addDefaultRole(roleName);
             }
         }
     }
@@ -705,14 +670,6 @@ public final class KeycloakModelUtils {
         } else {
             return provider.getAlias();
         }
-    }
-
-    /**
-     * @return true if implementation of realmProvider is "jpa" . Which is always the case in standard Keycloak installations.
-     */
-    public static boolean isRealmProviderJpa(KeycloakSession session) {
-        Set<String> providerIds = session.listProviderIds(RealmProvider.class);
-        return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
     }
 
 }

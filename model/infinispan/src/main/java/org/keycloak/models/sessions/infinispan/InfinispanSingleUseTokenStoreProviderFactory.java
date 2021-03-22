@@ -52,29 +52,25 @@ public class InfinispanSingleUseTokenStoreProviderFactory implements SingleUseTo
         if (tokenCache == null) {
             synchronized (this) {
                 if (tokenCache == null) {
-                    this.tokenCache = getActionTokenCache(session);
+                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+                    Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+
+                    RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
+
+                    if (remoteCache != null) {
+                        LOG.debugf("Having remote stores. Using remote cache '%s' for single-use cache of token", remoteCache.getName());
+                        this.tokenCache = () -> {
+                            // Doing this way as flag is per invocation
+                            return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
+                        };
+                    } else {
+                        LOG.debugf("Not having remote stores. Using normal cache '%s' for single-use cache of token", cache.getName());
+                        this.tokenCache = () -> {
+                            return cache;
+                        };
+                    }
                 }
             }
-        }
-    }
-
-    static Supplier getActionTokenCache(KeycloakSession session) {
-        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
-
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-
-        if (remoteCache != null) {
-            LOG.debugf("Having remote stores. Using remote cache '%s' for single-use cache of token", remoteCache.getName());
-            return () -> {
-                // Doing this way as flag is per invocation
-                return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
-            };
-        } else {
-            LOG.debugf("Not having remote stores. Using normal cache '%s' for single-use cache of token", cache.getName());
-            return () -> {
-                return cache;
-            };
         }
     }
 

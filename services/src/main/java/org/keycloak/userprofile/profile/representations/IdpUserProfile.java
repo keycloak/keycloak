@@ -18,7 +18,6 @@
 package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 
@@ -29,8 +28,8 @@ public class IdpUserProfile extends AbstractUserProfile {
 
     private final SerializedBrokeredIdentityContext user;
 
-    public IdpUserProfile(SerializedBrokeredIdentityContext user, UserProfileProvider profileProvider) {
-        super(user.getAttributes(), profileProvider);
+    public IdpUserProfile(SerializedBrokeredIdentityContext user) {
+        super(user.getAttributes());
         this.user = user;
     }
 

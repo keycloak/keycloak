@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0"?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -15,14 +15,16 @@
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>12.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -40,25 +42,25 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>20.0.1.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>12.0.3.Final</wildfly.deprecated.wildfly.core.version>
-        <wildfly.deprecated.arquillian.wildfly.container>2.2.0.Final</wildfly.deprecated.arquillian.wildfly.container>
+        <wildfly.deprecated.version>19.1.0.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>11.1.1.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
         <arquillian-core.version>1.6.0.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
-        <arquillian-drone.version>2.5.2</arquillian-drone.version>
+        <arquillian-drone.version>2.5.1</arquillian-drone.version>
         <arquillian-graphene.version>2.3.2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
         <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
-        <arquillian-tomcat7-container-version>1.1.0.Final</arquillian-tomcat7-container-version>
-        <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
-        <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
+        <arquillian-tomcat7-container-version>1.0.1.Final</arquillian-tomcat7-container-version>
+        <arquillian-tomcat8-container-version>1.0.1.Final</arquillian-tomcat8-container-version>
+        <arquillian-tomcat9-container-version>1.0.1.Final</arquillian-tomcat9-container-version>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
         <testcontainers.version>1.5.1</testcontainers.version>
@@ -440,7 +442,7 @@
                 <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-                <keycloak.connectionsJpa.password/>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
             </properties>
         </profile>

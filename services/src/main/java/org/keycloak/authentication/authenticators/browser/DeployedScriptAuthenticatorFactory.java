@@ -16,17 +16,13 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
-import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 
 /**
@@ -34,16 +30,17 @@ import org.keycloak.representations.provider.ScriptProviderMetadata;
  */
 public final class DeployedScriptAuthenticatorFactory extends ScriptBasedAuthenticatorFactory {
 
-    private ScriptProviderMetadata metadata;
-    private AuthenticatorConfigModel model;
-    private List<ProviderConfigProperty> configProperties;
+    private final AuthenticatorConfigModel model;
 
     public DeployedScriptAuthenticatorFactory(ScriptProviderMetadata metadata) {
-        this.metadata = metadata;
-    }
+        model = new AuthenticatorConfigModel();
 
-    public DeployedScriptAuthenticatorFactory() {
-        // for reflection
+        model.setId(metadata.getId());
+        model.setAlias(metadata.getName());
+        model.setConfig(new HashMap<>());
+        model.getConfig().put("scriptName", metadata.getName());
+        model.getConfig().put("scriptCode", metadata.getCode());
+        model.getConfig().put("scriptDescription", metadata.getDescription());
     }
 
     @Override
@@ -58,7 +55,7 @@ public final class DeployedScriptAuthenticatorFactory extends ScriptBasedAuthent
 
     @Override
     public String getId() {
-        return metadata.getId();
+        return model.getId();
     }
 
     @Override
@@ -84,37 +81,5 @@ public final class DeployedScriptAuthenticatorFactory extends ScriptBasedAuthent
     @Override
     public boolean isSupported() {
         return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        model = createModel(metadata);
-        configProperties = super.getConfigProperties();
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
-    }
-
-    public void setMetadata(ScriptProviderMetadata metadata) {
-        this.metadata = metadata;
-    }
-
-    public ScriptProviderMetadata getMetadata() {
-        return metadata;
-    }
-
-    private AuthenticatorConfigModel createModel(ScriptProviderMetadata metadata) {
-        AuthenticatorConfigModel model = new AuthenticatorConfigModel();
-
-        model.setId(metadata.getId());
-        model.setAlias(metadata.getName());
-        model.setConfig(new HashMap<>());
-        model.getConfig().put("scriptName", metadata.getName());
-        model.getConfig().put("scriptCode", metadata.getCode());
-        model.getConfig().put("scriptDescription", metadata.getDescription());
-
-        return model;
     }
 }

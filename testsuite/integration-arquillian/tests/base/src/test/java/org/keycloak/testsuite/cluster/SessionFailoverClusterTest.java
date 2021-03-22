@@ -36,15 +36,15 @@ public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
     protected void sessionFailover(boolean expectSuccessfulFailover) {
 
         // LOGIN
-        Cookie sessionCookie = login();
+        Cookie sessionCookie = login(accountPage);
 
         switchFailedNode();
 
         // VERIFY
         if (expectSuccessfulFailover) {
-            verifyLoggedIn(sessionCookie);
+            verifyLoggedIn(accountPage, sessionCookie);
         } else {
-            verifyLoggedOut();
+            verifyLoggedOut(accountPage);
             // FIXME test fails if I put re-login here
         }
 
@@ -52,20 +52,20 @@ public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
         // VERIFY again
         if (expectSuccessfulFailover) {
-            verifyLoggedIn(sessionCookie);
+            verifyLoggedIn(accountPage, sessionCookie);
         } else {
-            verifyLoggedOut();
-            login();
+            verifyLoggedOut(accountPage);
+            login(accountPage);
         }
 
         // LOGOUT
-        logout();
-        verifyLoggedOut();
+        logout(accountPage);
+        verifyLoggedOut(accountPage);
 
         switchFailedNode();
 
         // VERIFY
-        verifyLoggedOut();
+        verifyLoggedOut(accountPage);
 
     }
 

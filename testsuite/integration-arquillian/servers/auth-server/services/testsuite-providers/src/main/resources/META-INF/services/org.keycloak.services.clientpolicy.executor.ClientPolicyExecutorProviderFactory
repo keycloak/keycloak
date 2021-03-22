@@ -1,1 +1,2 @@
-org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory
+org.keycloak.testsuite.services.clientpolicy.executor.TestPKCEEnforceExecutorFactory
+org.keycloak.testsuite.services.clientpolicy.executor.TestClientAuthenticationExecutorFactory

@@ -34,7 +34,6 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
@@ -53,6 +52,8 @@ import java.security.Key;
 public class DefaultTokenManager implements TokenManager {
 
     private static final Logger logger = Logger.getLogger(DefaultTokenManager.class);
+
+    private static String DEFAULT_ALGORITHM_NAME = Algorithm.RS256;
 
     private final KeycloakSession session;
 
@@ -158,7 +159,7 @@ public class DefaultTokenManager implements TokenManager {
             return algorithm;
         }
 
-        return Constants.DEFAULT_SIGNATURE_ALGORITHM;
+        return DEFAULT_ALGORITHM_NAME;
     }
 
     @Override

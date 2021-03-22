@@ -221,7 +221,7 @@ public class ManyUsersTest extends AbstractUserTest {
             realmTimer.reset("re-import realm with " + realm.getUsers().size() + " users");
             realmsResouce().create(realm);
             realmTimer.reset("load " + realm.getUsers().size() + " users");
-            users = realmResource().users().search("", 0, -1);
+            users = realmResource().users().search("", 0, Integer.MAX_VALUE);
 
         }
 

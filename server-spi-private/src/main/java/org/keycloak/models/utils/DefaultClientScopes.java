@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import java.util.List;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -25,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,9 +41,11 @@ public class DefaultClientScopes {
      * @param addScopesToExistingClients true when creating new realm. False when migrating from previous version
      */
     public static void createDefaultClientScopes(KeycloakSession session, RealmModel realm, boolean addScopesToExistingClients) {
-        session.getKeycloakSessionFactory().getProviderFactoriesStream(LoginProtocol.class)
-                .map(LoginProtocolFactory.class::cast)
-                .forEach(lpf -> lpf.createDefaultClientScopes(realm, addScopesToExistingClients));
+        List<ProviderFactory> loginProtocolFactories = session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class);
+        for (ProviderFactory factory : loginProtocolFactories) {
+            LoginProtocolFactory lpf = (LoginProtocolFactory) factory;
+            lpf.createDefaultClientScopes(realm, addScopesToExistingClients);
+        }
     }
 
 

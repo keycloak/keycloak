@@ -42,8 +42,6 @@ public class RealmConfigData {
 
     private String secret;
 
-    private String grantTypeForAuthentication;
-
     private Long expiresAt;
 
     private Long refreshExpiresAt;
@@ -127,14 +125,6 @@ public class RealmConfigData {
         this.refreshExpiresAt = refreshExpiresAt;
     }
 
-    public String getGrantTypeForAuthentication() {
-        return grantTypeForAuthentication;
-    }
-
-    public void setGrantTypeForAuthentication(String grantTypeForAuthentication) {
-        this.grantTypeForAuthentication = grantTypeForAuthentication;
-    }
-
     public Long getSigExpiresAt() {
         return sigExpiresAt;
     }
@@ -163,7 +153,6 @@ public class RealmConfigData {
         refreshToken = source.refreshToken;
         signingToken = source.signingToken;
         secret = source.secret;
-        grantTypeForAuthentication = source.grantTypeForAuthentication;
         expiresAt = source.expiresAt;
         refreshExpiresAt = source.refreshExpiresAt;
         sigExpiresAt = source.sigExpiresAt;
@@ -221,7 +210,6 @@ public class RealmConfigData {
         data.refreshToken = refreshToken;
         data.signingToken = signingToken;
         data.secret = secret;
-        data.grantTypeForAuthentication = grantTypeForAuthentication;
         data.expiresAt = expiresAt;
         data.refreshExpiresAt = refreshExpiresAt;
         data.sigExpiresAt = sigExpiresAt;

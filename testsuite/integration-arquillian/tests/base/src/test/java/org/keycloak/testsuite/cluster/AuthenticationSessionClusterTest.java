@@ -28,12 +28,12 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanStickySessionEncoderProviderFactory;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.HashSet;
@@ -83,15 +83,12 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 //        String node1Route = backendNode(0).getArquillianContainer().getName();
 //        String node2Route = backendNode(1).getArquillianContainer().getName();
 
-        OAuthClient oAuthClient = new OAuthClient();
-        oAuthClient.init(driver);
-        oAuthClient.baseUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth").build("test").toString());
-
-        String testAppLoginNode1URL = oAuthClient.getLoginFormUrl();
+        String accountServiceNode1URL = RealmsResource.accountUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth")).build("test").toString();
+        String accountServiceNode2URL = RealmsResource.accountUrl(UriBuilder.fromUri(backendNode(1).getUriBuilder().build() + "/auth")).build("test").toString();
 
         Set<String> visitedRoutes = new HashSet<>();
         for (int i = 0; i < 20; i++) {
-            driver.navigate().to(testAppLoginNode1URL);
+            driver.navigate().to(accountServiceNode1URL);
             String authSessionCookie = AuthenticationSessionFailoverClusterTest.getAuthSessionCookieValue(driver);
 
             Assert.assertThat(authSessionCookie.length(), Matchers.greaterThan(36));
@@ -108,11 +105,8 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 
     @Test
     public void testAuthSessionCookieWithoutRoute() throws Exception {
-        OAuthClient oAuthClient = new OAuthClient();
-        oAuthClient.init(driver);
-        oAuthClient.baseUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth").build("test").toString());
-
-        String testAppLoginNode1URL = oAuthClient.getLoginFormUrl();
+        String accountServiceNode1URL = RealmsResource.accountUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth")).build("test").toString();
+        String accountServiceNode2URL = RealmsResource.accountUrl(UriBuilder.fromUri(backendNode(1).getUriBuilder().build() + "/auth")).build("test").toString();
 
         // Disable route on backend server
         getTestingClientFor(backendNode(0)).server().run(session -> {
@@ -122,7 +116,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 
         // Test routes
         for (int i = 0; i < 20; i++) {
-            driver.navigate().to(testAppLoginNode1URL);
+            driver.navigate().to(accountServiceNode1URL);
             String authSessionCookie = AuthenticationSessionFailoverClusterTest.getAuthSessionCookieValue(driver);
 
             Assert.assertEquals(36, authSessionCookie.length());

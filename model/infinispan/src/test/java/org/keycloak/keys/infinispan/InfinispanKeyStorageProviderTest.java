@@ -156,7 +156,8 @@ public class InfinispanKeyStorageProviderTest {
 
     protected Cache<String, PublicKeysEntry> getKeysCache() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
+        gcb.globalJmxStatistics().allowDuplicateDomains(true).enabled(true);
+
         final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
@@ -166,8 +167,8 @@ public class InfinispanKeyStorageProviderTest {
                 .size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
         cb.jmxStatistics().enabled(true);
         Configuration cfg = cb.build();
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, cfg);
 
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, cfg);
         return cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
     }
 }

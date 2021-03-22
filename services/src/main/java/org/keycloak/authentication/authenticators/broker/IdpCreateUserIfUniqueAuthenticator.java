@@ -120,13 +120,13 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
         if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
-            UserModel existingUser = context.getSession().users().getUserByEmail(context.getRealm(), brokerContext.getEmail());
+            UserModel existingUser = context.getSession().users().getUserByEmail(brokerContext.getEmail(), context.getRealm());
             if (existingUser != null) {
                 return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
             }
         }
 
-        UserModel existingUser = context.getSession().users().getUserByUsername(context.getRealm(), username);
+        UserModel existingUser = context.getSession().users().getUserByUsername(username, context.getRealm());
         if (existingUser != null) {
             return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
         }
