@@ -371,13 +371,21 @@ public class NiaEndpoint {
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
 
             try {
+                AuthenticationSessionModel authSession;
+                if (clientId != null && !clientId.trim().isEmpty()) {
+                    authSession = samlIdpInitiatedSSO(clientId);
+                } else {
+                    authSession = callback.getAndVerifyAuthenticationSession(relayState);
+                }
+                session.getContext().setAuthenticationSession(authSession);
+
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 if (!isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
-                    return callback.error(relayState, statusMessage);
+                    return callback.error(statusMessage);
                 }
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
-                    return callback.error(relayState, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                    return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
 
                 boolean assertionIsEncrypted = AssertionUtil.isAssertionEncrypted(responseType);
@@ -386,7 +394,7 @@ public class NiaEndpoint {
                     logger.error("The assertion is not encrypted, which is required.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
                 Element assertionElement;
@@ -409,7 +417,7 @@ public class NiaEndpoint {
                     logger.error("validation failed");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
@@ -420,16 +428,14 @@ public class NiaEndpoint {
                     logger.errorf("no principal in assertion; expected: %s", expectedPrincipalType());
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
                 //Map<String, String> notes = new HashMap<>();
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(principal);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
-                if (clientId != null && !clientId.trim().isEmpty()) {
-                    identity.getContextData().put(SAML_IDP_INITIATED_CLIENT_ID, clientId);
-                }
+                identity.setAuthenticationSession(authSession);
 
                 identity.setUsername(principal);
 
@@ -458,7 +464,7 @@ public class NiaEndpoint {
                     logger.error("Assertion expired.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
                 }
 
                 AuthnStatementType authn = null;
@@ -483,7 +489,6 @@ public class NiaEndpoint {
                 if (authn != null && authn.getSessionIndex() != null) {
                     identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
                 }
-                identity.setCode(relayState);
 
                 return callback.authenticated(identity);
             } catch (WebApplicationException e) {
@@ -491,6 +496,42 @@ public class NiaEndpoint {
             } catch (Exception e) {
                 throw new IdentityBrokerException("Could not process response from SAML identity provider.", e);
             }
+        }
+
+        /**
+         * If there is a client whose SAML IDP-initiated SSO URL name is set to
+         * the given {@code clientUrlName}, creates a fresh authentication
+         * session for that client and returns a
+         * {@link AuthenticationSessionModel} object with that session.
+         * Otherwise returns "client not found" response.
+         *
+         * @param clientUrlName
+         * @return see description
+         */
+        private AuthenticationSessionModel samlIdpInitiatedSSO(final String clientUrlName) {
+            event.event(EventType.LOGIN);
+            CacheControlUtil.noBackButtonCacheControlHeader();
+            Optional<ClientModel> oClient = SAMLEndpoint.this.realm.getClientsStream()
+                    .filter(c -> Objects.equals(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME), clientUrlName))
+                    .findFirst();
+
+            if (!oClient.isPresent()) {
+                event.error(Errors.CLIENT_NOT_FOUND);
+                Response response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+                throw new WebApplicationException(response);
+            }
+
+            LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+            SamlService samlService = (SamlService) factory.createProtocolEndpoint(SAMLEndpoint.this.realm, event);
+            ResteasyProviderFactory.getInstance().injectProperties(samlService);
+            AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, SAMLEndpoint.this.realm, oClient.get(), null);
+            if (authSession == null) {
+                event.error(Errors.INVALID_REDIRECT_URI);
+                Response response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
+                throw new WebApplicationException(response);
+            }
+
+            return authSession;
         }
 
         private boolean isSuccessfulSamlResponse(ResponseType responseType) {
