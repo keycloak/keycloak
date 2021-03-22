@@ -39,9 +39,6 @@ public class ClientCredentialsForm extends Form {
 
     @FindBy(xpath = "//button[@data-ng-click='changePassword()']")
     private WebElement regenerateSecretButton; // Regenerate Secret
-
-    @FindBy(xpath = "//button[@data-ng-click='generateSigningKey()']")
-    private WebElement generateNewKeysAndCert; // Generate new keys and certificate
     
     @FindBy(xpath = "//button[@data-ng-click='regenerateRegistrationAccessToken()']")
     private WebElement regenerateRegistrationAccessTokenButton; // Regenerate registration access token
@@ -63,12 +60,6 @@ public class ClientCredentialsForm extends Form {
     public void regenerateRegistrationAccessToken() {
         waitUntilElement(regenerateRegistrationAccessTokenButton).is().visible();
         regenerateRegistrationAccessTokenButton.click();
-        waitForPageToLoad();
-    }
-
-    public void generateNewKeysAndCert() {
-        waitUntilElement(generateNewKeysAndCert).is().visible();
-        generateNewKeysAndCert.click();
         waitForPageToLoad();
     }
 }
