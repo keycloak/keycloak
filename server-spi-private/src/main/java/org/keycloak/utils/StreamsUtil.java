@@ -17,8 +17,12 @@
 
 package org.keycloak.utils;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Spliterators;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -71,5 +75,16 @@ public class StreamsUtil {
         }
 
         return originalStream;
+    }
+
+    /**
+     * distinctByKey is not supposed to be used with parallel streams
+     *
+     * To make this method synchronized use {@code ConcurrentHashMap<Object, Boolean>} instead of HashSet
+     *
+     */
+    public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = new HashSet<>();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 }

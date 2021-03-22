@@ -280,7 +280,7 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+            public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
                 return delegate.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
             }
         };
@@ -385,7 +385,7 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+            public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
                 return policyStore.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
             }
 
@@ -506,7 +506,7 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+            public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
                 return delegate.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
             }
 

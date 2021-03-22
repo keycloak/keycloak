@@ -18,7 +18,7 @@
 package org.keycloak.authorization.admin;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -184,22 +184,22 @@ public class PolicyService {
             this.auth.realm().requireViewAuthorization();
         }
 
-        Map<String, String[]> search = new HashMap<>();
+        Map<Policy.FilterOption, String[]> search = new EnumMap<>(Policy.FilterOption.class);
 
         if (id != null && !"".equals(id.trim())) {
-            search.put("id", new String[] {id});
+            search.put(Policy.FilterOption.ID, new String[] {id});
         }
 
         if (name != null && !"".equals(name.trim())) {
-            search.put("name", new String[] {name});
+            search.put(Policy.FilterOption.NAME, new String[] {name});
         }
 
         if (type != null && !"".equals(type.trim())) {
-            search.put("type", new String[] {type});
+            search.put(Policy.FilterOption.TYPE, new String[] {type});
         }
 
         if (owner != null && !"".equals(owner.trim())) {
-            search.put("owner", new String[] {owner});
+            search.put(Policy.FilterOption.OWNER, new String[] {owner});
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -209,12 +209,12 @@ public class PolicyService {
             Resource resourceModel = resourceStore.findById(resource, resourceServer.getId());
 
             if (resourceModel == null) {
-                Map<String, String[]> resourceFilters = new HashMap<>();
+                Map<Resource.FilterOption, String[]> resourceFilters = new EnumMap<>(Resource.FilterOption.class);
 
-                resourceFilters.put("name", new String[]{resource});
+                resourceFilters.put(Resource.FilterOption.NAME, new String[]{resource});
 
                 if (owner != null) {
-                    resourceFilters.put("owner", new String[]{owner});
+                    resourceFilters.put(Resource.FilterOption.OWNER, new String[]{owner});
                 }
 
                 Set<String> resources = resourceStore.findByResourceServer(resourceFilters, resourceServer.getId(), -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
@@ -223,9 +223,9 @@ public class PolicyService {
                     return Response.noContent().build();
                 }
 
-                search.put("resource", resources.toArray(new String[resources.size()]));
+                search.put(Policy.FilterOption.RESOURCE_ID, resources.toArray(new String[resources.size()]));
             } else {
-                search.put("resource", new String[] {resourceModel.getId()});
+                search.put(Policy.FilterOption.RESOURCE_ID, new String[] {resourceModel.getId()});
             }
         }
 
@@ -234,9 +234,9 @@ public class PolicyService {
             Scope scopeModel = scopeStore.findById(scope, resourceServer.getId());
 
             if (scopeModel == null) {
-                Map<String, String[]> scopeFilters = new HashMap<>();
+                Map<Scope.FilterOption, String[]> scopeFilters = new EnumMap<>(Scope.FilterOption.class);
 
-                scopeFilters.put("name", new String[]{scope});
+                scopeFilters.put(Scope.FilterOption.NAME, new String[]{scope});
 
                 Set<String> scopes = scopeStore.findByResourceServer(scopeFilters, resourceServer.getId(), -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
 
@@ -244,14 +244,14 @@ public class PolicyService {
                     return Response.noContent().build();
                 }
 
-                search.put("scope", scopes.toArray(new String[scopes.size()]));
+                search.put(Policy.FilterOption.SCOPE_ID, scopes.toArray(new String[scopes.size()]));
             } else {
-                search.put("scope", new String[] {scopeModel.getId()});
+                search.put(Policy.FilterOption.SCOPE_ID, new String[] {scopeModel.getId()});
             }
         }
 
         if (permission != null) {
-            search.put("permission", new String[] {permission.toString()});
+            search.put(Policy.FilterOption.PERMISSION, new String[] {permission.toString()});
         }
 
         return Response.ok(
@@ -263,7 +263,7 @@ public class PolicyService {
         return ModelToRepresentation.toRepresentation(model, authorization, true, false, fields != null && fields.equals("*"));
     }
 
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         return policyStore.findByResourceServer(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                 .map(policy -> toRepresentation(policy, fields, authorization))

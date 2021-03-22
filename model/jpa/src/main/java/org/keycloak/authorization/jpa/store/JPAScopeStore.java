@@ -131,7 +131,7 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ScopeEntity> querybuilder = builder.createQuery(ScopeEntity.class);
         Root<ScopeEntity> root = querybuilder.from(ScopeEntity.class);
@@ -140,11 +140,16 @@ public class JPAScopeStore implements ScopeStore {
 
         predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
 
-        attributes.forEach((name, value) -> {
-            if ("id".equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+        attributes.forEach((filterOption, value) -> {
+            switch (filterOption) {
+                case ID:
+                    predicates.add(root.get(filterOption.getName()).in(value));
+                    break;
+                case NAME:
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
             }
         });
 

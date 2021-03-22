@@ -16,22 +16,55 @@
  */
 package org.keycloak.authorization.model;
 
+import org.keycloak.storage.SearchableModelField;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface PermissionTicket {
 
-    String ID = "id";
-    String RESOURCE = "resource.id";
-    String RESOURCE_NAME = "resource.name";
-    String SCOPE = "scope.id";
-    String SCOPE_IS_NULL = "scope_is_null";
-    String OWNER = "owner";
-    String GRANTED = "granted";
-    String REQUESTER = "requester";
-    String REQUESTER_IS_NULL = "requester_is_null";
-    String POLICY_IS_NOT_NULL = "policy_is_not_null";
-    String POLICY = "policy";
+    public static class SearchableFields {
+        public static final SearchableModelField<PermissionTicket> ID = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<PermissionTicket> RESOURCE_ID = new SearchableModelField<>("resourceId", String.class);
+        public static final SearchableModelField<PermissionTicket> RESOURCE_SERVER_ID = new SearchableModelField<>("resourceServerId", String.class);
+        public static final SearchableModelField<PermissionTicket> OWNER = new SearchableModelField<>("owner", String.class);
+        public static final SearchableModelField<PermissionTicket> REQUESTER = new SearchableModelField<>("requester", String.class);
+        public static final SearchableModelField<PermissionTicket> SCOPE_ID = new SearchableModelField<>("scopeId", String.class);
+        public static final SearchableModelField<PermissionTicket> POLICY_ID = new SearchableModelField<>("policyId", String.class);
+        public static final SearchableModelField<PermissionTicket> GRANTED_TIMESTAMP = new SearchableModelField<>("grantedTimestamp", String.class);
+    }
+    
+    public static enum FilterOption {
+        ID("id", SearchableFields.ID),
+        RESOURCE_ID("resource.id", SearchableFields.RESOURCE_ID),
+        RESOURCE_NAME("resource.name", SearchableFields.RESOURCE_ID),
+        SCOPE_ID("scope.id", SearchableFields.SCOPE_ID),
+        SCOPE_IS_NULL("scope_is_null", SearchableFields.SCOPE_ID),
+        OWNER("owner", SearchableFields.OWNER),
+        GRANTED("granted", SearchableFields.GRANTED_TIMESTAMP),
+        REQUESTER("requester", SearchableFields.REQUESTER),
+        REQUESTER_IS_NULL("requester_is_null", SearchableFields.REQUESTER),
+        POLICY_IS_NOT_NULL("policy_is_not_null", SearchableFields.POLICY_ID),
+        POLICY_ID("policy.id", SearchableFields.POLICY_ID)
+        ;
+
+        private final String name;
+        private final SearchableModelField<PermissionTicket> searchableModelField;
+
+        FilterOption(String name, SearchableModelField<PermissionTicket> searchableModelField) {
+            this.name = name;
+            this.searchableModelField = searchableModelField;
+        }
+
+
+        public String getName() {
+            return name;
+        }
+
+        public SearchableModelField<PermissionTicket> getSearchableModelField() {
+            return searchableModelField;
+        }
+    }
 
     /**
      * Returns the unique identifier for this instance.

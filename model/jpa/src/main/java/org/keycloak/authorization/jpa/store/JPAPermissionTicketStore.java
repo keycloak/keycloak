@@ -18,7 +18,7 @@ package org.keycloak.authorization.jpa.store;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +58,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public long count(Map<String, String> attributes, String resourceServerId) {
+    public long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> querybuilder = builder.createQuery(Long.class);
         Root<PermissionTicketEntity> root = querybuilder.from(PermissionTicketEntity.class);
@@ -77,46 +77,49 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     private List<Predicate> getPredicates(CriteriaBuilder builder,
                                           Root<PermissionTicketEntity> root,
                                           String resourceServerId,
-                                          Map<String, String> attributes) {
-        List<Predicate> predicates = new ArrayList();
+                                          Map<PermissionTicket.FilterOption, String> attributes) {
+        List<Predicate> predicates = new ArrayList<>();
 
         if (resourceServerId != null) {
             predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
         }
 
-        attributes.forEach((name, value) -> {
-            if (PermissionTicket.ID.equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else if (PermissionTicket.SCOPE.equals(name)) {
-                predicates.add(root.join("scope").get("id").in(value));
-            } else if (PermissionTicket.SCOPE_IS_NULL.equals(name)) {
-                if (Boolean.valueOf(value)) {
-                    predicates.add(builder.isNull(root.get("scope")));
-                } else {
-                    predicates.add(builder.isNotNull(root.get("scope")));
-                }
-            } else if (PermissionTicket.RESOURCE.equals(name)) {
-                predicates.add(root.join("resource").get("id").in(value));
-            } else if (PermissionTicket.RESOURCE_NAME.equals(name)) {
-                predicates.add(root.join("resource").get("name").in(value));
-            } else if (PermissionTicket.OWNER.equals(name)) {
-                predicates.add(builder.equal(root.get("owner"), value));
-            } else if (PermissionTicket.REQUESTER.equals(name)) {
-                predicates.add(builder.equal(root.get("requester"), value));
-            } else if (PermissionTicket.GRANTED.equals(name)) {
-                if (Boolean.valueOf(value)) {
-                    predicates.add(builder.isNotNull(root.get("grantedTimestamp")));
-                } else {
-                    predicates.add(builder.isNull(root.get("grantedTimestamp")));
-                }
-            } else if (PermissionTicket.REQUESTER_IS_NULL.equals(name)) {
-                predicates.add(builder.isNull(root.get("requester")));
-            } else if (PermissionTicket.POLICY_IS_NOT_NULL.equals(name)) {
-                predicates.add(builder.isNotNull(root.get("policy")));
-            } else if (PermissionTicket.POLICY.equals(name)) {
-                predicates.add(root.join("policy").get("id").in(value));
-            } else {
-                throw new RuntimeException("Unsupported filter [" + name + "]");
+        attributes.forEach((filterOption, value) -> {
+            switch (filterOption) {
+                case ID:
+                case OWNER:
+                case REQUESTER:
+                    predicates.add(builder.equal(root.get(filterOption.getName()), value));
+                    break;
+                case SCOPE_ID:
+                case RESOURCE_ID:
+                case RESOURCE_NAME:
+                case POLICY_ID:
+                    String[] predicateValues = filterOption.getName().split("\\.");
+                    predicates.add(root.join(predicateValues[0]).get(predicateValues[1]).in(value));
+                    break;
+                case SCOPE_IS_NULL:
+                    if (Boolean.parseBoolean(value)) {
+                        predicates.add(builder.isNull(root.get("scope")));
+                    } else {
+                        predicates.add(builder.isNotNull(root.get("scope")));
+                    }
+                    break;
+                case GRANTED:
+                    if (Boolean.parseBoolean(value)) {
+                        predicates.add(builder.isNotNull(root.get("grantedTimestamp")));
+                    } else {
+                        predicates.add(builder.isNull(root.get("grantedTimestamp")));
+                    }
+                    break;
+                case REQUESTER_IS_NULL:
+                    predicates.add(builder.isNull(root.get("requester")));
+                    break;
+                case POLICY_IS_NOT_NULL:
+                    predicates.add(builder.isNotNull(root.get("policy")));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
             }
         });
         return predicates;
@@ -235,7 +238,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> find(Map<String, String> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<PermissionTicketEntity> querybuilder = builder.createQuery(PermissionTicketEntity.class);
         Root<PermissionTicketEntity> root = querybuilder.from(PermissionTicketEntity.class);
@@ -264,21 +267,21 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public List<PermissionTicket> findGranted(String userId, String resourceServerId) {
-        HashMap<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
-        filters.put(PermissionTicket.REQUESTER, userId);
+        filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
         return find(filters, resourceServerId, -1, -1);
     }
 
     @Override
     public List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId) {
-        HashMap<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        filters.put(PermissionTicket.RESOURCE_NAME, resourceName);
-        filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
-        filters.put(PermissionTicket.REQUESTER, userId);
+        filters.put(PermissionTicket.FilterOption.RESOURCE_NAME, resourceName);
+        filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
         return find(filters, resourceServerId, -1, -1);
     }

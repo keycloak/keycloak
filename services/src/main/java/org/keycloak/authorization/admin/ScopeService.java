@@ -50,7 +50,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -242,14 +242,14 @@ public class ScopeService {
                             @QueryParam("max") Integer maxResult) {
         this.auth.realm().requireViewAuthorization();
 
-        Map<String, String[]> search = new HashMap<>();
+        Map<Scope.FilterOption, String[]> search = new EnumMap<>(Scope.FilterOption.class);
 
         if (id != null && !"".equals(id.trim())) {
-            search.put("id", new String[] {id});
+            search.put(Scope.FilterOption.ID, new String[] {id});
         }
 
         if (name != null && !"".equals(name.trim())) {
-            search.put("name", new String[] {name});
+            search.put(Scope.FilterOption.NAME, new String[] {name});
         }
 
         return Response.ok(

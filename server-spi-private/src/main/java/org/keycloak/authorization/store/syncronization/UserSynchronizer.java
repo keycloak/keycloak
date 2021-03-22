@@ -17,7 +17,7 @@
 
 package org.keycloak.authorization.store.syncronization;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,10 +58,10 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         UserModel userModel = event.getUser();
-        Map<String, String[]> attributes = new HashMap<>();
+        Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
 
-        attributes.put("type", new String[] {"user"});
-        attributes.put("config:users", new String[] {userModel.getId()});
+        attributes.put(Policy.FilterOption.TYPE, new String[] {"user"});
+        attributes.put(Policy.FilterOption.CONFIG, new String[] {"users", userModel.getId()});
 
         List<Policy> search = policyStore.findByResourceServer(attributes, null, -1, -1);
 
@@ -112,17 +112,17 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
         UserModel userModel = event.getUser();
-        Map<String, String> attributes = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> attributes = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        attributes.put(PermissionTicket.OWNER, userModel.getId());
+        attributes.put(PermissionTicket.FilterOption.OWNER, userModel.getId());
 
         for (PermissionTicket ticket : ticketStore.find(attributes, null, -1, -1)) {
             ticketStore.delete(ticket.getId());
         }
 
-        attributes = new HashMap<>();
+        attributes.clear();
         
-        attributes.put(PermissionTicket.REQUESTER, userModel.getId());
+        attributes.put(PermissionTicket.FilterOption.REQUESTER, userModel.getId());
 
         for (PermissionTicket ticket : ticketStore.find(attributes, null, -1, -1)) {
             ticketStore.delete(ticket.getId());

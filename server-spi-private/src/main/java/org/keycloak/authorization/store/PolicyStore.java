@@ -18,6 +18,7 @@
 package org.keycloak.authorization.store;
 
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -79,11 +80,13 @@ public interface PolicyStore {
     /**
      * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     * @param attributes a map holding the attributes that will be used as a filter
+     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
      * @param resourceServerId the identifier of a resource server
      * @return a list of policies that belong to the given resource server
+     *
+     * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.
@@ -92,7 +95,13 @@ public interface PolicyStore {
      * @param resourceServerId the resource server id
      * @return a list of policies associated with the given resource
      */
-    List<Policy> findByResource(String resourceId, String resourceServerId);
+    default List<Policy> findByResource(String resourceId, String resourceServerId) {
+        List<Policy> result = new LinkedList<>();
+
+        findByResource(resourceId, resourceServerId, result::add);
+
+        return result;
+    }
 
     void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer);
 
@@ -103,7 +112,13 @@ public interface PolicyStore {
      * @param resourceServerId the resource server id
      * @return a list of policies associated with the given resource type
      */
-    List<Policy> findByResourceType(String resourceType, String resourceServerId);
+    default List<Policy> findByResourceType(String resourceType, String resourceServerId) {
+        List<Policy> result = new LinkedList<>();
+
+        findByResourceType(resourceType, resourceServerId, result::add);
+
+        return result;
+    }
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>scopeIds</code>.
@@ -118,12 +133,23 @@ public interface PolicyStore {
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>resourceId</code> and <code>scopeIds</code>.
      *
      * @param scopeIds the id of the scopes
-     * @param resourceId the id of the resource
+     * @param resourceId the id of the resource. Ignored if {@code null}.
      * @param resourceServerId the resource server id
      * @return a list of policies associated with the given scopes
      */
-    List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId);
+    default List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
+        List<Policy> result = new LinkedList<>();
 
+        findByScopeIds(scopeIds, resourceId, resourceServerId, result::add);
+
+        return result;
+    }
+
+    /**
+     * Effectively the same method as {@link #findByScopeIds(List, String, String)}, however in the end
+     * the {@code consumer} is fed with the result.
+     *
+     */
     void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer);
 
     /**
@@ -144,5 +170,5 @@ public interface PolicyStore {
      */
     List<Policy> findDependentPolicies(String id, String resourceServerId);
 
-    void findByResourceType(String type, String id, Consumer<Policy> policyConsumer);
+    void findByResourceType(String type, String resourceServerId, Consumer<Policy> policyConsumer);
 }
