@@ -57,11 +57,6 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource create(String name, ResourceServer resourceServer, String owner) {
-        return create(null, name, resourceServer, owner);
-    }
-
-    @Override
     public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
         ResourceEntity entity = new ResourceEntity();
 
@@ -99,15 +94,6 @@ public class JPAResourceStore implements ResourceStore {
         ResourceEntity entity = entityManager.find(ResourceEntity.class, id);
         if (entity == null) return null;
         return new ResourceAdapter(entity, entityManager, provider.getStoreFactory());
-    }
-
-    @Override
-    public List<Resource> findByOwner(String ownerId, String resourceServerId) {
-        List<Resource> list = new LinkedList<>();
-
-        findByOwner(ownerId, resourceServerId, list::add);
-
-        return list;
     }
 
     @Override
@@ -195,7 +181,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ResourceEntity> querybuilder = builder.createQuery(ResourceEntity.class);
         Root<ResourceEntity> root = querybuilder.from(ResourceEntity.class);
@@ -206,29 +192,36 @@ public class JPAResourceStore implements ResourceStore {
             predicates.add(builder.equal(root.get("resourceServer"), resourceServerId));
         }
 
-        attributes.forEach((name, value) -> {
-            if ("id".equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else if ("scope".equals(name)) {
-                predicates.add(root.join("scopes").get("id").in(value));
-            } else if ("ownerManagedAccess".equals(name) && value.length > 0) {
-                predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
-            } else if ("uri".equals(name) && value.length > 0 && value[0] != null) {
-                predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
-            } else if ("uri_not_null".equals(name)) {
-                // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
-                // Workaround
-                Expression<Integer> urisSize = builder.size(root.get("uris"));
-                predicates.add(builder.notEqual(urisSize, 0));
-            } else if ("owner".equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else if (!Resource.EXACT_NAME.equals(name)) {
-                if ("name".equals(name) && attributes.containsKey(Resource.EXACT_NAME) && Boolean.valueOf(attributes.get(Resource.EXACT_NAME)[0]) 
-                        && value.length > 0 && value[0] != null) {
-                    predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
-                } else if (value.length > 0 &&  value[0] != null) {
-                    predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
-                }
+        attributes.forEach((filterOption, value) -> {
+            switch (filterOption) {
+                case ID:
+                case OWNER:
+                    predicates.add(root.get(filterOption.getName()).in(value));
+                    break;
+                case SCOPE_ID:
+                    predicates.add(root.join("scopes").get("id").in(value));
+                    break;
+                case OWNER_MANAGED_ACCESS:
+                    predicates.add(builder.equal(root.get(filterOption.getName()), Boolean.valueOf(value[0])));
+                    break;
+                case URI:
+                    predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
+                    break;
+                case URI_NOT_NULL:
+                    // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
+                    // Workaround
+                    Expression<Integer> urisSize = builder.size(root.get("uris"));
+                    predicates.add(builder.notEqual(urisSize, 0));
+                    break;
+                case NAME:
+                case TYPE:
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    break;
+                case EXACT_NAME:
+                    predicates.add(builder.equal(builder.lower(root.get(filterOption.getName())), value[0].toLowerCase()));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
             }
         });
 
@@ -249,15 +242,6 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         return list;
-    }
-
-    @Override
-    public List<Resource> findByScope(List<String> scopes, String resourceServerId) {
-        List<Resource> result = new ArrayList<>();
-
-        findByScope(scopes, resourceServerId, result::add);
-
-        return result;
     }
 
     @Override
@@ -296,24 +280,6 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByType(String type, String resourceServerId) {
-        List<Resource> list = new LinkedList<>();
-
-        findByType(type, resourceServerId, list::add);
-
-        return list;
-    }
-
-    @Override
-    public List<Resource> findByType(String type, String owner, String resourceServerId) {
-        List<Resource> list = new LinkedList<>();
-
-        findByType(type, owner, resourceServerId, list::add);
-
-        return list;
-    }
-
-    @Override
     public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
         findByType(type, resourceServerId, resourceServerId, consumer);
     }
@@ -342,15 +308,6 @@ public class JPAResourceStore implements ResourceStore {
         query.getResultList().stream()
                 .map(entity -> new ResourceAdapter(entity, entityManager, storeFactory))
                 .forEach(consumer);
-    }
-
-    @Override
-    public List<Resource> findByTypeInstance(String type, String resourceServerId) {
-        List<Resource> list = new LinkedList<>();
-
-        findByTypeInstance(type, resourceServerId, list::add);
-
-        return list;
     }
 
     @Override

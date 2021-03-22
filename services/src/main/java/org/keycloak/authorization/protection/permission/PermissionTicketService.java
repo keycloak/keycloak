@@ -47,7 +47,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -116,10 +116,10 @@ public class PermissionTicketService {
         if (!match)
            throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not have Scope [" + scope.getName() + "]", Response.Status.BAD_REQUEST);     
         
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put(PermissionTicket.RESOURCE, resource.getId());
-        attributes.put(PermissionTicket.SCOPE, scope.getId());
-        attributes.put(PermissionTicket.REQUESTER, user.getId());
+        Map<PermissionTicket.FilterOption, String> attributes = new EnumMap<>(PermissionTicket.FilterOption.class);
+        attributes.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+        attributes.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
+        attributes.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         
         if (!ticketStore.find(attributes, resourceServer.getId(), -1, -1).isEmpty())
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
@@ -190,7 +190,7 @@ public class PermissionTicketService {
         StoreFactory storeFactory = authorization.getStoreFactory();
         PermissionTicketStore permissionTicketStore = storeFactory.getPermissionTicketStore();
 
-        Map<String, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
+        Map<PermissionTicket.FilterOption, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
 
         return Response.ok().entity(permissionTicketStore.find(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
                     .stream()
@@ -210,22 +210,22 @@ public class PermissionTicketService {
                                        @QueryParam("returnNames") Boolean returnNames) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         PermissionTicketStore permissionTicketStore = storeFactory.getPermissionTicketStore();
-        Map<String, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
+        Map<PermissionTicket.FilterOption, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
         long count = permissionTicketStore.count(filters, resourceServer.getId());
 
         return Response.ok().entity(count).build();
     }
 
-    private Map<String, String> getFilters(StoreFactory storeFactory,
+    private Map<PermissionTicket.FilterOption, String> getFilters(StoreFactory storeFactory,
                                            String resourceId,
                                            String scopeId,
                                            String owner,
                                            String requester,
                                            Boolean granted) {
-        Map<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
         if (resourceId != null) {
-            filters.put(PermissionTicket.RESOURCE, resourceId);
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resourceId);
         }
 
         if (scopeId != null) {
@@ -236,19 +236,19 @@ public class PermissionTicketService {
                 scope = scopeStore.findByName(scopeId, resourceServer.getId());
             }
 
-            filters.put(PermissionTicket.SCOPE, scope != null ? scope.getId() : scopeId);
+            filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope != null ? scope.getId() : scopeId);
         }
 
         if (owner != null) {
-            filters.put(PermissionTicket.OWNER, getUserId(owner));
+            filters.put(PermissionTicket.FilterOption.OWNER, getUserId(owner));
         }
 
         if (requester != null) {
-            filters.put(PermissionTicket.REQUESTER, getUserId(requester));
+            filters.put(PermissionTicket.FilterOption.REQUESTER, getUserId(requester));
         }
 
         if (granted != null) {
-            filters.put(PermissionTicket.GRANTED, granted.toString());
+            filters.put(PermissionTicket.FilterOption.GRANTED, granted.toString());
         }
 
         return filters;

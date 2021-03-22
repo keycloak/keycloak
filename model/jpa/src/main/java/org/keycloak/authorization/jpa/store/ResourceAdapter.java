@@ -241,12 +241,6 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
         entity.getAttributes().removeAll(toRemove);
     }
 
-    @Override
-    public boolean isFetched(String association) {
-        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(this.entity, association);
-    }
-
-
     public static ResourceEntity toEntity(EntityManager em, Resource resource) {
         if (resource instanceof ResourceAdapter) {
             return ((ResourceAdapter)resource).getEntity();

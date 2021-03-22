@@ -91,10 +91,11 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity<K>, M> implemen
         }
         Predicate<? super K> resIndexFilter = b.getKeyFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getKeyFilter().negate();
         Predicate<? super V> resEntityFilter = b.getEntityFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getEntityFilter().negate();
+
         return new MapModelCriteriaBuilder<>(
           fieldPredicates,
-          v -> keyFilter.test(v) && ! resIndexFilter.test(v),
-          v -> entityFilter.test(v) && ! resEntityFilter.test(v)
+          v -> keyFilter.test(v) && resIndexFilter.test(v),
+          v -> entityFilter.test(v) && resEntityFilter.test(v)
         );
     }
 
