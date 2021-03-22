@@ -368,24 +368,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                         }
                     });
 
-<<<<<<< HEAD
-            Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
-                    ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-                    : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
-            keys.addAll(session.keys().getRsaKeys(realm));
-            for (RsaKeyMetadata key : keys) {
-                if (key == null || key.getCertificate() == null) {
-                    continue;
-                }
 
-                signingKeys.add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
-
-                if (key.getStatus() == KeyStatus.ACTIVE) {
-                    encryptionKeys.add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
-                }
-            }
-=======
->>>>>>> upstream/master
             String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint,
                     wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                     entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
