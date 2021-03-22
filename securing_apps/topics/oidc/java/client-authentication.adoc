@@ -28,7 +28,7 @@ This is based on the https://tools.ietf.org/html/rfc7523[RFC7523] specification.
 the particular backchannel request (for example, code-to-token request) in the `client_assertion` parameter.
 
 * {project_name} must have the public key or certificate of the client so that it can verify the signature on JWT. In {project_name} you need to configure client credentials for your client. First you need to choose `Signed JWT` as the method of authenticating your client in the tab `Credentials` in administration console.
-Then you can choose to either:
+Then you can choose to either in the tab `Keys`:
 ** Configure the JWKS URL where {project_name} can download the client's public keys. This can be a URL such as  \http://myhost.com/myapp/k_jwks (see details above). This option is the most flexible, since the client can rotate its keys anytime and {project_name} then always downloads new keys when needed without needing to change the configuration. More accurately,  {project_name} downloads new keys when it sees the token signed by an unknown `kid` (Key ID).
 ** Upload the client's public key or certificate, either in PEM format, in JWK format, or from the keystore. With this option, the public key is hardcoded and must be changed when the client generates a new key pair.
 You can even generate your own keystore from the {project_name} admininstration console if you don't have your own available.

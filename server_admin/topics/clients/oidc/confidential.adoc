@@ -20,9 +20,13 @@ Alternatively, you can opt to use a signed Json Web Token (JWT) or x509 certific
 .Signed JWT
 image:{project_images}/client-credentials-jwt.png[]
 
-When choosing this credential type you will have to also generate a private key and certificate for the client.  The private key
-will be used to sign the JWT, while the certificate is used by the server to verify the signature.  Click on the
-`Generate new keys and certificate` button to start this process.
+When choosing this credential type you will have to also generate a private key and certificate for the client in the tab `Keys`.
+The private key will be used to sign the JWT, while the certificate is used by the server to verify the signature.
+
+.Keys Tab
+image:{project_images}/client-oidc-keys.png[]
+
+Click on the `Generate new keys and certificate` button to start this process.
 
 .Generate Keys
 image:{project_images}/generate-client-keys.png[]

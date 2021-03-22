@@ -184,9 +184,8 @@ In Key Encryption, the client generates a key pair of asymmetric cryptography. T
 
 The client needs to pass their public key for encrypting CEK onto {project_name}. {project_name} supports downloading public keys from the URL the client provides. The client needs to provide their public keys according to https://tools.ietf.org/html/rfc7517[Json Web Keys (JWK)] specification. The way to do so is defined in `Signed JWT` of <<_client-credentials, Confidential Client Credentials>>. The detailed procedure is as follows:
 
-* open the client's `Credentials` tab
-* select `Signed Jwt` from `Client Authenticator` pulldown menu
-* set ON to `JWKS URL` switch
+* open the client's `Keys` tab
+* toggle `JWKS URL` to ON
 * input the client's public key providing URL on `JWKS URL` textbox
 
 Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5), RSAES OAEP using default parameters (RSA-OAEP), and RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256). The detailed procedure to select this algorithm is as follows:
