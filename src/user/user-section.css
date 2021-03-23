@@ -1,4 +1,8 @@
-
 .keycloak__user-section__email-verified {
   color: var(--pf-global--danger-color--100);
+}
+
+button.pf-c-button.pf-m-primary.kc-join-group-button {
+  margin-left: var(--pf-global--spacer--md);
+  margin-right: var(--pf-global--spacer--xl);
 }

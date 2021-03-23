@@ -43,6 +43,7 @@ export const RealmRoleTabs = () => {
   const [role, setRole] = useState<RoleFormType>();
 
   const { id, clientId } = useParams<{ id: string; clientId: string }>();
+
   const { url } = useRouteMatch();
 
   const { realm } = useRealm();

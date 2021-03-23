@@ -49,9 +49,9 @@ export const UserForm = ({
   useEffect(() => {
     if (editMode) {
       return asyncStateFetch(
-        () => adminClient.users.find({ username: id }),
+        () => adminClient.users.findOne({ id: id }),
         (user) => {
-          setupForm(user[0]);
+          setupForm(user);
         },
         handleError
       );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   AlertVariant,
   PageSection,
@@ -15,6 +15,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { UserGroups } from "./UserGroups";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");
@@ -25,6 +26,17 @@ export const UsersTabs = () => {
   const adminClient = useAdminClient();
   const form = useForm<UserRepresentation>({ mode: "onChange" });
   const { id } = useParams<{ id: string }>();
+  const [user, setUser] = useState("");
+
+  useEffect(() => {
+    const update = async () => {
+      if (id) {
+        const fetchedUser = await adminClient.users.findOne({ id });
+        setUser(fetchedUser.username!);
+      }
+    };
+    setTimeout(update, 100);
+  }, []);
 
   const save = async (user: UserRepresentation) => {
     try {
@@ -48,7 +60,7 @@ export const UsersTabs = () => {
 
   return (
     <>
-      <ViewHeader titleKey={id! || t("users:createUser")} subKey="" />
+      <ViewHeader titleKey={user! || t("users:createUser")} subKey="" />
       <PageSection variant="light">
         {id && (
           <KeycloakTabs isBox>
@@ -58,6 +70,13 @@ export const UsersTabs = () => {
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
               <UserForm form={form} save={save} editMode={true} />
+            </Tab>
+            <Tab
+              eventKey="groups"
+              data-testid="user-groups-tab"
+              title={<TabTitleText>{t("groups")}</TabTitleText>}
+            >
+              <UserGroups />
             </Tab>
           </KeycloakTabs>
         )}

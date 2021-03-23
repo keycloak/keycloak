@@ -22,6 +22,7 @@ import { UsersSection } from "./user/UsersSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
 import { ClientDetails } from "./clients/ClientDetails";
 import { UsersTabs } from "./user/UsersTabs";
+import { UserGroups } from "./user/UserGroups";
 import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
 import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
@@ -143,6 +144,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/:realm/users/add-user",
     component: UsersTabs,
     breadcrumb: t("users:createUser"),
+    access: "manage-users",
+  },
+  {
+    path: "/:realm/users/:id",
+    component: UserGroups,
+    breadcrumb: t("users:userDetails"),
     access: "manage-users",
   },
   {

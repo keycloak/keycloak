@@ -35,7 +35,7 @@ export const RealmRolesSection = () => {
       params.search = searchParam;
     }
 
-    if (listRoles) {
+    if (!listRoles && !searchParam) {
       return [];
     }
 

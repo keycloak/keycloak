@@ -74,7 +74,7 @@ export const UsersSection = () => {
 
   const UserDetailLink = (user: UserRepresentation) => (
     <>
-      <Link key={user.username} to={`${url}/${user.username}/details`}>
+      <Link key={user.username} to={`${url}/${user.id}/details`}>
         {user.username}
       </Link>
     </>
