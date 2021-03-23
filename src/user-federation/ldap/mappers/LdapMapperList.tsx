@@ -27,7 +27,7 @@ import {
   asyncStateFetch,
 } from "../../../context/auth/AdminClient";
 
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams, useRouteMatch } from "react-router-dom";
 
 interface ComponentMapperRepresentation {
   config?: Record<string, any>;
@@ -49,6 +49,8 @@ export const LdapMapperList = () => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
+
+  const { url } = useRouteMatch();
 
 //  const [mapperAction, setMapperAction] = useState(false);
 
@@ -101,7 +103,6 @@ export const LdapMapperList = () => {
       // .sort((a, b) => a.priority - b.priority)
     );
 
-  const url = "mappers";
   const MapperLink = (mapper: ComponentMapperRepresentation) => (
     <>
       <Link to={`${url}/${mapper.id}`}>{mapper.name}</Link>
