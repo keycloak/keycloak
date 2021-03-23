@@ -19,11 +19,7 @@ package org.keycloak.keys;
 
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyStatus;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.*;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
@@ -66,6 +62,10 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
     }
 
     protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate) {
+        return createKeyWrapper(keyPair, certificate, Collections.emptyList());
+    }
+
+    protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<X509Certificate> certificateChain) {
         KeyWrapper key = new KeyWrapper();
 
         key.setProviderId(model.getId());
@@ -79,6 +79,14 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         key.setPrivateKey(keyPair.getPrivate());
         key.setPublicKey(keyPair.getPublic());
         key.setCertificate(certificate);
+
+        if (!certificateChain.isEmpty()) {
+            if (certificate != null && !certificate.equals(certificateChain.get(0))) {
+                // just in case the chain does not contain the end-user certificate
+                certificateChain.add(0, certificate);
+            }
+            key.setCertificateChain(certificateChain);
+        }
 
         return key;
     }
