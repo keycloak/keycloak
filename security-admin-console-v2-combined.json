@@ -9,7 +9,8 @@
     "clientAuthenticatorType": "client-secret",
     "redirectUris": [
         "/adminv2/*",
-        "http://localhost:8080/*"
+        "http://localhost:8080/*",
+        "http://localhost/*"
     ],
     "webOrigins": [
         "*"
