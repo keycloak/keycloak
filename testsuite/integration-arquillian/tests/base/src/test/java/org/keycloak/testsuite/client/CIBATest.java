@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.client;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.containsString;
@@ -408,6 +409,37 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         } finally {
             revertCIBASettings(victimClientResource, victimClientRep);
             revertCIBASettings(attackerClientResource, attackerClientRep);
+        }
+    }
+
+    // This tests that client should *not* be allowed to do whole CIBA flow by himself without any interaction from the user
+    @Test
+    public void testAttackerClientUseAuthReqIdInCallbackEndpoint() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "BASTION";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            // client sends Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
+
+            // This request should not ever pass. Client should not be allowed to send the successfull "approve" request to the BackchannelAuthenticationCallbackEndpoint
+            // with using the "authReqId" as a bearer token
+            int statusCode = oauth.doAuthenticationChannelCallback(response.getAuthReqId(), SUCCEEDED);
+            Assert.assertThat(statusCode, is(equalTo(403)));
+
+            // client sends TokenRequest - This should not pass and should return 400
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.AUTHORIZATION_PENDING)));
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
         }
     }
 
