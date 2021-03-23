@@ -19,6 +19,7 @@ import {
   Switch,
   TextInput,
   ValidatedOptions,
+  Text
 } from "@patternfly/react-core";
 import { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configPropertyRepresentation";
 import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
@@ -42,112 +43,115 @@ type Params = {
 };
 
 export const LdapMappingDetails = () => {
-  const { t } = useTranslation("client-scopes");
-  const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
-  const { addAlert } = useAlerts();
+//   const { t } = useTranslation("client-scopes");
+//   const adminClient = useAdminClient();
+//   const handleError = useErrorHandler();
+//   const { addAlert } = useAlerts();
 
-  const { id, mapperId } = useParams<Params>();
-  const { register, errors, setValue, control, handleSubmit } = useForm();
-  const [mapping, setMapping] = useState<ProtocolMapperRepresentation>();
-  const [typeOpen, setTypeOpen] = useState(false);
-  const [configProperties, setConfigProperties] = useState<
-    ConfigPropertyRepresentation[]
-  >();
+//   const { id, mapperId } = useParams<Params>();
+//   const { register, errors, setValue, control, handleSubmit } = useForm();
+//   const [mapping, setMapping] = useState<ProtocolMapperRepresentation>();
+//   const [typeOpen, setTypeOpen] = useState(false);
+//   const [configProperties, setConfigProperties] = useState<
+//     ConfigPropertyRepresentation[]
+//   >();
 
-  const history = useHistory();
-  const serverInfo = useServerInfo();
-  const { url } = useRouteMatch();
-  const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
+//   const history = useHistory();
+//   const serverInfo = useServerInfo();
+//   const { url } = useRouteMatch();
+//   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        if (mapperId.match(isGuid)) {
-          const data = await adminClient.clientScopes.findProtocolMapper({
-            id,
-            mapperId,
-          });
-          if (data) {
-            Object.entries(data).map((entry) => {
-              convertToFormValues(entry[1], "config", setValue);
-            });
-          }
-          const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
-          const properties = mapperTypes.find(
-            (type) => type.id === data!.protocolMapper
-          )?.properties!;
+  // useEffect(() => {
+  //   return asyncStateFetch(
+  //     async () => {
+  //       if (mapperId.match(isGuid)) {
+  //         const data = await adminClient.clientScopes.findProtocolMapper({
+  //           id,
+  //           mapperId,
+  //         });
+  //         if (data) {
+  //           Object.entries(data).map((entry) => {
+  //             convertToFormValues(entry[1], "config", setValue);
+  //           });
+  //         }
+  //         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
+  //         const properties = mapperTypes.find(
+  //           (type) => type.id === data!.protocolMapper
+  //         )?.properties!;
 
-          return {
-            configProperties: properties,
-            mapping: data,
-          };
-        } else {
-          const scope = await adminClient.clientScopes.findOne({ id });
-          const protocolMappers = serverInfo.protocolMapperTypes![
-            scope.protocol!
-          ];
-          const mapping = protocolMappers.find(
-            (mapper) => mapper.id === mapperId
-          )!;
-          return {
-            mapping: {
-              name: mapping.name,
-              protocol: scope.protocol,
-              protocolMapper: mapperId,
-            },
-          };
-        }
-      },
-      (result) => {
-        setConfigProperties(result.configProperties);
-        setMapping(result.mapping);
-      },
-      handleError
-    );
-  }, []);
+  //         return {
+  //           configProperties: properties,
+  //           mapping: data,
+  //         };
+  //       } else {
+  //         const scope = await adminClient.clientScopes.findOne({ id });
+  //         const protocolMappers = serverInfo.protocolMapperTypes![
+  //           scope.protocol!
+  //         ];
+  //         const mapping = protocolMappers.find(
+  //           (mapper) => mapper.id === mapperId
+  //         )!;
+  //         return {
+  //           mapping: {
+  //             name: mapping.name,
+  //             protocol: scope.protocol,
+  //             protocolMapper: mapperId,
+  //           },
+  //         };
+  //       }
+  //     },
+  //     (result) => {
+  //       setConfigProperties(result.configProperties);
+  //       setMapping(result.mapping);
+  //     },
+  //     handleError
+  //   );
+  // }, []);
 
-  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "client-scopes:deleteMappingTitle",
-    messageKey: "client-scopes:deleteMappingConfirm",
-    continueButtonLabel: "common:delete",
-    continueButtonVariant: ButtonVariant.danger,
-    onConfirm: async () => {
-      try {
-        await adminClient.clientScopes.delClientScopeMappings(
-          { client: id, id: mapperId },
-          []
-        );
-        addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        history.push(`${url}/${id}`);
-      } catch (error) {
-        addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
-      }
-    },
-  });
+  // const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+  //   titleKey: "client-scopes:deleteMappingTitle",
+  //   messageKey: "client-scopes:deleteMappingConfirm",
+  //   continueButtonLabel: "common:delete",
+  //   continueButtonVariant: ButtonVariant.danger,
+  //   onConfirm: async () => {
+  //     try {
+  //       await adminClient.clientScopes.delClientScopeMappings(
+  //         { client: id, id: mapperId },
+  //         []
+  //       );
+  //       addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+  //       history.push(`${url}/${id}`);
+  //     } catch (error) {
+  //       addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
+  //     }
+  //   },
+  // });
 
-  const save = async (formMapping: ProtocolMapperRepresentation) => {
-    const config = convertFormValuesToObject(formMapping.config);
-    const map = { ...mapping, ...formMapping, config };
-    const key = mapperId.match(isGuid) ? "Updated" : "Created";
-    try {
-      if (mapperId.match(isGuid)) {
-        await adminClient.clientScopes.updateProtocolMapper(
-          { id, mapperId },
-          map
-        );
-      } else {
-        await adminClient.clientScopes.addProtocolMapper({ id }, map);
-      }
-      addAlert(t(`mapping${key}Success`), AlertVariant.success);
-    } catch (error) {
-      addAlert(t(`mapping${key}Error`, { error }), AlertVariant.danger);
-    }
-  };
+  // const save = async (formMapping: ProtocolMapperRepresentation) => {
+  //   const config = convertFormValuesToObject(formMapping.config);
+  //   const map = { ...mapping, ...formMapping, config };
+  //   const key = mapperId.match(isGuid) ? "Updated" : "Created";
+  //   try {
+  //     if (mapperId.match(isGuid)) {
+  //       await adminClient.clientScopes.updateProtocolMapper(
+  //         { id, mapperId },
+  //         map
+  //       );
+  //     } else {
+  //       await adminClient.clientScopes.addProtocolMapper({ id }, map);
+  //     }
+  //     addAlert(t(`mapping${key}Success`), AlertVariant.success);
+  //   } catch (error) {
+  //     addAlert(t(`mapping${key}Error`, { error }), AlertVariant.danger);
+  //   }
+  // };
 
   return (
     <>
-      <DeleteConfirm />
+    <Text>
+    Coming soon!
+    </Text>
+      {/* <DeleteConfirm />
       <ViewHeader
         titleKey={mapping ? mapping.name! : t("addMapper")}
         subKey={mapperId.match(isGuid) ? mapperId : ""}
@@ -371,6 +375,7 @@ export const LdapMappingDetails = () => {
           </ActionGroup>
         </FormAccess>
       </PageSection>
-    </>
+     */}
+     </>
   );
 };
