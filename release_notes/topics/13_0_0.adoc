@@ -11,3 +11,12 @@ especially with larger number of clients, because it is no longer necessary to g
 
 Support for OAuth 2.0 Device Authorization Grant is now available. Thanks to https://github.com/wadahiro[Hiroyuki Wada], https://github.com/splatch[Łukasz Dywicki]
 and https://github.com/Michito-Okai[Michito Okai].
+
+== SAML Artifact binding in server to client communication
+
+Keycloak now supports communication with clients using SAML _Artifact_ binding. A new `Force Artifact Binding` option
+was introduced in the client configuration, that forces communication with the client using artifact messages. For more
+details proceed to link:{adminguide_link_latest}#_client_saml_configuration[{adminguide_name}]. Please note, that with
+this version, Keycloak SAML client adapter does NOT support _Artifact_ binding.
+
+Thanks to https://github.com/AlistairDoswald[AlistairDoswald] and https://github.com/harture[harture].

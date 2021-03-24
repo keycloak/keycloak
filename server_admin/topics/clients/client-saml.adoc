@@ -1,4 +1,4 @@
-
+[[_client_saml_configuration]]
 === SAML Clients
 
 {project_name} supports <<_saml,SAML 2.0>> for registered applications.
@@ -54,6 +54,11 @@ Include AuthnStatement::
   This is enabled by default, which means that `AuthStatement` element will be included in login responses. Note that setting this to off
   would prevent the client from determining the maximum session length which could result into never expiring client session.
 
+Force Artifact Binding::
+  When turned on, this will force {project_name} to send artifact messages instead of SAML messages via _POST_ and _Redirect_,
+  even when the client has not asked for the binding during login. This must be set if _Artifact_ binding is to be used with
+  Idp-initiated login. To use artifact messages also during logout, it is necessary to also configure `Logout Service Redirect Binding URL`.
+
 Sign Documents::
   When turned on, {project_name} will sign the document using the realm's private key.
 
@@ -89,7 +94,7 @@ Canonicalization Method::
 
 Encrypt Assertions::
   Encrypt assertions in SAML documents with the realm's private key.
-  The AES algorithm is used with a key size of 128 bits. 
+  The AES algorithm is used with a key size of 128 bits.
 
 Client Signature Required::
   Expect that documents coming from a client are signed.
@@ -105,12 +110,12 @@ Front Channel Logout::
   If this switch is false, then {project_name} will invoke a background SAML request to logout the application.
 
 Force Name ID Format::
-  If the request has a name ID policy, ignore it and used the value configured in the admin console under Name ID Format 
+  If the request has a name ID policy, ignore it and used the value configured in the admin console under Name ID Format
 
 Name ID Format::
   Name ID Format for the subject.
   If no name ID policy is specified in the request or if the Force Name ID Format attribute is true, this value is used.
-  Properties used for each of the respective formats are defined below. 
+  Properties used for each of the respective formats are defined below.
 
 Root URL::
   If {project_name} uses any configured relative URLs, this value is prepended to them.
@@ -127,18 +132,25 @@ Base URL::
 Master SAML Processing URL::
   This URL will be used for all SAML requests and the response will be directed to the SP.
   It will be used as the Assertion Consumer Service URL and the Single Logout Service URL.
-  If a login request contains the Assertion Consumer Service URL, that will take precedence, but this URL must be validated by a registered Valid Redirect URI pattern 
+  If a login request contains the Assertion Consumer Service URL, that will take precedence, but this URL must be validated by a registered Valid Redirect URI pattern
 
 Assertion Consumer Service POST Binding URL::
-  POST Binding URL for the Assertion Consumer Service. 
+  POST Binding URL for the Assertion Consumer Service.
 
 Assertion Consumer Service Redirect Binding URL::
-  Redirect Binding URL for the Assertion Consumer Service. 
+  Redirect Binding URL for the Assertion Consumer Service.
 
 Logout Service POST Binding URL::
-  POST Binding URL for the Logout Service. 
+  POST Binding URL for the Logout Service.
 
 Logout Service Redirect Binding URL::
-  Redirect Binding URL for the Logout Service.     
+  Redirect Binding URL for the Logout Service.
 
+ Logout Service Artifact Binding URL::
+  _Artifact_ Binding URL for the Logout Service. When set together with the `Force Artifact Binding` option, _Artifact_ binding is forced for both login and logout flows. _Artifact_ binding is not used for logout unless this property is set.
 
+Artifact Binding URL::
+  URL to send the HTTP artifact messages to.
+
+Artifact Resolution Service::
+  URL of the client SOAP endpoint where to send the `ArtifactResolve` messages to.
