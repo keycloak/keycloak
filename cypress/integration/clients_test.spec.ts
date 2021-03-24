@@ -83,8 +83,7 @@ describe("Clients test", function () {
 
     it("Initial access token", () => {
       const initialAccessTokenTab = new InitialAccessTokenTab();
-      listingPage.goToInitialAccessTokenTab();
-      initialAccessTokenTab.shouldBeEmpty();
+      initialAccessTokenTab.goToInitialAccessTokenTab().shouldBeEmpty();
       initialAccessTokenTab.createNewToken(1, 1).save();
 
       modalUtils.checkModalTitle("Initial access token details").closeModal();

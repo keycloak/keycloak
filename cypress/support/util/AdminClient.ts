@@ -1,4 +1,5 @@
 import KeycloakAdminClient from "keycloak-admin";
+import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 
 export default class AdminClient {
   private client: KeycloakAdminClient;
@@ -57,9 +58,14 @@ export default class AdminClient {
     }
   }
 
+  async createUser(user: UserRepresentation) {
+    await this.login();
+    return await this.client.users.create(user);
+  }
+
   async createUserInGroup(username: string, groupId: string) {
     await this.login();
-    const user = await this.client.users.create({ username, enabled: true });
+    const user = await this.createUser({ username, enabled: true });
     await this.client.users.addToGroup({ id: user.id!, groupId });
   }
 }

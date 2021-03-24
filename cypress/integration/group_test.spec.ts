@@ -1,5 +1,5 @@
 import ListingPage from "../support/pages/admin_console/ListingPage";
-import CreateGroupModal from "../support/pages/admin_console/manage/groups/CreateGroupModal";
+import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import GroupDetailPage from "../support/pages/admin_console/manage/groups/GroupDetailPage";
 import { SearchGroupPage } from "../support/pages/admin_console/manage/groups/SearchGroup";
 import Masthead from "../support/pages/admin_console/Masthead";
@@ -15,7 +15,7 @@ describe("Group test", () => {
   const sidebarPage = new SidebarPage();
   const listingPage = new ListingPage();
   const viewHeaderPage = new ViewHeaderPage();
-  const createGroupModal = new CreateGroupModal();
+  const groupModal = new GroupModal();
 
   let groupName = "group";
 
@@ -29,7 +29,7 @@ describe("Group test", () => {
     it("Group CRUD test", () => {
       groupName += "_" + (Math.random() + 1).toString(36).substring(7);
 
-      createGroupModal
+      groupModal
         .open("empty-primary-action")
         .fillGroupForm(groupName)
         .clickCreate();
@@ -42,6 +42,23 @@ describe("Group test", () => {
       // Delete
       listingPage.deleteItem(groupName);
       masthead.checkNotificationMessage("Group deleted");
+    });
+
+    it("Should rename group", () => {
+      groupModal
+        .open("empty-primary-action")
+        .fillGroupForm(groupName)
+        .clickCreate();
+      listingPage.goToItemDetails(groupName);
+      viewHeaderPage.clickAction("renameGroupAction");
+
+      const newName = "Renamed group";
+      groupModal.fillGroupForm(newName).clickRename();
+      masthead.checkNotificationMessage("Group updated");
+
+      sidebarPage.goToGroups();
+      listingPage.searchItem(newName, false).itemExist(newName);
+      listingPage.deleteItem(newName);
     });
 
     const searchGroupPage = new SearchGroupPage();
@@ -63,6 +80,7 @@ describe("Group test", () => {
         const username = "user" + i;
         client.createUserInGroup(username, createdGroups[i % 3].id);
       }
+      client.createUser({ username: "new", enabled: true });
     });
 
     beforeEach(() => {
@@ -80,7 +98,7 @@ describe("Group test", () => {
       detailPage.checkListSubGroup([groups[1]]);
 
       const added = "addedGroup";
-      createGroupModal.open().fillGroupForm(added).clickCreate();
+      groupModal.open().fillGroupForm(added).clickCreate();
 
       detailPage.checkListSubGroup([added, groups[1]]);
     });
@@ -91,6 +109,18 @@ describe("Group test", () => {
       detailPage
         .clickIncludeSubGroups()
         .checkListMembers(["user0", "user3", "user1", "user4", "user2"]);
+    });
+
+    it("Should add members", () => {
+      listingPage.goToItemDetails(groups[0]);
+      detailPage
+        .clickMembersTab()
+        .clickAddMembers()
+        .checkSelectableMembers(["user1", "user4"]);
+      detailPage.selectUsers(["new"]).clickAdd();
+
+      masthead.checkNotificationMessage("1 user added to the group");
+      detailPage.checkListMembers(["new", "user0", "user3"]);
     });
 
     it("Attributes CRUD test", () => {

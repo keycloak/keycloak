@@ -1,9 +1,16 @@
 export default class InitialAccessTokenTab {
+  private initialAccessTokenTab = "initialAccessToken";
+
   private emptyAction = "empty-primary-action";
 
   private expirationInput = "expiration";
   private countInput = "count";
   private saveBtn = "save";
+
+  goToInitialAccessTokenTab() {
+    cy.getId(this.initialAccessTokenTab).click();
+    return this;
+  }
 
   shouldBeEmpty() {
     cy.getId(this.emptyAction).should("exist");

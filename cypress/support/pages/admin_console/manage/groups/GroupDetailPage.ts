@@ -6,6 +6,9 @@ export default class GroupDetailPage {
   private attributesTab = "attributes";
   private memberNameColumn = 'tbody > tr > [data-label="Name"]';
   private includeSubGroupsCheck = "includeSubGroupsCheck";
+  private addMembers = "addMember";
+  private addMember = "add";
+  private memberUsernameColumn = 'tbody > tr > [data-label="Username"]';
 
   private keyInput = '[name="attributes[0].key"]';
   private valueInput = '[name="attributes[0].value"]';
@@ -37,6 +40,31 @@ export default class GroupDetailPage {
     return this;
   }
 
+  checkSelectableMembers(members: string[]) {
+    cy.get(this.memberUsernameColumn).should((member) => {
+      for (const user of members) {
+        expect(member).to.contain(user);
+      }
+    });
+    return this;
+  }
+
+  selectUsers(users: string[]) {
+    for (const user of users) {
+      cy.get(this.memberUsernameColumn)
+        .contains(user)
+        .parent()
+        .find("input")
+        .click();
+    }
+    return this;
+  }
+
+  clickAdd() {
+    cy.getId(this.addMember).click();
+    return this;
+  }
+
   clickIncludeSubGroups() {
     cy.getId(this.includeSubGroupsCheck).click();
     return this;
@@ -44,6 +72,11 @@ export default class GroupDetailPage {
 
   clickAttributesTab() {
     cy.getId(this.attributesTab).click();
+    return this;
+  }
+
+  clickAddMembers() {
+    cy.getId(this.addMembers).click();
     return this;
   }
 

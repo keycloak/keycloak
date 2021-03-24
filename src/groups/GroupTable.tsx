@@ -19,7 +19,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { GroupsCreateModal } from "./GroupsCreateModal";
+import { GroupsModal } from "./GroupsModal";
 import { getLastId } from "./groupIdUtils";
 
 type GroupTableData = GroupRepresentation & {
@@ -195,7 +195,7 @@ export const GroupTable = () => {
         }
       />
       {isCreateModalOpen && (
-        <GroupsCreateModal
+        <GroupsModal
           id={id}
           handleModalToggle={handleModalToggle}
           refresh={refresh}

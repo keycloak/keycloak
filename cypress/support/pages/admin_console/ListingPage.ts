@@ -7,7 +7,6 @@ export default class ListingPage {
   searchBtn: string;
   createBtn: string;
   importBtn: string;
-  initialAccessTokenTab = "initialAccessToken";
 
   constructor() {
     this.searchInput = '.pf-c-toolbar__item [type="search"]';
@@ -32,11 +31,6 @@ export default class ListingPage {
   goToImportItem() {
     cy.get(this.importBtn).click();
 
-    return this;
-  }
-
-  goToInitialAccessTokenTab() {
-    cy.getId(this.initialAccessTokenTab).click();
     return this;
   }
 

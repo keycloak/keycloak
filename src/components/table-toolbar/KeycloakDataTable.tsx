@@ -133,6 +133,7 @@ export function KeycloakDataTable<T>({
   emptyState,
 }: DataListProps<T>) {
   const { t } = useTranslation();
+  const [selected, setSelected] = useState<T[]>([]);
   const [rows, setRows] = useState<Row<T>[]>();
   const [filteredData, setFilteredData] = useState<Row<T>[]>();
   const [loading, setLoading] = useState(false);
@@ -154,7 +155,9 @@ export function KeycloakDataTable<T>({
         const result = data!.map((value) => {
           return {
             data: value,
-            selected: false,
+            selected: !!selected.find(
+              (v) => (v as any).id === (value as any).id
+            ),
             cells: columns.map((col) => {
               if (col.cellRenderer) {
                 return col.cellRenderer(value);
@@ -233,7 +236,17 @@ export function KeycloakDataTable<T>({
       rows![rowIndex].selected = isSelected;
       setRows([...rows!]);
     }
-    onSelect!(rows!.filter((row) => row.selected).map((row) => row.data));
+    const difference = _.differenceBy(
+      selected,
+      rows!.map((row) => row.data),
+      "id"
+    );
+    const selectedRows = [
+      ...difference,
+      ...rows!.filter((row) => row.selected).map((row) => row.data),
+    ];
+    setSelected(selectedRows);
+    onSelect!(selectedRows);
   };
 
   return (

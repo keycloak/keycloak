@@ -1,7 +1,8 @@
-export default class CreateGroupModal {
+export default class GroupModal {
   private openButton = "openCreateGroupModal";
   private nameInput = "groupNameInput";
   private createButton = "createGroup";
+  private renameButton = "renameGroup";
 
   open(name?: string) {
     cy.getId(name || this.openButton).click();
@@ -16,6 +17,11 @@ export default class CreateGroupModal {
 
   clickCreate() {
     cy.getId(this.createButton).click();
+    return this;
+  }
+
+  clickRename() {
+    cy.getId(this.renameButton).click();
     return this;
   }
 }
