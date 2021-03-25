@@ -300,6 +300,64 @@ public class GroupTest extends AbstractGroupTest {
         });
     }
 
+
+    // KEYCLOAK-17581
+    @Test
+    public void createGroupWithEmptyNameShouldFail() {
+
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("");
+        try (Response response = realm.groups().add(group)){
+            if (response.getStatus() != 400) {
+                Assert.fail("Creating a group with empty name should fail");
+            }
+        } catch (Exception expected) {
+            Assert.assertNotNull(expected);
+        }
+
+        group.setName(null);
+        try (Response response = realm.groups().add(group)){
+            if (response.getStatus() != 400) {
+                Assert.fail("Creating a group with null name should fail");
+            }
+        } catch (Exception expected) {
+            Assert.assertNotNull(expected);
+        }
+    }
+
+    // KEYCLOAK-17581
+    @Test
+    public void updatingGroupWithEmptyNameShouldFail() {
+
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("groupWithName");
+
+        String groupId = null;
+        try (Response response = realm.groups().add(group)) {
+            groupId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            group.setName("");
+            realm.groups().group(groupId).update(group);
+            Assert.fail("Updating a group with empty name should fail");
+        } catch(Exception expected) {
+            Assert.assertNotNull(expected);
+        }
+
+        try {
+            group.setName(null);
+            realm.groups().group(groupId).update(group);
+            Assert.fail("Updating a group with null name should fail");
+        } catch(Exception expected) {
+            Assert.assertNotNull(expected);
+        }
+    }
+
     @Test
     public void createAndTestGroups() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
