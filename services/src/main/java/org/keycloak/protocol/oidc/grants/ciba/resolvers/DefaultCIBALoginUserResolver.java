@@ -20,6 +20,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class DefaultCIBALoginUserResolver implements CIBALoginUserResolver {
 
     private KeycloakSession session;

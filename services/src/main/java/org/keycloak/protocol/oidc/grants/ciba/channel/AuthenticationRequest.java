@@ -47,6 +47,8 @@ import org.keycloak.util.TokenUtil;
  *
  * <p>A authentication request can be serialized to a JWE so that they can be exchanged with authentication devices to communicate
  * and authorize the authentication request made by consumption devices.
+ * 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class AuthenticationRequest extends JsonWebToken {
 

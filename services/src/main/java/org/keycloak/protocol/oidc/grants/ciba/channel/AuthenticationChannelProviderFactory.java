@@ -18,6 +18,9 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import org.keycloak.provider.ProviderFactory;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public interface AuthenticationChannelProviderFactory extends ProviderFactory<AuthenticationChannelProvider> {
 
 }

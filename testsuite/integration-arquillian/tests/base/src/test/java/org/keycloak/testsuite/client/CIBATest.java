@@ -82,6 +82,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.testsuite.util.WaitUtils;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 @EnableCiba
 @EnableFeature(value = Profile.Feature.CIBA, skipRestart = true)
 @AuthServerContainerExclude({REMOTE, QUARKUS})

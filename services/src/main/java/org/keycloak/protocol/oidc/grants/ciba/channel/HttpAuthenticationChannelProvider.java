@@ -32,6 +32,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.services.resources.Cors;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class HttpAuthenticationChannelProvider implements AuthenticationChannelProvider{
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";

@@ -18,6 +18,9 @@ package org.keycloak.protocol.oidc.grants.ciba.resolvers;
 
 import org.keycloak.provider.ProviderFactory;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public interface CIBALoginUserResolverFactory extends ProviderFactory<CIBALoginUserResolver> {
 
 }
