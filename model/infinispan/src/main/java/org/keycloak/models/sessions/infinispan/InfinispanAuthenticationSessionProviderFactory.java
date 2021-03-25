@@ -48,6 +48,7 @@ import org.jboss.logging.Logger;
 public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
+    public static final int PROVIDER_PRIORITY = 1;
 
     private InfinispanKeyGenerator keyGenerator;
 
@@ -176,5 +177,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

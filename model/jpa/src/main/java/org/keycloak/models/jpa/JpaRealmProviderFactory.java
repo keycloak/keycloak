@@ -40,6 +40,9 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
 
     private Runnable onClose;
 
+    public static final String PROVIDER_ID = "jpa";
+    public static final int PROVIDER_PRIORITY = 1;
+
     @Override
     public void init(Config.Scope config) {
     }
@@ -52,7 +55,7 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
 
     @Override
     public String getId() {
-        return "jpa";
+        return PROVIDER_ID;
     }
 
     @Override
@@ -83,4 +86,10 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
             create(e.getKeycloakSession()).preRemove(realm, role);
         }
     }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
+    }
+
 }

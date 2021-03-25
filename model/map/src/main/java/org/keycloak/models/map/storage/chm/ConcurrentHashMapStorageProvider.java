@@ -57,13 +57,24 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
     @Override
     public void init(Scope config) {
-        File f = new File(config.get("dir"));
-        try {
-            this.storageDirectory = f.exists()
-              ? f
-              : Files.createTempDirectory("storage-map-chm-").toFile();
-        } catch (IOException ex) {
+        final String dir = config.get("dir");
+        if (dir == null || dir.trim().isEmpty()) {
+            LOG.warn("No directory set, created objects will not survive server restart");
             this.storageDirectory = null;
+        } else {
+            File f = new File(dir);
+            try {
+                Files.createDirectories(f.toPath());
+                if (f.exists()) {
+                    this.storageDirectory = f;
+                } else {
+                    LOG.warnf("Directory cannot be used, created objects will not survive server restart: %s", dir);
+                    this.storageDirectory = null;
+                }
+            } catch (IOException ex) {
+                LOG.warnf("Directory cannot be used, created objects will not survive server restart: %s", dir);
+                this.storageDirectory = null;
+            }
         }
     }
 

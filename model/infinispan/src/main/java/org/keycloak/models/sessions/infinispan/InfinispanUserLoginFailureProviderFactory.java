@@ -50,6 +50,7 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.function.BiFunction;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -210,5 +211,10 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }
