@@ -2046,7 +2046,6 @@ public class UserTest extends AbstractAdminTest {
         
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
         realm.roles().create(realmCompositeRole);
-        realm.roles().get("realm-composite").update(realmCompositeRole);
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite").addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
 
@@ -2061,7 +2060,6 @@ public class UserTest extends AbstractAdminTest {
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role").build());
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role2").build());
         realm.clients().get(clientUuid).roles().create(clientCompositeRole);
-        realm.clients().get(clientUuid).roles().get("client-composite").update(clientCompositeRole);
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
         realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
 
