@@ -65,6 +65,7 @@ import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
@@ -334,5 +335,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         return PROVIDER_ID;
     }
 
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
+    }
 }
 

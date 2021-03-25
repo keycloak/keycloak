@@ -24,6 +24,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ServerInfoProvider;
 import org.keycloak.models.ServerInfoProviderFactory;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
 public class JpaServerInfoProviderFactory implements ServerInfoProviderFactory {
 
@@ -37,7 +39,7 @@ public class JpaServerInfoProviderFactory implements ServerInfoProviderFactory {
 
     @Override
     public String getId() {
-        return "jpa";
+        return PROVIDER_ID;
     }
 
     @Override
@@ -48,5 +50,10 @@ public class JpaServerInfoProviderFactory implements ServerInfoProviderFactory {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

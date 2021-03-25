@@ -225,7 +225,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
             String defaultProvider = Config.getProvider(spi.getName());
             if (defaultProvider != null) {
                 if (getProviderFactory(spi.getProviderClass(), defaultProvider) == null) {
-                    throw new RuntimeException("Failed to find provider " + provider + " for " + spi.getName());
+                    throw new RuntimeException("Failed to find provider " + defaultProvider + " for " + spi.getName());
                 }
             } else {
                 Map<String, ProviderFactory> factories = factoriesMap.get(spi.getProviderClass());

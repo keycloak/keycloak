@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SingleUseTokenStoreProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -96,5 +97,10 @@ public class InfinispanSingleUseTokenStoreProviderFactory implements SingleUseTo
     @Override
     public String getId() {
         return "infinispan";
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

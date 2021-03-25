@@ -24,10 +24,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SamlArtifactSessionMappingStoreProvider;
 import org.keycloak.models.SamlArtifactSessionMappingStoreProviderFactory;
-import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 
 import java.util.UUID;
 import java.util.function.Supplier;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author mhajas
@@ -73,5 +73,10 @@ public class InfinispanSamlArtifactSessionMappingStoreProviderFactory implements
     @Override
     public String getId() {
         return "infinispan";
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

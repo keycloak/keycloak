@@ -25,6 +25,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.persistence.EntityManager;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
 public class JpaGroupProviderFactory implements GroupProviderFactory {
 
@@ -39,7 +41,7 @@ public class JpaGroupProviderFactory implements GroupProviderFactory {
 
     @Override
     public String getId() {
-        return "jpa";
+        return PROVIDER_ID;
     }
 
     @Override
@@ -50,6 +52,11 @@ public class JpaGroupProviderFactory implements GroupProviderFactory {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 
 }
