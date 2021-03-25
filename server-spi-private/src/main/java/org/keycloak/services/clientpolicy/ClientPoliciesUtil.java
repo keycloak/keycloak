@@ -50,6 +50,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Utilities for treating client policies/profiles
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientPoliciesUtil {
 
     private static final Logger logger = Logger.getLogger(ClientPoliciesUtil.class);

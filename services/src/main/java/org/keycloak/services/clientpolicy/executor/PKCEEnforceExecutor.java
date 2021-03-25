@@ -47,6 +47,9 @@ import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider<PKCEEnforceExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(PKCEEnforceExecutor.class);

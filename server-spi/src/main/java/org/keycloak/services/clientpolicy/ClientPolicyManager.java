@@ -23,6 +23,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 /**
  * Provides a method for handling an event defined in {@link ClientPolicyEvent}.
  * Also provides methods for handling client profiles and policies.
+ * 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public interface ClientPolicyManager {
 

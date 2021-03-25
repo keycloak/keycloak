@@ -20,6 +20,9 @@ package org.keycloak.models;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientPolicyModel implements Serializable {
 
     protected String name;

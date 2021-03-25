@@ -20,5 +20,8 @@ package org.keycloak.services.clientpolicy.condition;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderFactory;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public interface ClientPolicyConditionProviderFactory extends ProviderFactory<ClientPolicyConditionProvider>, ConfiguredProvider { 
 }

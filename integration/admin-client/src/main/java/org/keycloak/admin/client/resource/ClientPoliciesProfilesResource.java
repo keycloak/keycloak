@@ -9,6 +9,9 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public interface ClientPoliciesProfilesResource {
 
     @GET

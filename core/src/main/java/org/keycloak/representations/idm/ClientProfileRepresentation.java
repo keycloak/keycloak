@@ -21,6 +21,11 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Client Profile's external representation class
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientProfileRepresentation {
 

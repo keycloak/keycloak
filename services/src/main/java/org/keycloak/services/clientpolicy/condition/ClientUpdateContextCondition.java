@@ -35,6 +35,9 @@ import org.keycloak.util.TokenUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientUpdateContextCondition extends AbstractClientCondition {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);

@@ -42,6 +42,9 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientUpdateSourceRolesCondition extends AbstractClientCondition {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceRolesCondition.class);

@@ -106,6 +106,9 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 @EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
 public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 

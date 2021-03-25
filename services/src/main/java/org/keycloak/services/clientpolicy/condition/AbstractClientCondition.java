@@ -27,6 +27,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public abstract class AbstractClientCondition implements ClientPolicyConditionProvider {
 
     protected static final Logger logger = Logger.getLogger(AbstractClientCondition.class);

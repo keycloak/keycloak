@@ -19,6 +19,9 @@ package org.keycloak.services.clientpolicy;
 
 import org.jboss.logging.Logger;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientPolicyLogger {
 
     public static void log(Logger logger, String content) {

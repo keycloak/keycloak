@@ -39,6 +39,9 @@ import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientScopesCondition extends AbstractClientCondition {
 
     private static final Logger logger = Logger.getLogger(ClientScopesCondition.class);

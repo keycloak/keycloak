@@ -28,6 +28,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
  * The condition can be evaluated on the events defined in {@link ClientPolicyEvent}.
  * It is sufficient for the implementer of this condition to implement methods in which they are interested
  * and {@link isEvaluatedOnEvent} method.
+ * 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public interface ClientPolicyConditionProvider extends Provider {
 

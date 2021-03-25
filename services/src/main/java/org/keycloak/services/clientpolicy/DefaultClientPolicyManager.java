@@ -34,6 +34,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class DefaultClientPolicyManager implements ClientPolicyManager {
 
     // log format CLIENT-POLICY@session.hashCode() :: [event] :: [detail]

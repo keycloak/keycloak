@@ -32,6 +32,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProvider<SecureClientAuthEnforceExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(SecureClientAuthEnforceExecutor.class);

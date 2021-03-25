@@ -152,6 +152,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected static final Logger logger = Logger.getLogger(AbstractClientPoliciesTest.class);

@@ -19,6 +19,14 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+/**
+ * Client Profiles' (the set of all Client Profile) external representation class
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientProfilesRepresentation {
     protected List<ClientProfileRepresentation> profiles;
 

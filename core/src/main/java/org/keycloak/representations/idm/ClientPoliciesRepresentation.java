@@ -21,6 +21,11 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Client Policies' (the set of all Client Policy) external representation class
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientPoliciesRepresentation {
     protected List<ClientPolicyRepresentation> policies;

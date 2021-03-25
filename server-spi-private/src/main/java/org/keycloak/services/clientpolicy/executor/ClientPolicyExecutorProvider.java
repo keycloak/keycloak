@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -28,6 +27,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  * The executor can be executed on the events defined in {@link ClientPolicyEvent}.
  * It is sufficient for the implementer of this executor to implement methods in which they are interested
  * and {@link isEvaluatedOnEvent} method.
+ * 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public interface ClientPolicyExecutorProvider<CONFIG extends ClientPolicyExecutorConfiguration> extends Provider {
 

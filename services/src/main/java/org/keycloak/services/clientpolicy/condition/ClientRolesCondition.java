@@ -34,6 +34,9 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientRolesCondition extends AbstractClientCondition {
 
     private static final Logger logger = Logger.getLogger(ClientRolesCondition.class);
