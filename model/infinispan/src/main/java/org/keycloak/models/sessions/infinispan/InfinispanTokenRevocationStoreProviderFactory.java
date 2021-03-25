@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.TokenRevocationStoreProvider;
 import org.keycloak.models.TokenRevocationStoreProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -73,4 +74,8 @@ public class InfinispanTokenRevocationStoreProviderFactory implements TokenRevoc
         return "infinispan";
     }
 
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
+    }
 }

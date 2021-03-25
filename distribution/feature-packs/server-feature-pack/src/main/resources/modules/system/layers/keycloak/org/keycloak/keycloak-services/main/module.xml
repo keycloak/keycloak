@@ -34,6 +34,7 @@
         <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
+        <module name="org.keycloak.keycloak-model-map" services="import"/>
         <module name="org.keycloak.keycloak-model-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-saml-core-public" services="import"/>
         <module name="org.keycloak.keycloak-saml-core" services="import"/>

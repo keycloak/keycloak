@@ -44,6 +44,7 @@ public class KeycloakProviderDependencyProcessor implements DeploymentUnitProces
     private static final ModuleIdentifier KEYCLOAK_SERVER_SPI = ModuleIdentifier.create("org.keycloak.keycloak-server-spi");
     private static final ModuleIdentifier KEYCLOAK_SERVER_SPI_PRIVATE = ModuleIdentifier.create("org.keycloak.keycloak-server-spi-private");
     private static final ModuleIdentifier KEYCLOAK_JPA = ModuleIdentifier.create("org.keycloak.keycloak-model-jpa");
+    private static final ModuleIdentifier KEYCLOAK_MAP = ModuleIdentifier.create("org.keycloak.keycloak-model-map");
     private static final ModuleIdentifier JAXRS = ModuleIdentifier.create("javax.ws.rs.api");
     private static final ModuleIdentifier RESTEASY = ModuleIdentifier.create("org.jboss.resteasy.resteasy-jaxrs");
     private static final ModuleIdentifier APACHE = ModuleIdentifier.create("org.apache.httpcomponents");
@@ -70,6 +71,7 @@ public class KeycloakProviderDependencyProcessor implements DeploymentUnitProces
             moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, RESTEASY, false, false, false, false));
             moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE, false, false, false, false));
             moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_JPA, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_MAP, false, false, false, false));
         }
     }
 
