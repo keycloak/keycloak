@@ -94,6 +94,7 @@ org.keycloak.vault.VaultSpi
 org.keycloak.crypto.CekManagementSpi
 org.keycloak.crypto.ContentEncryptionSpi
 org.keycloak.validation.ClientValidationSPI
+org.keycloak.validate.ValidatorSPI
 org.keycloak.headers.SecurityHeadersSpi
 org.keycloak.services.clientpolicy.condition.ClientPolicyConditionSpi
 org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorSpi

@@ -1,0 +1,137 @@
+package org.keycloak.validate;
+
+import com.google.common.collect.ImmutableMap;
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.validate.builtin.LengthValidator;
+import org.keycloak.validate.builtin.UriValidator;
+
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.regex.Pattern;
+
+import static org.keycloak.validate.ValidatorConfig.configFromMap;
+
+public class BuiltinValidatorsTest {
+
+    @Test
+    public void validateLength() {
+
+        Validator validator = Validators.lengthValidator();
+
+        ValidatorConfig config1 = configFromMap(ImmutableMap.of("min", 1));
+        Assert.assertTrue(validator.validate("tester", "name", config1).isValid());
+
+        ValidatorConfig config2 = configFromMap(ImmutableMap.of("min", 7));
+        Assert.assertFalse(validator.validate("tester", "name", config2).isValid());
+    }
+
+    @Test
+    public void validateEmail() {
+
+        Validator validator = Validators.emailValidator();
+
+        Assert.assertTrue(validator.validate("admin@example.org", "email")
+                .isValid());
+        Assert.assertFalse(validator.validate("adminATexample.org", "email")
+                .isValid());
+    }
+
+    @Test
+    public void validateNotBlank() {
+
+        Validator validator = Validators.notBlankValidator();
+
+        Assert.assertTrue(validator.validate("tester", "username").isValid());
+        Assert.assertFalse(validator.validate("", "username").isValid());
+        Assert.assertFalse(validator.validate("   ", "username").isValid());
+        Assert.assertFalse(validator.validate(null, "username").isValid());
+    }
+
+    @Test
+    public void validateNotEmpty() {
+
+        Validator validator = Validators.notEmptyValidator();
+
+        Assert.assertTrue(validator.validate("tester", "username").isValid());
+        Assert.assertTrue(validator.validate(Arrays.asList(1, 2, 3), "numberList").isValid());
+        Assert.assertTrue(validator.validate(Collections.singleton("key"), "stringSet").isValid());
+        Assert.assertTrue(validator.validate(Collections.singletonMap("key", "value"), "stringMap").isValid());
+
+        Assert.assertFalse(validator.validate(null, "username").isValid());
+        Assert.assertFalse(validator.validate(Collections.emptyList(), "emptyList").isValid());
+        Assert.assertFalse(validator.validate(Collections.emptySet(), "emptySet").isValid());
+        Assert.assertFalse(validator.validate(Collections.emptyMap(), "emptyMap").isValid());
+    }
+
+    @Test
+    public void validateNumber() {
+
+        Validator validator = Validators.numberValidator();
+
+        Assert.assertTrue(validator.validate(10, "age").isValid());
+        Assert.assertTrue(validator.validate("10", "age").isValid());
+        Assert.assertTrue(validator.validate("3.14", "pi").isValid());
+        Assert.assertTrue(validator.validate("   3.14   ", "piWithBlank").isValid());
+
+        Assert.assertFalse(validator.validate("", "emptyString").isValid());
+        Assert.assertFalse(validator.validate(true, "true").isValid());
+        Assert.assertFalse(validator.validate(null, "null").isValid());
+    }
+
+    @Test
+    public void validatePattern() {
+
+        Validator validator = Validators.patternValidator();
+
+        ValidatorConfig config = configFromMap(Collections.singletonMap("pattern", Pattern.compile("^start-.*-end$")));
+
+        Assert.assertTrue(validator.validate("start-1234-end", "value", config).isValid());
+        Assert.assertFalse(validator.validate("start___end", "value", config).isValid());
+    }
+
+    @Test
+    public void validateUri() throws Exception {
+
+        Validator validator = Validators.uriValidator();
+
+        Assert.assertTrue(validator.validate("http://localhost:3000/", "baseUrl").isValid());
+        Assert.assertTrue(validator.validate("https://localhost:3000/", "baseUrl").isValid());
+        Assert.assertTrue(validator.validate("https://localhost:3000/#someFragment", "baseUrl").isValid());
+
+        Assert.assertFalse(validator.validate("file:///somefile.txt", "baseUrl").isValid());
+        Assert.assertFalse(validator.validate("invalidUrl++@23", "invalidUri").isValid());
+
+        ValidatorConfig config = configFromMap(ImmutableMap.of(UriValidator.KEY_ALLOW_FRAGMENT, false));
+        Assert.assertFalse(validator.validate("https://localhost:3000/#someFragment", "baseUrl", config).isValid());
+
+        // it is also possible to call dedicated validation methods on a built-in validator
+        Assert.assertTrue(Validators.uriValidator().
+                validateUri(new URI("https://customurl"), Collections.singleton("https"), true, true));
+
+        Assert.assertFalse(Validators.uriValidator().
+                validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
+    }
+
+    @Test
+    public void validateValidationConfig() {
+
+        ValidatorConfig config = new ValidatorConfig(ImmutableMap.of("min",new Object(),"max","invalid"));
+
+        ValidationResult result = Validators.validatorConfigValidator().validate(config, LengthValidator.ID).toResult();
+
+        Assert.assertFalse(result.isValid());
+        ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+        ValidationError error0 = errors[0];
+        Assert.assertNotNull(error0);
+        Assert.assertEquals(LengthValidator.ID, error0.getValidatorId());
+        Assert.assertEquals("min", error0.getInputHint());
+
+        ValidationError error1 = errors[1];
+        Assert.assertNotNull(error1);
+        Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
+        Assert.assertEquals("max", error1.getInputHint());
+    }
+}
