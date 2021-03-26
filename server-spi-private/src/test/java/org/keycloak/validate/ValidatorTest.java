@@ -3,6 +3,7 @@ package org.keycloak.validate;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.validate.builtin.BuiltinValidators;
 import org.keycloak.validate.builtin.LengthValidator;
 import org.keycloak.validate.builtin.NotEmptyValidator;
 
@@ -18,13 +19,39 @@ public class ValidatorTest {
     @Test
     public void simpleValidation() {
 
+        Validator validator = BuiltinValidators.notEmpty();
+
+        {
+            ValidationResult result = validator.validate("a").toResult();
+            Assert.assertTrue(result.isValid());
+        }
+
+        {
+            ValidationResult result = validator.validate("").toResult();
+            Assert.assertFalse(result.isValid());
+        }
+    }
+
+    @Test
+    public void simpleValidationWithContext() {
+
         ValidationContext context = new ValidationContext(session);
 
-        Validator validator = LengthValidator.INSTANCE;
+        Validator validator = BuiltinValidators.length();
 
         validator.validate("a", "username", context);
 
         ValidationResult result = context.toResult();
+
+        Assert.assertTrue(result.isValid());
+    }
+
+    @Test
+    public void simpleValidationFluent() {
+
+        ValidationContext context = new ValidationContext(session);
+
+        ValidationResult result = BuiltinValidators.length().validate("a", "username", context).toResult();
 
         Assert.assertTrue(result.isValid());
     }
@@ -42,17 +69,6 @@ public class ValidatorTest {
 
         Assert.assertTrue(result.isValid());
     }
-
-    @Test
-    public void simpleValidationFluent() {
-
-        ValidationContext context = new ValidationContext(session);
-
-        ValidationResult result = LengthValidator.INSTANCE.validate("a", "username", context).toResult();
-
-        Assert.assertTrue(result.isValid());
-    }
-
 
     @Test
     public void simpleValidationError() {
@@ -90,8 +106,8 @@ public class ValidatorTest {
         String input = "aaa";
         String inputHint = "username";
 
-        LengthValidator.INSTANCE.validate(input, inputHint, context);
-        NotEmptyValidator.INSTANCE.validate(input, inputHint, context);
+        BuiltinValidators.length().validate(input, inputHint, context);
+        BuiltinValidators.notEmpty().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -106,8 +122,8 @@ public class ValidatorTest {
         String input = "";
         String inputHint = "username";
 
-        LengthValidator.INSTANCE.validate(input, inputHint, context, Collections.singletonMap("min", 1));
-        NotEmptyValidator.INSTANCE.validate(input, inputHint, context);
+        BuiltinValidators.length().validate(input, inputHint, context, Collections.singletonMap("min", 1));
+        BuiltinValidators.notEmpty().validate(input, inputHint, context);
 
 //        Map<String, Map<String, Object>> configs = new HashMap<>();
 //        configs.put(LengthValidator.ID, Collections.singletonMap("min", 1));

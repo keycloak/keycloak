@@ -44,6 +44,10 @@ public class ValidationContext {
      */
     private final Map<String, Object> attributes;
 
+    public ValidationContext() {
+        this(null, new LinkedHashSet<>());
+    }
+
     public ValidationContext(KeycloakSession session) {
         // we deliberately use a LinkedHashSet here to retain the order of errors.
         this(session, new LinkedHashSet<>());

@@ -35,6 +35,17 @@ public interface Validator extends Provider {
      * Validates the given {@code input}.
      *
      * @param input   the value to validate
+
+     * @return the validation context with the outcome of the validation
+     */
+    default ValidationContext validate(Object input) {
+        return validate(input, null, new ValidationContext(), Collections.emptyMap());
+    }
+
+    /**
+     * Validates the given {@code input}.
+     *
+     * @param input   the value to validate
      * @param context the validation context
      * @return the validation context with the outcome of the validation
      */
