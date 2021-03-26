@@ -52,6 +52,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.Constants.defaultClients;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -74,7 +76,6 @@ public class ClientManager {
      * @param session
      * @param realm
      * @param rep
-     * @param addDefaultRoles
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
@@ -96,7 +97,7 @@ public class ClientManager {
 
 
     public boolean removeClient(RealmModel realm, ClientModel client) {
-        if (realm.removeClient(client.getId())) {
+        if (!isInternalClient(realm.getName(), client.getClientId()) && realm.removeClient(client.getId())) {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
                 sessions.onClientRemoved(realm, client);
@@ -366,4 +367,21 @@ public class ClientManager {
         return authenticator.getAdapterConfiguration(client);
     }
 
+    private boolean isInternalClient(String realmName, String clientId) {
+        if (defaultClients.contains(clientId)) return true;
+
+        if (!"master".equals(realmName)) {
+            return false;
+        }
+
+        final String internalClientSuffix = "-realm";
+
+        if (clientId.endsWith(internalClientSuffix)) {
+            return realmManager.getSession().realms()
+                    .getRealmByName(
+                            clientId.substring(0, clientId.length() - internalClientSuffix.length())) != null;
+        }
+
+        return false;
+    }
 }
