@@ -50,6 +50,8 @@ public class EmailEventListenerProvider implements EventListenerProvider {
         this.model = session.realms();
         this.emailTemplateProvider = emailTemplateProvider;
         this.includedEvents = includedEvents;
+
+        this.session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
     @Override
