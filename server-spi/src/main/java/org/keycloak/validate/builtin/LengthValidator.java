@@ -18,10 +18,15 @@ public class LengthValidator implements CompactValidator {
     }
 
     @Override
-    public void validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config) {
+    public ValidationContext validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config) {
+
+        if (input == null) {
+            context.addError(new ValidationError(ID, inputHint, ERROR_INVALID_LENGTH, input));
+            return context;
+        }
 
         if (!(input instanceof String)) {
-            return;
+            return context;
         }
 
         // TODO make config value extraction more robust
@@ -39,5 +44,7 @@ public class LengthValidator implements CompactValidator {
         if (length > max) {
             context.addError(new ValidationError(ID, inputHint, ERROR_INVALID_LENGTH, string));
         }
+
+        return context;
     }
 }

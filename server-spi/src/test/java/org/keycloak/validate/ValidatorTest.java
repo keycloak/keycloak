@@ -23,6 +23,17 @@ public class ValidatorTest {
         Assert.assertTrue(result.isValid());
     }
 
+    @Test
+    public void simpleValidationFluent() {
+
+        KeycloakSession session = null;
+        ValidationContext context = new ValidationContext(session, ValidationUseCase.Common.USER_REGISTRATION);
+
+        ValidationResult result = LengthValidator.INSTANCE.validate("a", "username", context).toResult();
+
+        Assert.assertTrue(result.isValid());
+    }
+
 
     @Test
     public void simpleValidationError() {

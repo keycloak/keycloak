@@ -19,39 +19,40 @@ public class NotEmptyValidator implements CompactValidator {
     }
 
     @Override
-    public void validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config) {
+    public ValidationContext validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config) {
 
         if (input == null) {
             context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
-            return;
+            return context;
         }
 
         if (!(input instanceof String) && !(input instanceof Collection<?>) && !(input instanceof Map<?, ?>)) {
-            return;
+            // our validator is not applicable here, so we stop here
+            return context;
         }
 
         if (input instanceof String) {
             if (((String) input).length() == 0) {
                 context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
             }
-            return;
+            return context;
         }
 
         if (input instanceof Collection) {
             if (((Collection<?>) input).isEmpty()) {
                 context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
             }
-            return;
+            return context;
         }
 
         if (input instanceof Map) {
             if (((Map<?, ?>) input).isEmpty()) {
                 context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
             }
-            return;
+            return context;
         }
 
         // general case
-        // NOOP
+        return context;
     }
 }

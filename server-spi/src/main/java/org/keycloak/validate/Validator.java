@@ -23,10 +23,10 @@ import java.util.Map;
 
 /**
  * Validates given input in a {@link ValidationContext}.
- *
+ * <p>
  * Validations can be supported with an optional {@code inputHint}, which could denote a reference to a potentially
  * nested attribute of an object to validate.
- *
+ * <p>
  * Validations can be configured with an optional {@code config} {@link Map}.
  */
 public interface Validator extends Provider {
@@ -36,9 +36,10 @@ public interface Validator extends Provider {
      *
      * @param input   the value to validate
      * @param context the validation context
+     * @return the validation context with the outcome of the validation
      */
-    default void validate(Object input, ValidationContext context) {
-        validate(input, null, context, Collections.emptyMap());
+    default ValidationContext validate(Object input, ValidationContext context) {
+        return validate(input, null, context, Collections.emptyMap());
     }
 
     /**
@@ -47,9 +48,10 @@ public interface Validator extends Provider {
      * @param input     the value to validate
      * @param inputHint an optional input hint to guide the validation
      * @param context   the validation context
+     * @return the validation context with the outcome of the validation
      */
-    default void validate(Object input, String inputHint, ValidationContext context) {
-        validate(input, inputHint, context, Collections.emptyMap());
+    default ValidationContext validate(Object input, String inputHint, ValidationContext context) {
+        return validate(input, inputHint, context, Collections.emptyMap());
     }
 
     /**
@@ -59,8 +61,9 @@ public interface Validator extends Provider {
      * @param inputHint an optional input hint to guide the validation
      * @param context   the validation context
      * @param config    parameterization for the current validation
+     * @return the validation context with the outcome of the validation
      */
-    void validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config);
+    ValidationContext validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config);
 
     default void close() {
         // NOOP
