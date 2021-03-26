@@ -296,8 +296,8 @@ a.zocial  {
     white-space: normal;
 }
 a.zocial.nia {
-    background: url("../img/nia-logo-02.png") no-repeat left top;
-    background: url("../img/nia-logo-01.png") no-repeat left top;
+   
+    background: url("../img/nia-logo-01.png") no-repeat left top !important;
     width: 100%;
     font-weight: normal;
     font-size: 14px;
@@ -310,7 +310,7 @@ a.zocial.nia {
 }
 
 a.zocial.nia:hover {
-    background: url("../img/nia-logo-02.png") no-repeat left top;
+   
     background: #dddddd;
 }
 
