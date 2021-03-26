@@ -39,6 +39,9 @@ public class ValidationContext {
      */
     private final Set<ValidationError> errors;
 
+    /**
+     * Holds optional attributes that should be available to {@link Validator} implementations.
+     */
     private final Map<String, Object> attributes;
 
     public ValidationContext(KeycloakSession session) {
