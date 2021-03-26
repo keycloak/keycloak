@@ -10,12 +10,18 @@ import java.util.Map;
 public class NotEmptyValidator implements CompactValidator {
 
     public static final NotEmptyValidator INSTANCE = new NotEmptyValidator();
+
     public static final String ID = "not-empty";
+
     public static final String ERROR_EMPTY = "error-empty";
 
     @Override
     public String getId() {
         return ID;
+    }
+
+    private NotEmptyValidator() {
+        // prevent instantiation
     }
 
     @Override

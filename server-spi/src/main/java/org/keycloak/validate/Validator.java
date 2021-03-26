@@ -65,6 +65,16 @@ public interface Validator extends Provider {
      */
     ValidationContext validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config);
 
+    /**
+     * Validates the given validation config.
+     *
+     * @param config the config to be validated
+     * @return the validation result
+     */
+    default ValidationResult validateConfig(Map<String, Object> config) {
+        return ValidationResult.OK;
+    }
+
     default void close() {
         // NOOP
     }

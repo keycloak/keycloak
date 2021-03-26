@@ -24,7 +24,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.validate.Validator;
 import org.keycloak.vault.VaultTranscriber;
 
 import java.util.Set;
@@ -308,9 +307,4 @@ public interface KeycloakSession extends InvalidationHandler {
      * Client Policy Manager
      */
     ClientPolicyManager clientPolicy();
-
-    /**
-     * Look-up up for a built-in or registered validator with the given validatorName.
-     */
-    Validator validator(String validatorName);
 }

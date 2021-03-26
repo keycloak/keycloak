@@ -49,7 +49,7 @@ public class ValidationError {
     private final Object[] messageParameters;
 
     public ValidationError(String validatorId, String inputHint, String message) {
-        this(validatorId, inputHint, message, null);
+        this(validatorId, inputHint, message, EMPTY_PARAMETERS);
     }
 
     public ValidationError(String validatorId, String inputHint, String message, Object... messageParameters) {

@@ -19,8 +19,9 @@ package org.keycloak.validate;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,24 +35,25 @@ public class ValidationContext {
     private final KeycloakSession session;
 
     /**
-     * Holds the {@link ValidationUseCase}.
-     */
-    private final ValidationUseCase type;
-
-    /**
      * Holds the {@link ValidationError} found during validation.
      */
     private final Set<ValidationError> errors;
 
-    public ValidationContext(KeycloakSession session, ValidationUseCase type) {
+    private final Map<String, Object> attributes;
+
+    public ValidationContext(KeycloakSession session) {
         // we deliberately use a LinkedHashSet here to retain the order of errors.
-        this(session, type, new LinkedHashSet<>());
+        this(session, new LinkedHashSet<>());
     }
 
-    protected ValidationContext(KeycloakSession session, ValidationUseCase type, Set<ValidationError> errors) {
+    protected ValidationContext(KeycloakSession session, Set<ValidationError> errors) {
         this.session = session;
-        this.type = type;
         this.errors = errors;
+        this.attributes = new HashMap<>();
+    }
+
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     public void addError(ValidationError error) {
@@ -64,10 +66,6 @@ public class ValidationContext {
 
     public KeycloakSession getSession() {
         return session;
-    }
-
-    public ValidationUseCase getType() {
-        return type;
     }
 
     public Set<ValidationError> getErrors() {

@@ -25,6 +25,8 @@ import java.util.function.Consumer;
  */
 public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
 
+    public static final ValidationResult OK = new ValidationResult(true, Collections.emptySet());
+
     /**
      * Holds the validation status.
      */

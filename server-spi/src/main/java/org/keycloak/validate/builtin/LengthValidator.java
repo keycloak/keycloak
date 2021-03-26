@@ -9,8 +9,14 @@ import java.util.Map;
 public class LengthValidator implements CompactValidator {
 
     public static final LengthValidator INSTANCE = new LengthValidator();
+
     public static final String ID = "length";
+
     public static final String ERROR_INVALID_LENGTH = "error-invalid-length";
+
+    private LengthValidator() {
+        // prevent instantiation
+    }
 
     @Override
     public String getId() {

@@ -51,9 +51,6 @@ import org.keycloak.storage.GroupStorageManager;
 import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.validate.Validator;
-import org.keycloak.validate.builtin.LengthValidator;
-import org.keycloak.validate.builtin.NotEmptyValidator;
 import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
@@ -68,7 +65,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -101,19 +97,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
-
-    private static final Map<String, Validator> INTERNAL_VALIDATORS;
-
-    // TODO move internal validator binding somewhere else?
-    static {
-        Map<String, Validator> validators = new HashMap<>();
-
-        Stream.of(LengthValidator.INSTANCE, NotEmptyValidator.INSTANCE).forEach(v -> {
-            validators.put(v.getId(), v);
-        });
-
-        INTERNAL_VALIDATORS = validators;
-    }
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -509,19 +492,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             clientPolicyManager = new DefaultClientPolicyManager(this);
         }
         return clientPolicyManager;
-    }
-
-    @Override
-    public Validator validator(String validatorName) {
-
-        // Fast-path for internal Validators
-        Validator validator = INTERNAL_VALIDATORS.get(validatorName);
-        if (validator != null) {
-            return validator;
-        }
-
-        // Lookup validator in registry
-        return getProvider(Validator.class, validatorName);
     }
 
     public void close() {

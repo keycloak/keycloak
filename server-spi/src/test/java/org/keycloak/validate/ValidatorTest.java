@@ -10,13 +10,30 @@ import java.util.Collections;
 
 public class ValidatorTest {
 
+    KeycloakSession session = null;
+
     @Test
     public void simpleValidation() {
 
-        KeycloakSession session = null;
-        ValidationContext context = new ValidationContext(session, ValidationUseCase.Common.USER_REGISTRATION);
+        ValidationContext context = new ValidationContext(session);
 
-        LengthValidator.INSTANCE.validate("a", "username", context);
+        Validator validator = LengthValidator.INSTANCE;
+
+        validator.validate("a", "username", context);
+
+        ValidationResult result = context.toResult();
+
+        Assert.assertTrue(result.isValid());
+    }
+
+    @Test
+    public void simpleValidationLookup() {
+
+        ValidationContext context = new ValidationContext(session);
+
+        Validator validator = ValidatorLookup.validator(session, LengthValidator.ID);
+
+        validator.validate("a", "username", context);
 
         ValidationResult result = context.toResult();
 
@@ -26,8 +43,7 @@ public class ValidatorTest {
     @Test
     public void simpleValidationFluent() {
 
-        KeycloakSession session = null;
-        ValidationContext context = new ValidationContext(session, ValidationUseCase.Common.USER_REGISTRATION);
+        ValidationContext context = new ValidationContext(session);
 
         ValidationResult result = LengthValidator.INSTANCE.validate("a", "username", context).toResult();
 
@@ -38,13 +54,14 @@ public class ValidatorTest {
     @Test
     public void simpleValidationError() {
 
-        KeycloakSession session = null;
-        ValidationContext context = new ValidationContext(session, ValidationUseCase.Common.USER_REGISTRATION);
+        ValidationContext context = new ValidationContext(session);
 
         String input = "a";
         String inputHint = "username";
 
-        LengthValidator.INSTANCE.validate(input, inputHint, context, Collections.singletonMap("min", "2"));
+        Validator validator = LengthValidator.INSTANCE;
+
+        validator.validate(input, inputHint, context, Collections.singletonMap("min", "2"));
 
         ValidationResult result = context.toResult();
 
@@ -65,8 +82,7 @@ public class ValidatorTest {
     @Test
     public void multipleValidations() {
 
-        KeycloakSession session = null;
-        ValidationContext context = new ValidationContext(session, ValidationUseCase.Common.USER_REGISTRATION);
+        ValidationContext context = new ValidationContext(session);
 
         String input = "aaa";
         String inputHint = "username";
@@ -82,8 +98,7 @@ public class ValidatorTest {
     @Test
     public void multipleValidationsError() {
 
-        KeycloakSession session = null;
-        ValidationContext context = new ValidationContext(session, ValidationUseCase.Common.USER_REGISTRATION);
+        ValidationContext context = new ValidationContext(session);
 
         String input = "";
         String inputHint = "username";
