@@ -40,6 +40,10 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
      */
     private final Set<ValidationError> errors;
 
+    public ValidationResult(Set<ValidationError> errors) {
+        this(errors == null || errors.isEmpty(), errors);
+    }
+
     public ValidationResult(boolean valid, Set<ValidationError> errors) {
         this.valid = valid;
         this.errors = errors == null ? Collections.emptySet() : errors;

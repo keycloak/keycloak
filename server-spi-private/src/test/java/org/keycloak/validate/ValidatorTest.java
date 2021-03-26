@@ -6,7 +6,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.validate.builtin.LengthValidator;
 import org.keycloak.validate.builtin.NotEmptyValidator;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ValidatorTest {
 
@@ -127,5 +130,45 @@ public class ValidatorTest {
         Assert.assertEquals(inputHint, error1.getInputHint());
         Assert.assertEquals(NotEmptyValidator.ERROR_EMPTY, error1.getMessage());
         Assert.assertEquals(input, error1.getMessageParameters()[0]);
+    }
+
+    @Test
+    public void validateValidatorConfig() {
+
+        Validator validator = LengthValidator.INSTANCE;
+
+        Assert.assertTrue(validator.validateConfig(null).isValid());
+        Assert.assertTrue(validator.validateConfig(Collections.singletonMap("min", 1)).isValid());
+        Assert.assertTrue(validator.validateConfig(Collections.singletonMap("max", 100)).isValid());
+
+        {
+            Map<String, Object> config = new HashMap<>();
+            config.put("min", 1);
+            config.put("max", 10);
+            Assert.assertTrue(validator.validateConfig(config).isValid());
+        }
+
+        Assert.assertFalse(validator.validateConfig(Collections.singletonMap("min", null)).isValid());
+        Assert.assertFalse(validator.validateConfig(Collections.singletonMap("min", "123")).isValid());
+
+        {
+            Map<String, Object> config = new HashMap<>();
+            config.put("min", "1");
+            config.put("max", new ArrayList<>());
+            ValidationResult result = validator.validateConfig(config);
+            Assert.assertFalse(result.isValid());
+
+            Assert.assertEquals(2, result.getErrors().size());
+
+            ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+            ValidationError error1 = errors[1];
+
+            Assert.assertNotNull(error1);
+            Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
+            Assert.assertEquals("max", error1.getInputHint());
+            Assert.assertEquals(LengthValidator.ERROR_INVALID_VALUE, error1.getMessage());
+            Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
+        }
     }
 }

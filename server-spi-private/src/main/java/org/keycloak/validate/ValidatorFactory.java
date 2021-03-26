@@ -23,6 +23,8 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface ValidatorFactory extends ProviderFactory<Validator> {
 
+    String ERROR_INVALID_VALUE = "error-invalid-value";
+
     /**
      * This is called when the server shuts down.
      */

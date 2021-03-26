@@ -19,8 +19,11 @@ package org.keycloak.validate.builtin;
 import org.keycloak.validate.CompactValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidationResult;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class LengthValidator implements CompactValidator {
 
@@ -29,6 +32,8 @@ public class LengthValidator implements CompactValidator {
     public static final String ID = "length";
 
     public static final String ERROR_INVALID_LENGTH = "error-invalid-length";
+    public static final String KEY_MIN = "min";
+    public static final String KEY_MAX = "max";
 
     private LengthValidator() {
         // prevent instantiation
@@ -54,8 +59,8 @@ public class LengthValidator implements CompactValidator {
         // TODO make config value extraction more robust
 
         String string = (String) input;
-        int min = config.containsKey("min") ? Integer.parseInt(String.valueOf(config.get("min"))) : 0;
-        int max = config.containsKey("max") ? Integer.parseInt(String.valueOf(config.get("max"))) : Integer.MAX_VALUE;
+        int min = config.containsKey(KEY_MIN) ? Integer.parseInt(String.valueOf(config.get(KEY_MIN))) : 0;
+        int max = config.containsKey(KEY_MAX) ? Integer.parseInt(String.valueOf(config.get(KEY_MAX))) : Integer.MAX_VALUE;
 
         int length = string.length();
 
@@ -68,5 +73,35 @@ public class LengthValidator implements CompactValidator {
         }
 
         return context;
+    }
+
+    @Override
+    public ValidationResult validateConfig(Map<String, Object> config) {
+
+        if (config == null) {
+            // new don't require configuration
+            return ValidationResult.OK;
+        }
+
+
+        boolean containsMin = config.containsKey(KEY_MIN);
+        boolean containsMax = config.containsKey(KEY_MAX);
+        if (!containsMin && containsMax) {
+            return ValidationResult.OK;
+        }
+
+        Object maybeMin = config.get(KEY_MIN);
+        Object maybeMax = config.get(KEY_MAX);
+
+        Set<ValidationError> errors = new LinkedHashSet<>();
+        if (containsMin && !(maybeMin instanceof Integer)) {
+            errors.add(new ValidationError(ID, KEY_MIN, ERROR_INVALID_VALUE, maybeMin));
+        }
+
+        if (containsMax && !(maybeMax instanceof Integer)) {
+            errors.add(new ValidationError(ID, KEY_MAX, ERROR_INVALID_VALUE, maybeMax));
+        }
+
+        return new ValidationResult(errors);
     }
 }
