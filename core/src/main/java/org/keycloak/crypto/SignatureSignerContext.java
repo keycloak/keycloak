@@ -26,4 +26,6 @@ public interface SignatureSignerContext {
 
     byte[] sign(byte[] data) throws SignatureException;
 
+    byte[] getSHA1Thumbprint();
+
 }

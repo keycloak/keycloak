@@ -17,6 +17,8 @@
 
 package org.keycloak.common.util;
 
+import org.bouncycastle.util.encoders.Hex;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -568,6 +570,10 @@ public class Encode
       {
          throw new RuntimeException(e);
       }
+   }
+
+   public static String hexString(byte[] bytes) {
+      return Hex.toHexString(bytes);
    }
 
 }

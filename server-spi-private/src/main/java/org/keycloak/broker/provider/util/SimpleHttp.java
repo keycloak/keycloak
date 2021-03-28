@@ -53,10 +53,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
@@ -129,6 +126,14 @@ public class SimpleHttp {
         return new SimpleHttp(url, "PATCH", client);
     }
 
+    public String method() {
+        return method;
+    }
+
+    public String url() {
+        return url;
+    }
+
     public SimpleHttp header(String name, String value) {
         if (headers == null) {
             headers = new HashMap<>();
@@ -148,6 +153,10 @@ public class SimpleHttp {
         }
         params.put(name, value);
         return this;
+    }
+
+    public Map<String, String> params() {
+        return params != null ? Collections.unmodifiableMap(params) : Collections.emptyMap();
     }
 
     public SimpleHttp socketTimeOutMillis(int timeout) {

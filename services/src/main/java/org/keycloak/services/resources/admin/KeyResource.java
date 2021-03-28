@@ -18,6 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
@@ -28,6 +29,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,7 +83,15 @@ public class KeyResource {
         r.setType(key.getType());
         r.setAlgorithm(key.getAlgorithm());
         r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
-        r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
+        final X509Certificate certificate = key.getCertificate();
+        if (certificate != null) {
+            r.setCertificate(PemUtils.encodeCertificate(certificate));
+            r.setNotAfter(certificate.getNotAfter() != null ? certificate.getNotAfter().getTime() : null);
+            final byte[] thumbprint = key.getSHA1Thumbprint();
+            if (thumbprint != null) {
+                r.setThumbprint(Encode.hexString(thumbprint));
+            }
+        }
         return r;
     }
 }
