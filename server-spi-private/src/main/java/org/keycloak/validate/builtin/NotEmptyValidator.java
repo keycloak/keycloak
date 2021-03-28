@@ -19,6 +19,7 @@ package org.keycloak.validate.builtin;
 import org.keycloak.validate.CompactValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidatorConfig;
 
 import java.util.Collection;
 import java.util.Map;
@@ -29,52 +30,45 @@ public class NotEmptyValidator implements CompactValidator {
 
     public static final String ID = "not-empty";
 
-    public static final String ERROR_EMPTY = "error-empty";
+    public static final String MESSAGE_ERROR_EMPTY = "error-empty";
+
+    private NotEmptyValidator() {
+    }
 
     @Override
     public String getId() {
         return ID;
     }
 
-    private NotEmptyValidator() {
-        // prevent instantiation
-    }
-
     @Override
-    public ValidationContext validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config) {
+    public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
 
         if (input == null) {
-            context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
-            return context;
-        }
-
-        if (!(input instanceof String) && !(input instanceof Collection<?>) && !(input instanceof Map<?, ?>)) {
-            // our validator is not applicable here, so we stop here
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_ERROR_EMPTY, input));
             return context;
         }
 
         if (input instanceof String) {
             if (((String) input).length() == 0) {
-                context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
+                context.addError(new ValidationError(ID, inputHint, MESSAGE_ERROR_EMPTY, input));
             }
             return context;
         }
 
         if (input instanceof Collection) {
             if (((Collection<?>) input).isEmpty()) {
-                context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
+                context.addError(new ValidationError(ID, inputHint, MESSAGE_ERROR_EMPTY, input));
             }
             return context;
         }
 
         if (input instanceof Map) {
             if (((Map<?, ?>) input).isEmpty()) {
-                context.addError(new ValidationError(ID, inputHint, ERROR_EMPTY, input));
+                context.addError(new ValidationError(ID, inputHint, MESSAGE_ERROR_EMPTY, input));
             }
             return context;
         }
 
-        // general case
         return context;
     }
 }

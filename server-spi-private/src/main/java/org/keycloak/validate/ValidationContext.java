@@ -67,6 +67,17 @@ public class ValidationContext {
         errors.add(error);
     }
 
+    /**
+     * Convenience method for checking the validation status of the current {@link ValidationContext}.
+     * <p>
+     * This is an alternative to {@code toResult().isValid()} for brief validations.
+     *
+     * @return
+     */
+    public boolean isValid() {
+        return !hasErrors();
+    }
+
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
@@ -79,7 +90,21 @@ public class ValidationContext {
         return errors;
     }
 
+    /**
+     * Creates a {@link ValidationResult} based on the current errors;
+     *
+     * @return
+     */
     public ValidationResult toResult() {
         return new ValidationResult(!hasErrors(), Collections.unmodifiableSet(getErrors()));
+    }
+
+    @Override
+    public String toString() {
+        return "ValidationContext{" +
+                "valid=" + isValid() +
+                ", errors=" + errors +
+                ", attributes=" + attributes +
+                '}';
     }
 }

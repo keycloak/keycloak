@@ -35,7 +35,12 @@ public class BuiltinValidators {
     static {
         List<CompactValidator> list = Arrays.asList(
                 LengthValidator.INSTANCE,
-                NotEmptyValidator.INSTANCE
+                NotEmptyValidator.INSTANCE,
+                UriValidator.INSTANCE,
+                EmailValidator.INSTANCE,
+                NotBlankValidator.INSTANCE,
+                PatternValidator.INSTANCE,
+                NumberValidator.INSTANCE
         );
 
         Map<String, Validator> validators = new HashMap<>();
@@ -55,11 +60,31 @@ public class BuiltinValidators {
         return Collections.unmodifiableMap(INTERNAL_VALIDATORS);
     }
 
+    public static Validator notBlank() {
+        return NotBlankValidator.INSTANCE;
+    }
+
     public static Validator notEmpty() {
         return NotEmptyValidator.INSTANCE;
     }
 
     public static Validator length() {
         return LengthValidator.INSTANCE;
+    }
+
+    public static Validator uri() {
+        return UriValidator.INSTANCE;
+    }
+
+    public static Validator email() {
+        return EmailValidator.INSTANCE;
+    }
+
+    public static Validator pattern() {
+        return PatternValidator.INSTANCE;
+    }
+
+    public static Validator number() {
+        return NumberValidator.INSTANCE;
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.validate;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Denotes the result of a validation.
@@ -40,10 +41,23 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
      */
     private final Set<ValidationError> errors;
 
+    /**
+     * Creates a new {@link ValidationResult} from the given errors.
+     * <p>
+     * The created {@link ValidationResult} is considered valid if the given {@code errors} are empty.
+     *
+     * @param errors
+     */
     public ValidationResult(Set<ValidationError> errors) {
         this(errors == null || errors.isEmpty(), errors);
     }
 
+    /**
+     * Creates a new {@link ValidationResult} from the given errors and valid state.
+     *
+     * @param valid
+     * @param errors
+     */
     public ValidationResult(boolean valid, Set<ValidationError> errors) {
         this.valid = valid;
         this.errors = errors == null ? Collections.emptySet() : errors;
@@ -60,5 +74,21 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
 
     public Set<ValidationError> getErrors() {
         return errors;
+    }
+
+    public boolean hasErrorsForValidatorId(String id) {
+        return getErrors().stream().anyMatch(e -> e.getValidatorId().equals(id));
+    }
+
+    public Set<ValidationError> getErrorsForValidatorId(String id) {
+        return getErrors().stream().filter(e -> e.getValidatorId().equals(id)).collect(Collectors.toSet());
+    }
+
+    public boolean hasErrorsForInputHint(String inputHint) {
+        return getErrors().stream().anyMatch(e -> e.getInputHint().equals(inputHint));
+    }
+
+    public Set<ValidationError> getErrorsForInputHint(String inputHint) {
+        return getErrors().stream().filter(e -> e.getInputHint().equals(inputHint)).collect(Collectors.toSet());
     }
 }

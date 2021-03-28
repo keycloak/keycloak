@@ -23,7 +23,31 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface ValidatorFactory extends ProviderFactory<Validator> {
 
-    String ERROR_INVALID_VALUE = "error-invalid-value";
+    /**
+     * A generic invalid value message.
+     */
+    String MESSAGE_INVALID_VALUE = "error-invalid-value";
+
+    /**
+     * Validates the given validation config.
+     *
+     * @param config the config to be validated
+     * @return the validation result
+     */
+    default ValidationResult validateConfig(ValidatorConfig config) {
+        return ValidationResult.OK;
+    }
+
+    /**
+     * Returns the default {@link ValidatorConfig} for this {@link Validator}.
+     * <p>
+     * This is intended to be used by the user interface to create valid default configurations.
+     *
+     * @return ValidatorConfig or {@link ValidatorConfig#EMPTY} if no default config is provided.
+     */
+    default ValidatorConfig getDefaultConfig() {
+        return ValidatorConfig.EMPTY;
+    }
 
     /**
      * This is called when the server shuts down.

@@ -24,7 +24,7 @@ import org.keycloak.validate.builtin.BuiltinValidators;
  */
 public class ValidatorLookup {
 
-    // TODO this should be part of KeycloakSession API later
+    // TODO Validator lookup should be provided via KeycloakSession API later
 
     /**
      * Look-up up for a built-in or registered validator with the given validatorName.

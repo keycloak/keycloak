@@ -18,7 +18,6 @@ package org.keycloak.validate;
 
 import org.keycloak.provider.Provider;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -34,12 +33,11 @@ public interface Validator extends Provider {
     /**
      * Validates the given {@code input}.
      *
-     * @param input   the value to validate
-
+     * @param input the value to validate
      * @return the validation context with the outcome of the validation
      */
     default ValidationContext validate(Object input) {
-        return validate(input, null, new ValidationContext(), Collections.emptyMap());
+        return validate(input, null, new ValidationContext(), ValidatorConfig.EMPTY);
     }
 
     /**
@@ -50,7 +48,30 @@ public interface Validator extends Provider {
      * @return the validation context with the outcome of the validation
      */
     default ValidationContext validate(Object input, ValidationContext context) {
-        return validate(input, null, context, Collections.emptyMap());
+        return validate(input, null, context, ValidatorConfig.EMPTY);
+    }
+
+    /**
+     * Validates the given {@code input} with an additional {@code inputHint}.
+     *
+     * @param input     the value to validate
+     * @param inputHint an optional input hint to guide the validation
+     * @return the validation context with the outcome of the validation
+     */
+    default ValidationContext validate(Object input, String inputHint) {
+        return validate(input, inputHint, new ValidationContext(), ValidatorConfig.EMPTY);
+    }
+
+    /**
+     * Validates the given {@code input} with an additional {@code inputHint}.
+     *
+     * @param input     the value to validate
+     * @param inputHint an optional input hint to guide the validation
+     * @param config    parameterization for the current validation
+     * @return the validation context with the outcome of the validation
+     */
+    default ValidationContext validate(Object input, String inputHint, ValidatorConfig config) {
+        return validate(input, inputHint, new ValidationContext(), config);
     }
 
     /**
@@ -62,7 +83,7 @@ public interface Validator extends Provider {
      * @return the validation context with the outcome of the validation
      */
     default ValidationContext validate(Object input, String inputHint, ValidationContext context) {
-        return validate(input, inputHint, context, Collections.emptyMap());
+        return validate(input, inputHint, context, ValidatorConfig.EMPTY);
     }
 
     /**
@@ -74,17 +95,7 @@ public interface Validator extends Provider {
      * @param config    parameterization for the current validation
      * @return the validation context with the outcome of the validation
      */
-    ValidationContext validate(Object input, String inputHint, ValidationContext context, Map<String, Object> config);
-
-    /**
-     * Validates the given validation config.
-     *
-     * @param config the config to be validated
-     * @return the validation result
-     */
-    default ValidationResult validateConfig(Map<String, Object> config) {
-        return ValidationResult.OK;
-    }
+    ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config);
 
     default void close() {
         // NOOP
