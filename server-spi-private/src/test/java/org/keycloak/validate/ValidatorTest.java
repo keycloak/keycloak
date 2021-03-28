@@ -65,7 +65,6 @@ public class ValidatorTest {
     @Test
     public void simpleValidationError() {
 
-
         Validator validator = LengthValidator.INSTANCE;
 
         String input = "a";
@@ -169,11 +168,9 @@ public class ValidatorTest {
         ValidationResult result = validator.validateConfig(configFromMap(config));
 
         Assert.assertFalse(result.isValid());
-
         Assert.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
-
         ValidationError error1 = errors[1];
 
         Assert.assertNotNull(error1);
@@ -198,7 +195,6 @@ public class ValidatorTest {
         Assert.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
-
         ValidationError error1 = errors[1];
 
         Assert.assertNotNull(error1);

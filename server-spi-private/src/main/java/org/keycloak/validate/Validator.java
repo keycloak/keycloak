@@ -37,7 +37,7 @@ public interface Validator extends Provider {
      * @return the validation context with the outcome of the validation
      */
     default ValidationContext validate(Object input) {
-        return validate(input, null, new ValidationContext(), ValidatorConfig.EMPTY);
+        return validate(input, "input", new ValidationContext(), ValidatorConfig.EMPTY);
     }
 
     /**
@@ -48,7 +48,7 @@ public interface Validator extends Provider {
      * @return the validation context with the outcome of the validation
      */
     default ValidationContext validate(Object input, ValidatorConfig config) {
-        return validate(input, null, new ValidationContext(), config);
+        return validate(input, "input", new ValidationContext(), config);
     }
 
     /**
@@ -59,7 +59,7 @@ public interface Validator extends Provider {
      * @return the validation context with the outcome of the validation
      */
     default ValidationContext validate(Object input, ValidationContext context) {
-        return validate(input, null, context, ValidatorConfig.EMPTY);
+        return validate(input, "input", context, ValidatorConfig.EMPTY);
     }
 
     /**

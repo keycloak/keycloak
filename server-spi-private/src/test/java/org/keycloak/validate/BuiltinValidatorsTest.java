@@ -19,17 +19,11 @@ public class BuiltinValidatorsTest {
 
         Validator validator = BuiltinValidators.length();
 
-        {
-            ValidatorConfig config = configFromMap(ImmutableMap.of("min", 1));
-            ValidationResult result = validator.validate("tester", "name", config).toResult();
-            Assert.assertTrue(result.isValid());
-        }
+        ValidatorConfig config1 = configFromMap(ImmutableMap.of("min", 1));
+        Assert.assertTrue(validator.validate("tester", "name", config1).isValid());
 
-        {
-            ValidatorConfig config = configFromMap(ImmutableMap.of("min", 7));
-            ValidationResult result = validator.validate("tester", "name", config).toResult();
-            Assert.assertFalse(result.isValid());
-        }
+        ValidatorConfig config2 = configFromMap(ImmutableMap.of("min", 7));
+        Assert.assertFalse(validator.validate("tester", "name", config2).isValid());
     }
 
     @Test
@@ -37,17 +31,10 @@ public class BuiltinValidatorsTest {
 
         Validator validator = BuiltinValidators.email();
 
-        {
-            ValidationResult result = validator.validate("admin@example.org", "email")
-                    .toResult();
-            Assert.assertTrue(result.isValid());
-        }
-
-        {
-            ValidationResult result = validator.validate("adminATexample.org", "email")
-                    .toResult();
-            Assert.assertFalse(result.isValid());
-        }
+        Assert.assertTrue(validator.validate("admin@example.org", "email")
+                .isValid());
+        Assert.assertFalse(validator.validate("adminATexample.org", "email")
+                .isValid());
     }
 
     @Test
@@ -55,12 +42,7 @@ public class BuiltinValidatorsTest {
 
         Validator validator = BuiltinValidators.notBlank();
 
-        {
-            ValidationResult result = validator.validate("tester", "username")
-                    .toResult();
-            Assert.assertTrue(result.isValid());
-        }
-
+        Assert.assertTrue(validator.validate("tester", "username").isValid());
         Assert.assertFalse(validator.validate("", "username").isValid());
         Assert.assertFalse(validator.validate("   ", "username").isValid());
         Assert.assertFalse(validator.validate(null, "username").isValid());
