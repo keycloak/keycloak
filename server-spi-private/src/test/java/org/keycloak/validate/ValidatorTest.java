@@ -23,26 +23,17 @@ public class ValidatorTest {
 
         Validator validator = BuiltinValidators.notEmpty();
 
-        {
-            ValidationResult result = validator.validate("a").toResult();
-            Assert.assertTrue(result.isValid());
-        }
-
-        {
-            ValidationResult result = validator.validate("").toResult();
-            Assert.assertFalse(result.isValid());
-        }
+        Assert.assertTrue(validator.validate("a").isValid());
+        Assert.assertFalse(validator.validate("").isValid());
     }
 
     @Test
     public void simpleValidationWithContext() {
 
-        ValidationContext context = new ValidationContext(session);
-
         Validator validator = BuiltinValidators.length();
 
+        ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
-
         ValidationResult result = context.toResult();
 
         Assert.assertTrue(result.isValid());
@@ -61,13 +52,11 @@ public class ValidatorTest {
     @Test
     public void simpleValidationLookup() {
 
-        ValidationContext context = new ValidationContext(session);
-
         // later: session.validator(LengthValidator.ID);
         Validator validator = ValidatorLookup.validator(session, LengthValidator.ID);
 
+        ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
-
         ValidationResult result = context.toResult();
 
         Assert.assertTrue(result.isValid());
@@ -76,15 +65,14 @@ public class ValidatorTest {
     @Test
     public void simpleValidationError() {
 
-        ValidationContext context = new ValidationContext(session);
+
+        Validator validator = LengthValidator.INSTANCE;
 
         String input = "a";
         String inputHint = "username";
 
-        Validator validator = LengthValidator.INSTANCE;
-
+        ValidationContext context = new ValidationContext(session);
         validator.validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", "2")));
-
         ValidationResult result = context.toResult();
 
         Assert.assertFalse(result.isValid());
@@ -92,7 +80,6 @@ public class ValidatorTest {
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
         ValidationError error = errors[0];
-
         Assert.assertNotNull(error);
         Assert.assertEquals(LengthValidator.ID, error.getValidatorId());
         Assert.assertEquals(inputHint, error.getInputHint());
@@ -128,13 +115,6 @@ public class ValidatorTest {
         BuiltinValidators.length().validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", 1)));
         BuiltinValidators.notEmpty().validate(input, inputHint, context);
 
-//        Map<String, Map<String, Object>> configs = new HashMap<>();
-//        configs.put(LengthValidator.ID, Collections.singletonMap("min", 1));
-
-//        Stream.of(LengthValidator.INSTANCE, NotEmptyValidator.INSTANCE).forEach(v -> {
-//            v.validate(input, inputHint, context, configs.get(v.getId()));
-//        });
-
         ValidationResult result = context.toResult();
 
         Assert.assertFalse(result.isValid());
@@ -152,47 +132,79 @@ public class ValidatorTest {
     }
 
     @Test
-    public void validateValidatorConfig() {
+    public void validateValidatorConfigSimple() {
 
         CompactValidator validator = LengthValidator.INSTANCE;
 
         Assert.assertTrue(validator.validateConfig(null).isValid());
         Assert.assertTrue(validator.validateConfig(configFromMap(Collections.singletonMap("min", 1))).isValid());
         Assert.assertTrue(validator.validateConfig(configFromMap(Collections.singletonMap("max", 100))).isValid());
-
-        {
-            Map<String, Object> config = new HashMap<>();
-            config.put("min", 1);
-            config.put("max", 10);
-
-            ValidatorConfig validatorConfig = configFromMap(config);
-
-            Assert.assertTrue(validator.validateConfig(validatorConfig).isValid());
-        }
-
         Assert.assertFalse(validator.validateConfig(configFromMap(Collections.singletonMap("min", null))).isValid());
         Assert.assertFalse(validator.validateConfig(configFromMap(Collections.singletonMap("min", "123"))).isValid());
+    }
 
-        {
-            Map<String, Object> config = new HashMap<>();
-            config.put("min", "1");
-            config.put("max", new ArrayList<>());
+    @Test
+    public void validateValidatorConfigMultipleOptions() {
 
-            ValidationResult result = validator.validateConfig(configFromMap(config));
+        CompactValidator validator = LengthValidator.INSTANCE;
 
-            Assert.assertFalse(result.isValid());
+        Map<String, Object> config = new HashMap<>();
+        config.put("min", 1);
+        config.put("max", 10);
 
-            Assert.assertEquals(2, result.getErrors().size());
+        ValidatorConfig validatorConfig = configFromMap(config);
 
-            ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+        Assert.assertTrue(validator.validateConfig(validatorConfig).isValid());
+    }
 
-            ValidationError error1 = errors[1];
+    @Test
+    public void validateValidatorConfigMultipleOptionsInvalidValues() {
 
-            Assert.assertNotNull(error1);
-            Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
-            Assert.assertEquals("max", error1.getInputHint());
-            Assert.assertEquals(LengthValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
-            Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
-        }
+        CompactValidator validator = LengthValidator.INSTANCE;
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("min", "1");
+        config.put("max", new ArrayList<>());
+
+        ValidationResult result = validator.validateConfig(configFromMap(config));
+
+        Assert.assertFalse(result.isValid());
+
+        Assert.assertEquals(2, result.getErrors().size());
+
+        ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+        ValidationError error1 = errors[1];
+
+        Assert.assertNotNull(error1);
+        Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
+        Assert.assertEquals("max", error1.getInputHint());
+        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
+    }
+
+    @Test
+    public void validateValidatorConfigViaValidatorFactory() {
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("min", "1");
+        config.put("max", new ArrayList<>());
+
+        ValidatorFactory validatorFactory = ValidatorLookup.validatorFactory(session, LengthValidator.ID);
+
+        ValidatorConfig validatorConfig = configFromMap(config);
+
+        ValidationResult result = validatorFactory.validateConfig(validatorConfig);
+        Assert.assertEquals(2, result.getErrors().size());
+
+        ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+        ValidationError error1 = errors[1];
+
+        Assert.assertNotNull(error1);
+        Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
+        Assert.assertEquals("max", error1.getInputHint());
+        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 }
