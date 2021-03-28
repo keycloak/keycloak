@@ -78,10 +78,17 @@ public class ValidationError {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ValidationError)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ValidationError)) {
+            return false;
+        }
         ValidationError that = (ValidationError) o;
-        return Objects.equals(validatorId, that.validatorId) && Objects.equals(inputHint, that.inputHint) && Objects.equals(message, that.message) && Arrays.equals(messageParameters, that.messageParameters);
+        return Objects.equals(validatorId, that.validatorId)
+                && Objects.equals(inputHint, that.inputHint)
+                && Objects.equals(message, that.message)
+                && Arrays.equals(messageParameters, that.messageParameters);
     }
 
     @Override

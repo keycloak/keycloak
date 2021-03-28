@@ -41,6 +41,17 @@ public interface Validator extends Provider {
     }
 
     /**
+     * Validates the given {@code input} with an additional {@code config}.
+     *
+     * @param input  the value to validate
+     * @param config parameterization for the current validation
+     * @return the validation context with the outcome of the validation
+     */
+    default ValidationContext validate(Object input, ValidatorConfig config) {
+        return validate(input, null, new ValidationContext(), config);
+    }
+
+    /**
      * Validates the given {@code input}.
      *
      * @param input   the value to validate
