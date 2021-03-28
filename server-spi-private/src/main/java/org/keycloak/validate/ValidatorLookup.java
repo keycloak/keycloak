@@ -17,6 +17,7 @@
 package org.keycloak.validate;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.validate.builtin.BuiltinValidators;
 
 /**
@@ -27,9 +28,11 @@ public class ValidatorLookup {
     // TODO Validator lookup should be provided via KeycloakSession API later
 
     /**
-     * Look-up up for a built-in or registered validator with the given validatorName.
+     * Look-up up for a built-in or registered validator with the given validatorId.
      *
-     * @param id the id of the validator.
+     * @param session the {@link KeycloakSession}
+     * @param id      the id of the validator
+     * @return the {@link Validator} or {@literal null}
      */
     public static Validator validator(KeycloakSession session, String id) {
 
@@ -39,7 +42,38 @@ public class ValidatorLookup {
             return validator;
         }
 
+        if (session == null) {
+            return null;
+        }
+
         // Lookup validator in registry
         return session.getProvider(Validator.class, id);
+    }
+
+    /**
+     * Look-up for a built-in or registered validator with the given validatorId.
+     * <p>
+     * This is intended for users who want to dynamically create new {@link Validator} instances, validate
+     * {@link ValidatorConfig} configurations or create default configurations for a {@link Validator}.
+     *
+     * @param session the {@link KeycloakSession}
+     * @param id      the id of the validator
+     * @return the {@link Validator} or {@literal null}
+     */
+    public static ValidatorFactory validatorFactory(KeycloakSession session, String id) {
+
+        // Fast-path for internal Validators
+        ValidatorFactory factory = BuiltinValidators.getValidatorFactoryById(id);
+        if (factory != null) {
+            return factory;
+        }
+
+        if (session == null) {
+            return null;
+        }
+
+        // Lookup factory in registry
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        return (ValidatorFactory) sessionFactory.getProviderFactory(Validator.class, id);
     }
 }

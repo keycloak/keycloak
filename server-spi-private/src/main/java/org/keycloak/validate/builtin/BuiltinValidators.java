@@ -18,6 +18,7 @@ package org.keycloak.validate.builtin;
 
 import org.keycloak.validate.CompactValidator;
 import org.keycloak.validate.Validator;
+import org.keycloak.validate.ValidatorFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +31,7 @@ import java.util.Map;
  */
 public class BuiltinValidators {
 
-    private static final Map<String, Validator> INTERNAL_VALIDATORS;
+    private static final Map<String, CompactValidator> INTERNAL_VALIDATORS;
 
     static {
         List<CompactValidator> list = Arrays.asList(
@@ -43,7 +44,7 @@ public class BuiltinValidators {
                 NumberValidator.INSTANCE
         );
 
-        Map<String, Validator> validators = new HashMap<>();
+        Map<String, CompactValidator> validators = new HashMap<>();
 
         for (CompactValidator validator : list) {
             validators.put(validator.getId(), validator);
@@ -53,6 +54,10 @@ public class BuiltinValidators {
     }
 
     public static Validator getValidatorById(String id) {
+        return INTERNAL_VALIDATORS.get(id);
+    }
+
+    public static ValidatorFactory getValidatorFactoryById(String id) {
         return INTERNAL_VALIDATORS.get(id);
     }
 
