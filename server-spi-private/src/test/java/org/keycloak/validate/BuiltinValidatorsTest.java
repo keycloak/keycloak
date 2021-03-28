@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.keycloak.validate.builtin.BuiltinValidators;
 import org.keycloak.validate.builtin.UriValidator;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -108,7 +109,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateUri() {
+    public void validateUri() throws Exception {
 
         Validator validator = BuiltinValidators.uri();
 
@@ -121,5 +122,12 @@ public class BuiltinValidatorsTest {
 
         ValidatorConfig config = configFromMap(ImmutableMap.of(UriValidator.KEY_ALLOW_FRAGMENT, false));
         Assert.assertFalse(validator.validate("https://localhost:3000/#someFragment", "baseUrl", config).isValid());
+
+        // it is also possible to call dedicated validation methods on a built-in validator
+        Assert.assertTrue(BuiltinValidators.uri().
+                validateUri(new URI("https://customurl"), Collections.singleton("https"), true, true));
+
+        Assert.assertFalse(BuiltinValidators.uri().
+                validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
     }
 }

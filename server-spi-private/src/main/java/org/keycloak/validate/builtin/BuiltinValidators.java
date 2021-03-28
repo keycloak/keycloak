@@ -60,31 +60,31 @@ public class BuiltinValidators {
         return Collections.unmodifiableMap(INTERNAL_VALIDATORS);
     }
 
-    public static Validator notBlank() {
+    public static NotBlankValidator notBlank() {
         return NotBlankValidator.INSTANCE;
     }
 
-    public static Validator notEmpty() {
+    public static NotEmptyValidator notEmpty() {
         return NotEmptyValidator.INSTANCE;
     }
 
-    public static Validator length() {
+    public static LengthValidator length() {
         return LengthValidator.INSTANCE;
     }
 
-    public static Validator uri() {
+    public static UriValidator uri() {
         return UriValidator.INSTANCE;
     }
 
-    public static Validator email() {
+    public static EmailValidator email() {
         return EmailValidator.INSTANCE;
     }
 
-    public static Validator pattern() {
+    public static PatternValidator pattern() {
         return PatternValidator.INSTANCE;
     }
 
-    public static Validator number() {
+    public static NumberValidator number() {
         return NumberValidator.INSTANCE;
     }
 }

@@ -96,8 +96,16 @@ public class UriValidator implements CompactValidator {
         return null;
     }
 
-    public static boolean validateUri(URI uri, String inputHint, ValidationContext context,
-                                      Set<String> allowedSchemes, boolean allowFragment, boolean requireValidUrl)
+    public boolean validateUri(URI uri, Set<String> allowedSchemes, boolean allowFragment, boolean requireValidUrl) {
+        try {
+            return validateUri(uri, "url", new ValidationContext(), allowedSchemes, allowFragment, requireValidUrl);
+        } catch (MalformedURLException mue) {
+            return false;
+        }
+    }
+
+    public boolean validateUri(URI uri, String inputHint, ValidationContext context,
+                               Set<String> allowedSchemes, boolean allowFragment, boolean requireValidUrl)
             throws MalformedURLException {
 
         boolean valid = true;
