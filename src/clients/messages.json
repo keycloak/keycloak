@@ -1,5 +1,6 @@
 {
   "clients": {
+    "clientType": "Client type",
     "clientAuthorization": "Client authorization",
     "implicitFlow": "Implicit flow",
     "createClient": "Create client",

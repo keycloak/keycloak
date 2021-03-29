@@ -25,8 +25,9 @@ export const NewClientForm = () => {
   const adminClient = useAdminClient();
   const history = useHistory();
 
+  const [showCapabilityConfig, setShowCapabilityConfig] = useState(false);
   const [client, setClient] = useState<ClientRepresentation>({
-    protocol: "",
+    protocol: "openid-connect",
     clientId: "",
     name: "",
     description: "",
@@ -62,6 +63,7 @@ export const NewClientForm = () => {
                 onClick={async () => {
                   if (await methods.trigger()) {
                     setClient({ ...client, ...methods.getValues() });
+                    setShowCapabilityConfig(true);
                     onNext();
                   }
                 }}
@@ -106,13 +108,21 @@ export const NewClientForm = () => {
             mainAriaLabel={`${title} content`}
             steps={[
               {
+                id: "generalSettings",
                 name: t("generalSettings"),
                 component: <GeneralSettings />,
               },
-              {
-                name: t("capabilityConfig"),
-                component: <CapabilityConfig protocol={client.protocol} />,
-              },
+              ...(showCapabilityConfig
+                ? [
+                    {
+                      id: "capabilityConfig",
+                      name: t("capabilityConfig"),
+                      component: (
+                        <CapabilityConfig protocol={client.protocol} />
+                      ),
+                    },
+                  ]
+                : []),
             ]}
             footer={<Footer />}
             onSave={save}

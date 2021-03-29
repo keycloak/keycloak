@@ -11,9 +11,10 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ClientDescription } from "../ClientDescription";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 export const GeneralSettings = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("clients");
   const { errors, control } = useFormContext();
 
   const providers = useLoginProviders();
@@ -22,30 +23,32 @@ export const GeneralSettings = () => {
   return (
     <FormAccess isHorizontal role="manage-clients">
       <FormGroup
-        label="Client Type"
+        label={t("clientType")}
         fieldId="kc-type"
-        isRequired
-        helperTextInvalid={t("common:required")}
         validated={errors.protocol ? "error" : "default"}
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:clientType"
+            forLabel={t("clientType")}
+            forID="kc-type"
+          />
+        }
       >
         <Controller
           name="protocol"
           defaultValue=""
           control={control}
-          rules={{ required: true }}
           render={({ onChange, value }) => (
             <Select
               id="kc-type"
-              required
               onToggle={() => isOpen(!open)}
-              onSelect={(_, value, isPlaceholder) => {
-                onChange(isPlaceholder ? "" : (value as string));
+              onSelect={(_, value) => {
+                onChange(value as string);
                 isOpen(false);
               }}
               selections={value}
               variant={SelectVariant.single}
               aria-label={t("selectEncryptionType")}
-              placeholderText={t("common:selectOne")}
               isOpen={open}
             >
               {providers.map((option) => (
