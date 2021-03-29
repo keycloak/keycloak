@@ -15,7 +15,7 @@ import { Link, useParams, useRouteMatch } from "react-router-dom";
 export const LdapMapperList = () => {
   const [mappers, setMappers] = useState<ComponentRepresentation[]>();
 
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
 
@@ -81,8 +81,8 @@ export const LdapMapperList = () => {
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="client-scopes:clientScopeList"
-        searchPlaceholderKey="client-scopes:mappersSearchFor"
+        ariaLabelKey="ldapMappersList"
+        searchPlaceholderKey="common:searchForMapper"
         toolbarItem={
           <ToolbarItem>
             <Button
@@ -96,8 +96,7 @@ export const LdapMapperList = () => {
                 )
               }
             >
-              {/* TODO: Add proper strings */}
-              {t("Add mapper")}
+              {t("common:addMapper")}
             </Button>
           </ToolbarItem>
         }
@@ -107,12 +106,13 @@ export const LdapMapperList = () => {
             onRowClick: async (mapper) => {
               try {
                 addAlert(
+                  // t("common:mappingDeletedError"),
                   "Delete functionality not implemented yet!",
                   AlertVariant.success
                 );
               } catch (error) {
                 addAlert(
-                  t("mappingDeletedError", { error }),
+                  t("common:mappingDeletedError", { error }),
                   AlertVariant.danger
                 );
               }

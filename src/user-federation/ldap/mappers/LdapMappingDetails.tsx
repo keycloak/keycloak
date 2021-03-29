@@ -72,9 +72,14 @@ export const LdapMappingDetails = () => {
     <>
       <ViewHeader titleKey={mapper ? mapper.name! : ""} subKey="" />
       <PageSection variant="light" isFilled>
-        <LdapMapperUsername form={form} />
+        {mapper
+          ? (mapper.providerId! === "certificate-ldap-mapper" ||
+              mapper.providerId! === "user-attribute-ldap-mapper") && (
+              <LdapMapperUsername form={form} mapperType={mapper?.providerId} />
+            )
+          : ""}
         <Form onSubmit={form.handleSubmit(save)}>
-          <ActionGroup className="keycloak__form_actions">
+          <ActionGroup>
             <Button
               isDisabled={!form.formState.isDirty}
               variant="primary"

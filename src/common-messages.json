@@ -95,6 +95,16 @@
       "minutes": "Minutes",
       "hours": "Hours",
       "days": "Days"
-    }
+    },
+
+    "attributes": "Attributes",
+    "clientId": "Client ID",
+    "id": "ID",
+
+    "addMapper": "Add mapper",
+    "searchForMapper": "Search for mapper",
+    "mapperType": "Mapper type",
+    "mappingDeletedSuccess": "Mapping successfully deleted",
+    "mappingDeletedError": "Could not delete mapping: '{{error}}'"
   }
 }

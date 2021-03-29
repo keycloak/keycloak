@@ -119,8 +119,6 @@
     "validateRdnLdapAttribute": "You must enter an RDN LDAP attribute",
     "validateCustomUserSearchFilter": "Filter must be enclosed in parentheses, for example: (filter)", 
 
-    "id": "ID",
-    "mapperType": "Mapper type",
     "mapperTypeMsadUserAccountControlManager": "msad-user-account-control-mapper",
     "mapperTypeMsadLdsUserAccountControlMapper": "msad-user-account-control-mapper",
     "mapperTypeGroupLdapMapper": "group-ldap-mapper",
@@ -133,23 +131,36 @@
     "mapperTypeHardcodedLdapGroupMapper": "hardcoded-ldap-group-mapper",
     "mapperTypeLdapAttributeMapper": "hardcoded-ldap-attribute-mapper",
 
-    "passwordPolicyHintsEnabled": "Password policy hints enabled",
+    "ldapMappersList": "LDAP Mappers",
+    "ldapFullNameAttribute": "LDAP full name attribute",
+    "writeOnly": "Write only",
 
-    "ldapGroupsDn": "LDAP Groups DN",
+    "ldapGroupsDn": "LDAP groups DN",
     "groupNameLDAPAttribute": "Group name LDAP attribute",
     "groupObjectClasses": "Group object classes",
     "preserveGroupInheritance": "Preserve group inheritance",
     "ignoreMissingGroups": "Ignore missing groups",
+    "userGroupsRetrieveStrategy": "User groups retrieve strategy",
+    "mappedGroupAttributes": "Mapped group attributes",
+    "dropNonexistingGroupsDuringSync": "Drop non-existing groups during sync",
+    "groupsPath": "Groups path",
+
     "membershipLdapAttribute": "Membership LDAP attribute",
     "membershipAttributeType": "Membership attribute type",
     "membershipUserLdapAttribute": "Membership user LDAP attribute",
     "ldapFilter": "LDAP filter",
     "mode": "Mode",
-    "userGroupsRetrieveStrategy": "User groups retrieve strategy",
     "memberofLdapAttribute": "Member-of LDAP attribute",
-    "mappedGroupAttributes": "Mapped group attributes",
-    "dropNonexistingGroupsDuringSync": "Drop non-existing groups during sync",
-    "groupsPath": "Groups path",
+
+    "ldapRolesDN": "LDAP roles DN",
+    "roleNameLdapAttribute": "Role name LDAP attribute",
+    "roleObjectClasses": "Role object classes",
+    "userRolesRetrieveStrategy": "User roles retrieve strategy",
+    "useRealmRolesMapping": "Use realm roles mapping",
+    "clientId": "Client ID",
+
+    "ldapAttributeName": "LDAP attribute name",
+    "ldapAttributeValue": "LDAP attribute value",
 
     "userModelAttribute": "User model attribute",
     "ldapAttribute": "LDAP attribute",
@@ -157,21 +168,15 @@
     "alwaysReadValueFromLdap": "Always read value from LDAP",
     "isMandatoryInLdap": "Is mandatory in LDAP",
     "isBinaryAttribute": "Is binary attribute",
-
-    "ldapRolesDN": "LDAP roles DN",
-    "roleNameLdapAttribute": "Role Name LDAP attribute",
-    "roleObjectClasses": "Role object classes",
-    "useRealmRolesMapping": "Use realm roles mapping",
-    "clientId": "Client ID",
-
     "derFormatted": "DER formatted",
 
-    "ldapFullNameAttribute": "LDAP full name attribute",
-    "writeOnly": "Write only",
+    "passwordPolicyHintsEnabled": "Password policy hints enabled",
 
-    "group": "Group",
+    "userModelAttributeName": "User model attribute name",
+    "attributeValue": "Attribute value",
 
-    "ldapAttributeName": "LDAP attribute name",
-    "ldapAttributeValue": "LDAP attribute value"
+    "selectRole": "Select role",
+
+    "group": "Group"
   }
 }
