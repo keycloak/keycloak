@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.validate.builtin.BuiltinValidators;
 import org.keycloak.validate.builtin.LengthValidator;
+import org.keycloak.validate.builtin.NotBlankValidator;
 import org.keycloak.validate.builtin.NotEmptyValidator;
 
 import java.util.ArrayList;
@@ -202,5 +203,85 @@ public class ValidatorTest {
         Assert.assertEquals("max", error1.getInputHint());
         Assert.assertEquals(LengthValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
         Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
+    }
+
+    @Test
+    public void nestedValidation() {
+
+        Assert.assertTrue(MockAddressValidator.INSTANCE.validate(
+                new MockAddress("4848 Arcu St.", "Saint-Maur-des-Fossés", "02206", "Germany")
+                , "address").isValid());
+
+        ValidationResult result = MockAddressValidator.INSTANCE.validate(
+                new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany")
+                , "address").toResult();
+        Assert.assertFalse(result.isValid());
+        Assert.assertEquals(2, result.getErrors().size());
+
+        ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+        ValidationError error0 = errors[0];
+
+        Assert.assertNotNull(error0);
+        Assert.assertEquals(NotBlankValidator.ID, error0.getValidatorId());
+        Assert.assertEquals("address.street", error0.getInputHint());
+        Assert.assertEquals(NotBlankValidator.MESSAGE_BLANK, error0.getMessage());
+        Assert.assertEquals("", error0.getMessageParameters()[0]);
+
+        ValidationError error1 = errors[1];
+
+        Assert.assertNotNull(error1);
+        Assert.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
+        Assert.assertEquals("address.zip", error1.getInputHint());
+        Assert.assertEquals(NotBlankValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(null, error1.getMessageParameters()[0]);
+
+    }
+
+    static class MockAddress {
+
+        private final String street;
+        private final String city;
+        private final String zip;
+        private final String country;
+
+        public MockAddress(String street, String city, String zip, String country) {
+            this.street = street;
+            this.city = city;
+            this.zip = zip;
+            this.country = country;
+        }
+    }
+
+    static class MockAddressValidator implements CompactValidator {
+
+        public static MockAddressValidator INSTANCE = new MockAddressValidator();
+
+        public static final String ID = "address";
+
+        @Override
+        public String getId() {
+            return ID;
+        }
+
+        @Override
+        public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
+
+            if (!(input instanceof MockAddress)) {
+                context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_VALUE, input));
+                return context;
+            }
+
+            MockAddress address = (MockAddress) input;
+            // Access validator statically
+            NotBlankValidator.INSTANCE.validate(address.street, inputHint + ".street", context);
+            NotBlankValidator.INSTANCE.validate(address.city, inputHint + ".city", context);
+            NotBlankValidator.INSTANCE.validate(address.country, inputHint + ".country", context);
+
+            // Access validator via lookup (could be built-in or user-provided Validator)
+            context.validator(NotBlankValidator.ID).validate(address.zip, inputHint + ".zip", context);
+
+            return context;
+        }
     }
 }

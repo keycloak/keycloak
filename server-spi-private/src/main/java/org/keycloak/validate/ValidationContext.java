@@ -59,8 +59,15 @@ public class ValidationContext {
         this.attributes = new HashMap<>();
     }
 
-    public Map<String, Object> getAttributes() {
-        return attributes;
+    /**
+     * Eases access to {@link Validator Validator's} for nested validation.
+     *
+     * @param validatorId
+     * @return
+     */
+    public Validator validator(String validatorId) {
+        // TODO refactor to session.validator(validatorId);
+        return ValidatorLookup.validator(session, validatorId);
     }
 
     public void addError(ValidationError error) {
@@ -80,6 +87,10 @@ public class ValidationContext {
 
     public boolean hasErrors() {
         return !errors.isEmpty();
+    }
+
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     public KeycloakSession getSession() {
