@@ -20,7 +20,6 @@ package org.keycloak.testsuite.client;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import java.util.Arrays;
@@ -107,14 +106,14 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
 
         assertExpectedLoadedPolicies((ClientPoliciesRepresentation reps)->{
             ClientPolicyRepresentation rep =  getPolicyRepresentation(reps, "new-policy");
-            assertExpectedPolicy("new-policy", "not existed and duplicated profiles are ignored.", false, true, Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
+            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", false, true, Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
                     rep);
         });
 
         // update existing profiles
 
         String modifiedProfileDescription = "The profile has been updated.";
-        ClientProfilesRepresentation actualProfilesRep = getProfiles();
+        ClientProfilesRepresentation actualProfilesRep = getProfilesWithoutBuiltin();
         ClientProfilesBuilder profilesBuilder = new ClientProfilesBuilder();
         actualProfilesRep.getProfiles().stream().forEach(i->{
             if (i.getName().equals("ordinal-test-profile")) {
@@ -132,7 +131,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         // update existing policies
 
         String modifiedPolicyDescription = "The policy has also been updated.";
-        ClientPoliciesRepresentation actualPoliciesRep = getPolicies();
+        ClientPoliciesRepresentation actualPoliciesRep = getPoliciesWithoutBuiltin();
         ClientPoliciesBuilder policiesBuilder = new ClientPoliciesBuilder();
         actualPoliciesRep.getPolicies().stream().forEach(i->{
             if (i.getName().equals("new-policy")) {
@@ -294,7 +293,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         ClientPolicyRepresentation loadedPolicyRep = 
                 (new ClientPolicyBuilder()).createPolicy(
                         "new-policy",
-                        "not existed and duplicated profiles are ignored.",
+                        "duplicated profiles are ignored.",
                         Boolean.FALSE,
                         Boolean.TRUE,
                         null,

@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 
 import org.keycloak.OAuth2Constants;
@@ -30,7 +29,6 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
@@ -40,18 +38,11 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforceExecutor.Configuration> {
-
-    private static final Logger logger = Logger.getLogger(HolderOfKeyEnforceExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     private final KeycloakSession session;
     private Configuration configuration;

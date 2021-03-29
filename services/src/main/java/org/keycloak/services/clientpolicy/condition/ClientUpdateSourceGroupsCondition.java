@@ -31,7 +31,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
@@ -40,34 +39,46 @@ import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceGroupsCondition extends AbstractClientCondition {
+public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionProvider<ClientUpdateSourceGroupsCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceGroupsCondition.class);
 
     // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
     private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
 
     public ClientUpdateSourceGroupsCondition(KeycloakSession session) {
-        super(session);
+        this.session = session;
     }
 
     @Override
-    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
-        return (T) configuration;
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
     }
- 
+
     @Override
-    public void setupConfiguration(Object config) {
-        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends AbstractClientCondition.Configuration {
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
         protected List<String> groups;
 
         public List<String> getGroups() {
@@ -77,6 +88,11 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientCondition {
         public void setGroups(List<String> groups) {
             this.groups = groups;
         }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override
@@ -134,8 +150,8 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientCondition {
         Set<String> groups = user.getGroupsStream().map(GroupModel::getName).collect(Collectors.toSet());
 
         if (logger.isTraceEnabled()) {
-            groups.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: user group = {1}", logMsgPrefix(), i));
-            expectedGroups.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: expected user group = {1}", logMsgPrefix(), i));
+            groups.forEach(i -> logger.tracev("user group = {0}", i));
+            expectedGroups.forEach(i -> logger.tracev("expected user group = {0}", i));
         }
 
         return expectedGroups.removeAll(groups); // may change expectedGroups so that it has needed to be instantiated.

@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
@@ -39,7 +38,6 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
@@ -51,12 +49,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider<PKCEEnforceExecutor.Configuration> {
-
-    private static final Logger logger = Logger.getLogger(PKCEEnforceExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
     private static final Pattern VALID_CODE_VERIFIER_PATTERN  = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");

@@ -27,17 +27,12 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmForSignedJwtEnforceExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     private final KeycloakSession session;
 
@@ -80,7 +75,7 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
 
     private void verifySecureSigningAlgorithm(String signatureAlgorithm) throws ClientPolicyException {
         if (signatureAlgorithm == null) {
-            ClientPolicyLogger.logv(logger, "{0} :: Signing algorithm not specified explicitly.", logMsgPrefix());
+            logger.trace("Signing algorithm not specified explicitly.");
             return;
         }
 
@@ -92,10 +87,10 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:
-                ClientPolicyLogger.logv(logger, "{0} :: Passed. signatureAlgorithm = {1}", logMsgPrefix(), signatureAlgorithm);
+                logger.tracev("Passed. signatureAlgorithm = {0}", signatureAlgorithm);
                 return;
         }
-        ClientPolicyLogger.logv(logger, "{0} :: NOT allowed signatureAlgorithm = {1}", logMsgPrefix(), signatureAlgorithm);
+        logger.tracev("NOT allowed signatureAlgorithm = {0}", signatureAlgorithm);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
     }
 

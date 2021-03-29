@@ -25,7 +25,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
@@ -41,10 +40,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureRedirectUriEnforceExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     private final KeycloakSession session;
 
@@ -92,7 +87,7 @@ public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorPro
         }
 
         for(String redirectUri : redirectUris) {
-            ClientPolicyLogger.logv(logger, "{0} :: Redirect URI = {1}", logMsgPrefix(), redirectUri);
+            logger.tracev("Redirect URI = {0}", redirectUri);
             if (redirectUri.startsWith("http://") || redirectUri.contains("*")) {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: redirect_uris");
             }

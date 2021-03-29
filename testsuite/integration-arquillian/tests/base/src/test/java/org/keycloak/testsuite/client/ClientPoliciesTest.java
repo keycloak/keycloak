@@ -538,8 +538,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     @Test
     public void testAnyClientCondition() throws Exception {
-        getProfiles();
-        getPolicies();
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil", Boolean.FALSE, null)
@@ -1452,6 +1450,40 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         }
 
         // TODO : For dynamic client registration, the existing test scheme can not distinguish when the exception happens on which event so that the migrated client policy executors test them afterwards.
+    }
+
+    @Test
+    public void testOverwriteBuiltinProfileNotAllowed() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                   (new ClientProfileBuilder()).createProfile("builtin-default-profile", "Pershyy Profil", Boolean.FALSE, null)
+                       .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
+                           createSecureClientAuthEnforceExecutorConfig(Boolean.TRUE, 
+                               Arrays.asList(JWTClientAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID, X509ClientAuthenticator.PROVIDER_ID),
+                               X509ClientAuthenticator.PROVIDER_ID))
+                       .toRepresentation()
+                ).toString();
+        try {
+            updateProfiles(json);
+        } catch (ClientPolicyException cpe) {
+            assertEquals("update profiles failed", cpe.getError());
+        }
+    }
+
+    @Test
+    public void testUpdatePolicyWithoutNameNotAllowd() throws Exception {
+        // register policies
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(null, "La Premiere Politique", Boolean.FALSE, Boolean.TRUE, null, null)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        try {
+            updatePolicies(json);
+        } catch (ClientPolicyException cpe) {
+            assertEquals("update profiles failed", cpe.getError());
+        }
     }
 
     private void checkMtlsFlow() throws IOException {

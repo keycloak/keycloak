@@ -34,13 +34,12 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ClientPolicyModel;
-import org.keycloak.models.ClientProfileModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionConfiguration;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorConfiguration;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
@@ -59,7 +58,7 @@ public class ClientPoliciesUtil {
 
     private static final Logger logger = Logger.getLogger(ClientPoliciesUtil.class);
 
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICIES";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * gets existing client profiles in a realm as representation.
@@ -81,11 +80,7 @@ public class ClientPoliciesUtil {
         if (profilesJson == null) {
             return new ClientProfilesRepresentation();
         }
-        try {
-            profilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
-        } catch (ClientPolicyException e) {
-            throw new ClientPolicyException(e.getError(), e.getErrorDetail());
-        }
+        profilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
         if (profilesRep == null) {
             return new ClientProfilesRepresentation();
         }
@@ -109,7 +104,7 @@ public class ClientPoliciesUtil {
         try {
             profilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
         } catch (ClientPolicyException e) {
-            logger.warnv("{0} Failed to serialize client profiles json string. err={1}, errDetail={2}", LOGMSG_PREFIX, e.getError(), e.getErrorDetail());
+            logger.warnv("Failed to serialize client profiles json string. err={0}, errDetail={1}", e.getError(), e.getErrorDetail());
             return Collections.emptyMap();
         }
         if (profilesRep == null || profilesRep.getProfiles() == null) {
@@ -142,8 +137,7 @@ public class ClientPoliciesUtil {
             List<Object> executors = new ArrayList<>();
             if (profileRep.getExecutors() != null) {
                 profileRep.getExecutors().stream().forEach(obj->{
-                    ObjectMapper mp = new ObjectMapper();
-                    JsonNode node = mp.convertValue(obj, JsonNode.class);
+                    JsonNode node = objectMapper.convertValue(obj, JsonNode.class);
                     node.fields().forEachRemaining(executor->{
                         ClientPolicyExecutorProvider provider = session.getProvider(ClientPolicyExecutorProvider.class, executor.getKey());
                         if (provider == null) {
@@ -152,11 +146,11 @@ public class ClientPoliciesUtil {
                         }
 
                         try {
-                            ClientPolicyExecutorConfiguration configuration =  (ClientPolicyExecutorConfiguration) JsonSerialization.mapper.convertValue(executor.getValue(), provider.getExecutorConfigurationClass());
+                            ClientPolicyExecutorConfiguration configuration = (ClientPolicyExecutorConfiguration) JsonSerialization.mapper.convertValue(executor.getValue(), provider.getExecutorConfigurationClass());
                             provider.setupConfiguration(configuration);
                             executors.add(provider);
                         } catch (IllegalArgumentException iae) {
-                            logger.warnv("{0} :: failed for Configuration Setup :: error = {1}", LOGMSG_PREFIX, iae.getMessage());
+                            logger.warnv("failed for Configuration Setup :: error = {0}", iae.getMessage());
                         }
                     });
                 });
@@ -194,7 +188,7 @@ public class ClientPoliciesUtil {
 
         // duplicated profile name is not allowed.
         if (proposedProfileRepList.size() != proposedProfileRepList.stream().map(i->i.getName()).distinct().count()) {
-            throw new ClientPolicyException("proposed builtin client profile name duplicated.", "NA");
+            throw new ClientPolicyException("proposed builtin client profile name duplicated.");
         }
 
         // construct validated and modified profiles from builtin profiles in JSON file enclosed in keycloak binary.
@@ -204,13 +198,12 @@ public class ClientPoliciesUtil {
 
         for (ClientProfileRepresentation proposedProfileRep : proposedProfilesRep.getProfiles()) {
             if (proposedProfileRep.getName() == null) {
-                continue;
+                throw new ClientPolicyException("client profile without its name not allowed.");
             }
 
             // ignore proposed ordinal profile because builtin profile can only be added.
             if (proposedProfileRep.isBuiltin() == null || !proposedProfileRep.isBuiltin()) {
-                logger.warnv("{0} ordinal profile included in proposed builtin profiles. Just ignore it. profile name = {1}", LOGMSG_PREFIX, proposedProfileRep.getName());
-                continue;
+                throw new ClientPolicyException("ordinal client profile not allowed.");
             }
 
             ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
@@ -220,7 +213,12 @@ public class ClientPoliciesUtil {
 
             profileRep.setExecutors(new ArrayList<>()); // to prevent returning null
             if (proposedProfileRep.getExecutors() != null) {
-                proposedProfileRep.getExecutors().stream().filter(executor->isValidExecutor(session, executor)).forEach(executor->profileRep.getExecutors().add(executor));
+                for (Object executor : proposedProfileRep.getExecutors()) {
+                    if (isValidExecutor(session, executor) == false) {
+                        throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
+                    }
+                    profileRep.getExecutors().add(executor);
+                }
             }
 
             updatingProfileList.add(profileRep);
@@ -230,7 +228,7 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * converts client profiles as representation to json.
+     * convert client profiles as representation to json.
      * can return null.
      */
     public static String convertClientProfilesRepresentationToJson(ClientProfilesRepresentation reps) throws ClientPolicyException {
@@ -238,7 +236,7 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * converts client profiles as json to representation.
+     * convert client profiles as json to representation.
      * not return null.
      */
     private static ClientProfilesRepresentation convertClientProfilesJsonToRepresentation(String json) throws ClientPolicyException {
@@ -264,18 +262,14 @@ public class ClientPoliciesUtil {
             proposedProfilesRep = new ClientProfilesRepresentation();
         }
         if (realm == null) {
-            throw new ClientPolicyException("realm not specified.", "NA");
+            throw new ClientPolicyException("realm not specified.");
         }
 
         // deserialize existing profiles (json -> representation)
         ClientProfilesRepresentation existingProfilesRep = null;
         String existingProfilesJson = session.clientPolicy().getClientProfilesJsonString(realm);
         if (existingProfilesJson != null) {
-            try {
-                existingProfilesRep = convertClientProfilesJsonToRepresentation(existingProfilesJson);
-            } catch (ClientPolicyException e) {
-                throw new ClientPolicyException(e.getError(), e.getErrorDetail());
-            }
+            existingProfilesRep = convertClientProfilesJsonToRepresentation(existingProfilesJson);
             if (existingProfilesRep == null) {
                 existingProfilesRep = new ClientProfilesRepresentation();
             }
@@ -293,7 +287,7 @@ public class ClientPoliciesUtil {
 
         // duplicated profile name is not allowed.
         if (proposedProfileRepList.size() != proposedProfileRepList.stream().map(i->i.getName()).distinct().count()) {
-            throw new ClientPolicyException("proposed client profile name duplicated.", "NA");
+            throw new ClientPolicyException("proposed client profile name duplicated.");
         }
 
         // construct updating profiles from existing profiles and proposed profiles
@@ -309,13 +303,17 @@ public class ClientPoliciesUtil {
 
         for (ClientProfileRepresentation proposedProfileRep : proposedProfilesRep.getProfiles()) {
             if (proposedProfileRep.getName() == null) {
-                continue;
+                throw new ClientPolicyException("client profile without its name not allowed.");
             }
 
-            // ignore proposed builtin profile because builtin profile cannot added/deleted/modified.
+            // newly proposed builtin profile not allowed because builtin profile cannot added/deleted/modified.
             if (proposedProfileRep.isBuiltin() != null && proposedProfileRep.isBuiltin()) {
-                logger.warnv("{0} builtin profile included in proposed profiles. Just ignore it. profile name = {1}", LOGMSG_PREFIX, proposedProfileRep.getName());
-                continue;
+                throw new ClientPolicyException("newly builtin proposed client profile not allowed.");
+            }
+
+            // not allow to overwrite builtin profiles
+            if (updatingProfileList.stream().anyMatch(i->proposedProfileRep.getName().equals(i.getName()))) {
+                throw new ClientPolicyException("proposed client profile name is the same one of the builtin profile.");
             }
 
             // basically, proposed profile totally overrides existing profile
@@ -325,7 +323,12 @@ public class ClientPoliciesUtil {
             profileRep.setBuiltin(Boolean.FALSE);
             profileRep.setExecutors(new ArrayList<>());
             if (proposedProfileRep.getExecutors() != null) {
-                proposedProfileRep.getExecutors().stream().filter(executor->isValidExecutor(session, executor)).forEach(executor->profileRep.getExecutors().add(executor));
+                for (Object executor : proposedProfileRep.getExecutors()) {
+                    if (isValidExecutor(session, executor) == false) {
+                        throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
+                    }
+                    profileRep.getExecutors().add(executor);
+                }
             }
 
             updatingProfileList.add(profileRep);
@@ -341,22 +344,17 @@ public class ClientPoliciesUtil {
      */
     public static ClientProfilesRepresentation getValidatedClientProfilesRepresentation(KeycloakSession session, RealmModel realm, String profilesJson) throws ClientPolicyException {
         if (profilesJson == null) {
-            throw new ClientPolicyException("no client profiles json.", "NA");
+            throw new ClientPolicyException("no client profiles json.");
         }
 
         // deserialize existing profiles (json -> representation)
-        ClientProfilesRepresentation proposedProfilesRep = null;
-        try {
-            proposedProfilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
-        } catch (ClientPolicyException cpe) {
-            throw new ClientPolicyException(cpe.getError(), cpe.getErrorDetail());
-        }
+        ClientProfilesRepresentation proposedProfilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
 
         return getValidatedClientProfilesRepresentation(session, realm, proposedProfilesRep);
     }
 
     /**
-     * check whether the propsed executor's provider can be found in keycloak's ClientPolicyExecutorProvider list.
+     * check whether the proposed executor's provider can be found in keycloak's ClientPolicyExecutorProvider list.
      * not return null.
      */
     private static boolean isValidExecutor(KeycloakSession session, Object executor) {
@@ -365,14 +363,14 @@ public class ClientPoliciesUtil {
             if (providerSet != null && providerSet.contains(providerId)) {
                 return true;
             }
-            logger.warnv("{0} no executor provider found. providerId = {1}", LOGMSG_PREFIX, providerId);
+            logger.warnv("no executor provider found. providerId = {0}", providerId);
             return false;
         });
     }
 
 
     /**
-     * gets existing client policies in a realm as representation.
+     * get existing client policies in a realm as representation.
      * not return null.
      */
     public static ClientPoliciesRepresentation getClientPoliciesRepresentation(KeycloakSession session, RealmModel realm) throws ClientPolicyException {
@@ -389,14 +387,9 @@ public class ClientPoliciesUtil {
 
         // deserialize existing policies (json -> representation)
         if (policiesJson == null) {
-            // vacant reps
             return new ClientPoliciesRepresentation();
         }
-        try {
-            policiesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
-        } catch (ClientPolicyException e) {
-            throw new ClientPolicyException(e.getError(), e.getErrorDetail());
-        }
+        policiesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
         if (policiesRep == null) {
             return new ClientPoliciesRepresentation();
         }
@@ -405,10 +398,10 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * gets existing client policies in a realm as model.
+     * get existing enabled client policies in a realm as model.
      * not return null.
      */
-    public static List<ClientPolicyModel> getClientPoliciesModel(KeycloakSession session, RealmModel realm) {
+    public static List<ClientPolicyModel> getEnabledClientProfilesModel(KeycloakSession session, RealmModel realm) {
         // get existing profiles as json
         String policiesJson = session.clientPolicy().getClientPoliciesJsonString(realm);
         if (policiesJson == null) {
@@ -420,7 +413,7 @@ public class ClientPoliciesUtil {
         try {
             policiesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
         } catch (ClientPolicyException e) {
-            logger.warnv("{0} Failed to serialize client policies json string. err={1}, errDetail={2}", LOGMSG_PREFIX, e.getError(), e.getErrorDetail());
+            logger.warnv("Failed to serialize client policies json string. err={0}, errDetail={1}", e.getError(), e.getErrorDetail());
             return Collections.emptyList();
         }
         if (policiesRep == null || policiesRep.getPolicies() == null) {
@@ -434,34 +427,39 @@ public class ClientPoliciesUtil {
             if (policyRep.getName() == null) {
                 continue;
             }
+            // pick up only enabled policy
+            if (policyRep.isEnable() == null || policyRep.isEnable() == false) {
+                continue;
+            }
 
             ClientPolicyModel policyModel = new ClientPolicyModel();
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
+            policyModel.setEnable(true);
             if (policyRep.isBuiltin() != null) {
                 policyModel.setBuiltin(policyRep.isBuiltin().booleanValue());
             } else {
                 policyModel.setBuiltin(false);
             }
-            if (policyRep.isEnable() != null) {
-                policyModel.setEnable(policyRep.isEnable().booleanValue());
-            } else {
-                policyModel.setEnable(false);
-            }
 
             List<Object> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
                 policyRep.getConditions().stream().forEach(obj->{
-                    ObjectMapper mp = new ObjectMapper();
-                    JsonNode node = mp.convertValue(obj, JsonNode.class);
+                    JsonNode node = objectMapper.convertValue(obj, JsonNode.class);
                     node.fields().forEachRemaining(condition->{
                         ClientPolicyConditionProvider provider = session.getProvider(ClientPolicyConditionProvider.class, condition.getKey());
                         if (provider == null) {
                             // condition's provider not found. just skip it.
                             return;
                         }
-                        provider.setupConfiguration(condition.getValue());
-                        conditions.add(provider);
+
+                        try {
+                            ClientPolicyConditionConfiguration configuration =  (ClientPolicyConditionConfiguration) JsonSerialization.mapper.convertValue(condition.getValue(), provider.getConditionConfigurationClass());
+                            provider.setupConfiguration(configuration);
+                            conditions.add(provider);
+                        } catch (IllegalArgumentException iae) {
+                            logger.warnv("failed for Configuration Setup :: error = {0}", iae.getMessage());
+                        }
                     });
                 });
             }
@@ -502,7 +500,7 @@ public class ClientPoliciesUtil {
 
         // duplicated policy name is not allowed.
         if (proposedPolicyRepList.size() != proposedPolicyRepList.stream().map(i->i.getName()).distinct().count()) {
-            throw new ClientPolicyException("proposed builtin client policy name duplicated.", "NA");
+            throw new ClientPolicyException("proposed builtin client policy name duplicated.");
         }
 
         // construct validated and modified policies from builtin profiles in JSON file enclosed in keycloak binary.
@@ -512,13 +510,12 @@ public class ClientPoliciesUtil {
 
         for (ClientPolicyRepresentation proposedPolicyRep : proposedPoliciesRep.getPolicies()) {
             if (proposedPolicyRep.getName() == null) {
-                continue;
+                throw new ClientPolicyException("proposed client policy name missing.");
             }
 
             // ignore proposed ordinal policy because builtin policy can only be added.
             if (proposedPolicyRep.isBuiltin() == null || !proposedPolicyRep.isBuiltin()) {
-                logger.warnv("{0} ordinal policy included in proposed builtin policies. Just ignore it. policy name = {1}", LOGMSG_PREFIX, proposedPolicyRep.getName());
-                continue;
+                throw new ClientPolicyException("ordinal client policy not allowed.");
             }
 
             ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
@@ -530,7 +527,12 @@ public class ClientPoliciesUtil {
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {
-                proposedPolicyRep.getConditions().stream().filter(condition->isValidCondition(session, condition)).forEach(condition->policyRep.getConditions().add(condition));
+                for (Object condition : proposedPolicyRep.getConditions()) {
+                    if (isValidCondition(session, condition) == false) {
+                        throw new ClientPolicyException("the proposed client policy contains the condition with its invalid configuration.");
+                    }
+                    policyRep.getConditions().add(condition);
+                }
             }
 
             Set<String> existingProfileNames = new HashSet<>();
@@ -538,7 +540,12 @@ public class ClientPoliciesUtil {
             reps.getProfiles().stream().map(profile->profile.getName()).forEach(profileName->existingProfileNames.add(profileName));
             policyRep.setProfiles(new ArrayList<>());
             if (proposedPolicyRep.getProfiles() != null) {
-                proposedPolicyRep.getProfiles().stream().filter(profileName->existingProfileNames.contains(profileName)).distinct().forEach(profileName->policyRep.getProfiles().add(profileName));
+                for (String profileName : proposedPolicyRep.getProfiles()) {
+                    if (existingProfileNames.contains(profileName) == false) {
+                        throw new ClientPolicyException("referring not existing client profile not allowed.");
+                    }
+                }
+                proposedPolicyRep.getProfiles().stream().distinct().forEach(profileName->policyRep.getProfiles().add(profileName));
             }
 
             updatingPoliciesList.add(policyRep);
@@ -548,7 +555,7 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * converts client policies as representation to json.
+     * convert client policies as representation to json.
      * can return null.
      */
     public static String convertClientPoliciesRepresentationToJson(ClientPoliciesRepresentation reps) throws ClientPolicyException {
@@ -556,7 +563,7 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * converts client policies as json to representation.
+     * convert client policies as json to representation.
      * not return null.
      */
     private static ClientPoliciesRepresentation convertClientPoliciesJsonToRepresentation(String json) throws ClientPolicyException {
@@ -582,18 +589,14 @@ public class ClientPoliciesUtil {
             proposedPoliciesRep = new ClientPoliciesRepresentation();
         }
         if (realm == null) {
-            throw new ClientPolicyException("realm not specified.", "NA");
+            throw new ClientPolicyException("realm not specified.");
         }
 
         // deserialize existing profiles (json -> represetation)
         ClientPoliciesRepresentation existingPoliciesRep = null;
         String existingPoliciesJson = session.clientPolicy().getClientPoliciesJsonString(realm);
         if (existingPoliciesJson != null) {
-            try {
-                existingPoliciesRep = convertClientPoliciesJsonToRepresentation(existingPoliciesJson);
-            } catch (ClientPolicyException cpe) {
-                throw new ClientPolicyException(cpe.getError(), cpe.getErrorDetail());
-            }
+            existingPoliciesRep = convertClientPoliciesJsonToRepresentation(existingPoliciesJson);
             if (existingPoliciesRep == null) {
                 existingPoliciesRep = new ClientPoliciesRepresentation();
             }
@@ -611,7 +614,7 @@ public class ClientPoliciesUtil {
 
         // duplicated policy name is not allowed.
         if (proposedPolicyRepList.size() != proposedPolicyRepList.stream().map(i->i.getName()).distinct().count()) {
-            throw new ClientPolicyException("proposed client policy name duplicated.", "NA");
+            throw new ClientPolicyException("proposed client policy name duplicated.");
         }
 
         // construct updating policies from existing policies and proposed policies
@@ -627,10 +630,10 @@ public class ClientPoliciesUtil {
 
         for (ClientPolicyRepresentation proposedPolicyRep : proposedPoliciesRep.getPolicies()) {
             if (proposedPolicyRep.getName() == null) {
-                continue;
+                throw new ClientPolicyException("proposed client policy name missing.");
             }
 
-            // ignore newly proposed builtin policy because builtin policy cannot added/deleted/modified.
+            // newly proposed builtin policy not allowed because builtin policy cannot added/deleted/modified.
             Boolean enabled = (proposedPolicyRep.isEnable() != null) ? proposedPolicyRep.isEnable() : Boolean.FALSE;
             if (proposedPolicyRep.isBuiltin() != null && proposedPolicyRep.isBuiltin()) {
                 // only enable field of the existing builtin policy can be overridden.
@@ -638,8 +641,7 @@ public class ClientPoliciesUtil {
                     updatingPoliciesList.stream().filter(i->i.getName().equals(proposedPolicyRep.getName())).forEach(i->i.setEnable(enabled));
                     continue;
                 }
-                logger.warnv("{0} builtin policy included in proposed policies. Just ignore it. policy name = {1}", LOGMSG_PREFIX, proposedPolicyRep.getName());
-                continue;
+                throw new ClientPolicyException("newly builtin proposed client policy not allowed.");
             }
 
             // basically, proposed policy totally overrides existing policy except for enabled field..
@@ -651,7 +653,12 @@ public class ClientPoliciesUtil {
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {
-                proposedPolicyRep.getConditions().stream().filter(condition->isValidCondition(session, condition)).forEach(condition->policyRep.getConditions().add(condition));
+                for (Object condition : proposedPolicyRep.getConditions()) {
+                    if (isValidCondition(session, condition) == false) {
+                        throw new ClientPolicyException("the proposed client policy contains the condition with its invalid configuration.");
+                    }
+                    policyRep.getConditions().add(condition);
+                }
             }
 
             Set<String> existingProfileNames = new HashSet<>();
@@ -661,7 +668,12 @@ public class ClientPoliciesUtil {
             }
             policyRep.setProfiles(new ArrayList<>());
             if (proposedPolicyRep.getProfiles() != null) {
-                proposedPolicyRep.getProfiles().stream().filter(profileName->existingProfileNames.contains(profileName)).distinct().forEach(profileName->policyRep.getProfiles().add(profileName));
+                for (String profileName : proposedPolicyRep.getProfiles()) {
+                    if (existingProfileNames.contains(profileName) == false) {
+                        throw new ClientPolicyException("referring not existing client profile not allowed.");
+                    }
+                }
+                proposedPolicyRep.getProfiles().stream().distinct().forEach(profileName->policyRep.getProfiles().add(profileName));
             }
 
             updatingPoliciesList.add(policyRep);
@@ -677,22 +689,15 @@ public class ClientPoliciesUtil {
      */
     public static ClientPoliciesRepresentation getValidatedClientPoliciesRepresentation(KeycloakSession session, RealmModel realm, String policiesJson) throws ClientPolicyException {
         if (policiesJson == null) {
-            throw new ClientPolicyException("no client policies json.", "NA");
+            throw new ClientPolicyException("no client policies json.");
         }
-
         // deserialize existing policies (json -> representation)
-        ClientPoliciesRepresentation proposedPoliciesRep = null;
-        try {
-            proposedPoliciesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
-        } catch (ClientPolicyException cpe) {
-            throw new ClientPolicyException(cpe.getError(), cpe.getErrorDetail());
-        }
-
+        ClientPoliciesRepresentation proposedPoliciesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
         return getValidatedClientPoliciesRepresentation(session, realm, proposedPoliciesRep);
     }
 
     /**
-     * check whether the propsed condition's provider can be found in keycloak's ClientPolicyConditionProvider list.
+     * check whether the proposed condition's provider can be found in keycloak's ClientPolicyConditionProvider list.
      * not return null.
      */
     private static boolean isValidCondition(KeycloakSession session, Object condition) {
@@ -701,20 +706,19 @@ public class ClientPoliciesUtil {
             if (providerSet != null && providerSet.contains(providerId)) {
                 return true;
             }
-            logger.warnv("{0} no executor provider found. providerId = {1}", LOGMSG_PREFIX, providerId);
+            logger.warnv("no executor provider found. providerId = {0}", providerId);
             return false;
         });
     }
 
 
     private static boolean isValidComponent(KeycloakSession session, Object obj, String type, Predicate<String> f) {
-        ObjectMapper mp = new ObjectMapper();
         JsonNode node = null;
 
         try {
-            node = mp.convertValue(obj, JsonNode.class);
+            node = objectMapper.convertValue(obj, JsonNode.class);
         } catch (IllegalArgumentException iae) {
-            logger.warnv("{0} invalid json string representating {1}. err={2}", LOGMSG_PREFIX, type, iae.getMessage());
+            logger.warnv("invalid json string representating {0}. err={1}", type, iae.getMessage());
             return false;
         }
 
@@ -730,12 +734,11 @@ public class ClientPoliciesUtil {
     private static String convertRepresentationToJson(Object reps) throws ClientPolicyException {
         if (reps == null) return null;
 
-        ObjectMapper mapper = new ObjectMapper();
         String json = null;
         try {
-            json = mapper.writeValueAsString(reps);
+            json = objectMapper.writeValueAsString(reps);
         } catch (JsonProcessingException jpe) {
-            throw new ClientPolicyException(jpe.getMessage(), "NA");
+            throw new ClientPolicyException(jpe.getMessage());
         }
 
         return json;
@@ -743,7 +746,7 @@ public class ClientPoliciesUtil {
 
     private static <T> T convertJsonToRepresentation(String json, Class<T> type) throws ClientPolicyException {
         if (json == null) {
-            throw new ClientPolicyException("no json.", "NA");
+            throw new ClientPolicyException("no json.");
         }
 
         T rep = null;

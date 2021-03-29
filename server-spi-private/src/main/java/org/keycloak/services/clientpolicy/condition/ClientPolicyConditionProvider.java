@@ -31,7 +31,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public interface ClientPolicyConditionProvider extends Provider {
+public interface ClientPolicyConditionProvider<CONFIG extends ClientPolicyConditionConfiguration> extends Provider {
 
     @Override
     default void close() {
@@ -42,7 +42,14 @@ public interface ClientPolicyConditionProvider extends Provider {
      *
      * @param config
      */
-    default void setupConfiguration(Object config) {
+    default void setupConfiguration(CONFIG config) {
+    }
+
+    /**
+     * @return Class, which should match the "config" argument of the {@link #setupConfiguration(ClientPolicyConditionConfiguration)}
+     */
+    default Class<CONFIG> getConditionConfigurationClass() {
+        return (Class<CONFIG>) ClientPolicyConditionConfiguration.class;
     }
 
     /**

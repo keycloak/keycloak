@@ -24,7 +24,6 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -35,10 +34,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureResponseTypeExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     protected final KeycloakSession session;
 
@@ -74,18 +69,18 @@ public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<
             OIDCResponseType parsedResponseType,
             AuthorizationEndpointRequest request,
             String redirectUri) throws ClientPolicyException {
-        ClientPolicyLogger.logv(logger, "{0} :: Authz Endpoint - authz request", logMsgPrefix());
+        logger.trace("Authz Endpoint - authz request");
 
         if (parsedResponseType.hasResponseType(OIDCResponseType.CODE) && parsedResponseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
             if (parsedResponseType.hasResponseType(OIDCResponseType.TOKEN)) {
-                ClientPolicyLogger.logv(logger, "{0} :: Passed. response_type = code id_token token", logMsgPrefix());
+                logger.trace("Passed. response_type = code id_token token");
             } else {
-                ClientPolicyLogger.logv(logger, "{0} :: Passed. response_type = code id_token", logMsgPrefix());
+                logger.trace("Passed. response_type = code id_token");
             }
             return;
         }
 
-        ClientPolicyLogger.logv(logger, "{0} :: invalid response_type = {1}", logMsgPrefix(), parsedResponseType);
+        logger.tracev("invalid response_type = {0}", parsedResponseType);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "invalid response_type");
     }
 

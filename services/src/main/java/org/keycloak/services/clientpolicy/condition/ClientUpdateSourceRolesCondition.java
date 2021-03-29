@@ -32,7 +32,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
@@ -41,34 +40,46 @@ import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceRolesCondition extends AbstractClientCondition {
+public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionProvider<ClientUpdateSourceRolesCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceRolesCondition.class);
 
     // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
     private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
 
     public ClientUpdateSourceRolesCondition(KeycloakSession session) {
-        super(session);
+        this.session = session;
     }
 
     @Override
-    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
-        return (T) configuration;
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
     }
- 
+
     @Override
-    public void setupConfiguration(Object config) {
-        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends AbstractClientCondition.Configuration {
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
         protected List<String> roles;
 
         public List<String> getRoles() {
@@ -78,6 +89,11 @@ public class ClientUpdateSourceRolesCondition extends AbstractClientCondition {
         public void setRoles(List<String> roles) {
             this.roles = roles;
         }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override
@@ -135,8 +151,8 @@ public class ClientUpdateSourceRolesCondition extends AbstractClientCondition {
         Set<String> roles = user.getRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet());
 
         if (logger.isTraceEnabled()) {
-            roles.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: user role = {1}", logMsgPrefix(), i));
-            expectedRoles.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: roles expected = {1}", logMsgPrefix(), i));
+            roles.forEach(i -> logger.tracev("user role = {0}", i));
+            expectedRoles.forEach(i -> logger.tracev("roles expected = {0}", i));
         }
 
         RealmModel realm = session.getContext().getRealm();

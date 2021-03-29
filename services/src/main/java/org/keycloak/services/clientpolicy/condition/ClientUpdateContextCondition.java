@@ -26,7 +26,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
@@ -38,30 +37,41 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateContextCondition extends AbstractClientCondition {
+public class ClientUpdateContextCondition implements ClientPolicyConditionProvider<ClientUpdateContextCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);
 
     // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
     private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
 
     public ClientUpdateContextCondition(KeycloakSession session) {
-        super(session);
+        this.session = session;
     }
 
     @Override
-    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
-        return (T) configuration;
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
     }
- 
+
     @Override
-    public void setupConfiguration(Object config) {
-        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends AbstractClientCondition.Configuration {
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
         @JsonProperty("update-client-source")
         protected List<String> updateClientSource;
 
@@ -72,6 +82,11 @@ public class ClientUpdateContextCondition extends AbstractClientCondition {
         public void setUpdateClientSource(List<String> updateClientSource) {
             this.updateClientSource = updateClientSource;
         }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override
@@ -98,8 +113,8 @@ public class ClientUpdateContextCondition extends AbstractClientCondition {
         if (expectedAuthMethods == null) expectedAuthMethods = Collections.emptyList();
 
         if (logger.isTraceEnabled()) {
-            ClientPolicyLogger.logv(logger, "{0} :: auth method = {1}", logMsgPrefix(), authMethod);
-            expectedAuthMethods.stream().forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: auth method expected = {1}", logMsgPrefix(), i));
+            logger.tracev("auth method = {0}", authMethod);
+            expectedAuthMethods.stream().forEach(i -> logger.tracev("auth method expected = {0}", i));
         }
 
         return expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));

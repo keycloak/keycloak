@@ -32,40 +32,51 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientScopesCondition extends AbstractClientCondition {
+public class ClientScopesCondition implements ClientPolicyConditionProvider<ClientScopesCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientScopesCondition.class);
 
     // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
     private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
 
     public ClientScopesCondition(KeycloakSession session) {
-        super(session);
+        this.session = session;
     }
 
     @Override
-    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
-        return (T) configuration;
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
     }
- 
+
     @Override
-    public void setupConfiguration(Object config) {
-        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends AbstractClientCondition.Configuration {
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
         protected String type;
         protected List<String> scope;
 
@@ -84,6 +95,11 @@ public class ClientScopesCondition extends AbstractClientCondition {
         public void setScope(List<String> scope) {
             this.scope = scope;
         }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override
@@ -124,10 +140,10 @@ public class ClientScopesCondition extends AbstractClientCondition {
         if (expectedScopes == null) return false;
 
         if (logger.isTraceEnabled()) {
-            explicitSpecifiedScopes.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: explicit specified client scope = {1}", logMsgPrefix(), i));
-            defaultScopes.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: default client scope = {1}", logMsgPrefix(), i));
-            optionalScopes.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: optional client scope = {1}", logMsgPrefix(), i));
-            expectedScopes.forEach(i -> ClientPolicyLogger.logv(logger, "{0} :: expected scope = {1}", logMsgPrefix(), i));
+            explicitSpecifiedScopes.forEach(i -> logger.tracev("explicit specified client scope = {0}", i));
+            defaultScopes.forEach(i -> logger.tracev("default client scope = {0}", i));
+            optionalScopes.forEach(i -> logger.tracev("optional client scope = {0}", i));
+            expectedScopes.forEach(i -> logger.tracev("expected scope = {0}", i));
         }
 
         boolean isDefaultScope = ClientScopesConditionFactory.DEFAULT.equals(configuration.getType());
@@ -140,7 +156,7 @@ public class ClientScopesCondition extends AbstractClientCondition {
             explicitSpecifiedScopes.retainAll(optionalScopes);
             if (!explicitSpecifiedScopes.isEmpty()) {
                 if (logger.isTraceEnabled()) {
-                    explicitSpecifiedScopes.forEach(i->ClientPolicyLogger.logv(logger, "{0} :: matched scope = {1}", logMsgPrefix(), i));
+                    explicitSpecifiedScopes.forEach(i->logger.tracev("matched scope = {0}", i));
                 }
                 return true;
             }

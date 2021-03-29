@@ -19,41 +19,52 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class AnyClientCondition extends AbstractClientCondition {
-
-    private static final Logger logger = Logger.getLogger(AnyClientCondition.class);
+public class AnyClientCondition implements ClientPolicyConditionProvider<AnyClientCondition.Configuration> {
 
     // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
     private Configuration configuration = new Configuration();
 
     public AnyClientCondition(KeycloakSession session) {
-        super(session);
     }
 
     @Override
-    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
-        return (T) configuration;
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
     }
- 
+
     @Override
-    public void setupConfiguration(Object config) {
-        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends AbstractClientCondition.Configuration {
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override

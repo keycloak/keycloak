@@ -22,17 +22,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorConfiguration;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
 public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(TestRaiseExeptionExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     protected final KeycloakSession session;
 
@@ -51,11 +46,10 @@ public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<C
     }
 
     private boolean isThrowExceptionNeeded(ClientPolicyEvent event) {
-        ClientPolicyLogger.logv(logger, "{0} Client Policy Trigger Event = {1}", logMsgPrefix(), event);
+        logger.tracev("Client Policy Trigger Event = {0}",  event);
         switch (event) {
             case REGISTERED:
             case UPDATED:
-            //case VIEW:
             case UNREGISTER:
                 return true;
             default :

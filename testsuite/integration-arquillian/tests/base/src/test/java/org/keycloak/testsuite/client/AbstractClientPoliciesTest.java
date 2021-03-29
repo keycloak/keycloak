@@ -68,7 +68,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -143,7 +142,6 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionCondition;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutor;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
@@ -173,6 +171,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected ClientRegistration reg;
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -194,34 +194,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void loadValidProfilesAndPolicies() throws Exception {
         // load profiles
-        ClientProfileRepresentation notLoadedOverrideExistingBuiltinProfile = (new ClientProfileBuilder()).createProfile("builtin-basic-security", "Enforce basic security level", Boolean.TRUE, null)
-                    .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureClientAuthEnforceExecutorConfig(
-                            Boolean.FALSE, 
-                            Arrays.asList(ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientAuthenticator.PROVIDER_ID),
-                            null))
-                    .addExecutor(PKCEEnforceExecutorFactory.PROVIDER_ID, 
-                        createPKCEEnforceExecutorConfig(Boolean.FALSE))
-                    .addExecutor("no-such-executor", 
-                            createPKCEEnforceExecutorConfig(Boolean.TRUE))
-                    .toRepresentation();
-
-        ClientProfileRepresentation notLoadedNewBuiltinProfileRep = (new ClientProfileBuilder()).createProfile("builtin-advanced-security", "Enforce advanced security level", Boolean.TRUE, null)
-                .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
-                    createSecureClientAuthEnforceExecutorConfig(
-                        Boolean.TRUE, 
-                        Arrays.asList(ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientAuthenticator.PROVIDER_ID),
-                        JWTClientAuthenticator.PROVIDER_ID))
-                .addExecutor(PKCEEnforceExecutorFactory.PROVIDER_ID, 
-                    createPKCEEnforceExecutorConfig(Boolean.TRUE))
-                .addExecutor("no-such-executor", null)
-                .toRepresentation();
-
-        ClientProfileRepresentation notLoadedProfileRepWithoutName = (new ClientProfileBuilder()).createProfile(null, "No name profile that should be skipped.", Boolean.FALSE, null)
-                .addExecutor(PKCEEnforceExecutorFactory.PROVIDER_ID, 
-                    createPKCEEnforceExecutorConfig(Boolean.TRUE))
-                .toRepresentation();
-
         ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.", Boolean.FALSE, null)
                 .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
                     createSecureClientAuthEnforceExecutorConfig(
@@ -247,47 +219,20 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                 .toRepresentation();
 
         String json = (new ClientProfilesBuilder())
-                .addProfile(notLoadedOverrideExistingBuiltinProfile)
-                .addProfile(notLoadedNewBuiltinProfileRep)
-                .addProfile(notLoadedProfileRepWithoutName)
                 .addProfile(loadedProfileRep)
                 .addProfile(loadedProfileRepWithoutBuiltinField)
                 .toString();
         updateProfiles(json);
 
         // load policies
-        ClientPolicyRepresentation loadedOverrideExistingBuiltinPolicy = 
-                (new ClientPolicyBuilder()).createPolicy(
-                        "builtin-default-policy",
-                        "modified description is ignored.",
-                        Boolean.TRUE,
-                        Boolean.TRUE,
-                        null,
-                        Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"))
-                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
-                        createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
-                    .toRepresentation();
-
-        ClientPolicyRepresentation notLoadedNewBuiltinPolicyRep = 
-                (new ClientPolicyBuilder()).createPolicy(
-                        "builtin-new-policy",
-                        "builtin new policy is ignored.",
-                        Boolean.TRUE,
-                        Boolean.TRUE,
-                        null,
-                        Arrays.asList("builtin-default-profile"))
-                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
-                        createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
-                    .toRepresentation();
-
         ClientPolicyRepresentation loadedPolicyRepNotExistAndDuplicatedProfile = 
                 (new ClientPolicyBuilder()).createPolicy(
                         "new-policy",
-                        "not existed and duplicated profiles are ignored.",
+                        "duplicated profiles are ignored.",
                         Boolean.FALSE,
                         Boolean.TRUE,
                         null,
-                        Arrays.asList("no-such-profile", "builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile", "ordinal-test-profile"))
+                        Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile", "ordinal-test-profile"))
                     .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, 
                         createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC, ClientAccessTypeConditionFactory.TYPE_BEARERONLY)))
                     .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
@@ -315,8 +260,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                     .toRepresentation();
 
         json = (new ClientPoliciesBuilder())
-                    .addPolicy(loadedOverrideExistingBuiltinPolicy)
-                    .addPolicy(notLoadedNewBuiltinPolicyRep)
                     .addPolicy(loadedPolicyRepNotExistAndDuplicatedProfile)
                     .addPolicy(loadedPolicyRepWithoutBuiltinField)
                     .toString();
@@ -381,16 +324,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // same policies
         assertExpectedPolicies(Arrays.asList("builtin-default-policy", "new-policy", "lack-of-builtin-field-test-policy"), actualPoliciesRep);
 
-        // each policy - builtin-default-policy
-        ClientPolicyRepresentation actualPolicyRep = getPolicyRepresentation(actualPoliciesRep, "builtin-default-policy");
-        assertExpectedPolicy("builtin-default-policy", "The built-in default policy applied to all clients.", true, true, Arrays.asList("builtin-default-profile"), actualPolicyRep);
-
-        // each condition
-        assertExpectedConditions(Arrays.asList(AnyClientConditionFactory.PROVIDER_ID), actualPolicyRep);
-        assertExpectedAnyClientCondition(actualPolicyRep);
-
         // each policy - new-policy - updated
-        actualPolicyRep =  getPolicyRepresentation(actualPoliciesRep, "new-policy");
+        ClientPolicyRepresentation actualPolicyRep =  getPolicyRepresentation(actualPoliciesRep, "new-policy");
         modifiedAssertion.accept(actualPoliciesRep);
 
         // each condition
@@ -645,7 +580,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void doIntrospectAccessToken(OAuthClient.AccessTokenResponse tokenRes, String username, String clientId, String clientSecret) throws IOException {
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential(clientId, clientSecret, tokenRes.getAccessToken());
-        ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
         assertEquals(true, jsonNode.get("active").asBoolean());
         assertEquals(username, jsonNode.get("username").asText());
@@ -826,10 +760,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
 
         public String toString() {
-            ObjectMapper mapper = new ObjectMapper();
             String profilesJson = null;
             try {
-                profilesJson = mapper.writeValueAsString(profilesRep);
+                profilesJson = objectMapper.writeValueAsString(profilesRep);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
                 fail();
@@ -867,13 +800,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
 
         public ClientProfileBuilder addExecutor(String providerId, Object config) {
-            ObjectMapper mapper = new ObjectMapper();
             String configString = null;
             if (config == null) {
                 configString = "{}";
             } else {
                 try {
-                    configString = mapper.writeValueAsString(config);
+                    configString = objectMapper.writeValueAsString(config);
                 } catch (JsonProcessingException e) {
                     fail();
                 }
@@ -887,7 +819,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                     .toString();
             JsonNode node = null;
             try {
-                node = mapper.readTree(executorJson);
+                node = objectMapper.readTree(executorJson);
             } catch (JsonProcessingException e) {
                 fail();
             }
@@ -900,10 +832,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
 
         public String toString() {
-            ObjectMapper mapper = new ObjectMapper();
             String profileJson = null;
             try {
-                profileJson = mapper.writeValueAsString(profileRep);
+                profileJson = objectMapper.writeValueAsString(profileRep);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
                 fail();
@@ -914,21 +845,21 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Client Profiles - Executor CRUD Operations
 
-    protected Object createHolderOfKeyEnforceExecutorConfig(Boolean isArgument) {
+    protected Object createHolderOfKeyEnforceExecutorConfig(Boolean isAugment) {
         HolderOfKeyEnforceExecutor.Configuration config = new HolderOfKeyEnforceExecutor.Configuration();
-        config.setAugment(isArgument);
+        config.setAugment(isAugment);
         return config;
     }
 
-    protected Object createPKCEEnforceExecutorConfig(Boolean isArgument) {
+    protected Object createPKCEEnforceExecutorConfig(Boolean isAugment) {
         PKCEEnforceExecutor.Configuration config = new PKCEEnforceExecutor.Configuration();
-        config.setAugment(isArgument);
+        config.setAugment(isAugment);
         return config;
     }
 
-    protected Object createSecureClientAuthEnforceExecutorConfig(Boolean isArgument, List<String> clientAuthns, String clientAuthnsAugment) {
+    protected Object createSecureClientAuthEnforceExecutorConfig(Boolean isAugment, List<String> clientAuthns, String clientAuthnsAugment) {
         SecureClientAuthEnforceExecutor.Configuration config = new SecureClientAuthEnforceExecutor.Configuration();
-        config.setAugment(isArgument);
+        config.setAugment(isAugment);
         config.setClientAuthns(clientAuthns);
         config.setClientAuthnsAugment(clientAuthnsAugment);
         return config;
@@ -978,10 +909,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
 
         public String toString() {
-            ObjectMapper mapper = new ObjectMapper();
             String policiesJson = null;
             try {
-                policiesJson = mapper.writeValueAsString(policiesRep);
+                policiesJson = objectMapper.writeValueAsString(policiesRep);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
                 fail();
@@ -1027,13 +957,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
 
         public ClientPolicyBuilder addCondition(String providerId, Object config) {
-            ObjectMapper mapper = new ObjectMapper();
             String configString = null;
             if (config == null) {
                 configString = "{}";
             } else {
                 try {
-                    configString = mapper.writeValueAsString(config);
+                    configString = objectMapper.writeValueAsString(config);
                 } catch (JsonProcessingException e) {
                     fail();
                 }
@@ -1047,7 +976,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                     .toString();
             JsonNode node = null;
             try {
-                node = mapper.readTree(conditionJson);
+                node = objectMapper.readTree(conditionJson);
             } catch (JsonProcessingException e) {
                 fail();
             }
@@ -1065,10 +994,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
 
         public String toString() {
-            ObjectMapper mapper = new ObjectMapper();
             String policyJson = null;
             try {
-                policyJson = mapper.writeValueAsString(policyRep);
+                policyJson = objectMapper.writeValueAsString(policyRep);
             } catch (JsonProcessingException e) {
                 fail();
             }
@@ -1139,10 +1067,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     // Profiles Operation
 
     protected String convertToProfilesJson(ClientProfilesRepresentation reps) {
-        ObjectMapper mapper = new ObjectMapper();
         String json = null;
         try {
-            json = mapper.writeValueAsString(reps);
+            json = objectMapper.writeValueAsString(reps);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -1182,11 +1109,18 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return convertToProfiles(getProfilesJson());
     }
 
+    protected ClientProfilesRepresentation getProfilesWithoutBuiltin() {
+        ClientProfilesRepresentation reps = new ClientProfilesRepresentation();
+        reps.setProfiles(new ArrayList<>());
+        ClientProfilesRepresentation repsWithBuiltin = getProfiles();
+        repsWithBuiltin.getProfiles().stream().filter(i->!i.isBuiltin()).forEach(j->reps.getProfiles().add(j));
+        return reps;
+    }
+
     protected String convertToProfileJson(ClientProfileRepresentation rep) {
-        ObjectMapper mapper = new ObjectMapper();
         String json = null;
         try {
-            json = mapper.writeValueAsString(rep);
+            json = objectMapper.writeValueAsString(rep);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -1221,7 +1155,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void addProfile(ClientProfileRepresentation profileRep) throws ClientPolicyException {
-        ClientProfilesRepresentation reps = getProfiles();
+        ClientProfilesRepresentation reps = getProfilesWithoutBuiltin();
         if (reps == null || reps.getProfiles() == null) return;
         reps.getProfiles().add(profileRep);
         updateProfiles(convertToProfilesJson(reps));
@@ -1232,7 +1166,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         if (profileRep == null || profileRep.getName() == null) return;
         String profileName = profileRep.getName();
 
-        ClientProfilesRepresentation reps = getProfiles();
+        ClientProfilesRepresentation reps = getProfilesWithoutBuiltin();
 
         if (reps.getProfiles().stream().anyMatch(i->profileName.equals(i.getName()))) {
             ClientProfileRepresentation rep = reps.getProfiles().stream().filter(i->profileName.equals(i.getName())).collect(Collectors.toList()).get(0);
@@ -1247,7 +1181,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void deleteProfile(String profileName) throws ClientPolicyException {
         if (profileName == null) return;
 
-        ClientProfilesRepresentation reps = getProfiles();
+        ClientProfilesRepresentation reps = getProfilesWithoutBuiltin();
 
         if (reps.getProfiles().stream().anyMatch(i->profileName.equals(i.getName()))) {
             ClientProfileRepresentation rep = reps.getProfiles().stream().filter(i->profileName.equals(i.getName())).collect(Collectors.toList()).get(0);
@@ -1261,10 +1195,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     // Policies Operation
 
     protected String convertToPoliciesJson(ClientPoliciesRepresentation reps) {
-        ObjectMapper mapper = new ObjectMapper();
         String json = null;
         try {
-            json = mapper.writeValueAsString(reps);
+            json = objectMapper.writeValueAsString(reps);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -1304,11 +1237,18 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return convertToPolicies(getPoliciesJson());
     }
 
+    protected ClientPoliciesRepresentation getPoliciesWithoutBuiltin() {
+        ClientPoliciesRepresentation reps = new ClientPoliciesRepresentation();
+        reps.setPolicies(new ArrayList<>());
+        ClientPoliciesRepresentation repsWithBuiltin = getPolicies();
+        repsWithBuiltin.getPolicies().stream().filter(i->!i.isBuiltin()).forEach(j->reps.getPolicies().add(j));
+        return reps;
+    }
+
     protected String convertToPolicyJson(ClientPolicyRepresentation rep) {
-        ObjectMapper mapper = new ObjectMapper();
         String json = null;
         try {
-            json = mapper.writeValueAsString(rep);
+            json = objectMapper.writeValueAsString(rep);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -1343,7 +1283,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void addPolicy(ClientPolicyRepresentation policyRep) throws ClientPolicyException {
-        ClientPoliciesRepresentation reps = getPolicies();
+        ClientPoliciesRepresentation reps = getPoliciesWithoutBuiltin();
         if (reps == null || reps.getPolicies() == null) return;
         reps.getPolicies().add(policyRep);
         updatePolicies(convertToPoliciesJson(reps));
@@ -1354,7 +1294,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         if (policyRep == null || policyRep.getName() == null) return;
         String policyName = policyRep.getName();
 
-        ClientPoliciesRepresentation reps = getPolicies();
+        ClientPoliciesRepresentation reps = getPoliciesWithoutBuiltin();
 
         if (reps.getPolicies().stream().anyMatch(i->policyName.equals(i.getName()))) {
             ClientPolicyRepresentation rep = reps.getPolicies().stream().filter(i->policyName.equals(i.getName())).collect(Collectors.toList()).get(0);
@@ -1369,7 +1309,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void deletePolicy(String policyName) throws ClientPolicyException {
         if (policyName == null) return;
 
-        ClientPoliciesRepresentation reps = getPolicies();
+        ClientPoliciesRepresentation reps = getPoliciesWithoutBuiltin();
 
         if (reps.getPolicies().stream().anyMatch(i->policyName.equals(i.getName()))) {
             ClientPolicyRepresentation rep = reps.getPolicies().stream().filter(i->policyName.equals(i.getName())).collect(Collectors.toList()).get(0);
@@ -1625,8 +1565,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             return;
         }
         Set<String> actual = objs.stream().map(i->{
-            ObjectMapper mp = new ObjectMapper();
-            JsonNode node = mp.convertValue(i, JsonNode.class);
+            JsonNode node = objectMapper.convertValue(i, JsonNode.class);
             return node.fieldNames().next();
         }).collect(Collectors.toSet());
         assertEquals(new HashSet<>(expected), actual);
@@ -1639,7 +1578,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     private JsonNode getConfig(List<Object> objs, String providerId) {
-        List<JsonNode> nodes = objs.stream().map(i->(new ObjectMapper()).convertValue(i, JsonNode.class))
+        List<JsonNode> nodes = objs.stream().map(i->objectMapper.convertValue(i, JsonNode.class))
                 .filter(j->j.fieldNames().next().equals(providerId)).collect(Collectors.toList());
         if (nodes == null || nodes.size() != 1) return null;
         return nodes.get(0);

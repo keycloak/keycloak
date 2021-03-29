@@ -28,7 +28,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -37,30 +36,42 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceHostsCondition extends AbstractClientCondition {
+public class ClientUpdateSourceHostsCondition implements ClientPolicyConditionProvider<ClientUpdateSourceHostsCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceHostsCondition.class);
 
     // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
     private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
 
     public ClientUpdateSourceHostsCondition(KeycloakSession session) {
-        super(session);
+        this.session = session;
     }
 
     @Override
-    protected <T extends AbstractClientCondition.Configuration> T getConfiguration(Class<T> clazz) {
-        return (T) configuration;
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
     }
- 
+
     @Override
-    public void setupConfiguration(Object config) {
-        // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-        configuration = Optional.ofNullable(getConvertedConfiguration(config, Configuration.class)).orElse(new Configuration());
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
     }
+
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends AbstractClientCondition.Configuration {
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
         @JsonProperty("trusted-hosts")
         protected List<String> trustedHosts;
         @JsonProperty("host-sending-request-must-match")
@@ -84,6 +95,11 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientCondition {
     }
 
     @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
+    }
+
+    @Override
     public String getProviderId() {
         return ClientUpdateSourceHostsConditionFactory.PROVIDER_ID;
     }
@@ -104,7 +120,7 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientCondition {
     private boolean isHostMatched() {
         String hostAddress = session.getContext().getConnection().getRemoteAddr();
 
-        ClientPolicyLogger.logv(logger, "{0} :: Verifying remote host = {1}", logMsgPrefix(), hostAddress);
+        logger.tracev("Verifying remote host = {0}", hostAddress);
 
         List<String> trustedHosts = getTrustedHosts();
         List<String> trustedDomains = getTrustedDomains();
@@ -149,14 +165,13 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientCondition {
         for (String confHostName : trustedHosts) {
             try {
                 String hostIPAddress = InetAddress.getByName(confHostName).getHostAddress();
-
-                ClientPolicyLogger.logv(logger, "{0} :: Trying host {1} of address {2}", logMsgPrefix(), confHostName, hostIPAddress);
+                logger.tracev("Trying host {0} of address {1}", confHostName, hostIPAddress);
                 if (hostIPAddress.equals(hostAddress)) {
-                    ClientPolicyLogger.logv(logger, "{0} :: Successfully verified host = {1}", logMsgPrefix(), confHostName);
+                    logger.tracev("Successfully verified host = {0}", confHostName);
                     return confHostName;
                 }
             } catch (UnknownHostException uhe) {
-                ClientPolicyLogger.logv(logger, "{0} :: Unknown host from realm configuration = {1}", logMsgPrefix(), confHostName);
+                logger.tracev("Unknown host from realm configuration = {0}", confHostName);
             }
         }
 
@@ -167,17 +182,15 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientCondition {
         if (!trustedDomains.isEmpty()) {
             try {
                 String hostname = InetAddress.getByName(hostAddress).getHostName();
-
-                ClientPolicyLogger.logv(logger, "{0} :: Trying verify request from address {1} of host {2} by domains", logMsgPrefix(), hostAddress, hostname);
-
+                logger.tracev("Trying verify request from address {0} of host {1} by domains", hostAddress, hostname);
                 for (String confDomain : trustedDomains) {
                     if (hostname.endsWith(confDomain)) {
-                        ClientPolicyLogger.logv(logger, "{0} :: Successfully verified host {1} by trusted domain {2}", logMsgPrefix(), hostname, confDomain);
+                        logger.tracev("Successfully verified host {0} by trusted domain {1}", hostname, confDomain);
                         return hostname;
                     }
                 }
             } catch (UnknownHostException uhe) {
-                ClientPolicyLogger.logv(logger, "{0} :: Request of address {1} came from unknown host. Skip verification by domains", logMsgPrefix(), hostAddress);
+                logger.tracev("Request of address {0} came from unknown host. Skip verification by domains", hostAddress);
             }
         }
 
@@ -189,11 +202,4 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientCondition {
         if (l != null && !l.isEmpty()) return l.get(0).booleanValue();
         return true;
     }
-
-    // True by default
-    //private boolean parseBoolean(String propertyKey) {
-    //    String val = componentModel.getConfig().getFirst(propertyKey);
-    //    return val==null || Boolean.parseBoolean(val);
-    //}
-
 }

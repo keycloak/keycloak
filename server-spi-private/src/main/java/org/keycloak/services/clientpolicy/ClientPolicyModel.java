@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.services.clientpolicy;
 
 import java.io.Serializable;
 import java.util.List;

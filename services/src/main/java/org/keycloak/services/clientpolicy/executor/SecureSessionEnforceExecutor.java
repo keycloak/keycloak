@@ -24,7 +24,6 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.util.TokenUtil;
 
@@ -36,10 +35,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureSessionEnforceExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     private final KeycloakSession session;
 
@@ -74,19 +69,19 @@ public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvide
             OIDCResponseType parsedResponseType,
             AuthorizationEndpointRequest request,
             String redirectUri) throws ClientPolicyException {
-        ClientPolicyLogger.logv(logger, "{0} :: Authz Endpoint - authz request", logMsgPrefix());
+        logger.trace("Authz Endpoint - authz request");
         if (TokenUtil.isOIDCRequest(request.getScope())) {
             if(request.getNonce() == null) {
-                ClientPolicyLogger.logv(logger, "{0} :: Missing parameter: nonce", logMsgPrefix());
+                logger.trace("Missing parameter: nonce");
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
             }
         } else {
             if(request.getState() == null) {
-                ClientPolicyLogger.logv(logger, "{0} :: Missing parameter: state", logMsgPrefix());
+                logger.trace("Missing parameter: state");
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: state");
             }
         }
-        ClientPolicyLogger.logv(logger, "{0} :: Passed.", logMsgPrefix());
+        logger.trace("Passed.");
     }
 
 }

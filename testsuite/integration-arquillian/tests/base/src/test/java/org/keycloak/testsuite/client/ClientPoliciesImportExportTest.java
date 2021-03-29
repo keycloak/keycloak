@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.client;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import java.io.File;
@@ -99,7 +98,7 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
         assertExpectedLoadedPolicies((ClientPoliciesRepresentation reps)->{
             ClientPolicyRepresentation rep =  getPolicyRepresentation(reps, "new-policy");
-            assertExpectedPolicy("new-policy", "not existed and duplicated profiles are ignored.", false, true, Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
+            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", false, true, Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
                     rep);
         });
     }

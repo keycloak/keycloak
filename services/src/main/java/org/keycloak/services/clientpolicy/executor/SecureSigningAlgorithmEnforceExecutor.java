@@ -29,7 +29,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
@@ -43,10 +42,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
-    private static final String LOGMSG_PREFIX = "CLIENT-POLICY";
-    private String logMsgPrefix() {
-        return LOGMSG_PREFIX + "@" + session.hashCode() + " :: EXECUTOR";
-    }
 
     private final KeycloakSession session;
 
@@ -117,7 +112,7 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
 
     private void verifySecureSigningAlgorithm(String sigTarget, String sigAlg) throws ClientPolicyException {
         if (sigAlg == null) {
-            ClientPolicyLogger.logv(logger, "{0} :: Signing algorithm not specified explicitly. signature target = {1}", logMsgPrefix(), sigTarget);
+            logger.tracev("Signing algorithm not specified explicitly. signature target = {0}", sigTarget);
             return;
         }
         switch (sigAlg) {
@@ -127,10 +122,10 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
         case Algorithm.ES256:
         case Algorithm.ES384:
         case Algorithm.ES512:
-            ClientPolicyLogger.logv(logger, "{0} :: Passed. signature target = {1}, signature algorithm = {2}", logMsgPrefix(),sigTarget, sigAlg);
+            logger.tracev("Passed. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
             return;
         }
-        ClientPolicyLogger.logv(logger, "{0} :: NOT allowed signatureAlgorithm. signature target = {1}, signature algorithm = {2}", logMsgPrefix(), sigTarget, sigAlg);
+        logger.tracev("NOT allowed signatureAlgorithm. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
     }
 
