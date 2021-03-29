@@ -46,6 +46,10 @@ public interface OAuth2Constants {
 
     String ACCESS_TOKEN = "access_token";
 
+    String TOKEN_TYPE = "token_type";
+
+    String EXPIRES_IN = "expires_in";
+
     String ID_TOKEN = "id_token";
 
     String REFRESH_TOKEN = "refresh_token";
