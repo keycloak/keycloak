@@ -229,7 +229,7 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/:realm/user-federation/ldap/:id/:tab/:mapperId",
     component: LdapMappingDetails,
     breadcrumb: t("client-scopes:mappingDetails"),
-    access: "view-clients",
+    access: "view-realm",
   },
   {
     path: "/:realm/user-federation/ldap/new",

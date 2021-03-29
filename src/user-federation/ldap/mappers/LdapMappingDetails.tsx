@@ -1,381 +1,98 @@
-import React, { useEffect, useState } from "react";
-import { useHistory, useParams, useRouteMatch } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
+import React, { useState, useEffect } from "react";
 import {
   ActionGroup,
   AlertVariant,
   Button,
-  ButtonVariant,
-  Checkbox,
-  DropdownItem,
-  Flex,
-  FlexItem,
-  FormGroup,
+  Form,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
-  Switch,
-  TextInput,
-  ValidatedOptions,
-  Text
 } from "@patternfly/react-core";
-import { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configPropertyRepresentation";
-import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-
+import { convertToFormValues } from "../../../util";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { useAdminClient } from "../../../context/auth/AdminClient";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../../context/auth/AdminClient";
-import { Controller, useForm } from "react-hook-form";
-import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { useHistory, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { useAlerts } from "../../../components/alert/Alerts";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
-import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
-import { convertFormValuesToObject, convertToFormValues } from "../../../util";
-import { FormAccess } from "../../../components/form-access/FormAccess";
-
-type Params = {
-  id: string;
-  mapperId: string;
-};
+import { useTranslation } from "react-i18next";
+import { LdapMapperUsername } from "./LdapMapperUsername";
+import { useRealm } from "../../../context/realm-context/RealmContext";
 
 export const LdapMappingDetails = () => {
-//   const { t } = useTranslation("client-scopes");
-//   const adminClient = useAdminClient();
-//   const handleError = useErrorHandler();
-//   const { addAlert } = useAlerts();
+  const form = useForm<ComponentRepresentation>();
+  const [mapper, setMapper] = useState<ComponentRepresentation>();
+  const adminClient = useAdminClient();
+  const { mapperId } = useParams<{ mapperId: string }>();
+  const history = useHistory();
 
-//   const { id, mapperId } = useParams<Params>();
-//   const { register, errors, setValue, control, handleSubmit } = useForm();
-//   const [mapping, setMapping] = useState<ProtocolMapperRepresentation>();
-//   const [typeOpen, setTypeOpen] = useState(false);
-//   const [configProperties, setConfigProperties] = useState<
-//     ConfigPropertyRepresentation[]
-//   >();
+  const { realm } = useRealm();
+  const id = mapperId;
+  const { t } = useTranslation("user-federation");
+  const { addAlert } = useAlerts();
 
-//   const history = useHistory();
-//   const serverInfo = useServerInfo();
-//   const { url } = useRouteMatch();
-//   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
+  useEffect(() => {
+    (async () => {
+      if (mapperId) {
+        const fetchedMapper = await adminClient.components.findOne({ id });
+        if (fetchedMapper) {
+          // TODO: remove after adding all mapper types
+          console.log("LdapMappingDetails: id used in findOne(id) call::");
+          console.log(id);
+          console.log("LdapMappingDetails: data returned from findOne(id):");
+          console.log(fetchedMapper);
+          setMapper(fetchedMapper);
+          setupForm(fetchedMapper);
+        }
+      }
+    })();
+  }, []);
 
-  // useEffect(() => {
-  //   return asyncStateFetch(
-  //     async () => {
-  //       if (mapperId.match(isGuid)) {
-  //         const data = await adminClient.clientScopes.findProtocolMapper({
-  //           id,
-  //           mapperId,
-  //         });
-  //         if (data) {
-  //           Object.entries(data).map((entry) => {
-  //             convertToFormValues(entry[1], "config", setValue);
-  //           });
-  //         }
-  //         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
-  //         const properties = mapperTypes.find(
-  //           (type) => type.id === data!.protocolMapper
-  //         )?.properties!;
+  const setupForm = (mapper: ComponentRepresentation) => {
+    Object.entries(mapper).map((entry) => {
+      if (entry[0] === "config") {
+        convertToFormValues(entry[1], "config", form.setValue);
+      } else {
+        form.setValue(entry[0], entry[1]);
+      }
+    });
+  };
 
-  //         return {
-  //           configProperties: properties,
-  //           mapping: data,
-  //         };
-  //       } else {
-  //         const scope = await adminClient.clientScopes.findOne({ id });
-  //         const protocolMappers = serverInfo.protocolMapperTypes![
-  //           scope.protocol!
-  //         ];
-  //         const mapping = protocolMappers.find(
-  //           (mapper) => mapper.id === mapperId
-  //         )!;
-  //         return {
-  //           mapping: {
-  //             name: mapping.name,
-  //             protocol: scope.protocol,
-  //             protocolMapper: mapperId,
-  //           },
-  //         };
-  //       }
-  //     },
-  //     (result) => {
-  //       setConfigProperties(result.configProperties);
-  //       setMapping(result.mapping);
-  //     },
-  //     handleError
-  //   );
-  // }, []);
-
-  // const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-  //   titleKey: "client-scopes:deleteMappingTitle",
-  //   messageKey: "client-scopes:deleteMappingConfirm",
-  //   continueButtonLabel: "common:delete",
-  //   continueButtonVariant: ButtonVariant.danger,
-  //   onConfirm: async () => {
-  //     try {
-  //       await adminClient.clientScopes.delClientScopeMappings(
-  //         { client: id, id: mapperId },
-  //         []
-  //       );
-  //       addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-  //       history.push(`${url}/${id}`);
-  //     } catch (error) {
-  //       addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
-  //     }
-  //   },
-  // });
-
-  // const save = async (formMapping: ProtocolMapperRepresentation) => {
-  //   const config = convertFormValuesToObject(formMapping.config);
-  //   const map = { ...mapping, ...formMapping, config };
-  //   const key = mapperId.match(isGuid) ? "Updated" : "Created";
-  //   try {
-  //     if (mapperId.match(isGuid)) {
-  //       await adminClient.clientScopes.updateProtocolMapper(
-  //         { id, mapperId },
-  //         map
-  //       );
-  //     } else {
-  //       await adminClient.clientScopes.addProtocolMapper({ id }, map);
-  //     }
-  //     addAlert(t(`mapping${key}Success`), AlertVariant.success);
-  //   } catch (error) {
-  //     addAlert(t(`mapping${key}Error`, { error }), AlertVariant.danger);
-  //   }
-  // };
+  const save = () => {
+    addAlert(
+      t(
+        id === "new"
+          ? "Create functionality not implemented yet!"
+          : "Save functionality not implemented yet!"
+      ),
+      AlertVariant.success
+    );
+    history.push(`/${realm}/user-federation`);
+  };
 
   return (
     <>
-    <Text>
-    Coming soon!
-    </Text>
-      {/* <DeleteConfirm />
-      <ViewHeader
-        titleKey={mapping ? mapping.name! : t("addMapper")}
-        subKey={mapperId.match(isGuid) ? mapperId : ""}
-        badge={mapping?.protocol}
-        dropdownItems={
-          mapperId.match(isGuid)
-            ? [
-                <DropdownItem
-                  key="delete"
-                  value="delete"
-                  onClick={toggleDeleteDialog}
-                >
-                  {t("common:delete")}
-                </DropdownItem>,
-              ]
-            : undefined
-        }
-      />
-      <PageSection variant="light">
-        <FormAccess
-          isHorizontal
-          onSubmit={handleSubmit(save)}
-          role="manage-clients"
-        >
-          <>
-            {!mapperId.match(isGuid) && (
-              <FormGroup
-                label={t("common:name")}
-                labelIcon={
-                  <HelpItem
-                    helpText="client-scopes-help:mapperName"
-                    forLabel={t("common:name")}
-                    forID="name"
-                  />
-                }
-                fieldId="name"
-                isRequired
-                validated={
-                  errors.name
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                helperTextInvalid={t("common:required")}
-              >
-                <TextInput
-                  ref={register({ required: true })}
-                  type="text"
-                  id="name"
-                  name="name"
-                  validated={
-                    errors.name
-                      ? ValidatedOptions.error
-                      : ValidatedOptions.default
-                  }
-                />
-              </FormGroup>
-            )}
-          </>
-          <FormGroup
-            label={t("realmRolePrefix")}
-            labelIcon={
-              <HelpItem
-                helpText="client-scopes-help:prefix"
-                forLabel={t("realmRolePrefix")}
-                forID="prefix"
-              />
-            }
-            fieldId="prefix"
-          >
-            <TextInput
-              ref={register()}
-              type="text"
-              id="prefix"
-              name="config.usermodel-realmRoleMapping-rolePrefix"
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("multiValued")}
-            labelIcon={
-              <HelpItem
-                helpText="client-scopes-help:multiValued"
-                forLabel={t("multiValued")}
-                forID="multiValued"
-              />
-            }
-            fieldId="multiValued"
-          >
-            <Controller
-              name="config.multivalued"
-              control={control}
-              defaultValue="false"
-              render={({ onChange, value }) => (
-                <Switch
-                  id="multiValued"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange("" + value)}
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("tokenClaimName")}
-            labelIcon={
-              <HelpItem
-                helpText="client-scopes-help:tokenClaimName"
-                forLabel={t("tokenClaimName")}
-                forID="claimName"
-              />
-            }
-            fieldId="claimName"
-          >
-            <TextInput
-              ref={register()}
-              type="text"
-              id="claimName"
-              name="config.claim-name"
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("claimJsonType")}
-            labelIcon={
-              <HelpItem
-                helpText="client-scopes-help:claimJsonType"
-                forLabel={t("claimJsonType")}
-                forID="claimJsonType"
-              />
-            }
-            fieldId="claimJsonType"
-          >
-            <Controller
-              name="config.jsonType-label"
-              defaultValue=""
-              control={control}
-              render={({ onChange, value }) => (
-                <Select
-                  toggleId="claimJsonType"
-                  onToggle={() => setTypeOpen(!typeOpen)}
-                  onSelect={(_, value) => {
-                    onChange(value as string);
-                    setTypeOpen(false);
-                  }}
-                  selections={value}
-                  variant={SelectVariant.single}
-                  aria-label={t("claimJsonType")}
-                  isOpen={typeOpen}
-                >
-                  {configProperties &&
-                    configProperties
-                      .find((property) => property.name! === "jsonType.label")
-                      ?.options!.map((option) => (
-                        <SelectOption
-                          selected={option === value}
-                          key={option}
-                          value={option}
-                        />
-                      ))}
-                </Select>
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            hasNoPaddingTop
-            label={t("addClaimTo")}
-            fieldId="addClaimTo"
-          >
-            <Flex>
-              <FlexItem>
-                <Controller
-                  name="config.id-token-claim"
-                  defaultValue="false"
-                  control={control}
-                  render={({ onChange, value }) => (
-                    <Checkbox
-                      label={t("idToken")}
-                      id="idToken"
-                      isChecked={value === "true"}
-                      onChange={(value) => onChange("" + value)}
-                    />
-                  )}
-                />
-              </FlexItem>
-              <FlexItem>
-                <Controller
-                  name="config.access-token-claim"
-                  defaultValue="false"
-                  control={control}
-                  render={({ onChange, value }) => (
-                    <Checkbox
-                      label={t("accessToken")}
-                      id="accessToken"
-                      isChecked={value === "true"}
-                      onChange={(value) => onChange("" + value)}
-                    />
-                  )}
-                />
-              </FlexItem>
-              <FlexItem>
-                <Controller
-                  name="config.userinfo-token-claim"
-                  defaultValue="false"
-                  control={control}
-                  render={({ onChange, value }) => (
-                    <Checkbox
-                      label={t("userInfo")}
-                      id="userInfo"
-                      isChecked={value === "true"}
-                      onChange={(value) => onChange("" + value)}
-                    />
-                  )}
-                />
-              </FlexItem>
-            </Flex>
-          </FormGroup>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
+      <ViewHeader titleKey={mapper ? mapper.name! : ""} subKey="" />
+      <PageSection variant="light" isFilled>
+        <LdapMapperUsername form={form} />
+        <Form onSubmit={form.handleSubmit(save)}>
+          <ActionGroup className="keycloak__form_actions">
+            <Button
+              isDisabled={!form.formState.isDirty}
+              variant="primary"
+              type="submit"
+              data-testid="ldap-save"
+            >
               {t("common:save")}
             </Button>
-            <Button variant="link">{t("common:cancel")}</Button>
+            <Button
+              variant="link"
+              onClick={() => history.push(`/${realm}/user-federation`)}
+              data-testid="ldap-cancel"
+            >
+              {t("common:cancel")}
+            </Button>
           </ActionGroup>
-        </FormAccess>
+        </Form>
       </PageSection>
-     */}
-     </>
+    </>
   );
 };

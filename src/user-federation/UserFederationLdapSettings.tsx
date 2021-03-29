@@ -34,7 +34,7 @@ import { useHistory, useParams } from "react-router-dom";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import {LdapMapperList} from "./ldap/mappers/LdapMapperList";
+import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
 
 type LdapSettingsHeaderProps = {
   onChange: (value: string) => void;
