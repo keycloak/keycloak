@@ -150,7 +150,7 @@
 
 :fuse7Version: JBoss Fuse 7.4.0
 
-:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:11.0
-:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:11.0
+:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:12.0
+:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:12.0
 :subsystem_datasources_xml_urn: urn:jboss:domain:datasources:6.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_10.xsd

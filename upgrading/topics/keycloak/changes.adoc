@@ -2,21 +2,41 @@
 
 === Migrating to 13.0.0
 
-==== Upgrade to Wildfly 22
+==== Upgrade to Wildfly 23
 
-The {project_name} server was upgraded to use Wildfly 22 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+The {project_name} server was upgraded to use Wildfly 23 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 22 server. For example, Infinispan is now `11.0.8.Final`.
+  The dependencies were updated to the versions used by the Wildfly 23 server. For example, Infinispan is now `11.0.9.Final`.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
-  section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some
-  configuration changes on your own, the list of the most important changes follows:
-  * The link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Config_SmallRye[Eclipse MicroProfile Config], link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Health_SmallRye[Eclipse MicroProfile Health], and link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Metrics_SmallRye[Eclipse MicroProfile Metrics] subsystems were replaced by link:https://docs.wildfly.org/22/Admin_Guide.html#Health[WildFly subsystem for health] and link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Metrics_SmallRye[WildFly subsystem for base metrics].
+  section to handle the migration of configuration files automatically. However, here are the most important changes, which you may need
+  if you made your own configuration changes:
 
-  * The default Wildfly configuration now utilizes the ability to make use of an automatically generated self-signed certificate with Elytron. Refer to link:https://docs.wildfly.org/22/WildFly_Elytron_Security.html#update-wildfly-to-use-the-default-elytron-components-for-application-authentication[a dedicated `applicationSSC` server SSL context section] for details.
+  * The `module` attribute of Infinispan cache containers is now *deprecated* (unused) and is *replaced with* the `modules` attribute,
+  representing the set of modules associated with this cache container's configuration. Moreover, there were also additional
+  changes to attributes of various elements, originating from the use of Wildfly 23 as the underlying container. For example,
+  the `managed-executor-service` and `managed-scheduled-executor-service` elements now recognize the new `hung-task-termination-period`
+  attribute. See link:https://docs.wildfly.org/23/wildscribe/index.html[the Wildfly 23 full model reference] for details.
+
+==== Upgrade to Wildfly 22
+
+The {project_name} server was upgraded to use Wildfly 22 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, however, note these changes related to migration:
+
+Dependency updates::
+  The dependencies were updated to the versions used by the Wildfly 22 server. For example, Infinispan is now `11.0.8.Final`.
+
+Configuration changes::
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  section to handle the migration of configuration files automatically. However, here are the most important changes, which you may need
+  if you made your own configuration changes:
+
+  * The link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Config_SmallRye[Eclipse MicroProfile Config], link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Health_SmallRye[Eclipse MicroProfile Health], and link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Metrics_SmallRye[Eclipse MicroProfile Metrics] subsystems are replaced with link:https://docs.wildfly.org/22/Admin_Guide.html#Health[WildFly subsystem for health] and link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Metrics_SmallRye[WildFly subsystem for base metrics].
+
+  * The default Wildfly configuration now uses the ability to make use of an automatically generated self-signed certificate with Elytron. Refer to link:https://docs.wildfly.org/22/WildFly_Elytron_Security.html#update-wildfly-to-use-the-default-elytron-components-for-application-authentication[a dedicated `applicationSSC` server SSL context section] for details.
 
 === Migrating to 12.0.2
 
@@ -48,16 +68,17 @@ as possible.
 ==== Upgrade to Wildfly 21
 
 The {project_name} server was upgraded to use Wildfly 21 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 21 server. For example, Infinispan is now 11.0.4.Final.
+  The dependencies were updated to the versions used by the Wildfly 21 server. For example, Infinispan is now 11.0.4.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
-  section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some
-  configuration changes on your own, the list of the most important changes follows:
-  * The `object-memory` element of Infinispan caches is now deprecated (unused) and was replaced with the `heap-memory` element.
+  section to handle the migration of configuration files automatically. However, here are the most important changes, which you may need
+  if you made your own configuration changes:
+
+  * The `object-memory` element of Infinispan caches is now *deprecated* (unused) and is *replaced with* the `heap-memory` element.
 
 ==== Skip creation of user session for the Docker protocol authentication
 
@@ -89,10 +110,10 @@ the {project_name} admin console, in client details in the section with `OpenID 
 ==== Upgrade to Wildfly 20
 
 The {project_name} server was upgraded to use Wildfly 20 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 20 server. For example, Infinispan is now 10.1.8.Final.
+  The dependencies were updated to the versions used by the Wildfly 20 server. For example, Infinispan is now 10.1.8.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
@@ -131,7 +152,7 @@ Also, the database did not change yet.
 
 ==== Instagram IdP migrated to new the API
 
-Instagram IdP now uses new API as the old legacy API was deprecated. This requires getting new API credentials. For details,
+Instagram IdP now uses new API as the old legacy API was *deprecated*. This requires getting new API credentials. For details,
 please refer to the link:{adminguide_link}#instagram[{adminguide_name}].
 
 Special attention is required for existing users that use Instagram IdP, specially the ones for whom it is the only authentication
@@ -205,17 +226,17 @@ REQUIRED and ALTERNATIVE executions not supported at same flow::
 
 ==== New Default Hostname provider
 
-The old request and fixed hostname providers have been replaced with a new default hostname provider. The request
+The old request and fixed hostname providers are replaced with a new default hostname provider. The request
 and fixed hostname providers are now deprecated and it is recommended to switch to the default hostname provider as
 soon as possible.
 
 ==== Upgrade to Wildfly 18
 
 The {project_name} server was upgraded to use Wildfly 18 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 18 server. For example, Infinispan is now 9.4.16.Final.
+  The dependencies were updated to the versions used by the Wildfly 18 server. For example, Infinispan is now 9.4.16.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
@@ -243,9 +264,10 @@ We did some refactoring and improvements related to the authentication flows, wh
 
 OPTIONAL execution requirement removed::
     Regarding migration, the most important change is removing the support for the OPTIONAL requirement from authentication executions and
-    replacing it with the CONDITIONAL requirement, which allows more flexibility. The existing OPTIONAL authenticators configured in the previous version will be replaced with the CONDITIONAL subflows. These subflows will have
-    the `Condition - User Configured` condition configured as first execution, and the previously OPTIONAL authenticator (for example `OTP Form`) as second execution.
-    From the user's point of view, the behavior during authentication should be same as in the previous version.
+    replacing it with the CONDITIONAL requirement, which allows more flexibility. The existing OPTIONAL authenticators configured in the
+    previous version are replaced with the CONDITIONAL subflows. These subflows have the `Condition - User Configured` condition configured
+    as first execution, and the previously OPTIONAL authenticator (for example `OTP Form`) as second execution. From the user's point of view,
+    the behavior during authentication is the same as in the previous version.
 
 Changes in the Java SPI::
     Some changes exist in the Java Authentication SPI and Credential Provider SPI. The interface `Authenticator` is not changed,
@@ -271,10 +293,10 @@ credentials set in the previous version.
 ==== Upgrade to Wildfly 17
 
 The {project_name} server was upgraded to use Wildfly 17 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 17 server. For example, Infinispan is now 9.4.14.Final.
+  The dependencies were updated to the versions used by the Wildfly 17 server. For example, Infinispan is now 9.4.14.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
@@ -289,10 +311,10 @@ Cross-Datacenter Replication changes::
 ==== Upgrade to Wildfly 16
 
 The {project_name} server was upgraded to use Wildfly 16 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 16 server. For example, Infinispan is now 9.4.8.Final.
+  The dependencies were updated to the versions used by the Wildfly 16 server. For example, Infinispan is now 9.4.8.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
@@ -327,10 +349,10 @@ we cannot assume which one will be used to fulfill the auth request so the reque
 ==== Upgrade to Wildfly 15
 
 The {project_name} server was upgraded to use Wildfly 15 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 15 server. For example, Infinispan is now 9.4.3.Final.
+  The dependencies were updated to the versions used by the Wildfly 15 server. For example, Infinispan is now 9.4.3.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
@@ -418,10 +440,10 @@ https://account.live.com/developers/applications/create[Microsoft Application Re
 ==== Upgrade to Wildfly 14
 
 The {project_name} server was upgraded to use Wildfly 14 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 14 server. For example, Infinispan is now 9.3.1.Final.
+  The dependencies were updated to the versions used by the Wildfly 14 server. For example, Infinispan is now 9.3.1.Final.
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
@@ -440,17 +462,18 @@ endif::[]
 ==== Upgrade to Wildfly 13
 
 The {project_name} server was upgraded to use Wildfly 13 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, however, note these changes related to migration:
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 13 server. For example, Infinispan is now 9.2.4.Final and Undertow is 2.0.9.Final
+  The dependencies were updated to the versions used by the Wildfly 13 server. For example, Infinispan is now 9.2.4.Final and Undertow is 2.0.9.Final
 
 Configuration changes::
   A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
-  section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some configuration
-  changes on your own, here is a list of the most important changes:
-  * Element `eviction` on infinispan caches is now deprecated (unused) and was replaced by element `object-memory`
-  * The `cache-container` element in Infinispan subsystem does not recognize the `jndi-attribute` anymore.
+  section to handle the migration of configuration files automatically. However, here are the most important changes, which you may need
+  if you made your own configuration changes:
+
+  * Element `eviction` on infinispan caches is now *deprecated* (unused) and is *replaced with* element `object-memory`
+  * The `cache-container` element in Infinispan subsystem *does not recognize* the `jndi-attribute` anymore.
 
 Cross-Datacenter Replication changes::
   * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
@@ -503,7 +526,7 @@ Consents need to be confirmed again::
 
 Some configuration switches removed::
   The switch `Scope Param Required` was removed from Role Detail. The switches `Consent Required` and `Consent Text` were removed
-  from the Protocol Mapper details. Those switches were replaced by the Client Scope feature.
+  from the Protocol Mapper details. Those switches are replaced with the Client Scope feature.
 
 ==== Changes to Authorization Services
 
@@ -680,9 +703,9 @@ trusted by the server (Identity providers or clients, which uses authentication 
 
 === Migrating to 2.2.0
 
-==== `databaseSchema` property deprecated
+==== `databaseSchema` property *deprecated*
 
-The `databaseSchema` property for both JPA and Mongo is now deprecated and has been replaced by `initializeEmpty`
+The `databaseSchema` property for both JPA and Mongo is now *deprecated* and is *replaced with* `initializeEmpty`
 and `migrationStrategy`. `initializeEmpty` can bet set to `true` or `false` and controls if an empty database should
 be initialized. `migrationStrategy` can be set to `update`, `validate` and `manual`. `manual` is only supported for
 relational databases and will write an SQL file with the required changes to the database schema. Please note that
@@ -758,7 +781,7 @@ In the OpenID Connect authentication response we used to return the session stat
 ==== Deprecated OpenID Connect endpoints
 
 In 1.2 we deprecated a number of endpoints that where not consistent with the OpenID Connect specifications, these have now been removed.
-This also applies to the validate token endpoints that was replaced with the new introspect endpoint in 1.8.
+This also applies to the validate token endpoint that is replaced with the new introspect endpoint in 1.8.
 
 ==== Updates to theme templates
 
@@ -989,7 +1012,7 @@ This has been simplified to only requiring a plain text file (`META-INF/keycloak
 
 Previously a dedicated `Claims` tab existed in the admin console for application and OAuth clients.
 This was used to configure which attributes should go into access token for particular application/client.
-This was removed and replaced with protocol mappers which are more flexible.
+This was removed and is replaced with protocol mappers which are more flexible.
 
 You don't need to care about migration of database from previous version.
 We did migration scripts for both RDBMS and Mongo, which should ensure that claims configured for particular application/client will be converted into corresponding protocol mappers (Still it's safer to backup DB before migrating to newer version though). Same applies for exported JSON representation from previous version.

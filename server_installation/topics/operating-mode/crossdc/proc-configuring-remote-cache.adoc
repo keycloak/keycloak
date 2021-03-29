@@ -27,9 +27,9 @@ After you set up remote {jdgserver_name} clusters, you configure the Infinispan 
 +
 [source,xml,options="nowrap",subs=attributes+]
 ----
-<subsystem xmlns="urn:jboss:domain:infinispan:11.0">
+<subsystem xmlns="urn:jboss:domain:infinispan:12.0">
     <cache-container name="keycloak"
-                     module="org.keycloak.keycloak-model-infinispan"/>
+                     modules="org.keycloak.keycloak-model-infinispan"/>
 ----
 
 . Update the `work` cache in the Infinispan subsystem so it has the following configuration:
