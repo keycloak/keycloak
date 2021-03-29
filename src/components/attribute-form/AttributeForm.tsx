@@ -65,7 +65,12 @@ export const AttributesForm = ({
   const { t } = useTranslation("roles");
 
   const columns = ["Key", "Value"];
-  const watchFirstKey = watch("attributes[0].key", "");
+
+  const watchLast = watch(`attributes[${fields.length - 1}].key`, "");
+
+  if (fields.length === 0) {
+    append({ key: "", value: "" });
+  }
 
   return (
     <>
@@ -137,7 +142,7 @@ export const AttributesForm = ({
                 )}
                 {rowIndex === fields.length - 1 && (
                   <Td key="add-button" id="add-button" dataLabel={columns[2]}>
-                    {fields[rowIndex].key === "" && (
+                    {fields.length !== 1 && (
                       <Button
                         id={`minus-button-${rowIndex}`}
                         aria-label={`remove ${attribute.key} with value ${attribute.value} `}
@@ -148,26 +153,36 @@ export const AttributesForm = ({
                         <MinusCircleIcon />
                       </Button>
                     )}
-                    <Button
-                      aria-label={t("roles:addAttributeText")}
-                      id="plus-icon"
-                      variant="link"
-                      className="kc-attributes__plus-icon"
-                      onClick={() => append({ key: "", value: "" })}
-                      icon={<PlusCircleIcon />}
-                      isDisabled={!formState.isValid}
-                    />
                   </Td>
                 )}
               </Tr>
             ))}
+            <Button
+              aria-label={t("roles:addAttributeText")}
+              id="plus-icon"
+              variant="link"
+              className="kc-attributes__plus-icon"
+              onClick={() => append({ key: "", value: "" })}
+              icon={<PlusCircleIcon />}
+              isDisabled={!watchLast}
+            >
+              {t("roles:addAttributeText")}
+            </Button>
           </Tbody>
         </TableComposable>
         <ActionGroup className="kc-attributes__action-group">
-          <Button variant="primary" type="submit" isDisabled={!watchFirstKey}>
+          <Button
+            variant="primary"
+            type="submit"
+            isDisabled={!formState.isDirty}
+          >
             {t("common:save")}
           </Button>
-          <Button onClick={reset} variant="link">
+          <Button
+            onClick={reset}
+            variant="link"
+            isDisabled={!formState.isDirty}
+          >
             {t("common:revert")}
           </Button>
         </ActionGroup>

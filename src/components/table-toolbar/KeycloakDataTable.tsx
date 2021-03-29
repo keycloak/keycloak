@@ -56,7 +56,11 @@ function DataTable<T>({
       }
       canSelectAll={canSelectAll}
       cells={columns.map((column) => {
-        return { ...column, title: t(column.displayKey || column.name) };
+        return {
+          ...column,
+          title: t(column.displayKey || column.name),
+          transforms: column.transforms,
+        };
       })}
       rows={rows}
       actions={actions}
