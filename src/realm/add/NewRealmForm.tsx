@@ -63,7 +63,7 @@ export const NewRealmForm = () => {
     } catch (error) {
       addAlert(
         t("saveRealmError", {
-          error: error.response.data?.errorMessage || error,
+          error: error.response?.data?.errorMessage || error,
         }),
         AlertVariant.danger
       );

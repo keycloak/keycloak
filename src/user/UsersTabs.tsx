@@ -51,7 +51,7 @@ export const UsersTabs = () => {
     } catch (error) {
       addAlert(
         t("users:userCreateError", {
-          error: error.response.data?.errorMessage || error,
+          error: error.response?.data?.errorMessage || error,
         }),
         AlertVariant.danger
       );

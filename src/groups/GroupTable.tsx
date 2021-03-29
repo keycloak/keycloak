@@ -21,6 +21,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { GroupsModal } from "./GroupsModal";
 import { getLastId } from "./groupIdUtils";
+import { MoveGroupDialog } from "./MoveGroupDialog";
 
 type GroupTableData = GroupRepresentation & {
   membersLength?: number;
@@ -35,6 +36,7 @@ export const GroupTable = () => {
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
+  const [move, setMove] = useState<GroupTableData>();
 
   const { subGroups } = useSubGroups();
 
@@ -161,7 +163,10 @@ export const GroupTable = () => {
         actions={[
           {
             title: t("moveTo"),
-            onRowClick: () => console.log("TO DO: Add move to functionality"),
+            onRowClick: async (group) => {
+              setMove(group);
+              return false;
+            },
           },
           {
             title: t("common:delete"),
@@ -199,6 +204,34 @@ export const GroupTable = () => {
           id={id}
           handleModalToggle={handleModalToggle}
           refresh={refresh}
+        />
+      )}
+      {move && (
+        <MoveGroupDialog
+          group={move}
+          onClose={() => setMove(undefined)}
+          onMove={async (id) => {
+            delete move.membersLength;
+            try {
+              try {
+                await adminClient.groups.setOrCreateChild({ id }, move);
+              } catch (error) {
+                if (error.response) {
+                  throw error;
+                }
+              }
+              setMove(undefined);
+              refresh();
+              addAlert(t("moveGroupSuccess"), AlertVariant.success);
+            } catch (error) {
+              addAlert(
+                t("moveGroupError", {
+                  error: error.response?.data?.errorMessage || error,
+                }),
+                AlertVariant.danger
+              );
+            }
+          }}
         />
       )}
     </>

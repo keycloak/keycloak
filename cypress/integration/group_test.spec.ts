@@ -1,6 +1,7 @@
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import GroupDetailPage from "../support/pages/admin_console/manage/groups/GroupDetailPage";
+import MoveGroupModal from "../support/pages/admin_console/manage/groups/MoveGroupModal";
 import { SearchGroupPage } from "../support/pages/admin_console/manage/groups/SearchGroup";
 import Masthead from "../support/pages/admin_console/Masthead";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
@@ -16,6 +17,8 @@ describe("Group test", () => {
   const listingPage = new ListingPage();
   const viewHeaderPage = new ViewHeaderPage();
   const groupModal = new GroupModal();
+  const searchGroupPage = new SearchGroupPage();
+  const moveGroupModal = new MoveGroupModal();
 
   let groupName = "group";
 
@@ -61,11 +64,35 @@ describe("Group test", () => {
       listingPage.deleteItem(newName);
     });
 
-    const searchGroupPage = new SearchGroupPage();
     it("Group search", () => {
       viewHeaderPage.clickAction("searchGroup");
       searchGroupPage.searchGroup("group").clickSearchButton();
       searchGroupPage.checkTerm("group");
+    });
+
+    it("Should move group", () => {
+      const targetGroupName = "target";
+      groupModal
+        .open("empty-primary-action")
+        .fillGroupForm(groupName)
+        .clickCreate();
+
+      groupModal.open().fillGroupForm(targetGroupName).clickCreate();
+
+      listingPage.clickRowDetails(groupName).clickDetailMenu("Move to");
+      moveGroupModal
+        .clickRow(targetGroupName)
+        .checkTitle(`Move ${groupName} to ${targetGroupName}`);
+      moveGroupModal.clickMove();
+
+      masthead.checkNotificationMessage("Group moved");
+      listingPage
+        .itemExist(groupName, false)
+        .goToItemDetails(targetGroupName)
+        .itemExist(targetGroupName);
+
+      sidebarPage.goToGroups();
+      listingPage.deleteItem(targetGroupName);
     });
   });
 

@@ -57,7 +57,7 @@ export const ClientScopesSection = () => {
                 } catch (error) {
                   addAlert(
                     t("deleteError", {
-                      error: error.response.data?.errorMessage || error,
+                      error: error.response?.data?.errorMessage || error,
                     }),
                     AlertVariant.danger
                   );

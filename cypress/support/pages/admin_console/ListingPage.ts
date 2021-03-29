@@ -47,6 +47,20 @@ export default class ListingPage {
     return this;
   }
 
+  clickRowDetails(itemName: string) {
+    cy.get(this.itemsRows)
+      .contains(itemName)
+      .parentsUntil("tbody")
+      .find(this.itemRowDrpDwn)
+      .click();
+    return this;
+  }
+
+  clickDetailMenu(name: string) {
+    cy.get(this.itemsRows).contains(name).click();
+    return this;
+  }
+
   itemExist(itemName: string, exist = true) {
     cy.get(this.itemsRows)
       .contains(itemName)
@@ -62,23 +76,15 @@ export default class ListingPage {
   }
 
   deleteItem(itemName: string) {
-    cy.get(this.itemsRows)
-      .contains(itemName)
-      .parentsUntil("tbody")
-      .find(this.itemRowDrpDwn)
-      .click();
-    cy.get(this.itemsRows).contains("Delete").click();
+    this.clickRowDetails(itemName);
+    this.clickDetailMenu("Delete");
 
     return this;
   }
 
   exportItem(itemName: string) {
-    cy.get(this.itemsRows)
-      .contains(itemName)
-      .parentsUntil("tbody")
-      .find(this.itemRowDrpDwn)
-      .click();
-    cy.get(this.itemsRows).contains("Export").click();
+    this.clickRowDetails(itemName);
+    this.clickDetailMenu("Export");
 
     return this;
   }

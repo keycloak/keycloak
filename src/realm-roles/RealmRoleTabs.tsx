@@ -163,7 +163,7 @@ export const RealmRoleTabs = () => {
     } catch (error) {
       addAlert(
         t((id ? "roleSave" : "roleCreate") + "Error", {
-          error: error.response.data?.errorMessage || error,
+          error: error.response?.data?.errorMessage || error,
         }),
         AlertVariant.danger
       );
