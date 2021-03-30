@@ -1099,7 +1099,7 @@
                     supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state', 'kc_action_status'];
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
             }
 

@@ -1359,6 +1359,8 @@ public class OAuthClient {
         // Just during OIDC implicit or hybrid flow
         private String accessToken;
         private String idToken;
+        private String tokenType;
+        private String expiresIn;
 
         public AuthorizationEndpointResponse(OAuthClient client) {
             boolean fragment;
@@ -1390,6 +1392,8 @@ public class OAuthClient {
             sessionState = params.get(OAuth2Constants.SESSION_STATE);
             accessToken = params.get(OAuth2Constants.ACCESS_TOKEN);
             idToken = params.get(OAuth2Constants.ID_TOKEN);
+            tokenType = params.get(OAuth2Constants.TOKEN_TYPE);
+            expiresIn = params.get(OAuth2Constants.EXPIRES_IN);
         }
 
         public boolean isRedirected() {
@@ -1422,6 +1426,14 @@ public class OAuthClient {
 
         public String getIdToken() {
             return idToken;
+        }
+
+        public String getTokenType() {
+            return tokenType;
+        }
+
+        public String getExpiresIn() {
+            return expiresIn;
         }
     }
 
@@ -1480,10 +1492,10 @@ public class OAuthClient {
                             case OAuth2Constants.ISSUED_TOKEN_TYPE:
                                 issuedTokenType = (String) entry.getValue();
                                 break;
-                            case "token_type":
+                            case OAuth2Constants.TOKEN_TYPE:
                                 tokenType = (String) entry.getValue();
                                 break;
-                            case "expires_in":
+                            case OAuth2Constants.EXPIRES_IN:
                                 expiresIn = (Integer) entry.getValue();
                                 break;
                             case "refresh_expires_in":
