@@ -139,6 +139,7 @@ export function KeycloakDataTable<T>({
   const { t } = useTranslation();
   const [selected, setSelected] = useState<T[]>([]);
   const [rows, setRows] = useState<Row<T>[]>();
+  const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
   const [filteredData, setFilteredData] = useState<Row<T>[]>();
   const [loading, setLoading] = useState(false);
 
@@ -154,23 +155,15 @@ export function KeycloakDataTable<T>({
     return asyncStateFetch(
       async () => {
         setLoading(true);
-        const data = await loader(first, max, search);
 
-        const result = data!.map((value) => {
-          return {
-            data: value,
-            selected: !!selected.find(
-              (v) => (v as any).id === (value as any).id
-            ),
-            cells: columns.map((col) => {
-              if (col.cellRenderer) {
-                return col.cellRenderer(value);
-              }
-              return _.get(value, col.name);
-            }),
-          };
-        });
-        return result;
+        let data = unPaginatedData || (await loader(first, max, search));
+
+        if (!isPaginated) {
+          setUnPaginatedData(data);
+          data = data.slice(first, first + max);
+        }
+
+        return convertToColumns(data);
       },
       (result) => {
         setRows(result);
@@ -194,9 +187,24 @@ export function KeycloakDataTable<T>({
     return "";
   };
 
+  const convertToColumns = (data: T[]) => {
+    return data!.map((value) => {
+      return {
+        data: value,
+        selected: !!selected.find((v) => (v as any).id === (value as any).id),
+        cells: columns.map((col) => {
+          if (col.cellRenderer) {
+            return col.cellRenderer(value);
+          }
+          return _.get(value, col.name);
+        }),
+      };
+    });
+  };
+
   const filter = (search: string) => {
     setFilteredData(
-      rows!.filter((row) =>
+      convertToColumns(unPaginatedData!).filter((row) =>
         row.cells.some(
           (cell) =>
             cell &&
@@ -255,7 +263,7 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
-      {rows && isPaginated && (
+      {rows && (
         <PaginatingTableToolbar
           count={rows.length}
           first={first}
@@ -269,18 +277,20 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnEnter={setSearch}
+          inputGroupOnEnter={
+            isPaginated ? setSearch : (search) => filter(search)
+          }
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
         >
-          {!loading && rows.length > 0 && (
+          {!loading && (filteredData || rows).length > 0 && (
             <DataTable
               canSelectAll={canSelectAll}
               onSelect={onSelect ? _onSelect : undefined}
               actions={convertAction()}
               actionResolver={actionResolver}
-              rows={rows}
+              rows={filteredData || rows}
               columns={columns}
               ariaLabelKey={ariaLabelKey}
             />
@@ -295,38 +305,6 @@ export function KeycloakDataTable<T>({
           )}
           {loading && <Loading />}
         </PaginatingTableToolbar>
-      )}
-      {rows && (rows.length > 0 || !emptyState) && !isPaginated && (
-        <TableToolbar
-          inputGroupName={
-            searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
-          }
-          inputGroupOnEnter={(search) => filter(search)}
-          inputGroupPlaceholder={t(searchPlaceholderKey || "")}
-          toolbarItem={toolbarItem}
-          searchTypeComponent={searchTypeComponent}
-        >
-          {!loading && (filteredData || rows).length > 0 && (
-            <DataTable
-              canSelectAll={canSelectAll}
-              onSelect={onSelect ? _onSelect : undefined}
-              actions={convertAction()}
-              actionResolver={actionResolver}
-              rows={filteredData || rows}
-              columns={columns}
-              ariaLabelKey={ariaLabelKey}
-            />
-          )}
-          {!loading && filteredData && filteredData.length === 0 && (
-            <ListEmptyState
-              hasIcon={true}
-              isSearchVariant={true}
-              message={t("noSearchResults")}
-              instructions={t("noSearchResultsInstructions")}
-            />
-          )}
-          {loading && <Loading />}
-        </TableToolbar>
       )}
       <>{!loading && rows?.length === 0 && search === "" && emptyState}</>
     </>
