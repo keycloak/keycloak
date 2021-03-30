@@ -64,6 +64,12 @@ public class OIDCHybridResponseTypeCodeTokenTest extends AbstractOIDCResponseTyp
         // Validate "at_hash"
         assertValidAccessTokenHash(idToken2.getAccessTokenHash(), authzResponse2.getAccessToken());
 
+        // Validate if token_type is present
+        Assert.assertNotNull(authzResponse.getTokenType());
+
+        // Validate if expires_in is present
+        Assert.assertNotNull(authzResponse.getExpiresIn());
+
         return Collections.singletonList(idToken2);
     }
 
