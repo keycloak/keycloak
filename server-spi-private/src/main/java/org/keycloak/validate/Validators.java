@@ -90,6 +90,18 @@ public class Validators {
         return validatorFactory(session, id);
     }
 
+    /**
+     * Validates the {@link ValidatorConfig} of {@link Validator} referenced by the given provider {@code id}.
+     * 
+     * @param id
+     * @param config
+     * @return
+     * @see #validateConfig(KeycloakSession, String, ValidatorConfig)
+     */
+    public ValidationResult validateConfig(String id, ValidatorConfig config) {
+        return validateConfig(session, id, config);
+    }
+
 
 //   public interface ClientModelValidator {
 //      boolean hasValidUrls();
@@ -196,5 +208,23 @@ public class Validators {
         // Lookup factory in registry
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         return (ValidatorFactory) sessionFactory.getProviderFactory(Validator.class, id);
+    }
+
+    /**
+     * Validates the {@link ValidatorConfig} of {@link Validator} referenced by the given provider {@code id}.
+     *
+     * @param session
+     * @param id
+     * @param config
+     * @return
+     */
+    public static ValidationResult validateConfig(KeycloakSession session, String id, ValidatorConfig config) {
+
+        ValidatorFactory validatorFactory = validatorFactory(session, id);
+        if (validatorFactory != null) {
+            return validatorFactory.validateConfig(config);
+        }
+
+        return ValidationResult.INVALID;
     }
 }

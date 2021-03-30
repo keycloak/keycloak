@@ -230,11 +230,9 @@ public class ValidatorTest {
         config.put("min", "1");
         config.put("max", new ArrayList<>());
 
-        ValidatorFactory validatorFactory = Validators.validatorFactory(session, LengthValidator.ID);
-
         ValidatorConfig validatorConfig = configFromMap(config);
 
-        ValidationResult result = validatorFactory.validateConfig(validatorConfig);
+        ValidationResult result = Validators.validateConfig(session, LengthValidator.ID, validatorConfig);
         Assert.assertEquals(2, result.getErrors().size());
 
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
