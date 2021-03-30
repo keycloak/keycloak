@@ -3,7 +3,6 @@ package org.keycloak.validate;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.validate.builtin.BuiltinValidators;
 import org.keycloak.validate.builtin.LengthValidator;
 import org.keycloak.validate.builtin.NotBlankValidator;
 import org.keycloak.validate.builtin.NotEmptyValidator;
@@ -26,7 +25,7 @@ public class ValidatorTest {
     @Test
     public void simpleValidation() {
 
-        Validator validator = BuiltinValidators.notEmpty();
+        Validator validator = Validators.notEmpty();
 
         Assert.assertTrue(validator.validate("a").isValid());
         Assert.assertFalse(validator.validate("").isValid());
@@ -35,7 +34,7 @@ public class ValidatorTest {
     @Test
     public void simpleValidationWithContext() {
 
-        Validator validator = BuiltinValidators.length();
+        Validator validator = Validators.length();
 
         ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
@@ -49,7 +48,7 @@ public class ValidatorTest {
 
         ValidationContext context = new ValidationContext(session);
 
-        ValidationResult result = BuiltinValidators.length().validate("a", "username", context).toResult();
+        ValidationResult result = Validators.length().validate("a", "username", context).toResult();
 
         Assert.assertTrue(result.isValid());
     }
@@ -57,8 +56,8 @@ public class ValidatorTest {
     @Test
     public void simpleValidationLookup() {
 
-        // later: session.validator(LengthValidator.ID);
-        Validator validator = ValidatorLookup.validator(session, LengthValidator.ID);
+        // later: session.validators().validator(LengthValidator.ID);
+        Validator validator = Validators.validator(session, LengthValidator.ID);
 
         ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
@@ -95,11 +94,11 @@ public class ValidatorTest {
     public void acceptOnError() {
 
         AtomicBoolean bool1 = new AtomicBoolean();
-        BuiltinValidators.notEmpty().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
+        Validators.notEmpty().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
         Assert.assertFalse(bool1.get());
 
         AtomicBoolean bool2 = new AtomicBoolean();
-        BuiltinValidators.notEmpty().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
+        Validators.notEmpty().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
         Assert.assertTrue(bool2.get());
     }
 
@@ -108,7 +107,7 @@ public class ValidatorTest {
 
         List<String> errors = new ArrayList<>();
         MockAddress faultyAddress = new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany");
-        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e ->  {
+        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e -> {
             errors.add(e.getMessage());
         });
 
@@ -124,7 +123,7 @@ public class ValidatorTest {
 
         List<String> errors = new ArrayList<>();
         MockAddress faultyAddress = new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany");
-        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e ->  {
+        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e -> {
             errors.add(e.formatMessage((message, args) -> MessageFormat.format(miniResourceBundle.getOrDefault(message, message), args)));
         });
 
@@ -139,8 +138,8 @@ public class ValidatorTest {
         String input = "aaa";
         String inputHint = "username";
 
-        BuiltinValidators.length().validate(input, inputHint, context);
-        BuiltinValidators.notEmpty().validate(input, inputHint, context);
+        Validators.length().validate(input, inputHint, context);
+        Validators.notEmpty().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -155,8 +154,8 @@ public class ValidatorTest {
         String input = "";
         String inputHint = "username";
 
-        BuiltinValidators.length().validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", 1)));
-        BuiltinValidators.notEmpty().validate(input, inputHint, context);
+        Validators.length().validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", 1)));
+        Validators.notEmpty().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -231,7 +230,7 @@ public class ValidatorTest {
         config.put("min", "1");
         config.put("max", new ArrayList<>());
 
-        ValidatorFactory validatorFactory = ValidatorLookup.validatorFactory(session, LengthValidator.ID);
+        ValidatorFactory validatorFactory = Validators.validatorFactory(session, LengthValidator.ID);
 
         ValidatorConfig validatorConfig = configFromMap(config);
 

@@ -3,7 +3,6 @@ package org.keycloak.validate;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.validate.builtin.BuiltinValidators;
 import org.keycloak.validate.builtin.UriValidator;
 
 import java.net.URI;
@@ -17,7 +16,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validateLength() {
 
-        Validator validator = BuiltinValidators.length();
+        Validator validator = Validators.length();
 
         ValidatorConfig config1 = configFromMap(ImmutableMap.of("min", 1));
         Assert.assertTrue(validator.validate("tester", "name", config1).isValid());
@@ -29,7 +28,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validateEmail() {
 
-        Validator validator = BuiltinValidators.email();
+        Validator validator = Validators.email();
 
         Assert.assertTrue(validator.validate("admin@example.org", "email")
                 .isValid());
@@ -40,7 +39,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validateNotBlank() {
 
-        Validator validator = BuiltinValidators.notBlank();
+        Validator validator = Validators.notBlank();
 
         Assert.assertTrue(validator.validate("tester", "username").isValid());
         Assert.assertFalse(validator.validate("", "username").isValid());
@@ -51,7 +50,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validateNotEmpty() {
 
-        Validator validator = BuiltinValidators.notEmpty();
+        Validator validator = Validators.notEmpty();
 
         Assert.assertTrue(validator.validate("tester", "username").isValid());
         Assert.assertTrue(validator.validate(Arrays.asList(1, 2, 3), "numberList").isValid());
@@ -67,7 +66,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validateNumber() {
 
-        Validator validator = BuiltinValidators.number();
+        Validator validator = Validators.number();
 
         Assert.assertTrue(validator.validate(10, "age").isValid());
         Assert.assertTrue(validator.validate("10", "age").isValid());
@@ -82,7 +81,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validatePattern() {
 
-        Validator validator = BuiltinValidators.pattern();
+        Validator validator = Validators.pattern();
 
         ValidatorConfig config = configFromMap(Collections.singletonMap("pattern", "^start-.*-end$"));
 
@@ -93,7 +92,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void validateUri() throws Exception {
 
-        Validator validator = BuiltinValidators.uri();
+        Validator validator = Validators.uri();
 
         Assert.assertTrue(validator.validate("http://localhost:3000/", "baseUrl").isValid());
         Assert.assertTrue(validator.validate("https://localhost:3000/", "baseUrl").isValid());
@@ -106,10 +105,10 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate("https://localhost:3000/#someFragment", "baseUrl", config).isValid());
 
         // it is also possible to call dedicated validation methods on a built-in validator
-        Assert.assertTrue(BuiltinValidators.uri().
+        Assert.assertTrue(Validators.uri().
                 validateUri(new URI("https://customurl"), Collections.singleton("https"), true, true));
 
-        Assert.assertFalse(BuiltinValidators.uri().
+        Assert.assertFalse(Validators.uri().
                 validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
     }
 }

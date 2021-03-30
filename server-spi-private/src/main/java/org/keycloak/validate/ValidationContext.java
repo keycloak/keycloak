@@ -67,7 +67,7 @@ public class ValidationContext {
      */
     public Validator validator(String validatorId) {
         // TODO refactor to session.validator(validatorId);
-        return ValidatorLookup.validator(session, validatorId);
+        return Validators.validator(session, validatorId);
     }
 
     public void addError(ValidationError error) {
