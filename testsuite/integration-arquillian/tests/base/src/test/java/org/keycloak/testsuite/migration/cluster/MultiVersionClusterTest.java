@@ -39,12 +39,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import org.infinispan.Cache;
-import org.infinispan.remoting.RemoteException;
+import org.infinispan.util.concurrent.TimeoutException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.DotName;
@@ -55,8 +56,6 @@ import org.jboss.modules.ModuleLoader;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
-import org.junit.Assert;
-import static org.junit.Assert.assertThat;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -161,7 +160,7 @@ public class MultiVersionClusterTest extends AbstractClusterTest {
             });
         } catch (Exception e) {
             assertThat(e, instanceOf(RunOnServerException.class));
-            assertThat(e.getCause().getCause(), instanceOf(RemoteException.class));
+            assertThat(e.getCause().getCause(), instanceOf(TimeoutException.class));
         } finally {
             undeploy(deployment(), currentNode);
         }
@@ -185,7 +184,7 @@ public class MultiVersionClusterTest extends AbstractClusterTest {
             });
         } catch (Exception e) {
             assertThat(e, instanceOf(RunOnServerException.class));
-            assertThat(e.getCause().getCause(), instanceOf(RemoteException.class));
+            assertThat(e.getCause().getCause(), instanceOf(TimeoutException.class));
         } finally {
             undeploy(deployment(), legacyNode);
         }
@@ -217,14 +216,14 @@ public class MultiVersionClusterTest extends AbstractClusterTest {
     public void fromLegacyToCurrent() {
         Map<String, Map<String, Object>> expected = createCacheAndGetFromServer(legacyNode);
         Map<String, Map<String, Object>> actual = getFromServer(currentNode, SerializationUtil.encode(expected.keySet().toString()));
-        Assert.assertThat(actual, equalTo(expected));
+        assertThat(actual, equalTo(expected));
     }
 
     @Test
     public void fromCurrentToLegacy() {
         Map<String, Map<String, Object>> expected = createCacheAndGetFromServer(currentNode);
         Map<String, Map<String, Object>> actual = getFromServer(legacyNode, SerializationUtil.encode(expected.keySet().toString()));
-        Assert.assertThat(actual, equalTo(expected));
+        assertThat(actual, equalTo(expected));
     }
 
     private void addAdminJsonFileToLegacy() {
