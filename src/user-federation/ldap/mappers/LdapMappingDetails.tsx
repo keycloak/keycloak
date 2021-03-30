@@ -14,7 +14,7 @@ import { useHistory, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { LdapMapperUsername } from "./LdapMapperUsername";
+import { LdapMapperUserAttribute } from "./LdapMapperUserAttribute";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 
 export const LdapMappingDetails = () => {
@@ -75,7 +75,10 @@ export const LdapMappingDetails = () => {
         {mapper
           ? (mapper.providerId! === "certificate-ldap-mapper" ||
               mapper.providerId! === "user-attribute-ldap-mapper") && (
-              <LdapMapperUsername form={form} mapperType={mapper?.providerId} />
+              <LdapMapperUserAttribute
+                form={form}
+                mapperType={mapper?.providerId}
+              />
             )
           : ""}
         <Form onSubmit={form.handleSubmit(save)}>
