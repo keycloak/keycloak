@@ -8,9 +8,7 @@ export type LdapMapperGeneralProps = {
   form: UseFormMethods;
 };
 
-export const LdapMapperGeneral = ({
-  form,
-}: LdapMapperGeneralProps) => {
+export const LdapMapperGeneral = ({ form }: LdapMapperGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 

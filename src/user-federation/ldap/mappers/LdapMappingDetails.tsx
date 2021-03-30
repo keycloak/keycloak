@@ -14,7 +14,17 @@ import { useHistory, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
+
 import { LdapMapperUserAttribute } from "./LdapMapperUserAttribute";
+import { LdapMapperMsadUserAccount } from "./LdapMapperMsadUserAccount";
+import { LdapMapperMsadLdsUserAccount } from "./LdapMapperMsadLdsUserAccount";
+import { LdapMapperFullNameAttribute } from "./LdapMapperFullNameAttribute";
+
+import { LdapMapperHardcodedLdapRole } from "./LdapMapperHardcodedLdapRole";
+import { LdapMapperHardcodedLdapGroup } from "./LdapMapperHardcodedLdapGroup";
+import { LdapMapperHardcodedLdapAttribute } from "./LdapMapperHardcodedLdapAttribute";
+import { LdapMapperHardcodedAttribute } from "./LdapMapperHardcodedAttribute";
+
 import { useRealm } from "../../../context/realm-context/RealmContext";
 
 export const LdapMappingDetails = () => {
@@ -79,6 +89,41 @@ export const LdapMappingDetails = () => {
                 form={form}
                 mapperType={mapper?.providerId}
               />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "msad-user-account-control-mapper" && (
+              <LdapMapperMsadUserAccount form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "msad-lds-user-account-control-mapper" && (
+              <LdapMapperMsadLdsUserAccount form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "full-name-ldap-mapper" && (
+              <LdapMapperFullNameAttribute form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "hardcoded-ldap-role-mapper" && (
+              <LdapMapperHardcodedLdapRole form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "hardcoded-ldap-group-mapper" && (
+              <LdapMapperHardcodedLdapGroup form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "hardcoded-ldap-attribute-mapper" && (
+              <LdapMapperHardcodedLdapAttribute form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "hardcoded-attribute-mapper" && (
+              <LdapMapperHardcodedAttribute form={form} />
             )
           : ""}
         <Form onSubmit={form.handleSubmit(save)}>

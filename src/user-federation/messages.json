@@ -132,6 +132,7 @@
     "mapperTypeLdapAttributeMapper": "hardcoded-ldap-attribute-mapper",
 
     "ldapMappersList": "LDAP Mappers",
+    
     "ldapFullNameAttribute": "LDAP full name attribute",
     "writeOnly": "Write only",
 

@@ -120,7 +120,6 @@ export const LdapMapperUserAttribute = ({
             )}
           ></Controller>
         </FormGroup>
-
         <FormGroup
           label={t("isMandatoryInLdap")}
           labelIcon={
@@ -149,7 +148,6 @@ export const LdapMapperUserAttribute = ({
             )}
           ></Controller>
         </FormGroup>
-
         <FormGroup
           label={t("isBinaryAttribute")}
           labelIcon={
@@ -178,7 +176,6 @@ export const LdapMapperUserAttribute = ({
             )}
           ></Controller>
         </FormGroup>
-
         {mapperType === "certificate-ldap-mapper" ? (
           <>
             <FormGroup
@@ -186,8 +183,8 @@ export const LdapMapperUserAttribute = ({
               labelIcon={
                 <HelpItem
                   helpText={helpText("derFormattedHelp")}
-                  forLabel={t("useKerberosForPasswordAuthentication")}
-                  forID="kc-use-kerberos-password-authentication"
+                  forLabel={t("derFormatted")}
+                  forID="kc-der-formatted"
                 />
               }
               fieldId="kc-der-formatted"
