@@ -22,11 +22,11 @@ export const ClientDescription = () => {
         labelIcon={
           <HelpItem
             helpText="clients-help:clientID"
-            forLabel={t("clientID")}
+            forLabel={t("common:clientID")}
             forID="kc-client-id"
           />
         }
-        label={t("clientID")}
+        label={t("common:clientID")}
         fieldId="kc-client-id"
         helperTextInvalid={t("common:required")}
         validated={

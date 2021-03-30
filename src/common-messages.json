@@ -105,6 +105,11 @@
     "searchForMapper": "Search for mapper",
     "mapperType": "Mapper type",
     "mappingDeletedSuccess": "Mapping successfully deleted",
-    "mappingDeletedError": "Could not delete mapping: '{{error}}'"
+    "mappingDeletedError": "Could not delete mapping: '{{error}}'",
+    "mappingDetails": "Mapper details",
+    "mappingCreatedSuccess": "Mapping successfully created",
+    "mappingCreatedError": "Could not create mapping: '{{error}}'",
+    "deleteMappingTitle": "Delete mapping?",
+    "deleteMappingConfirm": "Are you sure you want to delete this mapping?"
   }
 }

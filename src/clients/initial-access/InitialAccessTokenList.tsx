@@ -74,7 +74,7 @@ export const InitialAccessTokenList = () => {
         columns={[
           {
             name: "id",
-            displayKey: "clients:id",
+            displayKey: "common:id",
           },
           {
             name: "timestamp",

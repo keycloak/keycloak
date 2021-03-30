@@ -157,7 +157,6 @@
     "roleObjectClasses": "Role object classes",
     "userRolesRetrieveStrategy": "User roles retrieve strategy",
     "useRealmRolesMapping": "Use realm roles mapping",
-    "clientId": "Client ID",
 
     "ldapAttributeName": "LDAP attribute name",
     "ldapAttributeValue": "LDAP attribute value",

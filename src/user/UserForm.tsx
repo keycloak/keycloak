@@ -100,7 +100,7 @@ export const UserForm = ({
       {editMode ? (
         <>
           <FormGroup
-            label={t("id")}
+            label={t("common:id")}
             fieldId="kc-id"
             isRequired
             validated={errors.id ? "error" : "default"}

@@ -96,13 +96,13 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/client-scopes/:id/mappers/oidc-role-name-mapper",
     component: RoleMappingForm,
-    breadcrumb: t("client-scopes:mappingDetails"),
+    breadcrumb: t("common:mappingDetails"),
     access: "view-clients",
   },
   {
     path: "/:realm/client-scopes/:id/mappers/:mapperId",
     component: MappingDetails,
-    breadcrumb: t("client-scopes:mappingDetails"),
+    breadcrumb: t("common:mappingDetails"),
     access: "view-clients",
   },
   {
@@ -228,7 +228,7 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/user-federation/ldap/:id/:tab/:mapperId",
     component: LdapMappingDetails,
-    breadcrumb: t("client-scopes:mappingDetails"),
+    breadcrumb: t("common:mappingDetails"),
     access: "view-realm",
   },
   {
