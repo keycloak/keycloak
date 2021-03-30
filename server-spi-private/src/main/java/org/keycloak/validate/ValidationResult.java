@@ -63,9 +63,31 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
         this.errors = errors == null ? Collections.emptySet() : errors;
     }
 
+    /**
+     * Accepts a {@link Consumer<ValidationResult>} to visit the this current {@link ValidationResult}.
+     *
+     * @param consumer
+     */
     @Override
     public void accept(Consumer<ValidationResult> consumer) {
         consumer.accept(this);
+    }
+
+    /**
+     * Convenience method that accepts a {@link Consumer<ValidationResult>} if the result is not valid.
+     *
+     * @param consumer
+     */
+    public void ifNotValidAccept(Consumer<ValidationResult> consumer) {
+        if (!isValid()) {
+            accept(consumer);
+        }
+    }
+
+    public void forEachError(Consumer<ValidationError> consumer) {
+        for (ValidationError error : getErrors()) {
+            consumer.accept(error);
+        }
     }
 
     public boolean isValid() {

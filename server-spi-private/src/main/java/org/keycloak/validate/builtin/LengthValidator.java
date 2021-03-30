@@ -74,11 +74,11 @@ public class LengthValidator implements CompactValidator {
         int length = string.length();
 
         if (length < min) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, string));
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, input));
         }
 
         if (length > max) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, string));
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, input));
         }
 
         return context;

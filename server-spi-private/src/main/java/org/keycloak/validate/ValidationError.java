@@ -18,6 +18,7 @@ package org.keycloak.validate;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 /**
  * Denotes an error found during validation.
@@ -71,10 +72,44 @@ public class ValidationError {
         return message;
     }
 
+    /**
+     * Returns the raw message parameters, e.g. the actual input that was given for validation.
+     *
+     * @return
+     * @see #getInputHintWithMessageParameters()
+     */
     public Object[] getMessageParameters() {
         return messageParameters;
     }
 
+    /**
+     * Formats the current {@link ValidationError} with the given formatter {@link java.util.function.Function}.
+     * <p>
+     * The formatter {@link java.util.function.Function} will be called with the {@link #message} and {@link #getInputHintWithMessageParameters()}
+     * to render the error message.
+     *
+     * @param formatter
+     * @return
+     */
+    public String formatMessage(BiFunction<String, Object[], String> formatter) {
+        Objects.requireNonNull(formatter, "formatter must not be null");
+        return formatter.apply(message, getInputHintWithMessageParameters());
+    }
+
+    /**
+     * Returns an array where the first element is the {@link #inputHint} follwed by the {@link #messageParameters}.
+     *
+     * @return
+     */
+    public Object[] getInputHintWithMessageParameters() {
+
+        // insert to current input hint into the message
+        Object[] args = new Object[messageParameters.length + 1];
+        args[0] = getInputHint();
+        System.arraycopy(messageParameters, 0, args, 1, messageParameters.length);
+
+        return args;
+    }
 
     @Override
     public boolean equals(Object o) {

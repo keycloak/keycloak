@@ -8,10 +8,14 @@ import org.keycloak.validate.builtin.LengthValidator;
 import org.keycloak.validate.builtin.NotBlankValidator;
 import org.keycloak.validate.builtin.NotEmptyValidator;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
@@ -87,6 +91,45 @@ public class ValidatorTest {
         Assert.assertEquals(input, error.getMessageParameters()[0]);
     }
 
+    @Test
+    public void acceptOnError() {
+
+        AtomicBoolean bool1 = new AtomicBoolean();
+        BuiltinValidators.notEmpty().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
+        Assert.assertFalse(bool1.get());
+
+        AtomicBoolean bool2 = new AtomicBoolean();
+        BuiltinValidators.notEmpty().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
+        Assert.assertTrue(bool2.get());
+    }
+
+    @Test
+    public void forEachError() {
+
+        List<String> errors = new ArrayList<>();
+        MockAddress faultyAddress = new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany");
+        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e ->  {
+            errors.add(e.getMessage());
+        });
+
+        Assert.assertEquals(Arrays.asList("error-invalid-blank", "error-invalid-value"), errors);
+    }
+
+    @Test
+    public void formatError() {
+
+        Map<String, String> miniResourceBundle = new HashMap<>();
+        miniResourceBundle.put("error-invalid-blank", "{0} is blank: <{1}>");
+        miniResourceBundle.put("error-invalid-value", "{0} is invalid: <{1}>");
+
+        List<String> errors = new ArrayList<>();
+        MockAddress faultyAddress = new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany");
+        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e ->  {
+            errors.add(e.formatMessage((message, args) -> MessageFormat.format(miniResourceBundle.getOrDefault(message, message), args)));
+        });
+
+        Assert.assertEquals(Arrays.asList("address.street is blank: <>", "address.zip is invalid: <null>"), errors);
+    }
 
     @Test
     public void multipleValidations() {
