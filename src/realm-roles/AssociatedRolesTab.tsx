@@ -89,16 +89,9 @@ export const AssociatedRolesTab = ({
     return _.sortBy(rolesList, (role) => role.name?.toUpperCase());
   };
 
-  const loader = async (first?: number, max?: number, search?: string) => {
+  const loader = async () => {
     if (isInheritedHidden) {
-      const filteredRoles = additionalRoles.filter(
-        (role) =>
-          !search ||
-          role.name?.toLowerCase().includes(search) ||
-          role.description?.toLowerCase().includes(search)
-      );
-      const roles = alphabetize(filteredRoles);
-      return roles;
+      return alphabetize(additionalRoles);
     }
 
     const fetchedRoles: Promise<RoleRepresentation[]> = additionalRoles.reduce(
@@ -113,14 +106,7 @@ export const AssociatedRolesTab = ({
     );
 
     return fetchedRoles.then((results: RoleRepresentation[]) => {
-      const filteredRoles = results.filter(
-        (role) =>
-          !search ||
-          role.name?.toLowerCase().includes(search) ||
-          role.description?.toLowerCase().includes(search)
-      );
-      const roles = alphabetize(filteredRoles);
-      return roles;
+      return alphabetize(results);
     });
   };
 
@@ -205,7 +191,6 @@ export const AssociatedRolesTab = ({
         <KeycloakDataTable
           key={key}
           loader={loader}
-          isPaginated
           ariaLabelKey="roles:roleList"
           searchPlaceholderKey="roles:searchFor"
           canSelectAll
@@ -280,8 +265,8 @@ export const AssociatedRolesTab = ({
           emptyState={
             <ListEmptyState
               hasIcon={true}
-              message={t("noRolesInThisRealm")}
-              instructions={t("noRolesInThisRealmInstructions")}
+              message={t("noRoles")}
+              instructions={t("noRolesInstructions")}
               primaryActionText={t("createRole")}
               onPrimaryAction={goToCreate}
             />
