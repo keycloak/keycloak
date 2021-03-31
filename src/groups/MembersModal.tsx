@@ -42,7 +42,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
 
     try {
       const users = await adminClient.users.find({ ...params });
-      return _.xorBy(users, members, "id").slice(0, max);
+      return _.differenceBy(users, members, "id").slice(0, max);
     } catch (error) {
       addAlert(t("noUsersFoundError", { error }), AlertVariant.danger);
       return [];
