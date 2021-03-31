@@ -25,11 +25,14 @@ import { LdapMapperHardcodedLdapGroup } from "./LdapMapperHardcodedLdapGroup";
 import { LdapMapperHardcodedLdapAttribute } from "./LdapMapperHardcodedLdapAttribute";
 import { LdapMapperHardcodedAttribute } from "./LdapMapperHardcodedAttribute";
 
+import { LdapMapperRoleGroup } from "./LdapMapperRoleGroup";
+
 import { useRealm } from "../../../context/realm-context/RealmContext";
 
 export const LdapMappingDetails = () => {
   const form = useForm<ComponentRepresentation>();
   const [mapper, setMapper] = useState<ComponentRepresentation>();
+
   const adminClient = useAdminClient();
   const { mapperId } = useParams<{ mapperId: string }>();
   const history = useHistory();
@@ -124,6 +127,11 @@ export const LdapMappingDetails = () => {
         {mapper
           ? mapper.providerId! === "hardcoded-attribute-mapper" && (
               <LdapMapperHardcodedAttribute form={form} />
+            )
+          : ""}
+        {mapper
+          ? mapper.providerId! === "role-ldap-mapper" && (
+              <LdapMapperRoleGroup form={form} />
             )
           : ""}
         <Form onSubmit={form.handleSubmit(save)}>
