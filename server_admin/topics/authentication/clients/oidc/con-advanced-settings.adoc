@@ -73,8 +73,7 @@ The client must pass its public key for encrypting CEK to {project_name}. {proje
 
 The procedure is:
 
-. Open the client's *Credentials* tab.
-. Select *Signed Jwt* from the *Client Authenticator* menu.
+. Open the client's *Keys* tab.
 . Toggle *JWKS URL* to ON.
 . Input the client's public key URL in the *JWKS URL* textbox.
 

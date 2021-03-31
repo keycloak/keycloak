@@ -89,6 +89,25 @@ This can be configured through the admin console on the client details page or t
 to contain the list of Request URI values, which are permitted for the particular client. This is to avoid SSRF attacks. There is possibility to use wildcards
 or relative paths similarly such as the `Valid Redirect URIs` option, however for security purposes, we typically recommend to use as specific value
 as possible.
+=======
+=== Migrating to 13.0.0
+
+==== Upgrade to Wildfly 22
+
+The {project_name} server was upgraded to use Wildfly 22 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+
+Dependency updates::
+  The dependencies were updated to the versions used by Wildfly 22 server. For example, Infinispan is now `11.0.8.Final`.
+
+Configuration changes::
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some
+  configuration changes on your own, the list of the most important changes follows:
+  * The link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Config_SmallRye[Eclipse MicroProfile Config], link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Health_SmallRye[Eclipse MicroProfile Health], and link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Metrics_SmallRye[Eclipse MicroProfile Metrics] subsystems were replaced by link:https://docs.wildfly.org/22/Admin_Guide.html#Health[WildFly subsystem for health] and link:https://docs.wildfly.org/22/Admin_Guide.html#MicroProfile_Metrics_SmallRye[WildFly subsystem for base metrics].
+
+  * The default Wildfly configuration now utilizes the ability to make use of an automatically generated self-signed certificate with Elytron. Refer to link:https://docs.wildfly.org/22/WildFly_Elytron_Security.html#update-wildfly-to-use-the-default-elytron-components-for-application-authentication[a dedicated `applicationSSC` server SSL context section] for details.
+>>>>>>> integrated latest changes into new files
 
 === Migrating to 12.0.0
 

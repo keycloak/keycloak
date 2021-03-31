@@ -36,8 +36,14 @@ How long you wait to delete old keys is a tradeoff between security and making s
 In general it should be acceptable to drop old keys after a few weeks. Users that have not been active in the period
 between the new keys where added and the old keys removed will have to re-authenticate.
 
+<<<<<<< HEAD
 This also applies to offline tokens. To make sure they are updated the applications need to refresh the tokens before
 the old keys are removed.
+=======
+The frequency of deleting old keys is a tradeoff between security and making sure all cookies and tokens are updated. Consider creating new keys every three to six months and deleting old keys one to two months after you create the new keys. If a user was inactive in the period between the new keys being added and the old keys being removed, that user will have to re-authenticate.
+
+Rotating keys also applies to offline tokens. To make sure they are updated, the applications need to refresh the tokens before the old keys are removed.
+>>>>>>> integrated latest changes into new files
 
 As a guideline, it may be a good idea to create new keys every 3-6 months and delete old keys 1-2 months after the new
 keys were created.

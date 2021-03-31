@@ -64,7 +64,7 @@ This option is used when {project_name} server and adapter provide the IDP and S
 
 *Encrypt Assertions*:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits. 
 
-*Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} validates this signature using the client public key or certificate set up in the *SAML Keys* tab.
+*Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} will validate this signature using the client public key or cert set up in the `Keys` tab.
 
 *Force POST Binding*:: By default, {project_name} responds using the initial SAML binding of the original request. By enabling *Force POST Binding*, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
 

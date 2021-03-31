@@ -32,6 +32,10 @@ _Bearer-only_::
 
 *Direct Access Grants Enabled*:: When enabled, clients can use the OIDC xref:_oidc-auth-flows-direct[Direct Access Grants].
 
+*OAuth 2.0 Device Authorization Grant Enabled*
+
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Device Authorization Grant>>.
+
 *Root URL*:: This value adds a prefix to any configured URLS that {project_name} uses.
 
 *Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. You can use wildcards at the end of the URL pattern. For example $$http://host.com/*$$

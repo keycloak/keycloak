@@ -37,7 +37,7 @@ When you attempt to change the non-LDAP mapped user data, the user update is not
 
 ==== Edit Mode
 
-Users and admins can modify user metadata, users through the <<_account-service, Account Console>>, and admins through the admin console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
+Users and admins can modify user metadata, users through the <<_account-service, Account Console>>, and administrators through the Admin Console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
 
 READONLY::
 You cannot change the username, email, first name, last name, and other mapped attributes. {project_name} shows an error anytime a user attempts to update these fields. Password updates are not supported.
@@ -72,7 +72,7 @@ Hover the mouse pointer over the tooltips in the Admin Console to see more detai
 
 ==== Connecting to LDAP over SSL
 
-When you configure a secure connection URL to your LDAP store (for example,`ldaps://myhost.com:636'), {project_name} uses SSL to communicate with the LDAP server. Configure a truststore on the {project_name} server side so that {project_name} can trust the SSL connection to LDAP.
+When you configure a secure connection URL to your LDAP store (for example,`ldaps://myhost.com:636`), {project_name} uses SSL to communicate with the LDAP server. Configure a truststore on the {project_name} server side so that {project_name} can trust the SSL connection to LDAP.
 
 Configure the global truststore for {project_name} with the Truststore SPI. For more information about configuring the global truststore, see the link:{installguide_link}[{installguide_name}]. If you do not configure the Truststore SPI, the truststore falls back to the default mechanism provided by Java, which can be the file supplied by the `javax.net.ssl.trustStore` system property or the cacerts file from the JDK if the system property is unset.
 
@@ -144,13 +144,24 @@ When {project_name} updates a password, {project_name} sends the password in pla
 
 By default, LDAP servers such as MSAD, RHDS, or FreeIPA hash and salt passwords. Other LDAP servers such as OpenLDAP or ApacheDS store the passwords in plain-text unless you use the _LDAPv3 Password Modify Extended Operation_ as described in https://tools.ietf.org/html/rfc3062[RFC3062]. Enable the LDAPv3 Password Modify Extended Operation in the LDAP configuration page. See the documentation of your LDAP server for more details.
 
+<<<<<<< HEAD
 WARNING: Always verify that user passwords are properly hashed and not stored as plaintext by inspecting a changed
 directory entry using `ldapsearch` and base64 decode the `userPassword` attribute value.
+=======
+[WARNING]
+====
+Always verify that user passwords are properly hashed and not stored as plaintext by inspecting a changed directory entry using `ldapsearch` and base64 decode the `userPassword` attribute value.
+====
+>>>>>>> integrated latest changes into new files
 
 [[_ldap_troubleshooting]]
 ==== Troubleshooting
 
+<<<<<<< HEAD
 - It is useful to increase the logging level to TRACE for the category `org.keycloak.storage.ldap`. You increase this level in the logging
+=======
+It is useful to increase the logging level to TRACE for the category `org.keycloak.storage.ldap`. You increase this level in the logging
+>>>>>>> integrated latest changes into new files
 subsystem in the `standalone(-ha).xml` file. With this setting, many logging messages are sent
 to the `server.log` file in the `TRACE` level, including the logging for all queries to the LDAP server and the parameters, which were
 used to send the queries. When you are creating any LDAP question on user forum or JIRA, consider attaching the server log with
@@ -158,7 +169,11 @@ enabled TRACE logging. If it is too big, the good alternative is to include just
 added to the log during the operation, which causes the issues to you.
 
 
+<<<<<<< HEAD
 - When you create LDAP provider, message appear in the server log in the INFO level starting with:
+=======
+ When you create LDAP provider, message appear in the server log in the INFO level starting with:
+>>>>>>> integrated latest changes into new files
 ```
 Creating new LDAP Store for the LDAP storage provider: ...
 ```
@@ -172,7 +187,11 @@ Mapper for provider: XXX, Mapper name: YYY, Provider: ZZZ ...
 ```
 Note those messages are displayed just with the enabled DEBUG logging.
 
+<<<<<<< HEAD
 - For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
+=======
+For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
+>>>>>>> integrated latest changes into new files
 the LDAP provider to value `all`. This will add lots of additional messages to server log with the included logging for the LDAP connection
 pooling. This can be used to track the issues related to connection pooling or performance.
 
@@ -182,7 +201,14 @@ of the LDAP provider connection.
 If no more messages appear for connection pooling even after server restart, it can indicate that connection pooling does not work
 with your LDAP server.
 
+<<<<<<< HEAD
 - For the case of reporting LDAP issue, you may consider to attach some part of your LDAP tree with the target data, which causes issues
 in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
 of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
 in {project_name} etc.
+=======
+For the case of reporting LDAP issue, you may consider to attach some part of your LDAP tree with the target data, which causes issues
+in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
+of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
+in {project_name} and so on.
+>>>>>>> integrated latest changes into new files

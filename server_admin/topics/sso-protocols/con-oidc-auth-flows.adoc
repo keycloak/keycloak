@@ -71,3 +71,11 @@ The HTTP response contains the _identity_, _access_, and _refresh_ tokens.
 The _Client Credentials Grant_ creates a token based on the metadata and permissions of a service account associated with the client instead of obtaining a token that works on behalf of an external user. _Client Credentials Grants_ are used by REST clients.
 
 See the <<_service_accounts,Service Accounts>> chapter for more information.
+
+===== Device Authorization Grant
+
+This is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser. Here's a brief summary of the protocol:
+
+. The application requests {project_name} a device code and a user code. {project_name} creates a device code and a user code. {project_name} returns a response including the device code and the user code to the application.
+. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
+. The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.

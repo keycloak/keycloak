@@ -23,3 +23,11 @@ https://localhost:8080/auth
 
 /realms/{realm-name}/protocol/openid-connect/revoke::
   Used for OAuth 2.0 Token Revocation described in https://tools.ietf.org/html/rfc7009[RFC7009].
+
+/realms/{realm-name}/protocol/openid-connect/certs::
+  Used for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)
+  
+/realms/{realm-name}/protocol/openid-connect/auth/device::
+  Used for Device Authorization Grant to obtain a device code and a user code.
+
+In all of these, replace {realm-name} with the name of the realm.
