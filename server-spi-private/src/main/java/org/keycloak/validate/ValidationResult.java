@@ -32,11 +32,6 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
     public static final ValidationResult OK = new ValidationResult(true, Collections.emptySet());
 
     /**
-     * An empty ValidationResult that's invalid by default.
-     */
-    public static final ValidationResult INVALID = new ValidationResult(false, Collections.emptySet());
-
-    /**
      * Holds the validation status.
      */
     private final boolean valid;

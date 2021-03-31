@@ -92,7 +92,7 @@ public class Validators {
 
     /**
      * Validates the {@link ValidatorConfig} of {@link Validator} referenced by the given provider {@code id}.
-     * 
+     *
      * @param id
      * @param config
      * @return
@@ -102,6 +102,7 @@ public class Validators {
         return validateConfig(session, id, config);
     }
 
+//    Note, this is just here to demonstrate type specific Validator implementations and will be removed during final polishing.
 
 //   public interface ClientModelValidator {
 //      boolean hasValidUrls();
@@ -225,6 +226,7 @@ public class Validators {
             return validatorFactory.validateConfig(config);
         }
 
-        return ValidationResult.INVALID;
+        // We could not find a ValidationFactory to validate that config, so we assume the config is valid.
+        return ValidationResult.OK;
     }
 }
