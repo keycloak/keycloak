@@ -137,7 +137,7 @@
     "writeOnly": "Write only",
 
     "ldapGroupsDn": "LDAP groups DN",
-    "groupNameLDAPAttribute": "Group name LDAP attribute",
+    "groupNameLdapAttribute": "Group name LDAP attribute",
     "groupObjectClasses": "Group object classes",
     "preserveGroupInheritance": "Preserve group inheritance",
     "ignoreMissingGroups": "Ignore missing groups",
@@ -153,7 +153,7 @@
     "mode": "Mode",
     "memberofLdapAttribute": "Member-of LDAP attribute",
 
-    "ldapRolesDN": "LDAP roles DN",
+    "ldapRolesDn": "LDAP roles DN",
     "roleNameLdapAttribute": "Role name LDAP attribute",
     "roleObjectClasses": "Role object classes",
     "userRolesRetrieveStrategy": "User roles retrieve strategy",

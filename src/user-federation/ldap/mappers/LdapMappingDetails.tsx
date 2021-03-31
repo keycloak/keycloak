@@ -130,8 +130,9 @@ export const LdapMappingDetails = () => {
             )
           : ""}
         {mapper
-          ? mapper.providerId! === "role-ldap-mapper" && (
-              <LdapMapperRoleGroup form={form} />
+          ? (mapper.providerId! === "role-ldap-mapper" ||
+              mapper.providerId! === "group-ldap-mapper") && (
+              <LdapMapperRoleGroup form={form} type={mapper.providerId} />
             )
           : ""}
         <Form onSubmit={form.handleSubmit(save)}>
