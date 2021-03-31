@@ -2,6 +2,7 @@ import React from "react";
 import {
   AlertVariant,
   Button,
+  ButtonVariant,
   Form,
   FormGroup,
   Modal,
@@ -72,6 +73,16 @@ export const GroupsModal = ({
           form="group-form"
         >
           {t(rename ? "rename" : "create")}
+        </Button>,
+        <Button
+          id="modal-cancel"
+          key="cancel"
+          variant={ButtonVariant.secondary}
+          onClick={() => {
+            handleModalToggle();
+          }}
+        >
+          {t("common:cancel")}
         </Button>,
       ]}
     >
