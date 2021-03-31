@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrayField, UseFormMethods } from "react-hook-form";
 import { ActionGroup, Button, TextInput } from "@patternfly/react-core";
@@ -68,9 +68,11 @@ export const AttributesForm = ({
 
   const watchLast = watch(`attributes[${fields.length - 1}].key`, "");
 
-  if (fields.length === 0) {
-    append({ key: "", value: "" });
-  }
+  useEffect(() => {
+    if (fields.length === 0) {
+      append({ key: "", value: "" });
+    }
+  }, [fields]);
 
   return (
     <>
