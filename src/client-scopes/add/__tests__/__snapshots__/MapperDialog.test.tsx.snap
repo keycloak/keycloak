@@ -1260,6 +1260,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                             expandId="expandable-toggle"
                             gridBreakPoint="grid-md"
                             isStickyHeader={false}
+                            isTreeTable={false}
                             onSelect={[Function]}
                             ouiaSafe={true}
                             role="grid"
@@ -1989,6 +1990,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                               }
                               gridBreakPoint="grid-md"
                               isStickyHeader={false}
+                              isTreeTable={false}
                               ouiaSafe={true}
                               renderers={
                                 Object {
@@ -2011,6 +2013,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                 className=""
                                 gridBreakPoint="grid-md"
                                 isStickyHeader={false}
+                                isTreeTable={false}
                                 ouiaSafe={true}
                                 role="grid"
                                 variant="compact"
@@ -2022,6 +2025,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                   gridBreakPoint="grid-md"
                                   innerRef={null}
                                   isStickyHeader={false}
+                                  isTreeTable={false}
                                   ouiaSafe={true}
                                   role="grid"
                                   variant="compact"
