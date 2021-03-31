@@ -274,15 +274,7 @@ export const ClientDetails = () => {
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <KeycloakTabs
-            isBox
-            inset={{
-              default: "insetNone",
-              md: "insetSm",
-              xl: "inset2xl",
-              "2xl": "insetLg",
-            }}
-          >
+          <KeycloakTabs isBox>
             <Tab
               id="settings"
               eventKey="settings"

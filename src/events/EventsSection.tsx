@@ -52,8 +52,12 @@ export const EventsSection = () => {
 
   return (
     <>
-      <ViewHeader titleKey="events:title" subKey="events:eventExplain" />
-      <PageSection variant="light">
+      <ViewHeader
+        titleKey="events:title"
+        subKey="events:eventExplain"
+        divider={false}
+      />
+      <PageSection variant="light" className="pf-u-p-0">
         <KeycloakTabs isBox>
           <Tab
             eventKey="userEvents"

@@ -90,15 +90,7 @@ export const ClientsSection = () => {
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs
-          isBox
-          inset={{
-            default: "insetNone",
-            md: "insetSm",
-            xl: "inset2xl",
-            "2xl": "insetLg",
-          }}
-        >
+        <KeycloakTabs isBox>
           <Tab
             data-testid="list"
             eventKey="list"

@@ -1,7 +1,11 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFieldArray, useForm } from "react-hook-form";
-import { AlertVariant } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  PageSection,
+  PageSectionVariants,
+} from "@patternfly/react-core";
 
 import { useAlerts } from "../components/alert/Alerts";
 import {
@@ -58,15 +62,17 @@ export const GroupAttributes = () => {
   };
 
   return (
-    <AttributesForm
-      form={form}
-      save={save}
-      array={{ fields, append, remove }}
-      reset={() =>
-        form.reset({
-          attributes: convertAttributes(),
-        })
-      }
-    />
+    <PageSection variant={PageSectionVariants.light}>
+      <AttributesForm
+        form={form}
+        save={save}
+        array={{ fields, append, remove }}
+        reset={() =>
+          form.reset({
+            attributes: convertAttributes(),
+          })
+        }
+      />
+    </PageSection>
   );
 };

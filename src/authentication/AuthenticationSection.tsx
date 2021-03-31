@@ -185,8 +185,8 @@ export const AuthenticationSection = () => {
           }}
         />
       )}
-      <ViewHeader titleKey="authentication:title" subKey="" />
-      <PageSection variant="light">
+      <ViewHeader titleKey="authentication:title" subKey="" divider={false} />
+      <PageSection variant="light" className="pf-u-p-0">
         <KeycloakTabs isBox>
           <Tab
             eventKey="flows"

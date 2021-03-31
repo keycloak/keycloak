@@ -47,7 +47,7 @@ export const SessionsSection = () => {
   return (
     <>
       <ViewHeader titleKey="sessions:title" subKey="sessions:sessionExplain" />
-      <PageSection variant="light">
+      <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable
           loader={loader}
           ariaLabelKey="session:title"

@@ -112,7 +112,8 @@ export const GroupsSection = () => {
       )}
       <ViewHeader
         titleKey="groups:groups"
-        subKey="groups:groupsDescription"
+        subKey={!id ? "groups:groupsDescription" : ""}
+        divider={!id}
         dropdownItems={
           id
             ? [
@@ -143,11 +144,16 @@ export const GroupsSection = () => {
             : [SearchDropdown]
         }
       />
-      <PageSection variant={PageSectionVariants.light}>
+      <PageSection variant={PageSectionVariants.light} className="pf-u-p-0">
         {subGroups.length > 0 && (
           <Tabs
+            inset={{
+              default: "insetNone",
+              md: "insetSm",
+              xl: "inset2xl",
+              "2xl": "insetLg",
+            }}
             activeKey={activeTab}
-            isSecondary
             onSelect={(_, key) => setActiveTab(key as number)}
             isBox
           >

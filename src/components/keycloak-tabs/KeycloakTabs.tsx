@@ -39,6 +39,12 @@ export const KeycloakTabs = ({
   const path = match.path.substr(0, pathIndex);
   return (
     <Tabs
+      inset={{
+        default: "insetNone",
+        md: "insetSm",
+        xl: "inset2xl",
+        "2xl": "insetLg",
+      }}
       activeKey={tab}
       onSelect={(_, key) =>
         history.push(createUrl(path, { ...params, [paramName]: key as string }))
