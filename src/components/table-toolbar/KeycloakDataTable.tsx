@@ -16,13 +16,13 @@ import { Spinner } from "@patternfly/react-core";
 import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
-import { TableToolbar } from "./TableToolbar";
 import { asyncStateFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 
 type Row<T> = {
   data: T;
   selected: boolean;
+  disableSelection: boolean;
   cells: (keyof T | JSX.Element)[];
 };
 
@@ -89,6 +89,7 @@ export type DataListProps<T> = {
   loader: (first?: number, max?: number, search?: string) => Promise<T[]>;
   onSelect?: (value: T[]) => void;
   canSelectAll?: boolean;
+  isRowDisabled?: (value: T) => boolean;
   isPaginated?: boolean;
   ariaLabelKey: string;
   searchPlaceholderKey?: string;
@@ -128,6 +129,7 @@ export function KeycloakDataTable<T>({
   isPaginated = false,
   onSelect,
   canSelectAll = false,
+  isRowDisabled,
   loader,
   columns,
   actions,
@@ -191,6 +193,7 @@ export function KeycloakDataTable<T>({
     return data!.map((value) => {
       return {
         data: value,
+        disableSelection: isRowDisabled ? isRowDisabled(value) : false,
         selected: !!selected.find((v) => (v as any).id === (value as any).id),
         cells: columns.map((col) => {
           if (col.cellRenderer) {
