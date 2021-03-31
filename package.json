@@ -18,10 +18,10 @@
     "start:cypress-tests": "cypress run"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.90.3",
-    "@patternfly/react-core": "4.101.2",
-    "@patternfly/react-icons": "4.9.4",
-    "@patternfly/react-table": "4.23.13",
+    "@patternfly/patternfly": "^4.96.2",
+    "@patternfly/react-core": "4.106.1",
+    "@patternfly/react-icons": "4.9.9",
+    "@patternfly/react-table": "4.24.0",
     "file-saver": "^2.0.2",
     "i18next": "^19.6.2",
     "keycloak-admin": "1.14.10",
