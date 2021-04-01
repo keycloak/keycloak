@@ -126,6 +126,36 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginClientCertSignedByIntermediateCA() throws Exception {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setOCSPEnabled(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        String keyStorePath = Paths.get(System.getProperty("client.certificate.keystore"))
+                .getParent().resolve("test-user-cert-intermediary-ca.jks").toString();
+        String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
+        String trustStorePath = System.getProperty("client.truststore");
+        String trustStorePassword = System.getProperty("client.truststore.passphrase");
+        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
+        try {
+            oauth.clientId("resource-owner");
+            oauth.httpClient(() -> OAuthClient.newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword));
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+            // now it's OK because the certificate is fixed
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        } finally {
+            oauth.httpClient(previous);
+        }
+    }
+
+    @Test
     public void loginOKOnOCSPResponderRevocationCheckWithoutCA() throws Exception {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()

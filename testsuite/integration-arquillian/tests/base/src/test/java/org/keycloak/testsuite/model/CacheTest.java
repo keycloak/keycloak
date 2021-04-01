@@ -136,14 +136,14 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {  
         	RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("joel", realm);
+            UserModel user = session.users().getUserByUsername(realm, "joel");
             long grantedRolesCount = user.getRoleMappingsStream().count();
 
             ClientModel client = realm.getClientByClientId("foo");
             realm.removeClient(client.getId());
 
             realm = session.realms().getRealmByName("test");
-            user = session.users().getUserByUsername("joel", realm);
+            user = session.users().getUserByUsername(realm, "joel");
         
             Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             for (RoleModel role : roles) {

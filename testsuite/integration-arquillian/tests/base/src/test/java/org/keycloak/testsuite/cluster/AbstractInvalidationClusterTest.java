@@ -9,10 +9,15 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
+import static org.keycloak.common.util.reflections.Reflections.resolveListType;
+import static org.keycloak.common.util.reflections.Reflections.setAccessible;
+import static org.keycloak.common.util.reflections.Reflections.unsetAccessible;
 
 /**
  *
@@ -44,28 +49,37 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
     public void crud(boolean backendFailover) {
         T testEntity = createTestEntityRepresentation();
 
-        // CREATE 
+        // CREATE
+        log.info("(1) createEntityOnCurrentFailNode");
         testEntity = createEntityOnCurrentFailNode(testEntity);
 
         if (backendFailover) {
+            log.info("(2) failure");
             failure();
         }
 
+        log.info("(3) assertEntityOnSurvivorNodesEqualsTo");
         assertEntityOnSurvivorNodesEqualsTo(testEntity);
 
+        log.info("(4) failback");
         failback();
+        log.info("(5) iterateCurrentFailNode");
         iterateCurrentFailNode();
 
         // UPDATE(s)
+        log.info("(6) testEntityUpdates");
         testEntity = testEntityUpdates(testEntity, backendFailover);
 
         // DELETE 
+        log.info("(7) deleteEntityOnCurrentFailNode");
         deleteEntityOnCurrentFailNode(testEntity);
 
         if (backendFailover) {
+            log.info("(8) failure");
             failure();
         }
 
+        log.info("(9) assertEntityOnSurvivorNodesIsDeleted");
         assertEntityOnSurvivorNodesIsDeleted(testEntity);
     }
 
@@ -131,8 +145,10 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
     protected void assertEntityOnSurvivorNodesEqualsTo(T testEntityOnFailNode) {
         boolean entityDiffers = false;
         for (ContainerInfo survivorNode : getCurrentSurvivorNodes()) {
+            log.debug(String.format("Attempt to verify %s on survivor %s (%s)", getEntityType(testEntityOnFailNode), survivorNode, survivorNode.getContextRoot()));
             T testEntityOnSurvivorNode = readEntity(testEntityOnFailNode, survivorNode);
-            if (EqualsBuilder.reflectionEquals(testEntityOnSurvivorNode, testEntityOnFailNode, excludedComparisonFields)) {
+
+            if (EqualsBuilder.reflectionEquals(sortFields(testEntityOnSurvivorNode), sortFields(testEntityOnFailNode), excludedComparisonFields)) {
                 log.info(String.format("Verification of %s on survivor %s PASSED", getEntityType(testEntityOnFailNode), survivorNode));
             } else {
                 entityDiffers = true;
@@ -147,6 +163,29 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
             }
         }
         assertFalse(entityDiffers);
+    }
+
+    private T sortFields(T entity) {
+        for (Field field : entity.getClass().getDeclaredFields()) {
+            try {
+                Class<?> type = resolveListType(field, entity);
+
+                if (type != null && Comparable.class.isAssignableFrom(type)) {
+                    setAccessible(field);
+                    Object value = field.get(entity);
+
+                    if (value != null) {
+                        Collections.sort((List) value);
+                    }
+                }
+            } catch (IllegalAccessException cause) {
+                throw new RuntimeException("Failed to sort field [" + field + "]", cause);
+            } finally {
+                unsetAccessible(field);
+            }
+        }
+
+        return entity;
     }
 
     private void assertEntityOnSurvivorNodesIsDeleted(T testEntityOnFailNode) {

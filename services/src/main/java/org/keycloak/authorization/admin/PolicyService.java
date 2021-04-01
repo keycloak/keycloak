@@ -22,11 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -280,8 +280,8 @@ public class PolicyService {
         }
 
         return Response.ok(
-                authorization.getProviderFactories().stream()
-                        .filter(factory -> !factory.isInternal())
+                authorization.getProviderFactoriesStream()
+                        .filter(((Predicate<PolicyProviderFactory>) PolicyProviderFactory::isInternal).negate())
                         .map(factory -> {
                             PolicyProviderRepresentation representation = new PolicyProviderRepresentation();
 

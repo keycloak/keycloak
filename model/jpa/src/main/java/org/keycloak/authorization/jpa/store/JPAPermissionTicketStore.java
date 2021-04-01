@@ -26,7 +26,6 @@ import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -43,6 +42,8 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.LockModeType;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -54,6 +55,71 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     public JPAPermissionTicketStore(EntityManager entityManager, AuthorizationProvider provider) {
         this.entityManager = entityManager;
         this.provider = provider;
+    }
+
+    @Override
+    public long count(Map<String, String> attributes, String resourceServerId) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> querybuilder = builder.createQuery(Long.class);
+        Root<PermissionTicketEntity> root = querybuilder.from(PermissionTicketEntity.class);
+
+        querybuilder.select(root.get("id"));
+
+        List<Predicate> predicates = getPredicates(builder, root, resourceServerId, attributes);
+
+        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("id")));
+
+        TypedQuery query = entityManager.createQuery(querybuilder);
+
+        return query.getResultStream().count();
+    }
+
+    private List<Predicate> getPredicates(CriteriaBuilder builder,
+                                          Root<PermissionTicketEntity> root,
+                                          String resourceServerId,
+                                          Map<String, String> attributes) {
+        List<Predicate> predicates = new ArrayList();
+
+        if (resourceServerId != null) {
+            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        }
+
+        attributes.forEach((name, value) -> {
+            if (PermissionTicket.ID.equals(name)) {
+                predicates.add(root.get(name).in(value));
+            } else if (PermissionTicket.SCOPE.equals(name)) {
+                predicates.add(root.join("scope").get("id").in(value));
+            } else if (PermissionTicket.SCOPE_IS_NULL.equals(name)) {
+                if (Boolean.valueOf(value)) {
+                    predicates.add(builder.isNull(root.get("scope")));
+                } else {
+                    predicates.add(builder.isNotNull(root.get("scope")));
+                }
+            } else if (PermissionTicket.RESOURCE.equals(name)) {
+                predicates.add(root.join("resource").get("id").in(value));
+            } else if (PermissionTicket.RESOURCE_NAME.equals(name)) {
+                predicates.add(root.join("resource").get("name").in(value));
+            } else if (PermissionTicket.OWNER.equals(name)) {
+                predicates.add(builder.equal(root.get("owner"), value));
+            } else if (PermissionTicket.REQUESTER.equals(name)) {
+                predicates.add(builder.equal(root.get("requester"), value));
+            } else if (PermissionTicket.GRANTED.equals(name)) {
+                if (Boolean.valueOf(value)) {
+                    predicates.add(builder.isNotNull(root.get("grantedTimestamp")));
+                } else {
+                    predicates.add(builder.isNull(root.get("grantedTimestamp")));
+                }
+            } else if (PermissionTicket.REQUESTER_IS_NULL.equals(name)) {
+                predicates.add(builder.isNull(root.get("requester")));
+            } else if (PermissionTicket.POLICY_IS_NOT_NULL.equals(name)) {
+                predicates.add(builder.isNotNull(root.get("policy")));
+            } else if (PermissionTicket.POLICY.equals(name)) {
+                predicates.add(root.join("policy").get("id").in(value));
+            } else {
+                throw new RuntimeException("Unsupported filter [" + name + "]");
+            }
+        });
+        return predicates;
     }
 
     @Override
@@ -176,61 +242,13 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         querybuilder.select(root.get("id"));
 
-        List<Predicate> predicates = new ArrayList();
-
-        if (resourceServerId != null) {
-            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
-        }
-
-        attributes.forEach((name, value) -> {
-            if (PermissionTicket.ID.equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else if (PermissionTicket.SCOPE.equals(name)) {
-                predicates.add(root.join("scope").get("id").in(value));
-            } else if (PermissionTicket.SCOPE_IS_NULL.equals(name)) {
-                if (Boolean.valueOf(value)) {
-                    predicates.add(builder.isNull(root.get("scope")));
-                } else {
-                    predicates.add(builder.isNotNull(root.get("scope")));
-                }
-            } else if (PermissionTicket.RESOURCE.equals(name)) {
-                predicates.add(root.join("resource").get("id").in(value));
-            } else if (PermissionTicket.RESOURCE_NAME.equals(name)) {
-                predicates.add(root.join("resource").get("name").in(value));
-            } else if (PermissionTicket.OWNER.equals(name)) {
-                predicates.add(builder.equal(root.get("owner"), value));
-            } else if (PermissionTicket.REQUESTER.equals(name)) {
-                predicates.add(builder.equal(root.get("requester"), value));
-            } else if (PermissionTicket.GRANTED.equals(name)) {
-                if (Boolean.valueOf(value)) {
-                    predicates.add(builder.isNotNull(root.get("grantedTimestamp")));
-                } else {
-                    predicates.add(builder.isNull(root.get("grantedTimestamp")));
-                }
-            } else if (PermissionTicket.REQUESTER_IS_NULL.equals(name)) {
-                predicates.add(builder.isNull(root.get("requester")));
-            } else if (PermissionTicket.POLICY_IS_NOT_NULL.equals(name)) {
-                predicates.add(builder.isNotNull(root.get("policy")));
-            } else if (PermissionTicket.POLICY.equals(name)) {
-                predicates.add(root.join("policy").get("id").in(value));
-            } else {
-                throw new RuntimeException("Unsupported filter [" + name + "]");
-            }
-        });
+        List<Predicate> predicates = getPredicates(builder, root, resourceServerId, attributes);
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("id")));
 
-        Query query = entityManager.createQuery(querybuilder);
+        TypedQuery query = entityManager.createQuery(querybuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-
-        if (maxResult != -1) {
-            query.setMaxResults(maxResult);
-        }
-
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<PermissionTicket> list = new LinkedList<>();
         PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
 
@@ -277,13 +295,8 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         if (name != null) {
             query.setParameter("resourceName", "%" + name.toLowerCase() + "%");
         }
-        
-        if (first > -1 && max > -1) {
-            query.setFirstResult(first);
-            query.setMaxResults(max);
-        }
 
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, first, max).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
@@ -305,12 +318,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", owner);
 
-        if (first > -1 && max > -1) {
-            query.setFirstResult(first);
-            query.setMaxResults(max);
-        }
-
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, first, max).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 

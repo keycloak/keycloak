@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -206,6 +206,7 @@
                                                 <include>keycloak.truststore</include>
                                                 <include>client.jks</include>
                                                 <include>client-ca.jks</include>
+                                                <include>test-user-cert-intermediary-ca.jks</include>
                                                 <include>ca.crt</include>
                                                 <include>client.crt</include>
                                                 <include>client.key</include>

@@ -34,8 +34,9 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -54,13 +55,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Stream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static java.lang.Boolean.TRUE;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -141,12 +139,7 @@ public class ClientsResource {
                 .filter(Objects::nonNull);
 
         if (!canView) {
-            if (firstResult != null && firstResult > 0) {
-                s = s.skip(firstResult);
-            }
-            if (maxResults != null && maxResults > 0) {
-                s = s.limit(maxResults);
-            }
+            s = paginatedStream(s, firstResult, maxResults);
         }
 
         return s;
@@ -171,12 +164,8 @@ public class ClientsResource {
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
-        } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
 
-        try {
-            ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
                 UserModel serviceAccount = session.users().getServiceAccount(clientModel);
@@ -208,9 +197,13 @@ public class ClientsResource {
                         Response.Status.BAD_REQUEST);
             });
 
+            session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
+
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
 

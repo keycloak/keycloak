@@ -30,16 +30,20 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 
-import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.LockModeType;
+
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaUserCredentialStore implements UserCredentialStore {
+public class JpaUserCredentialStore implements UserCredentialStore.Streams {
 
     // Typical priority difference between 2 credentials
     public static final int PRIORITY_DIFFERENCE = 10;
@@ -106,31 +110,27 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        List<CredentialEntity> results = getStoredCredentialEntities(realm, user);
-
-        // list is ordered correctly by priority (lowest priority value first)
-        return results.stream().map(this::toModel).collect(Collectors.toList());
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        return this.getStoredCredentialEntities(realm, user).map(this::toModel);
     }
 
-    private List<CredentialEntity> getStoredCredentialEntities(RealmModel realm, UserModel user) {
+    private Stream<CredentialEntity> getStoredCredentialEntities(RealmModel realm, UserModel user) {
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByUser", CredentialEntity.class)
                 .setParameter("user", userEntity);
-        return query.getResultList();
+        return closing(query.getResultStream());
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        return getStoredCredentials(realm, user).stream().filter(credential -> type.equals(credential.getType())).collect(Collectors.toList());
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        return getStoredCredentialsStream(realm, user).filter(credential -> Objects.equals(type, credential.getType()));
     }
 
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
-        List<CredentialModel> results = getStoredCredentials(realm, user).stream().filter(credential ->
-                type.equals(credential.getType()) && name.equals(credential.getUserLabel())).collect(Collectors.toList());
-        if (results.isEmpty()) return null;
-        return results.get(0);
+        return getStoredCredentialsStream(realm, user).filter(credential ->
+                Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         entity.setUser(userRef);
 
         //add in linkedlist to last position
-        List<CredentialEntity> credentials = getStoredCredentialEntities(realm, user);
+        List<CredentialEntity> credentials = getStoredCredentialEntities(realm, user).collect(Collectors.toList());
         int priority = credentials.isEmpty() ? PRIORITY_DIFFERENCE : credentials.get(credentials.size() - 1).getPriority() + PRIORITY_DIFFERENCE;
         entity.setPriority(priority);
 
@@ -165,14 +165,11 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
         int currentPriority = entity.getPriority();
 
-        List<CredentialEntity> credentials = getStoredCredentialEntities(realm, user);
-
-        // Decrease priority of all credentials after our
-        for (CredentialEntity cred : credentials) {
+        this.getStoredCredentialEntities(realm, user).forEach(cred -> {
             if (cred.getPriority() > currentPriority) {
                 cred.setPriority(cred.getPriority() - PRIORITY_DIFFERENCE);
             }
-        }
+        });
 
         em.remove(entity);
         em.flush();
@@ -182,11 +179,9 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     ////Operations to handle the linked list of credentials
     @Override
     public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
-        List<CredentialEntity> sortedCreds = getStoredCredentialEntities(realm, user);
 
         // 1 - Create new list and move everything to it.
-        List<CredentialEntity> newList = new ArrayList<>();
-        newList.addAll(sortedCreds);
+        List<CredentialEntity> newList = this.getStoredCredentialEntities(realm, user).collect(Collectors.toList());
 
         // 2 - Find indexes of our and newPrevious credential
         int ourCredentialIndex = -1;

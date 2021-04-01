@@ -1,0 +1,60 @@
+[
+  {
+    "id": "personal-info",
+    "path": "personal-info",
+    "icon": "pf-icon-user",
+    "label": "personalInfoHtmlTitle",
+    "descriptionLabel": "personalInfoIntroMessage",
+    "modulePath": "/content/account-page/AccountPage.js",
+    "componentName": "AccountPage"
+  },
+  {
+    "id": "security",
+    "icon": "pf-icon-security",
+    "label": "accountSecurityTitle",
+    "descriptionLabel": "accountSecurityIntroMessage",
+    "content": [
+      {
+        "id": "signingin",
+        "path": "security/signingin",
+        "label": "signingIn",
+        "modulePath": "/content/signingin-page/SigningInPage.js",
+        "componentName": "SigningInPage"
+      },
+      {
+        "id": "device-activity",
+        "path": "security/device-activity",
+        "label": "device-activity",
+        "modulePath": "/content/device-activity-page/DeviceActivityPage.js",
+        "componentName": "DeviceActivityPage"
+      },
+      {
+        "id": "linked-accounts",
+        "path": "security/linked-accounts",
+        "label": "linkedAccountsHtmlTitle",
+        "modulePath": "/content/linked-accounts-page/LinkedAccountsPage.js",
+        "componentName": "LinkedAccountsPage",
+        "hidden": "!features.isLinkedAccountsEnabled"
+      }
+    ]
+  },
+  {
+    "id": "applications",
+    "icon": "pf-icon-applications",
+    "path": "applications",
+    "label": "applications",
+    "descriptionLabel": "applicationsIntroMessage",
+    "modulePath": "/content/applications-page/ApplicationsPage.js",
+    "componentName": "ApplicationsPage"
+  },
+  {
+    "id": "resources",
+    "icon": "pf-icon-repository",
+    "path": "resources",
+    "label": "resources",
+    "descriptionLabel": "resourceIntroMessage",
+    "modulePath": "/content/my-resources-page/MyResourcesPage.js",
+    "componentName": "MyResourcesPage",
+    "hidden": "!features.isMyResourcesEnabled"
+  }
+]

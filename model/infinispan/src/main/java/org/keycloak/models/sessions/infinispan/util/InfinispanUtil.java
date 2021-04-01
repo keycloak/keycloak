@@ -18,12 +18,16 @@
 package org.keycloak.models.sessions.infinispan.util;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.BasicCache;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Transport;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
@@ -64,6 +68,28 @@ public class InfinispanUtil {
     public static boolean isCoordinator(Cache cache) {
         Transport transport = cache.getCacheManager().getTransport();
         return transport == null || transport.isCoordinator();
+    }
+
+    /**
+     * Convert the given value to the proper value, which can be used when calling operations for the infinispan remoteCache.
+     *
+     * Infinispan HotRod protocol of versions older than 3.0 uses the "lifespan" or "maxIdle" as the normal expiration time when the value is 30 days or less.
+     * However for the bigger values, it assumes that the value is unix timestamp.
+     *
+     * @param ispnCache
+     * @param lifespanOrigMs
+     * @return
+     */
+    public static long toHotrodTimeMs(BasicCache ispnCache, long lifespanOrigMs) {
+        if (ispnCache instanceof RemoteCache && lifespanOrigMs > 2592000000L) {
+            RemoteCache remoteCache = (RemoteCache) ispnCache;
+            ProtocolVersion protocolVersion = remoteCache.getRemoteCacheManager().getConfiguration().version();
+            if (ProtocolVersion.PROTOCOL_VERSION_30.compareTo(protocolVersion) > 0) {
+                return Time.currentTimeMillis() + lifespanOrigMs;
+            }
+        }
+
+        return lifespanOrigMs;
     }
 
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>performance</artifactId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -778,13 +778,8 @@
                 <delete.monitoring.data>true</delete.monitoring.data>
             </properties>
         </profile>
-        
         <profile>
-            <id>sar</id>
-            <properties>
-                <gnuplot>false</gnuplot>
-                <bzip>false</bzip>
-            </properties>
+            <id>start-sar</id>
             <build>
                 <plugins>
                     <plugin>
@@ -804,6 +799,23 @@
                                     </environmentVariables>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>stop-sar</id>
+            <properties>
+                <gnuplot>false</gnuplot>
+                <bzip>false</bzip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
                             <execution>
                                 <id>stop-sar</id>
                                 <phase>post-integration-test</phase>

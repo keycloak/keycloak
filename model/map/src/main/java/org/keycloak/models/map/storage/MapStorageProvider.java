@@ -39,5 +39,5 @@ public interface MapStorageProvider extends Provider, ProviderFactory<MapStorage
      * @param flags
      * @return
      */
-    <K, V extends AbstractEntity<K>> MapStorage<K, V> getStorage(String name, Class<K> keyType, Class<V> valueType, Flag... flags);
+    <K, V extends AbstractEntity<K>, M> MapStorage<K, V, M> getStorage(String name, Class<K> keyType, Class<V> valueType, Class<M> modelType, Flag... flags);
 }

@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
@@ -26,26 +29,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientAccessTypeCondition implements ClientPolicyConditionProvider {
+public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientAccessTypeCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientAccessTypeCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
+        super(session, componentModel);
     }
 
     @Override
@@ -76,11 +65,16 @@ public class ClientAccessTypeCondition implements ClientPolicyConditionProvider 
 
     private boolean isClientAccessTypeMatched() {
         final String accessType = getClientAccessType();
-        if (logger.isTraceEnabled() ) {
+
+        List<String> expectedAccessTypes = componentModel.getConfig().get(ClientAccessTypeConditionFactory.TYPE);
+        if (expectedAccessTypes == null) expectedAccessTypes = Collections.emptyList();
+
+        if (logger.isTraceEnabled()) {
             ClientPolicyLogger.log(logger, "client access type = " + accessType);
-            componentModel.getConfig().get(ClientAccessTypeConditionFactory.TYPE).stream().forEach(i -> ClientPolicyLogger.log(logger, "client access type expected = " + i));
+            expectedAccessTypes.stream().forEach(i -> ClientPolicyLogger.log(logger, "client access type expected = " + i));
         }
-        boolean isMatched = componentModel.getConfig().get(ClientAccessTypeConditionFactory.TYPE).stream().anyMatch(i -> i.equals(accessType));
+
+        boolean isMatched = expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
         if (isMatched) {
             ClientPolicyLogger.log(logger, "client access type matched.");
         } else {

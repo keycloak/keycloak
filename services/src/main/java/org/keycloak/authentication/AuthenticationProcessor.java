@@ -54,11 +54,14 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -95,12 +98,12 @@ public class AuthenticationProcessor {
     /**
      * This could be an error message forwarded from another authenticator
      */
-    protected FormMessage forwardedErrorMessage;
+    protected ForwardedFormMessageStore forwardedErrorMessageStore = new ForwardedFormMessageStore(ForwardedFormMessageType.ERROR);
 
     /**
      * This could be an success message forwarded from another authenticator
      */
-    protected FormMessage forwardedSuccessMessage;
+    protected ForwardedFormMessageStore forwardedSuccessMessageStore = new ForwardedFormMessageStore(ForwardedFormMessageType.SUCCESS);
 
     // Used for client authentication
     protected ClientModel client;
@@ -212,12 +215,20 @@ public class AuthenticationProcessor {
     }
 
     public AuthenticationProcessor setForwardedErrorMessage(FormMessage forwardedErrorMessage) {
-        this.forwardedErrorMessage = forwardedErrorMessage;
+        this.forwardedErrorMessageStore.setForwardedMessage(forwardedErrorMessage);
         return this;
     }
 
+    FormMessage getAndRemoveForwardedErrorMessage() {
+        FormMessage formMessage = this.forwardedErrorMessageStore.getForwardedMessage();
+        if (formMessage != null) {
+            this.forwardedErrorMessageStore.removeForwardedMessage();
+        }
+        return formMessage;
+    }
+
     public AuthenticationProcessor setForwardedSuccessMessage(FormMessage forwardedSuccessMessage) {
-        this.forwardedSuccessMessage = forwardedSuccessMessage;
+        this.forwardedSuccessMessageStore.setForwardedMessage(forwardedSuccessMessage);
         return this;
     }
 
@@ -480,7 +491,7 @@ public class AuthenticationProcessor {
 
         @Override
         public FormMessage getForwardedErrorMessage() {
-            return AuthenticationProcessor.this.forwardedErrorMessage;
+            return AuthenticationProcessor.this.forwardedErrorMessageStore.getForwardedMessage();
         }
 
         @Override
@@ -513,8 +524,10 @@ public class AuthenticationProcessor {
                     .setClientSessionCode(accessCode);
             if (getForwardedErrorMessage() != null) {
                 provider.addError(getForwardedErrorMessage());
+                forwardedErrorMessageStore.removeForwardedMessage();
             } else if (getForwardedSuccessMessage() != null) {
                 provider.addSuccess(getForwardedSuccessMessage());
+                forwardedSuccessMessageStore.removeForwardedMessage();
             }
             return provider;
         }
@@ -626,7 +639,7 @@ public class AuthenticationProcessor {
 
         @Override
         public FormMessage getForwardedSuccessMessage() {
-            return AuthenticationProcessor.this.forwardedSuccessMessage;
+            return AuthenticationProcessor.this.forwardedSuccessMessageStore.getForwardedMessage();
         }
 
         public FormMessage getErrorMessage() {
@@ -802,15 +815,15 @@ public class AuthenticationProcessor {
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client credentials");
             } else if (e.getError() == AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED) {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getMessage());
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client credentials setup required");
             } else {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", e.getError().toString() + ": " + e.getMessage());
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Invalid client credentials");
             }
         } else {
             ServicesLogger.LOGGER.errorAuthenticatingClient(failure);
             event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-            return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client: " + failure.getMessage());
+            return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client");
         }
     }
 
@@ -1087,6 +1100,51 @@ public class AuthenticationProcessor {
     }
 
 
+    // This takes care of CRUD of FormMessage to the authenticationSession, so that message can be displayed on the forms in different HTTP request
+    private class ForwardedFormMessageStore {
 
+        private final String messageKey;
+
+        private ForwardedFormMessageStore(ForwardedFormMessageType messageType) {
+            this.messageKey = messageType.getKey();
+        }
+
+        private void setForwardedMessage(FormMessage message) {
+            try {
+                logger.tracef("Saving message %s to the authentication session under key %s", message, messageKey);
+                getAuthenticationSession().setAuthNote(messageKey, JsonSerialization.writeValueAsString(message));
+            } catch (IOException ioe) {
+                throw new RuntimeException("Unexpected exception when serializing formMessage: " + message, ioe);
+            }
+        }
+
+        private FormMessage getForwardedMessage() {
+            String note = getAuthenticationSession().getAuthNote(messageKey);
+            try {
+                return note == null ? null : JsonSerialization.readValue(note, FormMessage.class);
+            } catch (IOException ioe) {
+                throw new RuntimeException("Unexpected exception when deserializing formMessage JSON: " + note, ioe);
+            }
+        }
+
+        private void removeForwardedMessage() {
+            logger.tracef("Removing message %s from the authentication session", messageKey);
+            getAuthenticationSession().removeAuthNote(messageKey);
+        }
+    }
+
+    private enum ForwardedFormMessageType {
+        SUCCESS("fwMessageSuccess"), ERROR("fwMessageError");
+
+        private final String key;
+
+        private ForwardedFormMessageType(String key) {
+            this.key = key;
+        }
+
+        private String getKey() {
+            return key;
+        }
+    }
 
 }

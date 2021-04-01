@@ -17,21 +17,20 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel.ExecutionStatus;
+
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.infinispan.commons.util.concurrent.ConcurrentHashSet;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel.ExecutionStatus;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,7 +51,7 @@ public class AuthenticationSessionEntity implements Serializable {
 
     private Map<String, String> clientNotes;
     private Map<String, String> authNotes;
-    private Set<String> requiredActions  = new ConcurrentHashSet<>();
+    private Set<String> requiredActions  = ConcurrentHashMap.newKeySet();
     private Map<String, String> userSessionNotes;
 
     public AuthenticationSessionEntity() {
@@ -234,14 +233,14 @@ public class AuthenticationSessionEntity implements Serializable {
 
               MarshallUtil.unmarshallString(input),     // redirectUri
               MarshallUtil.unmarshallString(input),     // action
-              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashSet<>()),  // clientScopes
+              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // clientScopes
 
               KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, size -> new ConcurrentHashMap<>(size)), // executionStatus
               MarshallUtil.unmarshallString(input),     // protocol
 
               KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // clientNotes
               KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
-              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashSet<>()),  // requiredActions
+              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // requiredActions
               KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
             );
         }

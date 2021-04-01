@@ -64,11 +64,9 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.migration.MigrationContext;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -83,11 +81,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
@@ -120,7 +122,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
-        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
+        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "default-roles-migration", "migration-test-realm-role");
         List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
 
         if (supportsAuthzService) {
@@ -136,7 +138,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigratedMasterData() {
-        assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
+        assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "default-roles-master", "create-realm", "master-test-realm-role", "admin");
         assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", "account-console",
                 "master-realm", "master-test-client", "Migration-realm", "Migration2-realm");
         String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
@@ -283,6 +285,26 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testAdminClientPkce(migrationRealm);
         testUserLocaleActionAdded(masterRealm);
         testUserLocaleActionAdded(migrationRealm);
+    }
+
+    protected void testMigrationTo12_0_0() {
+        testDeleteAccount(masterRealm);
+        testDeleteAccount(migrationRealm);
+    }
+
+    protected void testMigrationTo13_0_0() {
+        testDefaultRoles(masterRealm);
+        testDefaultRoles(migrationRealm);
+
+        testDefaultRolesNameWhenTaken();
+    }
+
+    protected void testDeleteAccount(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+
+        assertNotNull(accountResource.roles().get(AccountRoles.DELETE_ACCOUNT).toRepresentation());
+        assertNotNull(realm.flows().getRequiredAction("delete_account"));
     }
 
     private void testAccountClient(RealmResource realm) {
@@ -557,7 +579,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
                 assertFalse("Role shouldn't be composite should be false.", role.toRepresentation().isComposite());
 
-                assertTrue("role should be added to default roles for new users", realm.toRepresentation().getDefaultRoles().contains(roleName));
+                assertThat("role should be added to default roles for new users", realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.toRepresentation().getRealm().toLowerCase()).getRoleComposites().stream()
+                        .map(RoleRepresentation::getName).collect(Collectors.toSet()), hasItem(roleName));
             }
             //test admin roles - master admin client
             List<ClientRepresentation> clients = realm.clients().findByClientId(realm.toRepresentation().getRealm() + "-realm");
@@ -889,6 +912,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo9_x() {
         testMigrationTo9_0_0();
     }
+    protected void testMigrationTo12_x() {
+        testMigrationTo12_0_0();
+        testMigrationTo13_0_0();
+    }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
@@ -912,5 +939,20 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         for(ClientRepresentation clientRep : masterRealm.clients().findAll()) {
             Assert.assertFalse(clientRep.isAlwaysDisplayInConsole());
         }
+    }
+
+    protected void testDefaultRoles(RealmResource realm) {
+        String realmName = realm.toRepresentation().getRealm().toLowerCase();
+        assertThat(realm.roles().get("default-roles-" + realmName).getRoleComposites().stream()
+                .map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+            allOf(
+                hasItem(realmName + "-test-realm-role"), 
+                hasItem(realmName + "-test-client-role"))
+            );
+    }
+
+    protected void testDefaultRolesNameWhenTaken() {
+        // 'default-roles-migration2' name is used, we test that 'default-roles-migration2-1' is created instead
+        assertThat(migrationRealm2.toRepresentation().getDefaultRole().getName(), equalTo("default-roles-migration2-1"));
     }
 }

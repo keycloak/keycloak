@@ -17,19 +17,15 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.keycloak.Config.Scope;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 
-public class ClientUpdateContextConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientUpdateContextConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "clientupdatecontext-condition";
 
@@ -40,31 +36,17 @@ public class ClientUpdateContextConditionFactory implements ClientPolicyConditio
     public static final String BY_INITIAL_ACCESS_TOKEN = "ByInitialAccessToken";
     public static final String BY_REGISTRATION_ACCESS_TOKEN = "ByRegistrationAccessToken";
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
+    private static final ProviderConfigProperty CLIENTUPDATESOURCE_PROPERTY;
     static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty(UPDATE_CLIENT_SOURCE, null, null, ProviderConfigProperty.MULTIVALUED_LIST_TYPE, BY_AUTHENTICATED_USER);
-        List<String> updateProfileValues = Arrays.asList(BY_AUTHENTICATED_USER, BY_ANONYMOUS, BY_INITIAL_ACCESS_TOKEN, BY_REGISTRATION_ACCESS_TOKEN);
-        property.setOptions(updateProfileValues);
-        configProperties.add(property);
+        CLIENTUPDATESOURCE_PROPERTY = new ProviderConfigProperty(
+                UPDATE_CLIENT_SOURCE, null, null, ProviderConfigProperty.MULTIVALUED_LIST_TYPE, BY_AUTHENTICATED_USER);
+        CLIENTUPDATESOURCE_PROPERTY.setOptions(
+                Arrays.asList(BY_AUTHENTICATED_USER, BY_ANONYMOUS, BY_INITIAL_ACCESS_TOKEN, BY_REGISTRATION_ACCESS_TOKEN));
     }
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
         return new ClientUpdateContextCondition(session, model);
-    }
- 
-    @Override
-    public void init(Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 
     @Override
@@ -79,7 +61,8 @@ public class ClientUpdateContextConditionFactory implements ClientPolicyConditio
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        List<ProviderConfigProperty> l = super.getConfigProperties();
+        l.add(CLIENTUPDATESOURCE_PROPERTY);
+        return l;
     }
-
 }

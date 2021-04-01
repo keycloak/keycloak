@@ -44,7 +44,7 @@ public class Profile {
         DEPRECATED;
     }
     public enum Feature {
-        ACCOUNT2(Type.PREVIEW),
+        ACCOUNT2(Type.DEFAULT),
         ACCOUNT_API(Type.DEFAULT),
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),

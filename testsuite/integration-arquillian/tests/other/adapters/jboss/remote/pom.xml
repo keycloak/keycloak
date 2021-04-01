@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-remote</artifactId>
@@ -36,7 +36,7 @@
         <app.server.type>remote</app.server.type>
         <app.server.skip.unpack>true</app.server.skip.unpack>
         <app.server.arquillian.xsl>src/test/resources/xslt/arquillian.xsl</app.server.arquillian.xsl>
-        
+        <common.resources>${basedir}/../../../../../servers/auth-server/jboss/common</common.resources>
         <exclude.htmlunit>**/performance/htmlunit/**/*Test.java</exclude.htmlunit>
         <exclude.httpclient>**/performance/httpclient/**/*Test.java</exclude.httpclient>
         
@@ -129,7 +129,50 @@
     <profiles>
         <profile>
             <id>auth-server-remote</id>
-            <!--dummy profile for enforcer-->
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/containers/auth-server-remote</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/keystore</directory>
+                                            <includes>
+                                                <include>keycloak.jks</include>
+                                                <include>keycloak.truststore</include>
+                                                <include>client.jks</include>
+                                                <include>client-ca.jks</include>
+                                                <include>test-user-cert-intermediary-ca.jks</include>
+                                                <include>ca.crt</include>
+                                                <include>client.crt</include>
+                                                <include>client.key</include>
+                                                <include>*.crl</include>
+                                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
+                                                <include>other_client.jks</include>
+                                            </includes>
+                                        </resource>
+                                        <resource>
+                                            <directory>${common.resources}/pki/root/ca</directory>
+                                            <includes>
+                                                <include>certs/clients/test-user-san@localhost.cert.pem</include>
+                                                <include>certs/clients/test-user@localhost.key.pem</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>app-server-remote-as7-eap6</id>

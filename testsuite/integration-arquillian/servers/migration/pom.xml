@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers</artifactId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -131,6 +131,30 @@
                 </executions>
             </plugin>
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-keystore</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${common.resources}/keystore</directory>
+                                    <includes>
+                                        <include>keycloak.jks</include>
+                                        <include>keycloak.truststore</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
@@ -154,6 +178,18 @@
                                     <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
                                     <property name="keycloak.connectionsJpa.schema">${keycloak.connectionsJpa.schema}</property>
                                 </ant>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>inject-truststore</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <ant antfile="${common.resources}/ant/configure.xml" target="inject-truststore" />
                             </target>
                         </configuration>
                     </execution>

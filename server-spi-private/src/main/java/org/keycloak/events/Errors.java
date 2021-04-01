@@ -38,6 +38,7 @@ public interface Errors {
     String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
     String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
+    String USER_DELETE_ERROR = "user_delete_error";
 
     String USERNAME_MISSING = "username_missing";
     String USERNAME_IN_USE = "username_in_use";
@@ -100,4 +101,12 @@ public interface Errors {
     String INVALID_SAML_DOCUMENT = "invalid_saml_document";
     String UNSUPPORTED_NAMEID_FORMAT = "unsupported_nameid_format";
 
+    String INVALID_PERMISSION_TICKET = "invalid_permission_ticket";
+    String ACCESS_DENIED = "access_denied";
+
+    String INVALID_OAUTH2_DEVICE_CODE = "invalid_oauth2_device_code";
+    String EXPIRED_OAUTH2_DEVICE_CODE = "expired_oauth2_device_code";
+    String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
+    String EXPIRED_OAUTH2_USER_CODE = "expired_oauth2_user_code";
+    String SLOW_DOWN = "slow_down";
 }

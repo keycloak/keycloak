@@ -28,7 +28,6 @@ import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -41,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -64,6 +64,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.junit.Assume;
 import org.junit.BeforeClass;
 
@@ -111,6 +113,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             kcinit.setEnabled(true);
             kcinit.addRedirectUri("*");
             kcinit.setPublicClient(true);
+            kcinit.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             kcinit.removeRole(realm.getRole(OAuth2Constants.OFFLINE_ACCESS));
 
             ClientModel app = realm.addClient(APP);
@@ -292,7 +295,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testBrowserContinueRequiredAction() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("wburke", realm);
+            UserModel user = session.users().getUserByUsername(realm, "wburke");
             user.addRequiredAction("dummy");
         });
         testInstall();
@@ -437,7 +440,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testTerms() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("wburke", realm);
+            UserModel user = session.users().getUserByUsername(realm, "wburke");
             user.addRequiredAction(TermsAndConditions.PROVIDER_ID);
         });
 
@@ -464,7 +467,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         // expects that updateProfile is a passthrough
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("wburke", realm);
+            UserModel user = session.users().getUserByUsername(realm, "wburke");
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         });
 
@@ -494,7 +497,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("wburke", realm);
+                UserModel user = session.users().getUserByUsername(realm, "wburke");
                 user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
             });
         }
@@ -505,7 +508,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testUpdatePassword() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("wburke", realm);
+            UserModel user = session.users().getUserByUsername(realm, "wburke");
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         });
 
@@ -546,7 +549,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("wburke", realm);
+                UserModel user = session.users().getUserByUsername(realm, "wburke");
                 session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
             });
         }
@@ -560,7 +563,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testConfigureTOTP() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("wburke", realm);
+            UserModel user = session.users().getUserByUsername(realm, "wburke");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         });
 
@@ -629,10 +632,10 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         } finally {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("wburke", realm);
-                for (CredentialModel c: session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE)){
-                    session.userCredentialManager().removeStoredCredential(realm, user, c.getId());
-                }
+                UserModel user = session.users().getUserByUsername(realm, "wburke");
+                session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, OTPCredentialModel.TYPE)
+                        .collect(Collectors.toList())
+                        .forEach(model -> session.userCredentialManager().removeStoredCredential(realm, user, model.getId()));
             });
         }
 
@@ -646,7 +649,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     public void testVerifyEmail() throws Exception {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+            UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
             user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
         });
 

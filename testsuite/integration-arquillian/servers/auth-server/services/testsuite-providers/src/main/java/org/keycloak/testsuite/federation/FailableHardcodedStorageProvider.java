@@ -33,18 +33,16 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, UserQueryProvider.Streams,
-        ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
+public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider.Streams, UserQueryProvider.Streams,
+        ImportedUserValidation, CredentialInputUpdater.Streams, CredentialInputValidator {
 
     public static String username = "billb";
     public static String password = "password";
@@ -97,9 +95,9 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
         checkForceFail();
-        return Collections.EMPTY_SET;
+        return Stream.empty();
     }
 
     @Override
@@ -174,16 +172,16 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         checkForceFail();
         throw new RuntimeException("THIS IMPORTS  SHOULD NEVER BE CALLED");
     }
 
     @Override
-    public UserModel getUserByUsername(String uname, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String uname) {
         checkForceFail();
         if (!username.equals(uname)) return null;
-        UserModel local = session.userLocalStorage().getUserByUsername(uname, realm);
+        UserModel local = session.userLocalStorage().getUserByUsername(realm, uname);
         if (local != null && !model.getId().equals(local.getFederationLink())) {
             throw new RuntimeException("local storage has wrong federation link");
         }
@@ -203,7 +201,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         checkForceFail();
         return null;
     }
@@ -225,51 +223,51 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     @Override
     public Stream<UserModel> getUsersStream(RealmModel realm) {
         checkForceFail();
-        UserModel model = getUserByUsername(username, realm);
+        UserModel model = getUserByUsername(realm, username);
         return model != null ? Stream.of(model) : Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         checkForceFail();
-        UserModel model = getUserByUsername(username, realm);
+        UserModel model = getUserByUsername(realm, username);
         return model != null ? Stream.of(model) : Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
-        checkForceFail();
-        if (!search.equals(username)) return Stream.empty();
-        UserModel model = getUserByUsername(username, realm);
-        return model != null ? Stream.of(model) : Stream.empty();
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
         checkForceFail();
         if (!search.equals(username)) return Stream.empty();
-        UserModel model = getUserByUsername(username, realm);
+        UserModel model = getUserByUsername(realm, username);
         return model != null ? Stream.of(model) : Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        checkForceFail();
+        if (!search.equals(username)) return Stream.empty();
+        UserModel model = getUserByUsername(realm, username);
+        return model != null ? Stream.of(model) : Stream.empty();
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params) {
         checkForceFail();
         if (!username.equals(params.get("username")))return Stream.empty();
-        UserModel model = getUserByUsername(username, realm);
+        UserModel model = getUserByUsername(realm, username);
         return model != null ? Stream.of(model) : Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
         checkForceFail();
         if (!username.equals(params.get("username")))return Stream.empty();
-        UserModel model = getUserByUsername(username, realm);
+        UserModel model = getUserByUsername(realm, username);
         return model != null ? Stream.of(model) : Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         checkForceFail();
         return Stream.empty();
     }
@@ -281,7 +279,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         checkForceFail();
         return Stream.empty();
     }

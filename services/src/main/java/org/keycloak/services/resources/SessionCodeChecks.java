@@ -18,7 +18,6 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
-
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;

@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import org.keycloak.storage.SearchableModelField;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,52 @@ public interface UserModel extends RoleMapperModel {
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
 
+    Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
+
+    public static class SearchableFields {
+        public static final SearchableModelField<UserModel> ID              = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<UserModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<UserModel> USERNAME        = new SearchableModelField<>("username", String.class);
+        public static final SearchableModelField<UserModel> FIRST_NAME      = new SearchableModelField<>("firstName", String.class);
+        public static final SearchableModelField<UserModel> LAST_NAME       = new SearchableModelField<>("lastName", String.class);
+        public static final SearchableModelField<UserModel> EMAIL           = new SearchableModelField<>("email", String.class);
+        public static final SearchableModelField<UserModel> ENABLED         = new SearchableModelField<>("enabled", Boolean.class);
+        public static final SearchableModelField<UserModel> EMAIL_VERIFIED  = new SearchableModelField<>("emailVerified", Boolean.class);
+        public static final SearchableModelField<UserModel> FEDERATION_LINK = new SearchableModelField<>("federationLink", String.class);
+
+        /**
+         * This field can only searched either for users coming from an IDP, then the operand is (idp_alias),
+         * or as user coming from a particular IDP with given username there, then the operand is a pair (idp_alias, idp_user_id).
+         * It is also possible to search regardless of {@code idp_alias}, then the pair is {@code (null, idp_user_id)}.
+         */
+        public static final SearchableModelField<UserModel> IDP_AND_USER    = new SearchableModelField<>("idpAlias:idpUserId", String.class);
+
+        public static final SearchableModelField<UserModel> ASSIGNED_ROLE   = new SearchableModelField<>("assignedRole", String.class);
+        public static final SearchableModelField<UserModel> ASSIGNED_GROUP  = new SearchableModelField<>("assignedGroup", String.class);
+        /**
+         * Search for users that have consent set for a particular client.
+         */
+        public static final SearchableModelField<UserModel> CONSENT_FOR_CLIENT = new SearchableModelField<>("clientConsent", String.class);
+        /**
+         * Search for users that have consent set for a particular client that originates in the given client provider.
+         */
+        public static final SearchableModelField<UserModel> CONSENT_CLIENT_FEDERATION_LINK = new SearchableModelField<>("clientConsentFederationLink", String.class);
+        /**
+         * Search for users that have consent that has given client scope.
+         */
+        public static final SearchableModelField<UserModel> CONSENT_WITH_CLIENT_SCOPE = new SearchableModelField<>("consentWithClientScope", String.class);
+        /**
+         * ID of the client corresponding to the service account
+         */
+        public static final SearchableModelField<UserModel> SERVICE_ACCOUNT_CLIENT = new SearchableModelField<>("serviceAccountClientId", String.class);
+        /**
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * is always checked for equality, and the value (which can be any numbert of values, none for operators like EXISTS
+         * or potentially many for e.g. IN) is checked per the operator.
+         */
+        public static final SearchableModelField<UserModel> ATTRIBUTE       = new SearchableModelField<>("attribute", String[].class);
+    }
+
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         UserModel getUser();
@@ -56,7 +104,13 @@ public interface UserModel extends RoleMapperModel {
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();
 
-    // No default method here to allow Abstract subclasses where the username is provided in a different manner
+    /**
+     * Sets username for this user.
+     *
+     * No default method here to allow Abstract subclasses where the username is provided in a different manner
+     *
+     * @param username username string
+     */
     void setUsername(String username);
 
     /**
@@ -129,9 +183,17 @@ public interface UserModel extends RoleMapperModel {
 
     void removeRequiredAction(String action);
 
-    void addRequiredAction(RequiredAction action);
+    default void addRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        addRequiredAction(actionName);
+    }
 
-    void removeRequiredAction(RequiredAction action);
+    default void removeRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        removeRequiredAction(actionName);
+    }
 
     String getFirstName();
 
@@ -143,6 +205,11 @@ public interface UserModel extends RoleMapperModel {
 
     String getEmail();
 
+    /**
+     * Sets email for this user.
+     *
+     * @param email the email
+     */
     void setEmail(String email);
 
     boolean isEmailVerified();
@@ -188,7 +255,7 @@ public interface UserModel extends RoleMapperModel {
      * @param search Case insensitive string which will be searched for. Ignored if null.
      * @param first Index of first group to return. Ignored if negative or {@code null}.
      * @param max Maximum number of records to return. Ignored if negative or {@code null}.
-     * @return Stream of desired groups.
+     * @return Stream of desired groups. Never returns {@code null}.
      */
     default Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
         if (search != null) search = search.toLowerCase();

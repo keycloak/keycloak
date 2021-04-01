@@ -20,12 +20,20 @@ package org.keycloak.models;
 import java.util.Map;
 
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.storage.SearchableModelField;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeContainerModel, OrderedModel {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<ClientScopeModel> ID           = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<ClientScopeModel> REALM_ID     = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<ClientScopeModel> NAME         = new SearchableModelField<>("name", String.class);
+    }
+
     String getId();
 
     String getName();

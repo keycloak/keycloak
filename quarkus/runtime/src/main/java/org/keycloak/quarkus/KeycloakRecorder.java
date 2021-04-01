@@ -77,9 +77,10 @@ public class KeycloakRecorder {
     public void configSessionFactory(
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
+            Map<String, ProviderFactory> preConfiguredProviders,
             Boolean reaugmented) {
         Profile.setInstance(createProfile());
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, reaugmented));
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, reaugmented));
     }
 
     /**

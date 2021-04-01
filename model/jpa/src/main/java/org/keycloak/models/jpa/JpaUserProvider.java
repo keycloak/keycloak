@@ -43,7 +43,6 @@ import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -64,16 +63,14 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.persistence.LockModeType;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 
@@ -82,7 +79,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class JpaUserProvider implements UserProvider.Streams, UserCredentialStore {
+public class JpaUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
@@ -116,20 +113,18 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         UserAdapter userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {
-            DefaultRoles.addDefaultRoles(realm, userModel);
+            userModel.grantRole(realm.getDefaultRole());
 
             // No need to check if user has group as it's new user
             realm.getDefaultGroupsStream().forEach(userModel::joinGroupImpl);
         }
 
         if (addDefaultRequiredActions) {
-            Optional<String> requiredAction = realm.getRequiredActionProvidersStream()
-                    .filter(RequiredActionProviderModel::isEnabled)
-                    .filter(RequiredActionProviderModel::isDefaultAction)
-                    .map(RequiredActionProviderModel::getAlias)
-                    .findFirst();
-            if (requiredAction.isPresent())
-                userModel.addRequiredAction(requiredAction.get());
+            realm.getRequiredActionProvidersStream()
+                .filter(RequiredActionProviderModel::isEnabled)
+                .filter(RequiredActionProviderModel::isDefaultAction)
+                .map(RequiredActionProviderModel::getAlias)
+                .forEach(userModel::addRequiredAction);
         }
 
         return userModel;
@@ -142,7 +137,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        UserEntity userEntity = em.find(UserEntity.class, user.getId());
+        UserEntity userEntity = em.find(UserEntity.class, user.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (userEntity == null) return false;
         removeUser(userEntity);
         return true;
@@ -152,18 +147,10 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         String id = user.getId();
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteFederatedIdentityByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
-        em.flush();
-        // not sure why i have to do a clear() here.  I was getting some messed up errors that Hibernate couldn't
-        // un-delete the UserEntity.
-        em.clear();
-        user = em.find(UserEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (user != null) {
-            em.remove(user);
-        }
 
+        em.remove(user);
         em.flush();
     }
 
@@ -365,12 +352,18 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         UserEntity entity = em.getReference(UserEntity.class, user.getId());
+        if (entity == null) {
+            throw new ModelException("User does not exists");
+        }
         entity.setNotBefore(notBefore);
     }
 
     @Override
     public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
         UserEntity entity = em.getReference(UserEntity.class, user.getId());
+        if (entity == null) {
+            throw new ModelException("User does not exists");
+        }
         return entity.getNotBefore();
     }
 
@@ -515,14 +508,14 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         UserEntity userEntity = em.find(UserEntity.class, id);
         if (userEntity == null || !realm.getId().equals(userEntity.getRealmId())) return null;
         return new UserAdapter(session, realm, em, userEntity);
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
         query.setParameter("username", username.toLowerCase());
         query.setParameter("realmId", realm.getId());
@@ -532,7 +525,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
         query.setParameter("email", email.toLowerCase());
         query.setParameter("realmId", realm.getId());
@@ -550,7 +543,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public UserModel getUserByFederatedIdentity(FederatedIdentityModel identity, RealmModel realm) {
+    public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel identity) {
         TypedQuery<UserEntity> query = em.createNamedQuery("findUserByFederatedIdentityAndRealm", UserEntity.class);
         query.setParameter("realmId", realm.getId());
         query.setParameter("identityProvider", identity.getIdentityProvider());
@@ -585,11 +578,6 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        return getUsersStream(realm, -1, -1, includeServiceAccounts);
-    }
-
-    @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         String namedQuery = "getRealmUserCountExcludeServiceAccount";
 
@@ -601,11 +589,6 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                 .setParameter("realmId", realm.getId())
                 .getSingleResult();
         return ((Number)count).intValue();
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm) {
-        return getUsersCount(realm, false);
     }
 
     @Override
@@ -623,7 +606,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public int getUsersCount(String search, RealmModel realm) {
+    public int getUsersCount(RealmModel realm, String search) {
         TypedQuery<Long> query = em.createNamedQuery("searchForUserCount", Long.class);
         query.setParameter("realmId", realm.getId());
         query.setParameter("search", "%" + search.toLowerCase() + "%");
@@ -633,7 +616,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public int getUsersCount(String search, RealmModel realm, Set<String> groupIds) {
+    public int getUsersCount(RealmModel realm, String search, Set<String> groupIds) {
         if (groupIds == null || groupIds.isEmpty()) {
             return 0;
         }
@@ -648,7 +631,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public int getUsersCount(Map<String, String> params, RealmModel realm) {
+    public int getUsersCount(RealmModel realm, Map<String, String> params) {
         CriteriaBuilder qb = em.getCriteriaBuilder();
         CriteriaQuery<Long> userQuery = qb.createQuery(Long.class);
         Root<UserEntity> from = userQuery.from(UserEntity.class);
@@ -692,7 +675,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
+    public int getUsersCount(RealmModel realm, Map<String, String> params, Set<String> groupIds) {
         if (groupIds == null || groupIds.isEmpty()) {
             return 0;
         }
@@ -741,76 +724,46 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return getUsersStream(realm, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         return getUsersStream(realm, firstResult, maxResults, false);
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
         String queryName = includeServiceAccounts ? "getAllUsersByRealm" : "getAllUsersByRealmExcludeServiceAccount" ;
 
         TypedQuery<UserEntity> query = em.createNamedQuery(queryName, UserEntity.class);
         query.setParameter("realmId", realm.getId());
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResults != -1) {
-            query.setMaxResults(maxResults);
-        }
-        return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResults != -1) {
-            query.setMaxResults(maxResults);
-        }
-        return closing(query.getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResults != -1) {
-            query.setMaxResults(maxResults);
-        }
-        return closing(query.getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
-        return searchForUserStream(search, realm, -1, -1);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put(UserModel.SEARCH, search);
         session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, false);
-        return searchForUserStream(attributes, realm, firstResult, maxResults);
+        return searchForUserStream(realm, attributes, firstResult, maxResults);
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserStream(attributes, realm, -1, -1);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
@@ -917,20 +870,13 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-
-        if (maxResults != -1) {
-            query.setMaxResults(maxResults);
-        }
-
         UserProvider users = session.users();
-        return closing(query.getResultStream().map(userEntity -> users.getUserById(userEntity.getId(), realm)));
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(userEntity -> users.getUserById(realm, userEntity.getId()));
     }
 
     @Override
-    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class);
         query.setParameter("name", attrName);
         query.setParameter("value", attrValue);
@@ -951,7 +897,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
 
     @Override
-    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(UserModel user, RealmModel realm) {
+    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
         TypedQuery<FederatedIdentityEntity> query = em.createNamedQuery("findFederatedIdentityByUser", FederatedIdentityEntity.class);
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         query.setParameter("user", userEntity);
@@ -961,7 +907,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public FederatedIdentityModel getFederatedIdentity(UserModel user, String identityProvider, RealmModel realm) {
+    public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String identityProvider) {
         FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider, LockModeType.NONE);
         return (entity != null) ? new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName(), entity.getToken()) : null;
     }
@@ -1022,27 +968,20 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        return credentialStore.getStoredCredentials(realm, user);
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        return credentialStore.getStoredCredentialsStream(realm, user);
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        List<CredentialEntity> results;
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
         UserEntity userEntity = userInEntityManagerContext(user.getId());
         if (userEntity != null) {
-
             // user already in persistence context, no need to execute a query
-            results = userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
+            return userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
                     .sorted(Comparator.comparingInt(CredentialEntity::getPriority))
-                    .collect(Collectors.toList());
-            List<CredentialModel> rtn = new LinkedList<>();
-            for (CredentialEntity entity : results) {
-                rtn.add(toModel(entity));
-            }
-            return rtn;
+                    .map(this::toModel);
         } else {
-           return credentialStore.getStoredCredentialsByType(realm, user, type);
+           return credentialStore.getStoredCredentialsByTypeStream(realm, user, type);
         }
     }
 

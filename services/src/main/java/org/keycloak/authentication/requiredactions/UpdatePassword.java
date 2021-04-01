@@ -47,7 +47,9 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -129,12 +131,11 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         if (getId().equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
                 && "on".equals(formData.getFirst("logout-sessions")))
         {
-            List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-            for (UserSessionModel s : sessions) {
-                if (!s.getId().equals(authSession.getParentSession().getId())) {
-                    AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(), context.getConnection(), context.getHttpRequest().getHttpHeaders(), true);
-                }
-            }
+            session.sessions().getUserSessionsStream(realm, user)
+                    .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
+                    .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                    .forEach(s -> AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
+                            context.getConnection(), context.getHttpRequest().getHttpHeaders(), true));
         }
 
         try {

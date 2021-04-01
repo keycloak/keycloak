@@ -17,20 +17,16 @@
 package org.keycloak.models.map.client;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import com.google.common.base.Functions;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -241,10 +237,18 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     @Override
     public void setProtocol(String protocol) {
         entity.setProtocol(protocol);
+        session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
     }
 
     @Override
     public void setAttribute(String name, String value) {
+        boolean valueUndefined = value == null || "".equals(value.trim());
+
+        if (valueUndefined) {
+            removeAttribute(name);
+            return;
+        }
+
         entity.setAttribute(name, value);
     }
 
@@ -378,38 +382,6 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
         entity.setNotBefore(notBefore);
     }
 
-    /*************** Client scopes ****************/
-
-    @Override
-    public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
-        final String id = clientScope == null ? null : clientScope.getId();
-        if (id != null) {
-            entity.addClientScope(id, defaultScope);
-        }
-    }
-
-    @Override
-    public void removeClientScope(ClientScopeModel clientScope) {
-        final String id = clientScope == null ? null : clientScope.getId();
-        if (id != null) {
-            entity.removeClientScope(id);
-        }
-    }
-
-    @Override
-    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
-        Stream<ClientScopeModel> res = this.entity.getClientScopes(defaultScope)
-          .map(realm::getClientScopeById)
-          .filter(Objects::nonNull);
-
-        if (filterByProtocol) {
-            String clientProtocol = getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : getProtocol();
-            res = res.filter(cs -> Objects.equals(cs.getProtocol(), clientProtocol));
-        }
-
-        return res.collect(Collectors.toMap(ClientScopeModel::getName, Functions.identity()));
-    }
-
     /*************** Scopes mappings ****************/
 
     @Override
@@ -454,22 +426,35 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     /*************** Default roles ****************/
 
     @Override
+    @Deprecated
     public Stream<String> getDefaultRolesStream() {
-        return entity.getDefaultRoles().stream();
+        return realm.getDefaultRole().getCompositesStream().filter(this::isClientRole).map(RoleModel::getName);
+    }
+
+    private boolean isClientRole(RoleModel role) {
+        return role.isClientRole() && Objects.equals(role.getContainerId(), this.getId());
     }
 
     @Override
+    @Deprecated
     public void addDefaultRole(String name) {
+        realm.getDefaultRole().addCompositeRole(getOrAddRoleId(name));
+    }
+
+    private RoleModel getOrAddRoleId(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
-            addRole(name);
+            role = addRole(name);
         }
-        this.entity.addDefaultRole(name);
+        return role;
     }
 
     @Override
+    @Deprecated
     public void removeDefaultRoles(String... defaultRoles) {
-        this.entity.removeDefaultRoles(defaultRoles);
+        for (String defaultRole : defaultRoles) {
+            realm.getDefaultRole().removeCompositeRole(getRole(defaultRole));
+        }
     }
 
     /*************** Protocol mappers ****************/
@@ -527,5 +512,10 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
           .filter(pm -> Objects.equals(pm.getProtocol(), protocol) && Objects.equals(pm.getName(), name))
           .findAny()
           .orElse(null);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getClientId(), System.identityHashCode(this));
     }
 }

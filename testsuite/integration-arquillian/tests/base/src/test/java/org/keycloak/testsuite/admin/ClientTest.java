@@ -28,6 +28,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -64,6 +65,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -104,7 +107,9 @@ public class ClientTest extends AbstractAdminTest {
     public void createClientVerify() {
         String id = createClient().getId();
 
-        assertNotNull(realm.clients().get(id));
+        ClientResource client = realm.clients().get(id);
+        assertNotNull(client);
+        assertNull(client.toRepresentation().getSecret());
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
@@ -331,19 +336,21 @@ public class ClientTest extends AbstractAdminTest {
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "test"), role, ResourceType.CLIENT_ROLE);
 
-        ClientRepresentation foundClientRep = realm.clients().get(id).toRepresentation();
-        foundClientRep.setDefaultRoles(new String[]{"test"});
-        realm.clients().get(id).update(foundClientRep);
+        role = realm.clients().get(id).roles().get("test").toRepresentation();
 
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
+        realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).addComposites(Collections.singletonList(role));
 
-        assertArrayEquals(new String[]{"test"}, realm.clients().get(id).toRepresentation().getDefaultRoles());
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
+
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+                hasItem(role.getName()));
 
         realm.clients().get(id).roles().deleteRole("test");
 
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(id, "test"), ResourceType.CLIENT_ROLE);
 
-        assertNull(realm.clients().get(id).toRepresentation().getDefaultRoles());
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+                not(hasItem(role)));
     }
 
     @Test
@@ -379,6 +386,13 @@ public class ClientTest extends AbstractAdminTest {
 
         storedClient = realm.clients().get(client.getId()).toRepresentation();
         assertClient(client, storedClient);
+
+        storedClient.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+
+        realm.clients().get(storedClient.getId()).update(storedClient);
+        storedClient = realm.clients().get(client.getId()).toRepresentation();
+
+        assertFalse(storedClient.getAttributes().containsKey(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
     }
 
     @Test
@@ -555,13 +569,12 @@ public class ClientTest extends AbstractAdminTest {
 
         Assert.assertNames(scopesResource.realmLevel().listAll(), "role1");
         Assert.assertNames(scopesResource.realmLevel().listEffective(), "role1", "role2");
-        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll(), AccountRoles.VIEW_PROFILE);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective(), AccountRoles.VIEW_PROFILE);
 
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS,
-                AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
 
         Assert.assertNames(scopesResource.getAll().getRealmMappings(), "role1");
         Assert.assertNames(scopesResource.getAll().getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
@@ -574,11 +587,63 @@ public class ClientTest extends AbstractAdminTest {
 
         Assert.assertNames(scopesResource.realmLevel().listAll());
         Assert.assertNames(scopesResource.realmLevel().listEffective());
-        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "role1", "role2");
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "role1", "role2", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll());
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS,
-                AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
+
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
+
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
+    }
+
+    @Test
+    public void scopesRoleRemoval() {
+        // clientA to test scope mappins
+        Response response = realm.clients().create(ClientBuilder.create().clientId("clientA").fullScopeEnabled(false).build());
+        String idA = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(idA);
+        response.close();
+        assertAdminEvents.poll();
+
+        // clientB to create a client role for clientA
+        response = realm.clients().create(ClientBuilder.create().clientId("clientB").fullScopeEnabled(false).build());
+        String idB = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(idB);
+        response.close();
+        assertAdminEvents.poll();
+
+        RoleMappingResource scopesResource = realm.clients().get(idA).getScopeMappings();
+
+        // create a realm role and a role in clientB
+        RoleRepresentation realmRoleRep = RoleBuilder.create().name("realm-role").build();
+        realm.roles().create(realmRoleRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), realmRoleRep, ResourceType.REALM_ROLE);
+        RoleRepresentation clientBRoleRep = RoleBuilder.create().name("clientB-role").build();
+        realm.clients().get(idB).roles().create(clientBRoleRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), clientBRoleRep, ResourceType.CLIENT_ROLE);
+
+        // assing to clientA both roles to the scope mappings
+        realmRoleRep = realm.roles().get(realmRoleRep.getName()).toRepresentation();
+        clientBRoleRep = realm.clients().get(idB).roles().get(clientBRoleRep.getName()).toRepresentation();
+        scopesResource.realmLevel().add(Collections.singletonList(realmRoleRep));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsRealmLevelPath(idA), Collections.singletonList(realmRoleRep), ResourceType.REALM_SCOPE_MAPPING);
+        scopesResource.clientLevel(idB).add(Collections.singletonList(clientBRoleRep));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsClientLevelPath(idA, idB), Collections.singletonList(clientBRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
+
+        // assert the roles are there
+        Assert.assertNames(scopesResource.realmLevel().listAll(), realmRoleRep.getName());
+        Assert.assertNames(scopesResource.clientLevel(idB).listAll(), clientBRoleRep.getName());
+
+        // delete realm role and check everything is refreshed ok
+        realm.roles().deleteRole(realmRoleRep.getName());
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), ResourceType.REALM_ROLE);
+        Assert.assertNames(scopesResource.realmLevel().listAll());
+        Assert.assertNames(scopesResource.clientLevel(idB).listAll(), clientBRoleRep.getName());
+
+        // delete client role and check everything is refreshed ok
+        realm.clients().get(idB).roles().deleteRole(clientBRoleRep.getName());
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), ResourceType.CLIENT_ROLE);
+        Assert.assertNames(scopesResource.realmLevel().listAll());
+        Assert.assertNames(scopesResource.clientLevel(idB).listAll());
     }
 
     public void protocolMappersTest(String clientDbId, ProtocolMappersResource mappersResource) {

@@ -19,6 +19,7 @@
 package org.keycloak.cluster.infinispan;
 
 import java.awt.print.Book;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -131,21 +132,28 @@ public class JDGPutTest {
 
     protected static int getIspnSegmentsCount(RemoteCache remoteCache) {
         OperationsFactory operationsFactory = ((RemoteCacheImpl) remoteCache).getOperationsFactory();
+        Map<SocketAddress, Set<Integer>> segmentsByAddress = operationsFactory.getPrimarySegmentsByAddress();
 
-        // Same like RemoteCloseableIterator.startInternal
-        IterationStartOperation iterationStartOperation = operationsFactory.newIterationStartOperation(null, null, null, 64, false, null);
-        IterationStartResponse startResponse = await(iterationStartOperation.execute());
+        for (Map.Entry<SocketAddress, Set<Integer>> entry : segmentsByAddress.entrySet()) {
+            SocketAddress targetAddress = entry.getKey();
 
-        try {
-            // Could happen for non-clustered caches
-            if (startResponse.getSegmentConsistentHash() == null) {
-                return -1;
-            } else {
-                return startResponse.getSegmentConsistentHash().getNumSegments();
+            // Same like RemoteCloseableIterator.startInternal
+            IterationStartOperation iterationStartOperation = operationsFactory.newIterationStartOperation(null, null, null, 64, false, null, targetAddress);
+            IterationStartResponse startResponse = await(iterationStartOperation.execute());
+
+            try {
+                // Could happen for non-clustered caches
+                if (startResponse.getSegmentConsistentHash() == null) {
+                    return -1;
+                } else {
+                    return startResponse.getSegmentConsistentHash().getNumSegments();
             }
-        } finally {
-            startResponse.getChannel().close();
+            } finally {
+                startResponse.getChannel().close();
+            }
         }
+        // Handle the case when primary segments owned by the address are not known
+        return -1;
     }
 
     // Compute set of ISPN segments into 1 "worker" segment

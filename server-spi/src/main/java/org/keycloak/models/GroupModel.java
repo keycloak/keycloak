@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import org.keycloak.storage.SearchableModelField;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,20 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface GroupModel extends RoleMapperModel {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<GroupModel> ID             = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<GroupModel> REALM_ID       = new SearchableModelField<>("realmId", String.class);
+        /** Parent group ID */
+        public static final SearchableModelField<GroupModel> PARENT_ID      = new SearchableModelField<>("parentGroupId", String.class);
+        public static final SearchableModelField<GroupModel> NAME           = new SearchableModelField<>("name", String.class);
+        /**
+         * Field for comparison with roles granted to this group.
+         * A role can be checked for belonging only via EQ operator. Role is referred by their ID
+         */
+        public static final SearchableModelField<GroupModel> ASSIGNED_ROLE  = new SearchableModelField<>("assignedRole", String.class);
+    }
+
     interface GroupRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         GroupModel getGroup();
@@ -66,10 +81,16 @@ public interface GroupModel extends RoleMapperModel {
     /**
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
      */
     @Deprecated
     List<String> getAttribute(String name);
 
+    /**
+     * Returns group attributes that match the given name as a stream.
+     * @param name {@code String} Name of the attribute to be used as a filter.
+     * @return Stream of all attribute values or empty stream if there are not any values. Never return {@code null}.
+     */
     default Stream<String> getAttributeStream(String name) {
         List<String> value = this.getAttribute(name);
         return value != null ? value.stream() : Stream.empty();
@@ -80,9 +101,16 @@ public interface GroupModel extends RoleMapperModel {
     GroupModel getParent();
     String getParentId();
 
+    /**
+     * @deprecated Use {@link #getSubGroupsStream() getSubGroupsStream} instead.
+     */
     @Deprecated
     Set<GroupModel> getSubGroups();
 
+    /**
+     * Returns all sub groups for the parent group as a stream.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     default Stream<GroupModel> getSubGroupsStream() {
         Set<GroupModel> value = this.getSubGroups();
         return value != null ? value.stream() : Stream.empty();

@@ -19,7 +19,10 @@ package org.keycloak.storage.openshift;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NotFoundException;
 import com.openshift.restclient.model.IResource;
+import java.util.Collections;
+import java.util.Map;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
@@ -91,5 +94,11 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
         } catch (NotFoundException nfe) {
             return null;
         }
+    }
+
+    @Override
+    public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
+        // TODO not sure about this, this implementation doesn't use it now
+        return Collections.EMPTY_MAP;
     }
 }

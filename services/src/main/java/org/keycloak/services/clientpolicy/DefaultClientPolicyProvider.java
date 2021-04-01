@@ -88,7 +88,7 @@ public class DefaultClientPolicyProvider implements ClientPolicyProvider {
                     ClientPolicyConditionProvider provider = session.getProvider(ClientPolicyConditionProvider.class, cm);
                     providers.add(provider);
                     session.enlistForClose(provider);
-                    ClientPolicyLogger.logv(logger, "Loaded Condition id = {0}, name = {1}, provider id = {2}", conditionId, cm.getName(), cm.getProviderId());
+                    ClientPolicyLogger.logv(logger, "Loaded Condition id = {0}, name = {1}, provider id = {2}, is negative logic = {3}", conditionId, cm.getName(), cm.getProviderId(), provider.isNegativeLogic());
                 } catch (Throwable t) {
                     logger.errorv(t, "Failed to load condition {0}", cm.getId());
                 }

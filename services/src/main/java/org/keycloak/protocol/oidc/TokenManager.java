@@ -54,6 +54,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -293,14 +294,14 @@ public class TokenManager {
      */
     public static UserModel lookupUserFromStatelessToken(KeycloakSession session, RealmModel realm, AccessToken token) {
         // Try to lookup user based on "sub" claim. It should work for most cases with some rare exceptions (EG. OIDC "pairwise" subjects)
-        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        UserModel user = session.users().getUserById(realm, token.getSubject());
         if (user != null) {
             return user;
         }
 
         // Fallback to lookup user based on username (preferred_username claim)
         if (token.getPreferredUsername() != null) {
-            user = session.users().getUserByUsername(token.getPreferredUsername(), realm);
+            user = session.users().getUserByUsername(realm, token.getPreferredUsername());
             if (user != null) {
                 return user;
             }
@@ -496,18 +497,13 @@ public class TokenManager {
     }
 
 
-    public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, AuthenticatedClientSessionModel clientSession) {
+    public static void dettachClientSession(AuthenticatedClientSessionModel clientSession) {
         UserSessionModel userSession = clientSession.getUserSession();
         if (userSession == null) {
             return;
         }
 
         clientSession.detachFromUserSession();
-
-        // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
-        if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-            sessions.removeUserSession(realm, userSession);
-        }
     }
 
 
@@ -552,14 +548,14 @@ public class TokenManager {
     public static Stream<ClientScopeModel> getRequestedClientScopes(String scopeParam, ClientModel client) {
         // Add all default client scopes automatically and client itself
         Stream<ClientScopeModel> clientScopes = Stream.concat(
-                client.getClientScopes(true, true).values().stream(),
+                client.getClientScopes(true).values().stream(),
                 Stream.of(client)).distinct();
 
         if (scopeParam == null) {
             return clientScopes;
         }
 
-        Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false, true);
+        Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam).map(allOptionalScopes::get).filter(Objects::nonNull),
                 clientScopes).distinct();
@@ -628,6 +624,18 @@ public class TokenManager {
                 .forEach(mapper -> finalToken.set(((OIDCAccessTokenMapper) mapper.getValue())
                         .transformAccessToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
         return finalToken.get();
+    }
+
+    public AccessTokenResponse transformAccessTokenResponse(KeycloakSession session, AccessTokenResponse accessTokenResponse,
+            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+
+        AtomicReference<AccessTokenResponse> finalResponseToken = new AtomicReference<>(accessTokenResponse);
+        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
+                .filter(mapper -> mapper.getValue() instanceof OIDCAccessTokenResponseMapper)
+                .forEach(mapper -> finalResponseToken.set(((OIDCAccessTokenResponseMapper) mapper.getValue())
+                        .transformAccessTokenResponse(finalResponseToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
+
+        return finalResponseToken.get();
     }
 
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
@@ -1017,6 +1025,8 @@ public class TokenManager {
             int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
             if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
+
+            transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
 
             // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
             String responseScope = clientSessionCtx.getScopeString();

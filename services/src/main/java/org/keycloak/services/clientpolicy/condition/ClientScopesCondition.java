@@ -30,23 +30,19 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.TokenRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
-public class ClientScopesCondition implements ClientPolicyConditionProvider {
+public class ClientScopesCondition extends AbstractClientPolicyConditionProvider {
 
     private static final Logger logger = Logger.getLogger(ClientScopesCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
     public ClientScopesCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+        super(session, componentModel);
     }
 
     @Override
@@ -63,16 +59,6 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider {
         }
     }
 
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
-    }
-
     private boolean isScopeMatched(AuthenticatedClientSessionModel clientSession) {
         if (clientSession == null) return false;
         return isScopeMatched(clientSession.getNote(OAuth2Constants.SCOPE), clientSession.getClient());
@@ -84,10 +70,12 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider {
     }
 
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {
+        if (explicitScopes == null) explicitScopes = "";
         Collection<String> explicitSpecifiedScopes = new HashSet<>(Arrays.asList(explicitScopes.split(" ")));
-        Set<String> defaultScopes = client.getClientScopes(true, true).keySet();
-        Set<String> optionalScopes = client.getClientScopes(false, true).keySet();
-        List<String> expectedScopes = componentModel.getConfig().get(ClientScopesConditionFactory.SCOPES);
+        Set<String> defaultScopes = client.getClientScopes(true).keySet();
+        Set<String> optionalScopes = client.getClientScopes(false).keySet();
+        Set<String> expectedScopes = getScopesForMatching();
+        if (expectedScopes == null) expectedScopes = new HashSet<>();
 
         if (logger.isTraceEnabled()) {
             explicitSpecifiedScopes.stream().forEach(i -> ClientPolicyLogger.log(logger, " explicit specified client scope = " + i));
@@ -112,4 +100,10 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider {
         return false;
     }
 
+    private Set<String> getScopesForMatching() {
+        if (componentModel.getConfig() == null) return null;
+        List<String> scopes = componentModel.getConfig().get(ClientScopesConditionFactory.SCOPES);
+        if (scopes == null) return null;
+        return new HashSet<>(scopes);
+    }
 }

@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.provider.InvalidationHandler;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
@@ -31,7 +33,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSession {
+public interface KeycloakSession extends InvalidationHandler {
 
     KeycloakContext getContext();
 
@@ -62,6 +64,25 @@ public interface KeycloakSession {
      */
     <T extends Provider> T getProvider(Class<T> clazz, String id);
 
+    /**
+     * Returns a component provider for a component from the realm that is relevant to this session.
+     * The relevant realm must be set prior to calling this method in the context, see {@link KeycloakContext#getRealm()}.
+     * @param <T>
+     * @param clazz
+     * @param componentId Component configuration
+     * @throws IllegalArgumentException If the realm is not set in the context.
+     * @return Provider configured according to the {@link componentId}, {@code null} if it cannot be instantiated.
+     */
+    <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId);
+
+    /**
+     *
+     * @param <T>
+     * @param clazz
+     * @param componentModel
+     * @return
+     * @deprecated Deprecated in favor of {@link #getComponentProvider)
+     */
     <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
@@ -92,6 +113,13 @@ public interface KeycloakSession {
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);
 
+    /**
+     * Invalidates intermediate states of the given objects, both immediately and at the end of this session.
+     * @param type Type of the objects to invalidate
+     * @param ids Identifiers of the invalidated objects
+     */
+    @Override
+    void invalidate(InvalidableObjectType type, Object... ids);
 
     void enlistForClose(Provider provider);
 
@@ -114,6 +142,15 @@ public interface KeycloakSession {
      * @throws IllegalStateException if transaction is not active
      */
     ClientProvider clients();
+
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return Currently used ClientScopeProvider instance.
+     * @throws IllegalStateException if transaction is not active
+     */
+    ClientScopeProvider clientScopes();
 
     /**
      * Returns a managed group provider instance.
@@ -162,8 +199,15 @@ public interface KeycloakSession {
      */
     UserProvider users();
 
-
+    /**
+     * @return ClientStorageManager instance
+     */
     ClientProvider clientStorageManager();
+
+    /**
+     * @return ClientScopeStorageManager instance
+     */
+    ClientScopeProvider clientScopeStorageManager();
 
     /**
      * @return RoleStorageManager instance
@@ -204,6 +248,13 @@ public interface KeycloakSession {
      * @return
      */
     ClientProvider clientLocalStorage();
+
+    /**
+     * Keycloak specific local storage for client scopes.  No cache in front, this api talks directly to database configured for Keycloak
+     *
+     * @return
+     */
+    ClientScopeProvider clientScopeLocalStorage();
 
     /**
      * Keycloak specific local storage for groups.  No cache in front, this api talks directly to storage configured for Keycloak

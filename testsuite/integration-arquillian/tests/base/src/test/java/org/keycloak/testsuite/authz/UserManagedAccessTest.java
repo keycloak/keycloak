@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.AssertEvents.isUUID;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -28,11 +29,13 @@ import java.util.Collection;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.resource.PermissionResource;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -44,6 +47,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -54,6 +58,9 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
 public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resource;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Before
     public void configureAuthorization() throws Exception {
@@ -281,9 +288,12 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         permission.addResource(resource.getId());
         permission.addPolicy("Only Owner Policy");
 
-        getClient(getRealm()).authorization().permissions().resource().create(permission).close();
+        ClientResource client = getClient(getRealm());
+
+        client.authorization().permissions().resource().create(permission).close();
 
         AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {"ScopeA", "ScopeB"});
+
         String rpt = response.getToken();
 
         assertNotNull(rpt);
@@ -300,12 +310,30 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
 
+        getTestContext().getTestingClient().testing().clearEventQueue();
+
         try {
             response = authorize("kolo", "password", resource.getId(), new String[] {});
             fail("User should not have access to resource from another user");
         } catch (AuthorizationDeniedException ade) {
 
         }
+
+        String realmId = getRealm().toRepresentation().getId();
+        String clientId = client.toRepresentation().getClientId();
+        events.expectLogin().realm(realmId).client(clientId)
+                .user(isUUID())
+                .clearDetails()
+                .assertEvent();
+        events.expectLogin().realm(realmId).client(clientId)
+                .user(isUUID())
+                .clearDetails()
+                .assertEvent();
+        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(isUUID())
+                .session((String) null)
+                .error("access_denied")
+                .detail("reason", "request_submitted")
+                .assertEvent();
 
         PermissionResource permissionResource = getAuthzClient().protection().permission();
         List<PermissionTicketRepresentation> permissionTickets = permissionResource.findByResource(resource.getId());
@@ -330,6 +358,8 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(ticket.isGranted());
         }
 
+        getTestContext().getTestingClient().testing().clearEventQueue();
+
         response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
         rpt = response.getToken();
 
@@ -346,6 +376,19 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertNotNull(permissions);
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
+
+        events.expectLogin().realm(realmId).client(clientId)
+                .user(isUUID())
+                .clearDetails()
+                .assertEvent();
+        events.expectLogin().realm(realmId).client(clientId)
+                .user(isUUID())
+                .clearDetails()
+                .assertEvent();
+        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(isUUID())
+                .session((String) null)
+                .clearDetails()
+                .assertEvent();
     }
 
     @Test

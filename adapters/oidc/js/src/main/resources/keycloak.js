@@ -191,6 +191,10 @@
                 } else {
                     kc.enableLogging = false;
                 }
+
+                if (typeof initOptions.scope === 'string') {
+                    kc.scope = initOptions.scope;
+                }
             }
 
             if (!kc.responseMode) {
@@ -433,15 +437,13 @@
                 baseUrl = kc.endpoints.authorize();
             }
 
-            var scope;
-            if (options && options.scope) {
-                if (options.scope.indexOf("openid") != -1) {
-                    scope = options.scope;
-                } else {
-                    scope = "openid " + options.scope;
-                }
-            } else {
+            var scope = options && options.scope || kc.scope;
+            if (!scope) {
+                // if scope is not set, default to "openid"
                 scope = "openid";
+            } else if (scope.indexOf("openid") === -1) {
+                // if openid scope is missing, prefix the given scopes with it
+                scope = "openid " + scope;
             }
 
             var url = baseUrl
@@ -1097,7 +1099,7 @@
                     supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state', 'kc_action_status'];
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
             }
 

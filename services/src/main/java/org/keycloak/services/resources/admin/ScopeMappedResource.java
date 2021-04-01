@@ -237,7 +237,7 @@ public class ScopeMappedResource {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
-                    throw new NotFoundException("Client not found");
+                    throw new NotFoundException("Role not found");
                 }
                 scopeContainer.deleteScopeMapping(roleModel);
             }

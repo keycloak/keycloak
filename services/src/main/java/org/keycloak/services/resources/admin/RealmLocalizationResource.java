@@ -19,11 +19,6 @@ package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Set;
-
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Stream;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -132,13 +129,10 @@ public class RealmLocalizationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> getRealmLocalizationLocales() {
+    public Stream<String> getRealmLocalizationLocales() {
         this.auth.realm().requireViewRealm();
 
-        List<String> realmLocalesList = new ArrayList<>(realm.getRealmLocalizationTexts().keySet());
-        Collections.sort(realmLocalesList);
-
-        return realmLocalesList;
+        return realm.getRealmLocalizationTexts().keySet().stream().sorted();
     }
 
     @Path("{locale}")

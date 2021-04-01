@@ -19,12 +19,14 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -49,6 +51,7 @@ import org.junit.After;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Page
@@ -73,10 +76,11 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Test
     public void testCookiesPath() {
-        // navigate to "/realms/foo/account" and remove cookies in the browser for the current path
+        // navigate to "/realms/foo/account" and them remove cookies in the browser for the current path
         // first access to the path means there are no cookies being sent
         // we are redirected to login page and Keycloak sets cookie's path to "/auth/realms/foo/"
-        deleteAllCookiesForRealm("foo");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account");
+        driver.manage().deleteAllCookies();
 
         Assert.assertTrue("There shouldn't be any cookies sent!", driver.manage().getCookies().isEmpty());
 
@@ -91,15 +95,16 @@ public class CookiesPathTest extends AbstractKeycloakTest {
                 .forEach(cookie -> Assert.assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foo/")));
 
         // now navigate to realm which name overlaps the first realm and delete cookies for that realm (foobar)
-        deleteAllCookiesForRealm("foobar");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foobar/account");
+        driver.manage().deleteAllCookies();
 
         // cookies shouldn't be sent for the first access to /realms/foobar/account
         // At this moment IE would sent cookies for /auth/realms/foo without the fix
         cookies = driver.manage().getCookies();
         Assert.assertTrue("There shouldn't be any cookies sent!", cookies.isEmpty());
 
-        // refresh the page and check if correct cookies were sent
-        driver.navigate().refresh();
+        // navigate to account and check if correct cookies were sent
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foobar/account");
         cookies = driver.manage().getCookies();
 
         Assert.assertTrue("There should be cookies sent!", cookies.size() > 0);
@@ -160,7 +165,8 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         Cookie wrongCookie = new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE,
                 null, OLD_COOKIE_PATH, null, false, true);
 
-        deleteAllCookiesForRealm("foo");
+        URLUtils.navigateToUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/foo/account");
+        driver.manage().deleteAllCookies();
 
         // add old cookie with wrong path
         driver.manage().addCookie(wrongCookie);

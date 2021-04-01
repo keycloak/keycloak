@@ -73,6 +73,12 @@ public class OIDCHybridResponseTypeCodeIDTokenTokenTest extends AbstractOIDCResp
 
         Assert.assertEquals(idToken.getStateHash(), HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), authzResponse.getState()));
 
+        // Validate if token_type is present
+        Assert.assertNotNull(authzResponse.getTokenType());
+
+        // Validate if expires_in is present
+        Assert.assertNotNull(authzResponse.getExpiresIn());
+
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
 

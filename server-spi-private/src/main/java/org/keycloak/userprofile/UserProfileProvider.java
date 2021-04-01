@@ -26,4 +26,6 @@ import org.keycloak.userprofile.validation.UserProfileValidationResult;
 public interface UserProfileProvider extends Provider {
 
     UserProfileValidationResult validate(UserProfileContext updateContext, UserProfile updatedProfile);
+
+    boolean isReadOnlyAttribute(String key);
 }

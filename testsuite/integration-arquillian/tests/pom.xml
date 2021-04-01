@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -214,14 +214,14 @@
         <skip.add.user.json>false</skip.add.user.json>
         <skip.clean.second.cache>true</skip.clean.second.cache>
         <skip.copy.auth.crossdc.nodes>true</skip.copy.auth.crossdc.nodes>
-        <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
-        <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
-        <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
-        <client.truststore.passphrase>secret</client.truststore.passphrase>
         <client.certificate.ca.path>${auth.server.config.dir}/ca.crt</client.certificate.ca.path>
         <client.certificate.file>${auth.server.config.dir}/client.crt</client.certificate.file>
+        <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
+        <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
         <client.key.file>${auth.server.config.dir}/client.key</client.key.file>
         <client.key.passphrase>secret</client.key.passphrase>
+        <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
+        <client.truststore.passphrase>secret</client.truststore.passphrase>
 
         <!-- KEYCLOAK-6771 Certificate Bound Token -->
         <hok.client.certificate.keystore>${auth.server.config.dir}/other_client.jks</hok.client.certificate.keystore>
@@ -601,13 +601,13 @@
                             <project.version>${project.version}</project.version>
 
                             <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
+                            <client.certificate.file>${client.certificate.file}</client.certificate.file>
                             <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
                             <client.certificate.keystore.passphrase>${client.certificate.keystore.passphrase}</client.certificate.keystore.passphrase>
-                            <client.truststore>${client.truststore}</client.truststore>
-                            <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
-                            <client.certificate.file>${client.certificate.file}</client.certificate.file>
                             <client.key.file>${client.key.file}</client.key.file>
                             <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
+                            <client.truststore>${client.truststore}</client.truststore>
+                            <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
 
                             <!-- KEYCLOAK-6771 Certificate Bound Token -->
                             <hok.client.certificate.keystore>${hok.client.certificate.keystore}</hok.client.certificate.keystore>
@@ -641,6 +641,7 @@
                             <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
                             <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
                             <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+                            <keycloak.connectionsInfinispan.sessionsOwners>${keycloak.connectionsInfinispan.sessionsOwners}</keycloak.connectionsInfinispan.sessionsOwners>
                             <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
@@ -653,6 +654,12 @@
                             <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
                             <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
                             <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
+
+                            <!--
+                              ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
+                              ~ See KEYCLOAK-15692, ELY-1891 issues & PRs of EAP7-1219 issue for details.
+                              -->
+                            <wildfly-client.config.path>${project.build.directory}${file.separator}dependency${file.separator}wildfly-config.xml</wildfly-client.config.path>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -765,6 +772,7 @@
                 <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
                 <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
+                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>
@@ -1240,6 +1248,7 @@
 
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
 
+                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>

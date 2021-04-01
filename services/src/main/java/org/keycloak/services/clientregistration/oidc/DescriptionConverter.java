@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -64,6 +66,7 @@ public class DescriptionConverter {
         client.setName(clientOIDC.getClientName());
         client.setRedirectUris(clientOIDC.getRedirectUris());
         client.setBaseUrl(clientOIDC.getClientUri());
+        client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         String scopeParam = clientOIDC.getScope();
         if (scopeParam != null) client.setOptionalClientScopes(new ArrayList<>(Arrays.asList(scopeParam.split(" "))));
@@ -140,6 +143,10 @@ public class DescriptionConverter {
 
         if (clientOIDC.getIdTokenEncryptedResponseEnc() != null) {
             configWrapper.setIdTokenEncryptedResponseEnc(clientOIDC.getIdTokenEncryptedResponseEnc());
+        }
+
+        if (clientOIDC.getRequestUris() != null) {
+            configWrapper.setRequestUris(clientOIDC.getRequestUris());
         }
 
         configWrapper.setTokenEndpointAuthSigningAlg(clientOIDC.getTokenEndpointAuthSigningAlg());
@@ -253,6 +260,9 @@ public class DescriptionConverter {
         if (config.getIdTokenEncryptedResponseEnc() != null) {
             response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
         }
+        if (config.getRequestUris() != null) {
+            response.setRequestUris(config.getRequestUris());
+        }
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
@@ -303,6 +313,10 @@ public class DescriptionConverter {
         }
         if (client.isServiceAccountsEnabled()) {
             grantTypes.add(OAuth2Constants.CLIENT_CREDENTIALS);
+        }
+        boolean oauth2DeviceEnabled = client.getAttributes() != null && Boolean.parseBoolean(client.getAttributes().get(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
+        if (oauth2DeviceEnabled) {
+            grantTypes.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
         }
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
             grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);

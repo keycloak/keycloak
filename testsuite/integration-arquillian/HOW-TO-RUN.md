@@ -138,6 +138,10 @@ unzip prepared server:
 
     unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
 
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
+
 start the server:
 
     sh auth-server-wildfly/bin/standalone.sh \
@@ -162,6 +166,10 @@ unzip prepared servers:
 
     unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
     unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
+
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
 
 start both servers:
 
@@ -497,6 +505,8 @@ The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, becau
 which simulate hardware authentication device. For automated WebAuthN testing, this approach seems like the best choice so far.
 To enabling the feature you have to add flag to _chromeArguments_. In each WebAuthN test should be method with ``@Before`` annotation
 to verify the browser properties.
+
+**Note:** The testing feature is only available for Chrome version 68-80.
 
 #### Example of verifying the browser properties
 ```

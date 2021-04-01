@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -406,6 +407,20 @@ public class Reflections {
      */
     public static <A extends AccessibleObject> A setAccessible(A member) {
         AccessController.doPrivileged(new SetAccessiblePrivilegedAction(member));
+        return member;
+    }
+
+    /**
+     * Set the accessibility flag on the {@link AccessibleObject} to false as described in {@link
+     * AccessibleObject#setAccessible(boolean)} within the context of a {link PrivilegedAction}.
+     *
+     * @param <A> member the accessible object type
+     * @param member the accessible object
+     *
+     * @return the accessible object after the accessible flag has been altered
+     */
+    public static <A extends AccessibleObject> A unsetAccessible(A member) {
+        AccessController.doPrivileged(new UnSetAccessiblePrivilegedAction(member));
         return member;
     }
 
@@ -993,5 +1008,44 @@ public class Reflections {
      */
     public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return (T) classForName(fullQualifiedName, type.getClassLoader()).newInstance();
+    }
+
+    /**
+     * <p>Resolves the type of items for a {@link Field} declared as a {@link List}.
+     *
+     * <p>This method will first try to check the parametrized type of the field type. If none is defined, it will try to infer
+     * the type of items by looking at the value of the field for the given {@code instance}.
+     *
+     * <p>Make sure the field is accessible before invoking this method.
+     *
+     * @param field the field declared as {@link List}
+     * @param instance the instance that should be used to obtain infer the type in case no parametrized type is found in the field.
+     * @return if the field is not a {@link List}, it returns null. Otherwise the type of items of the list. If the type for items can not be inferred, the {@link Object} type is returned.
+     * @throws IllegalAccessException in case it fails to obtain the value of the field from the {@code instance}
+     */
+    public static Class<?> resolveListType(Field field, Object instance) throws IllegalAccessException {
+        if (!List.class.isAssignableFrom(field.getType())) {
+            return null;
+        }
+
+        Type genericType = field.getGenericType();
+
+        if (genericType instanceof ParameterizedType) {
+            Type[] typeArguments = ParameterizedType.class.cast(genericType)
+                    .getActualTypeArguments();
+
+            if (typeArguments[0] instanceof Class) {
+                return (Class<?>) typeArguments[0];
+            }
+        } else if (instance != null) {
+            // just in case the field is not parametrized
+            List item = List.class.cast(field.get(instance));
+
+            if (!item.isEmpty()) {
+                return item.get(0).getClass();
+            }
+        }
+
+        return Object.class;
     }
 }

@@ -34,6 +34,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -66,7 +67,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
 
             // assert that user "fullnameUser" is not in local DB
-            Assert.assertNull(session.users().getUserByUsername("fullname", appRealm));
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "fullname"));
 
             // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
@@ -103,7 +104,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             fullnameUser.setFirstName("James2");
             fullnameUser.setLastName("Dee2");
         });
@@ -117,7 +118,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James2", "Dee2", "fullname@email.org", "4578");
 
             // Remove "fullnameUser" to assert he is removed from LDAP.
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             session.users().removeUser(appRealm, fullnameUser);
         });
     }
@@ -140,7 +141,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             fullnameUser.setAttribute("myAttribute", Collections.singletonList("test"));
             fullnameUser.setAttribute("myEmptyAttribute", new ArrayList<>());
             fullnameUser.setAttribute("myNullAttribute", null);
@@ -154,10 +155,10 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
 
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
-            assertThat(fullnameUser.getAttribute("myAttribute"), contains("test"));
-            assertThat(fullnameUser.getAttribute("myEmptyAttribute"), is(empty()));
-            assertThat(fullnameUser.getAttribute("myNullAttribute"), is(empty()));
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
+            assertThat(fullnameUser.getAttributeStream("myAttribute").collect(Collectors.toList()), contains("test"));
+            assertThat(fullnameUser.getAttributeStream("myEmptyAttribute").collect(Collectors.toList()), is(empty()));
+            assertThat(fullnameUser.getAttributeStream("myNullAttribute").collect(Collectors.toList()), is(empty()));
 
             // Remove "fullnameUser" to assert he is removed from LDAP.
             session.users().removeUser(appRealm, fullnameUser);

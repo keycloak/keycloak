@@ -131,8 +131,18 @@ public enum EventType {
     TOKEN_EXCHANGE(true),
     TOKEN_EXCHANGE_ERROR(true),
 
+    OAUTH2_DEVICE_AUTH(true),
+    OAUTH2_DEVICE_AUTH_ERROR(true),
+    OAUTH2_DEVICE_VERIFY_USER_CODE(true),
+    OAUTH2_DEVICE_VERIFY_USER_CODE_ERROR(true),
+    OAUTH2_DEVICE_CODE_TO_TOKEN(true),
+    OAUTH2_DEVICE_CODE_TO_TOKEN_ERROR(true),
+
     PERMISSION_TOKEN(true),
-    PERMISSION_TOKEN_ERROR(false);
+    PERMISSION_TOKEN_ERROR(false),
+
+    DELETE_ACCOUNT(true),
+    DELETE_ACCOUNT_ERROR(true);
 
     private boolean saveByDefault;
 

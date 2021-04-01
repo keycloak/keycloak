@@ -35,11 +35,11 @@
         </thead>
         <tbody>
             <tr ng-repeat="role in roles">
-                <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
+                <td><a href="#{{determineEditLink(role)}}">{{role.name}}</a></td>
                 <td translate="{{role.composite}}"></td>
                 <td>{{role.description}}</td>
-                <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">{{:: 'edit' | translate}}</td>
-                <td class="kc-action-cell" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</td>
+                <td class="kc-action-cell" kc-open="{{determineEditLink(role)}}">{{:: 'edit' | translate}}</td>
+                <td class="kc-action-cell" data-ng-click="removeRole(role)" ng-class="{'kc-action-cell-disabled': role.name === defaultRoleName}">{{:: 'delete' | translate}}</td>
             </tr>
             <tr data-ng-show="(roles | filter:{name: query.search}).length == 0">
                 <td class="text-muted" colspan="4" data-ng-show="searchLoaded && roles.length == 0 && lastSearch != null">{{:: 'no-results' | translate}}</td>

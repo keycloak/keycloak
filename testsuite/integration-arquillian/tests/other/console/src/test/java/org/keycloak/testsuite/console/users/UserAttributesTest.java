@@ -22,10 +22,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
+import org.keycloak.testsuite.console.page.groups.CreateGroup;
+import org.keycloak.testsuite.console.page.groups.Groups;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  *
@@ -36,6 +44,12 @@ public class UserAttributesTest extends AbstractUserTest {
 
     @Page
     private UserAttributes userAttributesPage;
+
+    @Page
+    protected Groups groupsPage;
+
+    @Page
+    protected CreateGroup createGroupPage;
 
     @Before
     public void beforeUserAttributesTest() {
@@ -97,6 +111,33 @@ public class UserAttributesTest extends AbstractUserTest {
         createUser(disabledUser);
         assertAlertSuccess();
         // TODO try to log in
+    }
+
+    @Test
+    public void createUserWithGroups() {
+        GroupRepresentation newGroup = new GroupRepresentation();
+        newGroup.setName("mygroup");
+
+        // navigate to Groups creation page
+        groupsPage.navigateTo();
+        assertCurrentUrlEquals(groupsPage);
+        groupsPage.table().addGroup();
+        assertCurrentUrlStartsWith(createGroupPage);
+
+        // create the group
+        createGroupPage.form().setValues(newGroup);
+        createGroupPage.form().save();
+        assertAlertSuccess();
+
+        // navigate to Users creation page
+        usersPage.navigateTo();
+        RealmRepresentation representation = testRealmResource().toRepresentation();
+        representation.setRegistrationEmailAsUsername(true);
+        testRealmResource().update(representation);
+        newTestRealmUser.setEmail("test-with-groups@keycloak.org");
+        newTestRealmUser.setGroups(Arrays.asList("mygroup"));
+        createUser(newTestRealmUser);
+        assertAlertSuccess();
     }
 
 }

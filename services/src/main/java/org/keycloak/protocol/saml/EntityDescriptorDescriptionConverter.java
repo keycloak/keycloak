@@ -31,7 +31,10 @@ import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -48,6 +51,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -177,6 +181,22 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
                 }
             }
         }
+        
+        app.setProtocolMappers(spDescriptorType.getAttributeConsumingService().stream().flatMap(att -> att.getRequestedAttribute().stream())
+            .map(attr -> {
+                ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+                mapper.setName(attr.getName());
+                mapper.setProtocol("saml");
+                mapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+                Map<String, String> config = new HashMap<>();
+                config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, attr.getName());
+                if (attr.getFriendlyName() != null)
+                    config.put(AttributeStatementHelper.FRIENDLY_NAME, attr.getFriendlyName());
+                if (attr.getNameFormat() != null)
+                    config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, getSAMLNameFormat(attr.getNameFormat()));
+                mapper.setConfig(config);
+                return mapper;
+            }).collect(Collectors.toList()));
 
         for (KeyDescriptorType keyDescriptor : spDescriptorType.getKeyDescriptor()) {
             X509Certificate cert = null;
@@ -198,6 +218,20 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         }
 
         return app;
+    }
+    
+    private static String getSAMLNameFormat(String xmlValue) {
+        String value =null;
+        if (JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.getUri().toString().equals(xmlValue)) {
+            value = AttributeStatementHelper.URI_REFERENCE;
+        } else if (JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.getUri().toString().equals(xmlValue)) {
+            value = AttributeStatementHelper.BASIC;
+        } else if (JBossSAMLURIConstants.ATTRIBUTE_FORMAT_UNSPECIFIED.getUri().toString().equals(xmlValue)) {
+            value = AttributeStatementHelper.UNSPECIFIED;
+        }
+            
+       return value;
+        
     }
 
     private static String getLogoutLocation(SPSSODescriptorType idp, String bindingURI) {

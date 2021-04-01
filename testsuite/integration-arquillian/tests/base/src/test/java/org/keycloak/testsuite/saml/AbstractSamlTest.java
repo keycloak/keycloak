@@ -1,8 +1,14 @@
 package org.keycloak.testsuite.saml;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.util.SamlClient;
@@ -17,7 +23,11 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -35,6 +45,9 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
 
     public static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST = AUTH_SERVER_SCHEME + "://localhost:" + (AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT : 8080) + "/sales-post/saml";
     public static final String SAML_CLIENT_ID_SALES_POST = "http://localhost:8280/sales-post/";
+
+    public static final String SAML_CLIENT_ID_ECP_SP = "http://localhost:8280/ecp-sp/";
+    public static final String SAML_ASSERTION_CONSUMER_URL_ECP_SP = AUTH_SERVER_SCHEME + "://localhost:" + (AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT : 8080) + "/ecp-sp/saml";
 
     public static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST2 = AUTH_SERVER_SCHEME + "://localhost:" + (AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT : 8080) + "/sales-post2/saml";
     public static final String SAML_CLIENT_ID_SALES_POST2 = "http://localhost:8280/sales-post2/";
@@ -73,6 +86,9 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
 
     public static final String SAML_BROKER_ALIAS = "saml-broker";
 
+    protected final AtomicReference<NameIDType> nameIdRef = new AtomicReference<>();
+    protected final AtomicReference<String> sessionIndexRef = new AtomicReference<>();
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
@@ -108,5 +124,21 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
 
     protected URI getSamlBrokerUrl(String realmName) {
         return URI.create(getAuthServerRealmBase(realmName).toString() + "/broker/" + SAML_BROKER_ALIAS + "/endpoint");
+    }
+
+    protected SAML2Object extractNameIdAndSessionIndexAndTerminate(SAML2Object so) {
+        assertThat(so, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        ResponseType loginResp1 = (ResponseType) so;
+        final AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
+        assertThat(firstAssertion, org.hamcrest.Matchers.notNullValue());
+        assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
+
+        NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
+        AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
+
+        nameIdRef.set(nameId);
+        sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
+
+        return null;
     }
 }

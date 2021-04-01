@@ -380,6 +380,6 @@ public class UserAdapter implements CachedUserModel.Streams {
     }
 
     private UserModel getUserModel() {
-        return userProviderCache.getDelegate().getUserById(cached.getId(), realm);
+        return userProviderCache.getDelegate().getUserById(realm, cached.getId());
     }
 }

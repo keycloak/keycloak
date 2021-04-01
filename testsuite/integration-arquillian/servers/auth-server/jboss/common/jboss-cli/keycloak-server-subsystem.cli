@@ -1,13 +1,5 @@
 
 echo *** Updating keycloak-server subsystem ***
-echo ** Adding truststore spi**
-/subsystem=keycloak-server/spi=truststore/:add
-/subsystem=keycloak-server/spi=truststore/provider=file/:add(enabled=true,properties={ \
-    file => "${auth.server.truststore:${jboss.home.dir}/standalone/configuration/keycloak.truststore}", \
-    password => "${auth.server.truststore.password:secret}", \
-    hostname-verification-policy => "WILDCARD", \
-    disabled => "false"})
-
 echo ** Adding login-protocol spi **
 /subsystem=keycloak-server/spi=login-protocol/:add
 /subsystem=keycloak-server/spi=login-protocol/provider=saml/:add(enabled=true,properties={knownProtocols => "[\"http=${auth.server.http.port}\",\"https=${auth.server.https.port}\"]"})
@@ -24,3 +16,9 @@ echo ** Adding provider **
 
 echo ** Adding max-detail-length to eventsStore spi **
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:write-attribute(name=properties.max-detail-length,value=${keycloak.eventsStore.maxDetailLength:1000})
+
+echo ** Adding spi=userProfile with legacy-user-profile configuration of read-only attributes **
+/subsystem=keycloak-server/spi=userProfile/:add
+/subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:add(properties={},enabled=true)
+/subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=read-only-attributes,value=[deniedFoo,deniedBar*,deniedSome/thing,deniedsome*thing])
+/subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value=[deniedSomeAdmin])

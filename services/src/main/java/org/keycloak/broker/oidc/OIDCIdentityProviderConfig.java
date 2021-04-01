@@ -18,10 +18,12 @@ package org.keycloak.broker.oidc;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import java.util.Arrays;
 
 /**
  * @author Pedro Igor
@@ -32,7 +34,6 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
-
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -132,7 +133,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         }
     }
 
-    @Override 
+    @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
         SslRequired sslRequired = realm.getSslRequired();

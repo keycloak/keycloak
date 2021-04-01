@@ -36,6 +36,7 @@
             </imports>
         </module>
         <module name="javax.api"/>
+        <module name="javax.xml.bind.api" optional="true" />
         <module name="org.apache.httpcomponents"/>
     </dependencies>
 

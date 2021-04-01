@@ -50,6 +50,8 @@ public class Templates {
                 return "login-reset-password.ftl";
             case LOGIN_UPDATE_PASSWORD:
                 return "login-update-password.ftl";
+            case LOGIN_OAUTH2_DEVICE_VERIFY_USER_CODE:
+                return "login-oauth2-device-verify-user-code.ftl";
             case LOGIN_SELECT_AUTHENTICATOR:
                 return "select-authenticator.ftl";
             case REGISTER:

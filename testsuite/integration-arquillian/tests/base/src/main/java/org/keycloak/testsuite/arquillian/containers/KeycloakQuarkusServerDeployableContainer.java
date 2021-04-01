@@ -141,7 +141,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         commands.add("./kc.sh");
 
-        if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
+        if (configuration.getDebugPort() > 0) {
+            commands.add("--debug");
+            commands.add(Integer.toString(configuration.getDebugPort()));
+        } else if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
             commands.add(System.getProperty("auth.server.debug.port", "5005"));
         }

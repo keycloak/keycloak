@@ -80,7 +80,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
     }
 
     @Test
-    public void testOnlyOwnerCanDeleteAlbum() throws Exception {
+    public void testPathConfigInvalidation() throws Exception {
         loginToClientPage(aliceUser);
         clientPage.createAlbum(ALICE_ALBUM_NAME);
 

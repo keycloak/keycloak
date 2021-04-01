@@ -20,16 +20,17 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.TokenRevocationStoreProvider;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,7 +58,8 @@ public class InfinispanTokenRevocationStoreProvider implements TokenRevocationSt
 
         try {
             BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
-            cache.put(tokenId, tokenValue, lifespanSeconds + 1, TimeUnit.SECONDS);
+            long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds + 1));
+            cache.put(tokenId, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             if (logger.isDebugEnabled()) {

@@ -30,6 +30,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
@@ -60,7 +63,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         try {
             RealmModel realm = session.getContext().getRealm();
-            ClientModel clientModel = ClientManager.createClient(session, realm, client, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
@@ -70,6 +73,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
+            session.clientPolicy().triggerOnEvent(new DynamicClientRegisteredContext(context, clientModel, auth.getJwt(), realm));
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
             client = ModelToRepresentation.toRepresentation(clientModel, session);
@@ -84,10 +88,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 session.realms().decreaseRemainingCount(realm, initialAccessModel);
             }
 
+            client.setDirectAccessGrantsEnabled(false);
+
             event.client(client.getClientId()).success();
             return client;
         } catch (ModelDuplicateException e) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier in use", Response.Status.BAD_REQUEST);
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -97,7 +105,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireView(client);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
-        if (client.getSecret() != null) {
+        if (!(Boolean.TRUE.equals(rep.isBearerOnly()) || Boolean.TRUE.equals(rep.isPublicClient()))) {
             rep.setSecret(client.getSecret());
         }
 
@@ -132,6 +140,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
+        try {
+            session.clientPolicy().triggerOnEvent(new DynamicClientUpdatedContext(session, client, auth.getJwt(), client.getRealm()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
         ClientRegistrationPolicyManager.triggerAfterUpdate(context, registrationAuth, client);
 
         event.client(client.getClientId()).success();

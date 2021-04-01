@@ -73,10 +73,10 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -85,6 +85,7 @@ import static org.junit.Assert.assertThat;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import org.keycloak.testsuite.util.RoleBuilder;
 
 /**
  * @author pedroigor
@@ -177,13 +178,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
     // KEYCLOAK-8838
     @Test
     public void testSuccess_dotsInClientId() throws Exception {
-        // Create client with dot in the name and with some role
+        // Create client with dot in the name
         ClientRepresentation clientRep = org.keycloak.testsuite.util.ClientBuilder.create()
                 .clientId("my.foo.client")
                 .addRedirectUri("http://foo.host")
                 .secret("password")
                 .directAccessGrants()
-                .defaultRoles("my.foo.role")
                 .build();
 
         RealmResource realm = adminClient.realm("test");
@@ -192,6 +192,9 @@ public class UserInfoTest extends AbstractKeycloakTest {
         String clientUUID = ApiUtil.getCreatedId(resp);
         resp.close();
         getCleanup().addClientUuid(clientUUID);
+
+        //Create role with dot in the name
+        realm.clients().get(clientUUID).roles().create(RoleBuilder.create().name("my.foo.role").build());
 
         // Assign role to the user
         RoleRepresentation fooRole = realm.clients().get(clientUUID).roles().get("my.foo.role").toRepresentation();
@@ -731,8 +734,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private void testRolesInUserInfoResponse(UserInfo userInfo) {
-        Map<String, Set<String>> realmAccess = (Map<String, Set<String>>) userInfo.getOtherClaims().get("realm_access");
-        Map<String, Map<String, Set<String>>> resourceAccess = (Map<String, Map<String, Set<String>>>) userInfo.getOtherClaims().get("resource_access");
+        Map<String, Collection<String>> realmAccess = (Map<String, Collection<String>>) userInfo.getOtherClaims().get("realm_access");
+        Map<String, Map<String, Collection<String>>> resourceAccess = (Map<String, Map<String, Collection<String>>>) userInfo.getOtherClaims().get("resource_access");
 
         org.hamcrest.MatcherAssert.assertThat(realmAccess.get("roles"), CoreMatchers.hasItems("offline_access", "user"));
         org.hamcrest.MatcherAssert.assertThat(resourceAccess.get("test-app").get("roles"), CoreMatchers.hasItems("customer-user"));

@@ -150,60 +150,35 @@
     border-color: rgba(230, 230, 230, 0.5);
 }
 /*End of IE compatibility*/
+h1#kc-page-title {
+    margin-top: 10px;
+}
 
 #kc-locale ul {
     display: none;
-    position: absolute;
-    background-color: #fff;
-    list-style: none;
-    right: 0;
     top: 20px;
     min-width: 100px;
-    padding: 2px 0;
-    border: solid 1px #bbb;
+    padding: 0;
 }
 
 #kc-locale:hover ul {
     display: block;
-    margin: 0;
 }
 
-#kc-locale ul li a {
-    display: block;
-    padding: 5px 14px;
-    color: #000 !important;
-    text-decoration: none;
-    line-height: 20px;
-}
-
-#kc-locale ul li a:hover {
-    color: #4d5258;
-    background-color: #d4edfa;
-}
-
+/* IE compatibility */
 #kc-locale-dropdown a {
-    color: #4d5258;
-    background: 0 0;
-    padding: 0 15px 0 0;
-    font-weight: 300;
+    color: #6A6E73;
+    color: var(--pf-global--Color--200);
+    text-align: right;
+    font-size: 14px;
+    font-size: var(--pf-global--FontSize--sm);
 }
 
-#kc-locale-dropdown a:hover {
-    text-decoration: none;
-}
-
-a#kc-current-locale-link {
-    display: block;
-    padding: 0 5px;
-}
-
-/* a#kc-current-locale-link:hover {
-    background-color: rgba(0,0,0,0.2);
-} */
-
+/* IE compatibility */
 a#kc-current-locale-link::after {
     content: "\2c5";
     margin-left: 4px;
+    margin-left: var(--pf-global--spacer--xs)
 }
 
 .login-pf .container {
@@ -574,6 +549,71 @@ ul#kc-totp-supported-apps {
     width: 40%;
 }
 
+/* Internet Explorer 11 compatibility workaround for select-authenticator screen */
+@media all and (-ms-high-contrast: none),
+(-ms-high-contrast: active) {
+    .select-auth-box-parent {
+        border-top: 1px solid #f0f0f0;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        cursor: pointer;
+    }
+
+    .select-auth-box-headline {
+        font-size: 16px;
+        color: #06c;
+        font-weight: bold;
+    }
+
+    .select-auth-box-desc {
+        font-size: 14px;
+    }
+
+    .pf-l-stack {
+        flex-basis: 100%;
+    }
+}
+/* End of IE11 workaround for select-authenticator screen */
+
+.select-auth-box-arrow{
+    display: flex;
+    align-items: center;
+    margin-right: 2rem;
+}
+
+.select-auth-box-icon{
+    display: flex;
+    flex: 0 0 2em;
+    justify-content: center;
+    margin-right: 1rem;
+    margin-left: 3rem;
+}
+
+.select-auth-box-parent{
+    border-top: 1px solid var(--pf-global--palette--black-200);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    cursor: pointer;
+}
+
+.select-auth-box-parent:hover{
+    background-color: #f7f8f8;
+}
+
+.select-auth-container {
+    padding-bottom: 0px !important;
+}
+
+.select-auth-box-headline {
+    font-size: var(--pf-global--FontSize--md);
+    color: var(--pf-global--primary-color--100);
+    font-weight: bold;
+}
+
+.select-auth-box-desc {
+    font-size: var(--pf-global--FontSize--sm);
+}
+
 .card-pf {
     margin: 0 auto;
     box-shadow: var(--pf-global--BoxShadow--lg);
@@ -629,10 +669,6 @@ ul#kc-totp-supported-apps {
 
 .login-pf-page .list-view-pf-description {
     width: 100%;
-}
-
-.login-pf-page .card-pf{
-    margin-bottom: 10px;
 }
 
 #kc-form-login div.form-group:last-of-type,

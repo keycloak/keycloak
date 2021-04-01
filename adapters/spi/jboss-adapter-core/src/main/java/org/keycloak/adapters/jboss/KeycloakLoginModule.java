@@ -30,7 +30,6 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.security.Principal;
-import java.security.acl.Group;
 import java.util.Set;
 
 /**
@@ -83,10 +82,10 @@ public class KeycloakLoginModule extends AbstractServerLoginModule {
     */
 
     @Override
-    protected Group[] getRoleSets() throws LoginException {
+    protected SimpleGroup[] getRoleSets() throws LoginException {
         //log.info("getRoleSets");
         SimpleGroup roles = new SimpleGroup("Roles");
-        Group[] roleSets = {roles};
+        SimpleGroup[] roleSets = {roles};
         for (String role : roleSet) {
             //log.info("   adding role: " + role);
             roles.addMember(new SimplePrincipal(role));

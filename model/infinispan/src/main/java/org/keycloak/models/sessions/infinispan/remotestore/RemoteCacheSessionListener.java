@@ -32,12 +32,20 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+
 import org.infinispan.client.hotrod.VersionedValue;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,17 +61,25 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     private RemoteCache<K, SessionEntityWrapper<V>> remoteCache;
     private TopologyInfo topologyInfo;
     private ClientListenerExecutorDecorator<K> executor;
+    private BiFunction<RealmModel, V, Long> lifespanMsLoader;
+    private BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader;
+    private KeycloakSessionFactory sessionFactory;
 
 
     protected RemoteCacheSessionListener() {
     }
 
 
-    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache) {
+    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
+                        BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
         this.cache = cache;
         this.remoteCache = remoteCache;
 
         this.topologyInfo = InfinispanUtil.getTopologyInfo(session);
+
+        this.lifespanMsLoader = lifespanMsLoader;
+        this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
+        this.sessionFactory = session.getKeycloakSessionFactory();
 
         ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor("client-listener-" + cache.getName());
         this.executor = new ClientListenerExecutorDecorator<>(executor);
@@ -107,8 +123,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
         // Maybe can happen under some circumstances that remoteCache doesn't yet contain the value sent in the event (maybe just theoretically...)
         if (remoteSessionVersioned == null || remoteSessionVersioned.getValue() == null) {
-            logger.debugf("Entity '%s' not present in remoteCache. Ignoring create",
-                    key.toString());
+            logger.debugf("Entity '%s' not present in remoteCache. Ignoring create", key);
             return;
         }
 
@@ -116,36 +131,46 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         V remoteSession = remoteSessionVersioned.getValue().getEntity();
         SessionEntityWrapper<V> newWrapper = new SessionEntityWrapper<>(remoteSession);
 
-        logger.debugf("Read session entity wrapper from the remote cache: %s", remoteSession.toString());
+        logger.debugf("Read session entity wrapper from the remote cache: %s", remoteSession);
 
-        // Using putIfAbsent. Theoretic possibility that entity was already put to cache by someone else
-        cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                .putIfAbsent(key, newWrapper);
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, (session -> {
+
+            RealmModel realm = session.realms().getRealm(newWrapper.getEntity().getRealmId());
+            long lifespanMs = lifespanMsLoader.apply(realm, newWrapper.getEntity());
+            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, newWrapper.getEntity());
+
+            logger.tracef("Calling putIfAbsent for entity '%s' in the cache '%s' . lifespan: %d ms, maxIdleTime: %d ms", key, remoteCache.getName(), lifespanMs, maxIdleTimeMs);
+
+            // Using putIfAbsent. Theoretic possibility that entity was already put to cache by someone else
+            cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                    .putIfAbsent(key, newWrapper, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+
+        }));
     }
 
 
     protected void replaceRemoteEntityInCache(K key, long eventVersion) {
         // TODO can be optimized and remoteSession sent in the event itself?
-        boolean replaced = false;
+        AtomicBoolean replaced = new AtomicBoolean(false);
         int replaceRetries = 0;
         int sleepInterval = 25;
         do {
             replaceRetries++;
-            
+
             SessionEntityWrapper<V> localEntityWrapper = cache.get(key);
             VersionedValue<SessionEntityWrapper<V>> remoteSessionVersioned = remoteCache.getWithMetadata(key);
 
             // Probably already removed
             if (remoteSessionVersioned == null || remoteSessionVersioned.getValue() == null) {
                 logger.debugf("Entity '%s' not present in remoteCache. Ignoring replace",
-                        key.toString());
+                        key);
                 return;
             }
 
             if (remoteSessionVersioned.getVersion() < eventVersion) {
                 try {
                     logger.debugf("Got replace remote entity event prematurely for entity '%s', will try again. Event version: %d, got: %d",
-                      key.toString(), eventVersion, remoteSessionVersioned == null ? -1 : remoteSessionVersioned.getVersion());
+                            key, eventVersion, remoteSessionVersioned == null ? -1 : remoteSessionVersioned.getVersion());
                     Thread.sleep(new Random().nextInt(sleepInterval));  // using exponential backoff
                     continue;
                 } catch (InterruptedException ex) {
@@ -156,18 +181,26 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             }
             SessionEntity remoteSession = remoteSessionVersioned.getValue().getEntity();
 
-            logger.debugf("Read session entity from the remote cache: %s . replaceRetries=%d", remoteSession.toString(), replaceRetries);
+            logger.debugf("Read session entity from the remote cache: %s . replaceRetries=%d", remoteSession, replaceRetries);
 
             SessionEntityWrapper<V> sessionWrapper = remoteSession.mergeRemoteEntityWithLocalEntity(localEntityWrapper);
 
-            // We received event from remoteCache, so we won't update it back
-            replaced = cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                    .replace(key, localEntityWrapper, sessionWrapper);
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, (session -> {
 
-            if (! replaced) {
-                logger.debugf("Did not succeed in merging sessions, will try again: %s", remoteSession.toString());
+                RealmModel realm = session.realms().getRealm(sessionWrapper.getEntity().getRealmId());
+                long lifespanMs = lifespanMsLoader.apply(realm, sessionWrapper.getEntity());
+                long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionWrapper.getEntity());
+
+                // We received event from remoteCache, so we won't update it back
+                replaced.set(cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                        .replace(key, localEntityWrapper, sessionWrapper, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS));
+
+            }));
+
+            if (! replaced.get()) {
+                logger.debugf("Did not succeed in merging sessions, will try again: %s", remoteSession);
             }
-        } while (replaceRetries < MAXIMUM_REPLACE_RETRIES && ! replaced);
+        } while (replaceRetries < MAXIMUM_REPLACE_RETRIES && ! replaced.get());
     }
 
 
@@ -203,7 +236,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             result = topologyInfo.amIOwner(cache, key);
         }
 
-        logger.debugf("Received event from remote store. Event '%s', key '%s', skip '%b'", type.toString(), key, !result);
+        logger.debugf("Received event from remote store. Event '%s', key '%s', skip '%b'", type, key, !result);
 
         return result;
     }
@@ -220,7 +253,8 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
 
-    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache) {
+    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
+                                                                                         BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.
@@ -235,7 +269,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         }*/
 
         RemoteCacheSessionListener<K, V> listener = new RemoteCacheSessionListener<>();
-        listener.init(session, cache, remoteCache);
+        listener.init(session, cache, remoteCache, lifespanMsLoader, maxIdleTimeMsLoader);
 
         return listener;
     }

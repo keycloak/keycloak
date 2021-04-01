@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -124,7 +125,9 @@ public class LoadPersistentSessionsCommand extends AbstractCommand {
                 int offset = workerId * limit;
 
                 UserSessionPersisterProvider persister = keycloakSession.getProvider(UserSessionPersisterProvider.class);
-                loadedSessions = persister.loadUserSessions(offset, limit, true, lastCreatedOn, lastSessionId);
+                loadedSessions = persister
+                        .loadUserSessionsStream(offset, limit, true, lastCreatedOn, lastSessionId)
+                        .collect(Collectors.toList());
 
             });
         }

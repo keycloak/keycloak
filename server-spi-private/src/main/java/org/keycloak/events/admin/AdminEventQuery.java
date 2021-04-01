@@ -138,7 +138,7 @@ public interface AdminEventQuery {
 
     /**
      * Executes the query and returns the results as a stream.
-     * @return Stream of admin events
+     * @return Stream of admin events. Never returns {@code null}.
      */
     Stream<AdminEvent> getResultStream();
 }

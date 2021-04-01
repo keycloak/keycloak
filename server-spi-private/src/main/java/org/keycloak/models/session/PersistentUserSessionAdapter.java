@@ -120,7 +120,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public UserModel getUser() {
         if (user == null) {
-            user = session.users().getUserById(userId, realm);
+            user = session.users().getUserById(realm, userId);
         }
         return user;
     }

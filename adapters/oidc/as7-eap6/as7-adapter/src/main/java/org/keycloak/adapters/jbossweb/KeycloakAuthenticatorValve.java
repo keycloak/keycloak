@@ -27,7 +27,7 @@ import org.apache.catalina.deploy.LoginConfig;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.tomcat.AbstractAuthenticatedActionsValve;
 import org.keycloak.adapters.tomcat.AbstractKeycloakAuthenticatorValve;
-import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.adapters.tomcat.PrincipalFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -65,7 +65,7 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
     }
 
     @Override
-    protected GenericPrincipalFactory createPrincipalFactory() {
+    protected PrincipalFactory createPrincipalFactory() {
         return new JBossWebPrincipalFactory();
     }
 

@@ -14,8 +14,7 @@ import static org.keycloak.models.LDAPConstants.BIND_CREDENTIAL;
  * @author mhajas
  */
 @EnableVault
-@AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
-        "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
+@AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details = "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
 public class LDAPVaultCredentialsTest extends LDAPSyncTest {
 
     private static final String VAULT_EXPRESSION = "${vault.ldap_bindCredential}";

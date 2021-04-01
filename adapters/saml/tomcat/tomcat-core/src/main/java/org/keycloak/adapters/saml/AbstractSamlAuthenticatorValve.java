@@ -31,7 +31,7 @@ import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 import org.keycloak.adapters.spi.*;
 import org.keycloak.adapters.tomcat.CatalinaHttpFacade;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
-import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.adapters.tomcat.PrincipalFactory;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 import javax.servlet.RequestDispatcher;
@@ -87,7 +87,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         // Possible scenarios:
         // 1) The deployment has a keycloak.config.resolver specified and it exists:
         //    Outcome: adapter uses the resolver
-        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exists, isn't a resolver, ...) :
+        // 2) The deployment has a keycloak.config.resolver and isn't valid (doesn't exist, isn't a resolver, ...) :
         //    Outcome: adapter is left unconfigured
         // 3) The deployment doesn't have a keycloak.config.resolver , but has a keycloak.json (or equivalent)
         //    Outcome: adapter uses it
@@ -186,7 +186,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
     }
 
-    protected abstract GenericPrincipalFactory createPrincipalFactory();
+    protected abstract PrincipalFactory createPrincipalFactory();
     protected abstract boolean forwardToErrorPageInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException;
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 

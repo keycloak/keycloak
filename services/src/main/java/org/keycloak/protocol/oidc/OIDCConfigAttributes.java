@@ -27,6 +27,8 @@ public final class OIDCConfigAttributes {
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST = "request only";
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST_URI = "request_uri only";
 
+    public static final String REQUEST_URIS = "request.uris";
+
     public static final String JWKS_URL = "jwks.url";
 
     public static final String USE_JWKS_URL = "use.jwks.url";

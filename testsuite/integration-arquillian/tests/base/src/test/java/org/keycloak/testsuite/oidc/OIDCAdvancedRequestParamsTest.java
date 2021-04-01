@@ -28,7 +28,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
@@ -56,6 +58,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -92,6 +95,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -118,7 +122,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app")
+                .directAccessGrant(true)
+                .setRequestUris(TestApplicationResourceUrls.clientRequestUri());
+
         /*
          * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
          * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
@@ -247,6 +254,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     // Prompt=none with consent required for client
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void promptNoneConsentRequired() throws Exception {
         // Require consent
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(true);
@@ -780,6 +788,72 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assert.assertNotNull(response.getCode());
         Assert.assertEquals("mystate1", response.getState());
         assertTrue(appPage.isCurrent());
+    }
+
+    @Test
+    public void requestUriParamWithAllowedRequestUris() throws Exception {
+        oauth.stateParamHardcoded("mystate1");
+        String validRedirectUri = oauth.getRedirectUri();
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+        ClientManager.ClientManagerBuilder clientMgrBuilder = ClientManager.realm(adminClient.realm("test")).clientId("test-app");
+
+        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+
+        // Test with the relative allowed request_uri - should pass
+        String absoluteRequestUri = TestApplicationResourceUrls.clientRequestUri();
+        String requestUri = absoluteRequestUri.substring(UriUtils.getOrigin(absoluteRequestUri).length());
+        clientMgrBuilder.setRequestUris(requestUri);
+
+        oauth.openLoginForm();
+        Assert.assertFalse(errorPage.isCurrent());
+        loginPage.assertCurrent();
+
+        // Test with the relative and star at the end - should pass
+        requestUri = requestUri.replace("/get-oidc-request", "/*");
+        clientMgrBuilder.setRequestUris(requestUri);
+
+        oauth.openLoginForm();
+        Assert.assertFalse(errorPage.isCurrent());
+        loginPage.assertCurrent();
+
+        // Test absolute and wildcard at the end - should pass
+        requestUri = absoluteRequestUri.replace("/get-oidc-request", "/*");
+        clientMgrBuilder.setRequestUris(requestUri);
+
+        oauth.openLoginForm();
+        Assert.assertFalse(errorPage.isCurrent());
+        loginPage.assertCurrent();
+
+        // Test star only as wildcard - should pass
+        clientMgrBuilder.setRequestUris("*");
+
+        oauth.openLoginForm();
+        Assert.assertFalse(errorPage.isCurrent());
+        loginPage.assertCurrent();
+
+        // Test with multiple request_uris - should pass
+        clientMgrBuilder.setRequestUris("/foo", requestUri);
+
+        oauth.openLoginForm();
+        Assert.assertFalse(errorPage.isCurrent());
+        loginPage.assertCurrent();
+
+        // Test invalid request_uris - should fail
+        clientMgrBuilder.setRequestUris("/foo", requestUri.replace("/*", "/foo"));
+
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+
+        // Test with no request_uri set at all - should fail
+        clientMgrBuilder.setRequestUris();
+
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+
+        // Revert
+        clientMgrBuilder.setRequestUris(TestApplicationResourceUrls.clientRequestUri());
+
     }
 
     @Test

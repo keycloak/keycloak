@@ -22,12 +22,14 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -190,5 +192,10 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
 
             Assert.assertRoleAttributes(attributes, roleAttributes);
         }
+    }
+
+    @Test (expected = BadRequestException.class)
+    public void deleteDefaultRole() {
+        resource.deleteRole(adminClient.realm(REALM_NAME).roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).toRepresentation().getId());
     }
 }

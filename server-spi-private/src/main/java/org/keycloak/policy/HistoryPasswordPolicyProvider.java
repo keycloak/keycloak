@@ -26,8 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,37 +52,36 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
         PasswordPolicy policy = session.getContext().getRealm().getPasswordPolicy();
         int passwordHistoryPolicyValue = policy.getPolicyConfig(PasswordPolicy.PASSWORD_HISTORY_ID);
         if (passwordHistoryPolicyValue != -1) {
-            List<CredentialModel> storedPasswords = session.userCredentialManager().getStoredCredentialsByType(realm, user, PasswordCredentialModel.TYPE);
-            for (CredentialModel cred : storedPasswords) {
-                PasswordCredentialModel passwordCredential = PasswordCredentialModel.createFromCredentialModel(cred);
-                PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, passwordCredential.getPasswordCredentialData().getAlgorithm());
-                if (hash == null) continue;
-                if (hash.verify(password, passwordCredential)) {
-                    return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
-                }
+            if (session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, PasswordCredentialModel.TYPE)
+                    .map(PasswordCredentialModel::createFromCredentialModel)
+                    .anyMatch(passwordCredential -> {
+                        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class,
+                                passwordCredential.getPasswordCredentialData().getAlgorithm());
+                        return hash != null && hash.verify(password, passwordCredential);
+                    })) {
+                return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
             }
 
             if (passwordHistoryPolicyValue > 0) {
-                List<CredentialModel> passwordHistory = session.userCredentialManager().getStoredCredentialsByType(realm, user, PasswordCredentialModel.PASSWORD_HISTORY);
-                List<CredentialModel> recentPasswordHistory = getRecent(passwordHistory, passwordHistoryPolicyValue - 1);
-                for (CredentialModel cred : recentPasswordHistory) {
-                    PasswordCredentialModel passwordCredential = PasswordCredentialModel.createFromCredentialModel(cred);
-                    PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, passwordCredential.getPasswordCredentialData().getAlgorithm());
-                    if (hash.verify(password, passwordCredential)) {
-                        return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
-                    }
-
+                if (this.getRecent(session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, PasswordCredentialModel.PASSWORD_HISTORY),
+                        passwordHistoryPolicyValue - 1)
+                        .map(PasswordCredentialModel::createFromCredentialModel)
+                        .anyMatch(passwordCredential -> {
+                            PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class,
+                                    passwordCredential.getPasswordCredentialData().getAlgorithm());
+                            return hash.verify(password, passwordCredential);
+                        })) {
+                    return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
                 }
             }
         }
         return null;
     }
 
-    private List<CredentialModel> getRecent(List<CredentialModel> passwordHistory, int limit) {
-        return passwordHistory.stream()
+    private Stream<CredentialModel> getRecent(Stream<CredentialModel> passwordHistory, int limit) {
+        return passwordHistory
                 .sorted(CredentialModel.comparingByStartDateDesc())
-                .limit(limit)
-                .collect(Collectors.toList());
+                .limit(limit);
     }
 
     @Override

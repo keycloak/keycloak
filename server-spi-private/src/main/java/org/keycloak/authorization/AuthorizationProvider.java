@@ -18,12 +18,12 @@
 
 package org.keycloak.authorization;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -126,11 +126,11 @@ public final class AuthorizationProvider implements Provider {
     /**
      * Returns the registered {@link PolicyProviderFactory}.
      *
-     * @return a {@link List} containing all registered {@link PolicyProviderFactory}
+     * @return a {@link Stream} containing all registered {@link PolicyProviderFactory}
      */
-    public Collection<PolicyProviderFactory> getProviderFactories() {
-        return keycloakSession.getKeycloakSessionFactory().getProviderFactories(PolicyProvider.class).stream().map(
-                PolicyProviderFactory.class::cast).collect(Collectors.toList());
+    public Stream<PolicyProviderFactory> getProviderFactoriesStream() {
+        return keycloakSession.getKeycloakSessionFactory().getProviderFactoriesStream(PolicyProvider.class)
+                .map(PolicyProviderFactory.class::cast);
     }
 
     /**

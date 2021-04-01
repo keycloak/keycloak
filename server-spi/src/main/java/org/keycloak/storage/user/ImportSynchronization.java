@@ -22,6 +22,11 @@ import org.keycloak.storage.UserStorageProviderModel;
 import java.util.Date;
 
 /**
+ *
+ * This is an optional capability interface that is intended to be implemented by any
+ * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports syncing users to keycloak local
+ * storage. You must implement this interface if you want to be able to use sync functionality within the Admin console.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

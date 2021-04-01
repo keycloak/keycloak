@@ -63,6 +63,12 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
         // Validate "at_hash"
         assertValidAccessTokenHash(idToken2.getAccessTokenHash(), authzResponse2.getAccessToken());
 
+        // Validate if token_type is null
+        Assert.assertNull(authzResponse.getTokenType());
+
+        // Validate if expires_in is null
+        Assert.assertNull(authzResponse.getExpiresIn());
+
         return Collections.singletonList(idToken2);
     }
 

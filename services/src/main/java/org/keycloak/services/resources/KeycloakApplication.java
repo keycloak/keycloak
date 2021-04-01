@@ -18,7 +18,6 @@ package org.keycloak.services.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
@@ -371,7 +370,7 @@ public class KeycloakApplication extends Application {
 
                             UserProvider users = session.users();
 
-                            if (users.getUserByUsername(userRep.getUsername(), realm) != null) {
+                            if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
                                 ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                             } else {
                                 UserModel user = users.addUser(realm, userRep.getUsername());

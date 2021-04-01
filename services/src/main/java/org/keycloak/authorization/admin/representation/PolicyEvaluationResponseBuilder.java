@@ -199,8 +199,8 @@ public class PolicyEvaluationResponseBuilder {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
                 RealmModel realm = authorization.getRealm();
                 PermissionTicket ticket = tickets.get(0);
-                UserModel userOwner = keycloakSession.users().getUserById(ticket.getOwner(), realm);
-                UserModel requester = keycloakSession.users().getUserById(ticket.getRequester(), realm);
+                UserModel userOwner = keycloakSession.users().getUserById(realm, ticket.getOwner());
+                UserModel requester = keycloakSession.users().getUserById(realm, ticket.getRequester());
                 String resourceOwner;
                 if (userOwner != null) {
                     resourceOwner = getUserEmailOrUserName(userOwner);

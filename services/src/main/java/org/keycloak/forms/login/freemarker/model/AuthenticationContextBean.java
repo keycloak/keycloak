@@ -62,7 +62,7 @@ public class AuthenticationContextBean {
     public String getAttemptedUsername() {
         String username = context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
 
-        // Fallback to real username of the user just if attemptedUsername doesn't exists
+        // Fallback to real username of the user just if attemptedUsername doesn't exist
         if (username == null) {
             username = context.getUser().getUsername();
         }

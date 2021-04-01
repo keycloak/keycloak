@@ -452,7 +452,7 @@ case "$OPERATION" in
                     echo "<html><head><title>JStat Charts for $SERVICE</title>" > "$HTML"
                     echo "<style>div.box{ display: -webkit-inline-box }</style></head>" >> "$HTML"
                     echo "<body><h1>JStat Charts for $SERVICE</h1>" >> "$HTML"
-                    for GP_SCRIPT in gc-all gc-s0 gc-s1 gc-e gc-o gc-m gc-cc ; do
+                    for GP_SCRIPT in gc-all gc-s0 gc-s1 gc-e gc-o gc-m gc-cc gc-ev gc-t ; do
                         gnuplot -e "datafile='$JSTAT_DATAFILE'" "$GNUPLOT_COMMON" "$GNUPLOT_SCRIPTS_DIR/${GP_SCRIPT}.gp" > "${ARTIFACTS_DIR}/${SERVICE}/jstat-charts/${GP_SCRIPT}.png"
                         if [ $? == 0 ]; then 
                             echo "<div class='box'>" >> "$HTML"

@@ -190,6 +190,20 @@ th.w-40 {
     height: 26px;
 }
 
+.select2-container-single {
+    padding: 0;
+    margin: 0;
+}
+
+.select2-container-single .form-group {
+    width: 100%;
+    margin: 0;
+}
+
+.select2-container-single .form-group .input-group {
+    width: 100%;
+}
+
 /*********** html select ********/
 .overflow-select {
     overflow: auto;
@@ -353,6 +367,13 @@ h1 i {
 .kc-action-cell:hover {
     background-color: #eeeeee;
     background-image: none;
+}
+
+.kc-action-cell-disabled {
+    background-color: #fafafa;
+    color: #8b8d8f;
+    background-image: none;
+    cursor: not-allowed;
 }
 
 .kc-sorter span {

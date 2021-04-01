@@ -26,7 +26,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 
@@ -70,6 +69,7 @@ public class ApplianceBootstrap {
         realm.setDisplayNameHtml(Version.NAME_HTML);
         realm.setEnabled(true);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
+        realm.setDefaultSignatureAlgorithm(Constants.DEFAULT_SIGNATURE_ALGORITHM);
         realm.setSsoSessionIdleTimeout(1800);
         realm.setAccessTokenLifespan(60);
         realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);

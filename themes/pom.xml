@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>13.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
 
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
-        <dir.account2>src/main/resources/theme/keycloak-preview/account/src</dir.account2>
+        <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
         <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
     </properties>
 
@@ -126,7 +126,7 @@
                     <!-- Remove once rcue stops shipping this file -->
                     <exclude>**/git-Logo.svg</exclude>
                     
-                    <exclude>**/keycloak-preview/account/src/**</exclude>
+                    <exclude>**/keycloak.v2/account/src/**</exclude>
                 </excludes>
             </resource>
         </resources>

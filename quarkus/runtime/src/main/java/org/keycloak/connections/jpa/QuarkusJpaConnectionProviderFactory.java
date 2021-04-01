@@ -61,7 +61,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -113,7 +112,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = PersistenceExceptionConverter.create(em);
+        em = PersistenceExceptionConverter.create(session, em);
         if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         return new DefaultJpaConnectionProvider(em);
     }
@@ -497,7 +496,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
                             UserProvider users = session.users();
 
-                            if (users.getUserByUsername(userRep.getUsername(), realm) != null) {
+                            if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
                                 ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                             } else {
                                 UserModel user = users.addUser(realm, userRep.getUsername());

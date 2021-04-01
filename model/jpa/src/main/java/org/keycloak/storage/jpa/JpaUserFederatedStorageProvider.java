@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -71,7 +72,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider.Streams,
-        UserCredentialStore {
+        UserCredentialStore.Streams {
 
     protected static final Logger logger = Logger.getLogger(JpaUserFederatedStorageProvider.class);
 
@@ -465,18 +466,12 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Stream<String> getMembershipStream(RealmModel realm, GroupModel group, int firstResult, int max) {
+    public Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max) {
         TypedQuery<String> query = em.createNamedQuery("fedgroupMembership", String.class)
                 .setParameter("realmId", realm.getId())
                 .setParameter("groupId", group.getId());
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        
-        if (max != -1) {
-            query.setMaxResults(max);
-        }
-        return closing(query.getResultStream());
+
+        return closing(paginateQuery(query, firstResult, max).getResultStream());
     }
 
     @Override
@@ -660,13 +655,10 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Stream<String> getStoredUsersStream(RealmModel realm, int first, int max) {
+    public Stream<String> getStoredUsersStream(RealmModel realm, Integer first, Integer max) {
         TypedQuery<String> query = em.createNamedQuery("getFederatedUserIds", String.class)
                 .setParameter("realmId", realm.getId());
-        if (first > 0)
-                query.setFirstResult(first);
-        if (max > 0) query.setMaxResults(max);
-        return closing(query.getResultStream());
+        return closing(paginateQuery(query, first, max).getResultStream());
     }
 
     @Override
@@ -690,13 +682,13 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        return getStoredCredentials(realm, user.getId());
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        return getStoredCredentialsStream(realm, user.getId());
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        return getStoredCredentialsByType(realm, user.getId(), type);
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        return getStoredCredentialsByTypeStream(realm, user.getId(), type);
     }
 
     @Override

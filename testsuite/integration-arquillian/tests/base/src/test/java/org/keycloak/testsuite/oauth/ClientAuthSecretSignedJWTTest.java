@@ -41,6 +41,7 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -87,6 +88,32 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testCodeToTokenRequestSuccessHS512() throws Exception {
         testCodeToTokenRequestSuccess(Algorithm.HS512);
+    }
+
+    @Test
+    public void testInvalidIssuer() throws Exception {
+        oauth.clientId("test-app");
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider() {
+            @Override
+            protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
+                JsonWebToken jwt = super.createRequestToken(clientId, realmInfoUrl);
+
+                jwt.issuer("bad-issuer");
+
+                return jwt;
+            }
+        };
+        String algorithm = Algorithm.HS256;
+        jwtProvider.setClientSecret("password", algorithm);
+        String jwt = jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code,
+                jwt);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_client", response.getError());
     }
 
     @Test

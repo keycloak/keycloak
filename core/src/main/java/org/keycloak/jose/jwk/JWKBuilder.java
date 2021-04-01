@@ -17,6 +17,8 @@
 
 package org.keycloak.jose.jwk;
 
+import java.util.Collections;
+import java.util.List;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -65,10 +67,14 @@ public class JWKBuilder {
     }
 
     public JWK rsa(Key key) {
-        return rsa(key, (X509Certificate)null);
+        return rsa(key, (List<X509Certificate>) null);
     }
     
     public JWK rsa(Key key, X509Certificate certificate) {
+        return rsa(key, Collections.singletonList(certificate));
+    }
+
+    public JWK rsa(Key key, List<X509Certificate> certificates) {
         RSAPublicKey rsaKey = (RSAPublicKey) key;
 
         RSAPublicJWK k = new RSAPublicJWK();
@@ -80,9 +86,13 @@ public class JWKBuilder {
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
         k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
-        
-        if (certificate != null) {
-            k.setX509CertificateChain(new String [] {PemUtils.encodeCertificate(certificate)});
+
+        if (certificates != null && !certificates.isEmpty()) {
+            String[] certificateChain = new String[certificates.size()];
+            for (int i = 0; i < certificates.size(); i++) {
+                certificateChain[i] = PemUtils.encodeCertificate(certificates.get(i));
+            }
+            k.setX509CertificateChain(certificateChain);
         }
 
         return k;

@@ -34,6 +34,7 @@ public interface RealmAttributes {
     String OFFLINE_SESSION_MAX_LIFESPAN_ENABLED = "offlineSessionMaxLifespanEnabled";
 
     String OFFLINE_SESSION_MAX_LIFESPAN = "offlineSessionMaxLifespan";
+
     String CLIENT_SESSION_IDLE_TIMEOUT = "clientSessionIdleTimeout";
     String CLIENT_SESSION_MAX_LIFESPAN = "clientSessionMaxLifespan";
     String CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT = "clientOfflineSessionIdleTimeout";

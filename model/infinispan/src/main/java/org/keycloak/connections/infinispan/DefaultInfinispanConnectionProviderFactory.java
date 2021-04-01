@@ -21,10 +21,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.configuration.Builder;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.cache.CacheMode;
@@ -44,12 +41,23 @@ import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.jgroups.JChannel;
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.InvalidationHandler.ObjectType;
+import org.keycloak.provider.ProviderEvent;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -98,7 +106,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        factory.register((ProviderEvent event) -> {
+            if (event instanceof PostMigrationEvent) {
+                KeycloakModelUtils.runJobInTransaction(factory, session -> { registerSystemWideListeners(session); });
+            }
+        });
     }
 
     protected void lazyInit() {
@@ -178,20 +190,17 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", false);
-        boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, true);
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
             configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr);
-            gcb.globalJmxStatistics()
-              .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName());
+            gcb.jmx()
+              .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName()).enable();
+        } else {
+            gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         }
-
-        gcb.globalJmxStatistics()
-          .allowDuplicateDomains(allowDuplicateJMXDomains)
-          .enable();
 
         // For Infinispan 10, we go with the JBoss marshalling.
         // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
@@ -468,8 +477,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, jgroupsUdpMcastAddr);
                 }
                 try {
-                    // Compatibility with Wildfly
-                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
+                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-keycloak-jgroups-udp.xml", this.getClass().getClassLoader()).openStream());
                     channel.setName(nodeName);
                     JGroupsTransport transport = new JGroupsTransport(channel);
 
@@ -484,8 +492,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     }
 
 
-                    transportBuilder.globalJmxStatistics()
-                        .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
+                    transportBuilder.jmx()
+                        .domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
                         .enable();
 
                     logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
@@ -500,6 +508,25 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 }
             }
         }
+    }
+
+    private void registerSystemWideListeners(KeycloakSession session) {
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+        cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+            if (event instanceof ClearCacheEvent) {
+                sessionFactory.invalidate(ObjectType._ALL_);
+            }
+        });
+        cluster.registerListener(REALM_INVALIDATION_EVENTS, (ClusterEvent event) -> {
+            if (event instanceof RealmUpdatedEvent) {
+                RealmUpdatedEvent rr = (RealmUpdatedEvent) event;
+                sessionFactory.invalidate(ObjectType.REALM, rr.getId());
+            } else if (event instanceof RealmRemovedEvent) {
+                RealmRemovedEvent rr = (RealmRemovedEvent) event;
+                sessionFactory.invalidate(ObjectType.REALM, rr.getId());
+            }
+        });
     }
 
 }

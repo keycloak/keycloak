@@ -24,7 +24,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.provider.ProviderFactory;
 
 import java.lang.reflect.Method;
 import java.util.Comparator;
@@ -112,14 +111,13 @@ public class ProtocolMapperUtils {
      * @return The builtin locale mapper.
      */
     public static ProtocolMapperModel findLocaleMapper(KeycloakSession session) {
-        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(LoginProtocol.class)) {
-            LoginProtocolFactory factory = (LoginProtocolFactory) p;
-            ProtocolMapperModel found = factory.getBuiltinMappers().get(OIDCLoginProtocolFactory.LOCALE);
-            if (found != null && found.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
-                return found;
-            }
-        }
-        return null;
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(LoginProtocol.class)
+                .map(LoginProtocolFactory.class::cast)
+                .map(factory -> factory.getBuiltinMappers().get(OIDCLoginProtocolFactory.LOCALE))
+                .filter(Objects::nonNull)
+                .filter(protocolMapper -> Objects.equals(protocolMapper.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .findFirst()
+                .orElse(null);
     }
 
 

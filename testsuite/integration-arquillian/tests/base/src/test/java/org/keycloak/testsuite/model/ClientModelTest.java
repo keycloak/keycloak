@@ -79,9 +79,6 @@ public class ClientModelTest extends AbstractKeycloakTest {
         assertThat(expected.getDescription(), is(actual.getDescription()));
         assertThat(expected.getBaseUrl(), is(actual.getBaseUrl()));
         assertThat(expected.getManagementUrl(), is(actual.getManagementUrl()));
-        assertThat(expected.getDefaultRolesStream().collect(Collectors.toSet()),
-                is(actual.getDefaultRolesStream().collect(Collectors.toSet())));
-
         assertThat(expected.getRedirectUris().containsAll(actual.getRedirectUris()), is(true));
         assertThat(expected.getWebOrigins().containsAll(actual.getWebOrigins()), is(true));
         assertThat(expected.getRegisteredNodes(), is(actual.getRegisteredNodes()));
@@ -99,8 +96,6 @@ public class ClientModelTest extends AbstractKeycloakTest {
         client.addRole("role-1");
         client.addRole("role-2");
         client.addRole("role-3");
-        client.addDefaultRole("role-1");
-        client.addDefaultRole("role-2");
         client.addRedirectUri("redirect-1");
         client.addRedirectUri("redirect-2");
         client.addWebOrigin("origin-1");
@@ -288,7 +283,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
             }
 
             realm = currentSession.realms().createRealm("copy");
-            ClientModel copyClient = RepresentationToModel.createClient(currentSession, realm, representation, true);
+            ClientModel copyClient = RepresentationToModel.createClient(currentSession, realm, representation);
 
             assertEquals(client, copyClient);
 
@@ -376,12 +371,12 @@ public class ClientModelTest extends AbstractKeycloakTest {
             ClientScopeModel scope1 = scope1Atomic.get();
             ClientScopeModel scope2 = scope2Atomic.get();
 
-            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true, true);
+            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true);
             assertThat("Client Scope contains 'scope1':", clientScopes1.containsKey("scope1"), is(true));
             assertThat("Client Scope contains 'scope2':", clientScopes1.containsKey("scope2"), is(false));
             assertThat("Client Scope contains 'scope3':", clientScopes1.containsKey("scope3"), is(false));
 
-            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false, true);
+            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false);
             assertThat("Client Scope contains 'scope1':", clientScopes2.containsKey("scope1"), is(false));
             assertThat("Client Scope contains 'scope2':", clientScopes2.containsKey("scope2"), is(true));
             assertThat("Client Scope contains 'scope3':", clientScopes2.containsKey("scope3"), is(true));
@@ -397,12 +392,12 @@ public class ClientModelTest extends AbstractKeycloakTest {
             client = realm.getClientByClientId("templatized");
             ClientScopeModel scope3 = scope3Atomic.get();
 
-            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true, true);
+            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true);
             assertThat("Client Scope contains 'scope1':", clientScopes1.containsKey("scope1"), is(false));
             assertThat("Client Scope contains 'scope2':", clientScopes1.containsKey("scope2"), is(false));
             assertThat("Client Scope contains 'scope3':", clientScopes1.containsKey("scope3"), is(false));
 
-            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false, true);
+            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false);
             assertThat("Client Scope contains 'scope1':", clientScopes2.containsKey("scope1"), is(false));
             assertThat("Client Scope contains 'scope2':", clientScopes2.containsKey("scope2"), is(false));
             assertThat("Client Scope contains 'scope3':", clientScopes2.containsKey("scope3"), is(true));
@@ -425,6 +420,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
             client = realm.addClient("templatized");
             ClientScopeModel scope1 = realm.addClientScope("template");
+            scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             scope1Atomic.set(scope1);
             client.addClientScope(scope1, true);
         });
@@ -510,13 +506,13 @@ public class ClientModelTest extends AbstractKeycloakTest {
             ClientScopeModel scope2 = scope2Atomic.get();
 
 
-            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true, true);
+            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true);
             assertThat("Client Scope contains 'scope1':", clientScopes1.containsKey("scope1"), is(true));
             assertThat("Client Scope contains 'scope2':", clientScopes1.containsKey("scope2"), is(false));
             assertThat("Client Scope contains 'scope3':", clientScopes1.containsKey("scope3"), is(false));
 
 
-            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false, true);
+            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false);
             assertThat("Client Scope contains 'scope1':", clientScopes2.containsKey("scope1"), is(false));
             assertThat("Client Scope contains 'scope2':", clientScopes2.containsKey("scope2"), is(true));
             assertThat("Client Scope contains 'scope3':", clientScopes2.containsKey("scope3"), is(true));
@@ -539,12 +535,12 @@ public class ClientModelTest extends AbstractKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
             client = realm.getClientByClientId("foo2");
 
-            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true, true);
+            Map<String, ClientScopeModel> clientScopes1 = client.getClientScopes(true);
             assertThat("Client Scope contains 'scope1':", clientScopes1.containsKey("scope1"), is(false));
             assertThat("Client Scope contains 'scope2':", clientScopes1.containsKey("scope2"), is(false));
             assertThat("Client Scope contains 'scope3':", clientScopes1.containsKey("scope3"), is(false));
 
-            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false, true);
+            Map<String, ClientScopeModel> clientScopes2 = client.getClientScopes(false);
             assertThat("Client Scope contains 'scope1':", clientScopes2.containsKey("scope1"), is(false));
             assertThat("Client Scope contains 'scope2':", clientScopes2.containsKey("scope2"), is(false));
             assertThat("Client Scope contains 'scope3':", clientScopes2.containsKey("scope3"), is(true));

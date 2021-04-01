@@ -578,13 +578,16 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(400, response.getStatus());
+            // 401 because the client is now a bearer without a secret
+            assertEquals(401, response.getStatus());
             response.close();
 
             {
                 ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
                 ClientRepresentation clientRepresentation = clientResource.toRepresentation();
                 clientRepresentation.setBearerOnly(false);
+                // reset to the old secret
+                clientRepresentation.setSecret("password");
                 clientResource.update(clientRepresentation);
             }
 
@@ -1336,6 +1339,36 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
+    }
+
+    // KEYCLOAK-16009
+    @Test
+    public void tokenRequestParamsMoreThanOnce() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "foo"));
+
+            String authorization = BasicAuthHelper.createHeader(OAuth2Constants.CLIENT_ID, "password");
+            post.setHeader("Authorization", authorization);
+
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            post.setEntity(formEntity);
+
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_request", response.getError());
+            assertEquals("duplicated parameter", response.getErrorDescription());
+        }
     }
 
 }

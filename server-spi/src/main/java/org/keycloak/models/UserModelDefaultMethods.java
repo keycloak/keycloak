@@ -56,6 +56,11 @@ public abstract class UserModelDefaultMethods implements UserModel {
         setSingleAttribute(EMAIL, email);
     }
 
+    @Override
+    public String toString() {
+        return getClass().getName() + "@" + getId();
+    }
+
     /**
      * The {@link UserModelDefaultMethods.Streams} class extends the {@link UserModelDefaultMethods} abstract class and
      * implements the {@link UserModel.Streams} interface, allowing subclasses to focus on the implementation of the

@@ -51,7 +51,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -226,22 +225,16 @@ public class ExportUtils {
 
         // Finally users if needed
         if (options.isUsersIncluded()) {
-            List<UserModel> allUsers = session.users().getUsers(realm, true);
-            List<UserRepresentation> users = new LinkedList<>();
-            for (UserModel user : allUsers) {
-                UserRepresentation userRep = exportUser(session, realm, user, options, internal);
-                users.add(userRep);
-            }
+            List<UserRepresentation> users = session.users().getUsersStream(realm, true)
+                    .map(user -> exportUser(session, realm, user, options, internal))
+                    .collect(Collectors.toList());
 
             if (users.size() > 0) {
                 rep.setUsers(users);
             }
 
-            List<UserRepresentation> federatedUsers = new LinkedList<>();
-            for (String userId : session.userFederatedStorage().getStoredUsers(realm, 0, -1)) {
-                UserRepresentation userRep = exportFederatedUser(session, realm, userId, options);
-                federatedUsers.add(userRep);
-            }
+            List<UserRepresentation> federatedUsers = session.userFederatedStorage().getStoredUsersStream(realm, 0, -1)
+                    .map(user -> exportFederatedUser(session, realm, user, options)).collect(Collectors.toList());
             if (federatedUsers.size() > 0) {
                 rep.setFederatedUsers(federatedUsers);
             }
@@ -465,12 +458,8 @@ public class ExportUtils {
         UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
 
         // Social links
-        Set<FederatedIdentityModel> socialLinks = session.users().getFederatedIdentities(user, realm);
-        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<>();
-        for (FederatedIdentityModel socialLink : socialLinks) {
-            FederatedIdentityRepresentation socialLinkRep = exportSocialLink(socialLink);
-            socialLinkReps.add(socialLinkRep);
-        }
+        List<FederatedIdentityRepresentation> socialLinkReps = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(ExportUtils::exportSocialLink).collect(Collectors.toList());
         if (socialLinkReps.size() > 0) {
             userRep.setFederatedIdentities(socialLinkReps);
         }
@@ -506,24 +495,16 @@ public class ExportUtils {
 
         // Credentials - extra security, do not export credentials if service accounts
         if (internal) {
-            List<CredentialModel> creds = session.userCredentialManager().getStoredCredentials(realm, user);
-            List<CredentialRepresentation> credReps = new ArrayList<>();
-            for (CredentialModel cred : creds) {
-                CredentialRepresentation credRep = exportCredential(cred);
-                credReps.add(credRep);
-            }
+            List<CredentialRepresentation> credReps = session.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .map(ExportUtils::exportCredential).collect(Collectors.toList());
             userRep.setCredentials(credReps);
         }
 
         userRep.setFederationLink(user.getFederationLink());
 
         // Grants
-        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
-        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<>();
-        for (UserConsentModel consent : consents) {
-            UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
-            consentReps.add(consentRep);
-        }
+        List<UserConsentRepresentation> consentReps = session.users().getConsentsStream(realm, user.getId())
+                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
         if (consentReps.size() > 0) {
             userRep.setClientConsents(consentReps);
         }
@@ -636,21 +617,15 @@ public class ExportUtils {
             userRep.setAttributes(attrs);
         }
 
-        Set<String> requiredActions = session.userFederatedStorage().getRequiredActions(realm, id);
+        List<String> requiredActions = session.userFederatedStorage().getRequiredActionsStream(realm, id).collect(Collectors.toList());
         if (requiredActions.size() > 0) {
-            List<String> actions = new LinkedList<>();
-            actions.addAll(requiredActions);
-            userRep.setRequiredActions(actions);
+            userRep.setRequiredActions(requiredActions);
         }
-
 
         // Social links
-        Set<FederatedIdentityModel> socialLinks = session.userFederatedStorage().getFederatedIdentities(id, realm);
-        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<>();
-        for (FederatedIdentityModel socialLink : socialLinks) {
-            FederatedIdentityRepresentation socialLinkRep = exportSocialLink(socialLink);
-            socialLinkReps.add(socialLinkRep);
-        }
+        List<FederatedIdentityRepresentation> socialLinkReps = session.userFederatedStorage().getFederatedIdentitiesStream(id, realm)
+                .map(ExportUtils::exportSocialLink).collect(Collectors.toList());
+
         if (socialLinkReps.size() > 0) {
             userRep.setFederatedIdentities(socialLinkReps);
         }
@@ -685,21 +660,13 @@ public class ExportUtils {
         }
 
         // Credentials
-        List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, id);
-        List<CredentialRepresentation> credReps = new ArrayList<>();
-        for (CredentialModel cred : creds) {
-            CredentialRepresentation credRep = exportCredential(cred);
-            credReps.add(credRep);
-        }
+        List<CredentialRepresentation> credReps = session.userFederatedStorage().getStoredCredentialsStream(realm, id)
+                .map(ExportUtils::exportCredential).collect(Collectors.toList());
         userRep.setCredentials(credReps);
 
         // Grants
-        List<UserConsentModel> consents = session.users().getConsents(realm, id);
-        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<>();
-        for (UserConsentModel consent : consents) {
-            UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
-            consentReps.add(consentRep);
-        }
+        List<UserConsentRepresentation> consentReps = session.users().getConsentsStream(realm, id)
+                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
         if (consentReps.size() > 0) {
             userRep.setClientConsents(consentReps);
         }
