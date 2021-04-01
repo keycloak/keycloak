@@ -25,7 +25,7 @@ public class ValidatorTest {
     @Test
     public void simpleValidation() {
 
-        Validator validator = Validators.notEmpty();
+        Validator validator = Validators.notEmptyValidator();
 
         Assert.assertTrue(validator.validate("a").isValid());
         Assert.assertFalse(validator.validate("").isValid());
@@ -34,7 +34,7 @@ public class ValidatorTest {
     @Test
     public void simpleValidationWithContext() {
 
-        Validator validator = Validators.length();
+        Validator validator = Validators.lengthValidator();
 
         ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
@@ -48,7 +48,7 @@ public class ValidatorTest {
 
         ValidationContext context = new ValidationContext(session);
 
-        ValidationResult result = Validators.length().validate("a", "username", context).toResult();
+        ValidationResult result = Validators.lengthValidator().validate("a", "username", context).toResult();
 
         Assert.assertTrue(result.isValid());
     }
@@ -94,11 +94,11 @@ public class ValidatorTest {
     public void acceptOnError() {
 
         AtomicBoolean bool1 = new AtomicBoolean();
-        Validators.notEmpty().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
+        Validators.notEmptyValidator().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
         Assert.assertFalse(bool1.get());
 
         AtomicBoolean bool2 = new AtomicBoolean();
-        Validators.notEmpty().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
+        Validators.notEmptyValidator().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
         Assert.assertTrue(bool2.get());
     }
 
@@ -138,8 +138,8 @@ public class ValidatorTest {
         String input = "aaa";
         String inputHint = "username";
 
-        Validators.length().validate(input, inputHint, context);
-        Validators.notEmpty().validate(input, inputHint, context);
+        Validators.lengthValidator().validate(input, inputHint, context);
+        Validators.notEmptyValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -154,8 +154,8 @@ public class ValidatorTest {
         String input = "";
         String inputHint = "username";
 
-        Validators.length().validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", 1)));
-        Validators.notEmpty().validate(input, inputHint, context);
+        Validators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", 1)));
+        Validators.notEmptyValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 

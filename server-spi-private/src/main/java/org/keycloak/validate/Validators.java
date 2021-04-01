@@ -133,31 +133,31 @@ public class Validators {
         return Collections.unmodifiableMap(INTERNAL_VALIDATORS);
     }
 
-    public static NotBlankValidator notBlank() {
+    public static NotBlankValidator notBlankValidator() {
         return NotBlankValidator.INSTANCE;
     }
 
-    public static NotEmptyValidator notEmpty() {
+    public static NotEmptyValidator notEmptyValidator() {
         return NotEmptyValidator.INSTANCE;
     }
 
-    public static LengthValidator length() {
+    public static LengthValidator lengthValidator() {
         return LengthValidator.INSTANCE;
     }
 
-    public static UriValidator uri() {
+    public static UriValidator uriValidator() {
         return UriValidator.INSTANCE;
     }
 
-    public static EmailValidator email() {
+    public static EmailValidator emailValidator() {
         return EmailValidator.INSTANCE;
     }
 
-    public static PatternValidator pattern() {
+    public static PatternValidator patternValidator() {
         return PatternValidator.INSTANCE;
     }
 
-    public static NumberValidator number() {
+    public static NumberValidator numberValidator() {
         return NumberValidator.INSTANCE;
     }
 
