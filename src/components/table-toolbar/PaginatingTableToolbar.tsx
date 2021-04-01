@@ -59,19 +59,20 @@ export const PaginatingTableToolbar = ({
     />
   );
 
-  if (count === 0) {
-    <>{children}</>;
-  }
   return (
     <TableToolbar
       searchTypeComponent={searchTypeComponent}
       toolbarItem={
         <>
           {toolbarItem}
-          <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
+          {count !== 0 && (
+            <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
+          )}
         </>
       }
-      toolbarItemFooter={<ToolbarItem>{pagination("bottom")}</ToolbarItem>}
+      toolbarItemFooter={
+        count !== 0 ? <ToolbarItem>{pagination("bottom")}</ToolbarItem> : <></>
+      }
       inputGroupName={inputGroupName}
       inputGroupPlaceholder={inputGroupPlaceholder}
       inputGroupOnChange={inputGroupOnChange}
