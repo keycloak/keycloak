@@ -103,4 +103,7 @@ public interface PoliciesResource {
 
     @Path("group")
     GroupPoliciesResource group();
+
+    @Path("client-scope")
+    ClientScopePoliciesResource clientScope();
 }

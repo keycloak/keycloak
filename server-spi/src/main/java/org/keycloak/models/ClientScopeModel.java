@@ -20,6 +20,7 @@ package org.keycloak.models;
 import java.util.Map;
 
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 
 /**
@@ -32,6 +33,12 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         public static final SearchableModelField<ClientScopeModel> ID           = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<ClientScopeModel> REALM_ID     = new SearchableModelField<>("realmId", String.class);
         public static final SearchableModelField<ClientScopeModel> NAME         = new SearchableModelField<>("name", String.class);
+    }
+
+    interface ClientScopeRemovedEvent extends ProviderEvent {
+        ClientScopeModel getClientScope();
+
+        KeycloakSession getKeycloakSession();
     }
 
     String getId();
