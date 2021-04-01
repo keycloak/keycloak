@@ -57,6 +57,7 @@ export const RealmRoleTabs = () => {
   const [additionalRoles, setAdditionalRoles] = useState<RoleRepresentation[]>(
     []
   );
+
   const { addAlert } = useAlerts();
 
   const [open, setOpen] = useState(false);
@@ -321,7 +322,6 @@ export const RealmRoleTabs = () => {
                   addComposites={addComposites}
                   parentRole={role!}
                   onRemove={() => refresh()}
-                  // client={client!}
                 />
               </Tab>
             ) : null}

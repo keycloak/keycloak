@@ -22,7 +22,6 @@ import { RoleFormType } from "./RealmRoleTabs";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { AliasRendererComponent } from "./AliasRendererComponent";
 import _ from "lodash";
-import { cellWidth } from "@patternfly/react-table";
 
 type AssociatedRolesTabProps = {
   additionalRoles: RoleRepresentation[];
@@ -47,6 +46,7 @@ export const AssociatedRolesTab = ({
 
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
   const [isInheritedHidden, setIsInheritedHidden] = useState(false);
+  const [allRoles, setAllRoles] = useState<RoleRepresentation[]>([]);
 
   const [open, setOpen] = useState(false);
 
@@ -85,12 +85,12 @@ export const AssociatedRolesTab = ({
     return newRoles;
   };
 
-  const alphabetize = (rolesList: RoleRepresentation[]) => {
-    return _.sortBy(rolesList, (role) => role.name?.toUpperCase());
-  };
-
   const loader = async () => {
+    const alphabetize = (rolesList: RoleRepresentation[]) => {
+      return _.sortBy(rolesList, (role) => role.name?.toUpperCase());
+    };
     if (isInheritedHidden) {
+      setAllRoles(additionalRoles);
       return alphabetize(additionalRoles);
     }
 
@@ -106,7 +106,13 @@ export const AssociatedRolesTab = ({
     );
 
     return fetchedRoles.then((results: RoleRepresentation[]) => {
-      return alphabetize(results);
+      const filterDupes = results.filter(
+        (thing, index, self) =>
+          index === self.findIndex((t) => t.name === thing.name)
+      );
+      setAllRoles(filterDupes);
+
+      return alphabetize(filterDupes);
     });
   };
 
@@ -136,11 +142,12 @@ export const AssociatedRolesTab = ({
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleRemoveAssociatedRoleConfirm",
     messageKey: t("roles:roleRemoveAssociatedText"),
-    continueButtonLabel: t("common:remove"),
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.roles.delCompositeRoles({ id }, selectedRows);
+        onRemove(selectedRows);
         setSelectedRows([]);
 
         addAlert(t("associatedRolesRemoved"), AlertVariant.success);
@@ -158,11 +165,11 @@ export const AssociatedRolesTab = ({
     messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
       name: parentRole?.name || t("createRole"),
     }),
-    continueButtonLabel: "common:remove",
+    continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        if (selectedRows.length === additionalRoles.length) {
+        if (selectedRows.length === allRoles.length) {
           onRemove(selectedRows);
           const loc = url.replace(/\/AssociatedRoles/g, "/details");
           history.push(loc);
@@ -170,6 +177,7 @@ export const AssociatedRolesTab = ({
         onRemove(selectedRows);
         await adminClient.roles.delCompositeRoles({ id }, selectedRows);
         addAlert(t("associatedRolesRemoved"), AlertVariant.success);
+        refresh();
       } catch (error) {
         addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
       }
@@ -246,20 +254,17 @@ export const AssociatedRolesTab = ({
               displayKey: "roles:roleName",
               cellRenderer: AliasRenderer,
               cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
-              transforms: [cellWidth(40)],
             },
             {
               name: "containerId",
               displayKey: "roles:inheritedFrom",
               cellRenderer: InheritedRoleName,
               cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(30)],
             },
             {
               name: "description",
               displayKey: "common:description",
               cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(30)],
             },
           ]}
           emptyState={

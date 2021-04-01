@@ -20,9 +20,11 @@ export const AliasRendererComponent = ({
   const [containerName, setContainerName] = useState<string>("");
 
   useEffect(() => {
-    adminClient.clients
-      .findOne({ id: containerId! })
-      .then((client) => setContainerName(client.clientId! as string));
+    if (filterType === "clients") {
+      adminClient.clients
+        .findOne({ id: containerId! })
+        .then((client) => setContainerName(client.clientId! as string));
+    }
   }, [containerId]);
 
   if (filterType === "roles" || !containerName) {

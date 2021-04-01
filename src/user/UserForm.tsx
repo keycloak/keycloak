@@ -61,7 +61,6 @@ export const UserForm = ({
   const setupForm = (user: UserRepresentation) => {
     reset();
     Object.entries(user).map((entry) => {
-      console.log(entry[0], entry[1]);
       if (entry[0] == "createdTimestamp") {
         setTimestamp(entry[1]);
       } else {

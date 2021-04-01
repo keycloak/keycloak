@@ -159,17 +159,21 @@ export const AttributesForm = ({
                 )}
               </Tr>
             ))}
-            <Button
-              aria-label={t("roles:addAttributeText")}
-              id="plus-icon"
-              variant="link"
-              className="kc-attributes__plus-icon"
-              onClick={() => append({ key: "", value: "" })}
-              icon={<PlusCircleIcon />}
-              isDisabled={!watchLast}
-            >
-              {t("roles:addAttributeText")}
-            </Button>
+            <Tr>
+              <Td>
+                <Button
+                  aria-label={t("roles:addAttributeText")}
+                  id="plus-icon"
+                  variant="link"
+                  className="kc-attributes__plus-icon"
+                  onClick={() => append({ key: "", value: "" })}
+                  icon={<PlusCircleIcon />}
+                  isDisabled={!watchLast}
+                >
+                  {t("roles:addAttributeText")}
+                </Button>
+              </Td>
+            </Tr>
           </Tbody>
         </TableComposable>
         <ActionGroup className="kc-attributes__action-group">

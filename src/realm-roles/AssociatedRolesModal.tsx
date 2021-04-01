@@ -44,14 +44,20 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   };
 
   const loader = async () => {
-    const allRoles = await adminClient.roles.find();
+    const roles = await adminClient.roles.find();
     const existingAdditionalRoles = await adminClient.roles.getCompositeRoles({
       id,
     });
+    const allRoles = [...roles, ...existingAdditionalRoles];
 
-    return alphabetize(allRoles).filter((role: RoleRepresentation) => {
+    const filterDupes = allRoles.filter(
+      (thing, index, self) =>
+        index === self.findIndex((t) => t.name === thing.name)
+    );
+
+    return alphabetize(filterDupes).filter((role: RoleRepresentation) => {
       return (
-        existingAdditionalRoles.find(
+        props.existingCompositeRoles.find(
           (existing: RoleRepresentation) => existing.name === role.name
         ) === undefined && role.name !== name
       );
