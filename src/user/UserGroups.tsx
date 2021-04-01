@@ -17,6 +17,7 @@ import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { cellWidth } from "@patternfly/react-table";
 import { useErrorHandler } from "react-error-boundary";
+import _ from "lodash";
 
 export const UserGroups = () => {
   const { t } = useTranslation("roles");
@@ -30,11 +31,15 @@ export const UserGroups = () => {
   const [search, setSearch] = useState("");
   const [username, setUsername] = useState("");
 
-  const [isDirectMembership, setDirectMembership] = useState(false);
+  const [isDirectMembership, setDirectMembership] = useState(true);
   const [open, setOpen] = useState(false);
 
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
+  const alphabetize = (groupsList: GroupRepresentation[]) => {
+    return _.sortBy(groupsList, (group) => group.path?.toUpperCase());
+  };
+
   const loader = async (first?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {
       first: first!,
@@ -54,7 +59,94 @@ export const UserGroups = () => {
       return [];
     }
 
-    return await adminClient.users.listGroups({ ...params, id });
+    const joinedGroups = await adminClient.users.listGroups({ ...params, id });
+
+    const allCreatedGroups = await adminClient.groups.find();
+
+    const getAllPaths = joinedGroups.reduce(
+      (acc: string[], cur) => (cur.path && acc.push(cur.path), acc),
+      []
+    );
+    const parentGroupNames: string[] = [];
+    const allGroupMembership: string[] = [];
+    const slicedGroups: string[] = [];
+    const rootLevelGroups: GroupRepresentation[] = [...allCreatedGroups];
+    let allPaths: GroupRepresentation[] = [];
+
+    const getAllSubgroupPaths = (
+      o: any,
+      f: any,
+      context: GroupRepresentation[]
+    ): GroupRepresentation[] => {
+      f(o, context);
+      if (typeof o !== "object") return context;
+      if (Array.isArray(o))
+        return o.forEach((e) => getAllSubgroupPaths(e, f, context)), context;
+      for (const prop in o) getAllSubgroupPaths(o[prop], f, context);
+      return context;
+    };
+
+    const arr = getAllSubgroupPaths(
+      rootLevelGroups,
+      (x: GroupRepresentation, context: GroupRepresentation[][]) => {
+        if (x !== undefined && x.subGroups) context.push(x.subGroups);
+      },
+      []
+    );
+
+    const allSubgroups: GroupRepresentation[] = [].concat(...(arr as any));
+
+    allPaths = [...rootLevelGroups, ...allSubgroups];
+
+    getAllPaths.forEach((item) => {
+      const paths = item.split("/");
+      const groups: string[] = [];
+
+      paths.reduce((acc, value) => {
+        const path = acc + "/" + value;
+        groups.push(path);
+        return path;
+      }, "");
+
+      for (let i = 1; i < groups.length; i++) {
+        slicedGroups.push(groups[i].substring(1));
+      }
+    });
+
+    allGroupMembership.push(...slicedGroups);
+
+    allPaths.forEach((item) => {
+      if (item.subGroups!.length !== 0) {
+        allPaths.push(...item!.subGroups!);
+      }
+    });
+
+    allPaths = allPaths.filter((group) =>
+      allGroupMembership.includes(group.path as any)
+    );
+
+    const topLevelGroups = allCreatedGroups.filter((value) =>
+      parentGroupNames.includes(value.name!)
+    );
+
+    const subgroupArray: any[] = [];
+
+    topLevelGroups.forEach((group) => subgroupArray.push(group.subGroups));
+
+    const directMembership = joinedGroups.filter(
+      (value) => !topLevelGroups.includes(value)
+    );
+
+    const filterDupesfromGroups = allPaths.filter(
+      (thing, index, self) =>
+        index === self.findIndex((t) => t.name === thing.name)
+    );
+
+    if (isDirectMembership) {
+      return alphabetize(directMembership);
+    }
+
+    return alphabetize(filterDupesfromGroups);
   };
 
   useEffect(() => {
