@@ -192,9 +192,9 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyMappers")}
-            instructions={t("emptyMappersInstructions")}
-            primaryActionText={t("emptyPrimaryAction")}
+            message={t("common:emptyMappers")}
+            instructions={t("common:emptyMappersInstructions")}
+            primaryActionText={t("common:emptyPrimaryAction")}
             onPrimaryAction={() => toggleAddMapperDialog(true)}
             secondaryActions={[
               {

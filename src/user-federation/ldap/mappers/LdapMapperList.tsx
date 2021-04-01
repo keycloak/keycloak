@@ -51,9 +51,9 @@ export const LdapMapperList = () => {
     return (
       <>
         <ListEmptyState
-          message={t("emptyMappers")}
-          instructions={t("emptyMappersInstructions")}
-          primaryActionText={t("emptyPrimaryAction")}
+          message={t("common:emptyMappers")}
+          instructions={t("common:emptyMappersInstructions")}
+          primaryActionText={t("common:emptyPrimaryAction")}
         />
       </>
     );
@@ -131,9 +131,9 @@ export const LdapMapperList = () => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyMappers")}
-            instructions={t("emptyMappersInstructions")}
-            primaryActionText={t("emptyPrimaryAction")}
+            message={t("common:emptyMappers")}
+            instructions={t("common:emptyMappersInstructions")}
+            primaryActionText={t("common:emptyPrimaryAction")}
           />
         }
       />
