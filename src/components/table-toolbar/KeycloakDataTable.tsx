@@ -23,6 +23,7 @@ type Row<T> = {
   data: T;
   selected: boolean;
   disableSelection: boolean;
+  disableActions: boolean;
   cells: (keyof T | JSX.Element)[];
 };
 
@@ -191,9 +192,11 @@ export function KeycloakDataTable<T>({
 
   const convertToColumns = (data: T[]) => {
     return data!.map((value) => {
+      const disabledRow = isRowDisabled ? isRowDisabled(value) : false;
       return {
         data: value,
-        disableSelection: isRowDisabled ? isRowDisabled(value) : false,
+        disableSelection: disabledRow,
+        disableActions: disabledRow,
         selected: !!selected.find((v) => (v as any).id === (value as any).id),
         cells: columns.map((col) => {
           if (col.cellRenderer) {
