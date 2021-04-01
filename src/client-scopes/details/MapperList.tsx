@@ -20,6 +20,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { AddMapperDialog } from "../add/MapperDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type MapperListProps = {
   clientScope: ClientScopeRepresentation;
@@ -36,8 +37,10 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
+
   const history = useHistory();
-  const { url } = useRouteMatch();
+  const { realm } = useRealm();
+  const url = `/${realm}/client-scopes/${clientScope.id}/mappers`;
 
   const [mapperAction, setMapperAction] = useState(false);
   const mapperList = clientScope.protocolMappers!;

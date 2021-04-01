@@ -35,6 +35,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type Params = {
   id: string;
@@ -56,8 +57,8 @@ export const MappingDetails = () => {
   >();
 
   const history = useHistory();
+  const { realm } = useRealm();
   const serverInfo = useServerInfo();
-  const { url } = useRouteMatch();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
 
   useEffect(() => {
@@ -114,12 +115,12 @@ export const MappingDetails = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.clientScopes.delClientScopeMappings(
-          { client: id, id: mapperId },
-          []
-        );
+        await adminClient.clientScopes.delProtocolMapper({
+          id,
+          mapperId: mapperId,
+        });
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        history.push(`${url}/${id}`);
+        history.push(`/${realm}/client-scopes/${id}/mappers`);
       } catch (error) {
         addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
       }

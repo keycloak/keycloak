@@ -93,13 +93,13 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-clients",
   },
   {
-    path: "/:realm/client-scopes/:id/:tab/oidc-role-name-mapper",
+    path: "/:realm/client-scopes/:id/mappers/oidc-role-name-mapper",
     component: RoleMappingForm,
     breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
   },
   {
-    path: "/:realm/client-scopes/:id/:tab/:mapperId",
+    path: "/:realm/client-scopes/:id/mappers/:mapperId",
     component: MappingDetails,
     breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
