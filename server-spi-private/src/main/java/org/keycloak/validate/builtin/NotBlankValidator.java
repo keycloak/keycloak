@@ -41,7 +41,7 @@ public class NotBlankValidator implements CompactValidator {
     public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
 
         if (!(input instanceof String)) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_VALUE, input));
+            context.addError(new ValidationError(ID, inputHint, ValidationError.MESSAGE_INVALID_VALUE, input));
             return context;
         }
 

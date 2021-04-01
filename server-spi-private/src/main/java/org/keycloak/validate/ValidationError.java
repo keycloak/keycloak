@@ -25,6 +25,14 @@ import java.util.function.BiFunction;
  */
 public class ValidationError {
 
+    /**
+     * A generic invalid value message.
+     */
+    public static final String MESSAGE_INVALID_VALUE = "error-invalid-value";
+
+    /**
+     * Empty message parameters fly-weight.
+     */
     private static final Object[] EMPTY_PARAMETERS = {};
 
     /**

@@ -49,7 +49,7 @@ public class PatternValidator implements CompactValidator {
     public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
 
         if (!(input instanceof String)) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_VALUE, input));
+            context.addError(new ValidationError(ID, inputHint, ValidationError.MESSAGE_INVALID_VALUE, input));
             return context;
         }
 
@@ -71,10 +71,10 @@ public class PatternValidator implements CompactValidator {
         try {
             Pattern pattern = config.getPattern(KEY_PATTERN);
             if (pattern == null) {
-                errors.add(new ValidationError(ID, KEY_PATTERN, MESSAGE_INVALID_VALUE, maybePattern));
+                errors.add(new ValidationError(ID, KEY_PATTERN, ValidationError.MESSAGE_INVALID_VALUE, maybePattern));
             }
         } catch (PatternSyntaxException pse) {
-            errors.add(new ValidationError(ID, KEY_PATTERN, MESSAGE_INVALID_VALUE, maybePattern));
+            errors.add(new ValidationError(ID, KEY_PATTERN, ValidationError.MESSAGE_INVALID_VALUE, maybePattern));
         }
 
         return new ValidationResult(errors);

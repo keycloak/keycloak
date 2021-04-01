@@ -64,6 +64,7 @@ public class LengthValidator implements CompactValidator {
         }
 
         if (!(input instanceof String)) {
+            context.addError(new ValidationError(ID, inputHint, ValidationError.MESSAGE_INVALID_VALUE, input));
             return context;
         }
 
@@ -103,11 +104,11 @@ public class LengthValidator implements CompactValidator {
 
         Set<ValidationError> errors = new LinkedHashSet<>();
         if (containsMin && !(maybeMin instanceof Integer)) {
-            errors.add(new ValidationError(ID, KEY_MIN, MESSAGE_INVALID_VALUE, maybeMin));
+            errors.add(new ValidationError(ID, KEY_MIN, ValidationError.MESSAGE_INVALID_VALUE, maybeMin));
         }
 
         if (containsMax && !(maybeMax instanceof Integer)) {
-            errors.add(new ValidationError(ID, KEY_MAX, MESSAGE_INVALID_VALUE, maybeMax));
+            errors.add(new ValidationError(ID, KEY_MAX, ValidationError.MESSAGE_INVALID_VALUE, maybeMax));
         }
 
         return new ValidationResult(errors);

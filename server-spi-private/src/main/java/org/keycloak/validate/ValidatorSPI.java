@@ -27,6 +27,7 @@ public class ValidatorSPI implements Spi {
 
     @Override
     public boolean isInternal() {
+        // this API is internal for now, but is intended to be public later.
         return true;
     }
 

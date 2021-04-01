@@ -84,6 +84,11 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
         }
     }
 
+    /**
+     * Convenience method that accepts a {@link Consumer<ValidationError>}.
+     *
+     * @param consumer
+     */
     public void forEachError(Consumer<ValidationError> consumer) {
         for (ValidationError error : getErrors()) {
             consumer.accept(error);
@@ -98,18 +103,46 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
         return errors;
     }
 
+    /**
+     * Checks if this {@link ValidationResult} contains {@link ValidationError ValidationError's} from the {@link Validator} with the given {@code id}.
+     *
+     * @param id
+     * @return
+     */
     public boolean hasErrorsForValidatorId(String id) {
         return getErrors().stream().anyMatch(e -> e.getValidatorId().equals(id));
     }
 
+    /**
+     * Returns a {@link Set} of {@link ValidationError ValidationError's} from the {@link Validator} with the given {@code id} if present, otherwise an empty {@link Set} is returned.
+     * <p>
+     *
+     * @param id
+     * @return
+     */
     public Set<ValidationError> getErrorsForValidatorId(String id) {
         return getErrors().stream().filter(e -> e.getValidatorId().equals(id)).collect(Collectors.toSet());
     }
 
+    /**
+     * Checks if this {@link ValidationResult} contains {@link ValidationError ValidationError's} with the given {@code inputHint}.
+     * <p>
+     * This can be used to test if there are {@link ValidationError ValidationError's} for a specified attribute or attribute path.
+     *
+     * @param inputHint
+     * @return
+     */
     public boolean hasErrorsForInputHint(String inputHint) {
         return getErrors().stream().anyMatch(e -> e.getInputHint().equals(inputHint));
     }
 
+    /**
+     * Returns a {@link Set} of {@link ValidationError ValidationError's} with the given {@code inputHint} if present, otherwise an empty {@link Set} is returned.
+     * <p>
+     *
+     * @param inputHint
+     * @return
+     */
     public Set<ValidationError> getErrorsForInputHint(String inputHint) {
         return getErrors().stream().filter(e -> e.getInputHint().equals(inputHint)).collect(Collectors.toSet());
     }

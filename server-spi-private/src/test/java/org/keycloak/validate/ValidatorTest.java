@@ -219,7 +219,7 @@ public class ValidatorTest {
         Assert.assertNotNull(error1);
         Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
         Assert.assertEquals("max", error1.getInputHint());
-        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(ValidationError.MESSAGE_INVALID_VALUE, error1.getMessage());
         Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 
@@ -241,7 +241,7 @@ public class ValidatorTest {
         Assert.assertNotNull(error1);
         Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
         Assert.assertEquals("max", error1.getInputHint());
-        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(ValidationError.MESSAGE_INVALID_VALUE, error1.getMessage());
         Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 
@@ -273,7 +273,7 @@ public class ValidatorTest {
         Assert.assertNotNull(error1);
         Assert.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
         Assert.assertEquals("address.zip", error1.getInputHint());
-        Assert.assertEquals(NotBlankValidator.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(ValidationError.MESSAGE_INVALID_VALUE, error1.getMessage());
         Assert.assertEquals(null, error1.getMessageParameters()[0]);
 
     }
@@ -308,7 +308,7 @@ public class ValidatorTest {
         public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
 
             if (!(input instanceof MockAddress)) {
-                context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_VALUE, input));
+                context.addError(new ValidationError(ID, inputHint, ValidationError.MESSAGE_INVALID_VALUE, input));
                 return context;
             }
 

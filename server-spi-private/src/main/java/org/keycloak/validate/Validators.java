@@ -28,16 +28,14 @@ import org.keycloak.validate.builtin.UriValidator;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Facade for Validation functions with support for {@link Validator} implementation lookup by id.
  */
 public class Validators {
-
-    // TODO Validator lookup via Validators should be provided via KeycloakSession API later
 
     /**
      * Holds a mapping of internal {@link CompactValidator} to allow look-up via provider id.
@@ -55,15 +53,19 @@ public class Validators {
                 NumberValidator.INSTANCE
         );
 
-        Map<String, CompactValidator> validators = new HashMap<>();
-
-        list.forEach(v -> validators.put(v.getId(), v));
-
-        INTERNAL_VALIDATORS = validators;
+        INTERNAL_VALIDATORS = list.stream().collect(Collectors.toMap(CompactValidator::getId, v -> v));
     }
 
+    /**
+     * Holds the {@link KeycloakSession}.
+     */
     private final KeycloakSession session;
 
+    /**
+     * Creates a new {@link Validators} instance with the given {@link KeycloakSession}.
+     *
+     * @param session
+     */
     public Validators(KeycloakSession session) {
         this.session = session;
     }
@@ -120,6 +122,8 @@ public class Validators {
 //            }
 //        };
 //    }
+
+    /* static import friendly accessor methods for built-in validators */
 
     public static Validator getInternalValidatorById(String id) {
         return INTERNAL_VALIDATORS.get(id);

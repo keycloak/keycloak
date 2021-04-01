@@ -69,6 +69,7 @@ public class NotEmptyValidator implements CompactValidator {
             return context;
         }
 
+        context.addError(new ValidationError(ID, inputHint, ValidationError.MESSAGE_INVALID_VALUE, input));
         return context;
     }
 }

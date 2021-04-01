@@ -66,7 +66,6 @@ public class ValidationContext {
      * @return
      */
     public Validator validator(String validatorId) {
-        // TODO refactor to session.validator(validatorId);
         return Validators.validator(session, validatorId);
     }
 
@@ -82,11 +81,7 @@ public class ValidationContext {
      * @return
      */
     public boolean isValid() {
-        return !hasErrors();
-    }
-
-    public boolean hasErrors() {
-        return !errors.isEmpty();
+        return errors.isEmpty();
     }
 
     public Map<String, Object> getAttributes() {
@@ -107,7 +102,7 @@ public class ValidationContext {
      * @return
      */
     public ValidationResult toResult() {
-        return new ValidationResult(!hasErrors(), Collections.unmodifiableSet(getErrors()));
+        return new ValidationResult(isValid(), Collections.unmodifiableSet(getErrors()));
     }
 
     @Override

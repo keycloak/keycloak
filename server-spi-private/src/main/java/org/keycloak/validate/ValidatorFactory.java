@@ -24,11 +24,6 @@ import org.keycloak.provider.ProviderFactory;
 public interface ValidatorFactory extends ProviderFactory<Validator> {
 
     /**
-     * A generic invalid value message.
-     */
-    String MESSAGE_INVALID_VALUE = "error-invalid-value";
-
-    /**
      * Validates the given validation config.
      *
      * @param config the config to be validated

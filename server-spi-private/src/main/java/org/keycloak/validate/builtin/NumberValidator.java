@@ -45,6 +45,7 @@ public class NumberValidator implements CompactValidator {
         }
 
         if (input instanceof String) {
+            // if we have a String then check if it represents a valid number.
 
             // try to parse the string into a number
             String string = (String) input;
