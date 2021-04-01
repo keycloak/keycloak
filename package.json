@@ -19,9 +19,9 @@
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.96.2",
-    "@patternfly/react-core": "4.106.1",
+    "@patternfly/react-core": "4.106.2",
     "@patternfly/react-icons": "4.9.9",
-    "@patternfly/react-table": "4.24.0",
+    "@patternfly/react-table": "4.24.1",
     "file-saver": "^2.0.2",
     "i18next": "^19.6.2",
     "keycloak-admin": "1.14.10",
