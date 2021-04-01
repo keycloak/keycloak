@@ -1,4 +1,4 @@
-[[_spring_security_adapter]]
+<[[_spring_security_adapter]]
 ==== Spring Security Adapter
 
 To secure an application with Spring Security and Keycloak, add this adapter as a dependency to your project.
@@ -141,6 +141,9 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     <bean id="keycloakSecurityContextRequestFilter"
           class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
 
+<bean id="keycloakSecurityContextRequestFilter"
+     class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
+
     <bean id="keycloakLogoutHandler" class="org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler">
         <constructor-arg ref="adapterDeploymentContext" />
     </bean>
@@ -164,7 +167,11 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     <security:http auto-config="false" entry-point-ref="keycloakAuthenticationEntryPoint">
         <security:custom-filter ref="keycloakPreAuthActionsFilter" before="LOGOUT_FILTER" />
         <security:custom-filter ref="keycloakAuthenticationProcessingFilter" before="FORM_LOGIN_FILTER" />
+<<<<<<< HEAD
         <security:custom-filter ref="keycloakSecurityContextRequestFilter" after="FORM_LOGIN_FILTER" />
+=======
+	<security:custom-filter ref="keycloakSecurityContextRequestFilter" after="FORM_LOGIN_FILTER" />
+>>>>>>> correction to themes
         <security:intercept-url pattern="/customers**" access="ROLE_USER" />
         <security:intercept-url pattern="/admin**" access="ROLE_ADMIN" />
         <security:custom-filter ref="logoutFilter" position="LOGOUT_FILTER" />
