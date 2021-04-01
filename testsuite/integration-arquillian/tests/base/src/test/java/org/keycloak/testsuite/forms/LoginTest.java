@@ -839,13 +839,13 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         driver.manage().deleteAllCookies();
 
 
-        // Cookie has been deleted or disabled, the error shown in the UI should be Errors.DISABLED_COOKIES
+        // Cookie has been deleted or disabled, the error shown in the UI should be Errors.COOKIE_NOT_FOUND
         loginPage.login("login@test.com", "password");
 
         events.expect(EventType.LOGIN_ERROR)
                 .user(new UserRepresentation())
                 .client(new ClientRepresentation())
-                .error(Errors.DISABLED_COOKIES)
+                .error(Errors.COOKIE_NOT_FOUND)
                 .assertEvent();
 
         errorPage.assertCurrent();
