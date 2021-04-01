@@ -79,6 +79,14 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder addOptionalClientScopes(String... optionalClientScopes) {
+        if (rep.getOptionalClientScopes() == null) {
+            rep.setOptionalClientScopes(new ArrayList<>());
+        }
+        rep.getOptionalClientScopes().addAll(Arrays.asList(optionalClientScopes));
+        return this;
+    }
+
     public ClientBuilder serviceAccount() {
         rep.setServiceAccountsEnabled(true);
         return this;

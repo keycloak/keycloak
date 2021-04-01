@@ -786,6 +786,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         em.createNamedQuery("deleteClientScopeRoleMappingByClientScope").setParameter("clientScope", clientScopeEntity).executeUpdate();
         em.remove(clientScopeEntity);
+
+        session.getKeycloakSessionFactory().publish(new ClientScopeModel.ClientScopeRemovedEvent() {
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+
+            @Override
+            public ClientScopeModel getClientScope() {
+                return clientScope;
+            }
+        });
+
         em.flush();
         return true;
     }

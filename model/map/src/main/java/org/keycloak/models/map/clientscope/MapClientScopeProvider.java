@@ -124,6 +124,19 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         session.users().preRemove(clientScope);
         realm.removeDefaultClientScope(clientScope);
 
+        session.getKeycloakSessionFactory().publish(new ClientScopeModel.ClientScopeRemovedEvent() {
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+
+            @Override
+            public ClientScopeModel getClientScope() {
+                return clientScope;
+            }
+        });
+
         tx.delete(UUID.fromString(id));
         return true;
     }
