@@ -8,6 +8,7 @@ import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedT
 import AdminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
 import { keycloakBefore } from "../support/util/keycloak_before";
+import ServiceAccountTab from "../support/pages/admin_console/manage/clients/ServiceAccountTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -160,6 +161,41 @@ describe("Clients test", function () {
         .selectAccessTokenSignatureAlgorithm("HS384")
         .clickRevertFineGrain();
       advancedTab.checkAccessTokenSignatureAlgorithm(algorithm);
+    });
+  });
+
+  describe("Service account tab test", () => {
+    const serviceAccountTab = new ServiceAccountTab();
+    const serviceAccountName = "service-account-client";
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+    });
+
+    before(async () => {
+      await new AdminClient().createClient({
+        protocol: "openid-connect",
+        clientId: serviceAccountName,
+        publicClient: false,
+        authorizationServicesEnabled: true,
+        serviceAccountsEnabled: true,
+        standardFlowEnabled: true,
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(serviceAccountName);
+    });
+
+    it("list", () => {
+      listingPage
+        .searchItem(serviceAccountName)
+        .goToItemDetails(serviceAccountName);
+      serviceAccountTab
+        .goToTab()
+        .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
     });
   });
 });

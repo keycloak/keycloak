@@ -64,6 +64,13 @@ export default class CreateClientPage {
     return this;
   }
 
+  changeSwitches(switches: string[]) {
+    for (const uiSwitch of switches) {
+      cy.getId(uiSwitch).check({ force: true });
+    }
+    return this;
+  }
+
   checkClientTypeRequiredMessage(exist = true) {
     cy.get(this.clientTypeError).should((!exist ? "not." : "") + "exist");
 

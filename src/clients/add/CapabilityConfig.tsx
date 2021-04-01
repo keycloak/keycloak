@@ -44,6 +44,7 @@ export const CapabilityConfig = ({
                 control={control}
                 render={({ onChange, value }) => (
                   <Switch
+                    data-testid="authentication"
                     id="kc-authentication"
                     name="publicClient"
                     label={t("common:on")}
@@ -65,6 +66,7 @@ export const CapabilityConfig = ({
                 control={control}
                 render={({ onChange, value }) => (
                   <Switch
+                    data-testid="authorization"
                     id="kc-authorization"
                     name="authorizationServicesEnabled"
                     label={t("common:on")}
@@ -95,6 +97,7 @@ export const CapabilityConfig = ({
                     render={({ onChange, value }) => (
                       <InputGroup>
                         <Checkbox
+                          data-testid="standard"
                           label={t("standardFlow")}
                           id="kc-flow-standard"
                           name="standardFlowEnabled"
@@ -118,6 +121,7 @@ export const CapabilityConfig = ({
                     render={({ onChange, value }) => (
                       <InputGroup>
                         <Checkbox
+                          data-testid="direct"
                           label={t("directAccess")}
                           id="kc-flow-direct"
                           name="directAccessGrantsEnabled"
@@ -141,6 +145,7 @@ export const CapabilityConfig = ({
                     render={({ onChange, value }) => (
                       <InputGroup>
                         <Checkbox
+                          data-testid="implicit"
                           label={t("implicitFlow")}
                           id="kc-flow-implicit"
                           name="implicitFlowEnabled"
@@ -164,6 +169,7 @@ export const CapabilityConfig = ({
                     render={({ onChange, value }) => (
                       <InputGroup>
                         <Checkbox
+                          data-testid="service-account"
                           label={t("serviceAccount")}
                           id="kc-flow-service-account"
                           name="serviceAccountsEnabled"
@@ -207,6 +213,7 @@ export const CapabilityConfig = ({
                 defaultValue="false"
                 render={({ onChange, value }) => (
                   <Switch
+                    data-testid="encrypt"
                     id="kc-encrypt"
                     label={t("common:on")}
                     labelOff={t("common:off")}
@@ -233,6 +240,7 @@ export const CapabilityConfig = ({
                 defaultValue="false"
                 render={({ onChange, value }) => (
                   <Switch
+                    data-testid="client-signature"
                     id="kc-client-signature"
                     label={t("common:on")}
                     labelOff={t("common:off")}

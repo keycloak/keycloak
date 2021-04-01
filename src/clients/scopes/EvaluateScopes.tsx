@@ -9,6 +9,7 @@ import {
   FormGroup,
   Grid,
   GridItem,
+  PageSection,
   Select,
   SelectOption,
   SelectVariant,
@@ -253,92 +254,95 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
 
   return (
     <>
-      <TextContent className="keycloak__scopes_evaluate__intro">
-        <Text>
-          <QuestionCircleIcon /> {t("clients-help:evaluateExplain")}
-        </Text>
-      </TextContent>
-      <Form isHorizontal>
-        <FormGroup
-          label={t("scopeParameter")}
-          fieldId="scopeParameter"
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:scopeParameter"
-              forLabel={t("scopeParameter")}
-              forID="scopeParameter"
-            />
-          }
-        >
-          <Split hasGutter>
-            <SplitItem isFilled>
-              <Select
-                toggleId="scopeParameter"
-                variant={SelectVariant.typeaheadMulti}
-                typeAheadAriaLabel={t("scopeParameter")}
-                onToggle={() => setIsScopeOpen(!isScopeOpen)}
-                isOpen={isScopeOpen}
-                selections={selected}
-                onSelect={(_, value) => {
-                  const option = value as string;
-                  if (selected.includes(option)) {
-                    if (option !== prefix) {
-                      setSelected(selected.filter((item) => item !== option));
+      <PageSection variant="light">
+        <TextContent className="keycloak__scopes_evaluate__intro">
+          <Text>
+            <QuestionCircleIcon /> {t("clients-help:evaluateExplain")}
+          </Text>
+        </TextContent>
+        <Form isHorizontal>
+          <FormGroup
+            label={t("scopeParameter")}
+            fieldId="scopeParameter"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:scopeParameter"
+                forLabel={t("scopeParameter")}
+                forID="scopeParameter"
+              />
+            }
+          >
+            <Split hasGutter>
+              <SplitItem isFilled>
+                <Select
+                  toggleId="scopeParameter"
+                  variant={SelectVariant.typeaheadMulti}
+                  typeAheadAriaLabel={t("scopeParameter")}
+                  onToggle={() => setIsScopeOpen(!isScopeOpen)}
+                  isOpen={isScopeOpen}
+                  selections={selected}
+                  onSelect={(_, value) => {
+                    const option = value as string;
+                    if (selected.includes(option)) {
+                      if (option !== prefix) {
+                        setSelected(selected.filter((item) => item !== option));
+                      }
+                    } else {
+                      setSelected([...selected, option]);
                     }
-                  } else {
-                    setSelected([...selected, option]);
-                  }
-                }}
-                aria-labelledby={t("scopeParameter")}
-                placeholderText={t("scopeParameterPlaceholder")}
-              >
-                {selectableScopes.map((option, index) => (
-                  <SelectOption key={index} value={option.name} />
-                ))}
-              </Select>
-            </SplitItem>
-            <SplitItem>
-              <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">
-                {selected.join(" ")}
-              </ClipboardCopy>
-            </SplitItem>
-          </Split>
-        </FormGroup>
-        <FormGroup
-          label={t("user")}
-          fieldId="user"
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:user"
-              forLabel={t("user")}
-              forID="user"
+                  }}
+                  aria-labelledby={t("scopeParameter")}
+                  placeholderText={t("scopeParameterPlaceholder")}
+                >
+                  {selectableScopes.map((option, index) => (
+                    <SelectOption key={index} value={option.name} />
+                  ))}
+                </Select>
+              </SplitItem>
+              <SplitItem>
+                <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">
+                  {selected.join(" ")}
+                </ClipboardCopy>
+              </SplitItem>
+            </Split>
+          </FormGroup>
+          <FormGroup
+            label={t("user")}
+            fieldId="user"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:user"
+                forLabel={t("user")}
+                forID="user"
+              />
+            }
+          >
+            <Select
+              toggleId="user"
+              variant={SelectVariant.typeahead}
+              typeAheadAriaLabel={t("user")}
+              onToggle={() => setIsUserOpen(!isUserOpen)}
+              onFilter={(e) => {
+                const value = e?.target.value || "";
+                setUserSearch(value);
+                return userItems;
+              }}
+              onClear={() => {
+                setUser(undefined);
+                setUserSearch("");
+              }}
+              selections={[user]}
+              onSelect={(_, value) => {
+                setUser(value as UserRepresentation);
+                setUserSearch("");
+                setIsUserOpen(false);
+              }}
+              isOpen={isUserOpen}
             />
-          }
-        >
-          <Select
-            toggleId="user"
-            variant={SelectVariant.typeahead}
-            typeAheadAriaLabel={t("user")}
-            onToggle={() => setIsUserOpen(!isUserOpen)}
-            onFilter={(e) => {
-              const value = e?.target.value || "";
-              setUserSearch(value);
-              return userItems;
-            }}
-            onClear={() => {
-              setUser(undefined);
-              setUserSearch("");
-            }}
-            selections={[user]}
-            onSelect={(_, value) => {
-              setUser(value as UserRepresentation);
-              setUserSearch("");
-              setIsUserOpen(false);
-            }}
-            isOpen={isUserOpen}
-          />
-        </FormGroup>
-      </Form>
+          </FormGroup>
+        </Form>
+      </PageSection>
+
       <Grid hasGutter className="keycloak__scopes_evaluate__tabs">
         <GridItem span={8}>
           <TabContent

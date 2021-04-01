@@ -1,5 +1,6 @@
 import KeycloakAdminClient from "keycloak-admin";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 
 export default class AdminClient {
   private client: KeycloakAdminClient;
@@ -24,6 +25,10 @@ export default class AdminClient {
     await this.client.realms.del({ realm });
   }
 
+  async createClient(client: ClientRepresentation) {
+    await this.login();
+    await this.client.clients.create(client);
+  }
   async deleteClient(clientName: string) {
     await this.login();
     const client = (
