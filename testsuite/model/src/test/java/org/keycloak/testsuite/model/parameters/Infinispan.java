@@ -72,6 +72,7 @@ public class Infinispan extends KeycloakModelParameters {
             .provider("default")
               .config("embedded", "true")
               .config("clustered", "true")
+              .config("useKeycloakTimeService", "true")
               .config("nodeName", "node-" + NODE_COUNTER.incrementAndGet());
     }
 

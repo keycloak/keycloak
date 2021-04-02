@@ -58,11 +58,11 @@ public interface UserSessionPersisterProvider extends Provider {
 
     /**
      * Called during startup. For each userSession, it loads also clientSessions
-     * @deprecated Use {@link #loadUserSessionsStream(Integer, Integer, boolean, Integer, String) loadUserSessionsStream} instead.
+     * @deprecated Use {@link #loadUserSessionsStream(Integer, Integer, boolean, String) loadUserSessionsStream} instead.
      */
     @Deprecated
     default List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
-        return loadUserSessionsStream(firstResult, maxResults, offline, lastCreatedOn, lastUserSessionId).collect(Collectors.toList());
+        return loadUserSessionsStream(firstResult, maxResults, offline, lastUserSessionId).collect(Collectors.toList());
     }
 
     /**
@@ -70,13 +70,12 @@ public interface UserSessionPersisterProvider extends Provider {
      * @param firstResult {@code Integer} Index of the first desired user session. Ignored if negative or {@code null}.
      * @param maxResults {@code Integer} Maximum number of returned user sessions. Ignored if negative or {@code null}.
      * @param offline {@code boolean} Flag to include offline sessions.
-     * @param lastCreatedOn {@code Integer} Timestamp when the user session was created. It will return only user sessions created later.
-     * @param lastUserSessionId {@code String} Id of the user session. In case of equal {@code lastCreatedOn}
+     * @param lastUserSessionId {@code String} Id of the user session. It will return only user sessions with id's lexicographically greater than this.
      * it will compare the id in dictionary order and takes only those created later.
      * @return Stream of {@link UserSessionModel}. Never returns {@code null}.
      */
     Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                    Integer lastCreatedOn, String lastUserSessionId);
+                                                    String lastUserSessionId);
 
     int getUserSessionsCount(boolean offline);
 

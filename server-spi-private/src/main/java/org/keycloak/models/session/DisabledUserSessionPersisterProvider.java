@@ -111,7 +111,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
 
     @Override
     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                           Integer lastCreatedOn, String lastUserSessionId) {
+                                                           String lastUserSessionId) {
         return Stream.empty();
     }
 

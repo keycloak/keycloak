@@ -55,6 +55,7 @@ import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFact
 import org.hamcrest.Matchers;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+import java.util.LinkedList;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -66,12 +67,14 @@ import org.keycloak.testsuite.model.RequireProvider;
 @RequireProvider(RealmProvider.class)
 public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
+    private static final int USER_SESSION_COUNT = 2000;
     private String realmId;
 
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = s.realms().createRealm("test");
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+        realm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -408,49 +411,41 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     public void testNoSessions() {
         inComittedTransaction(session -> {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, 0, "abc");
+            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, "00000000-0000-0000-0000-000000000000");
             Assert.assertEquals(0, sessions.count());
         });
     }
 
     @Test
     public void testMoreSessions() {
-        AtomicReference<List<UserSessionModel>> userSessionsAt = new AtomicReference<>();
-
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
 
             // Create 10 userSessions - each having 1 clientSession
-            List<UserSessionModel> userSessions = new ArrayList<>();
+            List<String> userSessionsInner = new LinkedList<>();
             UserModel user = session.users().getUserByUsername(realm, "user1");
 
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < USER_SESSION_COUNT; i++) {
                 // Having different offsets for each session (to ensure that lastSessionRefresh is also different)
                 Time.setOffset(i);
 
                 UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "127.0.0.1", "form", true, null, null);
                 createClientSession(session, realmId, realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
-                userSessions.add(userSession);
+                userSessionsInner.add(userSession.getId());
             }
 
-            userSessionsAt.set(userSessions);
-        });
-
-        inComittedTransaction(session -> {
-            RealmModel realm = session.realms().getRealm(realmId);
-
-            List<UserSessionModel> userSessions = userSessionsAt.get();
-
-            for (UserSessionModel userSession : userSessions) {
-                UserSessionModel userSession2 = session.sessions().getUserSession(realm, userSession.getId());
+            for (String userSessionId : userSessionsInner) {
+                UserSessionModel userSession2 = session.sessions().getUserSession(realm, userSessionId);
                 persistUserSession(session, userSession2, true);
             }
+
+            return null;
         });
 
-        inComittedTransaction(session -> {
-            RealmModel realm = session.realms().getRealm(realmId);
-
-            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 2, 10, 20);
+        withRealm(realmId, (session, realm) -> {
+            final int sessionsPerPage = 3;
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, sessionsPerPage,
+              USER_SESSION_COUNT / sessionsPerPage + (USER_SESSION_COUNT / sessionsPerPage == 0 ? 0 : 1), USER_SESSION_COUNT);
             UserModel user = session.users().getUserByUsername(realm, "user1");
             ClientModel testApp = realm.getClientByClientId("test-app");
 
@@ -462,6 +457,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 assertEquals(1, loadedSession.getAuthenticatedClientSessions().size());
                 assertTrue(loadedSession.getAuthenticatedClientSessions().containsKey(testApp.getId()));
             }
+            return null;
         });
     }
 
@@ -563,12 +559,11 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         int pageCount = 0;
         boolean next = true;
         List<UserSessionModel> result = new ArrayList<>();
-        int lastCreatedOn = 0;
-        String lastSessionId = "abc";
+        String lastSessionId = "00000000-0000-0000-0000-000000000000";
 
         while (next) {
             List<UserSessionModel> sess = persister
-                    .loadUserSessionsStream(0, sessionsPerPage, offline, lastCreatedOn, lastSessionId)
+                    .loadUserSessionsStream(0, sessionsPerPage, offline, lastSessionId)
                     .collect(Collectors.toList());
 
             if (sess.size() < sessionsPerPage) {
@@ -582,7 +577,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 pageCount++;
 
                 UserSessionModel lastSession = sess.get(sess.size() - 1);
-                lastCreatedOn = lastSession.getStarted();
                 lastSessionId = lastSession.getId();
             }
 
