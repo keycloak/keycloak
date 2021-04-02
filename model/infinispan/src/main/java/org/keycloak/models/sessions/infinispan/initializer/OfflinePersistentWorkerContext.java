@@ -22,18 +22,11 @@ package org.keycloak.models.sessions.infinispan.initializer;
  */
 public class OfflinePersistentWorkerContext extends SessionLoader.WorkerContext {
 
-    private final int lastCreatedOn;
     private final String lastSessionId;
 
-    public OfflinePersistentWorkerContext(int segment, int workerId, int lastCreatedOn, String lastSessionId) {
+    public OfflinePersistentWorkerContext(int segment, int workerId, String lastSessionId) {
         super(segment, workerId);
-        this.lastCreatedOn = lastCreatedOn;
         this.lastSessionId = lastSessionId;
-    }
-
-
-    public int getLastCreatedOn() {
-        return lastCreatedOn;
     }
 
     public String getLastSessionId() {

@@ -413,7 +413,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
     public void testNoSessions(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionNS) -> {
             UserSessionPersisterProvider persister = sessionNS.getProvider(UserSessionPersisterProvider.class);
-            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, 0, "abc");
+            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, "00000000-0000-0000-0000-000000000000");
             Assert.assertEquals(0, sessions.count());
         });
     }
@@ -576,12 +576,10 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
         int pageCount = 0;
         boolean next = true;
         List<UserSessionModel> result = new ArrayList<>();
-        int lastCreatedOn = 0;
-        String lastSessionId = "abc";
-
+        String lastSessionId = "00000000-0000-0000-0000-000000000000";
         while (next) {
             List<UserSessionModel> sess = persister
-                    .loadUserSessionsStream(0, sessionsPerPage, offline, lastCreatedOn, lastSessionId)
+                    .loadUserSessionsStream(0, sessionsPerPage, offline, lastSessionId)
                     .collect(Collectors.toList());
 
             if (sess.size() < sessionsPerPage) {
@@ -595,7 +593,6 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
                 pageCount++;
 
                 UserSessionModel lastSession = sess.get(sess.size() - 1);
-                lastCreatedOn = lastSession.getStarted();
                 lastSessionId = lastSession.getId();
             }
 
