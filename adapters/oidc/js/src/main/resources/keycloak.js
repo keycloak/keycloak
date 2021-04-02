@@ -211,8 +211,8 @@
             initPromise.promise.then(function() {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
-            }).catch(function(errorData) {
-                promise.setError(errorData);
+            }).catch(function(error) {
+                promise.setError(error);
             });
 
             var configPromise = loadConfig(config);
@@ -225,8 +225,8 @@
 
                     kc.login(options).then(function () {
                         initPromise.setSuccess();
-                    }).catch(function () {
-                        initPromise.setError();
+                    }).catch(function (error) {
+                        initPromise.setError(error);
                     });
                 }
 
@@ -264,8 +264,8 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).catch(function () {
-                                    initPromise.setError();
+                                }).catch(function (error) {
+                                    initPromise.setError(error);
                                 });
                             });
                         } else {
@@ -290,8 +290,8 @@
                 if (callback && callback.valid) {
                     return setupCheckLoginIframe().then(function() {
                         processCallback(callback, initPromise);
-                    }).catch(function (e) {
-                        initPromise.setError();
+                    }).catch(function (error) {
+                        initPromise.setError(error);
                     });
                 } else if (initOptions) {
                     if (initOptions.token && initOptions.refreshToken) {
@@ -307,20 +307,20 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).catch(function () {
-                                    initPromise.setError();
+                                }).catch(function (error) {
+                                    initPromise.setError(error);
                                 });
                             });
                         } else {
                             kc.updateToken(-1).then(function() {
                                 kc.onAuthSuccess && kc.onAuthSuccess();
                                 initPromise.setSuccess();
-                            }).catch(function() {
+                            }).catch(function(error) {
                                 kc.onAuthError && kc.onAuthError();
                                 if (initOptions.onLoad) {
                                     onLoad();
                                 } else {
-                                    initPromise.setError();
+                                    initPromise.setError(error);
                                 }
                             });
                         }
@@ -351,13 +351,16 @@
             }
 
             configPromise.then(function () {
-                domReady().then(check3pCookiesSupported).then(processInit)
-                .catch(function() {
-                    promise.setError();
-                });
+                domReady()
+                    .then(checkIfRealmAvailable)
+                    .then(check3pCookiesSupported)
+                    .then(processInit)
+                    .catch(function (error) {
+                        promise.setError(error);
+                    });
             });
-            configPromise.catch(function() {
-                promise.setError();
+            configPromise.catch(function (error) {
+                promise.setError(error);
             });
 
             return promise.promise;
@@ -694,8 +697,8 @@
                 var iframePromise = checkLoginIframe();
                 iframePromise.then(function() {
                     exec();
-                }).catch(function() {
-                    promise.setError();
+                }).catch(function(error) {
+                    promise.setError(error);
                 });
             } else {
                 exec();
@@ -1301,6 +1304,31 @@
             return promise.promise;
         }
 
+        function checkIfRealmAvailable() {
+            var promise = createPromise();
+            var url = getRealmUrl();
+            var req = new XMLHttpRequest();
+            req.open('GET', url, true);
+            req.setRequestHeader('Accept', 'application/json');
+            req.onload = function () {
+                var res = parseJSON(req.responseText, {});
+                if (req.status == 200 && res.realm == kc.realm) {
+                    promise.setSuccess(res);
+                } else {
+                    promise.setError(
+                        createError('server_error', res.error || 'Unexpected response from Keycloak server')
+                    );
+                }
+            }
+            req.onerror = function (e) {
+                promise.setError(
+                    createError('network_error', 'Keycloak server is not reachable, most likely due to network problems')
+                );
+            }
+            req.send();
+            return promise.promise;
+        }
+
         function check3pCookiesSupported() {
             var promise = createPromise();
 
@@ -1739,6 +1767,22 @@
                 }
             };
         }
+
+        function parseJSON(json_string, default_val) {
+            try {
+                return JSON.parse(json_string);
+            } catch (error) {
+                return default_val;
+            }
+        }
+
+        function createError(error, error_description) {
+            return {
+                "error": error,
+                "error_description": error_description
+            };
+        }
+
     }
 
     return Keycloak;

@@ -30,6 +30,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
@@ -214,4 +215,11 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public JavascriptStateValidator assertEventsDoesntContain(String text) {
         return buildFunction(this::assertEventsWebElementDoesntContain, text);
     }
+
+    public void assertErrorResponse(WebDriver drv, Object output, WebElement evt) {
+        Assert.assertNotNull("Empty error response", output);
+        Assert.assertTrue("Invalid error response type", output instanceof Map);
+        Assert.assertTrue("Invalid error response format", ((Map<?, ?>) output).containsKey("error"));
+    }
+
 }
