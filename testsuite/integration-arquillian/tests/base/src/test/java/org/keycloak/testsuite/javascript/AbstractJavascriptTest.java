@@ -30,8 +30,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
@@ -214,4 +217,15 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public JavascriptStateValidator assertEventsDoesntContain(String text) {
         return buildFunction(this::assertEventsWebElementDoesntContain, text);
     }
+
+    public void assertErrorResponse(String expectedError, WebDriver drv, Object output, WebElement evt) {
+        Assert.assertNotNull("Empty error response", output);
+        Assert.assertTrue("Invalid error response type", output instanceof Map);
+        assertThat((Map<String, String>) output, anyOf(hasEntry("error", expectedError), hasEntry("error_description", expectedError)));
+    }
+
+    public JavascriptStateValidator assertErrorResponse(String expectedError) {
+        return buildFunction(this::assertErrorResponse, expectedError);
+    }
+
 }
