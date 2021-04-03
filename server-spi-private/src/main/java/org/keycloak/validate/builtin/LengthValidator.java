@@ -16,6 +16,7 @@
  */
 package org.keycloak.validate.builtin;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.validate.CompactValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -86,7 +87,7 @@ public class LengthValidator implements CompactValidator {
     }
 
     @Override
-    public ValidationResult validateConfig(ValidatorConfig config) {
+    public ValidationResult validateConfig(KeycloakSession session, ValidatorConfig config) {
 
         if (config == null || config == ValidatorConfig.EMPTY) {
             // new don't require configuration
@@ -115,7 +116,7 @@ public class LengthValidator implements CompactValidator {
     }
 
     @Override
-    public ValidatorConfig getDefaultConfig() {
+    public ValidatorConfig getDefaultConfig(KeycloakSession session) {
         return DEFAULT_CONFIG;
     }
 }

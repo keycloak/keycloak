@@ -16,6 +16,7 @@
  */
 package org.keycloak.validate.builtin;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.validate.CompactValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -64,7 +65,7 @@ public class PatternValidator implements CompactValidator {
     }
 
     @Override
-    public ValidationResult validateConfig(ValidatorConfig config) {
+    public ValidationResult validateConfig(KeycloakSession session, ValidatorConfig config) {
 
         Set<ValidationError> errors = new LinkedHashSet<>();
         Object maybePattern = config.get(KEY_PATTERN);

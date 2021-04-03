@@ -227,7 +227,7 @@ public class Validators {
 
         ValidatorFactory validatorFactory = validatorFactory(session, id);
         if (validatorFactory != null) {
-            return validatorFactory.validateConfig(config);
+            return validatorFactory.validateConfig(session, config);
         }
 
         // We could not find a ValidationFactory to validate that config, so we assume the config is valid.

@@ -178,11 +178,11 @@ public class ValidatorTest {
 
         CompactValidator validator = LengthValidator.INSTANCE;
 
-        Assert.assertTrue(validator.validateConfig(null).isValid());
-        Assert.assertTrue(validator.validateConfig(configFromMap(Collections.singletonMap("min", 1))).isValid());
-        Assert.assertTrue(validator.validateConfig(configFromMap(Collections.singletonMap("max", 100))).isValid());
-        Assert.assertFalse(validator.validateConfig(configFromMap(Collections.singletonMap("min", null))).isValid());
-        Assert.assertFalse(validator.validateConfig(configFromMap(Collections.singletonMap("min", "123"))).isValid());
+        Assert.assertTrue(validator.validateConfig(session, null).isValid());
+        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", 1))).isValid());
+        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("max", 100))).isValid());
+        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", null))).isValid());
+        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "123"))).isValid());
     }
 
     @Test
@@ -196,7 +196,7 @@ public class ValidatorTest {
 
         ValidatorConfig validatorConfig = configFromMap(config);
 
-        Assert.assertTrue(validator.validateConfig(validatorConfig).isValid());
+        Assert.assertTrue(validator.validateConfig(session, validatorConfig).isValid());
     }
 
     @Test
@@ -208,7 +208,7 @@ public class ValidatorTest {
         config.put("min", "1");
         config.put("max", new ArrayList<>());
 
-        ValidationResult result = validator.validateConfig(configFromMap(config));
+        ValidationResult result = validator.validateConfig(session, configFromMap(config));
 
         Assert.assertFalse(result.isValid());
         Assert.assertEquals(2, result.getErrors().size());
