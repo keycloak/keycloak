@@ -171,7 +171,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         request.exp(Time.currentTime() + expiresIn.longValue());
 
         StringBuilder scopes = new StringBuilder(Optional.ofNullable(request.getScope()).orElse(""));
-        client.getClientScopes(true, true)
+        client.getClientScopes(true)
                 .forEach((key, value) -> {
                     if (value.isDisplayOnConsentScreen())
                         scopes.append(" ").append(value.getName());

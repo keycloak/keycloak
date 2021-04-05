@@ -23,27 +23,28 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.util.HttpHeaderNames;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
+import org.keycloak.TokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
-import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AppAuthManager;
 
 public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpoint {
 
@@ -64,11 +65,8 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
     @Produces(MediaType.APPLICATION_JSON)
     public Response processAuthenticationChannelResult() {
         event.event(EventType.LOGIN);
-
-        authenticateClient();
-
         MultivaluedMap<String, String> formParams = httpRequest.getDecodedFormParameters();
-        AuthenticationRequest request = verifyAuthenticationRequest(formParams);
+        AccessToken request = verifyAuthenticationRequest(httpRequest.getHttpHeaders());
         String status = formParams.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_STATUS);
 
         if (SUCCEEDED.equals(status)) {
@@ -94,79 +92,74 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
                 Response.Status.BAD_REQUEST);
     }
 
-    private AuthenticationRequest verifyAuthenticationRequest(MultivaluedMap<String, String> formParams) {
-        String jwe = formParams.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_ID);
-        AuthenticationRequest request;
+    private AccessToken verifyAuthenticationRequest(HttpHeaders headers) {
+        String jwe = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+
+        if (jwe == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.UNAUTHORIZED);
+        }
+
+        AccessToken bearerToken;
 
         try {
-            request = AuthenticationRequest.deserialize(session, jwe);
+            bearerToken = TokenVerifier.createWithoutSignature(session.tokens().decode(jwe, AccessToken.class))
+                    .withDefaultChecks()
+                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
+                    .checkActive(true)
+                    .audience(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
+                    .verify().getToken();
         } catch (Exception e) {
-            event.error(Errors.INVALID_INPUT);
+            event.error(Errors.INVALID_TOKEN);
             // authentication channel id format is invalid or it has already been used
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Invalid authentication request",
-                    Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.FORBIDDEN);
         }
 
-        event.detail(Details.CODE_ID, request.getSessionState());
-        event.session(request.getSessionState());
+        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+        OAuth2DeviceCodeModel deviceCode = store.getByUserCode(realm, bearerToken.getId());
 
-        if (Time.currentTime() > request.getExp().intValue()) {
-            event.error(Errors.SESSION_EXPIRED);
-            cancelRequest(request);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The authentication request expired",
-                    Response.Status.BAD_REQUEST);
+        if (deviceCode == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.FORBIDDEN);
         }
 
-        // to bind Client Session of CD(Consumption Device) with User Session, set CD's Client Model to this class member "client".
-        ClientModel issuedFor = realm.getClientByClientId(request.getIssuedFor());
+        if (!deviceCode.isPending()) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.FORBIDDEN);
+        }
+
+        event.detail(Details.CODE_ID, bearerToken.getSessionState());
+        event.session(bearerToken.getSessionState());
+
+        ClientModel issuedFor = realm.getClientByClientId(bearerToken.getIssuedFor());
 
         if (issuedFor == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid token recipient",
                     Response.Status.BAD_REQUEST);
         }
 
-        if (!issuedFor.getClientId().equals(request.getIssuedFor())) {
+        if (!deviceCode.getClientId().equals(bearerToken.getIssuedFor())) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Token recipient mismatch",
                     Response.Status.BAD_REQUEST);
         }
 
         event.client(issuedFor);
 
-        try {
-            CIBALoginUserResolver resolver = session.getProvider(CIBALoginUserResolver.class);
-            String authenticatedUserId = resolver.getUserFromInfoUsedByAuthentication(
-                    formParams.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_USER_INFO)).getId();
-
-            if (!request.getSubject().equals(authenticatedUserId)) {
-                event.error(DIFFERENT_USER_AUTHENTICATED);
-                cancelRequest(request);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, DIFFERENT_USER_AUTHENTICATED,
-                        Response.Status.BAD_REQUEST);
-            }
-        } catch (ErrorResponseException ere) {
-            throw ere;
-        } catch (Exception cause) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Failied to resolve user",
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        return request;
+        return bearerToken;
     }
 
-    private void cancelRequest(AuthenticationRequest authReqId) {
+    private void cancelRequest(String authReqId) {
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        store.removeDeviceCode(realm, authReqId.getId());
-        store.removeUserCode(realm, authReqId.getAuthResultId());
+        OAuth2DeviceCodeModel userCode = store.getByUserCode(realm, authReqId);
+        store.removeDeviceCode(realm, userCode.getDeviceCode());
+        store.removeUserCode(realm, authReqId);
     }
 
 
-    private void approveRequest(AuthenticationRequest authReqId) {
+    private void approveRequest(AccessToken authReqId) {
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        store.approve(realm, authReqId.getAuthResultId(), "fake");
+        store.approve(realm, authReqId.getId(), "fake");
     }
 
-    private void denyRequest(AuthenticationRequest authReqId) {
+    private void denyRequest(AccessToken authReqId) {
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        store.deny(realm, authReqId.getAuthResultId());
+        store.deny(realm, authReqId.getId());
     }
 }

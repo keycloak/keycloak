@@ -741,16 +741,14 @@ public class OAuthClient {
         }
     }
 
-    public int doAuthenticationChannelCallback(String clientId, String clientSecret, String userid, String authenticationChannelId, String authResult) throws Exception {
+    public int doAuthenticationChannelCallback(String requestToken, String authResult) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getAuthenticationChannelCallbackUrl());
 
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            String authorization = TokenUtil.TOKEN_TYPE_BEARER + " " + requestToken;
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_USER_INFO, userid));
-            parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_ID, authenticationChannelId));
             parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_STATUS, authResult));
 
             UrlEncodedFormEntity formEntity;

@@ -24,13 +24,14 @@ import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.ciba.AuthenticationChannelRequest;
+import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.utils.MediaType;
 
@@ -62,7 +63,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
-    private final BlockingQueue<AuthenticationChannelRequest> authenticationChannelRequests;
+    private final BlockingQueue<TestAuthenticationChannelRequest> authenticationChannelRequests;
 
     @Context
     HttpRequest request;
@@ -72,7 +73,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
             TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            BlockingQueue<AuthenticationChannelRequest> authenticationChannelRequests) {
+            BlockingQueue<TestAuthenticationChannelRequest> authenticationChannelRequests) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;

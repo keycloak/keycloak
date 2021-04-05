@@ -16,12 +16,11 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
-import static org.keycloak.OAuth2Constants.SCOPE;
-import static org.keycloak.protocol.oidc.grants.ciba.CibaGrantType.BINDING_MESSAGE;
-
 import java.io.IOException;
 import java.util.Map;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
@@ -29,8 +28,9 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -38,9 +38,7 @@ import org.keycloak.services.resources.Cors;
 public class HttpAuthenticationChannelProvider implements AuthenticationChannelProvider{
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
-    public static final String AUTHENTICATION_CHANNEL_USER_INFO = "user_info";
     public static final String AUTHENTICATION_STATUS = "auth_result";
-    public static final String AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED = "is_consent_required";
 
     protected KeycloakSession session;
     protected MultivaluedMap<String, String> formParams;
@@ -74,13 +72,17 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         ClientModel client = request.getClient();
 
         try {
-            // TODO: we should probably just pass the serialized authentication request
+            AuthenticationChannelRequest channelRequest = new AuthenticationChannelRequest();
+
+            channelRequest.setScope(request.getScope());
+            channelRequest.setBindingMessage(request.getBindingMessage());
+            channelRequest.setLoginHint(infoUsedByAuthenticator);
+            channelRequest.setConsentRequired(client.isConsentRequired());
+
             int status = SimpleHttp.doPost(httpAuthenticationChannelUri, session)
-                .param(AUTHENTICATION_CHANNEL_ID, request.serialize(session))
-                .param(AUTHENTICATION_CHANNEL_USER_INFO, infoUsedByAuthenticator)
-                .param(AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED, Boolean.toString(client.isConsentRequired()))
-                .param(SCOPE, request.getScope())
-                .param(BINDING_MESSAGE, request.getBindingMessage()).asStatus();
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .json(channelRequest)
+                    .auth(createBearerToken(request, client)).asStatus();
 
             if (status == Status.CREATED.getStatusCode()) {
                 return true;
@@ -90,6 +92,20 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         }
 
         return false;
+    }
+
+    private String createBearerToken(AuthenticationRequest request, ClientModel client) {
+        AccessToken bearerToken = new AccessToken();
+
+        bearerToken.type(TokenUtil.TOKEN_TYPE_BEARER);
+        bearerToken.issuer(request.getIssuer());
+        bearerToken.id(request.getAuthResultId());
+        bearerToken.issuedFor(client.getClientId());
+        bearerToken.audience(request.getIssuer());
+        bearerToken.exp(request.getExp());
+        bearerToken.subject(request.getSubject());
+
+        return session.tokens().encode(bearerToken);
     }
 
     protected void checkAuthenticationChannel() {

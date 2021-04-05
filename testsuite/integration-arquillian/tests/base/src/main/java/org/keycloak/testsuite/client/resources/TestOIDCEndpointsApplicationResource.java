@@ -19,10 +19,8 @@ package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.testsuite.ciba.AuthenticationChannelRequest;
-import org.keycloak.testsuite.forms.PassThroughAuthenticator;
-import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
-import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
+import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -100,6 +98,6 @@ public interface TestOIDCEndpointsApplicationResource {
     @GET
     @Path("/get-authentication-channel")
     @Produces(MediaType.APPLICATION_JSON)
-    AuthenticationChannelRequest getAuthenticationChannel();
+    TestAuthenticationChannelRequest getAuthenticationChannel();
 
 }
