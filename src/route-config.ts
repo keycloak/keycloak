@@ -202,12 +202,6 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/:realm/user-federation/ldap",
-    component: UserFederationSection,
-    breadcrumb: null,
-    access: "view-realm",
-  },
-  {
     path: "/:realm/user-federation/kerberos/:id",
     component: UserFederationKerberosSettings,
     breadcrumb: t("common:settings"),
@@ -217,6 +211,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/:realm/user-federation/kerberos/new",
     component: UserFederationKerberosSettings,
     breadcrumb: t("common:settings"),
+    access: "view-realm",
+  },
+  {
+    path: "/:realm/user-federation/ldap",
+    component: UserFederationSection,
+    breadcrumb: null,
     access: "view-realm",
   },
   {
