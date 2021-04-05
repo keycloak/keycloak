@@ -54,6 +54,10 @@ include::topics/policy-group-policy.adoc[leveloffset=+2]
 
 include::topics/policy-group-policy-extend-children.adoc[leveloffset=+3]
 
+include::topics/policy-client-scope-policy.adoc[leveloffset=+2]
+
+include::topics/policy-client-scope-policy-required-client-scope.adoc[leveloffset=+3]
+
 include::topics/policy-logic.adoc[leveloffset=+2]
 
 include::topics/policy-evaluation-api.adoc[leveloffset=+2]
