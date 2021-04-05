@@ -437,6 +437,8 @@ public class RealmManager {
             RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
             manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
             manageConsentRole.addCompositeRole(viewConsentRole);
+            RoleModel viewGroups = accountClient.addRole(AccountRoles.VIEW_GROUPS);
+            viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
 
             KeycloakModelUtils.setupDeleteAccount(accountClient);
 

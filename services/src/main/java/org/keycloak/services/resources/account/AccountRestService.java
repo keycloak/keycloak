@@ -397,6 +397,11 @@ public class AccountRestService {
         return new LinkedAccountsResource(session, request, client, auth, event, user);
     }
 
+    @Path("/groups")
+    public GroupMembershipResource groupResource() {
+        return new GroupMembershipResource(session, auth, event, user);
+    }
+
     @Path("/applications")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

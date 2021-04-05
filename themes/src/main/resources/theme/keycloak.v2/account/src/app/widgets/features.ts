@@ -24,6 +24,7 @@
     isMyResourcesEnabled: boolean;
     isTotpConfigured: boolean;
     deleteAccountAllowed: boolean;
+    isViewGroupsEnabled: boolean;
  }
 
 
