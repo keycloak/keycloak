@@ -23,7 +23,7 @@ export const LdapSettingsKerberosIntegration = ({
   const allowKerberosAuth: [string] = useWatch({
     control: form.control,
     name: "config.allowKerberosAuthentication",
-    defaultValue: ["true"],
+    defaultValue: ["false"],
   });
 
   return (
@@ -169,39 +169,38 @@ export const LdapSettingsKerberosIntegration = ({
                   </div>
                 )}
             </FormGroup>
+
+            <FormGroup
+              label={t("debug")}
+              labelIcon={
+                <HelpItem
+                  helpText={helpText("debugHelp")}
+                  forLabel={t("debug")}
+                  forID="kc-debug"
+                />
+              }
+              fieldId="kc-debug"
+              hasNoPaddingTop
+            >
+              {" "}
+              <Controller
+                name="config.debug"
+                defaultValue={["false"]}
+                control={form.control}
+                render={({ onChange, value }) => (
+                  <Switch
+                    id={"kc-debug"}
+                    isDisabled={false}
+                    onChange={(value) => onChange([`${value}`])}
+                    isChecked={value[0] === "true"}
+                    label={t("common:on")}
+                    labelOff={t("common:off")}
+                  />
+                )}
+              ></Controller>
+            </FormGroup>
           </>
         )}
-
-        <FormGroup
-          label={t("debug")}
-          labelIcon={
-            <HelpItem
-              helpText={helpText("debugHelp")}
-              forLabel={t("debug")}
-              forID="kc-debug"
-            />
-          }
-          fieldId="kc-debug"
-          hasNoPaddingTop
-        >
-          {" "}
-          <Controller
-            name="config.debug"
-            defaultValue={["false"]}
-            control={form.control}
-            render={({ onChange, value }) => (
-              <Switch
-                id={"kc-debug"}
-                isDisabled={false}
-                onChange={(value) => onChange([`${value}`])}
-                isChecked={value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
-              />
-            )}
-          ></Controller>
-        </FormGroup>
-
         <FormGroup
           label={t("useKerberosForPasswordAuthentication")}
           labelIcon={

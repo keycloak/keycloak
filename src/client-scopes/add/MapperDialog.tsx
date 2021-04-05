@@ -157,8 +157,8 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
       )}
       {isBuiltIn && rows.length === 0 && (
         <ListEmptyState
-          message={t("emptyMappers")}
-          instructions={t("emptyBuiltInMappersInstructions")}
+          message={t("common:emptyMappers")}
+          instructions={t("common:emptyBuiltInMappersInstructions")}
         />
       )}
     </Modal>

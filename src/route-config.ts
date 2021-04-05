@@ -29,6 +29,7 @@ import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 import { SearchGroups } from "./groups/SearchGroups";
 import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
+import { LdapMappingDetails } from "./user-federation/ldap/mappers/LdapMappingDetails";
 
 export type RouteDef = BreadcrumbsRoute & {
   access: AccessType;
@@ -95,13 +96,13 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/client-scopes/:id/mappers/oidc-role-name-mapper",
     component: RoleMappingForm,
-    breadcrumb: t("client-scopes:mappingDetails"),
+    breadcrumb: t("common:mappingDetails"),
     access: "view-clients",
   },
   {
     path: "/:realm/client-scopes/:id/mappers/:mapperId",
     component: MappingDetails,
-    breadcrumb: t("client-scopes:mappingDetails"),
+    breadcrumb: t("common:mappingDetails"),
     access: "view-clients",
   },
   {
@@ -201,12 +202,6 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/:realm/user-federation/ldap",
-    component: UserFederationSection,
-    breadcrumb: null,
-    access: "view-realm",
-  },
-  {
     path: "/:realm/user-federation/kerberos/:id",
     component: UserFederationKerberosSettings,
     breadcrumb: t("common:settings"),
@@ -219,9 +214,21 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/:realm/user-federation/ldap/:id",
+    path: "/:realm/user-federation/ldap",
+    component: UserFederationSection,
+    breadcrumb: null,
+    access: "view-realm",
+  },
+  {
+    path: "/:realm/user-federation/ldap/:id/:tab?",
     component: UserFederationLdapSettings,
     breadcrumb: t("common:settings"),
+    access: "view-realm",
+  },
+  {
+    path: "/:realm/user-federation/ldap/:id/:tab/:mapperId",
+    component: LdapMappingDetails,
+    breadcrumb: t("common:mappingDetails"),
     access: "view-realm",
   },
   {

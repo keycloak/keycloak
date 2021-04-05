@@ -146,7 +146,7 @@ export const RoleMappingForm = () => {
   return (
     <>
       <ViewHeader
-        titleKey="client-scopes:addMapper"
+        titleKey="common:addMapper"
         subKey="client-scopes:addMapperExplain"
       />
       <PageSection variant="light">
@@ -156,11 +156,11 @@ export const RoleMappingForm = () => {
           role="manage-clients"
         >
           <FormGroup
-            label={t("protocolMapper")}
+            label={t("common:mapperType")}
             labelIcon={
               <HelpItem
                 helpText="client-scopes-help:protocolMapper"
-                forLabel={t("protocolMapper")}
+                forLabel={t("common:mapperType")}
                 forID="protocolMapper"
               />
             }

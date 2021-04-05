@@ -26,7 +26,7 @@ SimpleList.args = {
   ariaLabelKey: "clients:clientList",
   searchPlaceholderKey: "common:search",
   columns: [
-    { name: "clientId", displayKey: "clients:clientID" },
+    { name: "clientId", displayKey: "common:clientID" },
     { name: "protocol", displayKey: "common:type" },
     {
       name: "description",

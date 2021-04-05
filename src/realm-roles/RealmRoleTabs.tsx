@@ -327,7 +327,7 @@ export const RealmRoleTabs = () => {
             ) : null}
             <Tab
               eventKey="attributes"
-              title={<TabTitleText>{t("attributes")}</TabTitleText>}
+              title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
             >
               <AttributesForm
                 form={form}

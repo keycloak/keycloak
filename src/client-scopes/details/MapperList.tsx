@@ -75,9 +75,12 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
           mappers as ProtocolMapperRepresentation[]
         );
         refresh();
-        addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
+        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("mappingCreatedError", { error }), AlertVariant.danger);
+        addAlert(
+          t("common:mappingCreatedError", { error }),
+          AlertVariant.danger
+        );
       }
     }
   };
@@ -119,7 +122,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         key={key}
         loader={loader}
         ariaLabelKey="client-scopes:clientScopeList"
-        searchPlaceholderKey="client-scopes:mappersSearchFor"
+        searchPlaceholderKey="common:searchForMapper"
         toolbarItem={
           <Dropdown
             onSelect={() => setMapperAction(false)}
@@ -130,7 +133,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
                 onToggle={() => setMapperAction(!mapperAction)}
                 toggleIndicator={CaretDownIcon}
               >
-                {t("addMapper")}
+                {t("common:addMapper")}
               </DropdownToggle>
             }
             isOpen={mapperAction}
@@ -159,11 +162,14 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
                   id: clientScope.id!,
                   mapperId: mapper.id!,
                 });
-                addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+                addAlert(
+                  t("common:mappingDeletedSuccess"),
+                  AlertVariant.success
+                );
                 refresh();
               } catch (error) {
                 addAlert(
-                  t("mappingDeletedError", { error }),
+                  t("common:mappingDeletedError", { error }),
                   AlertVariant.danger
                 );
               }
@@ -186,9 +192,9 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyMappers")}
-            instructions={t("emptyMappersInstructions")}
-            primaryActionText={t("emptyPrimaryAction")}
+            message={t("common:emptyMappers")}
+            instructions={t("common:emptyMappersInstructions")}
+            primaryActionText={t("common:emptyPrimaryAction")}
             onPrimaryAction={() => toggleAddMapperDialog(true)}
             secondaryActions={[
               {

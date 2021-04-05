@@ -174,7 +174,7 @@ export const GroupsSection = () => {
             <Tab
               data-testid="attributes"
               eventKey={2}
-              title={<TabTitleText>{t("attributes")}</TabTitleText>}
+              title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
             >
               <GroupAttributes />
             </Tab>

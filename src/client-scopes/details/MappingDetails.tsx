@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useErrorHandler } from "react-error-boundary";
 import {
@@ -109,8 +109,8 @@ export const MappingDetails = () => {
   }, []);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "client-scopes:deleteMappingTitle",
-    messageKey: "client-scopes:deleteMappingConfirm",
+    titleKey: "common:deleteMappingTitle",
+    messageKey: "common:deleteMappingConfirm",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -119,10 +119,13 @@ export const MappingDetails = () => {
           id,
           mapperId: mapperId,
         });
-        addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
         history.push(`/${realm}/client-scopes/${id}/mappers`);
       } catch (error) {
-        addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
+        addAlert(
+          t("common:mappingDeletedError", { error }),
+          AlertVariant.danger
+        );
       }
     },
   });
@@ -150,7 +153,7 @@ export const MappingDetails = () => {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={mapping ? mapping.name! : t("addMapper")}
+        titleKey={mapping ? mapping.name! : t("common:addMapper")}
         subKey={mapperId.match(isGuid) ? mapperId : ""}
         badge={mapping?.protocol}
         dropdownItems={
