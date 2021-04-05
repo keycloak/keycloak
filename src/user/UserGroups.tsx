@@ -32,6 +32,9 @@ export const UserGroups = () => {
   const [username, setUsername] = useState("");
 
   const [isDirectMembership, setDirectMembership] = useState(true);
+  const [directMembershipList, setDirectMembershipList] = useState<
+    GroupRepresentation[]
+  >([]);
   const [open, setOpen] = useState(false);
 
   const adminClient = useAdminClient();
@@ -137,6 +140,7 @@ export const UserGroups = () => {
       (value) => !topLevelGroups.includes(value)
     );
 
+    setDirectMembershipList(directMembership);
     const filterDupesfromGroups = allPaths.filter(
       (thing, index, self) =>
         index === self.findIndex((t) => t.name === thing.name)
@@ -167,16 +171,6 @@ export const UserGroups = () => {
 
   const AliasRenderer = (group: GroupRepresentation) => {
     return <>{group.name}</>;
-  };
-
-  const LeaveButtonRenderer = (group: GroupRepresentation) => {
-    return (
-      <>
-        <Button onClick={() => leave(group)} variant="link">
-          {t("users:Leave")}
-        </Button>
-      </>
-    );
   };
 
   const toggleModal = () => setOpen(!open);
@@ -211,6 +205,23 @@ export const UserGroups = () => {
   const leave = (group: GroupRepresentation) => {
     setSelectedGroup(group);
     toggleDeleteDialog();
+  };
+
+  const LeaveButtonRenderer = (group: GroupRepresentation) => {
+    if (
+      directMembershipList.some((item) => item.id === group.id) ||
+      directMembershipList.length === 0
+    ) {
+      return (
+        <>
+          <Button onClick={() => leave(group)} variant="link">
+            {t("users:Leave")}
+          </Button>
+        </>
+      );
+    } else {
+      return <> </>;
+    }
   };
 
   return (
@@ -258,6 +269,7 @@ export const UserGroups = () => {
               cellFormatters: [emptyFormatter()],
               transforms: [cellWidth(45)],
             },
+
             {
               name: "",
               cellRenderer: LeaveButtonRenderer,
