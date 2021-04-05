@@ -32,7 +32,7 @@ export type UserFormProps = {
     max?: number,
     search?: string
   ) => Promise<UserRepresentation[]>;
-  addGroup?: (newGroup: GroupRepresentation) => void;
+  addGroups?: (newReps: GroupRepresentation[]) => void;
 };
 
 export const UserGroups = () => {
@@ -48,12 +48,17 @@ export const UserGroups = () => {
 
   const [search, setSearch] = useState("");
   const [username, setUsername] = useState("");
+  const [join, setJoin] = useState<GroupTableData>();
+
+  const lastId = getLastId(location.pathname);
+
 
   const [isDirectMembership, setDirectMembership] = useState(true);
   const [directMembershipList, setDirectMembershipList] = useState<
     GroupRepresentation[]
   >([]);
   const [open, setOpen] = useState(false);
+  const [move, setMove] = useState<GroupTableData>();
 
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
@@ -204,6 +209,15 @@ export const UserGroups = () => {
 
   const toggleModal = () => {
     setOpen(!open);
+  };
+  const JoinGroupButtonRenderer = (group: GroupRepresentation) => {
+    return (
+      <>
+        <Button onClick={() => joinGroup(group)} variant="link">
+          {t("users:joinGroup")}
+        </Button>
+      </>
+    );
   };
 
   const joinGroup = (group: GroupRepresentation) => {
