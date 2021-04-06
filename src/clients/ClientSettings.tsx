@@ -240,7 +240,12 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
               }
             />
           </FormGroup>
-          <SaveReset name="settings" save={save} reset={reset} />
+          <SaveReset
+            className="keycloak__form_actions"
+            name="settings"
+            save={save}
+            reset={reset}
+          />
         </FormAccess>
       </ScrollForm>
     </>
