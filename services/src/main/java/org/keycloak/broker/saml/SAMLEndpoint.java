@@ -325,7 +325,7 @@ public class SAMLEndpoint {
 
             }  else {
                 for (String sessionIndex : request.getSessionIndex()) {
-                    String brokerSessionId = brokerUserId + "." + sessionIndex;
+                    String brokerSessionId = config.getAlias()  + "." + sessionIndex;
                     UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
                     if (userSession != null) {
                         if (userSession.getState() == UserSessionModel.State.LOGGING_OUT || userSession.getState() == UserSessionModel.State.LOGGED_OUT) {
@@ -519,7 +519,7 @@ public class SAMLEndpoint {
                 identity.setIdpConfig(config);
                 identity.setIdp(provider);
                 if (authn != null && authn.getSessionIndex() != null) {
-                    identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
+                    identity.setBrokerSessionId(config.getAlias() + "." + authn.getSessionIndex());
                  }
 
 
