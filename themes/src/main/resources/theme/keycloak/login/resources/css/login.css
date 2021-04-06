@@ -155,6 +155,8 @@ h1#kc-page-title {
 }
 
 #kc-locale ul {
+    background-color: #FFF;
+    background-color: var(--pf-global--BackgroundColor--100);
     display: none;
     top: 20px;
     min-width: 100px;
