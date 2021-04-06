@@ -60,6 +60,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -192,6 +193,7 @@ public class KeycloakApplication extends Application {
                 }
             }
 
+            session.clientPolicy().setupClientPoliciesOnKeycloakApp("/keycloak-default-client-profiles.json", "/keycloak-default-client-policies.json");
 
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
             exportImportManager = new ExportImportManager(session);

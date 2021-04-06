@@ -1,0 +1,14 @@
+{
+  "profiles": [
+    {
+      "name": "builtin-default-profile",
+      "description": "The built-in default profile for enforcing basic security level to clients.",
+      "builtin": true,
+      "executors": [
+        {
+          "secure-session-enforce-executor": {}
+        }
+      ]
+    }
+  ]
+}
