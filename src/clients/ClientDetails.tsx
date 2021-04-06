@@ -191,7 +191,7 @@ export const ClientDetails = () => {
   ) => {
     if (await form.trigger()) {
       if (
-        client?.publicClient &&
+        !client?.publicClient &&
         client?.clientAuthenticatorType !==
           form.getValues("clientAuthenticatorType") &&
         !confirmed
@@ -285,7 +285,7 @@ export const ClientDetails = () => {
                 reset={() => setupForm(client)}
               />
             </Tab>
-            {client.publicClient && (
+            {!client.publicClient && (
               <Tab
                 id="credentials"
                 eventKey="credentials"

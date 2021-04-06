@@ -40,7 +40,7 @@ export const CapabilityConfig = ({
             >
               <Controller
                 name="publicClient"
-                defaultValue={false}
+                defaultValue={true}
                 control={control}
                 render={({ onChange, value }) => (
                   <Switch
@@ -49,8 +49,8 @@ export const CapabilityConfig = ({
                     name="publicClient"
                     label={t("common:on")}
                     labelOff={t("common:off")}
-                    isChecked={value}
-                    onChange={onChange}
+                    isChecked={!value}
+                    onChange={(value) => onChange(!value)}
                   />
                 )}
               />
@@ -78,7 +78,7 @@ export const CapabilityConfig = ({
                         setValue("serviceAccountsEnabled", true);
                       }
                     }}
-                    isDisabled={!clientAuthentication}
+                    isDisabled={clientAuthentication}
                   />
                 )}
               />

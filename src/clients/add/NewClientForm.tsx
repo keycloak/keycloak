@@ -31,7 +31,7 @@ export const NewClientForm = () => {
     clientId: "",
     name: "",
     description: "",
-    publicClient: false,
+    publicClient: true,
     authorizationServicesEnabled: false,
     serviceAccountsEnabled: false,
     implicitFlowEnabled: false,
