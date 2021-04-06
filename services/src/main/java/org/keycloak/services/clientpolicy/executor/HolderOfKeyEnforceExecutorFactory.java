@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,21 +18,26 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class HolderOfKeyEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "holder-of-key-enforce-executor";
 
+    public static final String IS_AUGMENT = "is-augment";
+
+    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
+            IS_AUGMENT, null, null, ProviderConfigProperty.BOOLEAN_TYPE, false);
+
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new HolderOfKeyEnforceExecutor(session, model);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new HolderOfKeyEnforceExecutor(session);
     }
 
     @Override
@@ -59,7 +64,7 @@ public class HolderOfKeyEnforceExecutorFactory implements ClientPolicyExecutorPr
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY));
     }
 
 }

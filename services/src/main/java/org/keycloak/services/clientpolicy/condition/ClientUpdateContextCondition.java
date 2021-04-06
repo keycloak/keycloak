@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,25 +19,79 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
-public class ClientUpdateContextCondition extends AbstractClientPolicyConditionProvider {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientUpdateContextCondition implements ClientPolicyConditionProvider<ClientUpdateContextCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);
 
-    public ClientUpdateContextCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+    private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
+
+    public ClientUpdateContextCondition(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
+        @JsonProperty("update-client-source")
+        protected List<String> updateClientSource;
+
+        public List<String> getUpdateClientSource() {
+            return updateClientSource;
+        }
+
+        public void setUpdateClientSource(List<String> updateClientSource) {
+            this.updateClientSource = updateClientSource;
+        }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
+    }
+
+    @Override
+    public String getProviderId() {
+        return ClientUpdateContextConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -55,21 +109,15 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
     private boolean isAuthMethodMatched(String authMethod) {
         if (authMethod == null) return false;
 
-        List<String> expectedAuthMethods = componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE);
+        List<String> expectedAuthMethods = configuration.getUpdateClientSource();
         if (expectedAuthMethods == null) expectedAuthMethods = Collections.emptyList();
 
         if (logger.isTraceEnabled()) {
-            ClientPolicyLogger.log(logger, "auth method = " + authMethod);
-            expectedAuthMethods.stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
+            logger.tracev("auth method = {0}", authMethod);
+            expectedAuthMethods.stream().forEach(i -> logger.tracev("auth method expected = {0}", i));
         }
 
-        boolean isMatched = expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));
-        if (isMatched) {
-            ClientPolicyLogger.log(logger, "auth method matched.");
-        } else {
-            ClientPolicyLogger.log(logger, "auth method unmatched.");
-        }
-        return isMatched;
+        return expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));
     }
 
     private boolean isAuthMethodMatched(ClientCRUDContext context) {
@@ -103,4 +151,5 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
     private boolean isBearerToken(JsonWebToken jwt) {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
+
 }

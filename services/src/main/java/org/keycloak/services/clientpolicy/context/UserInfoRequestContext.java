@@ -20,6 +20,9 @@ package org.keycloak.services.clientpolicy.context;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class UserInfoRequestContext implements ClientPolicyContext {
 
     private final String tokenString;

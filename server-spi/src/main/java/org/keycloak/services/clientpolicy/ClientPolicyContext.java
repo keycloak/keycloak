@@ -21,6 +21,8 @@ package org.keycloak.services.clientpolicy;
  * Provides Client Policy Context.
  * The implementation of this interface for handling an event defined in {@link ClientPolicyEvent}
  * needs to provide methods depending on this event.
+ * 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public interface ClientPolicyContext {
 

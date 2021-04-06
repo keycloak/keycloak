@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,18 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
@@ -39,12 +38,66 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
-public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyConditionProvider {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionProvider<ClientUpdateSourceGroupsCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceGroupsCondition.class);
 
-    public ClientUpdateSourceGroupsCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+    private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
+
+    public ClientUpdateSourceGroupsCondition(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
+        protected List<String> groups;
+
+        public List<String> getGroups() {
+            return groups;
+        }
+
+        public void setGroups(List<String> groups) {
+            this.groups = groups;
+        }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
+    }
+
+    @Override
+    public String getProviderId() {
+        return ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -97,23 +150,17 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyCondi
         Set<String> groups = user.getGroupsStream().map(GroupModel::getName).collect(Collectors.toSet());
 
         if (logger.isTraceEnabled()) {
-            groups.stream().forEach(i -> ClientPolicyLogger.log(logger, " user group = " + i));
-            expectedGroups.stream().forEach(i -> ClientPolicyLogger.log(logger, "groups expected = " + i));
+            groups.forEach(i -> logger.tracev("user group = {0}", i));
+            expectedGroups.forEach(i -> logger.tracev("expected user group = {0}", i));
         }
 
-        boolean isMatched = expectedGroups.removeAll(groups);
-        if (isMatched) {
-            ClientPolicyLogger.log(logger, "group matched.");
-        } else {
-            ClientPolicyLogger.log(logger, "group unmatched.");
-        }
-        return isMatched;
+        return expectedGroups.removeAll(groups); // may change expectedGroups so that it has needed to be instantiated.
     }
 
     private Set<String> instantiateGroupsForMatching() {
-        if (componentModel.getConfig() == null) return null;
-        List<String> roles = componentModel.getConfig().get(ClientUpdateSourceGroupsConditionFactory.GROUPS);
-        if (roles == null) return null;
-        return new HashSet<>(roles);
+        List<String> groups = configuration.getGroups();
+        if (groups == null) return null;
+        return new HashSet<>(groups);
     }
+
 }

@@ -38,7 +38,7 @@ abstract class AbstractDynamicClientCRUDContext implements ClientCRUDContext {
             this.authenticatedClient = realm.getClientByClientId(token.getIssuedFor());
         }
         if (token.getSubject() != null) {
-            this.authenticatedUser = session.users().getUserById(token.getSubject(), realm);
+            this.authenticatedUser = session.users().getUserById(realm, token.getSubject());
         }
     }
 

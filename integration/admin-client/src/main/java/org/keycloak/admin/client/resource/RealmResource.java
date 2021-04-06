@@ -18,6 +18,7 @@
 package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -282,4 +283,9 @@ public interface RealmResource {
     @Path("localization")
     RealmLocalizationResource localization();
 
+    @Path("client-policies/policies")
+    ClientPoliciesPoliciesResource clientPoliciesPoliciesResource();
+
+    @Path("client-policies/profiles")
+    ClientPoliciesProfilesResource clientPoliciesProfilesResource();
 }

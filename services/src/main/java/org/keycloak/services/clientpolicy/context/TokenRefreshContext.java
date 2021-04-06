@@ -22,6 +22,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class TokenRefreshContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;

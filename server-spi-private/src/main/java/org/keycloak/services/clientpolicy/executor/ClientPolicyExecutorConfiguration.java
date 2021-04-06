@@ -13,11 +13,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.services.clientpolicy.executor;
 
-import org.keycloak.component.ComponentFactory;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public interface ClientPolicyProviderFactory extends ComponentFactory<ClientPolicyProvider, ClientPolicyProvider> {
+/**
+ * Just adds some type-safety to the ClientPolicyExecutorConfiguration
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ClientPolicyExecutorConfiguration {
 }
