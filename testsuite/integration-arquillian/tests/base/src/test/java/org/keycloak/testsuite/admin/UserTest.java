@@ -1186,7 +1186,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude(QUARKUS) // TODO: Enable for quarkus
+    @AuthServerContainerExclude({REMOTE, QUARKUS}) // TODO: Enable for quarkus and remote
     public void updateUserWithReadOnlyAttributes() {
         // Admin is able to update "usercertificate" attribute
         UserRepresentation user1 = new UserRepresentation();
