@@ -22,7 +22,8 @@ import {
   clientScopeTypesSelectOptions,
   ClientScopeType,
   ClientScope,
-} from "./ClientScopeTypes";
+  CellDropdown,
+} from "../../components/client-scope/ClientScopeTypes";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 
@@ -78,40 +79,7 @@ const addScope = async (
   });
 };
 
-type CellDropdownProps = {
-  clientScope: ClientScopeRepresentation;
-  type: ClientScopeType;
-  onSelect: (value: ClientScopeType) => void;
-};
-
-const CellDropdown = ({ clientScope, type, onSelect }: CellDropdownProps) => {
-  const { t } = useTranslation("clients");
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Select
-      key={clientScope.id}
-      onToggle={() => setOpen(!open)}
-      isOpen={open}
-      selections={[type]}
-      onSelect={(_, value) => {
-        onSelect(value as ClientScopeType);
-        setOpen(false);
-      }}
-    >
-      {clientScopeTypesSelectOptions(t)}
-    </Select>
-  );
-};
-
 type SearchType = "client" | "assigned";
-
-type TableRow = {
-  selected: boolean;
-  clientScope: ClientScopeRepresentation;
-  type: ClientScopeType;
-  cells: (string | undefined)[];
-};
 
 export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
@@ -178,7 +146,13 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
         type={scope.type}
         onSelect={async (value) => {
           try {
-            await changeScope(adminClient, clientId, scope, scope.type, value);
+            await changeScope(
+              adminClient,
+              clientId,
+              scope,
+              scope.type,
+              value as ClientScope
+            );
             addAlert(t("clientScopeSuccess"), AlertVariant.success);
             refresh();
           } catch (error) {

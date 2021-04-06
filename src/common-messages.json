@@ -55,6 +55,12 @@
     "unexpectedError": "An unexpected error occurred: '{{error}}'",
     "retry": "Retry",
 
+    "clientScope": {
+      "default": "Default",
+      "optional": "Optional",
+      "none": "None"
+    },
+
     "home": "Home",
     "manage": "Manage",
     "clients": "Clients",

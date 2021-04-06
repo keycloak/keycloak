@@ -30,10 +30,6 @@
     "evaluate": "Evaluate",
     "changeTypeTo": "Change type to",
     "assignRole": "Assign role",
-    "clientScope": {
-      "default": "Default",
-      "optional": "Optional"
-    },
     "clientScopeSearch": {
       "client": "Client scope",
       "assigned": "Assigned type"

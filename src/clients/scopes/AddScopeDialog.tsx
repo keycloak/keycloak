@@ -18,7 +18,10 @@ import {
 } from "@patternfly/react-table";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
-import { ClientScopeType, clientScopeTypesDropdown } from "./ClientScopeTypes";
+import {
+  ClientScopeType,
+  clientScopeTypesDropdown,
+} from "../../components/client-scope/ClientScopeTypes";
 
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
