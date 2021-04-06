@@ -298,9 +298,10 @@ public class UserResource {
         RealmModel authenticatedRealm = auth.adminAuth().getRealm();
         // if same realm logout before impersonation
         boolean sameRealm = false;
-        if (authenticatedRealm.getId().equals(realm.getId())) {
+        String sessionState = auth.adminAuth().getToken().getSessionState();
+        if (authenticatedRealm.getId().equals(realm.getId()) && sessionState != null) {
             sameRealm = true;
-            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, auth.adminAuth().getToken().getSessionState());
+            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, sessionState);
             AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
             AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
