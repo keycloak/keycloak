@@ -10,7 +10,7 @@
     "webOrigins": "Allowed CORS origins. To permit all origins of Valid Redirect URIs, add '+'. This does not include the '*' wildcard though. To permit all origins, explicitly add '*'.",
     "homeURL": "Default URL to use when the auth server needs to redirect or link back to the client.",
     "adminURL": "URL to the admin interface of the client. Set this if the client supports the adapter REST API. This REST API allows the auth server to push revocation policies and other administrative tasks. Usually this is set to the base URL of the client.",
-    "clientID": "Specifies ID referenced in URI and tokens. For example 'my-client'. For SAML this is also the expected issuer value from authn requests",
+    "clientId": "Specifies ID referenced in URI and tokens. For example 'my-client'. For SAML this is also the expected issuer value from authn requests",
     "clientName": "Specifies display name of the client. For example 'My Client'. Supports keys for localized values as well. For example: ${my_client}",
     "description": "Specifies description of the client. For example 'My Client for TimeSheets'. Supports keys for localized values as well. For example: ${my_client_description}",
     "loginTheme": "Select theme for login, OTP, grant, registration, and forgot password pages.",

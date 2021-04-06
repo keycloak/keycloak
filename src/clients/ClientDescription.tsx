@@ -21,12 +21,12 @@ export const ClientDescription = () => {
       <FormGroup
         labelIcon={
           <HelpItem
-            helpText="clients-help:clientID"
-            forLabel={t("common:clientID")}
+            helpText="clients-help:clientId"
+            forLabel={t("common:clientId")}
             forID="kc-client-id"
           />
         }
-        label={t("common:clientID")}
+        label={t("common:clientId")}
         fieldId="kc-client-id"
         helperTextInvalid={t("common:required")}
         validated={
