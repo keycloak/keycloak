@@ -37,6 +37,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -63,7 +65,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
-import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -709,10 +711,6 @@ public class OAuthClient {
         } 
     }
 
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientSecret, String userid, String bindingMessage) throws Exception {
-        return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, bindingMessage);
-    }
-
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
@@ -742,27 +740,14 @@ public class OAuthClient {
         }
     }
 
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage) throws Exception {
-        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, null);
-    }
-
-    public int doAuthenticationChannelCallback(String requestToken, String authResult) throws Exception {
+    public int doAuthenticationChannelCallback(String requestToken, AuthenticationChannelResponse.Status authStatus) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getAuthenticationChannelCallbackUrl());
 
             String authorization = TokenUtil.TOKEN_TYPE_BEARER + " " + requestToken;
             post.setHeader("Authorization", authorization);
 
-            List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(HttpAuthenticationChannelProvider.AUTHENTICATION_STATUS, authResult));
-
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-            post.setEntity(formEntity);
+            post.setEntity(new StringEntity(JsonSerialization.writeValueAsString(new AuthenticationChannelResponse(authStatus)), ContentType.APPLICATION_JSON));
 
             return client.execute(post).getStatusLine().getStatusCode();
         }

@@ -20,15 +20,17 @@ package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 import javax.ws.rs.Path;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.protocol.oidc.ext.OIDCExtProviderFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CibaEndpoint implements OIDCExtProvider, OIDCExtProviderFactory {
+public class CibaEndpoint implements OIDCExtProvider, OIDCExtProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "ciba";
 
@@ -59,7 +61,7 @@ public class CibaEndpoint implements OIDCExtProvider, OIDCExtProviderFactory {
     }
 
     /**
-     * The callback endpoint used by authentication devices tno notify Keycloak about the end-user authentication status.
+     * The callback endpoint used by authentication devices to notify Keycloak about the end-user authentication status.
      *
      * @return
      */
@@ -91,4 +93,10 @@ public class CibaEndpoint implements OIDCExtProvider, OIDCExtProviderFactory {
     public void close() {
 
     }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.CIBA);
+    }
+
 }

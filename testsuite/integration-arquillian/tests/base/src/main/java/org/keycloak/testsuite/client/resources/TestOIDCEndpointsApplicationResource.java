@@ -19,7 +19,6 @@ package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
 import javax.ws.rs.Consumes;

@@ -16,6 +16,8 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
+import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -23,14 +25,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.util.HttpHeaderNames;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
-import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -38,17 +38,14 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
-import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 
 public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpoint {
-
-    public static final String SUCCEEDED = "succeeded";
-    public static final String UNAUTHORIZED = "unauthorized";
-    public static final String CANCELLED = "cancelled";
 
     @Context
     private HttpRequest httpRequest;
@@ -59,48 +56,44 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
     @Path("/")
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response processAuthenticationChannelResult() {
+    public Response processAuthenticationChannelResult(AuthenticationChannelResponse response) {
         event.event(EventType.LOGIN);
-        MultivaluedMap<String, String> formParams = httpRequest.getDecodedFormParameters();
-        AccessToken request = verifyAuthenticationRequest(httpRequest.getHttpHeaders());
-        String status = formParams.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_STATUS);
-
-        if (SUCCEEDED.equals(status)) {
-            approveRequest(request);
-            return Response.ok("", MediaType.APPLICATION_JSON_TYPE)
-                    .header(HttpHeaderNames.CACHE_CONTROL, "no-store")
-                    .header(HttpHeaderNames.PRAGMA, "no-cache")
-                    .build();
-        }
+        AccessToken bearerToken = verifyAuthenticationRequest(httpRequest.getHttpHeaders());
+        Status status = response.getStatus();
 
         if (status == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "authentication result not specified",
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid authentication status",
                     Response.Status.BAD_REQUEST);
-        } else if (status.equals(CANCELLED)) {
-            event.error(Errors.NOT_ALLOWED);
-            denyRequest(request);
-        } else if (status.equals(UNAUTHORIZED)) {
-            event.error(Errors.CONSENT_DENIED);
-            denyRequest(request);
         }
 
-        throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid authentication status",
-                Response.Status.BAD_REQUEST);
+        switch (status) {
+            case SUCCEED:
+                approveRequest(bearerToken);
+                break;
+            case CANCELLED:
+            case UNAUTHORIZED:
+                denyRequest(bearerToken, status);
+                break;
+        }
+
+        return Response.ok(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     private AccessToken verifyAuthenticationRequest(HttpHeaders headers) {
-        String jwe = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        String rawBearerToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
 
-        if (jwe == null) {
+        if (rawBearerToken == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.UNAUTHORIZED);
         }
 
         AccessToken bearerToken;
 
         try {
-            bearerToken = TokenVerifier.createWithoutSignature(session.tokens().decode(jwe, AccessToken.class))
+            bearerToken = TokenVerifier.createWithoutSignature(session.tokens().decode(rawBearerToken, AccessToken.class))
                     .withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
                     .checkActive(true)
@@ -120,20 +113,18 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         }
 
         if (!deviceCode.isPending()) {
+            cancelRequest(bearerToken.getId());
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.FORBIDDEN);
         }
 
-        event.detail(Details.CODE_ID, bearerToken.getSessionState());
-        event.session(bearerToken.getSessionState());
-
         ClientModel issuedFor = realm.getClientByClientId(bearerToken.getIssuedFor());
 
-        if (issuedFor == null) {
+        if (issuedFor == null || !issuedFor.isEnabled()) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid token recipient",
                     Response.Status.BAD_REQUEST);
         }
 
-        if (!deviceCode.getClientId().equals(bearerToken.getIssuedFor())) {
+        if (!deviceCode.getClientId().equals(issuedFor.getClientId())) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Token recipient mismatch",
                     Response.Status.BAD_REQUEST);
         }
@@ -143,13 +134,27 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         return bearerToken;
     }
 
+    private void cancelRequest(String authResultId) {
+        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+        OAuth2DeviceCodeModel userCode = store.getByUserCode(realm, authResultId);
+        store.removeDeviceCode(realm, userCode.getDeviceCode());
+        store.removeUserCode(realm, authResultId);
+    }
+
     private void approveRequest(AccessToken authReqId) {
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
         store.approve(realm, authReqId.getId(), "fake");
     }
 
-    private void denyRequest(AccessToken authReqId) {
+    private void denyRequest(AccessToken authReqId, Status status) {
+        if (CANCELLED.equals(status)) {
+            event.error(Errors.NOT_ALLOWED);
+        } else {
+            event.error(Errors.CONSENT_DENIED);
+        }
+
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+
         store.deny(realm, authReqId.getId());
     }
 }

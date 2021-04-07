@@ -69,7 +69,6 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response processGrantRequest(@Context HttpRequest httpRequest) {
-        ProfileHelper.requireFeature(Profile.Feature.CIBA);
         AuthenticationRequest request = authorizeClient(httpRequest.getDecodedFormParameters());
 
         try {

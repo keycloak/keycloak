@@ -38,7 +38,6 @@ import org.keycloak.util.TokenUtil;
 public class HttpAuthenticationChannelProvider implements AuthenticationChannelProvider{
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
-    public static final String AUTHENTICATION_STATUS = "auth_result";
 
     protected KeycloakSession session;
     protected MultivaluedMap<String, String> formParams;
