@@ -7,3 +7,4 @@ org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecuto
 org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutorFactory
 org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory
 org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory
+org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory

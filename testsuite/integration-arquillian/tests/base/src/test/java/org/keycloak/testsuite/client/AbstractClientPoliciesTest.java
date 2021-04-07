@@ -116,6 +116,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsCondi
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor;
