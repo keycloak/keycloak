@@ -219,7 +219,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         client.close();
     }
 
-    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details = "Unstable for Quarkus, review later")
+    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details = "Unstable for Quarkus, review later. Remote testsuite: max-detail-length is set to zero in standalone.xml, proposed fix - KEYCLOAK-17659")
     @Test
     public void loginWithLongRedirectUri() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))
