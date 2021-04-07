@@ -47,7 +47,6 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -102,6 +101,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -110,7 +111,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
@@ -151,10 +151,10 @@ public class UserTest extends AbstractAdminTest {
 
     @After
     public void after() {
-        realm.identityProviders().findAll().stream()
+        realm.identityProviders().findAll()
                 .forEach(ip -> realm.identityProviders().get(ip.getAlias()).remove());
 
-        realm.groups().groups().stream()
+        realm.groups().groups()
                 .forEach(g -> realm.groups().group(g.getId()).remove());
     }
 
@@ -177,9 +177,10 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private String createUser(UserRepresentation userRep, boolean assertAdminEvent) {
-        Response response = realm.users().create(userRep);
-        String createdId = ApiUtil.getCreatedId(response);
-        response.close();
+        String createdId;
+        try (Response response = realm.users().create(userRep)) {
+            createdId = ApiUtil.getCreatedId(response);
+        }
 
         if (assertAdminEvent) {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
@@ -1857,6 +1858,27 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("user11@localhost", userRep.getUsername());
 
         switchRegistrationEmailAsUsername(false);
+    }
+
+    @Test
+    public void updateUserWithExistingEmail() {
+        final String userId = createUser();
+        assertNotNull(userId);
+        assertNotNull(createUser("user2", "user2@localhost"));
+
+        UserResource user = realm.users().get(userId);
+        UserRepresentation userRep = user.toRepresentation();
+        assertNotNull(userRep);
+        userRep.setEmail("user2@localhost");
+
+        try {
+            updateUser(user, userRep);
+            fail("Expected failure - Email conflict");
+        } catch (ClientErrorException e) {
+            assertNotNull(e.getResponse());
+            assertThat(e.getResponse().getStatus(), is(409));
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
