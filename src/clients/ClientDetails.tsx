@@ -312,7 +312,6 @@ export const ClientDetails = () => {
             >
               <Tabs
                 activeKey={activeTab2}
-                isSecondary
                 onSelect={(_, key) => setActiveTab2(key as number)}
               >
                 <Tab

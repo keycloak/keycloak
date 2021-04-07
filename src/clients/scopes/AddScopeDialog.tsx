@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -10,18 +10,13 @@ import {
   DropdownDirection,
 } from "@patternfly/react-core";
 import { CaretUpIcon } from "@patternfly/react-icons";
-import {
-  Table,
-  TableBody,
-  TableHeader,
-  TableVariant,
-} from "@patternfly/react-table";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
 } from "../../components/client-scope/ClientScopeTypes";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
@@ -32,11 +27,7 @@ export type AddScopeDialogProps = {
   ) => void;
 };
 
-type Row = {
-  selected: boolean;
-  scope: ClientScopeRepresentation;
-  cells: (string | undefined)[];
-};
+import "./client-scopes.css";
 
 export const AddScopeDialog = ({
   clientScopes,
@@ -46,26 +37,14 @@ export const AddScopeDialog = ({
 }: AddScopeDialogProps) => {
   const { t } = useTranslation("clients");
   const [addToggle, setAddToggle] = useState(false);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<ClientScopeRepresentation[]>([]);
 
-  useEffect(() => {
-    setRows(
-      clientScopes.map((scope) => {
-        return {
-          selected: false,
-          scope,
-          cells: [scope.name, scope.description],
-        };
-      })
-    );
-  }, [clientScopes]);
+  const loader = () => Promise.resolve(clientScopes);
 
   const action = (scope: ClientScopeType) => {
-    const scopes = rows
-      .filter((row) => row.selected)
-      .map((row) => {
-        return { scope: row.scope, type: scope };
-      });
+    const scopes = rows.map((row) => {
+      return { scope: row, type: scope };
+    });
     onAdd(scopes);
     setAddToggle(false);
     toggleDialog();
@@ -79,12 +58,14 @@ export const AddScopeDialog = ({
       onClose={toggleDialog}
       actions={[
         <Dropdown
+          className="keycloak__client-scopes-add__add-dropdown"
           id="add-dropdown"
           key="add-dropdown"
           direction={DropdownDirection.up}
           isOpen={addToggle}
           toggle={
             <DropdownToggle
+              isDisabled={rows.length === 0}
               onToggle={() => setAddToggle(!addToggle)}
               isPrimary
               toggleIndicator={CaretUpIcon}
@@ -100,12 +81,7 @@ export const AddScopeDialog = ({
           key="cancel"
           variant={ButtonVariant.secondary}
           onClick={() => {
-            setRows(
-              rows.map((row) => {
-                row.selected = false;
-                return row;
-              })
-            );
+            setRows([]);
             toggleDialog();
           }}
         >
@@ -113,28 +89,21 @@ export const AddScopeDialog = ({
         </Button>,
       ]}
     >
-      <Table
-        variant={TableVariant.compact}
-        cells={[t("common:name"), t("common:description")]}
-        onSelect={(_, isSelected, rowIndex) => {
-          if (rowIndex === -1) {
-            setRows(
-              rows.map((row) => {
-                row.selected = isSelected;
-                return row;
-              })
-            );
-          } else {
-            rows[rowIndex].selected = isSelected;
-            setRows([...rows]);
-          }
-        }}
-        rows={rows}
-        aria-label={t("chooseAMapperType")}
-      >
-        <TableHeader />
-        <TableBody />
-      </Table>
+      <KeycloakDataTable
+        loader={loader}
+        ariaLabelKey="client-scopes:chooseAMapperType"
+        searchPlaceholderKey="client-scopes:searchFor"
+        canSelectAll
+        onSelect={(rows) => setRows(rows)}
+        columns={[
+          {
+            name: "name",
+          },
+          {
+            name: "description",
+          },
+        ]}
+      />
     </Modal>
   );
 };

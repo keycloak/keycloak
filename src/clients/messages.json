@@ -34,6 +34,7 @@
       "client": "Client scope",
       "assigned": "Assigned type"
     },
+    "assignedClientScope": "Assigned client scope",
     "assignedType": "Assigned type",
     "hideInheritedRoles": "Hide inherited roles",
     "inherentFrom": "Inherited from",

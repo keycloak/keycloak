@@ -27,6 +27,8 @@ import {
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 
+import "./client-scopes.css";
+
 export type ClientScopesProps = {
   clientId: string;
   protocol: string;
@@ -197,9 +199,11 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
         loader={loader}
         ariaLabelKey="clients:clientScopeList"
         searchPlaceholderKey="clients:searchByName"
+        canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
         searchTypeComponent={
           <Dropdown
+            className="keycloak__client-scopes__searchtype"
             toggle={
               <DropdownToggle
                 id="toggle-id"
@@ -245,6 +249,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                 key="add-dropdown"
                 isOpen={addToggle}
                 selections={[]}
+                isDisabled={selectedRows.length === 0}
                 placeholderText={t("changeTypeTo")}
                 onToggle={() => setAddToggle(!addToggle)}
                 onSelect={async (_, value) => {
@@ -323,6 +328,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
         columns={[
           {
             name: "name",
+            displayKey: "clients:assignedClientScope",
           },
           {
             name: "type",
@@ -330,6 +336,24 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
             cellRenderer: TypeSelector,
           },
           { name: "description" },
+        ]}
+        actions={[
+          {
+            title: t("common:remove"),
+            onRowClick: async (row) => {
+              try {
+                await removeScope(adminClient, clientId, row, row.type);
+                addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
+                refresh();
+              } catch (error) {
+                addAlert(
+                  t("clientScopeRemoveError", { error }),
+                  AlertVariant.danger
+                );
+              }
+              return true;
+            },
+          },
         ]}
         emptyState={
           <ListEmptyState
