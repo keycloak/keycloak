@@ -81,6 +81,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdateContextCondition
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceGroupsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
@@ -1509,6 +1510,55 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException cpe) {
             assertEquals("update profiles failed", cpe.getError());
         }
+    }
+
+    @Test
+    public void testConfidentialClientAcceptExecutorExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Erstes Profil", Boolean.FALSE, null)
+                    .addExecutor(ConfidentialClientAcceptExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Erstes Politik", Boolean.FALSE, Boolean.TRUE, null, null)
+                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
+                        createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        String clientConfidentialId = generateSuffixedName("confidential-app");
+        String clientConfidentialSecret = "app-secret";
+        String cidConfidential = createClientByAdmin(clientConfidentialId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientConfidentialSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cidConfidential).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        successfulLoginAndLogout(clientConfidentialId, clientConfidentialSecret);
+
+        String clientPublicId = generateSuffixedName("public-app");
+        String cidPublic = createClientByAdmin(clientPublicId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientConfidentialSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.TRUE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cidPublic).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        oauth.clientId(clientPublicId);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("invalid client access type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
     private void checkMtlsFlow() throws IOException {
