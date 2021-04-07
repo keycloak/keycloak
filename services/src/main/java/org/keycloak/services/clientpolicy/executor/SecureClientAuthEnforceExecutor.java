@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -52,7 +53,7 @@ public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProv
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyExecutorConfiguration {
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("client-authns")
         protected List<String> clientAuthns;
         @JsonProperty("client-authns-augment")

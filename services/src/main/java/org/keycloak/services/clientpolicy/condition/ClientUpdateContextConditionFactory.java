@@ -44,7 +44,11 @@ public class ClientUpdateContextConditionFactory implements ClientPolicyConditio
 
     static {
         ProviderConfigProperty property;
-        property = new ProviderConfigProperty(UPDATE_CLIENT_SOURCE, null, null, ProviderConfigProperty.MULTIVALUED_LIST_TYPE, BY_AUTHENTICATED_USER);
+        property = new ProviderConfigProperty(UPDATE_CLIENT_SOURCE, "Update Client Context", "Specifies the context how is client created or updated. " +
+                "ByInitialAccessToken is usually OpenID Connect client registration with the initial access token. " +
+                "ByRegistrationAccessToken is usually OpenID Connect client update request with the registration access token. " +
+                "ByAuthenticatedUser is usually Admin REST request with the token on behalf of authenticated user or client (service account). ByAnonymous is usually anonymous OpenID Client registration request.",
+                ProviderConfigProperty.MULTIVALUED_LIST_TYPE, BY_AUTHENTICATED_USER);
         List<String> updateProfileValues = Arrays.asList(BY_AUTHENTICATED_USER, BY_ANONYMOUS, BY_INITIAL_ACCESS_TOKEN, BY_REGISTRATION_ACCESS_TOKEN);
         property.setOptions(updateProfileValues);
         configProperties.add(property);

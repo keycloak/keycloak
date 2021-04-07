@@ -33,7 +33,7 @@ public class HolderOfKeyEnforceExecutorFactory implements ClientPolicyExecutorPr
     public static final String IS_AUGMENT = "is-augment";
 
     private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
-            IS_AUGMENT, null, null, ProviderConfigProperty.BOOLEAN_TYPE, false);
+            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to use MTLS HoK token", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

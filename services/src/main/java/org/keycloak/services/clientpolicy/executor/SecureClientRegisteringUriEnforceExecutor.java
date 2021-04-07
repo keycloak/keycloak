@@ -26,8 +26,12 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+<<<<<<< HEAD
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
+=======
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
@@ -40,7 +44,11 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+<<<<<<< HEAD:services/src/main/java/org/keycloak/services/clientpolicy/executor/SecureClientRegisteringUriEnforceExecutor.java
 public class SecureClientRegisteringUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+=======
+public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring:services/src/main/java/org/keycloak/services/clientpolicy/executor/SecureRedirectUriEnforceExecutor.java
 
     private static final Logger logger = Logger.getLogger(SecureClientRegisteringUriEnforceExecutor.class);
 

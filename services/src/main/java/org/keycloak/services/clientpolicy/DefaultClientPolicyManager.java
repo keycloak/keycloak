@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -63,7 +65,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
 
     private void doPolicyOperation(ClientConditionOperation condition, ClientExecutorOperation executor, RealmModel realm) throws ClientPolicyException {
         Map<String, ClientProfileModel> map = ClientPoliciesUtil.getClientProfilesModel(session, realm);
-        List<ClientPolicyModel> list = ClientPoliciesUtil.getEnabledClientProfilesModel(session, realm).stream().collect(Collectors.toList());
+        List<ClientPolicyModel> list = ClientPoliciesUtil.getEnabledClientPoliciesModel(session, realm).stream().collect(Collectors.toList());
 
         if (list == null || list.isEmpty()) {
             logger.trace("POLICY OPERATION :: No enabled policy.");
@@ -92,8 +94,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         }
 
         boolean ret = false;
-        for (Object obj : policy.getConditions()) {
-            ClientPolicyConditionProvider condition = (ClientPolicyConditionProvider)obj;
+        for (ClientPolicyConditionProvider condition : policy.getConditions()) {
             logger.tracev("CONDITION OPERATION :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
             try {
                 ClientPolicyVote vote = op.run(condition);
@@ -148,8 +149,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
                 continue;
             }
 
-            for (Object obj : profile.getExecutors()) {
-                ClientPolicyExecutorProvider executor = (ClientPolicyExecutorProvider)obj;
+            for (ClientPolicyExecutorProvider executor : profile.getExecutors()) {
                 logger.tracev("EXECUTION :: policy name = {0}, profile name = {1}, executor name = {2}, provider id = {3}", policy.getName(), profileName, executor.getName(), executor.getProviderId());
                 try {
                     op.run(executor);
@@ -258,7 +258,8 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         setClientProfilesJsonString(realm, validatedJson);
 
         try {
-            validatedJson = ClientPoliciesUtil.getValidatedClientPoliciesJson(session, realm, rep.getClientPolicies());
+            ClientPoliciesRepresentation clientPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesRepresentation(session, realm, rep.getClientPolicies(), true);
+            validatedJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(clientPoliciesRep);
         } catch (ClientPolicyException e) {
             logger.warnv("VALIDATE SERIALIZE IMPORTED REALM POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
             // revert to builtin profiles
@@ -268,32 +269,48 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     @Override
-    public void updateClientProfiles(RealmModel realm, String json) throws ClientPolicyException {
-        logger.tracev("UPDATE PROFILES :: realm = {0}, PUT = {1}", realm.getName(), json);
-        String validatedJsonString = null;
+    public void updateClientProfiles(RealmModel realm, ClientProfilesRepresentation clientProfiles) throws ClientPolicyException {
         try {
-            validatedJsonString = getValidatedClientProfilesJson(realm, json);
+            if (clientProfiles == null) {
+                throw new ClientPolicyException("Passing null clientProfiles not allowed");
+            }
+            ClientProfilesRepresentation validatedProfilesRep = ClientPoliciesUtil.getValidatedClientProfilesRepresentation(session, realm, clientProfiles);
+            String validatedJsonString = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(validatedProfilesRep);
+            setClientProfilesJsonString(realm, validatedJsonString);
+            logger.tracev("UPDATE PROFILES :: realm = {0}, validated and modified PUT = {1}", realm.getName(), validatedJsonString);
         } catch (ClientPolicyException e) {
             logger.warnv("VALIDATE SERIALIZE PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
             throw e;
         }
-        setClientProfilesJsonString(realm, validatedJsonString);
-        logger.tracev("UPDATE PROFILES :: realm = {0}, validated and modified PUT = {1}", realm.getName(), validatedJsonString);
     }
 
     @Override
-    public String getClientProfiles(RealmModel realm) {
+    public ClientProfilesRepresentation getClientProfiles(RealmModel realm) throws ClientPolicyException {
         String json = getClientProfilesJsonString(realm);
         logger.tracev("GET PROFILES :: realm = {0}, GET = {1}", realm.getName(), json);
-        return json;
+        try {
+            ClientProfilesRepresentation clientProfiles = ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
+            if (logger.isTraceEnabled()) {
+                logger.tracev("GET PROFILES :: realm = {0}, GET = {1}", realm.getName(), JsonSerialization.writeValueAsString(clientProfiles));
+            }
+            return clientProfiles;
+        } catch (ClientPolicyException e) {
+            logger.warnv("GET CLIENT PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
+            throw e;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unexpected exception when converting JSON to String", ioe);
+        }
     }
 
     @Override
-    public void updateClientPolicies(RealmModel realm, String json) throws ClientPolicyException {
-        logger.tracev("UPDATE POLICIES :: realm = {0}, PUT = {1}", realm.getName(), json);
+    public void updateClientPolicies(RealmModel realm, ClientPoliciesRepresentation clientPolicies) throws ClientPolicyException {
         String validatedJsonString = null;
         try {
-            validatedJsonString = getValidatedClientPoliciesJson(realm, json);
+            if (clientPolicies == null) {
+                throw new ClientPolicyException("Passing null clientPolicies not allowed");
+            }
+            ClientPoliciesRepresentation clientPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesRepresentation(session, realm, clientPolicies, false);
+            validatedJsonString = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(clientPoliciesRep);
         } catch (ClientPolicyException e) {
             logger.warnv("VALIDATE SERIALIZE POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
             throw e;
@@ -324,10 +341,21 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     @Override
-    public String getClientPolicies(RealmModel realm) {
+    public ClientPoliciesRepresentation getClientPolicies(RealmModel realm) throws ClientPolicyException {
         String json = getClientPoliciesJsonString(realm);
         logger.tracev("GET POLICIES :: realm = {0}, GET = {1}", realm.getName(), json);
-        return json;
+        try {
+            ClientPoliciesRepresentation clientPolicies = ClientPoliciesUtil.getClientPoliciesRepresentation(session, realm);
+            if (logger.isTraceEnabled()) {
+                logger.tracev("GET POLICIES :: realm = {0}, GET = {1}", realm.getName(), JsonSerialization.writeValueAsString(clientPolicies));
+            }
+            return clientPolicies;
+        } catch (ClientPolicyException e) {
+            logger.warnv("GET CLIENT POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
+            throw e;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unexpected exception when converting JSON to String", ioe);
+        }
     }
 
     @Override
@@ -356,16 +384,6 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
 
     private void setClientPoliciesJsonString(RealmModel realm, String json) {
         realm.setAttribute(CLIENT_POLICIES, json);
-    }
-
-    private String getValidatedClientProfilesJson(RealmModel realm, String profilesJson) throws ClientPolicyException {
-        ClientProfilesRepresentation validatedProfilesRep = ClientPoliciesUtil.getValidatedClientProfilesRepresentation(session, realm, profilesJson);
-        return ClientPoliciesUtil.convertClientProfilesRepresentationToJson(validatedProfilesRep);
-    }
-
-    private String getValidatedClientPoliciesJson(RealmModel realm, String policiesJson) throws ClientPolicyException {
-        ClientPoliciesRepresentation validatedPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesRepresentation(session, realm, policiesJson);
-        return ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(validatedPoliciesRep);
     }
 
     /**

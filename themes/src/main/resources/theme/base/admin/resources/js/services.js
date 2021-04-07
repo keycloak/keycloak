@@ -2198,6 +2198,26 @@ module.factory('ClientRegistrationPolicyProviders', function($resource) {
     });
 });
 
+module.factory('ClientPoliciesProfiles', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/profiles', {
+        realm : '@realm',
+    }, {
+       update : {
+           method : 'PUT'
+       }
+    });
+});
+
+module.factory('ClientPolicies', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/policies', {
+        realm : '@realm',
+    }, {
+       update : {
+           method : 'PUT'
+       }
+    });
+});
+
 module.factory('LDAPMapperSync', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/user-storage/:parentId/mappers/:mapperId/sync', {
         realm : '@realm',

@@ -29,6 +29,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 
@@ -62,7 +63,7 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyExecutorConfiguration {
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("require-client-assertion")
         protected Boolean requireClientAssertion;
 

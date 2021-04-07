@@ -20,6 +20,8 @@ package org.keycloak.services.clientpolicy;
 import java.io.Serializable;
 import java.util.List;
 
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -28,7 +30,7 @@ public class ClientProfileModel implements Serializable {
     protected String name;
     protected String description;
     protected boolean builtin;
-    protected List<Object> executors; // ClientPolicyExecutorProvider is not visible so that use Object.
+    protected List<ClientPolicyExecutorProvider> executors;
 
     public String getName() {
         return name;
@@ -54,11 +56,11 @@ public class ClientProfileModel implements Serializable {
         this.builtin = builtin;
     }
 
-    public List<Object> getExecutors() {
+    public List<ClientPolicyExecutorProvider> getExecutors() {
         return executors;
     }
 
-    public void setExecutors(List<Object> executors) {
+    public void setExecutors(List<ClientPolicyExecutorProvider> executors) {
         this.executors = executors;
     }
 }

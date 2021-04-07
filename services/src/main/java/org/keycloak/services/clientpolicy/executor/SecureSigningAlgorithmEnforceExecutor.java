@@ -29,6 +29,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -43,7 +44,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+<<<<<<< HEAD
 public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmEnforceExecutor.Configuration> {
+=======
+public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
 

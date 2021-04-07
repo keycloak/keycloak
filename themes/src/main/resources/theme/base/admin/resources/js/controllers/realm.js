@@ -2966,6 +2966,669 @@ module.controller('ClientRegPolicyDetailCtrl', function ($scope, realm, clientRe
 
 });
 
+module.controller('ClientPoliciesProfilesListCtrl', function($scope, realm, clientProfiles, ClientPoliciesProfiles, Dialog, Notifications, $route, $location) {
+    console.log('ClientPoliciesProfilesListCtrl');
+    $scope.realm = realm;
+    $scope.clientProfiles = clientProfiles;
+
+    $scope.removeClientProfile = function(clientProfile) {
+        console.log("Deleting client profile from the JSON: " + clientProfile.name);
+
+        for (var i=0 ; i < $scope.clientProfiles.profiles.length ; i++) {
+            var currentProfile = $scope.clientProfiles.profiles[i];
+            if (currentProfile.name === clientProfile.name) {
+                $scope.clientProfiles.profiles.splice(i, 1);
+                break;
+            }
+        }
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, $scope.clientProfiles,  function () {
+            $route.reload();
+            Notifications.success("The client profile was deleted.");
+        }, function(errorResponse) {
+            Notifications.error('Failed to delete client profile. Check server log for the details');
+        });
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesJsonCtrl', function($scope, realm, clientProfiles, ClientPoliciesProfiles, Dialog, Notifications, $route, $location) {
+    console.log('ClientPoliciesProfilesJsonCtrl');
+    $scope.realm = realm;
+    $scope.clientProfilesString = angular.toJson(clientProfiles, true);
+
+    $scope.save = function() {
+        var clientProfilesObj = null;
+        try {
+            var clientProfilesObj = angular.fromJson($scope.clientProfilesString);
+        } catch (e) {
+            Notifications.error("Provided JSON is incorrect. See browser javascript console for the details");
+            console.log(e);
+            return;
+        }
+        var clientProfilesCompressed = angular.toJson(clientProfilesObj, false);
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, clientProfilesCompressed,  function () {
+            $route.reload();
+            Notifications.success("The client profiles configuration was updated.");
+        }, function(errorResponse) {
+            Notifications.error('Failed to update client profiles. Check browser javascript console and server log for the details');
+            console.log("Error response when updating client profiles JSON: Status: " + errorResponse.status +
+                    ", statusText: " + errorResponse.statusText + ", data: " + errorResponse.data);
+        });
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clientProfiles, ClientPoliciesProfiles, Dialog, Notifications, $route, $location) {
+    var targetProfileName = $route.current.params.profileName;
+    $scope.createNew = targetProfileName == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesProfilesEditCtrl: creating new profile');
+    } else {
+        console.log('ClientPoliciesProfilesEditCtrl: updating profile ' + targetProfileName);
+    }
+
+    $scope.realm = realm;
+    $scope.clientProfiles = clientProfiles;
+    $scope.editedProfile = null;
+
+    function getExecutorNames(clientProfile) {
+        var executorNames = [];
+        for (var i=0 ; i<clientProfile.executors.length ; i++) {
+            var currentExecutor = clientProfile.executors[i];
+            if (!executorNames.includes(currentExecutor.providerId)) {
+                executorNames.push(currentExecutor.providerId);
+            }
+        }
+        return executorNames;
+    }
+
+    if ($scope.createNew) {
+        $scope.editedProfile = {
+            name: "",
+            builtin: false,
+            executors: []
+        };
+        $scope.editedProfileExecutorNames = [];
+    } else {
+        for (var i=0 ; i < $scope.clientProfiles.profiles.length ; i++) {
+            var currentProfile = $scope.clientProfiles.profiles[i];
+            if (targetProfileName === currentProfile.name) {
+                $scope.editedProfile = currentProfile;
+                $scope.editedProfileExecutorNames = getExecutorNames(currentProfile);
+                break;
+            }
+        }
+
+        if ($scope.editedProfile == null) {
+            console.log("Profile of name " + targetProfileName + " not found");
+            throw 'Profile not found';
+        }
+    }
+
+    $scope.readOnly = !$scope.access.manageRealm || $scope.editedProfile.builtin;
+
+    $scope.removeExecutor = function(executorName) {
+        console.log("remove executor " + executorName);
+
+        // Delete executor
+        for (var i=0 ; i<$scope.editedProfile.executors.length ; i++) {
+            var currentExecutor = $scope.editedProfile.executors[i];
+            if (currentExecutor.providerId === executorName) {
+                $scope.editedProfile.executors.splice(i, 1);
+                break;
+            }
+        }
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, $scope.clientProfiles,  function () {
+            $scope.editedProfileExecutorNames = getExecutorNames($scope.editedProfile);
+            Notifications.success("The executor was deleted.");
+        }, function(errorResponse) {
+            Notifications.error('Failed to delete executor. Check server log for the details');
+        });
+    }
+
+    $scope.save = function() {
+        if (!$scope.editedProfile.name || $scope.editedProfile.name === '') {
+            Notifications.error('Name must be provided');
+            return;
+        }
+
+        if ($scope.createNew) {
+            $scope.clientProfiles.profiles.push($scope.editedProfile);
+        }
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, $scope.clientProfiles,  function () {
+            if ($scope.createNew) {
+                Notifications.success("The client profile was created.");
+                $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + $scope.editedProfile.name);
+            } else {
+                Notifications.success("The client profile was updated.");
+                $location.url('/realms/' + realm.realm + '/client-policies/profiles');
+            }
+        }, function(errorResponse) {
+            if ($scope.createNew) {
+                Notifications.error('Failed to create client profile. Check server log for the details');
+            } else {
+                Notifications.error('Failed to update client profile. Check server log for the details');
+            }
+        });
+
+    };
+
+    $scope.back = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/profiles');
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, realm, serverInfo, clientProfiles, ClientPoliciesProfiles, ComponentUtils, Dialog, Notifications, $route, $location) {
+    var updatedExecutorName = $route.current.params.executorName;
+    var targetProfileName = $route.current.params.profileName;
+    $scope.createNew = updatedExecutorName == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesProfilesCreateExecutorCtrl: adding executor to profile ' + targetProfileName);
+    } else {
+        console.log('ClientPoliciesProfilesCreateExecutorCtrl: updating executor ' + updatedExecutorName + ' of profile ' + targetProfileName);
+    }
+    $scope.realm = realm;
+
+    var editedProfile = null;
+    for (var i=0 ; i < clientProfiles.profiles.length ; i++) {
+        var currentProfile = clientProfiles.profiles[i];
+        if (targetProfileName === currentProfile.name) {
+            editedProfile = currentProfile;
+            break;
+        }
+    }
+    if (editedProfile == null) {
+        throw 'Client profile of specified name not found';
+    }
+
+    $scope.readOnly = !$scope.access.manageRealm || editedProfile.builtin;
+
+    $scope.executorTypes = serverInfo.componentTypes['org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider'];
+
+    for (var j=0 ; j < $scope.executorTypes.length ; j++) {
+        var currExecutorType = $scope.executorTypes[j];
+        if (currExecutorType.properties) {
+            console.log("Adjusting executorType: " + currExecutorType.id);
+            ComponentUtils.addMvOptionsToMultivaluedLists(currExecutorType.properties);
+        }
+    }
+
+    function getExecutorByName(clientProfile, executorName) {
+        for (var i=0 ; i<clientProfile.executors.length ; i++) {
+            var currentExecutor = clientProfile.executors[i];
+            if (currentExecutor.providerId === executorName) {
+                return currentExecutor;
+            }
+        }
+        return null;
+    }
+
+    if ($scope.createNew) {
+        // make first type the default
+        $scope.executorType = $scope.executorTypes[0];
+        var oldExecutorType = $scope.executorType;
+        initConfig();
+
+        $scope.$watch('executorType', function() {
+            if (!angular.equals($scope.executorType, oldExecutorType)) {
+                oldExecutorType = $scope.executorType;
+                initConfig();
+            }
+        }, true);
+    } else {
+        $scope.executor = {
+            config: getExecutorByName(editedProfile, updatedExecutorName).configuration
+        };
+
+        //$scope.executorType = $scope.executorTypes[updatedExecutorName];
+        $scope.executorType = null;
+        for (var j=0 ; j < $scope.executorTypes.length ; j++) {
+            var currentExType = $scope.executorTypes[j];
+            if (updatedExecutorName === currentExType.id) {
+                $scope.executorType = currentExType;
+                break;
+            }
+        }
+
+    }
+
+    function toDefaultValue(configProperty) {
+        if (configProperty.type === 'MultivaluedString' || configProperty.type === 'MultivaluedList') {
+            if (configProperty.defaultValue) {
+                return configProperty.defaultValue;
+            } else {
+                return [];
+            }
+        }
+
+        if (configProperty.defaultValue) {
+            return configProperty.defaultValue;
+        } else {
+            return null;
+        }
+    }
+
+    function initConfig() {
+        console.log("Initialized config now. ConfigType is: " + $scope.executorType.id);
+        $scope.executor = {
+            config: {}
+        };
+
+       for (let i = 0; i < $scope.executorType.properties.length; i++) {
+           let configProperty = $scope.executorType.properties[i];
+           $scope.executor.config[configProperty.name] = toDefaultValue(configProperty);
+       }
+    }
+
+    $scope.save = function() {
+        console.log("save: " + $scope.executorType.id);
+
+        var executorName = $scope.executorType.id;
+        if (!editedProfile.executors) {
+            editedProfile.executors = [];
+        }
+
+        ComponentUtils.removeLastEmptyValue($scope.executor.config);
+
+        if ($scope.createNew) {
+            var selectedExecutor = {
+                providerId: $scope.executorType.id,
+                configuration: $scope.executor.config
+            };
+            editedProfile.executors.push(selectedExecutor);
+        } else {
+            var currentExecutor = getExecutorByName(editedProfile, updatedExecutorName);
+            currentExecutor.configuration = $scope.executor.config;
+         }
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, clientProfiles,  function () {
+            if ($scope.createNew) {
+                Notifications.success("Executor created successfully");
+            } else {
+                Notifications.success("Executor updated successfully");
+            }
+            $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + editedProfile.name);
+        });
+
+    };
+
+    $scope.cancel = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + editedProfile.name);
+    };
+
+});
+
+module.controller('ClientPoliciesListCtrl', function($scope, realm, clientPolicies, ClientPolicies, Dialog, Notifications, $route, $location) {
+    console.log('ClientPoliciesListCtrl');
+    $scope.realm = realm;
+    $scope.clientPolicies = clientPolicies;
+
+    $scope.removeClientPolicy = function(clientPolicy) {
+        console.log("Deleting client policy from the JSON: " + clientPolicy.name);
+
+        for (var i=0 ; i < $scope.clientPolicies.policies.length ; i++) {
+            var currentPolicy = $scope.clientPolicies.policies[i];
+            if (currentPolicy.name === clientPolicy.name) {
+                $scope.clientPolicies.policies.splice(i, 1);
+                break;
+            }
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, $scope.clientPolicies,  function () {
+            $route.reload();
+            Notifications.success("The client policy was deleted.");
+        }, function(errorResponse) {
+            Notifications.error('Failed to delete client policy. Check server log for the details');
+        });
+    };
+
+});
+
+module.controller('ClientPoliciesJsonCtrl', function($scope, realm, clientPolicies, Dialog, Notifications, ClientPolicies, $route, $location) {
+    console.log('ClientPoliciesJsonCtrl');
+    $scope.realm = realm;
+    $scope.clientPoliciesString = angular.toJson(clientPolicies, true);
+
+    $scope.save = function() {
+        var clientPoliciesObj = null;
+        try {
+            var clientPoliciesObj = angular.fromJson($scope.clientPoliciesString);
+        } catch (e) {
+            Notifications.error("Provided JSON is incorrect. See browser javascript console for the details");
+            console.log(e);
+            return;
+        }
+        var clientPoliciesCompressed = angular.toJson(clientPoliciesObj, false);
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, clientPoliciesCompressed,  function () {
+            $route.reload();
+            Notifications.success("The client policies configuration was updated.");
+        }, function(errorResponse) {
+            Notifications.error('Failed to update client policies. Check browser javascript console and server log for the details');
+            console.log("Error response when updating client policies JSON: Status: " + errorResponse.status +
+                    ", statusText: " + errorResponse.statusText + ", data: " + errorResponse.data);
+        });
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+});
+
+module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfiles, clientPolicies, ClientPolicies, Dialog, Notifications, $route, $location) {
+    var targetPolicyName = $route.current.params.policyName;
+    $scope.createNew = targetPolicyName == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesEditCtrl: creating new policy');
+    } else {
+        console.log('ClientPoliciesEditCtrl: updating policy ' + targetPolicyName);
+    }
+
+    $scope.realm = realm;
+    $scope.clientPolicies = clientPolicies;
+    $scope.clientProfiles = clientProfiles;
+    $scope.editedPolicy = null;
+
+    function getConditionNames(clientPolicy) {
+        var conditionNames = [];
+        for (var i=0 ; i<clientPolicy.conditions.length ; i++) {
+            var currentCondition = clientPolicy.conditions[i];
+            if (!conditionNames.includes(currentCondition.providerId)) {
+                conditionNames.push(currentCondition.providerId);
+            }
+        }
+        return conditionNames;
+    }
+
+    if ($scope.createNew) {
+        $scope.editedPolicy = {
+            name: "",
+            builtin: false,
+            enable: true,
+            profiles: [],
+            conditions: []
+        };
+        $scope.editedPolicyConditionNames = [];
+    } else {
+        for (var i=0 ; i < $scope.clientPolicies.policies.length ; i++) {
+            var currentPolicy = $scope.clientPolicies.policies[i];
+            if (targetPolicyName === currentPolicy.name) {
+                $scope.editedPolicy = currentPolicy;
+                $scope.editedPolicyConditionNames = getConditionNames(currentPolicy);
+                break;
+            }
+        }
+
+        if ($scope.editedPolicy == null) {
+            console.log("Policy of name " + targetPolicyName + " not found");
+            throw 'Policy not found';
+        }
+    }
+
+    $scope.readOnlyFormFields = !$scope.access.manageRealm || $scope.editedPolicy.builtin;
+    $scope.readOnlyButtons = !$scope.access.manageRealm;
+
+    $scope.availableProfiles = [];
+    for (var k=0 ; k<clientProfiles.profiles.length ; k++) {
+        var profileName = clientProfiles.profiles[k].name;
+        if (!$scope.editedPolicy.profiles || !$scope.editedPolicy.profiles.includes(profileName)) {
+            $scope.availableProfiles.push(profileName);
+        }
+    }
+
+    $scope.removeCondition = function(conditionName) {
+        console.log("remove condition " + conditionName);
+
+        // Delete condition
+        for (var i=0 ; i<$scope.editedPolicy.conditions.length ; i++) {
+            var currentCondition = $scope.editedPolicy.conditions[i];
+            if (currentCondition.providerId === conditionName) {
+                $scope.editedPolicy.conditions.splice(i, 1);
+                break;
+            }
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, $scope.clientPolicies,  function () {
+            $scope.editedPolicyConditionNames = getConditionNames($scope.editedPolicy);
+            Notifications.success("The condition was deleted.");
+        }, function(errorResponse) {
+            Notifications.error('Failed to delete condition. Check server log for the details');
+        });
+    }
+
+    $scope.save = function() {
+        if (!$scope.editedPolicy.name || $scope.editedPolicy.name === '') {
+            Notifications.error('Name must be provided');
+            return;
+        }
+
+        if ($scope.createNew) {
+            $scope.clientPolicies.policies.push($scope.editedPolicy);
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, $scope.clientPolicies,  function () {
+            if ($scope.createNew) {
+                Notifications.success("The client policy was created.");
+                $location.url('/realms/' + realm.realm + '/client-policies/policies-update/' + $scope.editedPolicy.name);
+            } else {
+                Notifications.success("The client policy was updated.");
+                $location.url('/realms/' + realm.realm + '/client-policies/policies');
+            }
+        }, function(errorResponse) {
+            if ($scope.createNew) {
+                Notifications.error('Failed to create client policy. Check server log for the details');
+            } else {
+                Notifications.error('Failed to update client policy. Check server log for the details');
+            }
+        });
+
+    };
+
+    $scope.back = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/policies');
+    };
+
+
+    function moveProfileAndUpdatePolicy(arrayFrom, arrayTo, profileName, notificationsMessage) {
+        for (var i=0 ; i<arrayFrom.length ; i++) {
+            if (arrayFrom[i] === profileName) {
+                arrayFrom.splice(i, 1);
+                arrayTo.push(profileName);
+                break;
+            }
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, $scope.clientPolicies,  function () {
+            Notifications.success(notificationsMessage);
+        }, function(errorResponse) {
+            Notifications.error('Failed to update profiles of the policy. Check server log for the details');
+        });
+    }
+
+    $scope.addProfile = function(profileName) {
+        console.log("addProfile: " + profileName);
+        moveProfileAndUpdatePolicy($scope.availableProfiles, $scope.editedPolicy.profiles, profileName, "Profile added to the policy");
+    };
+
+    $scope.removeProfile = function(profileName) {
+        console.log("removeProfile: " + profileName);
+        moveProfileAndUpdatePolicy( $scope.editedPolicy.profiles, $scope.availableProfiles, profileName, "Profile removed from the policy");
+    }
+
+});
+
+module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, serverInfo, clientPolicies, ClientPolicies, Components, ComponentUtils, Dialog, Notifications, $route, $location) {
+    var updatedConditionName = $route.current.params.conditionName;
+    var targetPolicyName = $route.current.params.policyName;
+    $scope.createNew = updatedConditionName == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesEditConditionCtrl: adding condition to policy ' + targetPolicyName);
+    } else {
+        console.log('ClientPoliciesEditConditionCtrl: updating condition ' + updatedConditionName + ' of policy ' + targetPolicyName);
+    }
+    $scope.realm = realm;
+
+    var editedPolicy = null;
+    for (var i=0 ; i < clientPolicies.policies.length ; i++) {
+        var currentPolicy = clientPolicies.policies[i];
+        if (targetPolicyName === currentPolicy.name) {
+            editedPolicy = currentPolicy;
+            break;
+        }
+    }
+    if (editedPolicy == null) {
+        throw 'Client policy of specified name not found';
+    }
+
+    $scope.readOnly = !$scope.access.manageRealm || editedPolicy.builtin;
+
+    $scope.conditionTypes = serverInfo.componentTypes['org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider'];
+
+    for (var j=0 ; j < $scope.conditionTypes.length ; j++) {
+        var currConditionType = $scope.conditionTypes[j];
+        if (currConditionType.properties) {
+            console.log("Adjusting conditionType: " + currConditionType.id);
+            ComponentUtils.addMvOptionsToMultivaluedLists(currConditionType.properties);
+        }
+    }
+
+    function getConditionByName(clientPolicy, conditionName) {
+        for (var i=0 ; i<clientPolicy.conditions.length ; i++) {
+            var currentCondition = clientPolicy.conditions[i];
+            if (currentCondition.providerId === conditionName) {
+                return currentCondition;
+            }
+        }
+        return null;
+    }
+
+    if ($scope.createNew) {
+        // make first type the default
+        $scope.conditionType = $scope.conditionTypes[0];
+        var oldConditionType = $scope.conditionType;
+        initConfig();
+
+        $scope.$watch('conditionType', function() {
+            if (!angular.equals($scope.conditionType, oldConditionType)) {
+                oldConditionType = $scope.conditionType;
+                initConfig();
+            }
+        }, true);
+    } else {
+        $scope.condition = {
+            config: getConditionByName(editedPolicy, updatedConditionName).configuration
+        };
+
+        $scope.conditionType = null;
+        for (var j=0 ; j < $scope.conditionTypes.length ; j++) {
+            var currentCndType = $scope.conditionTypes[j];
+            if (updatedConditionName === currentCndType.id) {
+                $scope.conditionType = currentCndType;
+                break;
+            }
+        }
+
+    }
+
+    function toDefaultValue(configProperty) {
+        if (configProperty.type === 'MultivaluedString' || configProperty.type === 'MultivaluedList') {
+            if (configProperty.defaultValue) {
+                return configProperty.defaultValue;
+            } else {
+                return [];
+            }
+        }
+
+        if (configProperty.defaultValue) {
+            return configProperty.defaultValue;
+        } else {
+            return null;
+        }
+    }
+
+    function initConfig() {
+        console.log("Initialized config now. ConfigType is: " + $scope.conditionType.id);
+        $scope.condition = {
+            config: {}
+        };
+
+       for (let i = 0; i < $scope.conditionType.properties.length; i++) {
+           let configProperty = $scope.conditionType.properties[i];
+           $scope.condition.config[configProperty.name] = toDefaultValue(configProperty);
+       }
+    }
+
+
+    $scope.save = function() {
+        console.log("save: " + $scope.conditionType.id);
+
+        var conditionName = $scope.conditionType.id;
+        if (!editedPolicy.conditions) {
+            editedPolicy.conditions = [];
+        }
+
+        ComponentUtils.removeLastEmptyValue($scope.condition.config);
+
+        var selectedCondition;
+        if ($scope.createNew) {
+            var selectedCondition = {
+                providerId: $scope.conditionType.id,
+                configuration: $scope.condition.config
+            };
+            editedPolicy.conditions.push(selectedCondition);
+        } else {
+            var currentCondition = getConditionByName(editedPolicy, updatedConditionName);
+            currentCondition.configuration = $scope.condition.config;
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, clientPolicies,  function () {
+            if ($scope.createNew) {
+                Notifications.success("Condition created successfully");
+            } else {
+                Notifications.success("Condition updated successfully");
+            }
+            $location.url('/realms/' + realm.realm + '/client-policies/policies-update/' + editedPolicy.name);
+        });
+
+    };
+
+    $scope.cancel = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/policies-update/' + editedPolicy.name);
+    };
+
+});
+
 module.controller('RealmImportCtrl', function($scope, realm, $route, 
                                               Notifications, $modal, $resource) {
     $scope.rawContent = {};

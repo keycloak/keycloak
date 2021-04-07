@@ -34,10 +34,18 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
 
     public static final String PROVIDER_ID = "secure-reqobj-executor";
 
+<<<<<<< HEAD
     public static final String VERIFY_NBF = "verify-nbf";
 
     private static final ProviderConfigProperty VERIFY_NBF_PROPERTY = new ProviderConfigProperty(
             VERIFY_NBF, null, null, ProviderConfigProperty.BOOLEAN_TYPE, true);
+=======
+    public static final String AVAILABLE_PERIOD = "available-period";
+
+    private static final ProviderConfigProperty AVAILABLE_PERIOD_PROPERTY = new ProviderConfigProperty(
+            AVAILABLE_PERIOD, "Available Period", "The maximum period in seconds for which the 'request' object used in OIDC authorization request is considered valid",
+            ProviderConfigProperty.STRING_TYPE, "3600");
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -68,7 +76,11 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
+<<<<<<< HEAD
         return new ArrayList<>(Arrays.asList(VERIFY_NBF_PROPERTY));
+=======
+        return new ArrayList<>(Arrays.asList(AVAILABLE_PERIOD_PROPERTY));
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
     }
 
 }

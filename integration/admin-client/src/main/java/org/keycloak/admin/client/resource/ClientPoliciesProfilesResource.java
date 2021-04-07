@@ -8,6 +8,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -17,9 +18,9 @@ public interface ClientPoliciesProfilesResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    String getProfiles();
+    ClientProfilesRepresentation getProfiles();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    Response updateProfiles(final String json);
+    void updateProfiles(final ClientProfilesRepresentation json);
 }

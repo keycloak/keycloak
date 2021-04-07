@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -38,7 +39,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,6 +63,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -92,6 +96,10 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
@@ -132,6 +140,7 @@ import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforce
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
@@ -191,7 +200,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void loadValidProfilesAndPolicies() throws Exception {
         // load profiles
-        ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.", Boolean.FALSE, null)
+        ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.", Boolean.FALSE)
                 .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
                     createSecureClientAuthEnforceExecutorConfig(
                         Boolean.TRUE, 
@@ -199,7 +208,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                         JWTClientAuthenticator.PROVIDER_ID))
                 .toRepresentation();
 
-        ClientProfileRepresentation loadedProfileRepWithoutBuiltinField = (new ClientProfileBuilder()).createProfile("lack-of-builtin-field-test-profile", "Without builtin field that is treated as builtin=false.", null, null)
+        ClientProfileRepresentation loadedProfileRepWithoutBuiltinField = (new ClientProfileBuilder()).createProfile("lack-of-builtin-field-test-profile", "Without builtin field that is treated as builtin=false.", null)
                 .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
                     createSecureClientAuthEnforceExecutorConfig(
                         Boolean.TRUE, 
@@ -227,15 +236,18 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                         "new-policy",
                         "duplicated profiles are ignored.",
                         Boolean.FALSE,
-                        Boolean.TRUE,
-                        null,
-                        Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile", "ordinal-test-profile"))
+                        Boolean.TRUE)
                     .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, 
                         createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC, ClientAccessTypeConditionFactory.TYPE_BEARERONLY)))
                     .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
                             createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
                             createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile("builtin-default-profile")
+                        .addProfile("ordinal-test-profile")
+                        .addProfile("lack-of-builtin-field-test-profile")
+                        .addProfile("ordinal-test-profile")
+
                     .toRepresentation();
 
         ClientPolicyRepresentation loadedPolicyRepWithoutBuiltinField = 
@@ -243,17 +255,16 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                         "lack-of-builtin-field-test-policy",
                         "Without builtin field that is treated as builtin=false.",
                         null,
-                        null,
-                        null,
-                        Arrays.asList("lack-of-builtin-field-test-profile"))
+                        null)
                     .addCondition(ClientUpdateContextConditionFactory.PROVIDER_ID, 
                             createClientUpdateContextConditionConfig(Arrays.asList(ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER)))
                     .addCondition(ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, 
                             createClientUpdateSourceGroupsConditionConfig(Arrays.asList("topGroup")))
-                    .addCondition(ClientUpdateSourceHostsConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientUpdateSourceHostsConditionFactory.PROVIDER_ID,
                             createClientUpdateSourceHostsConditionConfig(Arrays.asList("localhost", "127.0.0.1")))
                     .addCondition(ClientUpdateSourceRolesConditionFactory.PROVIDER_ID, 
                             createClientUpdateSourceRolesConditionConfig(Arrays.asList(AdminRoles.CREATE_CLIENT)))
+                        .addProfile("lack-of-builtin-field-test-profile")
                     .toRepresentation();
 
         json = (new ClientPoliciesBuilder())
@@ -339,7 +350,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedConditions(Arrays.asList(ClientUpdateContextConditionFactory.PROVIDER_ID, ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, ClientUpdateSourceHostsConditionFactory.PROVIDER_ID, ClientUpdateSourceRolesConditionFactory.PROVIDER_ID), actualPolicyRep);
         assertExpectedClientUpdateContextCondition(Arrays.asList(ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER), actualPolicyRep);
         assertExpectedClientUpdateSourceGroupsCondition(Arrays.asList("topGroup"), actualPolicyRep);
-        assertExpectedClientUpdateSourceHostsCondition(Arrays.asList("localhost", "127.0.0.1"), Arrays.asList(Boolean.TRUE, Boolean.TRUE), actualPolicyRep);
+        assertExpectedClientUpdateSourceHostsCondition(Arrays.asList("localhost", "127.0.0.1"), actualPolicyRep);
         assertExpectedClientUpdateSourceRolesCondition(Arrays.asList(AdminRoles.CREATE_CLIENT), actualPolicyRep);
     }
 
@@ -783,7 +794,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             profileRep = new ClientProfileRepresentation();
         }
 
-        public ClientProfileBuilder createProfile(String name, String description, Boolean isBuiltin, List<Object> executors) {
+        public ClientProfileBuilder createProfile(String name, String description, Boolean isBuiltin) {
             if (name != null) {
                 profileRep.setName(name);
             }
@@ -795,39 +806,16 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             } else {
                 profileRep.setBuiltin(Boolean.FALSE);
             }
-            if (executors != null) {
-                profileRep.setExecutors(executors);
-            } else {
-                profileRep.setExecutors(new ArrayList<>());
-            }
+            profileRep.setExecutors(new ArrayList<>());
+
             return this;
         }
 
-        public ClientProfileBuilder addExecutor(String providerId, Object config) {
-            String configString = null;
+        public ClientProfileBuilder addExecutor(String providerId, ClientPolicyExecutorConfigurationRepresentation config) {
             if (config == null) {
-                configString = "{}";
-            } else {
-                try {
-                    configString = objectMapper.writeValueAsString(config);
-                } catch (JsonProcessingException e) {
-                    fail();
-                }
+                config = new ClientPolicyExecutorConfigurationRepresentation();
             }
-            String executorJson = (new StringBuilder())
-                    .append("{\"")
-                    .append(providerId)
-                    .append("\":")
-                    .append(configString)
-                    .append("}")
-                    .toString();
-            JsonNode node = null;
-            try {
-                node = objectMapper.readTree(executorJson);
-            } catch (JsonProcessingException e) {
-                fail();
-            }
-            profileRep.getExecutors().add(node);
+            profileRep.getExecutors().add(new ClientPolicyExecutorRepresentation(providerId, config));
             return this;
         }
 
@@ -849,19 +837,19 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Client Profiles - Executor CRUD Operations
 
-    protected Object createHolderOfKeyEnforceExecutorConfig(Boolean isAugment) {
+    protected HolderOfKeyEnforceExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean isAugment) {
         HolderOfKeyEnforceExecutor.Configuration config = new HolderOfKeyEnforceExecutor.Configuration();
         config.setAugment(isAugment);
         return config;
     }
 
-    protected Object createPKCEEnforceExecutorConfig(Boolean isAugment) {
+    protected PKCEEnforceExecutor.Configuration createPKCEEnforceExecutorConfig(Boolean isAugment) {
         PKCEEnforceExecutor.Configuration config = new PKCEEnforceExecutor.Configuration();
         config.setAugment(isAugment);
         return config;
     }
 
-    protected Object createSecureClientAuthEnforceExecutorConfig(Boolean isAugment, List<String> clientAuthns, String clientAuthnsAugment) {
+    protected SecureClientAuthEnforceExecutor.Configuration createSecureClientAuthEnforceExecutorConfig(Boolean isAugment, List<String> clientAuthns, String clientAuthnsAugment) {
         SecureClientAuthEnforceExecutor.Configuration config = new SecureClientAuthEnforceExecutor.Configuration();
         config.setAugment(isAugment);
         config.setClientAuthns(clientAuthns);
@@ -869,7 +857,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return config;
     }
 
+<<<<<<< HEAD
     protected Object createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf) {
+=======
+    protected SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod) {
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
         if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
@@ -927,7 +919,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             policyRep = new ClientPolicyRepresentation();
         }
 
-        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isBuiltin, Boolean isEnabled, List<Object> conditions, List<String> profiles) {
+        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isBuiltin, Boolean isEnabled) {
             policyRep.setName(name);
             if (description != null) {
                 policyRep.setDescription(description);
@@ -942,44 +934,15 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             } else {
                 policyRep.setEnable(Boolean.FALSE);
             }
-            if (conditions != null) {
-                policyRep.setConditions(conditions);
-            } else {
-                policyRep.setConditions(new ArrayList<>());
-            }
-            if (profiles != null) {
-                policyRep.setProfiles(profiles);
-            } else {
-                policyRep.setProfiles(new ArrayList<>());
-            }
+
+            policyRep.setConditions(new ArrayList<>());
+            policyRep.setProfiles(new ArrayList<>());
+
             return this;
         }
 
-        public ClientPolicyBuilder addCondition(String providerId, Object config) {
-            String configString = null;
-            if (config == null) {
-                configString = "{}";
-            } else {
-                try {
-                    configString = objectMapper.writeValueAsString(config);
-                } catch (JsonProcessingException e) {
-                    fail();
-                }
-            }
-            String conditionJson = (new StringBuilder())
-                    .append("{\"")
-                    .append(providerId)
-                    .append("\":")
-                    .append(configString)
-                    .append("}")
-                    .toString();
-            JsonNode node = null;
-            try {
-                node = objectMapper.readTree(conditionJson);
-            } catch (JsonProcessingException e) {
-                fail();
-            }
-            policyRep.getConditions().add(node);
+        public ClientPolicyBuilder addCondition(String providerId, ClientPolicyConditionConfigurationRepresentation config) {
+            policyRep.getConditions().add(new ClientPolicyConditionRepresentation(providerId, config));
             return this;
         }
 
@@ -1005,58 +968,58 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Client Policies - Condition CRUD Operations
 
-    protected Object createTestRaiseExeptionConditionConfig() {
+    protected TestRaiseExeptionCondition.Configuration createTestRaiseExeptionConditionConfig() {
         return new TestRaiseExeptionCondition.Configuration();
     }
 
-    protected Object createAnyClientConditionConfig() {
-        return new AnyClientCondition.Configuration();
+    protected ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig() {
+        return new ClientPolicyConditionConfigurationRepresentation();
     }
 
-    protected Object createAnyClientConditionConfig(Boolean isNegativeLogic) {
-        AnyClientCondition.Configuration config = new AnyClientCondition.Configuration();
+    protected ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig(Boolean isNegativeLogic) {
+        ClientPolicyConditionConfigurationRepresentation config = new ClientPolicyConditionConfigurationRepresentation();
         config.setNegativeLogic(isNegativeLogic);
         return config;
     }
 
-    protected Object createClientAccessTypeConditionConfig(List<String> types) {
+    protected ClientAccessTypeCondition.Configuration createClientAccessTypeConditionConfig(List<String> types) {
         ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
         config.setType(types);
         return config;
     }
 
-    protected Object createClientRolesConditionConfig(List<String> roles) {
+    protected ClientRolesCondition.Configuration createClientRolesConditionConfig(List<String> roles) {
         ClientRolesCondition.Configuration config = new ClientRolesCondition.Configuration();
         config.setRoles(roles);
         return config;
     }
 
-    protected Object createClientScopesConditionConfig(String type, List<String> scopes) {
+    protected ClientScopesCondition.Configuration createClientScopesConditionConfig(String type, List<String> scopes) {
         ClientScopesCondition.Configuration config = new ClientScopesCondition.Configuration();
         config.setType(type);
         config.setScope(scopes);
         return config;
     }
 
-    protected Object createClientUpdateContextConditionConfig(List<String> updateClientSource) {
+    protected ClientUpdateContextCondition.Configuration createClientUpdateContextConditionConfig(List<String> updateClientSource) {
         ClientUpdateContextCondition.Configuration config = new ClientUpdateContextCondition.Configuration();
         config.setUpdateClientSource(updateClientSource);
         return config;
     }
 
-    protected Object createClientUpdateSourceGroupsConditionConfig(List<String> groups) {
+    protected ClientUpdateSourceGroupsCondition.Configuration createClientUpdateSourceGroupsConditionConfig(List<String> groups) {
         ClientUpdateSourceGroupsCondition.Configuration config = new ClientUpdateSourceGroupsCondition.Configuration();
         config.setGroups(groups);
         return config;
     }
 
-    protected Object createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts) {
+    protected ClientUpdateSourceHostsCondition.Configuration createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts) {
         ClientUpdateSourceHostsCondition.Configuration config = new ClientUpdateSourceHostsCondition.Configuration();
         config.setTrustedHosts(trustedHosts);
         return config;
     }
 
-    protected Object createClientUpdateSourceRolesConditionConfig(List<String> roles) {
+    protected ClientUpdateSourceRolesCondition.Configuration createClientUpdateSourceRolesConditionConfig(List<String> roles) {
         ClientUpdateSourceRolesCondition.Configuration config = new ClientUpdateSourceRolesCondition.Configuration();
         config.setRoles(roles);
         return config;
@@ -1074,24 +1037,15 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return json;
     }
 
-    protected ClientProfilesRepresentation convertToProfiles(String json) {
-        ClientProfilesRepresentation reps = null;
-        try {
-            reps = JsonSerialization.readValue(json, ClientProfilesRepresentation.class);
-        } catch (IOException e) {
-            fail();
-        }
-        return reps;
-    }
-
-    protected String getProfilesJson() {
-        return adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles();
-    }
-
+    // TODO: Possibly change this to accept ClientProfilesRepresentation instead of String to have more type-safety.
     protected void updateProfiles(String json) throws ClientPolicyException {
-        Response resp = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().updateProfiles(json);
-        if (resp.getStatus() != 204) {
-            throw new ClientPolicyException("update profiles failed", resp.getStatusInfo().toString());
+        try {
+            ClientProfilesRepresentation clientProfiles = JsonSerialization.readValue(json, ClientProfilesRepresentation.class);
+            adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().updateProfiles(clientProfiles);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update profiles failed", e.getResponse().getStatusInfo().toString());
+        } catch (Exception e) {
+            throw new ClientPolicyException("update profiles failed", e.getMessage());
         }
     }
 
@@ -1104,7 +1058,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected ClientProfilesRepresentation getProfiles() {
-        return convertToProfiles(getProfilesJson());
+        return adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles();
     }
 
     protected ClientProfilesRepresentation getProfilesWithoutBuiltin() {
@@ -1202,29 +1156,16 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return json;
     }
 
-    protected ClientPoliciesRepresentation convertToPolicies(String json) {
-        ClientPoliciesRepresentation reps = null;
-        try {
-            reps = JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
-        } catch (IOException e) {
-            fail();
-        }
-        return reps;
-    }
-
-    protected String getPoliciesJson() {
-        return adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource().getPolicies();
-    }
-
+    // TODO: Possibly change this to accept ClientPoliciesRepresentation instead of String to have more type-safety.
     protected void updatePolicies(String json) throws ClientPolicyException {
-        Response resp = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(json);
-        if (resp.getStatus() != 204) {
-            throw new ClientPolicyException("update profiles failed", resp.getStatusInfo().toString());
+        try {
+            ClientPoliciesRepresentation clientPolicies = json==null ? null : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
+            adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update policies failed", e.getResponse().getStatusInfo().toString());
+        } catch (IOException e) {
+            throw new ClientPolicyException("update policies failed", e.getMessage());
         }
-    }
-
-    protected void updatePolicies(ClientPoliciesRepresentation reps) throws ClientPolicyException {
-        updatePolicies(convertToPoliciesJson(reps));
     }
 
     protected void revertToBuiltinPolicies() throws ClientPolicyException {
@@ -1232,7 +1173,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected ClientPoliciesRepresentation getPolicies() {
-        return convertToPolicies(getPoliciesJson());
+        return adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource().getPolicies();
     }
 
     protected ClientPoliciesRepresentation getPoliciesWithoutBuiltin() {
@@ -1333,7 +1274,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedProfiles(ClientProfilesRepresentation profilesRep, List<String> expectedProfiles) {
-        assertExpetedCompounds(expectedProfiles, profilesRep, (ClientProfilesRepresentation i)->i.getProfiles(), (ClientProfileRepresentation i)->i.getName());
+        assertExpectedCompounds(expectedProfiles, profilesRep, (ClientProfilesRepresentation i)->i.getProfiles(), (ClientProfileRepresentation i)->i.getName());
     }
 
     protected void assertExpectedProfile(ClientProfileRepresentation actualProfileRep, String name, String description, boolean isBuiltin) {
@@ -1345,7 +1286,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     // executors
 
     protected void assertExpectedExecutors(List<String> expectedExecutors, ClientProfileRepresentation profileRep) {
-        assertExpetedElement(expectedExecutors, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        List<String> actualExecutorNames = profileRep.getExecutors().stream()
+                .map(ClientPolicyExecutorRepresentation::getProviderId)
+                .collect(Collectors.toList());
+        assertThat(actualExecutorNames, Matchers.containsInAnyOrder(expectedExecutors.toArray()));
     }
 
     protected void assertExpectedHolderOfKeyEnforceExecutor(boolean isAugment, ClientProfileRepresentation profileRep) {
@@ -1357,51 +1301,59 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedSecureClientAuthEnforceExecutor(List<String> clientAuthns, boolean isAugment, String clientAuthnsAugment, ClientProfileRepresentation profileRep) {
-        JsonNode actualExecutorConfig = assertExpectedAugmenedExecutor(isAugment, SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedAugmenedExecutor(isAugment, SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertNotNull(profileRep);
+        Map<String, Object> actualExecutorConfig = getConfigOfExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertNotNull(actualExecutorConfig);
 
-        Set<String> actualClientAuthns = new HashSet<>();
-        if (actualExecutorConfig.findValue("client-authns") != null) actualExecutorConfig.findValue("client-authns").elements().forEachRemaining(i->actualClientAuthns.add(i.asText()));
+        Set<String> actualClientAuthns = new HashSet<>((Collection<String>) actualExecutorConfig.get("client-authns"));
         assertEquals(new HashSet<>(clientAuthns), actualClientAuthns);
 
-        String actualClientAuthnAugment = null;
-        if (actualExecutorConfig.findValue("client-authns-augment") != null) actualClientAuthnAugment = actualExecutorConfig.findValue("client-authns-augment").asText();
+        String actualClientAuthnAugment = actualExecutorConfig.get("client-authns-augment").toString();
         assertEquals(clientAuthnsAugment, actualClientAuthnAugment);
     }
 
     protected void assertExpectedSecureRedirectUriEnforceExecutor(ClientProfileRepresentation profileRep) {
+<<<<<<< HEAD
         assertExpectedNoConfigElement(SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+=======
+        assertExpectedEmptyConfig(SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID, profileRep);
+>>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
     }
 
     protected void assertExpectedSecureRequestObjectExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedNoConfigElement(SecureRequestObjectExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        assertExpectedEmptyConfig(SecureRequestObjectExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureResponseTypeExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedNoConfigElement(SecureResponseTypeExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        assertExpectedEmptyConfig(SecureResponseTypeExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureSessionEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedNoConfigElement(SecureSessionEnforceExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        assertExpectedEmptyConfig(SecureSessionEnforceExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureSigningAlgorithmEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedNoConfigElement(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        assertExpectedEmptyConfig(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureSigningAlgorithmForSignedJwtEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedNoConfigElement(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        assertExpectedEmptyConfig(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, profileRep);
     }
 
-    protected JsonNode assertExpectedAugmenedExecutor(boolean isAugment, String providerId, ClientProfileRepresentation profileRep) {
+    protected void assertExpectedAugmenedExecutor(boolean isAugment, String providerId, ClientProfileRepresentation profileRep) {
         assertNotNull(profileRep);
-        JsonNode actualExecutorConfig = getConfig(profileRep.getExecutors(), providerId);
+        Map<String, Object> actualExecutorConfig = getConfigOfExecutor(providerId, profileRep);
         assertNotNull(actualExecutorConfig);
-
-        boolean actualIsAugment = false;
-        if (actualExecutorConfig.findValue("is-augment") != null) actualIsAugment = actualExecutorConfig.findValue("is-augment").asBoolean();
+        boolean actualIsAugment = actualExecutorConfig.get("is-augment") == null ? false : (Boolean) actualExecutorConfig.get("is-augment");
         assertEquals(isAugment, actualIsAugment);
+    }
 
-        return actualExecutorConfig;
+    private Map<String, Object> getConfigOfExecutor(String providerId, ClientProfileRepresentation profileRep) {
+        ClientPolicyExecutorRepresentation executorRep = profileRep.getExecutors().stream()
+                .filter(profileRepp -> providerId.equals(profileRepp.getProviderId()))
+                .findFirst().orElse(null);
+        return executorRep == null ? null : executorRep.getConfiguration().getConfigAsMap();
     }
 
     // Assertions about policies
@@ -1440,83 +1392,59 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     // conditions
 
     protected void assertExpectedConditions(List<String> expectedConditions, ClientPolicyRepresentation policyRep) {
-        assertExpetedElement(expectedConditions, policyRep, (ClientPolicyRepresentation i)->i.getConditions());
+        List<String> actualConditionNames = policyRep.getConditions().stream()
+                .map(ClientPolicyConditionRepresentation::getProviderId)
+                .collect(Collectors.toList());
+        assertThat(actualConditionNames, Matchers.containsInAnyOrder(expectedConditions.toArray()));
     }
 
-    protected void assertExpectedAnyClientCondition(ClientPolicyRepresentation profileRep) {
-        assertExpectedNoConfigElement(AnyClientConditionFactory.PROVIDER_ID, profileRep, (ClientPolicyRepresentation i)->i.getConditions());
+    protected void assertExpectedAnyClientCondition(ClientPolicyRepresentation policyRep) {
+        ClientPolicyConditionConfigurationRepresentation config = getConfigAsExpectedType(policyRep, AnyClientConditionFactory.PROVIDER_ID, ClientPolicyConditionConfigurationRepresentation.class);
+        Assert.assertTrue("Expected empty configuration for provider " + AnyClientConditionFactory.PROVIDER_ID, config.getConfigAsMap().isEmpty());
     }
 
     protected void assertExpectedClientAccessTypeCondition(List<String> type, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientAccessTypeConditionFactory.PROVIDER_ID);
-
-        Set<String> actualTypes = new HashSet<>();
-        if (actualConditionConfig.findValue("type") != null)
-            actualConditionConfig.findValue("type").elements().forEachRemaining(i->actualTypes.add(i.asText()));
-        assertEquals(new HashSet<>(type), actualTypes);
+        ClientAccessTypeCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientAccessTypeConditionFactory.PROVIDER_ID, ClientAccessTypeCondition.Configuration.class);
+        Assert.assertEquals(cfg.getType(), type);
     }
 
     protected void assertExpectedClientRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientRolesConditionFactory.PROVIDER_ID);
-
-        Set<String> actualRoles = new HashSet<>();
-        if (actualConditionConfig.findValue("roles") != null)
-            actualConditionConfig.findValue("roles").elements().forEachRemaining(i->actualRoles.add(i.asText()));
-        assertEquals(new HashSet<>(roles), actualRoles);
+        ClientRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientRolesConditionFactory.PROVIDER_ID,  ClientRolesCondition.Configuration.class);
+        Assert.assertEquals(cfg.getRoles(), roles);
     }
 
     protected void assertExpectedClientScopesCondition(String type, List<String> scopes, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientScopesConditionFactory.PROVIDER_ID);
-
-        String actualType = null;
-        if (actualConditionConfig.findValue("type") != null) actualType = actualConditionConfig.findValue("type").asText();
-        assertEquals(type, actualType);
-
-        Set<String> actualScopes = new HashSet<>();
-        if (actualConditionConfig.findValue("scope") != null)
-            actualConditionConfig.findValue("scope").elements().forEachRemaining(i->actualScopes.add(i.asText()));
-        assertEquals(new HashSet<>(scopes), actualScopes);
+        ClientScopesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientScopesConditionFactory.PROVIDER_ID,  ClientScopesCondition.Configuration.class);
+        Assert.assertEquals(cfg.getType(), type);
+        Assert.assertEquals(cfg.getScope(), scopes);
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientUpdateContextConditionFactory.PROVIDER_ID);
-
-        Set<String> actualUpdateClientSources = new HashSet<>();
-        if (actualConditionConfig.findValue("update-client-source") != null)
-            actualConditionConfig.findValue("update-client-source").elements().forEachRemaining(i->actualUpdateClientSources.add(i.asText()));
-        assertEquals(new HashSet<>(updateClientSources), actualUpdateClientSources);
+        ClientUpdateContextCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateContextConditionFactory.PROVIDER_ID,  ClientUpdateContextCondition.Configuration.class);
+        Assert.assertEquals(cfg.getUpdateClientSource(), updateClientSources);
     }
 
     protected void assertExpectedClientUpdateSourceGroupsCondition(List<String> groups, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID);
-
-        Set<String> actualGroups = new HashSet<>();
-        if (actualConditionConfig.findValue("groups") != null)
-            actualConditionConfig.findValue("groups").elements().forEachRemaining(i->actualGroups.add(i.asText()));
-        assertEquals(new HashSet<>(groups), actualGroups);
+        ClientUpdateSourceGroupsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID,  ClientUpdateSourceGroupsCondition.Configuration.class);
+        Assert.assertEquals(cfg.getGroups(), groups);
     }
 
-    protected void assertExpectedClientUpdateSourceHostsCondition(List<String> trustedHosts, List<Boolean> hostSendingRequestMustMatch, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientUpdateSourceHostsConditionFactory.PROVIDER_ID);
-
-        List<String> actualTrustedHosts = new ArrayList<>();
-        if (actualConditionConfig.findValue("trusted-hosts") != null)
-            actualConditionConfig.findValue("trusted-hosts").elements().forEachRemaining(i->actualTrustedHosts.add(i.asText()));
-        assertEquals(trustedHosts, actualTrustedHosts);
-
-        List<Boolean> actualHostSendingRequestMustMatch = new ArrayList<>();
-        if (actualConditionConfig.findValue("host-sending-request-must-match") != null)
-            actualConditionConfig.findValue("host-sending-request-must-match").elements().forEachRemaining(i->actualHostSendingRequestMustMatch.add(i.asBoolean()));
-        assertEquals(trustedHosts, actualTrustedHosts);
+    protected void assertExpectedClientUpdateSourceHostsCondition(List<String> trustedHosts, ClientPolicyRepresentation policyRep) {
+        ClientUpdateSourceHostsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateSourceHostsConditionFactory.PROVIDER_ID,  ClientUpdateSourceHostsCondition.Configuration.class);
+        Assert.assertEquals(cfg.getTrustedHosts(), trustedHosts);
     }
 
     protected void assertExpectedClientUpdateSourceRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
-        JsonNode actualConditionConfig = getConfig(policyRep.getConditions(), ClientUpdateSourceRolesConditionFactory.PROVIDER_ID);
+        ClientUpdateSourceRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateSourceRolesConditionFactory.PROVIDER_ID,  ClientUpdateSourceRolesCondition.Configuration.class);
+        Assert.assertEquals(cfg.getRoles(), roles);
+    }
 
-        Set<String> actualRoles = new HashSet<>();
-        if (actualConditionConfig.findValue("roles") != null)
-            actualConditionConfig.findValue("roles").elements().forEachRemaining(i->actualRoles.add(i.asText()));
-        assertEquals(new HashSet<>(roles), actualRoles);
+    private <CFG extends ClientPolicyConditionConfigurationRepresentation> CFG getConfigAsExpectedType(ClientPolicyRepresentation policyRep, String conditionProviderId, Class<CFG> configClass) {
+        ClientPolicyConditionRepresentation conditionRep = policyRep.getConditions().stream()
+                .filter(condition -> conditionProviderId.equals(condition.getProviderId()))
+                .findFirst().orElseThrow(() -> new AssertionError("Expected to contain configuration for condition " + conditionProviderId));
+
+        return JsonSerialization.mapper.convertValue(conditionRep.getConfiguration(), configClass);
     }
 
     // profiles/policies common (compounds)
@@ -1531,7 +1459,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return rep;
     }
 
-    private <T, R> void assertExpetedCompounds(List<String> expected, R rep, Function<R, List<T>> f, Function<T, String> g) {
+    private <T, R> void assertExpectedCompounds(List<String> expected, R rep, Function<R, List<T>> f, Function<T, String> g) {
         assertNotNull(rep);
         List<T> reps = f.apply(rep);
         if (reps == null) {
@@ -1553,33 +1481,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return reps.get(0);
     }
 
-    // condition/executor common (element)
-
-    private <T> void assertExpetedElement(List<String> expected, T rep, Function<T, List<Object>> f) {
-        assertNotNull(rep);
-        List<Object> objs = f.apply(rep);
-        if (objs == null) {
-            assertNull(expected);
-            return;
-        }
-        Set<String> actual = objs.stream().map(i->{
-            JsonNode node = objectMapper.convertValue(i, JsonNode.class);
-            return node.fieldNames().next();
-        }).collect(Collectors.toSet());
-        assertEquals(new HashSet<>(expected), actual);
-    }
-
-    private <T> void assertExpectedNoConfigElement(String providerId, T rep, Function<T, List<Object>> f) {
-        assertNotNull(rep);
-        JsonNode actualConfig = getConfig(f.apply(rep), providerId);
-        assertEquals("", actualConfig.asText());
-    }
-
-    private JsonNode getConfig(List<Object> objs, String providerId) {
-        List<JsonNode> nodes = objs.stream().map(i->objectMapper.convertValue(i, JsonNode.class))
-                .filter(j->j.fieldNames().next().equals(providerId)).collect(Collectors.toList());
-        if (nodes == null || nodes.size() != 1) return null;
-        return nodes.get(0);
+    private void assertExpectedEmptyConfig(String executorProviderId, ClientProfileRepresentation profileRep) {
+        Map<String, Object> config = getConfigOfExecutor(executorProviderId, profileRep);
+        Assert.assertTrue("Expected empty configuration for provider " + executorProviderId, config.isEmpty());
     }
 
 }

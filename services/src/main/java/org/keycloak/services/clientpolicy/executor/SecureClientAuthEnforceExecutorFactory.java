@@ -20,12 +20,15 @@ package org.keycloak.services.clientpolicy.executor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -38,12 +41,7 @@ public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecu
     public static final String CLIENT_AUTHNS = "client-authns";
     public static final String CLIENT_AUTHNS_AUGMENT = "client-authns-augment";
 
-    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
-            IS_AUGMENT, null, null, ProviderConfigProperty.BOOLEAN_TYPE, false);
-    private static final ProviderConfigProperty CLIENTAUTHNS_PROPERTY = new ProviderConfigProperty(
-            CLIENT_AUTHNS, null, null, ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
-    private static final ProviderConfigProperty CLIENTAUTHNS_AUGMENT = new ProviderConfigProperty(
-            CLIENT_AUTHNS_AUGMENT, null, null, ProviderConfigProperty.STRING_TYPE, JWTClientAuthenticator.PROVIDER_ID);
+    private List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -56,6 +54,25 @@ public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecu
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        ProviderConfigProperty isAugmentProperty = new ProviderConfigProperty(
+                IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce usage of PKCE",
+                ProviderConfigProperty.BOOLEAN_TYPE, false);
+
+        List<String> clientAuthProviders = factory.getProviderFactoriesStream(ClientAuthenticator.class)
+                .map(ProviderFactory::getId)
+                .collect(Collectors.toList());
+
+        ProviderConfigProperty clientAuthnsProperty = new ProviderConfigProperty(
+                CLIENT_AUTHNS, "Client Authentication Methods", "List of available client authentication methods, which are allowed for clients to use. Other client authentication methods will not be allowed.",
+                ProviderConfigProperty.MULTIVALUED_LIST_TYPE, null);
+        clientAuthnsProperty.setOptions(clientAuthProviders);
+
+        ProviderConfigProperty clientAuthnsAugment = new ProviderConfigProperty(
+                CLIENT_AUTHNS_AUGMENT, "Augment Client Authentication Method", "If 'Augment Configuration' is ON, then this client authentication method will be set as the authentication method to new clients",
+                ProviderConfigProperty.LIST_TYPE, JWTClientAuthenticator.PROVIDER_ID);
+        clientAuthnsAugment.setOptions(clientAuthProviders);
+
+        configProperties = Arrays.asList(isAugmentProperty, clientAuthnsProperty, clientAuthnsAugment);
     }
 
     @Override
@@ -74,7 +91,7 @@ public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecu
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY, CLIENTAUTHNS_PROPERTY, CLIENTAUTHNS_AUGMENT));
+        return configProperties;
     }
 
 }

@@ -16,15 +16,30 @@
  *
  */
 
-package org.keycloak.services.clientpolicy.executor;
+package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 
 /**
  * Just adds some type-safety to the ClientPolicyExecutorConfiguration
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class ClientPolicyExecutorConfiguration {
+public class ClientPolicyExecutorConfigurationRepresentation {
+
+    private Map<String, Object> configAsMap = new HashMap<>();
+
+    @JsonAnyGetter
+    public Map<String, Object> getConfigAsMap() {
+        return configAsMap;
+    }
+
+    @JsonAnySetter
+    public void setConfigAsMap(String name, Object value) {
+        this.configAsMap.put(name, value);
+    }
 }

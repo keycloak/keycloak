@@ -66,7 +66,7 @@ public class ClientRolesConditionFactory implements ClientPolicyConditionProvide
 
     @Override
     public String getHelpText() {
-        return "The condition checks whether one of the specified client roles is applied to the client to determine whether the policy is applied.";
+        return "The condition checks whether one of the specified client roles is applied to the client to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc).";
     }
 
     @Override

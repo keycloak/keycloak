@@ -563,8 +563,18 @@ module.factory('ClientRegistrationPolicyProvidersLoader', function(Loader, Clien
     });
 });
 
+module.factory('ClientPoliciesProfilesLoader', function(Loader, ClientPoliciesProfiles, $route) {
+    return Loader.get(ClientPoliciesProfiles, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});
 
-
-
-
-
+module.factory('ClientPoliciesLoader', function(Loader, ClientPolicies, $route) {
+    return Loader.get(ClientPolicies, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});

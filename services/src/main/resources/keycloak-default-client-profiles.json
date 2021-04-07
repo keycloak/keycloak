@@ -6,7 +6,8 @@
       "builtin": true,
       "executors": [
         {
-          "secure-session-enforce-executor": {}
+          "providerId": "secure-session-enforce-executor",
+          "configuration": {}
         }
       ]
     }

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -25,6 +26,7 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
 import java.util.Arrays;
 import java.util.List;
 
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -42,6 +44,7 @@ import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
@@ -155,7 +158,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         String beforeUpdateProfilesJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(getProfiles());
 
         // load profiles
-        ClientProfileRepresentation duplicatedProfileRep = (new ClientProfileBuilder()).createProfile("builtin-basic-security", "Enforce basic security level", Boolean.TRUE, null)
+        ClientProfileRepresentation duplicatedProfileRep = (new ClientProfileBuilder()).createProfile("builtin-basic-security", "Enforce basic security level", Boolean.TRUE)
                     .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
                         createSecureClientAuthEnforceExecutorConfig(
                             Boolean.FALSE, 
@@ -167,7 +170,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                             createPKCEEnforceExecutorConfig(Boolean.TRUE))
                     .toRepresentation();
 
-        ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.", Boolean.FALSE, null)
+        ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.", Boolean.FALSE)
                 .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
                     createSecureClientAuthEnforceExecutorConfig(
                         Boolean.TRUE, 
@@ -199,7 +202,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         try {
             updateProfiles(json);
         } catch (ClientPolicyException cpe) {
-            assertEquals("Bad Request", cpe.getErrorDetail());
+            assertEquals("argument \"content\" is null", cpe.getErrorDetail());
             String afterFailedUpdateProfilesJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(getProfiles());
             assertEquals(beforeUpdateProfilesJson, afterFailedUpdateProfilesJson);
             return;
@@ -232,7 +235,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         try {
             updateProfiles(json);
         } catch (ClientPolicyException cpe) {
-            assertEquals("Bad Request", cpe.getErrorDetail());
+            assertThat(cpe.getErrorDetail(), Matchers.startsWith("Unrecognized field"));
             String afterFailedUpdateProfilesJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(getProfiles());
             assertEquals(beforeUpdateProfilesJson, afterFailedUpdateProfilesJson);
             return;
@@ -250,14 +253,12 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                 + "            \"name\" : \"ordinal-test-profile\",\n"
                 + "            \"description\" : \"Not builtin profile that should be skipped.\",\n"
                 + "            \"builtin\" : \"no\",\n"
-                + "            \"executors\": [\n"
-                + "                {\n"
+                + "            \"executors\": {\n"
                 + "                    \"new-secure-client-authn-executor\": {\n"
                 + "                        \"client-authns\": [ \"private-key-jwt\" ],\n"
                 + "                        \"client-authns-augment\" : \"private-key-jwt\",\n"
                 + "                        \"is-augment\" : true\n"
                 + "                    }\n"
-                + "                }\n"
                 + "            ]\n"
                 + "        }\n"
                 + "    ]\n"
@@ -265,7 +266,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         try {
             updateProfiles(json);
         } catch (ClientPolicyException cpe) {
-            assertEquals("Bad Request", cpe.getErrorDetail());
+            assertThat(cpe.getErrorDetail(), Matchers.startsWith("Cannot deserialize value of type `java.lang.Boolean` from String \"no\""));
             String afterFailedUpdateProfilesJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(getProfiles());
             assertEquals(beforeUpdateProfilesJson, afterFailedUpdateProfilesJson);
             return;
@@ -283,11 +284,10 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                         "builtin-duplicated-new-policy",
                         "builtin duplicated new policy is ignored.",
                         Boolean.FALSE,
-                        Boolean.TRUE,
-                        null,
-                        Arrays.asList("builtin-default-profile"))
+                        Boolean.TRUE)
                     .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
                         createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile("builtin-default-profile")
                     .toRepresentation();
 
         ClientPolicyRepresentation loadedPolicyRep = 
@@ -295,11 +295,11 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                         "new-policy",
                         "duplicated profiles are ignored.",
                         Boolean.FALSE,
-                        Boolean.TRUE,
-                        null,
-                        Arrays.asList("lack-of-builtin-field-test-profile", "ordinal-test-profile"))
+                        Boolean.TRUE)
                     .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, 
                         createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC, ClientAccessTypeConditionFactory.TYPE_BEARERONLY)))
+                        .addProfile("lack-of-builtin-field-test-profile")
+                        .addProfile("ordinal-test-profile")
                     .toRepresentation();
 
         String json = (new ClientPoliciesBuilder())
@@ -359,7 +359,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         try {
             updatePolicies(json);
         } catch (ClientPolicyException cpe) {
-            assertEquals("Bad Request", cpe.getErrorDetail());
+            Assert.assertTrue(cpe.getErrorDetail().startsWith("Unrecognized field"));
             String afterFailedUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
             assertEquals(beforeUpdatePoliciesJson, afterFailedUpdatePoliciesJson);
             return;
@@ -386,7 +386,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         try {
             updatePolicies(json);
         } catch (ClientPolicyException cpe) {
-            assertEquals("Bad Request", cpe.getErrorDetail());
+            Assert.assertTrue(cpe.getErrorDetail().startsWith("Cannot deserialize instance of "));
             String afterFailedUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
             assertEquals(beforeUpdatePoliciesJson, afterFailedUpdatePoliciesJson);
             return;

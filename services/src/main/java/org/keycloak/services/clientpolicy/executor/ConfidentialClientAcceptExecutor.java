@@ -20,6 +20,7 @@ package org.keycloak.services.clientpolicy.executor;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 
@@ -28,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ConfidentialClientAcceptExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class ConfidentialClientAcceptExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     protected final KeycloakSession session;
 

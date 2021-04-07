@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -36,12 +37,14 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionConfiguration;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
-import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorConfiguration;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -134,26 +137,24 @@ public class ClientPoliciesUtil {
                 continue;
             }
 
-            List<Object> executors = new ArrayList<>();
+            List<ClientPolicyExecutorProvider> executors = new ArrayList<>();
             if (profileRep.getExecutors() != null) {
-                profileRep.getExecutors().stream().forEach(obj->{
-                    JsonNode node = objectMapper.convertValue(obj, JsonNode.class);
-                    node.fields().forEachRemaining(executor->{
-                        ClientPolicyExecutorProvider provider = session.getProvider(ClientPolicyExecutorProvider.class, executor.getKey());
-                        if (provider == null) {
-                            // executor's provider not found. just skip it.
-                            return;
-                        }
+                for (ClientPolicyExecutorRepresentation executorRep : profileRep.getExecutors()) {
+                    ClientPolicyExecutorProvider provider = session.getProvider(ClientPolicyExecutorProvider.class, executorRep.getProviderId());
+                    if (provider == null) {
+                        // executor's provider not found. just skip it.
+                        logger.warnf("Executor with provider ID %s not found", executorRep.getProviderId());
+                        continue;
+                    }
 
-                        try {
-                            ClientPolicyExecutorConfiguration configuration = (ClientPolicyExecutorConfiguration) JsonSerialization.mapper.convertValue(executor.getValue(), provider.getExecutorConfigurationClass());
-                            provider.setupConfiguration(configuration);
-                            executors.add(provider);
-                        } catch (IllegalArgumentException iae) {
-                            logger.warnv("failed for Configuration Setup :: error = {0}", iae.getMessage());
-                        }
-                    });
-                });
+                    try {
+                        ClientPolicyExecutorConfigurationRepresentation configuration = (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(executorRep.getConfiguration(), provider.getExecutorConfigurationClass());
+                        provider.setupConfiguration(configuration);
+                        executors.add(provider);
+                    } catch (IllegalArgumentException iae) {
+                        logger.warnv("failed for Configuration Setup during setup provider {0} :: error = {1}", executorRep.getProviderId(), iae.getMessage());
+                    }
+                }
             }
             profileModel.setExecutors(executors);
 
@@ -213,11 +214,11 @@ public class ClientPoliciesUtil {
 
             profileRep.setExecutors(new ArrayList<>()); // to prevent returning null
             if (proposedProfileRep.getExecutors() != null) {
-                for (Object executor : proposedProfileRep.getExecutors()) {
-                    if (isValidExecutor(session, executor) == false) {
+                for (ClientPolicyExecutorRepresentation executorRep : proposedProfileRep.getExecutors()) {
+                    if (!isValidExecutor(session, executorRep.getProviderId())) {
                         throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
                     }
-                    profileRep.getExecutors().add(executor);
+                    profileRep.getExecutors().add(executorRep);
                 }
             }
 
@@ -257,7 +258,7 @@ public class ClientPoliciesUtil {
      * it can be constructed by merging proposed client profiles with existing client profiles.
      * not return null.
      */
-    private static ClientProfilesRepresentation getValidatedClientProfilesRepresentation(KeycloakSession session, RealmModel realm, ClientProfilesRepresentation proposedProfilesRep) throws ClientPolicyException {
+    public static ClientProfilesRepresentation getValidatedClientProfilesRepresentation(KeycloakSession session, RealmModel realm, ClientProfilesRepresentation proposedProfilesRep) throws ClientPolicyException {
         if (proposedProfilesRep == null) {
             proposedProfilesRep = new ClientProfilesRepresentation();
         }
@@ -297,75 +298,73 @@ public class ClientPoliciesUtil {
 
         // add existing builtin profiles to updating profiles
         List<ClientProfileRepresentation> existingProfileList = existingProfilesRep.getProfiles();
+        Map<String, ClientProfileRepresentation> existingProfilesMap = new HashMap<>();
         if (existingProfileList != null && !existingProfileList.isEmpty()) {
-            existingProfileList.stream().filter(i->i.isBuiltin()).forEach(i->updatingProfileList.add(i));
+            existingProfileList.stream().filter(i -> i.isBuiltin()).forEach(i -> {
+                updatingProfileList.add(i);
+                existingProfilesMap.put(i.getName(), i);
+            });
         }
 
         for (ClientProfileRepresentation proposedProfileRep : proposedProfilesRep.getProfiles()) {
-            if (proposedProfileRep.getName() == null) {
+            if (proposedProfileRep.getName() == null || proposedProfileRep.getName().isEmpty()) {
                 throw new ClientPolicyException("client profile without its name not allowed.");
             }
 
             // newly proposed builtin profile not allowed because builtin profile cannot added/deleted/modified.
             if (proposedProfileRep.isBuiltin() != null && proposedProfileRep.isBuiltin()) {
-                throw new ClientPolicyException("newly builtin proposed client profile not allowed.");
-            }
-
-            // not allow to overwrite builtin profiles
-            if (updatingProfileList.stream().anyMatch(i->proposedProfileRep.getName().equals(i.getName()))) {
-                throw new ClientPolicyException("proposed client profile name is the same one of the builtin profile.");
-            }
-
-            // basically, proposed profile totally overrides existing profile
-            ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
-            profileRep.setName(proposedProfileRep.getName());
-            profileRep.setDescription(proposedProfileRep.getDescription());
-            profileRep.setBuiltin(Boolean.FALSE);
-            profileRep.setExecutors(new ArrayList<>());
-            if (proposedProfileRep.getExecutors() != null) {
-                for (Object executor : proposedProfileRep.getExecutors()) {
-                    if (isValidExecutor(session, executor) == false) {
-                        throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
-                    }
-                    profileRep.getExecutors().add(executor);
+                // Check if already existing profile was sent in JSON. In this case, check if none of the properties was changed, because update of builtin not allowed
+                ClientProfileRepresentation existingProfile = existingProfilesMap.get(proposedProfileRep.getName());
+                if (existingProfile == null) {
+                    throw new ClientPolicyException("newly builtin proposed client profile not allowed.");
                 }
-            }
 
-            updatingProfileList.add(profileRep);
+                JsonNode existingProfileNode = objectMapper.convertValue(existingProfile, JsonNode.class);
+                JsonNode proposedProfileNode = objectMapper.convertValue(proposedProfileRep, JsonNode.class);
+                if (!existingProfileNode.equals(proposedProfileNode)) {
+                    throw new ClientPolicyException("Updating builtin profile not allowed");
+                }
+
+            } else {
+                // not allow to overwrite builtin profiles or have duplicated profiles
+                if (updatingProfileList.stream().anyMatch(i -> proposedProfileRep.getName().equals(i.getName()))) {
+                    throw new ClientPolicyException("proposed client profile name is the same one of the existing profiles.");
+                }
+
+
+                // basically, proposed profile totally overrides existing profile
+                ClientProfileRepresentation profileRep = new ClientProfileRepresentation();
+                profileRep.setName(proposedProfileRep.getName());
+                profileRep.setDescription(proposedProfileRep.getDescription());
+                profileRep.setBuiltin(Boolean.FALSE);
+                profileRep.setExecutors(new ArrayList<>());
+                if (proposedProfileRep.getExecutors() != null) {
+                    for (ClientPolicyExecutorRepresentation executorRep : proposedProfileRep.getExecutors()) {
+                        if (!isValidExecutor(session, executorRep.getProviderId())) {
+                            throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
+                        }
+                        profileRep.getExecutors().add(executorRep);
+                    }
+                }
+
+                updatingProfileList.add(profileRep);
+            }
         }
 
         return updatingProfilesRep;
     }
 
     /**
-     * get validated and modified builtin client profiles in a realm as representation.
-     * it can be constructed by merging proposed client profiles with existing client profiles.
-     * not return null.
-     */
-    public static ClientProfilesRepresentation getValidatedClientProfilesRepresentation(KeycloakSession session, RealmModel realm, String profilesJson) throws ClientPolicyException {
-        if (profilesJson == null) {
-            throw new ClientPolicyException("no client profiles json.");
-        }
-
-        // deserialize existing profiles (json -> representation)
-        ClientProfilesRepresentation proposedProfilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
-
-        return getValidatedClientProfilesRepresentation(session, realm, proposedProfilesRep);
-    }
-
-    /**
      * check whether the proposed executor's provider can be found in keycloak's ClientPolicyExecutorProvider list.
      * not return null.
      */
-    private static boolean isValidExecutor(KeycloakSession session, Object executor) {
-        return isValidComponent(session, executor, "executor", (String providerId) -> {
-            Set<String> providerSet = session.listProviderIds(ClientPolicyExecutorProvider.class);
-            if (providerSet != null && providerSet.contains(providerId)) {
-                return true;
-            }
-            logger.warnv("no executor provider found. providerId = {0}", providerId);
-            return false;
-        });
+    private static boolean isValidExecutor(KeycloakSession session, String executorProviderId) {
+        Set<String> providerSet = session.listProviderIds(ClientPolicyExecutorProvider.class);
+        if (providerSet != null && providerSet.contains(executorProviderId)) {
+            return true;
+        }
+        logger.warnv("no executor provider found. providerId = {0}", executorProviderId);
+        return false;
     }
 
 
@@ -401,7 +400,7 @@ public class ClientPoliciesUtil {
      * get existing enabled client policies in a realm as model.
      * not return null.
      */
-    public static List<ClientPolicyModel> getEnabledClientProfilesModel(KeycloakSession session, RealmModel realm) {
+    public static List<ClientPolicyModel> getEnabledClientPoliciesModel(KeycloakSession session, RealmModel realm) {
         // get existing profiles as json
         String policiesJson = session.clientPolicy().getClientPoliciesJsonString(realm);
         if (policiesJson == null) {
@@ -442,26 +441,24 @@ public class ClientPoliciesUtil {
                 policyModel.setBuiltin(false);
             }
 
-            List<Object> conditions = new ArrayList<>();
+            List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
-                policyRep.getConditions().stream().forEach(obj->{
-                    JsonNode node = objectMapper.convertValue(obj, JsonNode.class);
-                    node.fields().forEachRemaining(condition->{
-                        ClientPolicyConditionProvider provider = session.getProvider(ClientPolicyConditionProvider.class, condition.getKey());
-                        if (provider == null) {
-                            // condition's provider not found. just skip it.
-                            return;
-                        }
+                for (ClientPolicyConditionRepresentation conditionRep : policyRep.getConditions()) {
+                    ClientPolicyConditionProvider provider = session.getProvider(ClientPolicyConditionProvider.class, conditionRep.getProviderId());
+                    if (provider == null) {
+                        // condition's provider not found. just skip it.
+                        logger.warnf("Condition with provider ID %s not found", conditionRep.getProviderId());
+                        continue;
+                    }
 
-                        try {
-                            ClientPolicyConditionConfiguration configuration =  (ClientPolicyConditionConfiguration) JsonSerialization.mapper.convertValue(condition.getValue(), provider.getConditionConfigurationClass());
-                            provider.setupConfiguration(configuration);
-                            conditions.add(provider);
-                        } catch (IllegalArgumentException iae) {
-                            logger.warnv("failed for Configuration Setup :: error = {0}", iae.getMessage());
-                        }
-                    });
-                });
+                    try {
+                        ClientPolicyConditionConfigurationRepresentation configuration =  (ClientPolicyConditionConfigurationRepresentation) JsonSerialization.mapper.convertValue(conditionRep.getConfiguration(), provider.getConditionConfigurationClass());
+                        provider.setupConfiguration(configuration);
+                        conditions.add(provider);
+                    } catch (IllegalArgumentException iae) {
+                        logger.warnv("failed for Configuration Setup :: error = {0}", iae.getMessage());
+                    }
+                }
             }
             policyModel.setConditions(conditions);
 
@@ -527,11 +524,11 @@ public class ClientPoliciesUtil {
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {
-                for (Object condition : proposedPolicyRep.getConditions()) {
-                    if (isValidCondition(session, condition) == false) {
+                for (ClientPolicyConditionRepresentation conditionRep : proposedPolicyRep.getConditions()) {
+                    if (!isValidCondition(session, conditionRep.getProviderId())) {
                         throw new ClientPolicyException("the proposed client policy contains the condition with its invalid configuration.");
                     }
-                    policyRep.getConditions().add(condition);
+                    policyRep.getConditions().add(conditionRep);
                 }
             }
 
@@ -571,20 +568,18 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * get validated and modified client policies as json.
-     * it can be constructed by merging proposed client policies with existing client policies.
-     * can return null.
-     */
-    public static String getValidatedClientPoliciesJson(KeycloakSession session, RealmModel realm, ClientPoliciesRepresentation proposedPoliciesRep) throws ClientPolicyException {
-        return convertClientPoliciesRepresentationToJson(getValidatedClientPoliciesRepresentation(session, realm, proposedPoliciesRep));
-    }
-
-    /**
      * get validated and modified client policies as representation.
      * it can be constructed by merging proposed client policies with existing client policies.
      * not return null.
+     *
+     * @param session
+     * @param realm
+     * @param proposedPoliciesRep
+     * @param skipBuiltinValidationUpdate if true, then the exception won't be thrown in case that builtin representation of "proposedPoliciesRep" is not 100% same as the builtin.
+     *                                    If false, then exception will be thrown in case they are not the same (with the exception of "enabled" field, which is only field allowed to update on builtin policies)
      */
-    private static ClientPoliciesRepresentation getValidatedClientPoliciesRepresentation(KeycloakSession session, RealmModel realm, ClientPoliciesRepresentation proposedPoliciesRep) throws ClientPolicyException {
+    public static ClientPoliciesRepresentation getValidatedClientPoliciesRepresentation(KeycloakSession session, RealmModel realm,
+                                                                                        ClientPoliciesRepresentation proposedPoliciesRep, boolean skipBuiltinValidationUpdate) throws ClientPolicyException {
         if (proposedPoliciesRep == null) {
             proposedPoliciesRep = new ClientPoliciesRepresentation();
         }
@@ -623,9 +618,13 @@ public class ClientPoliciesUtil {
         List<ClientPolicyRepresentation> updatingPoliciesList = updatingPoliciesRep.getPolicies();
 
         // add existing builtin policies to updating policies
+        Map<String, ClientPolicyRepresentation> existingBuiltinPolicies = new HashMap<>();
         List<ClientPolicyRepresentation> existingPoliciesList = existingPoliciesRep.getPolicies();
         if (existingPoliciesList != null && !existingPoliciesList.isEmpty()) {
-            existingPoliciesList.stream().filter(i->i.isBuiltin()).forEach(i->updatingPoliciesList.add(i));
+            existingPoliciesList.stream().filter(i->i.isBuiltin()).forEach(builtinPolicy -> {
+                updatingPoliciesList.add(builtinPolicy);
+                existingBuiltinPolicies.put(builtinPolicy.getName(), builtinPolicy);
+            });
         }
 
         for (ClientPolicyRepresentation proposedPolicyRep : proposedPoliciesRep.getPolicies()) {
@@ -636,12 +635,29 @@ public class ClientPoliciesUtil {
             // newly proposed builtin policy not allowed because builtin policy cannot added/deleted/modified.
             Boolean enabled = (proposedPolicyRep.isEnable() != null) ? proposedPolicyRep.isEnable() : Boolean.FALSE;
             if (proposedPolicyRep.isBuiltin() != null && proposedPolicyRep.isBuiltin()) {
-                // only enable field of the existing builtin policy can be overridden.
-                if (updatingPoliciesList.stream().anyMatch(i->i.getName().equals(proposedPolicyRep.getName()))) {
-                    updatingPoliciesList.stream().filter(i->i.getName().equals(proposedPolicyRep.getName())).forEach(i->i.setEnable(enabled));
-                    continue;
+                // Check if we are trying to add builtin policy. This is not allowed
+                if (!existingBuiltinPolicies.keySet().contains(proposedPolicyRep.getName())) {
+                    throw new ClientPolicyException("newly builtin proposed client policy not allowed.");
                 }
-                throw new ClientPolicyException("newly builtin proposed client policy not allowed.");
+
+                // Updating existing builtin policy is not allowed - with the exception of the "enabled" field
+                ClientPolicyRepresentation existingBuiltinPolicy = existingBuiltinPolicies.get(proposedPolicyRep.getName());
+                existingBuiltinPolicy.setEnable(enabled);
+
+                if (!skipBuiltinValidationUpdate) {
+                    JsonNode existingPolicyNode = objectMapper.convertValue(existingBuiltinPolicy, JsonNode.class);
+                    JsonNode proposedPolicyNode = objectMapper.convertValue(proposedPolicyRep, JsonNode.class);
+                    if (!existingPolicyNode.equals(proposedPolicyNode)) {
+                        throw new ClientPolicyException("Updating builtin policy not allowed - with the exception of 'enabled' status");
+                    }
+                }
+
+                continue;
+            } else {
+                // Check if we are trying to add the policy of same name as some builtin policy. This is not allowed
+                if (existingBuiltinPolicies.keySet().contains(proposedPolicyRep.getName())) {
+                    throw new ClientPolicyException("Not allowed to add new policy of same name as some existing policy");
+                }
             }
 
             // basically, proposed policy totally overrides existing policy except for enabled field..
@@ -653,11 +669,11 @@ public class ClientPoliciesUtil {
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {
-                for (Object condition : proposedPolicyRep.getConditions()) {
-                    if (isValidCondition(session, condition) == false) {
+                for (ClientPolicyConditionRepresentation conditionRep : proposedPolicyRep.getConditions()) {
+                    if (!isValidCondition(session, conditionRep.getProviderId())) {
                         throw new ClientPolicyException("the proposed client policy contains the condition with its invalid configuration.");
                     }
-                    policyRep.getConditions().add(condition);
+                    policyRep.getConditions().add(conditionRep);
                 }
             }
 
@@ -683,52 +699,16 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * get validated and modified builtin client policies in a realm as representation.
-     * it can be constructed by merging proposed client policies with existing client policies.
-     * not return null.
-     */
-    public static ClientPoliciesRepresentation getValidatedClientPoliciesRepresentation(KeycloakSession session, RealmModel realm, String policiesJson) throws ClientPolicyException {
-        if (policiesJson == null) {
-            throw new ClientPolicyException("no client policies json.");
-        }
-        // deserialize existing policies (json -> representation)
-        ClientPoliciesRepresentation proposedPoliciesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
-        return getValidatedClientPoliciesRepresentation(session, realm, proposedPoliciesRep);
-    }
-
-    /**
      * check whether the proposed condition's provider can be found in keycloak's ClientPolicyConditionProvider list.
      * not return null.
      */
-    private static boolean isValidCondition(KeycloakSession session, Object condition) {
-        return isValidComponent(session, condition, "condition", (String providerId) -> {
-            Set<String> providerSet = session.listProviderIds(ClientPolicyConditionProvider.class);
-            if (providerSet != null && providerSet.contains(providerId)) {
-                return true;
-            }
-            logger.warnv("no executor provider found. providerId = {0}", providerId);
-            return false;
-        });
-    }
-
-
-    private static boolean isValidComponent(KeycloakSession session, Object obj, String type, Predicate<String> f) {
-        JsonNode node = null;
-
-        try {
-            node = objectMapper.convertValue(obj, JsonNode.class);
-        } catch (IllegalArgumentException iae) {
-            logger.warnv("invalid json string representating {0}. err={1}", type, iae.getMessage());
-            return false;
+    private static boolean isValidCondition(KeycloakSession session, String conditionProviderId) {
+        Set<String> providerSet = session.listProviderIds(ClientPolicyConditionProvider.class);
+        if (providerSet != null && providerSet.contains(conditionProviderId)) {
+            return true;
         }
-
-        Iterator<Entry<String, JsonNode>> it = node.fields();
-        while (it.hasNext()) {
-            Entry<String, JsonNode> entry = it.next();
-            // whether find provider
-            if(!f.test(entry.getKey())) return false;
-        }
-        return true;
+        logger.warnv("no condition provider found. providerId = {0}", conditionProviderId);
+        return false;
     }
 
     private static String convertRepresentationToJson(Object reps) throws ClientPolicyException {

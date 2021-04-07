@@ -20,6 +20,8 @@ package org.keycloak.services.clientpolicy;
 import java.io.Serializable;
 import java.util.List;
 
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -29,7 +31,7 @@ public class ClientPolicyModel implements Serializable {
     protected String description;
     protected boolean builtin;
     protected boolean enable;
-    protected List<Object> conditions; // ClientPolicyConditionProvider is not visible so that use Object.
+    protected List<ClientPolicyConditionProvider> conditions;
     protected List<String> profiles;
 
     public String getName() {
@@ -64,11 +66,11 @@ public class ClientPolicyModel implements Serializable {
         this.enable = enable;
     }
 
-    public List<Object> getConditions() {
+    public List<ClientPolicyConditionProvider> getConditions() {
         return conditions;
     }
 
-    public void setConditions(List<Object> conditions) {
+    public void setConditions(List<ClientPolicyConditionProvider> conditions) {
         this.conditions = conditions;
     }
 
