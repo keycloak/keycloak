@@ -227,6 +227,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
+    path: "/:realm/user-federation/ldap/new",
+    component: UserFederationLdapSettings,
+    breadcrumb: t("common:settings"),
+    access: "view-realm",
+  },
+  {
     path: "/:realm/user-federation/ldap/:id/:tab?",
     component: UserFederationLdapSettings,
     breadcrumb: t("common:settings"),
@@ -236,12 +242,6 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/:realm/user-federation/ldap/:id/:tab/:mapperId",
     component: LdapMappingDetails,
     breadcrumb: t("common:mappingDetails"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/ldap/new",
-    component: UserFederationLdapSettings,
-    breadcrumb: t("common:settings"),
     access: "view-realm",
   },
   {

@@ -10,20 +10,17 @@ import {
   useAdminClient,
   asyncStateFetch,
 } from "../../../context/auth/AdminClient";
-import { Link, useParams, useRouteMatch } from "react-router-dom";
+import { Link, useHistory, useParams, useRouteMatch } from "react-router-dom";
 
 export const LdapMapperList = () => {
   const [mappers, setMappers] = useState<ComponentRepresentation[]>();
-
+  const history = useHistory();
   const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
-
   const { url } = useRouteMatch();
-
   const handleError = useErrorHandler();
   const [key, setKey] = useState(0);
-
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
@@ -95,13 +92,7 @@ export const LdapMapperList = () => {
             <Button
               data-testid="createMapperBtn"
               variant="primary"
-              // onClick={handleModalToggle}
-              onClick={() =>
-                addAlert(
-                  t("Add functionality not implemented yet!"),
-                  AlertVariant.success
-                )
-              }
+              onClick={() => history.push(`${url}/new`)}
             >
               {t("common:addMapper")}
             </Button>
