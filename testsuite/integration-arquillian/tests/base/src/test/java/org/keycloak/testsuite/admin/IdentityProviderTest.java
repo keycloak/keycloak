@@ -610,6 +610,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         expected.add("oidc-hardcoded-group-idp-mapper");
         expected.add("hardcoded-attribute-idp-mapper");
         expected.add("multi-valued-test-idp-mapper");
+        expected.add("javascript-idp-mapper");
         expected.addAll(Arrays.asList(mapperIds));
 
         Assert.assertEquals("mapperTypes", expected, mapperTypes.keySet());
