@@ -520,7 +520,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         requestObject.id(KeycloakModelUtils.generateId());
         requestObject.iat(Long.valueOf(Time.currentTime()));
         requestObject.exp(requestObject.getIat() + Long.valueOf(300));
-        requestObject.nbf(Long.valueOf(0));
+        requestObject.nbf(requestObject.getIat());
         requestObject.setClientId(clientId);
         requestObject.setResponseType("code");
         requestObject.setRedirectUriParam(oauth.getRedirectUri());

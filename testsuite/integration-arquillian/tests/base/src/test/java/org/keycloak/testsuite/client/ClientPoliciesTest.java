@@ -982,6 +982,30 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request Expired", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
+        // check whether "nbf" claim exists
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Missing parameter : nbf", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // check whether request object not yet being processed
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(requestObject.getNbf() + 600);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Request not yet being processed", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // check whether request object's available period is short
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.exp(requestObject.getNbf() + 3601);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Request's available period is long", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
         // check whether "aud" claim exists
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.audience((String)null);
