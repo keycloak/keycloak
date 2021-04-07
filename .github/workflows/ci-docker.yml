@@ -1,0 +1,39 @@
+name: Docker CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build and push docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up environment
+        run: curl https://raw.githubusercontent.com/primesign/keycloak/master/release-details >> $GITHUB_ENV
+      - name: Check out keycloak/keycloak-containers
+        uses: actions/checkout@v2
+        with:
+          repository: keycloak/keycloak-containers
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: primesign-services
+          password: ${{ secrets.CR_TOKEN }}
+      - name: Build docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: server
+          file: server/Dockerfile
+          push: true
+          build-args: GIT_REPO=primesign/keycloak
+          cache-from: type=registry,ref=primesign/keycloak:latest
+          cache-to: type=inline
+          tags: |
+            ghcr.io/primesign/keycloak:latest
+            ghcr.io/primesign/keycloak:${{env.VERSION}}
+            ghcr.io/primesign/keycloak:${{env.SHORT_VERSION}}
