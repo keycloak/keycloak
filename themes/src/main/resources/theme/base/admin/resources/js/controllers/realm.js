@@ -2756,7 +2756,27 @@ module.controller('IdentityProviderMapperCreateCtrl', function ($scope, realm, i
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.save = function () {
+    // apply default configurations on change for selected protocolmapper type.
+    $scope.$watch('mapperType', function() {
+
+        var currentMapperType = $scope.mapperType;
+        var defaultConfig = {};
+
+        if (currentMapperType && Array.isArray(currentMapperType.properties)) {
+            for (var i = 0; i < currentMapperType.properties.length; i++) {
+                var property = currentMapperType.properties[i];
+                if (property && property.name && property.defaultValue) {
+                    defaultConfig[property.name] = property.defaultValue;
+                }
+            }
+        }
+
+        $scope.mapper.config = defaultConfig;
+        $scope.mapper.config.syncMode = 'INHERIT';
+    }, true);
+
+
+    $scope.save = function() {
         $scope.mapper.identityProviderMapper = $scope.mapperType.id;
         let copyMapper = angular.copy($scope.mapper);
         ComponentUtils.convertAllListValuesToMultivaluedString($scope.mapperType.properties, copyMapper.config);
