@@ -41,6 +41,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import "./evaluate.css";
+import { HelpContext } from "../../components/help-enabler/HelpHeader";
 
 export type EvaluateScopesProps = {
   clientId: string;
@@ -65,7 +66,7 @@ const ProtocolMappers = ({
       columns={[
         {
           name: "mapperName",
-          displayKey: "clients:name",
+          displayKey: "common:name",
         },
         {
           name: "containerName",
@@ -77,7 +78,7 @@ const ProtocolMappers = ({
         },
         {
           name: "type.priority",
-          displayKey: "commmon:priority",
+          displayKey: "common:priority",
         },
       ]}
     />
@@ -117,6 +118,7 @@ const EffectiveRoles = ({
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const prefix = "openid";
   const { t } = useTranslation("clients");
+  const { enabled } = useContext(HelpContext);
   const adminClient = useAdminClient();
   const { realm } = useContext(RealmContext);
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
@@ -255,11 +257,13 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   return (
     <>
       <PageSection variant="light">
-        <TextContent className="keycloak__scopes_evaluate__intro">
-          <Text>
-            <QuestionCircleIcon /> {t("clients-help:evaluateExplain")}
-          </Text>
-        </TextContent>
+        {enabled && (
+          <TextContent className="keycloak__scopes_evaluate__intro">
+            <Text>
+              <QuestionCircleIcon /> {t("clients-help:evaluateExplain")}
+            </Text>
+          </TextContent>
+        )}
         <Form isHorizontal>
           <FormGroup
             label={t("scopeParameter")}
@@ -386,6 +390,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
         </GridItem>
         <GridItem span={4}>
           <Tabs
+            id="tabs"
             key={key}
             isVertical
             activeKey={activeTab}
@@ -396,7 +401,15 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               aria-controls="effectiveProtocolMappers"
               eventKey={0}
               title={
-                <TabTitleText>{t("effectiveProtocolMappers")}</TabTitleText>
+                <TabTitleText>
+                  {t("effectiveProtocolMappers")}{" "}
+                  <HelpItem
+                    forID="effectiveProtocolMappers"
+                    forLabel={t("effectiveProtocolMappers")}
+                    helpText="clients-help:effectiveProtocolMappers"
+                    noVerticalAlign={false}
+                  />
+                </TabTitleText>
               }
               tabContentRef={tabContent1}
             />
@@ -405,7 +418,15 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               aria-controls="effectiveRoleScopeMappings"
               eventKey={1}
               title={
-                <TabTitleText>{t("effectiveRoleScopeMappings")}</TabTitleText>
+                <TabTitleText>
+                  {t("effectiveRoleScopeMappings")}{" "}
+                  <HelpItem
+                    forID="effectiveRoleScopeMappings"
+                    forLabel={t("effectiveRoleScopeMappings")}
+                    helpText="clients-help:effectiveRoleScopeMappings"
+                    noVerticalAlign={false}
+                  />
+                </TabTitleText>
               }
               tabContentRef={tabContent2}
             ></Tab>
@@ -413,7 +434,17 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               id="generatedAccessToken"
               aria-controls="generatedAccessToken"
               eventKey={2}
-              title={<TabTitleText>{t("generatedAccessToken")}</TabTitleText>}
+              title={
+                <TabTitleText>
+                  {t("generatedAccessToken")}{" "}
+                  <HelpItem
+                    forID="generatedAccessToken"
+                    forLabel={t("generatedAccessToken")}
+                    helpText="clients-help:generatedAccessToken"
+                    noVerticalAlign={false}
+                  />
+                </TabTitleText>
+              }
               tabContentRef={tabContent3}
             />
           </Tabs>

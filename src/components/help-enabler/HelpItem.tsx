@@ -8,9 +8,15 @@ type HelpItemProps = {
   helpText: string;
   forLabel: string;
   forID: string;
+  noVerticalAlign?: boolean;
 };
 
-export const HelpItem = ({ helpText, forLabel, forID }: HelpItemProps) => {
+export const HelpItem = ({
+  helpText,
+  forLabel,
+  forID,
+  noVerticalAlign = true,
+}: HelpItemProps) => {
   const { t } = useTranslation();
   const { enabled } = useContext(HelpContext);
   return (
@@ -24,7 +30,7 @@ export const HelpItem = ({ helpText, forLabel, forID }: HelpItemProps) => {
             aria-describedby={forID}
             className="pf-c-form__group-label-help"
           >
-            <HelpIcon noVerticalAlign />
+            <HelpIcon noVerticalAlign={noVerticalAlign} />
           </button>
         </Popover>
       )}
