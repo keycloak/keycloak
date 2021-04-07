@@ -11,7 +11,7 @@ import {
   SelectVariant,
   TextInput,
 } from "@patternfly/react-core";
-import { convertToFormValues } from "../../../util";
+import { convertFormValuesToObject, convertToFormValues } from "../../../util";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { useAdminClient } from "../../../context/auth/AdminClient";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
@@ -36,7 +36,7 @@ import { useRealm } from "../../../context/realm-context/RealmContext";
 
 export const LdapMapperDetails = () => {
   const form = useForm<ComponentRepresentation>();
-  const [mapper, setMapper] = useState<ComponentRepresentation>();
+  const [mapping, setMapping] = useState<ComponentRepresentation>();
 
   const adminClient = useAdminClient();
   const { mapperId } = useParams<{ mapperId: string }>();
@@ -59,9 +59,9 @@ export const LdapMapperDetails = () => {
             // TODO: remove after adding all mapper types
             console.log("LdapMapperDetails: id used in findOne(id) call::");
             console.log(id);
-            console.log("LdapMapperDetails: data returned from findOne(id):");
+            console.log("fetchedMapper is:");
             console.log(fetchedMapper);
-            setMapper(fetchedMapper);
+            setMapping(fetchedMapper);
             setupForm(fetchedMapper);
           }
         }
@@ -79,16 +79,38 @@ export const LdapMapperDetails = () => {
     });
   };
 
-  const save = () => {
-    addAlert(
-      t(
-        id === "new"
-          ? "Create functionality not implemented yet!"
-          : "Save functionality not implemented yet!"
-      ),
-      AlertVariant.success
-    );
-    history.push(`/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`);
+  const save = async (mapper: ComponentRepresentation) => {
+    const config = convertFormValuesToObject(mapper.config);
+    const map = {...mapping, config };
+    try {
+      if (id) {
+        if (id === "new") {
+          await adminClient.components.create(mapper);
+          history.push(`/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`);
+        } else {
+          // TODO remove after debugging each mapper type
+          console.log(`On save - mapping is:`)
+          console.log(`${JSON.stringify(mapping)}`);
+          console.log(`id is:`);
+          console.log(`${id}`);
+          console.log(`mapper is:`);
+          console.log(`${JSON.stringify(mapper)}`);
+          console.log(`map is:`);
+          console.log(`${JSON.stringify(map)}`);
+          await adminClient.components.update({ id }, map);
+        }
+      }
+      setupForm(map as ComponentRepresentation);
+      addAlert(
+        t(id === "new" ? "createSuccess" : "saveSuccess"),
+        AlertVariant.success
+      );
+    } catch (error) {
+      addAlert(
+        `${t(id === "new" ? "createError" : "saveError")} '${error}'`,
+        AlertVariant.danger
+      );
+    }
   };
 
   const mapperType = useWatch({
@@ -101,7 +123,7 @@ export const LdapMapperDetails = () => {
   return (
     <>
       <ViewHeader
-        titleKey={mapper ? mapper.name! : "Create new mapper"}
+        titleKey={mapping ? mapping.name! : "Create new mapper"}
         subKey=""
       />
       <PageSection variant="light" isFilled>
@@ -222,51 +244,51 @@ export const LdapMapperDetails = () => {
             </FormGroup>
           )}
           {/* When loading existing mappers, load forms based on providerId aka mapper type */}
-          {mapper
-            ? (mapper.providerId! === "certificate-ldap-mapper" ||
-                mapper.providerId! === "user-attribute-ldap-mapper") && (
+          {mapping
+            ? (mapping.providerId! === "certificate-ldap-mapper" ||
+            mapping.providerId! === "user-attribute-ldap-mapper") && (
                 <LdapMapperUserAttribute
                   form={form}
-                  mapperType={mapper?.providerId}
+                  mapperType={mapping?.providerId}
                 />
               )
             : ""}
-          {mapper
-            ? mapper.providerId! === "msad-user-account-control-mapper" && (
+          {mapping
+            ? mapping.providerId! === "msad-user-account-control-mapper" && (
                 <LdapMapperMsadUserAccount form={form} />
               )
             : ""}
           {/* msad-lds-user-account-control-mapper does not need a component 
               because it is just id, name, and mapper type*/}
-          {mapper
-            ? mapper.providerId! === "full-name-ldap-mapper" && (
+          {mapping
+            ? mapping.providerId! === "full-name-ldap-mapper" && (
                 <LdapMapperFullNameAttribute form={form} />
               )
             : ""}
-          {mapper
-            ? mapper.providerId! === "hardcoded-ldap-role-mapper" && (
+          {mapping
+            ? mapping.providerId! === "hardcoded-ldap-role-mapper" && (
                 <LdapMapperHardcodedLdapRole form={form} />
               )
             : ""}
-          {mapper
-            ? mapper.providerId! === "hardcoded-ldap-group-mapper" && (
+          {mapping
+            ? mapping.providerId! === "hardcoded-ldap-group-mapper" && (
                 <LdapMapperHardcodedLdapGroup form={form} />
               )
             : ""}
-          {mapper
-            ? mapper.providerId! === "hardcoded-ldap-attribute-mapper" && (
+          {mapping
+            ? mapping.providerId! === "hardcoded-ldap-attribute-mapper" && (
                 <LdapMapperHardcodedLdapAttribute form={form} />
               )
             : ""}
-          {mapper
-            ? mapper.providerId! === "hardcoded-attribute-mapper" && (
+          {mapping
+            ? mapping.providerId! === "hardcoded-attribute-mapper" && (
                 <LdapMapperHardcodedAttribute form={form} />
               )
             : ""}
-          {mapper
-            ? (mapper.providerId! === "role-ldap-mapper" ||
-                mapper.providerId! === "group-ldap-mapper") && (
-                <LdapMapperRoleGroup form={form} type={mapper.providerId} />
+          {mapping
+            ? (mapping.providerId! === "role-ldap-mapper" ||
+            mapping.providerId! === "group-ldap-mapper") && (
+                <LdapMapperRoleGroup form={form} type={mapping.providerId} />
               )
             : ""}
           {/* When creating new mappers, load forms based on dropdown selection */}
@@ -336,7 +358,7 @@ export const LdapMapperDetails = () => {
               variant="link"
               onClick={() =>
                 history.push(
-                  `/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`
+                  `/${realm}/user-federation/ldap/${mapping!.parentId}/mappers`
                 )
               }
               data-testid="ldap-cancel"

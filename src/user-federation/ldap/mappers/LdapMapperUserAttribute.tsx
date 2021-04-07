@@ -35,7 +35,7 @@ export const LdapMapperUserAttribute = ({
           type="text"
           id="kc-user-model-attribute"
           data-testid="user-model-attribute"
-          name="config.user-model-attribute"
+          name="config.user-model-attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -56,7 +56,7 @@ export const LdapMapperUserAttribute = ({
           type="text"
           id="kc-ldap-attribute"
           data-testid="ldap-attribute"
-          name="config.ldap-attribute"
+          name="config.ldap-attribute[0]"
           ref={form.register}
         />
       </FormGroup>

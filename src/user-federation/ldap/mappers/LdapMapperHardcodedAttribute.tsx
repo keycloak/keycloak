@@ -33,7 +33,7 @@ export const LdapMapperHardcodedAttribute = ({
           type="text"
           id="kc-user-model-attribute"
           data-testid="user-model-attribute"
-          name="config.user-model-attribute"
+          name="config.user-model-attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -54,7 +54,7 @@ export const LdapMapperHardcodedAttribute = ({
           type="text"
           id="kc-attribute-value"
           data-testid="attribute-value"
-          name="config.attribute-value"
+          name="config.attribute-value[0]"
           ref={form.register}
         />
       </FormGroup>
