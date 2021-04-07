@@ -125,6 +125,25 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request Expired");
         }
 
+        // check whether "nbf" claim exists
+        if (requestObject.get("nbf") == null) {
+            logger.trace("nbf claim not incuded.");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter : nbf");
+        }
+
+        // check whether request object not yet being processed
+        long nbf = requestObject.get("nbf").asLong();
+        if (Time.currentTime() < nbf) { // TODO: Time.currentTime() is int while nbf is long...
+            logger.trace("request object not yet being processed.");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request not yet being processed");
+        }
+
+        // check whether request object's available period is short
+        if (exp - nbf > 3600) {
+            logger.trace("request object's available period is long.");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request's available period is long");
+        }
+
         // check whether "aud" claim exists
         List<String> aud = new ArrayList<String>();
         JsonNode audience = requestObject.get("aud");
