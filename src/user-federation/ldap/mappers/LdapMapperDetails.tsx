@@ -34,7 +34,7 @@ import { LdapMapperHardcodedAttribute } from "./LdapMapperHardcodedAttribute";
 import { LdapMapperRoleGroup } from "./LdapMapperRoleGroup";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 
-export const LdapMappingDetails = () => {
+export const LdapMapperDetails = () => {
   const form = useForm<ComponentRepresentation>();
   const [mapper, setMapper] = useState<ComponentRepresentation>();
 
@@ -57,9 +57,9 @@ export const LdapMappingDetails = () => {
           const fetchedMapper = await adminClient.components.findOne({ id });
           if (fetchedMapper) {
             // TODO: remove after adding all mapper types
-            console.log("LdapMappingDetails: id used in findOne(id) call::");
+            console.log("LdapMapperDetails: id used in findOne(id) call::");
             console.log(id);
-            console.log("LdapMappingDetails: data returned from findOne(id):");
+            console.log("LdapMapperDetails: data returned from findOne(id):");
             console.log(fetchedMapper);
             setMapper(fetchedMapper);
             setupForm(fetchedMapper);
