@@ -171,7 +171,9 @@ export const GroupTable = () => {
           {
             title: t("common:delete"),
             onRowClick: async (group: GroupRepresentation) => {
-              return deleteGroup(group);
+              await deleteGroup(group);
+              refresh();
+              return true;
             },
           },
         ]}
@@ -214,7 +216,11 @@ export const GroupTable = () => {
             delete move.membersLength;
             try {
               try {
-                await adminClient.groups.setOrCreateChild({ id }, move);
+                if (id) {
+                  await adminClient.groups.setOrCreateChild({ id }, move);
+                } else {
+                  await adminClient.groups.create(move);
+                }
               } catch (error) {
                 if (error.response) {
                   throw error;

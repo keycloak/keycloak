@@ -29,7 +29,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 type MoveGroupDialogProps = {
   group: GroupRepresentation;
   onClose: () => void;
-  onMove: (groupId: string) => void;
+  onMove: (groupId: string | undefined) => void;
 };
 
 export const MoveGroupDialog = ({
@@ -73,14 +73,10 @@ export const MoveGroupDialog = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={
-        currentGroup()
-          ? t("moveToGroup", {
-              group1: group.name,
-              group2: currentGroup().name,
-            })
-          : t("moveTo")
-      }
+      title={t("moveToGroup", {
+        group1: group.name,
+        group2: currentGroup() ? currentGroup().name : t("root"),
+      })}
       isOpen={true}
       onClose={onClose}
       actions={[
@@ -89,7 +85,7 @@ export const MoveGroupDialog = ({
           key="confirm"
           variant="primary"
           form="group-form"
-          onClick={() => onMove(currentGroup().id!)}
+          onClick={() => onMove(currentGroup()?.id)}
         >
           {t("moveHere")}
         </Button>,

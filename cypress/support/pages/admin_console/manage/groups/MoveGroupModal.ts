@@ -7,6 +7,11 @@ export default class MoveGroupModal {
     return this;
   }
 
+  clickRoot() {
+    cy.get(".pf-c-breadcrumb__item > button").click();
+    return this;
+  }
+
   checkTitle(title: string) {
     cy.get(this.title).should("have.text", title);
     return this;

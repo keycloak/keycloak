@@ -94,6 +94,21 @@ describe("Group test", () => {
       sidebarPage.goToGroups();
       listingPage.deleteItem(targetGroupName);
     });
+
+    it("Should move group to root", async () => {
+      const groups = ["group1", "group2"];
+      await new AdminClient().createSubGroups(groups);
+      sidebarPage.goToGroups();
+      listingPage.goToItemDetails(groups[0]);
+      cy.wait(2000);
+      listingPage.clickRowDetails(groups[1]).clickDetailMenu("Move to");
+
+      moveGroupModal.clickRoot().clickMove();
+      sidebarPage.goToGroups();
+
+      new GroupDetailPage().checkListSubGroup(groups);
+      listingPage.deleteItem(groups[0]);
+    });
   });
 
   describe("Group details", () => {
