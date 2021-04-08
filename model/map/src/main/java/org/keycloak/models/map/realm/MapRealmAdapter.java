@@ -43,6 +43,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -1564,5 +1565,9 @@ public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEnti
 
     public CibaConfig getCibaPolicy() {
         return new CibaConfig(this);
+    }
+
+    public ParConfig getParPolicy() {
+        return new ParConfig(this);
     }
 }

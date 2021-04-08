@@ -66,6 +66,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -101,6 +102,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.ws.rs.client.Entity;
@@ -823,7 +825,7 @@ public class OAuthClient {
             post.addHeader("Origin", origin);
         }
 
-        UrlEncodedFormEntity formEntity;
+       UrlEncodedFormEntity formEntity;
         try {
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -1035,6 +1037,149 @@ public class OAuthClient {
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret) throws IOException {
+        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{});
+    }
+
+    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, Consumer<CloseableHttpResponse> c) throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(getParEndpointUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
+            if (responseType != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.RESPONSE_TYPE, responseType));
+            }
+            if (responseMode != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.RESPONSE_MODE_PARAM, responseMode));
+            }
+            if (clientId != null && clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+            }
+            if (redirectUri != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
+            }
+            if (kcAction != null) {
+                parameters.add(new BasicNameValuePair(Constants.KC_ACTION, kcAction));
+            }
+            // on authz request, state is putting automatically so that.
+            // if state is put here, they are not matched.
+            //String state = this.state.getState();
+            //if (state != null) {
+            //    parameters.add(new BasicNameValuePair(OAuth2Constants.STATE, state));
+            //}
+            if (uiLocales != null){
+                parameters.add(new BasicNameValuePair(OAuth2Constants.UI_LOCALES_PARAM, uiLocales));
+            }
+            if (nonce != null){
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, nonce));
+            }
+            String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+            if (scopeParam != null && !scopeParam.isEmpty()) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
+            }
+            if (maxAge != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge));
+            }
+            if (request != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
+            }
+            if (requestUri != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri));
+            }
+            if (codeChallenge != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
+            }
+            if (codeChallengeMethod != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
+            }
+            if (customParameters != null) {
+                customParameters.keySet().stream().forEach(i -> parameters.add(new BasicNameValuePair(i, customParameters.get(i))));
+            }
+
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+            post.setEntity(formEntity);
+            try {
+                return new ParResponse(client.execute(post), c);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("Failed to do PAR request", e);
+            }
+        }
+    }
+
+    public static class ParResponse {
+        private int statusCode;
+        private Map<String, String> headers;
+
+        private String requestUri;
+        private int expiresIn;
+
+        private String error;
+        private String errorDescription;
+
+        public ParResponse(CloseableHttpResponse response, Consumer<CloseableHttpResponse> c) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+
+                headers = new HashMap<>();
+
+                for (Header h : response.getAllHeaders()) {
+                    headers.put(h.getName(), h.getValue());
+                }
+
+                Header[] contentTypeHeaders = response.getHeaders("Content-Type");
+                String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
+                if (!"application/json".equals(contentType)) {
+                    Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
+                }
+
+                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+                Map responseJson = JsonSerialization.readValue(s, Map.class);
+                if (statusCode == 201) {
+                    requestUri = (String) responseJson.get("request_uri");
+                    expiresIn = ((Integer) responseJson.get("expires_in")).intValue();
+                } else {
+                    error = (String) responseJson.get(OAuth2Constants.ERROR);
+                    errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String) responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+                }
+
+                c.accept(response);
+            } finally {
+                response.close();
+            }
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public String getRequestUri() {
+            return requestUri;
+        }
+
+        public int getExpiresIn() {
+            return expiresIn;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public String getErrorDescription() {
+            return errorDescription;
         }
     }
 
@@ -1322,6 +1467,11 @@ public class OAuthClient {
 
     public String getBackchannelAuthenticationTokenRequestUrl() {
         UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
+    public String getParEndpointUrl() {
+        UriBuilder b = ParEndpoint.parUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 

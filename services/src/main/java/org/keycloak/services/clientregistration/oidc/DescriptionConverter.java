@@ -29,6 +29,7 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -207,6 +208,13 @@ public class DescriptionConverter {
             }
         }
 
+        Boolean requirePushedAuthorizationRequests = clientOIDC.getRequirePushedAuthorizationRequests();
+        if (requirePushedAuthorizationRequests != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, requirePushedAuthorizationRequests.toString());
+            client.setAttributes(attr);
+        }
+
         return client;
     }
 
@@ -362,6 +370,8 @@ public class DescriptionConverter {
             if (StringUtil.isNotBlank(alg)) {
                 response.setBackchannelAuthenticationRequestSigningAlg(alg);
             }
+            Boolean requirePushedAuthorizationRequests = Boolean.valueOf(client.getAttributes().get(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS));
+            response.setRequirePushedAuthorizationRequests(requirePushedAuthorizationRequests.booleanValue());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

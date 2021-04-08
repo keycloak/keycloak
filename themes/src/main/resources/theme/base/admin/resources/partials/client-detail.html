@@ -839,6 +839,15 @@
                 </div>
                 <kc-tooltip>{{:: 'pkce-code-challenge-method.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requirePushedAuthorizationRequests">{{:: 'require-pushed-authorization-requests' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="requirePushedAuthorizationRequests" ng-click="switchChange()" name="requirePushedAuthorizationRequests" id="requirePushedAuthorizationRequests" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'require-pushed-authorization-requests.tooltip' | translate}}</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <fieldset>

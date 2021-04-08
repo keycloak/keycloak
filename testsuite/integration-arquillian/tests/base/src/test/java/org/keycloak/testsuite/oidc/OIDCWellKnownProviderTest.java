@@ -190,6 +190,11 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
                 Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
 
             assertEquals(oidcConfig.getDeviceAuthorizationEndpoint(), oauth.getDeviceAuthorizationUrl());
+
+            // Pushed Authorization Request (PAR)
+            assertEquals(oauth.getParEndpointUrl(), oidcConfig.getPushedAuthorizationRequestEndpoint());
+            assertEquals(Boolean.FALSE, oidcConfig.getRequirePushedAuthorizationRequests());
+
         } finally {
             client.close();
         }

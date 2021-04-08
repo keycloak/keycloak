@@ -147,7 +147,12 @@ public enum EventType {
     PERMISSION_TOKEN_ERROR(false),
 
     DELETE_ACCOUNT(true),
-    DELETE_ACCOUNT_ERROR(true);
+    DELETE_ACCOUNT_ERROR(true),
+
+    // PAR request.
+    PUSHED_AUTHORIZATION_REQUEST(false),
+    PUSHED_AUTHORIZATION_REQUEST_ERROR(false);
+
 
     private boolean saveByDefault;
 

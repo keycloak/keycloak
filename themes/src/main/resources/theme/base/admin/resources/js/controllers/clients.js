@@ -1143,6 +1143,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.oauth2DeviceCodeLifespan = TimeUnit2.asUnit(client.attributes['oauth2.device.code.lifespan']);
     $scope.oauth2DevicePollingInterval = parseInt(client.attributes['oauth2.device.polling.interval']);
 
+    // PAR request.
+    $scope.requirePushedAuthorizationRequests = false;
+
     if(client.origin) {
         if ($scope.access.viewRealm) {
             Components.get({realm: realm.realm, componentId: client.origin}, function (link) {
@@ -1360,6 +1363,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                $scope.tlsClientCertificateBoundAccessTokens = false;
            }
        }
+
+        // PAR request.
+        if ($scope.client.attributes["require.pushed.authorization.requests"]) {
+            if ($scope.client.attributes["require.pushed.authorization.requests"] == "true") {
+                $scope.requirePushedAuthorizationRequests = true;
+            } else {
+                $scope.requirePushedAuthorizationRequests = false;
+            }
+        }
 
         var useRefreshToken = $scope.client.attributes["client_credentials.use_refresh_token"];
         if (useRefreshToken === "true") {
@@ -1812,6 +1824,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "true";
         } else {
             $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "false";
+        }
+
+        // PAR request.
+        if ($scope.requirePushedAuthorizationRequests == true) {
+            $scope.clientEdit.attributes["require.pushed.authorization.requests"] = "true";
+        } else {
+            $scope.clientEdit.attributes["require.pushed.authorization.requests"] = "false";
         }
 
         // KEYCLOAK-9551 Client Credentials Grant generates refresh token
