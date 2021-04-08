@@ -27,8 +27,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.util.TokenUtil;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -40,10 +38,6 @@ public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvide
 
     public SecureSessionEnforceExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration {
     }
 
     @Override

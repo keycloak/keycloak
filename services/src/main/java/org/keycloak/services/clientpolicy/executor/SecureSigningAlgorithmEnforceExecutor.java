@@ -34,8 +34,6 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -56,10 +54,6 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
 
     public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session) {
         this.session = session;
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration {
     }
 
     @Override
