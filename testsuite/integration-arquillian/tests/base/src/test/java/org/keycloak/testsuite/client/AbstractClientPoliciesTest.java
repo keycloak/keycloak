@@ -865,8 +865,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return config;
     }
 
-    protected Object createSecureRequestObjectExecutorConfig() {
-        return new SecureRequestObjectExecutor.Configuration();
+    protected Object createSecureRequestObjectExecutorConfig(Integer availablePeriod) {
+        SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
+        if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
+        return config;
     }
 
     protected Object createSecureResponseTypeExecutorConfig() {
