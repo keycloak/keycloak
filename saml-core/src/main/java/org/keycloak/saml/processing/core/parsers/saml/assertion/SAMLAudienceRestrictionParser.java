@@ -52,11 +52,15 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                 StaxParserUtil.advance(xmlEventReader);
                 String audienceValue = StaxParserUtil.getElementText(xmlEventReader);
                 try {
+                    LOGGER.warn("SAMLAudienceRestrictionParser");
                     URI audienceURI = URI.create(audienceValue);
                     target.addAudience(audienceURI);
+                    LOGGER.warn("SAMLAudienceRestrictionParser success");
                 } catch (IllegalArgumentException e) {
                     // Ignore parse error
+                    LOGGER.warn("SAMLAudienceRestrictionParser IllegalArgumentException");
                     target.addAudience(audienceValue);
+                    LOGGER.warn("SAMLAudienceRestrictionParser IllegalArgumentException success");
                 }
                 break;
 

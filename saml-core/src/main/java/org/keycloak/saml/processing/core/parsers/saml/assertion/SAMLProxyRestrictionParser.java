@@ -45,7 +45,14 @@ public class SAMLProxyRestrictionParser extends AbstractStaxSamlAssertionParser<
             case AUDIENCE:
                 StaxParserUtil.advance(xmlEventReader);
                 String audienceValue = StaxParserUtil.getElementText(xmlEventReader);
-                target.addAudience(URI.create(audienceValue));
+                try {
+                    LOGGER.warn("SAMLProxyRestrictionParser");
+                    target.addAudience(URI.create(audienceValue));
+                    LOGGER.warn("SAMLProxyRestrictionParser success");
+                } catch (IllegalArgumentException e) {
+                    // Ignore parse error
+                    LOGGER.warn("SAMLProxyRestrictionParser IllegalArgumentException");
+                }
                 break;
 
             default:
