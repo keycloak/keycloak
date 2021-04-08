@@ -59,7 +59,6 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                 } catch (IllegalArgumentException e) {
                     // Ignore parse error
                     LOGGER.warn("SAMLAudienceRestrictionParser IllegalArgumentException");
-                    target.addAudience(audienceValue);
                     LOGGER.warn("SAMLAudienceRestrictionParser IllegalArgumentException success");
                 }
                 break;
