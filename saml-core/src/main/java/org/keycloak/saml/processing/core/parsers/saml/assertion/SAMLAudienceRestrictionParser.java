@@ -53,8 +53,7 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                 String audienceValue = StaxParserUtil.getElementText(xmlEventReader);
                 try {
                     LOGGER.warn("SAMLAudienceRestrictionParser 1");
-                    URI audienceURI = URI.create(audienceValue);
-                    target.addAudience("https://localhost/keycloak/auth/realms/opendata/broker/nias/endpoint");
+                    target.addAudience(URI.create("https://localhost/keycloak/auth/realms/opendata/broker/nias/endpoint"));
                     LOGGER.warn("SAMLAudienceRestrictionParser success");
                 } catch (IllegalArgumentException e) {
                     // Ignore parse error
