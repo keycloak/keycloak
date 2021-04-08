@@ -18,6 +18,10 @@
 package org.keycloak.provider.quarkus;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -122,9 +126,27 @@ public class QuarkusPlatform implements PlatformProvider {
             File tmpDir;
             if (homeDir == null) {
                 // Should happen just in the unit tests
-                homeDir = System.getProperty("java.io.tmpdir");
-                tmpDir = new File(homeDir, "keycloak-quarkus-tmp");
-                tmpDir.mkdir();
+                try {
+                    // Use "tmp" directory in case it points to the "target" directory (which is usually the case with quarkus unit tests)
+                    // Trying to use "target" subdirectory to avoid the situation when separate subdirectory will be created in the "/tmp" for each build and hence "/tmp" directory being swamped with many subdirectories
+                    String tmpDirProp = System.getProperty("java.io.tmpdir");
+                    if (tmpDirProp == null || !tmpDirProp.endsWith("target")) {
+                        // Fallback to "target" inside "user.dir"
+                        String userDirProp = System.getProperty("user.dir");
+                        if (userDirProp != null) {
+                            File userDir = new File(userDirProp, "target");
+                            if (userDir.exists()) {
+                                tmpDirProp = userDir.getAbsolutePath();
+                            }
+                        }
+                    }
+                    // Finally fallback to system tmp directory. Always create dedicated directory for current user
+                    Path path = tmpDirProp != null ? Files.createTempDirectory(new File(tmpDirProp).toPath(), "keycloak-quarkus-tmp") :
+                            Files.createTempDirectory("keycloak-quarkus-tmp");
+                    tmpDir = path.toFile();
+                } catch (IOException ioex) {
+                    throw new RuntimeException("It was not possible to create temporary directory keycloak-quarkus-tmp", ioex);
+                }
             } else {
                 tmpDir = new File(homeDir, "tmp");
                 tmpDir.mkdir();
