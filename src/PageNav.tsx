@@ -1,6 +1,7 @@
 import React from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import _ from "lodash";
 import {
   Nav,
   NavItem,
@@ -8,6 +9,7 @@ import {
   NavList,
   PageSidebar,
 } from "@patternfly/react-core";
+
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { DataLoader } from "./components/data-loader/DataLoader";
@@ -21,7 +23,7 @@ export const PageNav: React.FunctionComponent = () => {
   const { realm } = useRealm();
   const adminClient = useAdminClient();
   const realmLoader = async () => {
-    return await adminClient.realms.find();
+    return _.sortBy(await adminClient.realms.find(), "realm");
   };
 
   const history = useHistory();

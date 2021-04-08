@@ -12,6 +12,7 @@ import {
   Split,
   ContextSelector,
   ContextSelectorItem,
+  Label,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 
@@ -19,6 +20,7 @@ import { toUpperCase } from "../../util";
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
+import { RecentUsed } from "./recent-used";
 
 import "./realm-selector.css";
 
@@ -34,6 +36,8 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
   const [filteredItems, setFilteredItems] = useState(realmList);
   const history = useHistory();
   const { t } = useTranslation("common");
+  const recentUsed = new RecentUsed();
+
   const RealmText = ({ value }: { value: string }) => (
     <Split className="keycloak__realm_selector__list-item-split">
       <SplitItem isFilled>{toUpperCase(value)}</SplitItem>
@@ -41,7 +45,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     </Split>
   );
 
-  const AddRealm = ({ className }: { className?: string }) => (
+  const AddRealm = () => (
     <Button
       component="div"
       isBlock
@@ -49,7 +53,6 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
         history.push(`/${realm}/add-realm`);
         setOpen(!open);
       }}
-      className={className}
     >
       {t("createRealm")}
     </Button>
@@ -65,6 +68,11 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     setFilteredItems(filtered || []);
   };
 
+  const selectRealm = (realm: string) => {
+    setRealm(realm);
+    setOpen(!open);
+  };
+
   useEffect(() => {
     onFilter();
   }, [search]);
@@ -73,9 +81,8 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     <DropdownItem
       key={`realm-dropdown-item-${r.realm}`}
       onClick={() => {
-        setRealm(r.realm!);
-        history.push(`/${r.realm}/`);
-        setOpen(!open);
+        selectRealm(r.realm!);
+        history.push(`/${realm}/`);
       }}
     >
       <RealmText value={r.realm!} />
@@ -104,20 +111,32 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
           screenReaderLabel={toUpperCase(realm)}
           onToggle={() => setOpen(!open)}
           onSelect={(_, r) => {
-            const value = (r as ReactElement).props.value;
-            setRealm(value || "master");
-            setOpen(!open);
+            let element: ReactElement;
+            if (Array.isArray(r)) {
+              element = (r as ReactElement[])[0];
+            } else {
+              element = r as ReactElement;
+            }
+            const value = element.props.value || "master";
+            selectRealm(value);
           }}
           searchInputValue={search}
           onSearchInputChange={(value) => setSearch(value)}
           onSearchButtonClick={() => onFilter()}
           className="keycloak__realm_selector__context_selector"
         >
-          {filteredItems.map((item) => (
-            <ContextSelectorItem key={item.id}>
-              <RealmText value={item.realm!} />
+          {recentUsed.used.map((realm) => (
+            <ContextSelectorItem key={realm}>
+              <RealmText value={realm} /> <Label>{t("recent")}</Label>
             </ContextSelectorItem>
           ))}
+          {filteredItems
+            .filter((r) => !recentUsed.used.includes(r.realm!))
+            .map((item) => (
+              <ContextSelectorItem key={item.id}>
+                <RealmText value={item.realm!} />
+              </ContextSelectorItem>
+            ))}
           <ContextSelectorItem key="add">
             <AddRealm />
           </ContextSelectorItem>

@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import { RecentUsed } from "../../components/realm-selector/recent-used";
 
 type RealmContextType = {
   realm: string;
@@ -16,9 +17,15 @@ export const RealmContextProvider = ({
   children,
 }: RealmContextProviderProps) => {
   const [realm, setRealm] = useState("");
+  const recentUsed = new RecentUsed();
+
+  const set = (realm: string) => {
+    recentUsed.setRecentUsed(realm);
+    setRealm(realm);
+  };
 
   return (
-    <RealmContext.Provider value={{ realm, setRealm }}>
+    <RealmContext.Provider value={{ realm, setRealm: set }}>
       {children}
     </RealmContext.Provider>
   );

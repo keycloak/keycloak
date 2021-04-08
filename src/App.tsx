@@ -23,6 +23,7 @@ import { SubGroups } from "./groups/SubGroupsContext";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
+import { RecentUsed } from "./components/realm-selector/recent-used";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
@@ -44,11 +45,14 @@ const RealmPathSelector = ({ children }: { children: ReactNode }) => {
   const { realm } = useParams<{ realm: string }>();
   const adminClient = useAdminClient();
   const handleError = useErrorHandler();
+  const recentUsed = new RecentUsed();
+
   useEffect(
     () =>
       asyncStateFetch(
         () => adminClient.realms.find(),
         (realms) => {
+          recentUsed.clean(realms.map((r) => r.realm!));
           if (realms.findIndex((r) => r.realm == realm) !== -1) {
             setRealm(realm);
           }
