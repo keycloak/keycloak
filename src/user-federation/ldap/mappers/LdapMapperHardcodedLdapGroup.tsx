@@ -33,7 +33,7 @@ export const LdapMapperHardcodedLdapGroup = ({
           type="text"
           id="kc-group"
           data-testid="group"
-          name="config.group"
+          name="config.group[0]"
           ref={form.register}
         />
       </FormGroup>

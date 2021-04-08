@@ -33,7 +33,7 @@ export const LdapMapperHardcodedLdapRole = ({
           type="text"
           id="kc-role"
           data-testid="role"
-          name="config.role"
+          name="config.role[0]"
           ref={form.register}
         />
       </FormGroup>

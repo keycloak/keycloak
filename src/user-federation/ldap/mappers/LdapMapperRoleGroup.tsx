@@ -61,7 +61,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-ldap-dn"
           data-testid="ldap-dn"
-          name={isRole ? "config.roles-dn" : "config.groups-dn"}
+          name={isRole ? "config.roles-dn[0]" : "config.groups-dn[0]"}
           ref={form.register}
         />
       </FormGroup>
@@ -77,7 +77,7 @@ export const LdapMapperRoleGroup = ({
                 : helpText("groupNameLdapAttributeHelp")
             }
             forLabel={
-              isRole ? t("roleNameLdapAttribute") : t("roleNameLdapAttribute")
+              isRole ? t("roleNameLdapAttribute") : t("groupNameLdapAttribute")
             }
             forID="kc-name-attribute"
           />
@@ -92,8 +92,8 @@ export const LdapMapperRoleGroup = ({
           data-testid="name-attribute"
           name={
             isRole
-              ? "config.role-name-ldap-attribute"
-              : "config.group-name-ldap-attribute"
+              ? "config.role-name-ldap-attribute[0]"
+              : "config.group-name-ldap-attribute[0]"
           }
           ref={form.register}
         />
@@ -121,8 +121,8 @@ export const LdapMapperRoleGroup = ({
           data-testid="object-classes"
           name={
             isRole
-              ? "config.role-object-classes"
-              : "config.group-object-classes"
+              ? "config.role-object-classes[0]"
+              : "config.group-object-classes[0]"
           }
           ref={form.register}
         />
@@ -204,7 +204,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-membership-ldap-attribute"
           data-testid="membership-ldap-attribute"
-          name="config.membership-ldap-attribute"
+          name="config.membership-ldap-attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -264,7 +264,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-membership-user-ldap-attribute"
           data-testid="membership-user-ldap-attribute"
-          name="config.membership-user-ldap-attribute"
+          name="config.membership-user-ldap-attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -285,7 +285,11 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-ldap-filter"
           data-testid="ldap-filter"
-          name="config.ldap-filter"
+          name={
+            isRole
+              ? "config.roles-ldap-filter[0]"
+              : "config.groups-ldap-filter[0]"
+          }
           ref={form.register}
         />
       </FormGroup>
@@ -410,7 +414,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-member-of-attribute"
           data-testid="member-of-attribute"
-          name="config.memberof-ldap-attribute"
+          name="config.memberof-ldap-attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -504,7 +508,7 @@ export const LdapMapperRoleGroup = ({
               type="text"
               id="kc-mapped-attributes"
               data-testid="mapped-attributes"
-              name="config.mapped-group-attributes"
+              name="config.mapped-group-attributes[0]"
               ref={form.register}
             />
           </FormGroup>
@@ -553,7 +557,7 @@ export const LdapMapperRoleGroup = ({
               type="text"
               id="kc-path"
               data-testid="path"
-              name="config.groups-path"
+              name="config.groups-path[0]"
               ref={form.register}
             />
           </FormGroup>

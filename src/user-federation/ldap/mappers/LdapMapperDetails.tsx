@@ -81,15 +81,17 @@ export const LdapMapperDetails = () => {
 
   const save = async (mapper: ComponentRepresentation) => {
     const config = convertFormValuesToObject(mapper.config);
-    const map = {...mapping, config };
+    const map = { ...mapping, config };
     try {
       if (id) {
         if (id === "new") {
           await adminClient.components.create(mapper);
-          history.push(`/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`);
+          history.push(
+            `/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`
+          );
         } else {
           // TODO remove after debugging each mapper type
-          console.log(`On save - mapping is:`)
+          console.log(`On save - mapping is:`);
           console.log(`${JSON.stringify(mapping)}`);
           console.log(`id is:`);
           console.log(`${id}`);
@@ -246,7 +248,7 @@ export const LdapMapperDetails = () => {
           {/* When loading existing mappers, load forms based on providerId aka mapper type */}
           {mapping
             ? (mapping.providerId! === "certificate-ldap-mapper" ||
-            mapping.providerId! === "user-attribute-ldap-mapper") && (
+                mapping.providerId! === "user-attribute-ldap-mapper") && (
                 <LdapMapperUserAttribute
                   form={form}
                   mapperType={mapping?.providerId}
@@ -287,7 +289,7 @@ export const LdapMapperDetails = () => {
             : ""}
           {mapping
             ? (mapping.providerId! === "role-ldap-mapper" ||
-            mapping.providerId! === "group-ldap-mapper") && (
+                mapping.providerId! === "group-ldap-mapper") && (
                 <LdapMapperRoleGroup form={form} type={mapping.providerId} />
               )
             : ""}

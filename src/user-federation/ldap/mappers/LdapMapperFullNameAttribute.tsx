@@ -33,7 +33,7 @@ export const LdapMapperFullNameAttribute = ({
           type="text"
           id="kc-full-name-attribute"
           data-testid="full-name-attribute"
-          name="config.ldap-full-name-attribute"
+          name="config.ldap-full-name-attribute[0]"
           ref={form.register}
         />
       </FormGroup>
