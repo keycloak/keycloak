@@ -221,7 +221,7 @@ export const LdapMapperRoleGroup = ({
       >
         <Controller
           name="config.membership-attribute-type[0]"
-          defaultValue=""
+          defaultValue="DN"
           control={form.control}
           render={({ onChange, value }) => (
             <Select
@@ -306,7 +306,7 @@ export const LdapMapperRoleGroup = ({
       >
         <Controller
           name="config.mode[0]"
-          defaultValue=""
+          defaultValue="READ_ONLY"
           control={form.control}
           render={({ onChange, value }) => (
             <Select
@@ -362,7 +362,7 @@ export const LdapMapperRoleGroup = ({
               ? "config.user-roles-retrieve-strategy[0]"
               : "config.user-groups-retrieve-strategy[0]"
           }
-          defaultValue=""
+          defaultValue="LOAD_ROLES_BY_MEMBER_ATTRIBUTE"
           control={form.control}
           render={({ onChange, value }) => (
             <Select

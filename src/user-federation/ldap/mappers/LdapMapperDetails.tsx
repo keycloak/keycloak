@@ -80,25 +80,20 @@ export const LdapMapperDetails = () => {
   };
 
   const save = async (mapper: ComponentRepresentation) => {
-    const config = convertFormValuesToObject(mapper.config);
-    const map = { ...mapping, config };
+    let config = {};
+    if (mapper.config !== undefined) {
+      config = convertFormValuesToObject(mapper.config);
+    }
+    const map = { ...mapper, config };
+
     try {
       if (id) {
         if (id === "new") {
-          await adminClient.components.create(mapper);
+          await adminClient.components.create(map);
           history.push(
             `/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`
           );
         } else {
-          // TODO remove after debugging each mapper type
-          console.log(`On save - mapping is:`);
-          console.log(`${JSON.stringify(mapping)}`);
-          console.log(`id is:`);
-          console.log(`${id}`);
-          console.log(`mapper is:`);
-          console.log(`${JSON.stringify(mapper)}`);
-          console.log(`map is:`);
-          console.log(`${JSON.stringify(map)}`);
           await adminClient.components.update({ id }, map);
         }
       }
@@ -117,7 +112,7 @@ export const LdapMapperDetails = () => {
 
   const mapperType = useWatch({
     control: form.control,
-    name: "choose-mapper-type",
+    name: "providerId",
   });
 
   const isNew = mapperId === "new";
@@ -163,6 +158,24 @@ export const LdapMapperDetails = () => {
               name="name"
               ref={form.register}
             />
+            <TextInput
+              hidden
+              defaultValue="aa508e29-b5e7-49d0-89ce-f3e65c5e8165"
+              type="text"
+              id="kc-ldap-parentId"
+              data-testid="ldap-parentId"
+              name="parentId"
+              ref={form.register}
+            />
+            <TextInput
+              hidden
+              defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
+              type="text"
+              id="kc-ldap-provider-type"
+              data-testid="ldap-provider-type"
+              name="providerType"
+              ref={form.register}
+            />
           </FormGroup>
           {!isNew ? (
             <FormGroup
@@ -194,19 +207,19 @@ export const LdapMapperDetails = () => {
                 <HelpItem
                   helpText={helpText("mapperTypeHelp")}
                   forLabel={t("common:mapperType")}
-                  forID="kc-choose-mapper-type"
+                  forID="kc-providerId"
                 />
               }
-              fieldId="kc-choose-mapper-type"
+              fieldId="kc-providerId"
               isRequired
             >
               <Controller
-                name="choose-mapper-type"
+                name="providerId"
                 defaultValue=" "
                 control={form.control}
                 render={({ onChange, value }) => (
                   <Select
-                    toggleId="kc-choose-mapper-type"
+                    toggleId="kc-providerId"
                     required
                     onToggle={() =>
                       setIsMapperDropdownOpen(!isMapperDropdownOpen)
@@ -218,7 +231,6 @@ export const LdapMapperDetails = () => {
                     }}
                     selections={value}
                     variant={SelectVariant.single}
-                    // data-testid="choose-mapper-type"
                   >
                     <SelectOption
                       key={0}
@@ -226,7 +238,7 @@ export const LdapMapperDetails = () => {
                     />
                     <SelectOption
                       key={1}
-                      value="msda-lds-user-account-control-mapper"
+                      value="msad-lds-user-account-control-mapper"
                     />
                     <SelectOption key={2} value="group-ldap-mapper" />
                     <SelectOption key={3} value="user-attribute-ldap-mapper" />
@@ -294,52 +306,52 @@ export const LdapMapperDetails = () => {
               )
             : ""}
           {/* When creating new mappers, load forms based on dropdown selection */}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "certificate-ldap-mapper" && (
                 <LdapMapperUserAttribute form={form} mapperType={mapperType} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "user-attribute-ldap-mapper" && (
                 <LdapMapperUserAttribute form={form} mapperType={mapperType} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "msad-user-account-control-mapper" && (
                 <LdapMapperMsadUserAccount form={form} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "full-name-ldap-mapper" && (
                 <LdapMapperFullNameAttribute form={form} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "hardcoded-ldap-role-mapper" && (
                 <LdapMapperHardcodedLdapRole form={form} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "hardcoded-ldap-group-mapper" && (
                 <LdapMapperHardcodedLdapGroup form={form} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "hardcoded-ldap-attribute-mapper" && (
                 <LdapMapperHardcodedLdapAttribute form={form} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "hardcoded-attribute-mapper" && (
                 <LdapMapperHardcodedAttribute form={form} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "role-ldap-mapper" && (
                 <LdapMapperRoleGroup form={form} type={mapperType} />
               )
             : ""}
-          {mapperType
+          {isNew && mapperType
             ? mapperType === "group-ldap-mapper" && (
                 <LdapMapperRoleGroup form={form} type={mapperType} />
               )
