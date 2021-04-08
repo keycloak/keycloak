@@ -869,26 +869,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return new SecureRequestObjectExecutor.Configuration();
     }
 
-    protected Object createSecureResponseTypeExecutorConfig() {
-        return new SecureResponseTypeExecutor.Configuration();
-    }
-
-    protected Object createSecureRedirectUriEnforceExecutorConfig() {
-        return new SecureRedirectUriEnforceExecutor.Configuration();
-    }
-
-    protected Object createSecureSessionEnforceExecutorConfig() {
-        return new SecureSessionEnforceExecutor.Configuration();
-    }
-
-    protected Object createSecureSigningAlgorithmEnforceExecutorConfig() {
-        return new SecureSigningAlgorithmEnforceExecutor.Configuration();
-    }
-
-    protected Object createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig() {
-        return new SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration();
-    }
-
     // Client Policies CRUD Operation
 
     protected static class ClientPoliciesBuilder {

@@ -541,8 +541,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil", Boolean.FALSE, null)
-                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureSessionEnforceExecutorConfig())
+                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -808,8 +807,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "El Primer Perfil", Boolean.FALSE, null)
-                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureSessionEnforceExecutorConfig())
+                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -848,8 +846,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "O Primeiro Perfil", Boolean.FALSE, null)
-                    .addExecutor(SecureResponseTypeExecutorFactory.PROVIDER_ID, 
-                        createSecureResponseTypeExecutorConfig())
+                    .addExecutor(SecureResponseTypeExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1043,8 +1040,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen", Boolean.FALSE, null)
-                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureSessionEnforceExecutorConfig())
+                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1099,8 +1095,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen", Boolean.FALSE, null)
-                    .addExecutor(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureSigningAlgorithmEnforceExecutorConfig())
+                    .addExecutor(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1206,8 +1201,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili", Boolean.FALSE, null)
-                    .addExecutor(SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureRedirectUriEnforceExecutorConfig())
+                    .addExecutor(SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1258,8 +1252,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili", Boolean.FALSE, null)
-                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, 
-                        createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig())
+                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1382,7 +1375,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen", Boolean.FALSE, null)
-                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, createSecureSessionEnforceExecutorConfig())
+                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
