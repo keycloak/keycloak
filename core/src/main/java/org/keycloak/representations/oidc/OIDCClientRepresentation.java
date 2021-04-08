@@ -137,6 +137,9 @@ public class OIDCClientRepresentation {
 
     private String authorization_encrypted_response_enc;
 
+    // PAR request
+    private Boolean require_pushed_authorization_requests;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -537,5 +540,13 @@ public class OIDCClientRepresentation {
 
     public void setAuthorizationEncryptedResponseEnc(String authorization_encrypted_response_enc) {
         this.authorization_encrypted_response_enc = authorization_encrypted_response_enc;
+    }
+
+    public Boolean getRequirePushedAuthorizationRequests() {
+        return require_pushed_authorization_requests;
+    }
+
+    public void setRequirePushedAuthorizationRequests(Boolean require_pushed_authorization_requests) {
+        this.require_pushed_authorization_requests = require_pushed_authorization_requests;
     }
 }

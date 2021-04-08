@@ -660,6 +660,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public ParConfig getParPolicy() {
+        if (isUpdated()) return updated.getParPolicy();
+        return cached.getParConfig(modelSupplier);
+    }
+
+    @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         if (isUpdated()) return updated.getRequiredCredentials();
         return cached.getRequiredCredentials();

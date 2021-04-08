@@ -80,6 +80,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -299,6 +300,8 @@ public class RepresentationToModel {
         newRealm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
         updateCibaSettings(rep, newRealm);
+
+        updateParSettings(rep, newRealm);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -1190,6 +1193,7 @@ public class RepresentationToModel {
         realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
         updateCibaSettings(rep, realm);
+        updateParSettings(rep, realm);
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
@@ -1243,6 +1247,13 @@ public class RepresentationToModel {
         cibaPolicy.setExpiresIn(newAttributes.get(CibaConfig.CIBA_EXPIRES_IN));
         cibaPolicy.setPoolingInterval(newAttributes.get(CibaConfig.CIBA_INTERVAL));
         cibaPolicy.setAuthRequestedUserHint(newAttributes.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT));
+    }
+
+    private static void updateParSettings(RealmRepresentation rep, RealmModel realm) {
+        Map<String, String> newAttributes = rep.getAttributesOrEmpty();
+        ParConfig parPolicy = realm.getParPolicy();
+
+        parPolicy.setRequestUriLifespan(newAttributes.get(ParConfig.PAR_REQUEST_URI_LIFESPAN));
     }
 
     // Basic realm stuff

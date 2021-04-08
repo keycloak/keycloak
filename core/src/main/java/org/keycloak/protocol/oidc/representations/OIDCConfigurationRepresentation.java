@@ -163,6 +163,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("backchannel_authentication_request_signing_alg_values_supported")
     private List<String> backchannelAuthenticationRequestSigningAlgValuesSupported;
 
+    @JsonProperty("require_pushed_authorization_requests")
+    private Boolean requirePushedAuthorizationRequests;
+
+    @JsonProperty("pushed_authorization_request_endpoint")
+    private String pushedAuthorizationRequestEndpoint;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -479,6 +485,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setBackchannelAuthenticationRequestSigningAlgValuesSupported(List<String> backchannelAuthenticationRequestSigningAlgValuesSupported) {
         this.backchannelAuthenticationRequestSigningAlgValuesSupported = backchannelAuthenticationRequestSigningAlgValuesSupported;
+    }
+
+    public String getPushedAuthorizationRequestEndpoint() {
+        return pushedAuthorizationRequestEndpoint;
+    }
+
+    public void setPushedAuthorizationRequestEndpoint(String pushedAuthorizationRequestEndpoint) {
+        this.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint;
+    }
+
+    public Boolean getRequirePushedAuthorizationRequests() {
+        return requirePushedAuthorizationRequests;
+    }
+
+    public void setRequirePushedAuthorizationRequests(Boolean requirePushedAuthorizationRequests) {
+        this.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests;
     }
 
     @JsonAnyGetter

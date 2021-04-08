@@ -16,13 +16,10 @@
  */
 package org.keycloak.models;
 
-import java.io.Serializable;
-import java.util.function.Supplier;
-
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.utils.StringUtil;
 
-public class CibaConfig implements Serializable {
+public class CibaConfig extends AbstractConfig {
 
     // realm attribute names
     public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE = "cibaBackchannelTokenDeliveryMode";
@@ -45,11 +42,6 @@ public class CibaConfig implements Serializable {
     public static final String OIDC_CIBA_GRANT_ENABLED = "oidc.ciba.grant.enabled";
     public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT = "ciba.backchannel.token.delivery.mode";
     public static final String CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG = "ciba.backchannel.auth.request.signing.alg";
-
-    private transient Supplier<RealmModel> realm;
-
-    // Make sure setters are not called when calling this from constructor to avoid DB updates
-    private transient Supplier<RealmModel> realmForWrite;
 
     public CibaConfig(RealmModel realm) {
         this.realm = () -> realm;
@@ -153,19 +145,5 @@ public class CibaConfig implements Serializable {
     public Algorithm getBackchannelAuthRequestSigningAlg(ClientModel client) {
         String alg = client.getAttribute(CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
         return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
-    }
-
-    private void persistRealmAttribute(String name, String value) {
-        RealmModel realm = realmForWrite == null ? null : this.realmForWrite.get();
-        if (realm != null) {
-            realm.setAttribute(name, value);
-        }
-    }
-
-    private void persistRealmAttribute(String name, Integer value) {
-        RealmModel realm = realmForWrite == null ? null : this.realmForWrite.get();
-        if (realm != null) {
-            realm.setAttribute(name, value);
-        }
     }
 }

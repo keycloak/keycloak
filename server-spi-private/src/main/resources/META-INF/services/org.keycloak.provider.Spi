@@ -30,6 +30,7 @@ org.keycloak.models.CodeToTokenStoreSpi
 org.keycloak.models.OAuth2DeviceTokenStoreSpi
 org.keycloak.models.OAuth2DeviceUserCodeSpi
 org.keycloak.models.SamlArtifactSessionMappingStoreSpi
+org.keycloak.models.PushedAuthzRequestStoreSpi
 org.keycloak.models.SingleUseTokenStoreSpi
 org.keycloak.models.TokenRevocationStoreSpi
 org.keycloak.models.UserSessionSpi
