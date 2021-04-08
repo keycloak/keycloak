@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -34,27 +35,51 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor.Configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider<SecureRequestObjectExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(SecureRequestObjectExecutor.class);
 
     public static final String INVALID_REQUEST_OBJECT = "invalid_request_object";
+    public static final Integer DEFAULT_AVAILABLE_PERIOD = Integer.valueOf(3600); // (sec) from FAPI 1.0 Advanced requirement
 
     private final KeycloakSession session;
+    private Configuration configuration;
 
     public SecureRequestObjectExecutor(KeycloakSession session) {
         this.session = session;
     }
 
+    @Override
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration {
+    public static class Configuration extends ClientPolicyExecutorConfiguration {
+        @JsonProperty("available-period")
+        protected Integer availablePeriod;
+
+        public Integer getAvailablePeriod() {
+            return availablePeriod;
+        }
+
+        public void setAvailablePeriod(Integer availablePeriod) {
+            this.availablePeriod = availablePeriod;
+        }
     }
 
     @Override
@@ -139,7 +164,8 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         }
 
         // check whether request object's available period is short
-        if (exp - nbf > 3600) {
+        int availablePeriod = Optional.ofNullable(configuration.getAvailablePeriod()).orElse(DEFAULT_AVAILABLE_PERIOD).intValue();
+        if (exp - nbf > availablePeriod) {
             logger.trace("request object's available period is long.");
             throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request's available period is long");
         }

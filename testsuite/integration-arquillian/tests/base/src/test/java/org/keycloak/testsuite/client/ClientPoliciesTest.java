@@ -912,11 +912,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     @Test
     public void testSecureRequestObjectExecutor() throws Exception, URISyntaxException, IOException {
+        Integer availablePeriod = Integer.valueOf(SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 400);
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Prvy Profil", Boolean.FALSE, null)
                     .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, 
-                        createSecureRequestObjectExecutorConfig())
+                        createSecureRequestObjectExecutorConfig(availablePeriod))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1000,7 +1001,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // check whether request object's available period is short
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
-        requestObject.exp(requestObject.getNbf() + 3601);
+        requestObject.exp(requestObject.getNbf() + availablePeriod.intValue() + 1);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
         assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
