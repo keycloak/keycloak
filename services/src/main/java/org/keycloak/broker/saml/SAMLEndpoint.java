@@ -495,6 +495,12 @@ public class SAMLEndpoint {
                         cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                     }
                 } catch (IllegalArgumentException ex) {
+                    logger.error("IllegalArgumentException");
+                    logger.error(ex);
+                    logger.error("issuerURL");
+                    logger.error(issuerURL);
+                    logger.error("responseType.getDestination()");
+                    logger.error(responseType.getDestination());
                     // warning has been already emitted in DeploymentBuilder
                 }
                 if (! cvb.build().isValid()) {
