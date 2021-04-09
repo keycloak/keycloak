@@ -498,7 +498,7 @@ public class SAMLEndpoint {
                     logger.error("IllegalArgumentException");
                     logger.error(ex);
                     logger.error("issuerURL");
-                    logger.error(issuerURL);
+                    logger.error(getEntityId(session.getContext().getUri(), realm));
                     logger.error("responseType.getDestination()");
                     logger.error(responseType.getDestination());
                     // warning has been already emitted in DeploymentBuilder
