@@ -733,7 +733,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             }
             if (idTokenType) {
-                context.getContextData().put(VALIDATED_ID_TOKEN, subjectToken);
+                context.getContextData().put(VALIDATED_ID_TOKEN, parsedToken);
             } else {
                 context.getContextData().put(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN, parsedToken);
             }
