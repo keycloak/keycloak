@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -55,9 +56,11 @@ import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
@@ -549,6 +552,25 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertThat((Collection<String>) claim.get("resource_scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
         assertThat((Collection<String>) claim.get("scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
+    }
+
+    @Test
+    public void testNoRefreshToken() {
+        ClientResource client = getClient(getRealm());
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+        client.update(clientRepresentation);
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null,
+            new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
+        String rpt = response.getToken();
+        String refreshToken = response.getRefreshToken();
+        assertNotNull(rpt);
+        assertNull(refreshToken);
+
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        client.update(clientRepresentation);
     }
 
     private String getIdToken(String username, String password) {

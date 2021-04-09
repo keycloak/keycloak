@@ -160,7 +160,7 @@ jobs:
         run: |
           declare -A PARAMS TESTGROUP
           PARAMS["quarkus"]="-Pauth-server-quarkus"
-          PARAMS["undertow-map"]="-Pauth-server-undertow -Dkeycloak.client.provider=map -Dkeycloak.group.provider=map -Dkeycloak.role.provider=map -Dkeycloak.authSession.provider=map -Dkeycloak.user.provider=map -Dkeycloak.clientScope.provider=map"
+          PARAMS["undertow-map"]="-Pauth-server-undertow -Dkeycloak.client.provider=map -Dkeycloak.group.provider=map -Dkeycloak.role.provider=map -Dkeycloak.authSession.provider=map -Dkeycloak.user.provider=map -Dkeycloak.clientScope.provider=map -Dkeycloak.realm.provider=map"
           PARAMS["wildfly"]="-Pauth-server-wildfly"
           TESTGROUP["group1"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(a[abc]|ad[a-l]|[^a-q]).*]"   # Tests alphabetically before admin tests and those after "r"
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
@@ -187,9 +187,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' )" >> $GITHUB_ENV
+        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -245,7 +247,7 @@ jobs:
           fetch-depth: 2
 
       - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' )" >> $GITHUB_ENV
+        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
       - uses: actions/setup-java@v1
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}

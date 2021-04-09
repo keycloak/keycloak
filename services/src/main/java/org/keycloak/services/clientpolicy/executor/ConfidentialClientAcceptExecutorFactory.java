@@ -14,22 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.services.clientpolicy.executor;
 
-package org.keycloak.services.clientpolicy.condition;
-
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public abstract class AbstractClientPolicyConditionProviderFactory implements ClientPolicyConditionProviderFactory {
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ConfidentialClientAcceptExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String IS_NEGATIVE_LOGIC = "is-negative-logic";
+    public static final String PROVIDER_ID = "confidentialclient-accept-executor";
 
-    private static final ProviderConfigProperty IS_NEGATIVE_LOGIC_PROPERTY = new ProviderConfigProperty(IS_NEGATIVE_LOGIC, "clientpolicycondition-is-negative-logic.label", "clientpolicycondition-is-negative-logic.tooltip", ProviderConfigProperty.BOOLEAN_TYPE, false);
+    @Override
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new ConfidentialClientAcceptExecutor(session);
+    }
 
     @Override
     public void init(Scope config) {
@@ -44,8 +49,18 @@ public abstract class AbstractClientPolicyConditionProviderFactory implements Cl
     }
 
     @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "On authorization endpoint and token endpoint, this executor checks whether the client is confidential client. If not, it denies its request.";
+    }
+
+    @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(IS_NEGATIVE_LOGIC_PROPERTY));
+        return Collections.emptyList();
     }
 
 }

@@ -20,12 +20,14 @@ public class ConditionalRoleAuthenticator implements ConditionalAuthenticator {
         AuthenticatorConfigModel authConfig = context.getAuthenticatorConfig();
         if (user != null && authConfig!=null && authConfig.getConfig()!=null) {
             String requiredRole = authConfig.getConfig().get(ConditionalRoleAuthenticatorFactory.CONDITIONAL_USER_ROLE);
+            boolean negateOutput = Boolean.parseBoolean(authConfig.getConfig().get(ConditionalRoleAuthenticatorFactory.CONF_NEGATE));
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, requiredRole);
             if (role == null) {
                 logger.errorv("Invalid role name submitted: {0}", requiredRole);
                 return false;
             }
-            return user.hasRole(role);
+
+            return negateOutput != user.hasRole(role);
         }
         return false;
     }

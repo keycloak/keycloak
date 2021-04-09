@@ -58,7 +58,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<UUID, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
         this.session = session;
         this.sessionStore = sessionStore;
-        this.tx = sessionStore.createTransaction();
+        this.tx = sessionStore.createTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(tx);
     }

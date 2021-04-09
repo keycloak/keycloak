@@ -25,12 +25,18 @@ public class ClientScopeListQuery extends AbstractRevisioned implements ClientSc
     private final Set<String> clientScopes;
     private final String realm;
     private final String realmName;
+    private String clientUuid;
 
     public ClientScopeListQuery(Long revisioned, String id, RealmModel realm, Set<String> clientScopes) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.realmName = realm.getName();
         this.clientScopes = clientScopes;
+    }
+
+    public ClientScopeListQuery(Long revisioned, String id, RealmModel realm, String clientUuid, Set<String> clientScopes) {
+        this(revisioned, id, realm, clientScopes);
+        this.clientUuid = clientUuid;
     }
 
     @Override
@@ -44,10 +50,16 @@ public class ClientScopeListQuery extends AbstractRevisioned implements ClientSc
     }
 
     @Override
+    public String getClientId() {
+        return clientUuid;
+    }
+
+    @Override
     public String toString() {
         return "ClientScopeListQuery{" +
                 "id='" + getId() + "'" +
                 ", realmName='" + realmName + '\'' +
+                ", clientUuid='" + clientUuid + '\'' +
                 '}';
     }
 }

@@ -125,11 +125,6 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public void preRemove(RealmModel realm, RoleModel role) {
-        session.groupLocalStorage().preRemove(realm, role);
-    }
-
-    @Override
     public void close() {
 
     }

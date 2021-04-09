@@ -22,11 +22,19 @@ import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientPolicyException extends Exception {
 
     private String error = OAuthErrorException.INVALID_REQUEST;
-    private String errorDetail;
+    private String errorDetail ="NA";
     private Status errorStatus = Response.Status.BAD_REQUEST;
+
+    public ClientPolicyException(String error) {
+        super(error);
+        setError(error);
+    }
 
     public ClientPolicyException(String error, String errorDetail) {
         super(error);

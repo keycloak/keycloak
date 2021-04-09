@@ -260,6 +260,9 @@ public class ExportUtils {
         MultivaluedHashMap<String, ComponentExportRepresentation> components = exportComponents(realm, realm.getId());
         rep.setComponents(components);
 
+        // client policies
+        session.clientPolicy().setupClientPoliciesOnExportingRealm(realm, rep);
+
         return rep;
     }
 

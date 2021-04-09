@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,25 +19,29 @@ package org.keycloak.services.clientpolicy.executor;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
-public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider {
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureResponseTypeExecutor.class);
 
     protected final KeycloakSession session;
-    protected final ComponentModel componentModel;
 
-    public SecureResponseTypeExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public SecureResponseTypeExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
+    }
+
+    @Override
+    public String getProviderId() {
+        return SecureResponseTypeExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -59,30 +63,19 @@ public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider 
             OIDCResponseType parsedResponseType,
             AuthorizationEndpointRequest request,
             String redirectUri) throws ClientPolicyException {
-        ClientPolicyLogger.log(logger, "Authz Endpoint - authz request");
+        logger.trace("Authz Endpoint - authz request");
 
         if (parsedResponseType.hasResponseType(OIDCResponseType.CODE) && parsedResponseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
             if (parsedResponseType.hasResponseType(OIDCResponseType.TOKEN)) {
-                ClientPolicyLogger.log(logger, "Passed. response_type = code id_token token");
+                logger.trace("Passed. response_type = code id_token token");
             } else {
-                ClientPolicyLogger.log(logger, "Passed. response_type = code id_token");
+                logger.trace("Passed. response_type = code id_token");
             }
             return;
         }
 
-        ClientPolicyLogger.log(logger, "invalid response_type = " + parsedResponseType);
+        logger.tracev("invalid response_type = {0}", parsedResponseType);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "invalid response_type");
-
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
     }
 
 }

@@ -1141,6 +1141,32 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void refreshTokenRequestNoRefreshToken() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        setTimeOffset(2);
+
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+        client.update(clientRepresentation);
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+        assertNotNull(response.getAccessToken());
+        assertNull(response.getRefreshToken());
+
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        client.update(clientRepresentation);
+    }
+
+    @Test
     public void tokenRefreshRequest_ClientRS384_RealmRS384() throws Exception {
         conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS384);
     }

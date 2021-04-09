@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,35 +21,26 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 
-public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements ClientPolicyExecutorProvider {
+public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmForSignedJwtEnforceExecutor.class);
 
     private final KeycloakSession session;
-    private final ComponentModel componentModel;
 
-    public SecureSigningAlgorithmForSignedJwtEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public SecureSigningAlgorithmForSignedJwtEnforceExecutor(KeycloakSession session) {
         this.session = session;
-        this.componentModel = componentModel;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -78,7 +69,7 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
 
     private void verifySecureSigningAlgorithm(String signatureAlgorithm) throws ClientPolicyException {
         if (signatureAlgorithm == null) {
-            ClientPolicyLogger.log(logger, "Signing algorithm not specified explicitly.");
+            logger.trace("Signing algorithm not specified explicitly.");
             return;
         }
 
@@ -90,10 +81,11 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:
-                ClientPolicyLogger.log(logger, "Passed. signatureAlgorithm = " + signatureAlgorithm);
+                logger.tracev("Passed. signatureAlgorithm = {0}", signatureAlgorithm);
                 return;
         }
-        ClientPolicyLogger.log(logger, "NOT allowed signatureAlgorithm = " + signatureAlgorithm);
+        logger.tracev("NOT allowed signatureAlgorithm = {0}", signatureAlgorithm);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
     }
+
 }

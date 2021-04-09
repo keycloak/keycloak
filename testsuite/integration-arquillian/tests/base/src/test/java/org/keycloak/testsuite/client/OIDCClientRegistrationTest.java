@@ -520,7 +520,9 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     public void testClientWithoutScope() throws ClientRegistrationException {
         Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes()
-                .stream().map(i->i.getName()).collect(Collectors.toList()));
+                .stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(i->i.getName()).collect(Collectors.toList()));
 
         OIDCClientRepresentation clientRep = null;
         OIDCClientRepresentation response = null;
@@ -535,7 +537,9 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation rep = clientResource.toRepresentation();
 
         Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes()
-                .stream().map(i->i.getName()).collect(Collectors.toList()));
+                .stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(i->i.getName()).collect(Collectors.toList()));
 
         Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
         assertTrue(realmDefaultClientScopes.equals(new HashSet<>(registeredDefaultClientScopes)));
@@ -557,5 +561,50 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClient = getClient(response.getClientId());
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertNames(config.getRequestUris(), "http://host/foo", "https://host2/bar");
+    }
+
+    @Test
+    public void testClientWithoutRefreshToken() throws Exception {
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+
+        clientRep = createRep();
+        clientRep.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE));
+
+        response = reg.oidc().create(clientRep);
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertFalse(config.isUseRefreshToken());
+    }
+
+    @Test
+    public void testClientWithRefreshToken() throws Exception {
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+
+        clientRep = createRep();
+        clientRep.setGrantTypes(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN));
+
+        response = reg.oidc().create(clientRep);
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertTrue(config.isUseRefreshToken());
+    }
+
+    @Test
+    public void testClientWithoutGrantTypes() throws Exception {
+        OIDCClientRepresentation response = create();
+
+        assertTrue(CollectionUtil.collectionEquals(
+            Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes()));
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertTrue(config.isUseRefreshToken());
     }
 }

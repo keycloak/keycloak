@@ -20,13 +20,8 @@ package org.keycloak.models.map.common;
  *
  * @author hmlnarik
  */
-public interface AbstractEntity<K> {
+public interface AbstractEntity<K> extends UpdatableEntity {
 
     K getId();
 
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     * @return
-     */
-    boolean isUpdated();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy;
+package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
-public class ClientPolicySpi implements Spi {
+public class ServerInfoSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -30,17 +30,17 @@ public class ClientPolicySpi implements Spi {
 
     @Override
     public String getName() {
-        return "client-policy";
+        return "serverInfo";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return ClientPolicyProvider.class;
+        return ServerInfoProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return ClientPolicyProviderFactory.class;
+        return ServerInfoProviderFactory.class;
     }
 
 }

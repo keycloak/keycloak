@@ -457,8 +457,10 @@ public class TokenEndpoint {
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token)
-            .generateRefreshToken();
+            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+            responseBuilder.generateRefreshToken();
+        }
 
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
@@ -466,7 +468,9 @@ public class TokenEndpoint {
             AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
             if (certConf != null) {
                 responseBuilder.getAccessToken().setCertConf(certConf);
-                responseBuilder.getRefreshToken().setCertConf(certConf);
+                if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+                    responseBuilder.getRefreshToken().setCertConf(certConf);
+                }
             } else {
                 event.error(Errors.INVALID_REQUEST);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
@@ -684,9 +688,11 @@ public class TokenEndpoint {
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
-                .generateAccessToken()
-                .generateRefreshToken();
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
+            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+            responseBuilder.generateRefreshToken();
+        }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
@@ -1025,7 +1031,8 @@ public class TokenEndpoint {
             responseBuilder.getAccessToken().addAudience(audience);
         }
 
-        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)) {
+        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+            && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
         }

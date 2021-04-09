@@ -17,12 +17,10 @@
 
 package org.keycloak.testsuite.services.clientpolicy.executor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -33,13 +31,9 @@ public class TestRaiseExeptionExecutorFactory implements ClientPolicyExecutorPro
 
     public static final String PROVIDER_ID = "test-raise-exception-executor";
 
-    public static final String TARGET_CP_EVENTS = "target-cp-events";
-    private static final ProviderConfigProperty TARGET_CP_EVENTS_PROPERTY = new ProviderConfigProperty(
-            TARGET_CP_EVENTS, null, null, ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
-
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new TestRaiseExeptionExecutor(session, model);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new TestRaiseExeptionExecutor(session);
     }
 
     @Override
@@ -61,12 +55,12 @@ public class TestRaiseExeptionExecutorFactory implements ClientPolicyExecutorPro
 
     @Override
     public String getHelpText() {
-        return null;
+        return "NA";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Arrays.asList(TARGET_CP_EVENTS_PROPERTY);
+        return Collections.emptyList();
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.map.common;
 
-package org.keycloak.services.clientpolicy;
+public interface UpdatableEntity {
 
-import org.keycloak.component.ComponentFactory;
-
-public interface ClientPolicyProviderFactory extends ComponentFactory<ClientPolicyProvider, ClientPolicyProvider> {
+    /**
+     * Flag signalizing that any of the setters has been meaningfully used.
+     * @return
+     */
+    boolean isUpdated();
 }

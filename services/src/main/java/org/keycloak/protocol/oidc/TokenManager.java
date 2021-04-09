@@ -337,11 +337,14 @@ public class TokenManager {
             validation.newToken.setAuthorization(refreshToken.getAuthorization());
         }
 
-        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSessionCtx)
-                .accessToken(validation.newToken)
-                .generateRefreshToken();
+        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
+            validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
+        if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+            responseBuilder.generateRefreshToken();
+        }
 
-        if (validation.newToken.getAuthorization() != null) {
+        if (validation.newToken.getAuthorization() != null
+            && OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
         }
 
@@ -351,7 +354,9 @@ public class TokenManager {
         AccessToken.CertConf certConf = refreshToken.getCertConf();
         if (certConf != null) {
             responseBuilder.getAccessToken().setCertConf(certConf);
-            responseBuilder.getRefreshToken().setCertConf(certConf);
+            if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+                responseBuilder.getRefreshToken().setCertConf(certConf);
+            }
         }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -548,14 +553,14 @@ public class TokenManager {
     public static Stream<ClientScopeModel> getRequestedClientScopes(String scopeParam, ClientModel client) {
         // Add all default client scopes automatically and client itself
         Stream<ClientScopeModel> clientScopes = Stream.concat(
-                client.getClientScopes(true, true).values().stream(),
+                client.getClientScopes(true).values().stream(),
                 Stream.of(client)).distinct();
 
         if (scopeParam == null) {
             return clientScopes;
         }
 
-        Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false, true);
+        Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam).map(allOptionalScopes::get).filter(Objects::nonNull),
                 clientScopes).distinct();

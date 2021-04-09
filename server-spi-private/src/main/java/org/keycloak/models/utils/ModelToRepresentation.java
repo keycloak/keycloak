@@ -93,6 +93,9 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("client-policies.profiles");
+        REALM_EXCLUDED_ATTRIBUTES.add("client-policies.policies");
     }
 
 
@@ -592,8 +595,8 @@ public class ModelToRepresentation {
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
-        rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true, false).keySet()));
-        rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false, false).keySet()));
+        rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true).keySet()));
+        rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false).keySet()));
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

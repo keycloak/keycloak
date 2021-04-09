@@ -249,6 +249,7 @@ public class RealmAdminResource {
             ClientScopeRepresentation rep = new ClientScopeRepresentation();
             rep.setId(clientScope.getId());
             rep.setName(clientScope.getName());
+            rep.setProtocol(clientScope.getProtocol());
             return rep;
         });
     }
@@ -1206,4 +1207,17 @@ public class RealmAdminResource {
                 .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator);
     }
 
+    @Path("client-policies/policies")
+    public ClientPoliciesResource getClientPoliciesResource() {
+        ClientPoliciesResource resource = new ClientPoliciesResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    @Path("client-policies/profiles")
+    public ClientProfilesResource getClientProfilesResource() {
+        ClientProfilesResource resource = new ClientProfilesResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
 }

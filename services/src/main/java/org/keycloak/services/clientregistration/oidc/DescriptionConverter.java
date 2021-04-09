@@ -321,7 +321,9 @@ public class DescriptionConverter {
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
             grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);
         }
-        grantTypes.add(OAuth2Constants.REFRESH_TOKEN);
+        if (OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseRefreshToken()) {
+            grantTypes.add(OAuth2Constants.REFRESH_TOKEN);
+        }
         return grantTypes;
     }
 

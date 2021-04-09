@@ -25,12 +25,15 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,6 +46,8 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapClientProvider implements ClientProvider {
@@ -60,7 +65,7 @@ public class MapClientProvider implements ClientProvider {
         this.session = session;
         this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
-        this.tx = clientStore.createTransaction();
+        this.tx = clientStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
@@ -267,6 +272,66 @@ public class MapClientProvider implements ClientProvider {
           .sorted(COMPARE_BY_CLIENT_ID);
 
         return paginatedStream(s, firstResult, maxResults).map(entityToAdapterFunc(realm));
+    }
+
+    @Override
+    public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
+        MapClientEntity entity = tx.read(UUID.fromString(client.getId()));
+
+        if (entity == null) return;
+
+        // Defaults to openid-connect
+        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+
+        LOG.tracef("addClientScopes(%s, %s, %s, %b)%s", realm, client, clientScopes, defaultScope, getShortStackTrace());
+
+        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, defaultScope);
+
+        clientScopes.stream()
+                .filter(clientScope -> ! existingClientScopes.containsKey(clientScope.getName()))
+                .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
+                .forEach(clientScope -> entity.addClientScope(clientScope.getId(), defaultScope));
+    }
+
+    @Override
+    public void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope) {
+        MapClientEntity entity = tx.read(UUID.fromString(client.getId()));
+
+        if (entity == null) return;
+
+        LOG.tracef("removeClientScope(%s, %s, %s)%s", realm, client, clientScope, getShortStackTrace());
+
+        entity.removeClientScope(clientScope.getId());
+    }
+
+    @Override
+    public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
+        MapClientEntity entity = tx.read(UUID.fromString(client.getId()));
+
+        if (entity == null) return null;
+
+        // Defaults to openid-connect
+        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+
+        LOG.tracef("getClientScopes(%s, %s, %b)%s", realm, client, defaultScopes, getShortStackTrace());
+
+        return entity.getClientScopes(defaultScopes)
+                .map(clientScopeId -> session.clientScopes().getClientScopeById(realm, clientScopeId))
+                .filter(Objects::nonNull)
+                .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
+                .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
+    }
+
+    public void preRemove(RealmModel realm, RoleModel role) {
+        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
+          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
+        try (Stream<MapClientEntity> toRemove = tx.getUpdatedNotRemoved(mcb)) {
+            toRemove
+                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))
+                .filter(Objects::nonNull)
+                .forEach(clientModel -> clientModel.deleteScopeMapping(role));
+        }
     }
 
     @Override
