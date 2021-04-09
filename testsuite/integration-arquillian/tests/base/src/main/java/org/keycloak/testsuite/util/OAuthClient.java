@@ -595,10 +595,20 @@ public class OAuthClient {
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
-        return doTokenExchange(realm, token, targetAudience, clientId, clientSecret, null);
+        return doTokenExchange(realm, token, null, targetAudience, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String token, String tokenType, String targetAudience,
+            String clientId, String clientSecret) throws Exception {
+        return doTokenExchange(realm, token, tokenType, targetAudience, clientId, clientSecret, null);
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+            String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
+        return doTokenExchange(realm, token, null, targetAudience, clientId, clientSecret, additionalParams);
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String token, String tokenType, String targetAudience,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
@@ -606,7 +616,7 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, tokenType == null ? OAuth2Constants.ACCESS_TOKEN_TYPE : tokenType));
             parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
 
             if (additionalParams != null) {
