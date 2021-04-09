@@ -485,7 +485,7 @@ public class SAMLEndpoint {
                         .clockSkewInMillis(1000 * config.getAllowedClockSkew());
                 try {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
-                    cvb.addAllowedAudience(URI.create(issuerURL));
+                    // cvb.addAllowedAudience(URI.create(issuerURL));
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
                     logger.error("issuerURL");
                     logger.error(issuerURL);
