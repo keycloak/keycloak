@@ -5,7 +5,7 @@ With {project_name}, you can store tokens and responses from the authentication 
 
 Application code can retrieve these tokens and responses to import extra user information or to request the external IDP securely. For example, an application can use the Google token to use other Google services and REST APIs. To retrieve a token for a particular identity provider, send a request as follows:
 
-[source, subs="attributes"]
+[source,subs="attributes+"]
 ----
 GET /auth/realms/{realm}/broker/{provider_alias}/token HTTP/1.1
 Host: localhost:8080

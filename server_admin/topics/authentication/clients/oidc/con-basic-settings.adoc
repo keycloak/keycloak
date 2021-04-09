@@ -15,7 +15,8 @@ the name, set up a replacement string value. For example, a string value such as
 
 *Consent Required*:: When turned on, users see a consent page that they can use to grant access to that application.  It will also display metadata so the user knows the exact information that the client can access.
 
-[[_access-type]]*Access Type*:: The type of OIDC client.
+[[_access-type]]
+*Access Type*:: The type of OIDC client.
 
 _Confidential_::
   For server-side clients that perform browser logins and require client secrets when making an Access Token Request. This setting should be used for server-side applications.
@@ -34,7 +35,7 @@ _Bearer-only_::
 
 *OAuth 2.0 Device Authorization Grant Enabled*
 
-If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Device Authorization Grant>>.
+If this is on, clients are allowed to use the OIDC xref:con-oidc-auth-flows_server_administration_guide[Device Authorization Grant].
 
 *Root URL*:: This value adds a prefix to any configured URLS that {project_name} uses.
 

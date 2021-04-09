@@ -11,7 +11,7 @@ image:images/openshift-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
 . Register your client using the `oc` command-line tool.
 +
-[source, subs="attributes"]
+[source,subs="attributes+"]
 ----
 $ oc create -f <(echo '
 kind: OAuthClient
@@ -24,6 +24,7 @@ redirectURIs:
 grantMethod: prompt <4>
 ')
 ----
+
 <1> The `name` of your OAuth client. Passed as `client_id` request parameter when making requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token`.
 <2> The `secret` {project_name} uses for the `client_secret` request parameter.
 <3> The `redirect_uri` parameter specified in requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token` must be equal to (or prefixed by) one of the URIs in `redirectURIs`. You can obtain this from the *Redirect URI* field in the Identity Provider screen
@@ -42,7 +43,7 @@ grantMethod: prompt <4>
 .Procedure
 . Run the following command on the command line and note the OpenShift 4 API URL output.
 +
-[source, subs="attributes"]
+[source,subs="attributes+"]
 ----
 curl -s -k -H "Authorization: Bearer $(oc whoami -t)" \https://<openshift-user-facing-api-url>/apis/config.openshift.io/v1/infrastructures/cluster | jq ".status.apiServerURL"
 ----
@@ -56,7 +57,7 @@ image:images/openshift-4-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
 . Register your client using the `oc` command-line tool.
 +
-[source, subs="attributes"]
+[source, subs="attributes+"]
 ----
 $ oc create -f <(echo '
 kind: OAuthClient
