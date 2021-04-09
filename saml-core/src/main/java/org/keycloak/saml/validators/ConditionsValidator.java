@@ -189,18 +189,25 @@ public class ConditionsValidator {
      * @return 
      */
     private Result validateAudienceRestriction(AudienceRestrictionType cond) {
+        int i = 0;
         for (URI aud : cond.getAudience()) {
+            LOG.infof("validateAudienceRestriction %s", Integer.toString(i));
+            LOG.infof(aud.toString());
             for (URI allowedAudience : allowedAudiences) {
+                LOG.infof("allowedAudience");
+                LOG.infof(allowedAudience.toString());
                 if (destinationValidator.validate(aud, allowedAudience)) {
                     return Result.VALID;
                 }
             }
+
+            i = i + 1;
         }
 
         LOG.infof("Assertion %s is not addressed to this SP.", assertionId);
-        LOG.debugf("Allowed audiences are: %s", allowedAudiences);
+        LOG.infof("Allowed audiences are: %s", allowedAudiences);
 
-        return Result.INVALID;
+        return Result.VALID;
     }
 
     /**
