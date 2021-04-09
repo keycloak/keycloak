@@ -268,17 +268,23 @@ export function KeycloakDataTable<T>({
       );
     } else {
       data![rowIndex].selected = isSelected;
+
       setRows([...rows!]);
     }
+
+    // Keeps selected items when paginating
     const difference = _.differenceBy(
       selected,
       data!.map((row) => row.data),
       "id"
     );
+
+    // Selected rows are any rows previously selected from a different page, plus current page selections
     const selectedRows = [
       ...difference,
       ...data!.filter((row) => row.selected).map((row) => row.data),
     ];
+
     setSelected(selectedRows);
     onSelect!(selectedRows);
   };
