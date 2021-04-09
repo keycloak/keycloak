@@ -52,19 +52,21 @@ export const AddServiceAccountModal = ({
   const errorHandler = useErrorHandler();
 
   const [clients, setClients] = useState<ClientRole[]>([]);
+  const [name, setName] = useState<string>();
   const [searchToggle, setSearchToggle] = useState(false);
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
   const [selectedClients, setSelectedClients] = useState<ClientRole[]>([]);
-  const [selectedRows, setSelectedRows] = useState<Row[]>();
+  const [selectedRows, setSelectedRows] = useState<Row[]>([]);
 
   useEffect(
     () =>
       asyncStateFetch(
         async () => {
           const clients = await adminClient.clients.find();
+          setName(clients.find((client) => client.id === clientId)?.clientId);
           return (
             await Promise.all(
               clients.map(async (client) => {
@@ -171,7 +173,9 @@ export const AddServiceAccountModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("assignRolesTo", { client: clientId })}
+      title={t("assignRolesTo", {
+        client: name,
+      })}
       isOpen={true}
       onClose={onClose}
       actions={[
@@ -181,7 +185,7 @@ export const AddServiceAccountModal = ({
           isDisabled={selectedRows?.length === 0}
           variant="primary"
           onClick={() => {
-            onAssign(selectedRows!);
+            onAssign(selectedRows);
             onClose();
           }}
         >
@@ -190,7 +194,7 @@ export const AddServiceAccountModal = ({
         <Button
           data-testid="cancel"
           key="cancel"
-          variant="secondary"
+          variant="link"
           onClick={onClose}
         >
           {t("common:cancel")}
