@@ -108,9 +108,10 @@ You can also find these endpoints under "OpenID Endpoint Configuration" in your 
 
 /realms/{realm-name}/protocol/openid-connect/auth::
   This is the URL endpoint for obtaining a temporary code in the Authorization Code Flow or for obtaining tokens via the
-  Implicit Flow, Direct Grants, or Client Grants.
+  Implicit Flow or Hybrid Flow.
 /realms/{realm-name}/protocol/openid-connect/token::
-  This is the URL endpoint for the Authorization Code Flow to turn a temporary code into a token.
+  This is the URL endpoint for the Authorization Code Flow to turn a temporary code into a token, or for obtaining tokens
+  directly via Resource Owner Password Credentials (Direct Access Grants) or Client Credentials.
 /realms/{realm-name}/protocol/openid-connect/logout::
   This is the URL endpoint for performing logouts.
 /realms/{realm-name}/protocol/openid-connect/userinfo::
