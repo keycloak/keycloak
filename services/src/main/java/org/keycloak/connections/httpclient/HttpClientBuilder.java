@@ -279,6 +279,7 @@ public class HttpClientBuilder {
             }
 
             RequestConfig requestConfig = RequestConfig.custom()
+                    .setExpectContinueEnabled(true)
                     .setConnectTimeout((int) establishConnectionTimeout)
                     .setSocketTimeout((int) socketTimeout).build();
 
