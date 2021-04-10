@@ -68,6 +68,7 @@ public enum BrowserSecurityHeaders {
         dh.put(X_ROBOTS_TAG.getKey(), X_ROBOTS_TAG.getDefaultValue());
         dh.put(X_XSS_PROTECTION.getKey(), X_XSS_PROTECTION.getDefaultValue());
         dh.put(STRICT_TRANSPORT_SECURITY.getKey(), STRICT_TRANSPORT_SECURITY.getDefaultValue());
+        dh.put(REFERRER_POLICY.getKey(), REFERRER_POLICY.getDefaultValue());
 
         realmDefaultHeaders = Collections.unmodifiableMap(dh);
     }
