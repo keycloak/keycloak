@@ -52,6 +52,16 @@ Note that you should configure your client in the {project_name} Admin Console w
 The Admin URL will make callbacks to the Admin URL to do things like backchannel logout.
 So, the Admin URL in this example should be `http[s]://hostname/{context-root}/keycloak`.
 
+If you need to customize the session ID mapper, you can configure the fully qualified name of the class in the Filter init-param keycloak.config.idMapper. Session ID mapper is a mapper that is used to map user IDs and session IDs. By default org.keycloak.adapters.spi.InMemorySessionIdMapper is configured.
+
+[source,xml]
+----
+<init-param>
+    <param-name>keycloak.config.idMapper</param-name>
+    <param-value>org.keycloak.adapters.spi.InMemorySessionIdMapper</param-value>
+</init-param>
+----
+
 The {project_name} filter has the same configuration parameters as the other adapters except you must define them as filter init params instead of context params.
 
 To use this filter, include this maven artifact in your WAR poms:
