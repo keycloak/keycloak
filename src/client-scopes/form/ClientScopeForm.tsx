@@ -155,9 +155,22 @@ export const ClientScopeForm = () => {
                   />
                 }
                 fieldId="kc-description"
+                validated={
+                  errors.description
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
+                helperTextInvalid={t("common:maxLength", { length: 255 })}
               >
                 <TextInput
-                  ref={register}
+                  ref={register({
+                    maxLength: 255,
+                  })}
+                  validated={
+                    errors.description
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
                   type="text"
                   id="kc-description"
                   name="description"
