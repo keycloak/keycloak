@@ -80,10 +80,12 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
             channelRequest.setConsentRequired(client.isConsentRequired());
             channelRequest.setAcrValues(request.getAcrValues());
 
-            int status = SimpleHttp.doPost(httpAuthenticationChannelUri, session)
+            SimpleHttp simpleHttp = SimpleHttp.doPost(httpAuthenticationChannelUri, session)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .json(channelRequest)
-                    .auth(createBearerToken(request, client)).asStatus();
+                    .auth(createBearerToken(request, client));
+ 
+            int status = completeDecoupledAuthnRequest(simpleHttp, channelRequest).asStatus();
 
             if (status == Status.CREATED.getStatusCode()) {
                 return true;
@@ -116,6 +118,13 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         if (!httpAuthenticationChannelUri.startsWith("http://") && !httpAuthenticationChannelUri.startsWith("https://")) {
             throw new RuntimeException("Authentication Channel Request URI not set properly.");
         }
+    }
+
+    /**
+     * Extension point to allow subclass to override this method in order to add data to post to decoupled server.
+     */
+    protected SimpleHttp completeDecoupledAuthnRequest(SimpleHttp simpleHttp, AuthenticationChannelRequest channelRequest) {
+        return simpleHttp;
     }
 
     @Override
