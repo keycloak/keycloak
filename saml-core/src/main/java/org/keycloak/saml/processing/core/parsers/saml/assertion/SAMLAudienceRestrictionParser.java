@@ -22,6 +22,7 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
 
