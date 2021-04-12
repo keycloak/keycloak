@@ -541,7 +541,7 @@ public class TestingOIDCEndpointsApplicationResource {
 
         // optional
         // for testing purpose
-        if (request.getBindingMessage().equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
+        if (request.getBindingMessage() != null && request.getBindingMessage().equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
         try {
             authenticationChannelRequests.put(new TestAuthenticationChannelRequest(request, rawBearerToken));
         } catch (InterruptedException e) {

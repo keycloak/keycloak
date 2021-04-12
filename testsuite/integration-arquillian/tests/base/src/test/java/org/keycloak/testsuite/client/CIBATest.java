@@ -476,7 +476,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, "urn:mace:incommon:iap:silver urn:mace:incommon:iap:gold");
             Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
             Assert.assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
         } finally {

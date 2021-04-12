@@ -89,6 +89,9 @@ public class AuthenticationRequest extends JsonWebToken {
     @JsonProperty(CibaGrantType.BINDING_MESSAGE)
     protected String bindingMessage;
 
+    @JsonProperty(OAuth2Constants.ACR_VALUES)
+    protected String acrValues;
+
     @JsonIgnore
     protected ClientModel client;
 
@@ -143,6 +146,14 @@ public class AuthenticationRequest extends JsonWebToken {
 
     public void setBindingMessage(String binding_message) {
         this.bindingMessage = binding_message;
+    }
+
+    public String getAcrValues() {
+        return acrValues;
+    }
+
+    public void setAcrValues(String acrValues) {
+        this.acrValues = acrValues;
     }
 
     /**

@@ -20,6 +20,8 @@
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 
 /**
@@ -35,6 +37,9 @@ public class AuthenticationChannelRequest {
 
     @JsonProperty(CibaGrantType.IS_CONSENT_REQUIRED)
     private Boolean consentRequired;
+
+    @JsonProperty(OAuth2Constants.ACR_VALUES)
+    private String acrValues;
 
     private String scope;
 
@@ -60,6 +65,14 @@ public class AuthenticationChannelRequest {
 
     public Boolean getConsentRequired() {
         return consentRequired;
+    }
+
+    public String getAcrValues() {
+        return acrValues;
+    }
+
+    public void setAcrValues(String acrValues) {
+        this.acrValues = acrValues;
     }
 
     public void setScope(String scope) {

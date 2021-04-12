@@ -713,7 +713,7 @@ public class OAuthClient {
         return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, bindingMessage);
     }
 
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage) throws Exception {
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
 
@@ -722,7 +722,8 @@ public class OAuthClient {
 
             List<NameValuePair> parameters = new LinkedList<>();
             if (userid != null) parameters.add(new BasicNameValuePair(LOGIN_HINT_PARAM, userid));
-            parameters.add(new BasicNameValuePair(BINDING_MESSAGE, bindingMessage));
+            if (bindingMessage != null) parameters.add(new BasicNameValuePair(BINDING_MESSAGE, bindingMessage));
+            if (acrValues != null) parameters.add(new BasicNameValuePair(OAuth2Constants.ACR_VALUES, acrValues));
             if (scope != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID + " " + scope));
             } else {
@@ -739,6 +740,10 @@ public class OAuthClient {
 
             return new AuthenticationRequestAcknowledgement(client.execute(post));
         }
+    }
+
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage) throws Exception {
+        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, null);
     }
 
     public int doAuthenticationChannelCallback(String requestToken, String authResult) throws Exception {

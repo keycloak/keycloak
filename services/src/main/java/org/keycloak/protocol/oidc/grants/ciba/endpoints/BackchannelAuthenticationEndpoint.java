@@ -156,7 +156,9 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
         request.setScope(scope);
 
-        request.setBindingMessage(params.getFirst(CibaGrantType.BINDING_MESSAGE));
+        // optional parameters
+        if (params.getFirst(CibaGrantType.BINDING_MESSAGE) != null) request.setBindingMessage(params.getFirst(CibaGrantType.BINDING_MESSAGE));
+        if (params.getFirst(OAuth2Constants.ACR_VALUES) != null) request.setAcrValues(params.getFirst(OAuth2Constants.ACR_VALUES));
 
         CibaConfig policy = realm.getCibaPolicy();
 
@@ -190,13 +192,6 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         if (userCode != null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User code not supported",
                     Response.Status.BAD_REQUEST);
-        }
-
-        String acrValues = params.getFirst(OAuth2Constants.ACR_VALUES);
-
-        if (acrValues != null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
-                    "Authentication context class references not supported.", Response.Status.BAD_REQUEST);
         }
 
         return request;
