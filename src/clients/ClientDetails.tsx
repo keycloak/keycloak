@@ -11,7 +11,7 @@ import {
   Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -44,6 +44,7 @@ import { RolesList } from "../realm-roles/RolesList";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AdvancedTab } from "./AdvancedTab";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -122,9 +123,12 @@ export type SaveOptions = {
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
-
   const { addAlert } = useAlerts();
+  const handleError = useErrorHandler();
+  const { realm } = useRealm();
+
+  const history = useHistory();
+
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const toggleDownloadDialog = () => setDownloadDialogOpen(!downloadDialogOpen);
   const [changeAuthenticatorOpen, setChangeAuthenticatorOpen] = useState(false);
@@ -151,6 +155,7 @@ export const ClientDetails = () => {
       try {
         await adminClient.clients.del({ id: clientId });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
+        history.push(`/${realm}/clients`);
       } catch (error) {
         addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
       }
