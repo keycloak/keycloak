@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -47,6 +49,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
@@ -54,6 +57,11 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhotozExampleAdapterTest {
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Test
     public void testUserCanCreateAndDeleteAlbum() throws Exception {

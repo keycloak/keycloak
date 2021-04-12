@@ -18,6 +18,7 @@ package org.keycloak.services;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactoryProvider;
 import org.keycloak.component.ComponentFactoryProviderFactory;
@@ -96,7 +97,12 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         serverStartupTimestamp = System.currentTimeMillis();
 
         ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
-        spis.addAll(pm.loadSpis());
+        for (Spi spi : pm.loadSpis()) {
+            if (spi.isEnabled()) {
+                spis.add(spi);
+            }
+        }
+
         factoriesMap = loadFactories(pm);
 
         synchronized (ProviderManagerRegistry.SINGLETON) {

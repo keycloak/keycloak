@@ -25,6 +25,7 @@ import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -47,6 +48,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -439,7 +441,11 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
-        assertEquals(Boolean.TRUE, rep.isUserManagedAccessAllowed());
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            assertEquals(Boolean.TRUE, rep.isUserManagedAccessAllowed());
+        } else {
+            assertEquals(Boolean.FALSE, rep.isUserManagedAccessAllowed());
+        }
 
         // second change
         rep.setRegistrationAllowed(false);

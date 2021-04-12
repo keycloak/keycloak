@@ -38,6 +38,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.List;
@@ -49,6 +50,11 @@ import java.util.List;
 public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
     protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void setDefaultPageUriParameters() {

@@ -52,6 +52,7 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
@@ -2237,7 +2238,7 @@ public class RepresentationToModel {
     }
 
     public static void importAuthorizationSettings(ClientRepresentation clientRepresentation, ClientModel client, KeycloakSession session) {
-        if (Boolean.TRUE.equals(clientRepresentation.getAuthorizationServicesEnabled())) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && Boolean.TRUE.equals(clientRepresentation.getAuthorizationServicesEnabled())) {
             AuthorizationProviderFactory authorizationFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
             AuthorizationProvider authorization = authorizationFactory.create(session, client.getRealm());
 

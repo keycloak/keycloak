@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -186,7 +187,7 @@ public class ClientsResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
                 authorizationService.enable(true);

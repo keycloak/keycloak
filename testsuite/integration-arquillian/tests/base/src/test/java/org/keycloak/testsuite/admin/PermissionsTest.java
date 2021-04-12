@@ -21,11 +21,13 @@ import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -58,6 +60,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -99,6 +102,10 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Rule public GreenMailRule greenMailRule = new GreenMailRule();
 
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+    }
 
     // Remove all realms before first run
     @Override
