@@ -191,11 +191,9 @@ public class ConditionsValidator {
     private Result validateAudienceRestriction(AudienceRestrictionType cond) {
         int i = 0;
         for (URI aud : cond.getAudience()) {
-            LOG.infof("validateAudienceRestriction %s", Integer.toString(i));
-            LOG.infof(aud.toString());
+            LOG.debugf("Try to validate audienceRestriction at loop number %s", Integer.toString(i));
+            LOG.debugf("audienceRestriction value: " + aud.toString());
             for (URI allowedAudience : allowedAudiences) {
-                LOG.infof("allowedAudience");
-                LOG.infof(allowedAudience.toString());
                 if (destinationValidator.validate(aud, allowedAudience)) {
                     return Result.VALID;
                 }

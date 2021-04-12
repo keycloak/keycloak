@@ -487,22 +487,18 @@ public class SAMLEndpoint {
                         .clockSkewInMillis(1000 * config.getAllowedClockSkew());
                 try {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
-                    logger.error("issuerURL 1");
                     cvb.addAllowedAudience(URI.create(URLEncoder.encode(issuerURL, "UTF-8")));
-                    logger.error("issuerURL 2");
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
                     if (responseType.getDestination() != null) {
-                        logger.error("issuerURL 3");
                         cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                     }
-                    logger.error("issuerURL 4");
                 } catch (IllegalArgumentException ex) {
-                    logger.error("IllegalArgumentException when create issuerURL.");
-                    logger.error(ex);
+                    logger.debugf("IllegalArgumentException was thrown when create URI.");
+                    logger.debugf(ex);
                     // warning has been already emitted in DeploymentBuilder
                 } catch (UnsupportedEncodingException ex) {
-                    logger.error("UnsupportedEncodingException when encode issuerURL.");
-                    logger.error(ex);
+                    logger.debugf("UnsupportedEncodingException was thrown when encode URI");
+                    logger.debugf(ex);
                 }
 
                 if (! cvb.build().isValid()) {

@@ -377,12 +377,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                   // getDestination has been validated to match request URL already so it matches SAML endpoint
                   cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                 }
-                log.error("AbstractSamlAuthenticationHandler audience");
-                log.error(deployment.getEntityID());
-                log.error(deployment.getDestination());
             } catch (IllegalArgumentException ex) {
-                log.error("AbstractSamlAuthenticationHandler");
-                log.error(ex);
                 // warning has been already emitted in DeploymentBuilder
             }
             if (! cvb.build().isValid()) {
