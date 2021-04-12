@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.hamcrest.Matchers;
@@ -155,7 +156,15 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
         clientPage.viewProfile((ResponseValidator) response -> {
             Object headers = response.get("responseHeaders");
             assertThat(headers, Matchers.notNullValue());
-            assertThat(headers.toString(), Matchers.containsString("WWW-Authenticate: UMA"));
+
+            List<String> headersList = Arrays.asList(headers.toString().split("\r\n"));
+            String wwwAuthenticate = headersList.stream()
+                    .filter(s -> s.toLowerCase().startsWith("www-authenticate:"))
+                    .findFirst()
+                    .orElse(null);
+
+            assertThat(wwwAuthenticate, Matchers.notNullValue());
+            assertThat(wwwAuthenticate, Matchers.containsString("UMA"));
         });
     }
 
