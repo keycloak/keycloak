@@ -19,6 +19,8 @@ package org.keycloak.saml.processing.core.parsers.saml.assertion;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
@@ -59,12 +61,15 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                     LOGGER.warn("elementDetail");
                     LOGGER.warn(elementDetail.toString());
                     LOGGER.warn("SAMLAudienceRestrictionParser 2");
-                    target.addAudience(URI.create("https://localhost/keycloak/auth/realms/opendata/broker/nias/endpoint"));
-                    LOGGER.warn("SAMLAudienceRestrictionParser success");
+                    target.addAudience(URI.create(URLEncoder.encode(audienceValue, "UTF-8")));
+                    LOGGER.warn("SAMLAudienceRestrictionParser with the value");
+                    LOGGER.warn(URI.create(URLEncoder.encode(audienceValue, "UTF-8")));
                 } catch (IllegalArgumentException e) {
                     // Ignore parse error
-                    LOGGER.warn("SAMLAudienceRestrictionParser IllegalArgumentException 1");
-                    LOGGER.warn("SAMLAudienceRestrictionParser IllegalArgumentException success");
+                    LOGGER.warn("IllegalArgumentException when create URI for audience element");
+                } catch (UnsupportedEncodingException e) {
+                    // Ignore encode error
+                    LOGGER.warn("UnsupportedEncodingException when encode audience element");
                 }
                 break;
 

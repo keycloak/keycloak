@@ -112,6 +112,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateException;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -485,24 +487,24 @@ public class SAMLEndpoint {
                         .clockSkewInMillis(1000 * config.getAllowedClockSkew());
                 try {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
-                    // cvb.addAllowedAudience(URI.create(issuerURL));
+                    logger.error("issuerURL 1");
+                    cvb.addAllowedAudience(URI.create(URLEncoder.encode(issuerURL, "UTF-8")));
+                    logger.error("issuerURL 2");
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
-                    logger.error("issuerURL");
-                    logger.error(issuerURL);
-                    logger.error("responseType.getDestination()");
-                    logger.error(responseType.getDestination());
                     if (responseType.getDestination() != null) {
+                        logger.error("issuerURL 3");
                         cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                     }
+                    logger.error("issuerURL 4");
                 } catch (IllegalArgumentException ex) {
-                    logger.error("IllegalArgumentException");
+                    logger.error("IllegalArgumentException when create issuerURL.");
                     logger.error(ex);
-                    logger.error("issuerURL");
-                    logger.error(getEntityId(session.getContext().getUri(), realm));
-                    logger.error("responseType.getDestination()");
-                    logger.error(responseType.getDestination());
                     // warning has been already emitted in DeploymentBuilder
+                } catch (UnsupportedEncodingException ex) {
+                    logger.error("UnsupportedEncodingException when encode issuerURL.");
+                    logger.error(ex);
                 }
+
                 if (! cvb.build().isValid()) {
                     logger.error("Assertion expired.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
