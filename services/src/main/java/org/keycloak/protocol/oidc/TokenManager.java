@@ -763,7 +763,7 @@ public class TokenManager {
             }
 
             if (clientSessionMaxLifespan > 0) {
-                int clientSessionExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                int clientSessionExpiration = clientSession.getTimestamp() + clientSessionMaxLifespan;
                 return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
             }
         }
