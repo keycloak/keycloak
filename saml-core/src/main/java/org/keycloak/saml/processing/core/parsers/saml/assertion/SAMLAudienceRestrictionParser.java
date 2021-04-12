@@ -64,7 +64,7 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                     LOGGER.warn("SAMLAudienceRestrictionParser 2");
                     target.addAudience(URI.create(URLEncoder.encode(audienceValue, "UTF-8")));
                     LOGGER.warn("SAMLAudienceRestrictionParser with the value");
-                    LOGGER.warn(URI.create(URLEncoder.encode(audienceValue, "UTF-8")));
+                    LOGGER.warn(URI.create(URLEncoder.encode(audienceValue, "UTF-8")).toString());
                 } catch (IllegalArgumentException e) {
                     // Ignore parse error
                     LOGGER.warn("IllegalArgumentException when create URI for audience element");
