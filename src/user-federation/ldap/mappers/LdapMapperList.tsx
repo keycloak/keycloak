@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertVariant, Button, ToolbarItem } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  Button,
+  ToolbarItem,
+} from "@patternfly/react-core";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { useErrorHandler } from "react-error-boundary";
 import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
@@ -21,6 +25,7 @@ export const LdapMapperList = () => {
   const { url } = useRouteMatch();
   const handleError = useErrorHandler();
   const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
@@ -80,6 +85,19 @@ export const LdapMapperList = () => {
     </>
   );
 
+  const deleteMapper = async (mapper: ComponentRepresentation) => {
+    try {
+      await adminClient.components.del({
+        id: mapper.id!,
+      });
+      // refresh();
+      addAlert(t("mappingDelete"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("mappingDeleteError", { error }), AlertVariant.danger);
+    }
+    return true;
+  };
+
   return (
     <>
       <KeycloakDataTable
@@ -101,19 +119,9 @@ export const LdapMapperList = () => {
         actions={[
           {
             title: t("common:delete"),
-            onRowClick: async (mapper) => {
-              try {
-                addAlert(
-                  // t("common:mappingDeletedError"),
-                  "Delete functionality not implemented yet!",
-                  AlertVariant.success
-                );
-              } catch (error) {
-                addAlert(
-                  t("common:mappingDeletedError", { error }),
-                  AlertVariant.danger
-                );
-              }
+            onRowClick: async (mapper: ComponentRepresentation) => {
+              await deleteMapper(mapper);
+              refresh();
               return true;
             },
           },
