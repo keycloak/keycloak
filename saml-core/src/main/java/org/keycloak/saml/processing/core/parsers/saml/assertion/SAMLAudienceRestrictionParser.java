@@ -54,8 +54,6 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                 try {
                     LOGGER.warn("SAMLAudienceRestrictionParser 2");
                     LOGGER.warn(xmlEventReader.toString());
-                    LOGGER.warn("target");
-                    LOGGER.warn(target);
                     LOGGER.warn("element");
                     LOGGER.warn(element.toString());
                     LOGGER.warn("elementDetail");
