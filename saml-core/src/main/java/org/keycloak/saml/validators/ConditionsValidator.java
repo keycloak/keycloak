@@ -203,7 +203,7 @@ public class ConditionsValidator {
         }
 
         LOG.infof("Assertion %s is not addressed to this SP.", assertionId);
-        LOG.infof("Allowed audiences are: %s", allowedAudiences);
+        LOG.debugf("Allowed audiences are: %s", allowedAudiences);
 
         return Result.INVALID;
     }

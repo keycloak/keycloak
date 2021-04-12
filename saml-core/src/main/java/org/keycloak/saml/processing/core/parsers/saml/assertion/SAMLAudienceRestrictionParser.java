@@ -55,22 +55,15 @@ public class SAMLAudienceRestrictionParser extends AbstractStaxSamlAssertionPars
                 StaxParserUtil.advance(xmlEventReader);
                 String audienceValue = StaxParserUtil.getElementText(xmlEventReader);
                 try {
-                    LOGGER.warn("SAMLAudienceRestrictionParser 2");
-                    LOGGER.warn(xmlEventReader.toString());
-                    LOGGER.warn("element");
-                    LOGGER.warn(element.toString());
-                    LOGGER.warn("elementDetail");
-                    LOGGER.warn(elementDetail.toString());
-                    LOGGER.warn("SAMLAudienceRestrictionParser 2");
                     target.addAudience(URI.create(URLEncoder.encode(audienceValue, "UTF-8")));
-                    LOGGER.warn("SAMLAudienceRestrictionParser with the value");
-                    LOGGER.warn(URI.create(URLEncoder.encode(audienceValue, "UTF-8")).toString());
                 } catch (IllegalArgumentException e) {
                     // Ignore parse error
-                    LOGGER.warn("IllegalArgumentException when create URI for audience element");
+                    LOGGER.debug("IllegalArgumentException when create URI for audience element");
+                    LOGGER.debug(e.toString());
                 } catch (UnsupportedEncodingException e) {
                     // Ignore encode error
-                    LOGGER.warn("UnsupportedEncodingException when encode audience element");
+                    LOGGER.debug("UnsupportedEncodingException when encode audience element");
+                    LOGGER.debug(e.toString());
                 }
                 break;
 
