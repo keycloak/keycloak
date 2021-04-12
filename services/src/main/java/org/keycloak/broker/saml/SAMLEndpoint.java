@@ -493,12 +493,12 @@ public class SAMLEndpoint {
                         cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                     }
                 } catch (IllegalArgumentException ex) {
-                    logger.error("IllegalArgumentException was thrown when create URI.");
-                    logger.error(ex);
+                    logger.debug("IllegalArgumentException was thrown when create URI.");
+                    logger.debug(ex);
                     // warning has been already emitted in DeploymentBuilder
                 } catch (UnsupportedEncodingException ex) {
-                    logger.error("UnsupportedEncodingException was thrown when encode URI");
-                    logger.error(ex);
+                    logger.debug("UnsupportedEncodingException was thrown when encode URI");
+                    logger.debug(ex);
                 }
 
                 if (! cvb.build().isValid()) {
