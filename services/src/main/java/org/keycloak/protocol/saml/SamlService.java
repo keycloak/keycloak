@@ -550,7 +550,12 @@ public class SamlService extends AuthorizationEndpointBase {
          */
         protected URI getExpectedDestinationUri(final KeycloakSession session) {
             final String realmName = session.getContext().getRealm().getName();
+            logger.info("getExpectedDestinationUri");
+            logger.info(realmName);
+            logger.info("getExpectedDestinationUri");
             final URI baseUri = session.getContext().getUri().getBaseUri();
+            logger.info(baseUri);
+            logger.info(Urls.samlRequestEndpoint(baseUri, realmName).toString());
             return Urls.samlRequestEndpoint(baseUri, realmName);
         }
     }
