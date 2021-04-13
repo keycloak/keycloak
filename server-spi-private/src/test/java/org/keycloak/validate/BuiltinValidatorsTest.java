@@ -3,6 +3,7 @@ package org.keycloak.validate;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.validate.builtin.LengthValidator;
 import org.keycloak.validate.builtin.UriValidator;
 
 import java.net.URI;
@@ -111,5 +112,26 @@ public class BuiltinValidatorsTest {
 
         Assert.assertFalse(Validators.uriValidator().
                 validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
+    }
+
+    @Test
+    public void validateValidationConfig() {
+
+        ValidatorConfig config = new ValidatorConfig(ImmutableMap.of("min",new Object(),"max","invalid"));
+
+        ValidationResult result = Validators.validatorConfigValidator().validate(config, LengthValidator.ID).toResult();
+
+        Assert.assertFalse(result.isValid());
+        ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+        ValidationError error0 = errors[0];
+        Assert.assertNotNull(error0);
+        Assert.assertEquals(LengthValidator.ID, error0.getValidatorId());
+        Assert.assertEquals("min", error0.getInputHint());
+
+        ValidationError error1 = errors[1];
+        Assert.assertNotNull(error1);
+        Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
+        Assert.assertEquals("max", error1.getInputHint());
     }
 }

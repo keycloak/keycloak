@@ -25,6 +25,7 @@ import org.keycloak.validate.builtin.NotEmptyValidator;
 import org.keycloak.validate.builtin.NumberValidator;
 import org.keycloak.validate.builtin.PatternValidator;
 import org.keycloak.validate.builtin.UriValidator;
+import org.keycloak.validate.builtin.ValidatorConfigValidator;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,7 +51,8 @@ public class Validators {
                 EmailValidator.INSTANCE,
                 NotBlankValidator.INSTANCE,
                 PatternValidator.INSTANCE,
-                NumberValidator.INSTANCE
+                NumberValidator.INSTANCE,
+                ValidatorConfigValidator.INSTANCE
         );
 
         INTERNAL_VALIDATORS = list.stream().collect(Collectors.toMap(CompactValidator::getId, v -> v));
@@ -104,25 +106,6 @@ public class Validators {
         return validateConfig(session, id, config);
     }
 
-//    Note, this is just here to demonstrate type specific Validator implementations and will be removed during final polishing.
-
-//   public interface ClientModelValidator {
-//      boolean hasValidUrls();
-//   }
-
-//    public ClientModelValidator validator(ClientModel client) {
-//        return new ClientModelValidator() {
-//            @Override
-//            public boolean hasValidUrls() {
-//                ValidationContext context = new ValidationContext();
-//                for (String uri : client.getRedirectUris()) {
-//                    uri().validate(uri, "redirectUri", context);
-//                }
-//                return context.isValid();
-//            }
-//        };
-//    }
-
     /* static import friendly accessor methods for built-in validators */
 
     public static Validator getInternalValidatorById(String id) {
@@ -163,6 +146,10 @@ public class Validators {
 
     public static NumberValidator numberValidator() {
         return NumberValidator.INSTANCE;
+    }
+
+    public static ValidatorConfigValidator validatorConfigValidator() {
+        return ValidatorConfigValidator.INSTANCE;
     }
 
     /**
