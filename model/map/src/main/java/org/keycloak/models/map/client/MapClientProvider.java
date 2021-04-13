@@ -46,6 +46,7 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.ClientScopeModel;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import java.util.HashSet;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapClientProvider<K> implements ClientProvider {
@@ -334,6 +335,22 @@ public class MapClientProvider<K> implements ClientProvider {
                 .filter(Objects::nonNull)
                 .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
                 .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
+    }
+
+    @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
+          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
+
+        try (Stream<MapClientEntity<K>> st = tx.getUpdatedNotRemoved(mcb)) {
+            return st
+              .filter(mce -> mce.getRedirectUris() != null && ! mce.getRedirectUris().isEmpty())
+              .collect(Collectors.toMap(
+                mce -> entityToAdapterFunc(realm).apply(mce),
+                mce -> new HashSet<>(mce.getRedirectUris()))
+              );
+        }
     }
 
     public void preRemove(RealmModel realm, RoleModel role) {

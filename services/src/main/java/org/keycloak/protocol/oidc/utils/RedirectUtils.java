@@ -72,11 +72,12 @@ public class RedirectUtils {
     }
 
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
-        return session.getContext().getRealm().getClientsStream()
-                .filter(client -> client.isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && !client.isBearerOnly() && (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()))
-                .map(c -> resolveValidRedirects(session, c.getRootUrl(), c.getRedirectUris()))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+        RealmModel realm = session.getContext().getRealm();
+        return session.clientStorageManager().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
+          .filter(me -> me.getKey().isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(me.getKey().getProtocol()) && !me.getKey().isBearerOnly() && (me.getKey().isStandardFlowEnabled() || me.getKey().isImplicitFlowEnabled()))
+          .map(me -> resolveValidRedirects(session, me.getKey().getRootUrl(), me.getValue()))
+          .flatMap(Collection::stream)
+          .collect(Collectors.toSet());
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {

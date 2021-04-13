@@ -41,6 +41,7 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         public static final SearchableModelField<ClientModel> ID                 = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<ClientModel> REALM_ID           = new SearchableModelField<>("realmId", String.class);
         public static final SearchableModelField<ClientModel> CLIENT_ID          = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<ClientModel> ENABLED            = new SearchableModelField<>("enabled", Boolean.class);
         public static final SearchableModelField<ClientModel> SCOPE_MAPPING_ROLE = new SearchableModelField<>("scopeMappingRole", String.class);
 
         /**
