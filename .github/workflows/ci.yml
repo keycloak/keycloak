@@ -341,3 +341,58 @@ jobs:
           retention-days: 14
           path: reports-quarkus-cluster-tests.zip
           if-no-files-found: ignore
+
+  quickstarts-tests:
+    name: Quickstarts Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: keycloak/keycloak-quickstarts
+          ref: master # default is "latest"
+
+      - uses: actions/checkout@v2
+        with:
+          path: keycloak
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: cache-1-${{ runner.os }}-m2
+      - name: Cleanup org.keycloak artifacts
+        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
+      - name: Download built keycloak
+        id: download-keycloak
+        uses: actions/download-artifact@v2
+        with:
+          path: ~/.m2/repository/org/keycloak/
+          name: keycloak-artifacts.zip
+
+      - name: Prepare Keycloak
+        run: keycloak/.github/scripts/quickstarts/prepare-server.sh
+
+      - name: Build Quickstarts
+        run: .github/scripts/build-quickstarts.sh
+
+      - name: Start Keycloak
+        run: .github/scripts/start-local-server.sh
+
+      - name: Run tests
+        run: .github/scripts/run-tests.sh
+
+      - name: Archive logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: quickstarts-test-logs
+          retention-days: 2
+          path: |
+            test-logs
+            keycloak.log
