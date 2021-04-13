@@ -34,7 +34,6 @@ import org.keycloak.utils.ServicesUtils;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.ClientScopeModel;
 
@@ -262,6 +261,11 @@ public class ClientStorageManager implements ClientProvider {
             throw new RuntimeException("Federated clients do not support this operation");
         }
         session.clientLocalStorage().removeClientScope(realm, client, clientScope);
+    }
+
+    @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        return session.clientLocalStorage().getAllRedirectUrisOfEnabledClients(realm);
     }
 
     @Override

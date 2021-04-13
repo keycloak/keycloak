@@ -280,6 +280,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        TypedQuery<Map> query = em.createNamedQuery("getAllRedirectUrisOfEnabledClients", Map.class);
+        query.setParameter("realm", realm.getId());
+        return query.getResultStream()
+          .filter(s -> s.get("client") != null)
+          .collect(
+            Collectors.groupingBy(
+              s -> new ClientAdapter(realm, em, session, (ClientEntity) s.get("client")),
+              Collectors.mapping(s -> (String) s.get("redirectUri"), Collectors.toSet())
+            )
+          );
+    }
+
+    @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
         TypedQuery<RoleEntity> query = em.createNamedQuery("getRealmRoles", RoleEntity.class);
         query.setParameter("realm", realm.getId());
