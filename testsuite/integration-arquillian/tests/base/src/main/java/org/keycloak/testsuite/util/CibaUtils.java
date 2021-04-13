@@ -26,6 +26,9 @@ import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.ModelNodeResult;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class CibaUtils {
 
     public static void enableCiba(SuiteContext suiteContext, EnableCiba.PROVIDER_ID provider) throws IOException, CliException, TimeoutException, InterruptedException {

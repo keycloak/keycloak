@@ -532,40 +532,6 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-//    public void testDifferentUserAuthenticated() throws Exception {
-//        ClientResource clientResource = null;
-//        ClientRepresentation clientRep = null;
-//        try {
-//            final String usernameToBeAuthenticated = "nutzername-rot";
-//            final String usernameAuthenticated = "nutzername-gelb";
-//            final String bindingMessage = "BASTION";
-//
-//            // prepare CIBA settings
-//            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
-//            clientRep = clientResource.toRepresentation();
-//            prepareCIBASettings(clientResource, clientRep);
-//            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-//
-//            // user Backchannel Authentication Request
-//            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, usernameToBeAuthenticated, bindingMessage);
-//
-//            // user Authentication Channel Request
-//            AuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest();
-//            Assert.assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
-//            Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
-//
-//            // different user Authentication Channel completed
-//            oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, usernameAuthenticated, authenticationChannelReq.getAuthenticationChannelId(), SUCCEEDED);
-//
-//            // user Token Request
-//            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
-//            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-//            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
-//        } finally {
-//            revertCIBASettings(clientResource, clientRep);
-//        }
-//    }
-
     @Test
     public void testTokenRevocation() throws Exception {
         ClientResource clientResource = null;

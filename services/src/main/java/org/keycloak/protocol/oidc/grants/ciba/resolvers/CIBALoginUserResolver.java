@@ -20,7 +20,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 /**
- * Provides the resolver that several types of receives login hint and returns its corresponding UserModel.
+ * Provides the resolver that converts several types of receives login hint to its corresponding UserModel.
  * Also converts between UserModel and the user identifier that can be recognized by the external entity executing AuthN and AuthZ by AD.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

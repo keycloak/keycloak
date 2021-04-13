@@ -55,15 +55,13 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
 
     @Override
     public boolean requestAuthentication(AuthenticationRequest request, String infoUsedByAuthenticator) {
-        // create JWT formatted/JWS signed/JWE encrypted Authentication Channel ID by the same manner in creating auth_req_id
-        // Authentication Channel ID binds Backchannel Authentication Request with Authentication by AD(Authentication Device).
-        // By including userSessionIdWillBeCreated. keycloak can create UserSession whose ID is userSessionIdWillBeCreated on Authentication Channel Callback Endpoint,
-        // which can bind userSessionIdWillBeCreated (namely, Backchannel Authentication Request) with authenticated UserSession.
-        // By including authId, keycloak can create Authentication Channel Result of Authentication by AD on Authentication Channel Callback Endpoint,
-        // which can bind authId with Authentication Channel Result of Authentication by AD.
-        // By including client_id, Authentication Channel Callback Endpoint can recognize the CD(Consumption Device) who sent Backchannel Authentication Request.
+        // Creates JWT formatted/JWS signed/JWE encrypted Authentication Channel ID by the same manner in creating auth_req_id.
+        // Authentication Channel ID binds Backchannel Authentication Request with Authentication by Authentication Device (AD).
+        // JWE serialized Authentication Channel ID works as a bearer token. It includes client_id 
+        // that can be used on Authentication Channel Callback Endpoint to recognize the Consumption Device (CD)
+        // that sent Backchannel Authentication Request.
 
-        // The following scopes should be displayed on AD(Authentication Device):
+        // The following scopes should be displayed on AD:
         // 1. scopes specified explicitly as query parameter in the authorization request
         // 2. scopes specified implicitly as default client scope in keycloak
 

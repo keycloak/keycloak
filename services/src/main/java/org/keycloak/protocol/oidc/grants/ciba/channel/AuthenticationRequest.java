@@ -1,19 +1,18 @@
 /*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- *  * Copyright 2021  Red Hat, Inc. and/or its affiliates
- *  * and other contributors as indicated by the @author tags.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package org.keycloak.protocol.oidc.grants.ciba.channel;
@@ -43,10 +42,10 @@ import org.keycloak.services.Urls;
 import org.keycloak.util.TokenUtil;
 
 /**
- * <p>Represents an authentication request sent by a consumption device.
+ * <p>Represents an authentication request sent by a consumption device (CD).
  *
- * <p>A authentication request can be serialized to a JWE so that they can be exchanged with authentication devices to communicate
- * and authorize the authentication request made by consumption devices.
+ * <p>A authentication request can be serialized to a JWE so that it can be exchanged with authentication devices (AD)
+ * to communicate and authorize the authentication request made by consumption devices (CDs).
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -80,9 +79,6 @@ public class AuthenticationRequest extends JsonWebToken {
     @JsonProperty(OAuth2Constants.SCOPE)
     protected String scope;
 
-    @JsonProperty(SESSION_STATE)
-    protected String sessionState;
-
     @JsonProperty(AUTH_RESULT_ID)
     protected String authResultId;
 
@@ -104,7 +100,6 @@ public class AuthenticationRequest extends JsonWebToken {
 
     public AuthenticationRequest(KeycloakSession session, UserModel user, ClientModel client) {
         id(KeycloakModelUtils.generateId());
-        setAuthResultId(authResultId);
         issuedNow();
         RealmModel realm = session.getContext().getRealm();
         issuer(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
@@ -122,14 +117,6 @@ public class AuthenticationRequest extends JsonWebToken {
 
     public void setScope(String scope) {
         this.scope = scope;
-    }
-
-    public String getSessionState() {
-        return sessionState;
-    }
-
-    public void setSessionState(String sessionState) {
-        this.sessionState = sessionState;
     }
 
     public String getAuthResultId() {

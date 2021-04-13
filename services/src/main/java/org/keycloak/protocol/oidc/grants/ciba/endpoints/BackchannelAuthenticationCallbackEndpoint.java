@@ -16,8 +16,6 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import static org.keycloak.events.Errors.DIFFERENT_USER_AUTHENTICATED;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -144,14 +142,6 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
         return bearerToken;
     }
-
-    private void cancelRequest(String authReqId) {
-        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        OAuth2DeviceCodeModel userCode = store.getByUserCode(realm, authReqId);
-        store.removeDeviceCode(realm, userCode.getDeviceCode());
-        store.removeUserCode(realm, authReqId);
-    }
-
 
     private void approveRequest(AccessToken authReqId) {
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
