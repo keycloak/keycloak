@@ -66,7 +66,7 @@ public class ServerInfoTest extends AbstractKeycloakTest {
 
         Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
         ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
-        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo().toString());
+        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
     }
 
     @Override

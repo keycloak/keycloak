@@ -36,6 +36,13 @@
         "event-queue": {}
     },
 
+    "serverInfo": {
+        "provider": "${keycloak.serverInfo.provider:jpa}",
+        "map": {
+            "resourcesVersionSeed": "1JZ379bzyOCFA"
+        }
+    },
+
     "realm": {
         "provider": "${keycloak.realm.provider:jpa}"
     },
