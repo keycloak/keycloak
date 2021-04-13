@@ -88,6 +88,15 @@ public class ValidatorTest {
         Assert.assertEquals(inputHint, error.getInputHint());
         Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH, error.getMessage());
         Assert.assertEquals(input, error.getMessageParameters()[0]);
+
+        Assert.assertTrue(result.hasErrorsForValidatorId(LengthValidator.ID));
+        Assert.assertFalse(result.hasErrorsForValidatorId("unknown"));
+
+        Assert.assertEquals(result.getErrors(), result.getErrorsForValidatorId(LengthValidator.ID));
+        Assert.assertEquals(result.getErrors(), result.getErrorsForInputHint(inputHint));
+
+        Assert.assertTrue(result.hasErrorsForInputHint(inputHint));
+        Assert.assertFalse(result.hasErrorsForInputHint("email"));
     }
 
     @Test

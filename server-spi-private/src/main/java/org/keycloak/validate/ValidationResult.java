@@ -24,17 +24,12 @@ import java.util.stream.Collectors;
 /**
  * Denotes the result of a validation.
  */
-public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
+public class ValidationResult {
 
     /**
      * An empty ValidationResult that's valid by default.
      */
-    public static final ValidationResult OK = new ValidationResult(true, Collections.emptySet());
-
-    /**
-     * Holds the validation status.
-     */
-    private final boolean valid;
+    public static final ValidationResult OK = new ValidationResult(Collections.emptySet());
 
     /**
      * Holds the {@link ValidationError ValidationError's} that occurred during validation.
@@ -49,28 +44,7 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
      * @param errors
      */
     public ValidationResult(Set<ValidationError> errors) {
-        this(errors == null || errors.isEmpty(), errors);
-    }
-
-    /**
-     * Creates a new {@link ValidationResult} from the given errors and valid state.
-     *
-     * @param valid
-     * @param errors
-     */
-    public ValidationResult(boolean valid, Set<ValidationError> errors) {
-        this.valid = valid;
         this.errors = errors == null ? Collections.emptySet() : errors;
-    }
-
-    /**
-     * Accepts a {@link Consumer<ValidationResult>} to visit the this current {@link ValidationResult}.
-     *
-     * @param consumer
-     */
-    @Override
-    public void accept(Consumer<ValidationResult> consumer) {
-        consumer.accept(this);
     }
 
     /**
@@ -80,7 +54,7 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
      */
     public void ifNotValidAccept(Consumer<ValidationResult> consumer) {
         if (!isValid()) {
-            accept(consumer);
+            consumer.accept(this);
         }
     }
 
@@ -96,7 +70,7 @@ public class ValidationResult implements Consumer<Consumer<ValidationResult>> {
     }
 
     public boolean isValid() {
-        return valid;
+        return errors.isEmpty();
     }
 
     public Set<ValidationError> getErrors() {

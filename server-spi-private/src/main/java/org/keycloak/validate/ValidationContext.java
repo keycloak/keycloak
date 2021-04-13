@@ -18,10 +18,10 @@ package org.keycloak.validate;
 
 import org.keycloak.models.KeycloakSession;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -44,15 +44,29 @@ public class ValidationContext {
      */
     private final Map<String, Object> attributes;
 
+    /**
+     * Creates a new {@link ValidationContext} without a {@link KeycloakSession}.
+     */
     public ValidationContext() {
         this(null, new LinkedHashSet<>());
     }
 
+    /**
+     * Creates a new {@link ValidationContext} with a {@link KeycloakSession}.
+     *
+     * @param session must not be {@literal null}
+     */
     public ValidationContext(KeycloakSession session) {
         // we deliberately use a LinkedHashSet here to retain the order of errors.
-        this(session, new LinkedHashSet<>());
+        this(Objects.requireNonNull(session), new LinkedHashSet<>());
     }
 
+    /**
+     * Creates a new {@link ValidationContext}.
+     *
+     * @param session
+     * @param errors
+     */
     protected ValidationContext(KeycloakSession session, Set<ValidationError> errors) {
         this.session = session;
         this.errors = errors;
@@ -69,6 +83,11 @@ public class ValidationContext {
         return Validators.validator(session, validatorId);
     }
 
+    /**
+     * Adds an {@link ValidationError}.
+     *
+     * @param error
+     */
     public void addError(ValidationError error) {
         errors.add(error);
     }
@@ -102,7 +121,7 @@ public class ValidationContext {
      * @return
      */
     public ValidationResult toResult() {
-        return new ValidationResult(isValid(), Collections.unmodifiableSet(getErrors()));
+        return new ValidationResult(getErrors());
     }
 
     @Override
