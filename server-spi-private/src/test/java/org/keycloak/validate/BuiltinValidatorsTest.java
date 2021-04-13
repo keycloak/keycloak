@@ -8,6 +8,7 @@ import org.keycloak.validate.builtin.UriValidator;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
@@ -83,7 +84,7 @@ public class BuiltinValidatorsTest {
 
         Validator validator = Validators.patternValidator();
 
-        ValidatorConfig config = configFromMap(Collections.singletonMap("pattern", "^start-.*-end$"));
+        ValidatorConfig config = configFromMap(Collections.singletonMap("pattern", Pattern.compile("^start-.*-end$")));
 
         Assert.assertTrue(validator.validate("start-1234-end", "value", config).isValid());
         Assert.assertFalse(validator.validate("start___end", "value", config).isValid());

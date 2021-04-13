@@ -50,15 +50,10 @@ public class NumberValidator implements CompactValidator {
             // try to parse the string into a number
             String string = (String) input;
             try {
-                Integer.parseInt(string);
-                // okay we have an integer
-            } catch (NumberFormatException nfe) {
-                try {
-                    Double.parseDouble(string);
-                    // okay we have a double
-                } catch (NumberFormatException nfe2) {
-                    context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_NUMBER, input));
-                }
+                Double.parseDouble(string);
+                // okay we have a double
+            } catch (NumberFormatException nfe2) {
+                context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_NUMBER, input));
             }
 
             return context;

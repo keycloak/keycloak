@@ -169,8 +169,6 @@ public class ValidatorConfig {
         Object value = config.get(key);
         if (value instanceof Pattern) {
             return (Pattern) value;
-        } else if (value instanceof String) {
-            return Pattern.compile((String) value);
         }
         return defaultValue;
     }

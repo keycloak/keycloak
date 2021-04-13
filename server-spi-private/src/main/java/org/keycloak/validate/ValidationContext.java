@@ -54,11 +54,11 @@ public class ValidationContext {
     /**
      * Creates a new {@link ValidationContext} with a {@link KeycloakSession}.
      *
-     * @param session must not be {@literal null}
+     * @param session
      */
     public ValidationContext(KeycloakSession session) {
         // we deliberately use a LinkedHashSet here to retain the order of errors.
-        this(Objects.requireNonNull(session), new LinkedHashSet<>());
+        this(session, new LinkedHashSet<>());
     }
 
     /**
