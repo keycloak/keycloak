@@ -602,6 +602,10 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
+            logger.error("destinationValidator.validate");
+            logger.error(session.getContext().getUri().getAbsolutePath());
+            logger.error(statusResponse.getDestination());
+            logger.error(destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination()));
             if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.INVALID_DESTINATION);
