@@ -37,6 +37,13 @@ export const CapabilityConfig = ({
               hasNoPaddingTop
               label={t("clientAuthentication")}
               fieldId="kc-authentication"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:authentication"
+                  forLabel={t("authentication")}
+                  forID="kc-authentication"
+                />
+              }
             >
               <Controller
                 name="publicClient"
@@ -59,6 +66,13 @@ export const CapabilityConfig = ({
               hasNoPaddingTop
               label={t("clientAuthorization")}
               fieldId="kc-authorization"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:authorization"
+                  forLabel={t("authorization")}
+                  forID="kc-authorization"
+                />
+              }
             >
               <Controller
                 name="authorizationServicesEnabled"
@@ -206,6 +220,7 @@ export const CapabilityConfig = ({
               }
               label={t("encryptAssertions")}
               fieldId="kc-encrypt"
+              hasNoPaddingTop
             >
               <Controller
                 name="attributes.saml_encrypt"
@@ -233,6 +248,7 @@ export const CapabilityConfig = ({
               }
               label={t("clientSignature")}
               fieldId="kc-client-signature"
+              hasNoPaddingTop
             >
               <Controller
                 name="attributes.saml_client_signature"

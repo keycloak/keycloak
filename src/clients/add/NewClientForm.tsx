@@ -7,6 +7,7 @@ import {
   WizardFooter,
   WizardContextConsumer,
   Button,
+  WizardStepFunctionType,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
@@ -51,6 +52,27 @@ export const NewClientForm = () => {
     }
   };
 
+  const forward = async (onNext: () => void) => {
+    if (await methods.trigger()) {
+      setClient({ ...client, ...methods.getValues() });
+      setShowCapabilityConfig(true);
+      onNext();
+    }
+  };
+
+  const back = () => {
+    setClient({ ...client, ...methods.getValues() });
+    methods.reset({ ...client, ...methods.getValues() });
+  };
+
+  const onGoToStep = (newStep: { id?: string | number }) => {
+    if (newStep.id === "generalSettings") {
+      back();
+    } else {
+      forward(() => {});
+    }
+  };
+
   const Footer = () => (
     <WizardFooter>
       <WizardContextConsumer>
@@ -60,12 +82,8 @@ export const NewClientForm = () => {
               <Button
                 variant="primary"
                 type="submit"
-                onClick={async () => {
-                  if (await methods.trigger()) {
-                    setClient({ ...client, ...methods.getValues() });
-                    setShowCapabilityConfig(true);
-                    onNext();
-                  }
+                onClick={() => {
+                  forward(onNext);
                 }}
               >
                 {activeStep.name === t("capabilityConfig")
@@ -75,8 +93,7 @@ export const NewClientForm = () => {
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setClient({ ...client, ...methods.getValues() });
-                  methods.reset({ ...client, ...methods.getValues() });
+                  back();
                   onBack();
                 }}
                 isDisabled={activeStep.name === t("generalSettings")}
@@ -126,6 +143,7 @@ export const NewClientForm = () => {
             ]}
             footer={<Footer />}
             onSave={save}
+            onGoToStep={onGoToStep}
           />
         </FormProvider>
       </PageSection>
