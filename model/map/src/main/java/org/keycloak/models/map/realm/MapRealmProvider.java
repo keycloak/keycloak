@@ -342,6 +342,12 @@ public class MapRealmProvider<K> implements RealmProvider {
 
     @Override
     @Deprecated
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        return session.clients().getAllRedirectUrisOfEnabledClients(realm);
+    }
+
+    @Override
+    @Deprecated
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
         session.groups().moveGroup(realm, group, toParent);
     }

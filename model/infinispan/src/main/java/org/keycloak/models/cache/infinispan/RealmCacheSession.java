@@ -569,6 +569,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        return getClientDelegate().getAllRedirectUrisOfEnabledClients(realm);
+    }
+
+    @Override
     public void removeClients(RealmModel realm) {
         getClientDelegate().removeClients(realm);
     }

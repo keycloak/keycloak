@@ -128,9 +128,26 @@ public class LogoutEndpoint {
                            @QueryParam("state") String state,
                            @QueryParam("initiating_idp") String initiatingIdp) {
         String redirect = postLogoutRedirectUri != null ? postLogoutRedirectUri : redirectUri;
+        IDToken idToken = null;
+        if (encodedIdToken != null) {
+            try {
+                idToken = tokenManager.verifyIDTokenSignature(session, encodedIdToken);
+                TokenVerifier.createWithoutSignature(idToken).tokenType(TokenUtil.TOKEN_TYPE_ID).verify();
+            } catch (OAuthErrorException | VerificationException e) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_TOKEN);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+            }
+        }
 
         if (redirect != null) {
-            String validatedUri = RedirectUtils.verifyRealmRedirectUri(session, redirect);
+            String validatedUri;
+            ClientModel client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientById(idToken.getIssuedFor());
+            if (client != null) {
+                validatedUri = RedirectUtils.verifyRedirectUri(session, redirect, client);
+            } else {
+                validatedUri = RedirectUtils.verifyRealmRedirectUri(session, redirect);
+            }
             if (validatedUri == null) {
                 event.event(EventType.LOGOUT);
                 event.detail(Details.REDIRECT_URI, redirect);
@@ -141,17 +158,14 @@ public class LogoutEndpoint {
         }
 
         UserSessionModel userSession = null;
-        IDToken idToken = null;
-        if (encodedIdToken != null) {
+        if (idToken != null) {
             try {
-                idToken = tokenManager.verifyIDTokenSignature(session, encodedIdToken);
-                TokenVerifier.createWithoutSignature(idToken).tokenType(TokenUtil.TOKEN_TYPE_ID).verify();
                 userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
 
                 if (userSession != null) {
                     checkTokenIssuedAt(idToken, userSession);
                 }
-            } catch (OAuthErrorException | VerificationException e) {
+            } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);

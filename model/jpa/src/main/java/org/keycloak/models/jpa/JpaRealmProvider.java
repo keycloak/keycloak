@@ -62,7 +62,6 @@ import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ServerInfoProvider;
 import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
@@ -278,6 +277,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         List<String> roles = query.getResultList();
         if (roles.isEmpty()) return null;
         return session.roles().getRoleById(client.getRealm(), roles.get(0));
+    }
+
+    @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        TypedQuery<Map> query = em.createNamedQuery("getAllRedirectUrisOfEnabledClients", Map.class);
+        query.setParameter("realm", realm.getId());
+        return query.getResultStream()
+          .filter(s -> s.get("client") != null)
+          .collect(
+            Collectors.groupingBy(
+              s -> new ClientAdapter(realm, em, session, (ClientEntity) s.get("client")),
+              Collectors.mapping(s -> (String) s.get("redirectUri"), Collectors.toSet())
+            )
+          );
     }
 
     @Override
