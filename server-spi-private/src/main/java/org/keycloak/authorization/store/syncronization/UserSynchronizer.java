@@ -25,15 +25,12 @@ import java.util.Set;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
@@ -85,26 +82,18 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-        RealmModel realm = event.getRealm();
         UserModel userModel = event.getUser();
 
-        realm.getClientsStream().forEach(clientModel -> {
-            ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
-
-            if (resourceServer != null) {
-                resourceStore.findByOwner(userModel.getId(), resourceServer.getId()).forEach(resource -> {
-                    String resourceId = resource.getId();
-                    policyStore.findByResource(resourceId, resourceServer.getId()).forEach(policy -> {
-                        if (policy.getResources().size() == 1) {
-                            policyStore.delete(policy.getId());
-                        } else {
-                            policy.removeResource(resource);
-                        }
-                    });
-                    resourceStore.delete(resourceId);
-                });
-            }
+        resourceStore.findByOwner(userModel.getId(), null, resource -> {
+            String resourceId = resource.getId();
+            policyStore.findByResource(resourceId, resource.getResourceServer()).forEach(policy -> {
+                if (policy.getResources().size() == 1) {
+                    policyStore.delete(policy.getId());
+                } else {
+                    policy.removeResource(resource);
+                }
+            });
+            resourceStore.delete(resourceId);
         });
     }
 
