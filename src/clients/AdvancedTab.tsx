@@ -395,7 +395,7 @@ export const AdvancedTab = ({
         )}
         <>
           <Text className="pf-u-py-lg">
-            {t("clients-help:advancedSettings" + toUpperCase(protocol!))}
+            {t("clients-help:advancedSettings" + toUpperCase(protocol || ""))}
           </Text>
           <AdvancedSettings
             protocol={protocol}
