@@ -71,6 +71,8 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.timer.TimerSpi;
+import org.keycloak.models.ServerInfoProviderFactory;
+import org.keycloak.models.ServerInfoSpi;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -175,6 +177,7 @@ public abstract class KeycloakModelTest {
       .add(GroupSpi.class)
       .add(RealmSpi.class)
       .add(RoleSpi.class)
+      .add(ServerInfoSpi.class)
       .add(StoreFactorySpi.class)
       .add(TimerSpi.class)
       .add(UserLoginFailureSpi.class)
@@ -185,6 +188,7 @@ public abstract class KeycloakModelTest {
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(DefaultAuthorizationProviderFactory.class)
       .add(DefaultExecutorsProviderFactory.class)
+      .add(ServerInfoProviderFactory.class)
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;

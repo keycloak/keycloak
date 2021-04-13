@@ -27,6 +27,8 @@ import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProvid
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterSpi;
+import org.keycloak.migration.MigrationProviderFactory;
+import org.keycloak.migration.MigrationSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
@@ -40,6 +42,8 @@ import org.keycloak.provider.Spi;
 import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
+import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.LoginProtocolSpi;
 
 /**
  *
@@ -54,6 +58,10 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaUpdaterSpi.class)
       .add(LiquibaseConnectionSpi.class)
       .add(UserSessionPersisterSpi.class)
+
+      //required for migrateModel
+      .add(MigrationSpi.class)
+      .add(LoginProtocolSpi.class)
 
       .build();
 
@@ -72,6 +80,11 @@ public class Jpa extends KeycloakModelParameters {
       .add(LiquibaseConnectionProviderFactory.class)
       .add(LiquibaseDBLockProviderFactory.class)
       .add(JpaUserSessionPersisterProviderFactory.class)
+
+      //required for migrateModel
+      .add(MigrationProviderFactory.class)
+      .add(LoginProtocolFactory.class)
+
       .build();
 
     public Jpa() {
@@ -81,11 +94,17 @@ public class Jpa extends KeycloakModelParameters {
 
     @Override
     public void updateConfig(Config cf) {
+        updateConfigForJpa(cf);
+    }
+
+    public static void updateConfigForJpa(Config cf) {
         cf.spi("client").defaultProvider("jpa")
           .spi("clientScope").defaultProvider("jpa")
           .spi("group").defaultProvider("jpa")
           .spi("role").defaultProvider("jpa")
           .spi("user").defaultProvider("jpa")
+          .spi("realm").defaultProvider("jpa")
+          .spi("serverInfo").defaultProvider("jpa")
         ;
     }
 }

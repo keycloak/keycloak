@@ -31,6 +31,7 @@ import org.keycloak.storage.clientscope.ClientScopeStorageProviderFactory;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderModel;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi;
 import org.keycloak.testsuite.federation.HardcodedClientScopeStorageProviderFactory;
+import org.keycloak.testsuite.model.Config;
 
 /**
  *
@@ -69,5 +70,10 @@ public class JpaFederation extends KeycloakModelParameters {
         } else {
             return super.getParameters(clazz);
         }
+    }
+
+    @Override
+    public void updateConfig(Config cf) {
+        Jpa.updateConfigForJpa(cf);
     }
 }
