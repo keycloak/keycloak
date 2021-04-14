@@ -603,13 +603,16 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             String responseDestination = statusResponse.getDestination();
+            String allowedDestination = System.getenv("KEYCLOAK_SAML_ALLOWED_DESTINATION");
 
             logger.error("destinationValidator.validate");
             logger.error(session.getContext().getUri().getAbsolutePath());
-            logger.error(statusResponse.getDestination());
-            logger.error(destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination()));
+            logger.error(responseDestination);
+            logger.error(allowedDestination);
+            logger.error(destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), responseDestination));
+            logger.error(destinationValidator.validate(allowedDestination, responseDestination));
             if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), responseDestination)) {
-                if (!destinationValidator.validate("https://testservistst.fina.hr/Authentication/LogoutResponse", responseDestination)) {
+                if (!destinationValidator.validate(allowedDestination, responseDestination)) {
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                     event.error(Errors.INVALID_SAML_RESPONSE);
