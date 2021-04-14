@@ -605,12 +605,12 @@ public class SAMLEndpoint {
             String responseDestination = statusResponse.getDestination();
             String allowedDestination = System.getenv("KEYCLOAK_SAML_ALLOWED_DESTINATION");
 
-            logger.error("destinationValidator.validate");
-            logger.error(session.getContext().getUri().getAbsolutePath());
-            logger.error(responseDestination);
-            logger.error(allowedDestination);
-            logger.error(destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), responseDestination));
-            logger.error(destinationValidator.validate(allowedDestination, responseDestination));
+            logger.debug("Session absolute path");
+            logger.debug(session.getContext().getUri().getAbsolutePath());
+            logger.debug("Status response destination");
+            logger.debug(responseDestination);
+            logger.debug("Allowed destination defined from environment");
+            logger.debug(allowedDestination);
             if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), responseDestination)) {
                 if (!destinationValidator.validate(allowedDestination, responseDestination)) {
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
