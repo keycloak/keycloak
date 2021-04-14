@@ -126,8 +126,19 @@ describe("Users test", () => {
       cy.getId("modalConfirm").click();
     });
 
-    it("Delete user", function () {
+    it("Go to user consents test", function () {
+      cy.wait(1000);
       listingPage.searchItem(itemId).itemExist(itemId);
+
+      cy.wait(1000);
+      listingPage.goToItemDetails(itemId);
+
+      cy.getId("user-consents-tab").click();
+
+      cy.getId("empty-state").contains("No consents");
+    });
+
+    it("Delete user test", function () {
       // Delete
       cy.wait(1000);
       listingPage.deleteItem(itemId);

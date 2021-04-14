@@ -16,6 +16,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { UserGroups } from "./UserGroups";
+import { UserConsents } from "./UserConsents";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");
@@ -24,7 +25,7 @@ export const UsersTabs = () => {
   const history = useHistory();
 
   const adminClient = useAdminClient();
-  const form = useForm<UserRepresentation>({ mode: "onChange" });
+  const userForm = useForm<UserRepresentation>({ mode: "onChange" });
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState("");
 
@@ -69,7 +70,7 @@ export const UsersTabs = () => {
               data-testid="user-details-tab"
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
-              <UserForm form={form} save={save} editMode={true} />
+              <UserForm form={userForm} save={save} editMode={true} />
             </Tab>
             <Tab
               eventKey="groups"
@@ -78,9 +79,16 @@ export const UsersTabs = () => {
             >
               <UserGroups />
             </Tab>
+            <Tab
+              eventKey="consents"
+              data-testid="user-consents-tab"
+              title={<TabTitleText>{t("users:consents")}</TabTitleText>}
+            >
+              <UserConsents />
+            </Tab>
           </KeycloakTabs>
         )}
-        {!id && <UserForm form={form} save={save} editMode={false} />}
+        {!id && <UserForm form={userForm} save={save} editMode={false} />}
       </PageSection>
     </>
   );

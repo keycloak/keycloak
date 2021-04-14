@@ -83,6 +83,8 @@
     "tokenDeleteSuccess": "initial access token created successfully",
     "tokenDeleteError": "Could not delete initial access token: '{{error}}'",
     "timestamp": "Created date",
+    "created": "Created",
+    "lastUpdated": "Last updated",
     "expires": "Expires",
     "count": "Count",
     "remainingCount": "Remaining count",

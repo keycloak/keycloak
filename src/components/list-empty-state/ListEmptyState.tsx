@@ -8,6 +8,7 @@ import {
   ButtonVariant,
   EmptyStateSecondaryActions,
 } from "@patternfly/react-core";
+import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { SearchIcon } from "@patternfly/react-icons";
 
@@ -23,6 +24,7 @@ export type ListEmptyStateProps = {
   primaryActionText?: string;
   onPrimaryAction?: MouseEventHandler<HTMLButtonElement>;
   hasIcon?: boolean;
+  icon?: React.ComponentClass<SVGIconProps>;
   isSearchVariant?: boolean;
   secondaryActions?: Action[];
 };
@@ -35,6 +37,7 @@ export const ListEmptyState = ({
   isSearchVariant,
   primaryActionText,
   secondaryActions,
+  icon,
 }: ListEmptyStateProps) => {
   return (
     <>
@@ -42,7 +45,7 @@ export const ListEmptyState = ({
         {hasIcon && isSearchVariant ? (
           <EmptyStateIcon icon={SearchIcon} />
         ) : (
-          hasIcon && <EmptyStateIcon icon={PlusCircleIcon} />
+          hasIcon && <EmptyStateIcon icon={icon ? icon : PlusCircleIcon} />
         )}
         <Title headingLevel="h4" size="lg">
           {message}

@@ -18,6 +18,7 @@ import _ from "lodash";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { asyncStateFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 
 type Row<T> = {
   data: T;
@@ -98,6 +99,7 @@ export type DataListProps<T> = {
   searchTypeComponent?: ReactNode;
   toolbarItem?: ReactNode;
   emptyState?: ReactNode;
+  icon?: React.ComponentClass<SVGIconProps>;
 };
 
 /**
@@ -136,6 +138,7 @@ export function KeycloakDataTable<T>({
   searchTypeComponent,
   toolbarItem,
   emptyState,
+  icon,
   ...props
 }: DataListProps<T>) {
   const { t } = useTranslation();
@@ -330,6 +333,7 @@ export function KeycloakDataTable<T>({
             searchPlaceholderKey && (
               <ListEmptyState
                 hasIcon={true}
+                icon={icon}
                 isSearchVariant={true}
                 message={t("noSearchResults")}
                 instructions={t("noSearchResultsInstructions")}
