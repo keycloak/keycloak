@@ -18,6 +18,22 @@ import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { cellWidth } from "@patternfly/react-table";
 import { useErrorHandler } from "react-error-boundary";
 import _ from "lodash";
+import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import { JoinGroupDialog } from "./JoinGroupDialog";
+
+type GroupTableData = GroupRepresentation & {
+  membersLength?: number;
+};
+
+export type UserFormProps = {
+  username?: string;
+  loader?: (
+    first?: number,
+    max?: number,
+    search?: string
+  ) => Promise<UserRepresentation[]>;
+  addGroup?: (newGroup: GroupRepresentation) => void;
+};
 
 export const UserGroups = () => {
   const { t } = useTranslation("roles");
@@ -27,7 +43,9 @@ export const UserGroups = () => {
   const handleError = useErrorHandler();
 
   const [selectedGroup, setSelectedGroup] = useState<GroupRepresentation>();
+  const [list, setList] = useState(false);
   const [listGroups, setListGroups] = useState(true);
+
   const [search, setSearch] = useState("");
   const [username, setUsername] = useState("");
 
@@ -58,7 +76,7 @@ export const UserGroups = () => {
       setSearch(searchParam);
     }
 
-    if (!searchParam && !listGroups) {
+    if (!searchParam && !listGroups && !list) {
       return [];
     }
 
@@ -141,6 +159,7 @@ export const UserGroups = () => {
     );
 
     setDirectMembershipList(directMembership);
+
     const filterDupesfromGroups = allPaths.filter(
       (thing, index, self) =>
         index === self.findIndex((t) => t.name === thing.name)
@@ -163,7 +182,7 @@ export const UserGroups = () => {
       },
       handleError
     );
-  });
+  }, []);
 
   useEffect(() => {
     refresh();
@@ -173,7 +192,24 @@ export const UserGroups = () => {
     return <>{group.name}</>;
   };
 
-  const toggleModal = () => setOpen(!open);
+  const JoinGroupButtonRenderer = (group: GroupRepresentation) => {
+    return (
+      <>
+        <Button onClick={() => joinGroup(group)} variant="link">
+          {t("users:joinGroup")}
+        </Button>
+      </>
+    );
+  };
+
+  const toggleModal = () => {
+    setOpen(!open);
+  };
+
+  const joinGroup = (group: GroupRepresentation) => {
+    setSelectedGroup(group);
+    toggleModal();
+  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("users:leaveGroup", {
@@ -210,11 +246,16 @@ export const UserGroups = () => {
   const LeaveButtonRenderer = (group: GroupRepresentation) => {
     if (
       directMembershipList.some((item) => item.id === group.id) ||
-      directMembershipList.length === 0
+      directMembershipList.length === 0 ||
+      isDirectMembership
     ) {
       return (
         <>
-          <Button onClick={() => leave(group)} variant="link">
+          <Button
+            data-testid={`leave-${group.name}`}
+            onClick={() => leave(group)}
+            variant="link"
+          >
             {t("users:Leave")}
           </Button>
         </>
@@ -224,10 +265,38 @@ export const UserGroups = () => {
     }
   };
 
+  const addGroup = async (group: GroupRepresentation): Promise<void> => {
+    const newGroup = group;
+
+    try {
+      await adminClient.users.addToGroup({
+        id: id,
+        groupId: newGroup.id!,
+      });
+      setList(true);
+      refresh();
+      addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+    } catch (error) {
+      addAlert(
+        t("users:addedGroupMembershipError", { error }),
+        AlertVariant.danger
+      );
+    }
+  };
+
   return (
     <>
       <PageSection variant="light">
         <DeleteConfirm />
+        {open && (
+          <JoinGroupDialog
+            open={open}
+            onClose={() => setOpen(!open)}
+            onConfirm={addGroup}
+            toggleDialog={() => toggleModal()}
+            username={username}
+          />
+        )}
         <KeycloakDataTable
           key={key}
           loader={loader}
@@ -241,11 +310,12 @@ export const UserGroups = () => {
               <Button
                 className="kc-join-group-button"
                 key="join-group-button"
-                onClick={() => toggleModal()}
+                onClick={toggleModal}
                 data-testid="add-group-button"
               >
                 {t("users:joinGroup")}
               </Button>
+              {JoinGroupButtonRenderer}
               <Checkbox
                 label={t("users:directMembership")}
                 key="direct-membership-check"
@@ -283,8 +353,6 @@ export const UserGroups = () => {
                 hasIcon={true}
                 message={t("users:noGroups")}
                 instructions={t("users:noGroupsText")}
-                primaryActionText={t("users:joinGroup")}
-                onPrimaryAction={() => {}}
               />
             ) : (
               ""

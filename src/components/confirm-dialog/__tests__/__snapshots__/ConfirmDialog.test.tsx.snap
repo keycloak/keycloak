@@ -22,6 +22,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
         actions={
           Array [
             <Button
+              data-testid="modalConfirm"
               id="modal-confirm"
               onClick={[Function]}
               variant="primary"
@@ -125,6 +126,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                         data-ouia-component-id="OUIA-Generated-Button-primary-1"
                         data-ouia-component-type="PF4/Button"
                         data-ouia-safe="true"
+                        data-testid="modalConfirm"
                         id="modal-confirm"
                         type="button"
                       >
@@ -152,6 +154,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
             actions={
               Array [
                 <Button
+                  data-testid="modalConfirm"
                   id="modal-confirm"
                   onClick={[Function]}
                   variant="primary"
@@ -316,6 +319,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                             className="pf-c-modal-box__footer"
                           >
                             <Button
+                              data-testid="modalConfirm"
                               id="modal-confirm"
                               key="confirm"
                               onClick={[Function]}
@@ -328,6 +332,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                                 data-ouia-component-id="OUIA-Generated-Button-primary-1"
                                 data-ouia-component-type="PF4/Button"
                                 data-ouia-safe={true}
+                                data-testid="modalConfirm"
                                 disabled={false}
                                 id="modal-confirm"
                                 onClick={[Function]}

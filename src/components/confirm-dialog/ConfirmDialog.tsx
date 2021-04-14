@@ -67,6 +67,7 @@ export const ConfirmDialogModal = ({
       actions={[
         <Button
           id="modal-confirm"
+          data-testid="modalConfirm"
           key="confirm"
           variant={continueButtonVariant || ButtonVariant.primary}
           onClick={() => {

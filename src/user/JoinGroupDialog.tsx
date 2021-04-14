@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,26 +18,31 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
-
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import { useTranslation } from "react-i18next";
 import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-
-type MoveGroupDialogProps = {
-  group: GroupRepresentation;
+import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
+import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import { useErrorHandler } from "react-error-boundary";
+import { useParams } from "react-router-dom";
+import _ from "lodash";
+export type JoinGroupDialogProps = {
+  open: boolean;
+  toggleDialog: () => void;
   onClose: () => void;
-  onMove: (groupId: string | undefined) => void;
+  onConfirm: (newGroup: GroupRepresentation) => void;
+  username: string;
 };
 
-export const MoveGroupDialog = ({
-  group,
+export const JoinGroupDialog = ({
   onClose,
-  onMove,
-}: MoveGroupDialogProps) => {
-  const { t } = useTranslation("groups");
-
+  open,
+  toggleDialog,
+  onConfirm,
+  username,
+}: JoinGroupDialogProps) => {
+  const { t } = useTranslation("roles");
   const adminClient = useAdminClient();
+
   const errorHandler = useErrorHandler();
 
   const [navigation, setNavigation] = useState<GroupRepresentation[]>([]);
@@ -47,37 +50,43 @@ export const MoveGroupDialog = ({
   const [filtered, setFiltered] = useState<GroupRepresentation[]>();
   const [filter, setFilter] = useState("");
 
-  const [id, setId] = useState<string>();
-  const currentGroup = () => navigation[navigation.length - 1];
+  const [groupId, setGroupId] = useState<string>();
+
+  const { id } = useParams<{ id: string }>();
 
   useEffect(
     () =>
       asyncStateFetch(
         async () => {
-          if (id) {
-            const group = await adminClient.groups.findOne({ id });
+          const existingUserGroups = await adminClient.users.listGroups({ id });
+          const allGroups = await adminClient.groups.find();
+
+          if (groupId) {
+            const group = await adminClient.groups.findOne({ id: groupId });
             return { group, groups: group.subGroups! };
           } else {
-            return { groups: await adminClient.groups.find() };
+            return {
+              groups: _.differenceBy(allGroups, existingUserGroups, "id"),
+            };
           }
         },
-        ({ group: selectedGroup, groups }) => {
-          if (selectedGroup) setNavigation([...navigation, selectedGroup]);
-          setGroups(groups.filter((g) => g.id !== group.id));
+        async ({ group: selectedGroup, groups }) => {
+          if (selectedGroup) {
+            setNavigation([...navigation, selectedGroup]);
+          }
+
+          setGroups(groups);
         },
         errorHandler
       ),
-    [id]
+    [groupId]
   );
 
   return (
     <Modal
-      variant={ModalVariant.large}
-      title={t("moveToGroup", {
-        group1: group.name,
-        group2: currentGroup() ? currentGroup().name : t("root"),
-      })}
-      isOpen={true}
+      variant={ModalVariant.small}
+      title={`Join groups for user ${username}`}
+      isOpen={open}
       onClose={onClose}
       actions={[
         <Button
@@ -85,17 +94,12 @@ export const MoveGroupDialog = ({
           key="confirm"
           variant="primary"
           form="group-form"
-          onClick={() => onMove(currentGroup()?.id)}
+          onClick={() => {
+            toggleDialog();
+            onConfirm(navigation[navigation.length - 1]);
+          }}
         >
-          {t("moveHere")}
-        </Button>,
-        <Button
-          data-testid="moveCancel"
-          key="cancel"
-          variant="secondary"
-          onClick={onClose}
-        >
-          {t("common:cancel")}
+          {t("users:Join")}
         </Button>,
       ]}
     >
@@ -104,7 +108,7 @@ export const MoveGroupDialog = ({
           <Button
             variant="link"
             onClick={() => {
-              setId(undefined);
+              setGroupId(undefined);
               setNavigation([]);
             }}
           >
@@ -117,7 +121,7 @@ export const MoveGroupDialog = ({
               <Button
                 variant="link"
                 onClick={() => {
-                  setId(group.id);
+                  setGroupId(group.id);
                   setNavigation([...navigation].slice(0, i));
                 }}
               >
@@ -136,7 +140,7 @@ export const MoveGroupDialog = ({
               <TextInput
                 type="search"
                 aria-label={t("common:search")}
-                placeholder={t("searchForGroups")}
+                placeholder={t("users:searchForGroups")}
                 onChange={(value) => {
                   if (value === "") {
                     setFiltered(undefined);
@@ -162,7 +166,7 @@ export const MoveGroupDialog = ({
         </ToolbarContent>
       </Toolbar>
       <DataList
-        onSelectDataListItem={(value) => setId(value)}
+        onSelectDataListItem={(value) => setGroupId(value)}
         aria-label={t("groups")}
         isCompact
       >
@@ -193,13 +197,6 @@ export const MoveGroupDialog = ({
             </DataListItemRow>
           </DataListItem>
         ))}
-        {(filtered || groups).length === 0 && (
-          <ListEmptyState
-            hasIcon={false}
-            message={t("moveGroupEmpty")}
-            instructions={t("moveGroupEmptyInstructions")}
-          />
-        )}
       </DataList>
     </Modal>
   );
