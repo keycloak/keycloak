@@ -397,7 +397,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("preRemove[RoleModel](%s, %s)%s", realm, roleId, getShortStackTrace());
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, roleId);
+          .compare(SearchableFields.ASSIGNED_ROLE, Operator.CONTAINS, roleId);
 
         try (Stream<MapUserEntity> s = tx.getUpdatedNotRemoved(mcb)) {
             s.map(this::registerEntityForChanges)
@@ -411,7 +411,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("preRemove[GroupModel](%s, %s)%s", realm, groupId, getShortStackTrace());
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, groupId);
+          .compare(SearchableFields.ASSIGNED_GROUP, Operator.CONTAINS, groupId);
 
         try (Stream<MapUserEntity> s = tx.getUpdatedNotRemoved(mcb)) {
             s.map(this::registerEntityForChanges)
@@ -425,7 +425,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("preRemove[ClientModel](%s, %s)%s", realm, clientId, getShortStackTrace());
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.CONSENT_FOR_CLIENT, Operator.EQ, clientId);
+          .compare(SearchableFields.CONSENT_FOR_CLIENT_ID, Operator.CONTAINS, clientId);
 
         try (Stream<MapUserEntity> s = tx.getUpdatedNotRemoved(mcb)) {
             s.map(this::registerEntityForChanges)
@@ -445,7 +445,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, clientScope.getRealm().getId())
-          .compare(SearchableFields.CONSENT_WITH_CLIENT_SCOPE, Operator.EQ, clientScopeId);
+          .compare(SearchableFields.CONSENT_WITH_CLIENT_SCOPE_ID, Operator.CONTAINS, clientScopeId);
 
         try (Stream<MapUserEntity> s = tx.getUpdatedNotRemoved(mcb)) {
             s.flatMap(AbstractUserEntity::getUserConsents)
@@ -713,7 +713,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getGroupMembersStream(%s, %s, %d, %d)%s", realm, group.getId(), firstResult, maxResults, getShortStackTrace());
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, group.getId());
+          .compare(SearchableFields.ASSIGNED_GROUP, Operator.CONTAINS, group.getId());
 
         return paginatedStream(tx.getUpdatedNotRemoved(mcb).sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
                 .map(entityToAdapterFunc(realm));
@@ -753,7 +753,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getRoleMembersStream(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
+          .compare(SearchableFields.ASSIGNED_ROLE, Operator.CONTAINS, role.getId());
 
         return paginatedStream(tx.getUpdatedNotRemoved(mcb)
                 .sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)

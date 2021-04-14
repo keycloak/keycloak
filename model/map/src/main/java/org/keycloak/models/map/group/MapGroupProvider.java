@@ -152,7 +152,7 @@ public class MapGroupProvider implements GroupProvider {
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         LOG.tracef("getGroupsByRole(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
         Stream<GroupModel> groupModelStream = getGroupsStreamInternal(realm,
-          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId())
+          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.ASSIGNED_ROLE, Operator.CONTAINS, role.getId())
         );
 
         return paginatedStream(groupModelStream, firstResult, maxResults);
@@ -299,7 +299,7 @@ public class MapGroupProvider implements GroupProvider {
         LOG.tracef("preRemove(%s, %s)%s", realm, role, getShortStackTrace());
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
+          .compare(SearchableFields.ASSIGNED_ROLE, Operator.CONTAINS, role.getId());
         try (Stream<MapGroupEntity> toRemove = tx.getUpdatedNotRemoved(mcb)) {
             toRemove
                 .map(groupEntity -> session.groups().getGroupById(realm, groupEntity.getId().toString()))

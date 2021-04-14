@@ -128,7 +128,7 @@ public class MapRealmProvider implements RealmProvider {
     @Override
     public Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type) {
         ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
-                .compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.EQ, type.getName());
+                .compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.CONTAINS, type.getName());
 
         return getRealmsStream(mcb);
     }

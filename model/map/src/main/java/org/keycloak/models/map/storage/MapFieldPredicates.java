@@ -28,6 +28,7 @@ import org.keycloak.models.map.clientscope.AbstractClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.group.AbstractGroupEntity;
 import org.keycloak.models.map.realm.AbstractRealmEntity;
+import org.keycloak.models.map.realm.entity.MapComponentEntity;
 import org.keycloak.models.map.role.AbstractRoleEntity;
 import org.keycloak.storage.SearchableModelField;
 import java.util.HashMap;
@@ -39,11 +40,11 @@ import org.keycloak.models.map.user.UserConsentEntity;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -65,11 +66,11 @@ public class MapFieldPredicates {
     static {
         put(REALM_PREDICATES, RealmModel.SearchableFields.NAME,                   AbstractRealmEntity::getName);
         put(REALM_PREDICATES, RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS,  MapFieldPredicates::checkRealmsWithClientInitialAccess);
-        put(REALM_PREDICATES, RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, MapFieldPredicates::checkRealmsWithComponentType);
+        put(REALM_PREDICATES, RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, are -> are.getComponents().map(MapComponentEntity::getProviderType).collect(Collectors.toList()));
 
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.REALM_ID,             AbstractClientEntity::getRealmId);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.CLIENT_ID,            AbstractClientEntity::getClientId);
-        put(CLIENT_PREDICATES, ClientModel.SearchableFields.SCOPE_MAPPING_ROLE,   MapFieldPredicates::checkScopeMappingRole);
+        put(CLIENT_PREDICATES, ClientModel.SearchableFields.SCOPE_MAPPING_ROLE,   AbstractClientEntity::getScopeMappings);
 
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.REALM_ID,  AbstractClientScopeEntity::getRealmId);
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.NAME,      AbstractClientScopeEntity::getName);
@@ -77,7 +78,7 @@ public class MapFieldPredicates {
         put(GROUP_PREDICATES, GroupModel.SearchableFields.REALM_ID,               AbstractGroupEntity::getRealmId);
         put(GROUP_PREDICATES, GroupModel.SearchableFields.NAME,                   AbstractGroupEntity::getName);
         put(GROUP_PREDICATES, GroupModel.SearchableFields.PARENT_ID,              AbstractGroupEntity::getParentId);
-        put(GROUP_PREDICATES, GroupModel.SearchableFields.ASSIGNED_ROLE,          MapFieldPredicates::checkGrantedGroupRole);
+        put(GROUP_PREDICATES, GroupModel.SearchableFields.ASSIGNED_ROLE,          AbstractGroupEntity::getGrantedRoles);
 
         put(ROLE_PREDICATES, RoleModel.SearchableFields.REALM_ID,                 AbstractRoleEntity::getRealmId);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.CLIENT_ID,                AbstractRoleEntity::getClientId);
@@ -96,10 +97,10 @@ public class MapFieldPredicates {
         put(USER_PREDICATES, UserModel.SearchableFields.FEDERATION_LINK,          AbstractUserEntity::getFederationLink);
         put(USER_PREDICATES, UserModel.SearchableFields.ATTRIBUTE,                MapFieldPredicates::checkUserAttributes);
         put(USER_PREDICATES, UserModel.SearchableFields.IDP_AND_USER,             MapFieldPredicates::getUserIdpAliasAtIdentityProviderPredicate);
-        put(USER_PREDICATES, UserModel.SearchableFields.ASSIGNED_ROLE,            MapFieldPredicates::checkGrantedUserRole);
-        put(USER_PREDICATES, UserModel.SearchableFields.ASSIGNED_GROUP,           MapFieldPredicates::checkUserGroup);
-        put(USER_PREDICATES, UserModel.SearchableFields.CONSENT_FOR_CLIENT,       MapFieldPredicates::checkUserClientConsent);
-        put(USER_PREDICATES, UserModel.SearchableFields.CONSENT_WITH_CLIENT_SCOPE, MapFieldPredicates::checkUserConsentsWithClientScope);
+        put(USER_PREDICATES, UserModel.SearchableFields.ASSIGNED_ROLE,            AbstractUserEntity::getRolesMembership);
+        put(USER_PREDICATES, UserModel.SearchableFields.ASSIGNED_GROUP,           AbstractUserEntity::getGroupsMembership);
+        put(USER_PREDICATES, UserModel.SearchableFields.CONSENT_FOR_CLIENT_ID,    aue -> aue.getUserConsents().map(UserConsentEntity::getClientId).collect(Collectors.toList()));
+        put(USER_PREDICATES, UserModel.SearchableFields.CONSENT_WITH_CLIENT_SCOPE_ID, aue -> aue.getUserConsents().map(UserConsentEntity::getGrantedClientScopesIds).collect(Collectors.toList()));
         put(USER_PREDICATES, UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, MapFieldPredicates::getUserConsentClientFederationLink);
         put(USER_PREDICATES, UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT,   AbstractUserEntity::getServiceAccountClientLink);
 
@@ -145,20 +146,6 @@ public class MapFieldPredicates {
         return s;
     }
 
-    private static MapModelCriteriaBuilder<Object, AbstractClientEntity<Object>, ClientModel> checkScopeMappingRole(MapModelCriteriaBuilder<Object, AbstractClientEntity<Object>, ClientModel> mcb, Operator op, Object[] values) {
-        String roleIdS = ensureEqSingleValue(ClientModel.SearchableFields.SCOPE_MAPPING_ROLE, "role_id", op, values);
-        Function<AbstractClientEntity<Object>, ?> getter;
-        getter = ce -> ce.getScopeMappings().contains(roleIdS);
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, AbstractGroupEntity<Object>, GroupModel> checkGrantedGroupRole(MapModelCriteriaBuilder<Object, AbstractGroupEntity<Object>, GroupModel> mcb, Operator op, Object[] values) {
-        String roleIdS = ensureEqSingleValue(GroupModel.SearchableFields.ASSIGNED_ROLE, "role_id", op, values);
-        Function<AbstractGroupEntity<Object>, ?> getter;
-        getter = ge -> ge.getGrantedRoles().contains(roleIdS);
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
     private static MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> getUserConsentClientFederationLink(MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
         String providerId = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, "provider_id", op, values);
         String providerIdS = new StorageId((String) providerId, "").getId();
@@ -186,43 +173,6 @@ public class MapFieldPredicates {
             final List<String> attrs = ue.getAttribute(attrNameS);
             return attrs != null && attrs.stream().anyMatch(valueComparator);
         };
-
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> checkGrantedUserRole(MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
-        String roleIdS = ensureEqSingleValue(UserModel.SearchableFields.ASSIGNED_ROLE, "role_id", op, values);
-        Function<AbstractUserEntity<Object>, ?> getter;
-        getter = ue -> ue.getRolesMembership().contains(roleIdS);
-
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> checkUserGroup(MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
-        Function<AbstractUserEntity<Object>, ?> getter;
-        if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
-            Collection<?> c = (Collection<?>) values[0];
-            getter = ue -> ue.getGroupsMembership().stream().anyMatch(c::contains);
-        } else {
-            String groupIdS = ensureEqSingleValue(UserModel.SearchableFields.ASSIGNED_GROUP, "group_id", op, values);
-            getter = ue -> ue.getGroupsMembership().contains(groupIdS);
-        }
-
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> checkUserClientConsent(MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
-        String clientIdS = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "client_id", op, values);
-        Function<AbstractUserEntity<Object>, ?> getter;
-        getter = ue -> ue.getUserConsent(clientIdS);
-
-        return mcb.fieldCompare(Operator.EXISTS, getter, null);
-    }
-
-    private static MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> checkUserConsentsWithClientScope(MapModelCriteriaBuilder<Object, AbstractUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
-        String clientScopeIdS = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "client_scope_id", op, values);
-        Function<AbstractUserEntity<Object>, ?> getter;
-        getter = ue -> ue.getUserConsents().anyMatch(consent -> consent.getGrantedClientScopesIds().contains(clientScopeIdS));
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -258,13 +208,6 @@ public class MapFieldPredicates {
             throw new CriterionNotSupportedException(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, op);
         }
         Function<AbstractRealmEntity<Object>, ?> getter = AbstractRealmEntity::hasClientInitialAccess;
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, AbstractRealmEntity<Object>, RealmModel> checkRealmsWithComponentType(MapModelCriteriaBuilder<Object, AbstractRealmEntity<Object>, RealmModel> mcb, Operator op, Object[] values) {
-        String providerType = ensureEqSingleValue(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "component_provider_type", op, values);
-        Function<AbstractRealmEntity<Object>, ?> getter = realmEntity -> realmEntity.getComponents().anyMatch(component -> component.getProviderType().equals(providerType));
-
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 

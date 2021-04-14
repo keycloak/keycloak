@@ -325,7 +325,7 @@ public class MapClientProvider implements ClientProvider {
     public void preRemove(RealmModel realm, RoleModel role) {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
+          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.CONTAINS, role.getId());
         try (Stream<MapClientEntity> toRemove = tx.getUpdatedNotRemoved(mcb)) {
             toRemove
                 .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))

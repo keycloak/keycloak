@@ -57,6 +57,7 @@ class CriteriaOperator {
         OPERATORS.put(Operator.IN, CriteriaOperator::in);
         OPERATORS.put(Operator.LIKE, CriteriaOperator::like);
         OPERATORS.put(Operator.ILIKE, CriteriaOperator::ilike);
+        OPERATORS.put(Operator.CONTAINS, CriteriaOperator::contains);
 
         // Check that all operators are covered
         EnumSet<Operator> s = EnumSet.allOf(Operator.class);
@@ -136,7 +137,13 @@ class CriteriaOperator {
             operand = new HashSet(Arrays.asList(value));
         }
         return operand.isEmpty() ? ALWAYS_FALSE : new Predicate<Object>() {
-            @Override public boolean test(Object v) { return operand.contains(v); }
+            @Override public boolean test(Object v) {
+                if (v instanceof Collection) {
+                    return ((Collection<?>) v).stream().anyMatch(operand::contains);
+                }
+
+                return operand.contains(v);
+            }
         };
     }
 
@@ -204,6 +211,18 @@ class CriteriaOperator {
             };
         }
         return ALWAYS_FALSE;
+    }
+
+    public static Predicate<Object> contains(Object[] objects) {
+        Object requiredValue = getFirstArrayElement(objects);
+        
+        return new Predicate<Object>() {
+            @Override
+            public boolean test(Object checkedObject) {
+                if (!(checkedObject instanceof Collection)) return false;
+                return ((Collection<?>) checkedObject).contains(requiredValue);
+            }
+        };
     }
 
     private static class ComparisonPredicateImpl implements Predicate<Object> {

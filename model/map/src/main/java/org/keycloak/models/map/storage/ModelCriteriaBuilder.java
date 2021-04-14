@@ -103,6 +103,8 @@ public interface ModelCriteriaBuilder<M> {
         EXISTS,
         /** Is null */
         NOT_EXISTS,
+        /** Operator that checks a collection of values for presence of some specific item  */
+        CONTAINS,
     }
 
     /**
