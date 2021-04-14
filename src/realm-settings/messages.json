@@ -26,5 +26,9 @@
     "endpoints": "Endpoints",
     "openEndpointConfiguration": "Open Endpoint Configuration",
     "samlIdentityProviderMetadata": "SAML 2.0 Identity Provider Metadata"
+  },
+  "partial-import": {
+    "partialImportHeaderText": "Partial import allows you to import users, clients, and resources from a previously exported json file.",
+    "import": "Import"
   }
 }

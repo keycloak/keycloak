@@ -15,15 +15,17 @@ type FileUpload = {
   modal: boolean;
 };
 
+export type JsonFileUploadEvent =
+  | React.DragEvent<HTMLElement> // User dragged/dropped a file
+  | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
+  | React.MouseEvent<HTMLButtonElement, MouseEvent>; // User clicked Clear button
+
 export type JsonFileUploadProps = {
   id: string;
   onChange: (
     value: string | File,
     filename: string,
-    event:
-      | React.DragEvent<HTMLElement> // User dragged/dropped a file
-      | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
-      | React.MouseEvent<HTMLButtonElement, MouseEvent> // User clicked Clear button
+    event: JsonFileUploadEvent
   ) => void;
 };
 
