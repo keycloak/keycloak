@@ -130,8 +130,6 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<String> getRealmLocalizationLocales() {
-        this.auth.realm().requireViewRealm();
-
         return realm.getRealmLocalizationTexts().keySet().stream().sorted();
     }
 
@@ -139,7 +137,6 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale) {
-        this.auth.realm().requireViewRealm();
         return realm.getRealmLocalizationTextsByLocale(locale);
     }
 
@@ -147,7 +144,6 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key) {
-        this.auth.realm().requireViewRealm();
         String text = session.realms().getLocalizationTextsById(realm, locale, key);
         if (text != null) {
             return text;
