@@ -23,7 +23,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-class Database {
+import liquibase.database.core.H2Database;
+import liquibase.database.core.PostgresDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
+
+public class Database {
 
     private static Map<String, Vendor> DATABASES = new HashMap<>();
 
@@ -37,7 +43,7 @@ class Database {
         }
     }
 
-    static boolean isSupported(String alias) {
+    public static boolean isSupported(String alias) {
         return DATABASES.containsKey(alias);
     }
 
@@ -81,11 +87,13 @@ class Database {
                         }
                         return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
                     }
-                }, "h2-mem", "h2-file"),
+                }, "h2-mem", "h2-file", H2Database.class.getName()),
         MYSQL("com.mysql.cj.jdbc.MysqlXADataSource", "org.hibernate.dialect.MySQL8Dialect",
-                "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}"),
+                "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                UpdatedMySqlDatabase.class.getName()),
         MARIADB("org.mariadb.jdbc.MySQLDataSource", "org.hibernate.dialect.MariaDBDialect",
-                "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}"),
+                "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                UpdatedMariaDBDatabase.class.getName()),
         POSTGRES("org.postgresql.xa.PGXADataSource", new Function<String, String>() {
             @Override
             public String apply(String alias) {
@@ -95,7 +103,7 @@ class Database {
                 return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
             }
         }, "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
-                "postgres-95", "postgres-10");
+                "postgres-95", "postgres-10", PostgresDatabase.class.getName(), PostgresPlusDatabase.class.getName());
 
         final String driver;
         final Function<String, String> dialect;

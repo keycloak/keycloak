@@ -42,6 +42,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -50,6 +51,7 @@ import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
 import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.vertx.core.Handler;
@@ -57,8 +59,10 @@ import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.QuarkusKeycloakApplication;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
@@ -283,6 +287,20 @@ class KeycloakProcessor {
         routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT.concat("/live"), healthHandler));
         routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT.concat("/ready"), healthHandler));
         routes.produce(new RouteBuildItem(KeycloakMetricsHandler.DEFAULT_METRICS_ENDPOINT, metricsHandler));
+    }
+
+    @BuildStep
+    void configureResteasy(BuildProducer<ResteasyDeploymentCustomizerBuildItem> deploymentCustomizerProducer) {
+        deploymentCustomizerProducer.produce(new ResteasyDeploymentCustomizerBuildItem(new Consumer<ResteasyDeployment>() {
+            @Override
+            public void accept(ResteasyDeployment resteasyDeployment) {
+                // we need to explicitly set the application to avoid errors at build time due to the application
+                // from keycloak-services also being added to the index
+                resteasyDeployment.setApplicationClass(QuarkusKeycloakApplication.class.getName());
+                // we need to disable the sanitizer to avoid escaping text/html responses from the server
+                resteasyDeployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, Boolean.TRUE);
+            }
+        }));
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)

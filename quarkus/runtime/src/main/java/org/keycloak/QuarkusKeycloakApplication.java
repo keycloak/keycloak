@@ -1,8 +1,6 @@
 package org.keycloak;
 
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.Instance;
@@ -10,9 +8,6 @@ import javax.inject.Inject;
 import javax.persistence.EntityManagerFactory;
 import javax.ws.rs.ApplicationPath;
 
-import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
-import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -22,9 +17,13 @@ import org.keycloak.services.resources.WelcomeResource;
 @ApplicationPath("/")
 public class QuarkusKeycloakApplication extends KeycloakApplication {
 
+    private static boolean filterSingletons(Object o) {
+        return !WelcomeResource.class.isInstance(o);
+    }
+
     @Inject
     Instance<EntityManagerFactory> entityManagerFactory;
-    
+
     @Override
     protected void startup() {
         try {
@@ -38,16 +37,9 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     @Override
     public Set<Object> getSingletons() {
-        //TODO: a temporary hack for https://github.com/quarkusio/quarkus/issues/9647, we need to disable the sanitizer to avoid
-        // escaping text/html responses from the server
-        Resteasy.getContextData(ResteasyDeployment.class).setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, Boolean.TRUE);
-
-        HashSet<Object> singletons = new HashSet<>(super.getSingletons().stream().filter(new Predicate<Object>() {
-            @Override
-            public boolean test(Object o) {
-                return !WelcomeResource.class.isInstance(o);
-            }
-        }).collect(Collectors.toSet()));
+        Set<Object> singletons = super.getSingletons().stream()
+                .filter(QuarkusKeycloakApplication::filterSingletons)
+                .collect(Collectors.toSet());
 
         singletons.add(new QuarkusWelcomeResource());
 

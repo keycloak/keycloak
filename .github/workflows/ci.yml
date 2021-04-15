@@ -302,7 +302,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      MAVEN_OPTS: -Xmx2048m
+      MAVEN_OPTS: -Xmx1024m
     steps:
       - uses: actions/checkout@v2
       - name: Cache Maven packages

@@ -75,6 +75,6 @@ if [ "$DEBUG_MODE" = "true" ]; then
     fi
 fi
 
-CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar:$DIRNAME/../lib/main/*"
+CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar"
 
 exec java $JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}
