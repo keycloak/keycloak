@@ -66,7 +66,7 @@ export const UsersTabs = () => {
         {id && (
           <KeycloakTabs isBox>
             <Tab
-              eventKey="details"
+              eventKey="settings"
               data-testid="user-details-tab"
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
