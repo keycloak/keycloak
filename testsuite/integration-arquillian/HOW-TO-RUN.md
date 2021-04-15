@@ -499,6 +499,11 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
 tests in the Base UI testsuite are executed please use `-DchromeArguments=--enable-web-authentication-testing-api` as
 specified in [WebAuthn tests](#webauthn-tests).
 
+## Disabling features
+Some features in Keycloak can be disabled. To run the testsuite with a specific feature disabled use the `auth.server.feature` system property. For example to run the tests with authorization disabled run:
+```
+mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean test -Pauth-server-wildfly -Dauth.server.feature=-Dkeycloak.profile.feature.authorization=disabled
+```
 ## WebAuthN tests
 The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, because the Chrome has feature _WebAuthenticationTestingApi_,
 which simulate hardware authentication device. For automated WebAuthN testing, this approach seems like the best choice so far.
