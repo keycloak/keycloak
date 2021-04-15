@@ -39,10 +39,6 @@ type Group = GroupRepresentation & {
   checked?: boolean;
 };
 
-type Group = GroupRepresentation & {
-  checked?: boolean;
-};
-
 export const JoinGroupDialog = ({
   onClose,
   open,
