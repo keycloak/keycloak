@@ -79,7 +79,7 @@ export const AddScopeDialog = ({
         <Button
           id="modal-cancel"
           key="cancel"
-          variant={ButtonVariant.secondary}
+          variant={ButtonVariant.link}
           onClick={() => {
             setRows([]);
             toggleDialog();

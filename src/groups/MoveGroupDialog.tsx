@@ -92,7 +92,7 @@ export const MoveGroupDialog = ({
         <Button
           data-testid="moveCancel"
           key="cancel"
-          variant="secondary"
+          variant="link"
           onClick={onClose}
         >
           {t("common:cancel")}

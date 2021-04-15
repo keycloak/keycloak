@@ -71,7 +71,7 @@ export const AddHostDialog = ({
         <Button
           id="add-node-cancel"
           key="cancel"
-          variant={ButtonVariant.secondary}
+          variant={ButtonVariant.link}
           onClick={() => onClose()}
         >
           {t("common:cancel")}

@@ -82,7 +82,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
         <Button
           data-testid="cancel"
           key="cancel"
-          variant="secondary"
+          variant="link"
           onClick={onClose}
         >
           {t("common:cancel")}
