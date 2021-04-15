@@ -74,11 +74,11 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -97,6 +97,9 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -695,7 +698,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
 
-            WaitUtils.pause(3000);
+            setTimeOffset(3);
 
             tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), false);
 
@@ -759,7 +762,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
 
-            WaitUtils.pause(5000);
+            setTimeOffset(5);
 
             // user Token Request again
             tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), false);
@@ -1039,7 +1042,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // user Authentication Channel completed
             doAuthenticationChannelCallback(testRequest.getBearerToken(), SUCCEEDED, username);
 
-            WaitUtils.pause(6000);
+            setTimeOffset(6);
 
             // user Token Request after Authentication Channel completion
             tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
