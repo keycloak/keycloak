@@ -180,7 +180,7 @@ export const AdvancedTab = ({
     <PageSection variant="light">
       <ScrollForm sections={sections}>
         <>
-          <Text className="pf-u-py-lg">
+          <Text className="pf-u-pb-lg">
             <Trans i18nKey="clients-help:notBeforeIntro">
               In order to successfully push setup url on
               <Link to={`/${realm}/clients/${id}/settings`}>
@@ -352,7 +352,7 @@ export const AdvancedTab = ({
         <>
           {protocol === openIdConnect && (
             <>
-              <Text className="pf-u-py-lg">
+              <Text className="pf-u-pb-lg">
                 {t("clients-help:fineGrainOpenIdConnectConfiguration")}
               </Text>
               <FineGrainOpenIdConnect
@@ -366,7 +366,7 @@ export const AdvancedTab = ({
           )}
           {protocol !== openIdConnect && (
             <>
-              <Text className="pf-u-py-lg">
+              <Text className="pf-u-pb-lg">
                 {t("clients-help:fineGrainSamlEndpointConfig")}
               </Text>
               <FineGrainSamlEndpointConfig
@@ -381,7 +381,7 @@ export const AdvancedTab = ({
         </>
         {protocol === openIdConnect && (
           <>
-            <Text className="pf-u-py-lg">
+            <Text className="pf-u-pb-lg">
               {t("clients-help:openIdConnectCompatibilityModes")}
             </Text>
             <OpenIdConnectCompatibilityModes
@@ -394,7 +394,7 @@ export const AdvancedTab = ({
           </>
         )}
         <>
-          <Text className="pf-u-py-lg">
+          <Text className="pf-u-pb-lg">
             {t("clients-help:advancedSettings" + toUpperCase(protocol || ""))}
           </Text>
           <AdvancedSettings
@@ -412,7 +412,7 @@ export const AdvancedTab = ({
           />
         </>
         <>
-          <Text className="pf-u-py-lg">
+          <Text className="pf-u-pb-lg">
             {t("clients-help:authenticationOverrides")}
           </Text>
           <AuthenticationOverrides
