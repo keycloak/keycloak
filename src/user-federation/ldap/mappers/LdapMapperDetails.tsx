@@ -39,11 +39,9 @@ export const LdapMapperDetails = () => {
   const [mapping, setMapping] = useState<ComponentRepresentation>();
 
   const adminClient = useAdminClient();
-  const { mapperId } = useParams<{ mapperId: string }>();
+  const { id, mapperId } = useParams<{ id: string; mapperId: string }>();
   const history = useHistory();
-
   const { realm } = useRealm();
-  const id = mapperId;
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
   const { addAlert } = useAlerts();
@@ -54,13 +52,10 @@ export const LdapMapperDetails = () => {
     (async () => {
       if (mapperId !== "new") {
         if (mapperId) {
-          const fetchedMapper = await adminClient.components.findOne({ id });
+          const fetchedMapper = await adminClient.components.findOne({
+            id: mapperId,
+          });
           if (fetchedMapper) {
-            // TODO: remove after adding all mapper types
-            console.log("LdapMapperDetails: id used in findOne(id) call::");
-            console.log(id);
-            console.log("fetchedMapper is:");
-            console.log(fetchedMapper);
             setMapping(fetchedMapper);
             setupForm(fetchedMapper);
           }
@@ -87,24 +82,24 @@ export const LdapMapperDetails = () => {
     const map = { ...mapper, config };
 
     try {
-      if (id) {
-        if (id === "new") {
+      if (mapperId) {
+        if (mapperId === "new") {
           await adminClient.components.create(map);
           history.push(
             `/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`
           );
         } else {
-          await adminClient.components.update({ id }, map);
+          await adminClient.components.update({ id: mapperId }, map);
         }
       }
       setupForm(map as ComponentRepresentation);
       addAlert(
-        t(id === "new" ? "createSuccess" : "saveSuccess"),
+        t(mapperId === "new" ? "createSuccess" : "saveSuccess"),
         AlertVariant.success
       );
     } catch (error) {
       addAlert(
-        `${t(id === "new" ? "createError" : "saveError")} '${error}'`,
+        `${t(mapperId === "new" ? "createError" : "saveError")} '${error}'`,
         AlertVariant.danger
       );
     }
@@ -160,7 +155,7 @@ export const LdapMapperDetails = () => {
             />
             <TextInput
               hidden
-              defaultValue="aa508e29-b5e7-49d0-89ce-f3e65c5e8165"
+              defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
               type="text"
               id="kc-ldap-parentId"
               data-testid="ldap-parentId"
@@ -358,7 +353,7 @@ export const LdapMapperDetails = () => {
             : ""}
         </FormAccess>
 
-        <Form onSubmit={form.handleSubmit(save)}>
+        <Form onSubmit={form.handleSubmit(() => save(form.getValues()))}>
           <ActionGroup>
             <Button
               isDisabled={!form.formState.isDirty}
