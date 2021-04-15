@@ -60,7 +60,10 @@ export const LdapMapperList = () => {
         addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
         setSelectedMapper(undefined);
       } catch (error) {
-        addAlert(t("common:mappingDeletedError", { error }), AlertVariant.danger);
+        addAlert(
+          t("common:mappingDeletedError", { error }),
+          AlertVariant.danger
+        );
       }
     },
   });
