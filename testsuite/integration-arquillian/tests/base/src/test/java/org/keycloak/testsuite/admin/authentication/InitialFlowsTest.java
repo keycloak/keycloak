@@ -211,6 +211,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Profile Validation", "registration-profile-action", false, 1, 1, REQUIRED, null, new String[]{REQUIRED, DISABLED});
         addExecInfo(execs, "Password Validation", "registration-password-action", false, 1, 2, REQUIRED, null, new String[]{REQUIRED, DISABLED});
         addExecInfo(execs, "Recaptcha", "registration-recaptcha-action", true, 1, 3, DISABLED, null, new String[]{REQUIRED, DISABLED});
+        addExecInfo(execs, "Terms and conditions", "registration-terms-and-conditions", false, 1, 4, DISABLED, null, new String[]{REQUIRED, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("reset credentials", "Reset credentials for a user if they forgot their password or something", "basic-flow", true, true);
