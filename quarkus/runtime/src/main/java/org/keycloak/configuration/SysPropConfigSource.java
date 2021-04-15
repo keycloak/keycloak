@@ -28,15 +28,20 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  */
 public class SysPropConfigSource implements ConfigSource {
 
-    public Map<String, String> getProperties() {
-        Map<String, String> output = new TreeMap<>();
+    private final Map<String, String> properties = new TreeMap<>();
+
+    public SysPropConfigSource() {
         for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
             String key = (String) entry.getKey();
             if (key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-                output.put(key, entry.getValue().toString());
+                properties.put(key, entry.getValue().toString());
             }
         }
-        return output;
+    }
+
+    @Override
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
     public String getValue(final String propertyName) {
