@@ -232,15 +232,15 @@ public class ConfigurationTest {
     @Test
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
-        Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
+        Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty("kc.profile");
         System.setProperty("kc.config.args", "--cluster=foo");
 
-        Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
+        Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
         System.setProperty("kc.profile", "dev");
-        Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
+        Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
     }
 
     private Config.Scope initConfig(String... scope) {

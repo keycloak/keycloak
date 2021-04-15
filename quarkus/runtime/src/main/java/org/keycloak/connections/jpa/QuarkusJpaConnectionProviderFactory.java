@@ -18,6 +18,7 @@
 package org.keycloak.connections.jpa;
 
 import static org.keycloak.connections.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,7 +44,6 @@ import javax.transaction.Transaction;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.quarkus.runtime.Quarkus;
 import org.hibernate.internal.SessionFactoryImpl;
-import org.hibernate.internal.SessionImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
@@ -54,14 +54,12 @@ import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -75,10 +73,9 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
+public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
-
     private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
 
     enum MigrationStrategy {
@@ -86,35 +83,14 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     private EntityManagerFactory emf;
-
     private Config.Scope config;
-
     private Map<String, String> operationalInfo;
-
-    private boolean jtaEnabled;
-    private JtaTransactionManagerLookup jtaLookup;
-
     private KeycloakSessionFactory factory;
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
         logger.trace("Create QuarkusJpaConnectionProvider");
-        EntityManager em;
-        if (!jtaEnabled) {
-            logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
-            em = emf.createEntityManager();
-            try {
-                SessionImpl.class.cast(em).connection().setAutoCommit(false);
-            } catch (SQLException cause) {
-                throw new RuntimeException(cause);
-            }
-        } else {
-
-            em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
-        }
-        em = PersistenceExceptionConverter.create(session, em);
-        if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
-        return new DefaultJpaConnectionProvider(em);
+        return new DefaultJpaConnectionProvider(createEntityManager(session));
     }
 
     @Override
@@ -137,148 +113,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         this.factory = factory;
-        checkJtaEnabled(factory);
         lazyInit();
-    }
-
-    protected void checkJtaEnabled(KeycloakSessionFactory factory) {
-        jtaLookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
-        if (jtaLookup != null) {
-            if (jtaLookup.getTransactionManager() != null) {
-                jtaEnabled = true;
-            }
-        }
-    }
-
-    private String getSchema(String schema) {
-        return schema == null ? "" : schema + ".";
-    }
-
-    private File getDatabaseUpdateFile() {
-        String databaseUpdateFile = config.get("migrationExport", "keycloak-database-update.sql");
-        return new File(databaseUpdateFile);
-    }
-
-    protected void prepareOperationalInfo(Connection connection) {
-        try {
-            operationalInfo = new LinkedHashMap<>();
-            DatabaseMetaData md = connection.getMetaData();
-            operationalInfo.put("databaseUrl", md.getURL());
-            operationalInfo.put("databaseUser", md.getUserName());
-            operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
-            operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
-
-            logger.infof("Database info: %s", operationalInfo.toString());
-        } catch (SQLException e) {
-            logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
-        }
-    }
-
-    void migration(String schema, Connection connection, KeycloakSession session) {
-        MigrationStrategy strategy = getMigrationStrategy();
-        boolean initializeEmpty = config.getBoolean("initializeEmpty", true);
-        File databaseUpdateFile = getDatabaseUpdateFile();
-
-        String version = null;
-
-        try {
-            try (Statement statement = connection.createStatement()) {
-                try (ResultSet rs = statement.executeQuery(String.format(SQL_GET_LATEST_VERSION, getSchema(schema)))) {
-                    if (rs.next()) {
-                        version = rs.getString(1);
-                    }
-                }
-            }
-        } catch (SQLException ignore) {
-            // migration model probably does not exist so we assume the database is empty
-        }
-
-        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
-
-        boolean requiresMigration = version == null || !version.equals(new ModelVersion(Version.VERSION_KEYCLOAK).toString());
-        session.setAttribute(VERIFY_AND_RUN_MASTER_CHANGELOG, requiresMigration);
-
-        JpaUpdaterProvider.Status status = updater.validate(connection, schema);
-
-        if (status == JpaUpdaterProvider.Status.VALID) {
-            logger.debug("Database is up-to-date");
-        } else if (status == JpaUpdaterProvider.Status.EMPTY) {
-            if (initializeEmpty) {
-                update(connection, schema, session, updater);
-            } else {
-                switch (strategy) {
-                    case UPDATE:
-                        update(connection, schema, session, updater);
-                        break;
-                    case MANUAL:
-                        export(connection, schema, databaseUpdateFile, session, updater);
-                        throw new ServerStartupError("Database not initialized, please initialize database with " + databaseUpdateFile.getAbsolutePath(), false);
-                    case VALIDATE:
-                        throw new ServerStartupError("Database not initialized, please enable database initialization", false);
-                }
-            }
-        } else {
-            switch (strategy) {
-                case UPDATE:
-                    update(connection, schema, session, updater);
-                    break;
-                case MANUAL:
-                    export(connection, schema, databaseUpdateFile, session, updater);
-                    throw new ServerStartupError("Database not up-to-date, please migrate database with " + databaseUpdateFile.getAbsolutePath(), false);
-                case VALIDATE:
-                    throw new ServerStartupError("Database not up-to-date, please enable database migration", false);
-            }
-        }
-
-        ExportImportManager exportImportManager = new ExportImportManager(session);
-        
-        if (requiresMigration) {
-            KeycloakModelUtils.runJobInTransaction(factory, new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession session) {
-                    logger.debug("Calling migrateModel");
-                    migrateModel(session);
-
-                    DBLockManager dbLockManager = new DBLockManager(session);
-                    dbLockManager.checkForcedUnlock();
-                    DBLockProvider dbLock = dbLockManager.getDBLock();
-                    dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
-                    try {
-                        createMasterRealm(exportImportManager);
-                    } finally {
-                        dbLock.releaseLock();
-                    }
-                }
-            });
-        }
-
-        if (exportImportManager.isRunExport()) {
-            exportImportManager.runExport();
-            Quarkus.asyncExit();
-        }
-    }
-
-    protected void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
-        DBLockManager dbLockManager = new DBLockManager(session);
-        DBLockProvider dbLock2 = dbLockManager.getDBLock();
-        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
-        try {
-            updater.update(connection, schema);
-        } finally {
-            dbLock2.releaseLock();
-        }
-    }
-
-    protected void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session,
-            JpaUpdaterProvider updater) {
-        DBLockManager dbLockManager = new DBLockManager(session);
-        DBLockProvider dbLock2 = dbLockManager.getDBLock();
-        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
-        try {
-            updater.export(connection, schema, databaseUpdateFile);
-        } finally {
-            dbLock2.releaseLock();
-        }
     }
 
     @Override
@@ -300,6 +135,11 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
     @Override
     public Map<String, String> getOperationalInfo() {
         return operationalInfo;
+    }
+
+    @Override
+    public int order() {
+        return 100;
     }
 
     private MigrationStrategy getMigrationStrategy() {
@@ -325,33 +165,44 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
         emf = instance.get();
 
+        KeycloakSession session = factory.create();
+        boolean initSchema;
+
         try (Connection connection = getConnection()) {
-            if (jtaEnabled) {
-                KeycloakModelUtils.suspendJtaTransaction(factory, () -> {
-                    KeycloakSession session = factory.create();
-                    try {
-                        migration(getSchema(), connection, session);
-                    } finally {
-                        session.close();
-                    }
-                });
-            } else {
-                KeycloakModelUtils.runJobInTransaction(factory, session -> {
-                    migration(getSchema(), connection, session);
-                });
-            }
-            prepareOperationalInfo(connection);
+            logDatabaseConnectionInfo(connection);
+            initSchema = createOrUpdateSchema(getSchema(), connection, session);
         } catch (SQLException cause) {
-            throw new RuntimeException("Failed to migrate model", cause);
+            throw new RuntimeException("Failed to update database.", cause);
+        } finally {
+            session.close();
+        }
+
+        if (initSchema) {
+            runJobInTransaction(factory, this::initSchemaOrExport);
         }
     }
 
-    @Override
-    public int order() {
-        return 100;
+    private void initSchemaOrExport(KeycloakSession session) {
+        ExportImportManager exportImportManager = new ExportImportManager(session);
+        logger.debug("Calling migrateModel");
+        migrateModel(session);
+
+        DBLockManager dbLockManager = new DBLockManager(session);
+        dbLockManager.checkForcedUnlock();
+        DBLockProvider dbLock = dbLockManager.getDBLock();
+        dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
+        try {
+            createMasterRealm(exportImportManager);
+        } finally {
+            dbLock.releaseLock();
+        }
+        if (exportImportManager.isRunExport()) {
+            exportImportManager.runExport();
+            Quarkus.asyncExit();
+        }
     }
 
-    protected ExportImportManager createMasterRealm(ExportImportManager exportImportManager) {
+    private ExportImportManager createMasterRealm(ExportImportManager exportImportManager) {
         logger.debug("bootstrap");
         KeycloakSession session = factory.create();
 
@@ -406,7 +257,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
         return exportImportManager;
     }
 
-    protected void migrateModel(KeycloakSession session) {
+    private void migrateModel(KeycloakSession session) {
         try {
             MigrationModelManager.migrate(session);
         } catch (Exception e) {
@@ -414,7 +265,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
         }
     }
 
-    public void importRealms() {
+    private void importRealms() {
         String files = System.getProperty("keycloak.import");
         if (files != null) {
             StringTokenizer tokenizer = new StringTokenizer(files, ",");
@@ -431,7 +282,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
         }
     }
 
-    public void importRealm(RealmRepresentation rep, String from) {
+    private void importRealm(RealmRepresentation rep, String from) {
         KeycloakSession session = factory.create();
         boolean exists = false;
         try {
@@ -465,7 +316,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
         }
     }
 
-    public void importAddUser() {
+    private void importAddUser() {
         String configDir = System.getProperty("jboss.server.config.dir");
         if (configDir != null) {
             File addUserFile = new File(configDir + File.separator + "keycloak-add-user.json");
@@ -524,5 +375,119 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
                 }
             }
         }
+    }
+
+    private String getSchema(String schema) {
+        return schema == null ? "" : schema + ".";
+    }
+
+    private File getDatabaseUpdateFile() {
+        String databaseUpdateFile = config.get("migrationExport", "keycloak-database-update.sql");
+        return new File(databaseUpdateFile);
+    }
+
+    private void logDatabaseConnectionInfo(Connection connection) {
+        try {
+            operationalInfo = new LinkedHashMap<>();
+            DatabaseMetaData md = connection.getMetaData();
+            operationalInfo.put("databaseUrl", md.getURL());
+            operationalInfo.put("databaseUser", md.getUserName());
+            operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
+            operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
+            logger.debugf("Database info: %s", operationalInfo.toString());
+        } catch (SQLException e) {
+            logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
+        }
+    }
+
+    private boolean createOrUpdateSchema(String schema, Connection connection, KeycloakSession session) {
+        MigrationStrategy strategy = getMigrationStrategy();
+        boolean initializeEmpty = config.getBoolean("initializeEmpty", true);
+        File databaseUpdateFile = getDatabaseUpdateFile();
+
+        String version = null;
+
+        try {
+            try (Statement statement = connection.createStatement()) {
+                try (ResultSet rs = statement.executeQuery(String.format(SQL_GET_LATEST_VERSION, getSchema(schema)))) {
+                    if (rs.next()) {
+                        version = rs.getString(1);
+                    }
+                }
+            }
+        } catch (SQLException ignore) {
+            // migration model probably does not exist so we assume the database is empty
+        }
+
+        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
+
+        boolean requiresMigration = version == null || !version.equals(new ModelVersion(Version.VERSION_KEYCLOAK).toString());
+        session.setAttribute(VERIFY_AND_RUN_MASTER_CHANGELOG, requiresMigration);
+
+        JpaUpdaterProvider.Status status = updater.validate(connection, schema);
+
+        if (status == JpaUpdaterProvider.Status.VALID) {
+            logger.debug("Database is up-to-date");
+        } else if (status == JpaUpdaterProvider.Status.EMPTY) {
+            if (initializeEmpty) {
+                update(connection, schema, session, updater);
+            } else {
+                switch (strategy) {
+                    case UPDATE:
+                        update(connection, schema, session, updater);
+                        break;
+                    case MANUAL:
+                        export(connection, schema, databaseUpdateFile, session, updater);
+                        throw new ServerStartupError("Database not initialized, please initialize database with " + databaseUpdateFile.getAbsolutePath(), false);
+                    case VALIDATE:
+                        throw new ServerStartupError("Database not initialized, please enable database initialization", false);
+                }
+            }
+        } else {
+            switch (strategy) {
+                case UPDATE:
+                    update(connection, schema, session, updater);
+                    break;
+                case MANUAL:
+                    export(connection, schema, databaseUpdateFile, session, updater);
+                    throw new ServerStartupError("Database not up-to-date, please migrate database with " + databaseUpdateFile.getAbsolutePath(), false);
+                case VALIDATE:
+                    throw new ServerStartupError("Database not up-to-date, please enable database migration", false);
+            }
+        }
+
+        return requiresMigration;
+    }
+
+    private void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock2 = dbLockManager.getDBLock();
+        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+        try {
+            updater.update(connection, schema);
+        } finally {
+            dbLock2.releaseLock();
+        }
+    }
+
+    private void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session,
+            JpaUpdaterProvider updater) {
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock2 = dbLockManager.getDBLock();
+        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+        try {
+            updater.export(connection, schema, databaseUpdateFile);
+        } finally {
+            dbLock2.releaseLock();
+        }
+    }
+
+    private EntityManager createEntityManager(KeycloakSession session) {
+        // we need to auto join the transaction, hence the synchronized type
+        // ideally, we should leverage how hibernate-orm creates the entity manager
+        // but that breaks us, mainly due to flush which is always set to always
+        // as per hibernate guys, we should consider how JTASessionOpener creates entity managers
+        // but that brings lot of details that we need to investigate further
+        return PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
     }
 }
