@@ -77,7 +77,7 @@ export const GroupsModal = ({
         <Button
           id="modal-cancel"
           key="cancel"
-          variant={ButtonVariant.secondary}
+          variant={ButtonVariant.link}
           onClick={() => {
             handleModalToggle();
           }}

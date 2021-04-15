@@ -93,7 +93,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
               <Button
                 id="modal-cancel"
                 key="cancel"
-                variant={ButtonVariant.secondary}
+                variant={ButtonVariant.link}
                 onClick={() => {
                   props.toggleDialog();
                 }}

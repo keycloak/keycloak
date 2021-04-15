@@ -41,11 +41,7 @@ export const ChangeTypeDialog = ({
         >
           {t("common:continue")}
         </Button>,
-        <Button
-          key="cancel"
-          variant={ButtonVariant.secondary}
-          onClick={onClose}
-        >
+        <Button key="cancel" variant={ButtonVariant.link} onClick={onClose}>
           {t("common:cancel")}
         </Button>,
       ]}

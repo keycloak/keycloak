@@ -80,7 +80,7 @@ export const DuplicateFlowModal = ({
         <Button
           id="modal-cancel"
           key="cancel"
-          variant={ButtonVariant.secondary}
+          variant={ButtonVariant.link}
           onClick={() => {
             toggleDialog();
           }}
