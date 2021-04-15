@@ -18,6 +18,7 @@ package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.models.RealmModel;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -72,5 +73,9 @@ public class RealmBean {
 
     public boolean isUserManagedAccessAllowed() {
         return realm.isUserManagedAccessAllowed();
+    }
+
+    public Map<String, String> getAttributes() {
+        return realm.getAttributes();
     }
 }

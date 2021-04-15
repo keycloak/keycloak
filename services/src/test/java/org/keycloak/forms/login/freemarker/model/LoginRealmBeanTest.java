@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.keycloak.models.RealmModel;
 
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginRealmBeanTest {
 
@@ -43,4 +45,20 @@ public class LoginRealmBeanTest {
         Assert.assertEquals(5, realmBean.getResetCredentialsActionTokenLifespanMinutes());
         Assert.assertEquals(5, realmBean.getVerifyEmailActionTokenLifespanMinutes());
     }
+
+	@Test
+	public void exposeRealmAttributesTest() {
+		Map<String, String> map = new HashMap<String, String>();
+	    RealmModel realmModel = (RealmModel) Proxy.newProxyInstance(LoginRealmBeanTest.class.getClassLoader(), new Class[]{RealmModel.class}, (proxy, method, args) -> {
+
+	        if (method.getName().matches("getAttributes")) {
+	            return map;
+	        }
+
+	        return null;
+	    });
+	    RealmBean realmBean = new RealmBean(realmModel);
+
+	    Assert.assertEquals(map,realmBean.getAttributes());
+	}
 }
