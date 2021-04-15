@@ -1,10 +1,12 @@
 import React, { ReactNode, useContext, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Button,
   Modal,
   ModalVariant,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
 import moment from "moment";
 
@@ -12,6 +14,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import {
+  cellWidth,
   Table,
   TableBody,
   TableHeader,
@@ -40,13 +43,34 @@ const DisplayDialog = ({ titleKey, onClose, children }: DisplayDialogProps) => {
   );
 };
 
+const MAX_TEXT_LENGTH = 38;
+const Truncate = ({
+  text,
+  children,
+}: {
+  text?: string;
+  children: (text: string) => any;
+}) => {
+  const definedText = text || "";
+  const needsTruncation = definedText.length > MAX_TEXT_LENGTH;
+  const truncatedText = definedText.substr(0, MAX_TEXT_LENGTH);
+  return (
+    <>
+      {needsTruncation && (
+        <Tooltip content={text}>{children(truncatedText + "...")}</Tooltip>
+      )}
+      {!needsTruncation && <>{children(definedText)}</>}
+    </>
+  );
+};
+
 export const AdminEvents = () => {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
   const { realm } = useContext(RealmContext);
 
-  const [key, setKey] = useState("");
-  const refresh = () => setKey(`${new Date().getTime()}`);
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(new Date().getTime());
 
   const [authEvent, setAuthEvent] = useState<AdminEventRepresentation>();
   const [representationEvent, setRepresentationEvent] = useState<
@@ -64,6 +88,27 @@ export const AdminEvents = () => {
     }
     return await adminClient.realms.findAdminEvents({ ...params });
   };
+
+  const LinkResource = (row: AdminEventRepresentation) => (
+    <>
+      <Truncate text={row.resourcePath}>
+        {(text) => (
+          <>
+            {row.resourceType !== "COMPONENT" && (
+              <Link
+                to={`/${realm}/${row.resourcePath}${
+                  row.resourceType !== "GROUP" ? "/settings" : ""
+                }`}
+              >
+                {text}
+              </Link>
+            )}
+            {row.resourceType === "COMPONENT" && <span>{text}</span>}
+          </>
+        )}
+      </Truncate>
+    </>
+  );
 
   return (
     <>
@@ -120,6 +165,7 @@ export const AdminEvents = () => {
           {
             name: "resourcePath",
             displayKey: "events:resourcePath",
+            cellRenderer: LinkResource,
           },
           {
             name: "resourceType",
@@ -128,6 +174,7 @@ export const AdminEvents = () => {
           {
             name: "operationType",
             displayKey: "events:operationType",
+            transforms: [cellWidth(10)],
           },
           {
             name: "",
