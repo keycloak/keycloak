@@ -108,7 +108,7 @@ public class MapRealmProvider<K> implements RealmProvider {
         LOG.tracef("getRealmByName(%s)%s", name, getShortStackTrace());
 
         ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
-                .compare(SearchableFields.NAME, Operator.EQ, name);
+                .compare(SearchableFields.NAME, Operator.HAS_VALUE, name);
 
         K realmId = tx.read(mcb)
                 .findFirst()
@@ -126,7 +126,7 @@ public class MapRealmProvider<K> implements RealmProvider {
     @Override
     public Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type) {
         ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
-                .compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.EQ, type.getName());
+                .compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.HAS_VALUE, type.getName());
 
         return getRealmsStream(mcb);
     }

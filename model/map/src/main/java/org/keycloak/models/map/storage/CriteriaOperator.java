@@ -46,8 +46,8 @@ class CriteriaOperator {
     private static final Predicate<Object> ALWAYS_FALSE = o -> false;
 
     static {
-        OPERATORS.put(Operator.EQ, CriteriaOperator::eq);
-        OPERATORS.put(Operator.NE, CriteriaOperator::ne);
+        OPERATORS.put(Operator.HAS_VALUE, CriteriaOperator::hasValue);
+        OPERATORS.put(Operator.HAS_NOT_VALUE, CriteriaOperator::hasNotValue);
         OPERATORS.put(Operator.EXISTS, CriteriaOperator::exists);
         OPERATORS.put(Operator.NOT_EXISTS, CriteriaOperator::notExists);
         OPERATORS.put(Operator.LT, CriteriaOperator::lt);
@@ -88,17 +88,23 @@ class CriteriaOperator {
         return value[0];
     }
 
-    public static Predicate<Object> eq(Object[] value) {
+    public static Predicate<Object> hasValue(Object[] value) {
         Object value0 = getFirstArrayElement(value);
         return new Predicate<Object>() {
-            @Override public boolean test(Object v) { return Objects.equals(v, value0); }
+            @Override public boolean test(Object v) {
+                if (v instanceof Collection) return ((Collection<?>) v).contains(value0);
+                return Objects.equals(v, value0); 
+            }
         };
     }
 
-    public static Predicate<Object> ne(Object[] value) {
+    public static Predicate<Object> hasNotValue(Object[] value) {
         Object value0 = getFirstArrayElement(value);
         return new Predicate<Object>() {
-            @Override public boolean test(Object v) { return ! Objects.equals(v, value0); }
+            @Override public boolean test(Object v) {
+                if (v instanceof Collection) return !((Collection<?>) v).contains(value0);
+                return ! Objects.equals(v, value0); 
+            }
         };
     }
 
@@ -156,7 +162,13 @@ class CriteriaOperator {
             operand = new HashSet(Arrays.asList(value));
         }
         return operand.isEmpty() ? ALWAYS_FALSE : new Predicate<Object>() {
-            @Override public boolean test(Object v) { return operand.contains(v); }
+            @Override public boolean test(Object v) {
+                if (v instanceof Collection) {
+                    return ((Collection<?>) v).stream().anyMatch(operand::contains);
+                }
+
+                return operand.contains(v);
+            }
         };
     }
 

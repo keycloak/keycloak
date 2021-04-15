@@ -74,7 +74,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
 
         return resourceServerId == null
                 ? mcb
-                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.EQ,
+                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.HAS_VALUE,
                               resourceServerId);
     }
 
@@ -83,8 +83,8 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         LOG.tracef("create(%s, %s, %s, %s)%s", id, name, resourceServer, owner, getShortStackTrace());
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID", "OWNER"})
         ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServer.getId())
-                .compare(SearchableFields.NAME, Operator.EQ, name)
-                .compare(SearchableFields.OWNER, Operator.EQ, owner);
+                .compare(SearchableFields.NAME, Operator.HAS_VALUE, name)
+                .compare(SearchableFields.OWNER, Operator.HAS_VALUE, owner);
 
         if (tx.getCount(mcb) > 0) {
             throw new ModelDuplicateException("Resource with name '" + name + "' for " + resourceServer.getId() + " already exists for request owner " + owner);
@@ -114,7 +114,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.ID, Operator.EQ, id))
+                .compare(SearchableFields.ID, Operator.HAS_VALUE, id))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -129,7 +129,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         LOG.tracef("findByOwnerFilter(%s, %s, %s, %d, %d)%s", ownerId, resourceServerId, consumer, firstResult, maxResult, getShortStackTrace());
         Comparator<? super MapResourceEntity<K>> c = Comparator.comparing(MapResourceEntity::getId);
         paginatedStream(tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.OWNER, Operator.EQ, ownerId))
+                    .compare(SearchableFields.OWNER, Operator.HAS_VALUE, ownerId))
                     .sorted(c), firstResult, maxResult)
                 .map(this::entityToAdapter)
                 .forEach(consumer);
@@ -149,7 +149,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         LOG.tracef("findByUri(%s, %s)%s", uri, resourceServerId, getShortStackTrace());
         
         return tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.URI, Operator.EQ, uri))
+                    .compare(SearchableFields.URI, Operator.HAS_VALUE, uri))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -193,10 +193,10 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
                 return resourceStore.createCriteriaBuilder().compare(SearchableFields.URI, Operator.EXISTS);
             case OWNER_MANAGED_ACCESS:
                 return resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.OWNER_MANAGED_ACCESS, Operator.EQ, Boolean.valueOf(value[0]));
+                        .compare(SearchableFields.OWNER_MANAGED_ACCESS, Operator.HAS_VALUE, Boolean.valueOf(value[0]));
             case EXACT_NAME:
                 return resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.NAME, Operator.EQ, value[0]);
+                        .compare(SearchableFields.NAME, Operator.HAS_VALUE, value[0]);
             case NAME:
                 return  resourceStore.createCriteriaBuilder()
                         .compare(SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
@@ -225,8 +225,8 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         LOG.tracef("findByName(%s, %s, %s)%s", name, ownerId, resourceServerId, getShortStackTrace());
         return tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.OWNER, Operator.EQ, ownerId)
-                    .compare(SearchableFields.NAME, Operator.EQ, name))
+                    .compare(SearchableFields.OWNER, Operator.HAS_VALUE, ownerId)
+                    .compare(SearchableFields.NAME, Operator.HAS_VALUE, name))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -236,7 +236,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
         tx.read(forResourceServer(resourceServerId)
-            .compare(SearchableFields.TYPE, Operator.EQ, type))
+            .compare(SearchableFields.TYPE, Operator.HAS_VALUE, type))
             .map(this::entityToAdapter)
             .forEach(consumer);
     }
@@ -246,10 +246,10 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         LOG.tracef("findByType(%s, %s, %s, %s)%s", type, owner, resourceServerId, consumer, getShortStackTrace());
 
         ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServerId)
-                .compare(SearchableFields.TYPE, Operator.EQ, type);
+                .compare(SearchableFields.TYPE, Operator.HAS_VALUE, type);
 
         if (owner != null) {
-            mcb = mcb.compare(SearchableFields.OWNER, Operator.EQ, owner);
+            mcb = mcb.compare(SearchableFields.OWNER, Operator.HAS_VALUE, owner);
         }
 
         tx.read(mcb)
@@ -261,8 +261,8 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByTypeInstance(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
         tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.OWNER, Operator.NE, resourceServerId)
-                .compare(SearchableFields.TYPE, Operator.EQ, type))
+                .compare(SearchableFields.OWNER, Operator.HAS_NOT_VALUE, resourceServerId)
+                .compare(SearchableFields.TYPE, Operator.HAS_VALUE, type))
                 .map(this::entityToAdapter)
                 .forEach(consumer);
     }

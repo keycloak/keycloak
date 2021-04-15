@@ -132,7 +132,7 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm) {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         return tx.read(mcb)
           .sorted(COMPARE_BY_CLIENT_ID)
@@ -218,7 +218,7 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public long getClientsCount(RealmModel realm) {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         return this.clientStore.getCount(mcb);
     }
@@ -245,7 +245,7 @@ public class MapClientProvider<K> implements ClientProvider {
         LOG.tracef("getClientByClientId(%s, %s)%s", realm, clientId, getShortStackTrace());
 
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
           .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, clientId);
 
         return tx.read(mcb)
@@ -262,7 +262,7 @@ public class MapClientProvider<K> implements ClientProvider {
         }
 
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
           .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, "%" + clientId + "%");
 
         Stream<MapClientEntity<K>> s = tx.read(mcb)
@@ -274,10 +274,10 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+                .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
+            mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.HAS_VALUE, entry.getKey(), entry.getValue());
         }
 
         Stream<MapClientEntity<K>> s = tx.read(mcb)
@@ -341,8 +341,8 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.ENABLED, Operator.HAS_VALUE, Boolean.TRUE);
 
         try (Stream<MapClientEntity<K>> st = tx.read(mcb)) {
             return st
@@ -356,8 +356,8 @@ public class MapClientProvider<K> implements ClientProvider {
 
     public void preRemove(RealmModel realm, RoleModel role) {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.HAS_VALUE, role.getId());
         try (Stream<MapClientEntity<K>> toRemove = tx.read(mcb)) {
             toRemove
                 .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))

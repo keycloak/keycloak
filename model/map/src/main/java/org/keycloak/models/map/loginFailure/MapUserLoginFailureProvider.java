@@ -61,8 +61,8 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
     @Override
     public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
         ModelCriteriaBuilder<UserLoginFailureModel> mcb = userLoginFailureStore.createCriteriaBuilder()
-                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, userId);
+                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, realm.getId())
+                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, userId);
 
         LOG.tracef("getUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
@@ -75,8 +75,8 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
     @Override
     public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
         ModelCriteriaBuilder<UserLoginFailureModel> mcb = userLoginFailureStore.createCriteriaBuilder()
-                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, userId);
+                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, realm.getId())
+                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, userId);
 
         LOG.tracef("addUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
@@ -94,8 +94,8 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
     @Override
     public void removeUserLoginFailure(RealmModel realm, String userId) {
         ModelCriteriaBuilder<UserLoginFailureModel> mcb = userLoginFailureStore.createCriteriaBuilder()
-                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, userId);
+                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, realm.getId())
+                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, userId);
 
         LOG.tracef("removeUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
@@ -105,7 +105,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
     @Override
     public void removeAllUserLoginFailures(RealmModel realm) {
         ModelCriteriaBuilder<UserLoginFailureModel> mcb = userLoginFailureStore.createCriteriaBuilder()
-                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId());
+                .compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.HAS_VALUE, realm.getId());
 
         LOG.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 

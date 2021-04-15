@@ -114,8 +114,8 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity<K>, M> implemen
             case LE:
             case GT:
             case GE:
-            case EQ:
-            case NE:
+            case HAS_VALUE:
+            case HAS_NOT_VALUE:
             case EXISTS:
             case NOT_EXISTS:
             case IN:
