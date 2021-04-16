@@ -123,7 +123,7 @@ const LdapSettingsHeader = ({
   return (
     <>
       <DisableConfirm />
-      {id === "new" ? (
+      {!id ? (
         <ViewHeader titleKey="LDAP" subKey="" />
       ) : (
         <ViewHeader
@@ -178,7 +178,7 @@ export const UserFederationLdapSettings = () => {
 
   useEffect(() => {
     (async () => {
-      if (id !== "new") {
+      if (id) {
         const fetchedComponent = await adminClient.components.findOne({ id });
         if (fetchedComponent) {
           setupForm(fetchedComponent);
@@ -218,13 +218,10 @@ export const UserFederationLdapSettings = () => {
         await adminClient.components.update({ id }, component);
       }
       setupForm(component as ComponentRepresentation);
-      addAlert(
-        t(id === "new" ? "createSuccess" : "saveSuccess"),
-        AlertVariant.success
-      );
+      addAlert(t(id ? "saveSuccess" : "createSuccess"), AlertVariant.success);
     } catch (error) {
       addAlert(
-        `${t(id === "new" ? "createError" : "saveError")} '${error}'`,
+        `${t(id ? "saveError" : "createError")} '${error}'`,
         AlertVariant.danger
       );
     }
@@ -324,13 +321,15 @@ export const UserFederationLdapSettings = () => {
               </ActionGroup>
             </Form>
           </Tab>
-          <Tab
-            id="mappers"
-            eventKey="mappers"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
-          >
-            <LdapMapperList />
-          </Tab>
+          {id && (
+            <Tab
+              id="mappers"
+              eventKey="mappers"
+              title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            >
+              <LdapMapperList />
+            </Tab>
+          )}
         </KeycloakTabs>
       </PageSection>
     </>
