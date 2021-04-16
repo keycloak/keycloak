@@ -18,8 +18,6 @@
     "deletedSuccess": "The client scope has been deleted",
     "deleteError": "Could not delete client scope: {{error}}",
     "includeInTokenScope": "Include in token scope",
-    "mappingUpdatedSuccess": "Mapping successfully updated",
-    "mappingUpdatedError": "Could not update mapping: '{{error}}'",
     "realmRolePrefix": "Realm role prefix",
     "multiValued": "Multivalued",
     "tokenClaimName": "Token claim name",

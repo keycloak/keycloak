@@ -94,12 +94,20 @@ export const LdapMapperDetails = () => {
       }
       setupForm(map as ComponentRepresentation);
       addAlert(
-        t(mapperId === "new" ? "createSuccess" : "saveSuccess"),
+        t(
+          mapperId === "new"
+            ? "common:mappingCreatedSuccess"
+            : "common:mappingUpdatedSuccess"
+        ),
         AlertVariant.success
       );
     } catch (error) {
       addAlert(
-        `${t(mapperId === "new" ? "createError" : "saveError")} '${error}'`,
+        `${t(
+          mapperId === "new"
+            ? "common:mappingCreatedError"
+            : "common:mappingUpdatedError"
+        )} '${error}'`,
         AlertVariant.danger
       );
     }
@@ -115,7 +123,7 @@ export const LdapMapperDetails = () => {
   return (
     <>
       <ViewHeader
-        titleKey={mapping ? mapping.name! : "Create new mapper"}
+        titleKey={mapping ? mapping.name! : t("common:createNewMapper")}
         subKey=""
       />
       <PageSection variant="light" isFilled>
