@@ -374,9 +374,13 @@ export const LdapMapperDetails = () => {
             <Button
               variant="link"
               onClick={() =>
-                history.push(
-                  `/${realm}/user-federation/ldap/${mapping!.parentId}/mappers`
-                )
+                isNew
+                  ? history.goBack()
+                  : history.push(
+                      `/${realm}/user-federation/ldap/${
+                        mapping!.parentId
+                      }/mappers`
+                    )
               }
               data-testid="ldap-cancel"
             >
