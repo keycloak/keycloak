@@ -128,7 +128,7 @@ public final class PropertyMappers {
             }
             addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
             return "h2";
-        }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
+        }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres, postgres-95, postgres-10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
         create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> Database.getDefaultUrl(value).orElse(value), "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
         create("db.username", "quarkus.datasource.username", "The database username.");
