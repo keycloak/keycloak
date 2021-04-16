@@ -531,6 +531,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isClientRegistrationAccessTokenRotationEnabled() {
+        return getAttribute(RealmAttributes.CLIENT_REGISTRATION_ACCESS_TOKEN_ROTATION_ENABLED, true);
+    }
+
+    @Override
+    public void setClientRegistrationAccessTokenRotationEnabled(boolean clientRegistrationAccessTokenRotationEnabled) {
+        setAttribute(RealmAttributes.CLIENT_REGISTRATION_ACCESS_TOKEN_ROTATION_ENABLED, clientRegistrationAccessTokenRotationEnabled);
+    }
+
+    @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
     }

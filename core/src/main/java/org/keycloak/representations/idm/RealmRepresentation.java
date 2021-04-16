@@ -63,6 +63,7 @@ public class RealmRepresentation {
     protected Integer clientSessionMaxLifespan;
     protected Integer clientOfflineSessionIdleTimeout;
     protected Integer clientOfflineSessionMaxLifespan;
+    protected Boolean clientRegistrationAccessTokenRotationEnabled;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
@@ -424,6 +425,14 @@ public class RealmRepresentation {
 
     public void setClientOfflineSessionMaxLifespan(Integer clientOfflineSessionMaxLifespan) {
         this.clientOfflineSessionMaxLifespan = clientOfflineSessionMaxLifespan;
+    }
+
+    public Boolean getClientRegistrationAccessTokenRotationEnabled() {
+        return clientRegistrationAccessTokenRotationEnabled;
+    }
+
+    public void setClientRegistrationAccessTokenRotationEnabled(Boolean clientRegistrationAccessTokenRotationEnabled) {
+        this.clientRegistrationAccessTokenRotationEnabled = clientRegistrationAccessTokenRotationEnabled;
     }
 
     public List<ScopeMappingRepresentation> getScopeMappings() {

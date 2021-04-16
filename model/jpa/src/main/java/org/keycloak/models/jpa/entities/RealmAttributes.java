@@ -39,6 +39,7 @@ public interface RealmAttributes {
     String CLIENT_SESSION_MAX_LIFESPAN = "clientSessionMaxLifespan";
     String CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT = "clientOfflineSessionIdleTimeout";
     String CLIENT_OFFLINE_SESSION_MAX_LIFESPAN = "clientOfflineSessionMaxLifespan";
+    String CLIENT_REGISTRATION_ACCESS_TOKEN_ROTATION_ENABLED = "clientRegistrationAccessTokenRotationEnabled";
     String WEBAUTHN_POLICY_RP_ENTITY_NAME = "webAuthnPolicyRpEntityName";
     String WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = "webAuthnPolicySignatureAlgorithms";
 

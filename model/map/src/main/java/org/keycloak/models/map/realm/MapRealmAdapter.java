@@ -364,6 +364,16 @@ public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEnti
     }
 
     @Override
+    public boolean isClientRegistrationAccessTokenRotationEnabled() {
+        return entity.isClientRegistrationAccessTokenRotationEnabled();
+    }
+
+    @Override
+    public void setClientRegistrationAccessTokenRotationEnabled(boolean clientRegistrationAccessTokenRotationEnabled) {
+        entity.setClientRegistrationAccessTokenRotationEnabled(clientRegistrationAccessTokenRotationEnabled);
+    }
+
+    @Override
     public void setAccessTokenLifespan(int seconds) {
         entity.setAccessTokenLifespan(seconds);
     }

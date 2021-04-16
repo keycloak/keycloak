@@ -287,6 +287,17 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="clientRegistrationAccessTokenRotationEnabled">{{:: 'client-registration-access-token-rotation-enabled' | translate}}</label>
+            <div class="col-md-3">
+                <input ng-change="" ng-model="realm.clientRegistrationAccessTokenRotationEnabled"
+                       name="clientRegistrationAccessTokenRotationEnabled"
+                       id="clientRegistrationAccessTokenRotationEnabled"
+                       onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+            </div>
+            <kc-tooltip>{{:: 'client-registration-access-token-rotation-enabled.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="actionTokenGeneratedByUserLifespan" class="two-lines">{{:: 'action-token-generated-by-user-lifespan' | translate}}</label>
 
             <div class="col-md-6 time-selector">

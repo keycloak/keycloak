@@ -97,6 +97,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int clientSessionMaxLifespan;
     protected int clientOfflineSessionIdleTimeout;
     protected int clientOfflineSessionMaxLifespan;
+    protected boolean clientRegistrationAccessTokenRotationEnabled;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
@@ -217,6 +218,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         clientSessionMaxLifespan = model.getClientSessionMaxLifespan();
         clientOfflineSessionIdleTimeout = model.getClientOfflineSessionIdleTimeout();
         clientOfflineSessionMaxLifespan = model.getClientOfflineSessionMaxLifespan();
+        clientRegistrationAccessTokenRotationEnabled = model.isClientRegistrationAccessTokenRotationEnabled();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
@@ -473,6 +475,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getClientOfflineSessionMaxLifespan() {
         return clientOfflineSessionMaxLifespan;
+    }
+
+    public boolean isClientRegistrationAccessTokenRotationEnabled() {
+        return clientRegistrationAccessTokenRotationEnabled;
     }
 
     public int getAccessTokenLifespan() {

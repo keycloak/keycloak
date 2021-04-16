@@ -18,6 +18,7 @@ package org.keycloak.testsuite.client;
 
 import org.junit.After;
 import org.junit.Before;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -114,6 +115,13 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         } catch (NotFoundException e) {
             return null;
         }
+    }
+
+    public void setClientRegistrationAccessTokenRotationEnabled(boolean enabled) {
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        RealmRepresentation realmRepresentation = adminClient.realm(REALM_NAME).toRepresentation();
+        realmRepresentation.setClientRegistrationAccessTokenRotationEnabled(enabled);
+        realm.update(realmRepresentation);
     }
 
     void authCreateClients() {
