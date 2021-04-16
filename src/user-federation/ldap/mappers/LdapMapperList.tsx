@@ -37,7 +37,17 @@ export const LdapMapperList = () => {
       parent: id,
       type: "org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
     };
-    return adminClient.components.find(testParams);
+
+    const mappersList = (await adminClient.components.find(testParams)).map(
+      (mapper) => {
+        return {
+          ...mapper,
+          name: mapper.name,
+          type: mapper.providerId,
+        } as ComponentRepresentation;
+      }
+    );
+    return mappersList;
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
