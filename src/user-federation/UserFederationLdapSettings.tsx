@@ -211,13 +211,11 @@ export const UserFederationLdapSettings = () => {
 
   const save = async (component: ComponentRepresentation) => {
     try {
-      if (id) {
-        if (id === "new") {
-          await adminClient.components.create(component);
-          history.push(`/${realm}/user-federation`);
-        } else {
-          await adminClient.components.update({ id }, component);
-        }
+      if (!id) {
+        await adminClient.components.create(component);
+        history.push(`/${realm}/user-federation`);
+      } else {
+        await adminClient.components.update({ id }, component);
       }
       setupForm(component as ComponentRepresentation);
       addAlert(
