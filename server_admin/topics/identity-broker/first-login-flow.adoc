@@ -26,7 +26,6 @@ Review Profile::
 * When *OFF*, the profile page does not display unless the user clicks in a later phase on the `Review profile info` link in the page displayed by the `Confirm Link Existing Account` authenticator.
 
 Create User If Unique::
-<<<<<<< HEAD
   This authenticator checks if there is already an existing {project_name} account with the same email or username like the account from the identity provider.
   If it's not, then the authenticator just creates a new local {project_name} account and links it with the identity provider and the whole flow is finished.
   Otherwise it goes to the next `Handle Existing Account` subflow.
@@ -34,16 +33,15 @@ Create User If Unique::
   will see the error page if there is an existing {project_name} account and the user will need to link the identity provider account through Account management.
 =======
 * This authenticator verifies that there is already a {project_name} account with the same email or username as the identity provider's account.
-* If an account does not exist, the authenticator creates a local {project_name} account, links this account with the identity provider, and terminates the flow. 
+* If an account does not exist, the authenticator creates a local {project_name} account, links this account with the identity provider, and terminates the flow.
 * If an account exists, the authenticator implements the next `Handle Existing Account` sub-flow.
 * To ensure there is no duplicated account, you can mark this authenticator as `REQUIRED`. The user sees the error page if a {project_name} account exists, and users must link their identity provider account through Account management.
->>>>>>> KEYCLOAK-15756 Initial wording (#58)
 
 NOTE: If you want to skip the ability to create new users, but you want that users authenticated from identity provider must already exists in {project_name} with same username or email like the user from identity provider, you can create new flow and replace `Create User If Exists` authenticator with `Detect Existing Broker User` . More details in the <<Detect Existing User First Login Flow,examples below>>.
-  
+
 Confirm Link Existing Account::
 * On the information page, users see a {project_name} account with the same email. Users can review their profile again and use a different email or username. The flow restarts and goes back to the `Review Profile` authenticator.
-* Alternatively, users can confirm that they want to link their identity provider account with their existing {project_name} account. 
+* Alternatively, users can confirm that they want to link their identity provider account with their existing {project_name} account.
 * Disable this authenticator if you do not want users to see this confirmation page and go straight to linking identity provider account by email verification or re-authentication.
 
 Verify Existing Account By Email::
@@ -91,7 +89,6 @@ To disable user creation:
 . Set *Create User If Unique* to *DISABLED*.
 . Set *Confirm Link Existing Account* to *DISABLED*.
 
-<<<<<<< HEAD
 This configuration also implies that Keycloak itself won't be able to determine which internal account would correspond to the external identity.
 Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
 
@@ -115,4 +112,3 @@ You could set the also set `Sync Mode` to `force` if you want to update the user
 NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as github, facebook ...) but you want to manage which users that can log in.
 =======
 With this configuration, {project_name} is unable to determine which internal account corresponds to the external identity. The *Verify Existing Account By Re-authentication* authenticator asks the provider for the username and password.
->>>>>>> KEYCLOAK-15756 Initial wording (#58)

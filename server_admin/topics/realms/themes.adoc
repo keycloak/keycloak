@@ -64,16 +64,13 @@ The logic for selecting the locale uses the first of the following that is avail
 * Realm default
 * If none of the above, fall back to English
 
-<<<<<<< HEAD
 When a user is authenticated an action is triggered to update the locale in the persisted cookie mentioned earlier. If the
 user has actively switched the locale through the locale selector on the login pages the users locale is also updated at
 this point.
 
 If you want to change the logic for selecting the locale, you have an option to create custom `LocaleSelectorProvider`. For details, please refer to the
 link:{developerguide_link}#_locale_selector[{developerguide_name}].
-=======
 When a user is authenticated, an action is triggered to update the locale in the persisted cookie mentioned earlier. If the user has actively switched the locale through the locale selector on the login pages, the user's locale is also updated at this point.
 
 If you want to change the logic for selecting the locale, you have an option to create a custom `LocaleSelectorProvider`. For details, see the
 link:{developerguide_link}#_locale_selector[{developerguide_name}].
->>>>>>> integrated latest changes into new files

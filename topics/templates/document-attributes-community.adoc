@@ -131,10 +131,9 @@ endif::[]
 :jdgserver_version: 9.4.19
 :jdgserver_version_latest: 11.0.9
 :jdgserver_crossdcdocs_link: https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html
-=======
 :jdgserver_version_latest: 11.0.8
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_user_guide/x_site_replication
->>>>>>> integrated latest changes into new files
+
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 12
 :fuseHawtioEAPVersion: JBoss EAP 6.4

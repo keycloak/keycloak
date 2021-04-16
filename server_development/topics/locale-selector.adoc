@@ -1,17 +1,15 @@
 [[_locale_selector]]
 === Locale Selector
 
-<<<<<<< HEAD
 By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled.
 With internationalization enabled, the locale is resolved according to the logic described in the link:{adminguide_link}#_user_locale_selection[{adminguide_name}].
 
-This behaviour can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
-=======
+This behavior can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
+
 By default, the locale is selected using the `DefaultLocaleSelectorProvider`, which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled.
 With internationalization enabled, the locale is resolved according to the logic described in the link:{adminguide_link}#_user_locale_selection[{adminguide_name}].
 
 This behavior can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
->>>>>>> integrated latest changes into new files
 
 The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, which must return a locale given a `RealmModel` and a nullable `UserModel`. The actual request is available from the `KeycloakSession#getContext` method.
 
