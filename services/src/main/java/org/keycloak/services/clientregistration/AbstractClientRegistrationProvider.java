@@ -136,7 +136,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         rep = ModelToRepresentation.toRepresentation(client, session);
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 

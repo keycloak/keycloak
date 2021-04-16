@@ -418,9 +418,6 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         ClientRepresentation client3 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client3.getClientId());
 
-        Assert.assertEquals("registrationAccessToken in returned json is different than one returned by create",
-                client.getRegistrationAccessToken(), client3.getRegistrationAccessToken());
-
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
 
@@ -457,9 +454,6 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         ClientRepresentation client5 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client5.getClientId());
         Assert.assertTrue("enabled", client5.isEnabled());
-
-        Assert.assertNotEquals("registrationAccessToken in returned json is different than one returned by get",
-                client3.getRegistrationAccessToken(), client5.getRegistrationAccessToken());
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);

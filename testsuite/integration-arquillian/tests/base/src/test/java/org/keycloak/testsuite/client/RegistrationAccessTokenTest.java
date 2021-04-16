@@ -36,6 +36,7 @@ import static org.junit.Assert.fail;
 public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest {
 
     private ClientRepresentation client;
+    private ClientRepresentation otherClient;
 
     @Before
     public void before() throws Exception {
@@ -56,8 +57,8 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setSecret("RegistrationAccessTokenTestClientSecret");
         c.setRootUrl("http://root");
 
-        c = createClient(c);
-        getCleanup().addClientUuid(c.getId());
+        otherClient = createClient(c);
+        getCleanup().addClientUuid(otherClient.getId());
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
@@ -114,9 +115,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void getClientWithBadRegistrationToken() throws ClientRegistrationException {
-        String oldToken = client.getRegistrationAccessToken();
-        reg.update(client);
-        reg.auth(Auth.token(oldToken));
+        reg.auth(Auth.token(otherClient.getRegistrationAccessToken()));
         try {
             reg.get(client.getClientId());
             fail("Expected 401");
@@ -132,18 +131,15 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         ClientRepresentation rep = reg.update(client);
 
         assertEquals("http://newroot", getClient(client.getId()).getRootUrl());
-        assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
 
-        // check registration access token is updated
-        assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
+        // check registration access token remains valid
+        assertRead(client.getClientId(), client.getRegistrationAccessToken(), true);
         assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
     }
 
     @Test
-    public void updateClientWithBadRegistrationToken() throws ClientRegistrationException {
-        String oldToken = client.getRegistrationAccessToken();
-        reg.update(client);
-        reg.auth(Auth.token(oldToken));
+    public void updateClientWithBadRegistrationToken() {
+        reg.auth(Auth.token(otherClient.getRegistrationAccessToken()));
         try {
             reg.update(client);
             fail("Expected 401");
@@ -161,10 +157,8 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     }
 
     @Test
-    public void deleteClientWithBadRegistrationToken() throws ClientRegistrationException {
-        String oldToken = client.getRegistrationAccessToken();
-        reg.update(client);
-        reg.auth(Auth.token(oldToken));
+    public void deleteClientWithBadRegistrationToken() {
+        reg.auth(Auth.token(otherClient.getRegistrationAccessToken()));
         try {
             reg.delete(client);
             fail("Expected 401");
