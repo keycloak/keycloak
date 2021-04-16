@@ -48,6 +48,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import java.sql.Connection;
+import liquibase.changelog.ChangeLogHistoryServiceFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -116,6 +117,8 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Use "SELECT FOR UPDATE" for locking database
         SqlGeneratorFactory.getInstance().register(new CustomLockDatabaseChangeLogGenerator());
+
+        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
 
         // Adding CustomCreateIndexChange for handling conditional indices creation
         ChangeFactory.getInstance().register(CustomCreateIndexChange.class);
