@@ -24,7 +24,6 @@ import javax.xml.parsers.SAXParserFactory;
 
 import liquibase.database.core.MariaDBDatabase;
 import liquibase.database.core.MySQLDatabase;
-import liquibase.database.core.PostgresDatabase;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -33,18 +32,19 @@ import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import liquibase.Liquibase;
+import liquibase.changelog.ChangeLogHistoryServiceFactory;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.LiquibaseException;
-import liquibase.logging.LogFactory;
 import liquibase.parser.ChangeLogParser;
 import liquibase.parser.ChangeLogParserFactory;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
@@ -91,6 +91,8 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
             if (database.getDatabaseProductName().equals(MySQLDatabase.PRODUCT_NAME)) {
                 // Adding CustomVarcharType for MySQL 8 and newer
                 DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
+
+                ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
             } else if (database.getDatabaseProductName().equals(MariaDBDatabase.PRODUCT_NAME)) {
                 // Adding CustomVarcharType for MySQL 8 and newer
                 DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
