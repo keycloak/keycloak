@@ -18,11 +18,18 @@
 package org.keycloak.testsuite.console;
 
 import org.junit.Test;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.openqa.selenium.JavascriptExecutor;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.admin.ApiUtil.assignClientRoles;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 
 public class BasicConsoleTest extends AbstractConsoleTest {
+
+    private final static String TEST_USER_VIEW_USERS_NAME = "BasicConsoleTest-view-users";
+    private final static String DEFAULT_PASSWORD = "Test12345!";
 
     @Test
     // KEYCLOAK-4717
@@ -35,6 +42,31 @@ public class BasicConsoleTest extends AbstractConsoleTest {
         Thread.sleep(1000);
         result = executor.executeScript("return window.check;");
         assertEquals("Expected window not to have reloaded", "check", result);
+    }
+
+    @Test
+    // KEYCLOAK-17387
+    public void testUserWithViewUsersRoleCanOpenConsole() {
+        UserRepresentation userRepresentation = createTestUserWithViewUsersRole();
+        try {
+            loginToTestRealmConsoleAs(userRepresentation);
+        } finally {
+            ApiUtil.removeUserByUsername(testRealmResource(), TEST_USER_VIEW_USERS_NAME);
+        }
+    }
+
+    private UserRepresentation createTestUserWithViewUsersRole() {
+        ApiUtil.removeUserByUsername(testRealmResource(), TEST_USER_VIEW_USERS_NAME);
+
+        log.debug("creating test user with view-users role");
+
+        UserRepresentation userRepresentation = createUserRepresentation(TEST_USER_VIEW_USERS_NAME, null, null, null, true, DEFAULT_PASSWORD);
+        String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), userRepresentation, DEFAULT_PASSWORD);
+
+        userRepresentation.setId(id);
+
+        assignClientRoles(testRealmResource(), id, "realm-management", "view-users");
+        return userRepresentation;
     }
 
 }
