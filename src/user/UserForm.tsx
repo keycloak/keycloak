@@ -2,10 +2,14 @@ import React, { useEffect, useState } from "react";
 import {
   ActionGroup,
   Button,
+  Chip,
+  ChipGroup,
   FormGroup,
+  InputGroup,
   Select,
   SelectOption,
   Switch,
+  TextArea,
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -18,6 +22,8 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
 import { useErrorHandler } from "react-error-boundary";
 import moment from "moment";
+import { JoinGroupDialog } from "./JoinGroupDialog";
+import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 
 export type UserFormProps = {
   form: UseFormMethods<UserRepresentation>;
@@ -45,6 +51,10 @@ export const UserForm = ({
 
   const watchUsernameInput = watch("username");
   const [timestamp, setTimestamp] = useState(null);
+  const [chips, setChips] = useState<(string | undefined)[]>([]);
+
+  const [list, setList] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (editMode) {
@@ -56,7 +66,7 @@ export const UserForm = ({
         handleError
       );
     }
-  }, []);
+  }, [chips]);
 
   const setupForm = (user: UserRepresentation) => {
     reset();
@@ -90,6 +100,82 @@ export const UserForm = ({
     setRequiredUserActionsDropdownOpen(false);
   };
 
+  const deleteItem = (id: string) => {
+    const copyOfChips = chips;
+    console.log("care", id);
+
+    setChips(copyOfChips.filter((item) => item !== id));
+
+    // const index = copyOfChips.indexOf(id);
+    // if (index !== -1) {
+    //   copyOfChips.splice(index, 1);
+    //   setChips(copyOfChips);
+    // }
+  };
+
+  const deleteCategory = () => {
+    setChips([]);
+  };
+
+  const addChips = async (groups: GroupRepresentation[]): Promise<void> => {
+    const newGroups = groups;
+
+    const newGroupNames: (string | undefined)[] = newGroups!.map(
+      (item) => item.name
+    );
+    console.log(newGroupNames);
+    setChips([...chips!, ...newGroupNames]);
+
+    console.log("newGroups", newGroups)
+
+    newGroups.forEach(async (group) => {
+      // try {
+        await adminClient.users.addToGroup({
+          id: id,
+          groupId: group.id!,
+        });
+        // refresh();
+        // addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+      // } catch (error) {
+      //   // addAlert(
+      //   //   t("users:addedGroupMembershipError", { error }),
+      //   //   AlertVariant.danger
+      //   // );
+      // }
+    });
+
+    console.log("beep beep", adminClient.users.listGroups())
+
+  };
+
+  console.log(watchUsernameInput)
+
+
+  const addGroups = async (groups: GroupRepresentation[]): Promise<void> => {
+    const newGroups = groups;
+
+    newGroups.forEach(async (group) => {
+      try {
+        await adminClient.users.addToGroup({
+          id: id,
+          groupId: group.id!,
+        });
+        setList(true);
+        // refresh();
+        // addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+      } catch (error) {
+        // addAlert(
+        //   t("users:addedGroupMembershipError", { error }),
+        //   AlertVariant.danger
+        // );
+      }
+    });
+  };
+
+  const toggleModal = () => {
+    setOpen(!open);
+  };
+
   return (
     <FormAccess
       isHorizontal
@@ -97,6 +183,15 @@ export const UserForm = ({
       role="manage-users"
       className="pf-u-mt-lg"
     >
+      {open && (
+        <JoinGroupDialog
+          open={open}
+          onClose={() => setOpen(!open)}
+          onConfirm={editMode ? addGroups : addChips}
+          toggleDialog={() => toggleModal()}
+          chips={chips}
+        />
+      )}
       {editMode ? (
         <>
           <FormGroup
@@ -295,6 +390,53 @@ export const UserForm = ({
           )}
         />
       </FormGroup>
+      {!editMode && (
+        <FormGroup
+          label={t("common:groups")}
+          fieldId="kc-groups"
+          validated={errors.requiredActions ? "error" : "default"}
+          helperTextInvalid={t("common:required")}
+          labelIcon={
+            <HelpItem
+              helpText={t("requiredUserActionsHelpText")}
+              forLabel={t("requiredUserActions")}
+              forID="required-user-actions-label"
+            />
+          }
+        >
+          <Controller
+            name="groups"
+            defaultValue={[]}
+            typeAheadAriaLabel="Select an action"
+            control={control}
+            render={() => (
+              <>
+                <InputGroup>
+                  <ChipGroup categoryName={" "} onClick={deleteCategory}>
+                    {chips.map((currentChip) => (
+                      <Chip
+                        key={currentChip}
+                        onClick={() => deleteItem(currentChip!)}
+                      >
+                        {currentChip}
+                      </Chip>
+                    ))}
+                  </ChipGroup>
+                  <Button
+                    id="kc-join-groups-button"
+                    onClick={toggleModal}
+                    variant="secondary"
+                    // isDisabled={!watchUsernameInput}
+                  >
+                    {t("users:joinGroups")}
+                  </Button>
+                </InputGroup>
+              </>
+            )}
+          />
+        </FormGroup>
+      )}
+
       <ActionGroup>
         <Button
           data-testid={!editMode ? "create-user" : "save-user"}

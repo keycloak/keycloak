@@ -31,8 +31,9 @@ export type JoinGroupDialogProps = {
   open: boolean;
   toggleDialog: () => void;
   onClose: () => void;
-  username: string;
+  username?: string;
   onConfirm: (newGroups: Group[]) => void;
+  chips?: any;
 };
 
 type Group = GroupRepresentation & {
@@ -45,6 +46,7 @@ export const JoinGroupDialog = ({
   toggleDialog,
   onConfirm,
   username,
+  chips,
 }: JoinGroupDialogProps) => {
   const { t } = useTranslation("roles");
   const adminClient = useAdminClient();
@@ -61,41 +63,67 @@ export const JoinGroupDialog = ({
 
   const { id } = useParams<{ id: string }>();
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        async () => {
-          const existingUserGroups = await adminClient.users.listGroups({ id });
-          const allGroups = await adminClient.groups.find();
+  if (id) {
+    useEffect(
+      () =>
+        asyncStateFetch(
+          async () => {
+            const existingUserGroups = await adminClient.users.listGroups({
+              id,
+            });
+            const allGroups = await adminClient.groups.find();
 
-          if (groupId) {
-            const group = await adminClient.groups.findOne({ id: groupId });
-            return { group, groups: group.subGroups! };
-          } else {
-            return {
-              groups: _.differenceBy(allGroups, existingUserGroups, "id"),
-            };
-          }
-        },
-        async ({ group: selectedGroup, groups }) => {
-          if (selectedGroup) {
-            setNavigation([...navigation, selectedGroup]);
-          }
+            if (groupId) {
+              const group = await adminClient.groups.findOne({ id: groupId });
+              return { group, groups: group.subGroups! };
+            } else {
+              return {
+                groups: _.differenceBy(allGroups, existingUserGroups, "id"),
+              };
+            }
+          },
+          async ({ group: selectedGroup, groups }) => {
+            if (selectedGroup) {
+              setNavigation([...navigation, selectedGroup]);
+            }
 
-          groups.forEach((group: Group) => {
-            group.checked = !!selectedRows.find((r) => r.id === group.id);
-          });
-          setGroups(groups);
-        },
-        errorHandler
-      ),
-    [groupId]
-  );
+            groups.forEach((group: Group) => {
+              group.checked = !!selectedRows.find((r) => r.id === group.id);
+            });
+            setGroups(groups);
+          },
+          errorHandler
+        ),
+      [groupId]
+    );
+  }
+
+  else if (!id) {
+  useEffect(() => {
+    return asyncStateFetch(
+      () => {
+        // adminClient.groups.find();
+        return Promise.resolve(adminClient.groups.find());
+      },
+      (groups) => {
+        console.log(groups);
+        console.log("potato", chips)
+        // setGroups(groups.filter((item) => item.name !== chips));
+        setGroups([...groups.filter((row) => !chips.includes(row.name))]);
+
+        // setupForm(realm);
+      },
+      errorHandler
+    );
+  }, []);
+}
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={`Join groups for user ${username}`}
+      title={
+        username ? `Join groups for user ${username}` : "Select groups to join"
+      }
       isOpen={open}
       onClose={onClose}
       actions={[

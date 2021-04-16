@@ -10,6 +10,7 @@
     "noGroups": "No groups",
     "noGroupsText": "You haven't added this user to any groups. Join a group to get started.",
     "joinGroup": "Join Group",
+    "joinGroups": "Join Groups",
     "searchForGroups": "Search for groups",
     "leave": "Leave",
     "leaveGroup": "Leave group {{name}}?",
