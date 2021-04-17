@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.forms.login.freemarker.model;
 
-package org.keycloak.email;
-
+import javax.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.Provider;
 
-import java.util.Map;
+public class EmailBean {
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public interface EmailSenderProvider extends Provider {
+	private final UserModel user;
+	private final MultivaluedMap<String, String> formData;
 
-    default void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
-        send(config, user.getEmail(), subject, textBody, htmlBody);
-    }
+	public EmailBean(UserModel user, MultivaluedMap<String, String> formData) {
+		this.user = user;
+		this.formData = formData;
+	}
 
-    void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException;
+	public String getValue() {
+		return formData != null ? formData.getFirst("email") : user.getEmail();
+	}
 }

@@ -59,6 +59,11 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
     }
 
     @Override
+    public boolean isEditEmailAllowed() {
+        return false;
+    }
+
+    @Override
     public String getEmail() {
         return user.getEmail();
     }

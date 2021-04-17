@@ -26,16 +26,8 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
     @FindBy(id = "username")
     private WebElement usernameInput;
 
-    public void update(String firstName, String lastName, String email, String username) {
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
-        update(firstName, lastName, email);
-    }
-
-    public void updateWithDepartment(String firstName, String lastName, String department, String email, String username) {
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
-        super.updateWithDepartment(firstName, lastName, department, email);
+    public Update prepareUpdate() {
+        return new Update(this);
     }
 
     public String getUsername() {
@@ -57,6 +49,31 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
     @Override
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public static class Update extends LoginUpdateProfilePage.Update {
+
+        private final LoginUpdateProfileEditUsernameAllowedPage page;
+        private String username;
+
+        protected Update(LoginUpdateProfileEditUsernameAllowedPage page) {
+            super(page);
+            this.page = page;
+        }
+
+        public Update username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        @Override
+        public void submit() {
+            if (username != null) {
+                page.usernameInput.clear();
+                page.usernameInput.sendKeys(username);
+            }
+            super.submit();
+        }
     }
 
 }

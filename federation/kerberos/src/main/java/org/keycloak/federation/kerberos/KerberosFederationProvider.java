@@ -271,6 +271,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
         user.setSingleAttribute(KERBEROS_PRINCIPAL, username + "@" + kerberosConfig.getKerberosRealm());
 
         if (kerberosConfig.isUpdateProfileFirstLogin()) {
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 

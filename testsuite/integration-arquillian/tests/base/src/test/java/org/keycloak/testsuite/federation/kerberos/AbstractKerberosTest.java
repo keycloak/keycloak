@@ -22,6 +22,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import java.net.URI;
 import java.security.Principal;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -307,8 +308,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             Assert.assertEquals(expectedLastname, user.getLastName());
 
             if (updateProfileActionExpected) {
+                Iterator<String> requiredActionIterator = user.getRequiredActions().iterator();
+                Assert.assertEquals(UserModel.RequiredAction.UPDATE_EMAIL.toString(),
+                        requiredActionIterator.next());
                 Assert.assertEquals(UserModel.RequiredAction.UPDATE_PROFILE.toString(),
-                        user.getRequiredActions().iterator().next());
+                        requiredActionIterator.next());
             } else {
                 Assert.assertTrue(user.getRequiredActions().isEmpty());
             }

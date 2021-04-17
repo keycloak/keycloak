@@ -36,7 +36,8 @@ public enum UserProfileContext {
     ACCOUNT_OLD(true),
     IDP_REVIEW(false),
     REGISTRATION_PROFILE(false),
-    REGISTRATION_USER_CREATION(false);
+    REGISTRATION_USER_CREATION(false),
+    UPDATE_EMAIL(false);
     
     protected boolean resetEmailVerified;
     

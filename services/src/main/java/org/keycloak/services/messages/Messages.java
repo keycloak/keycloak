@@ -98,6 +98,8 @@ public class Messages {
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
 
+    public static final String UPDATE_EMAIL = "updateEmailMessage";
+
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";

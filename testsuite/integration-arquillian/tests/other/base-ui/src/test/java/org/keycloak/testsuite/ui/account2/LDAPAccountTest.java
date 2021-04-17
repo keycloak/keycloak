@@ -144,13 +144,13 @@ public class LDAPAccountTest extends AbstractAccountTest {
         assertEquals("keycloak-15634@test.local", personalInfoPage.getEmail());
 
         // Trigger the JS involved in KEYCLOAK-15634
-        personalInfoPage.setEmail("keycloak-15634@domain.local");
+        personalInfoPage.setFirstName("keycloak-15634");
         personalInfoPage.clickSave();
 
         // Check if updateProfile went well and if user is still there
         UserRepresentation userRepAfter = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
         assertNotNull("Test user should still be there", userRepAfter);
-        assertEquals("Email should have been updated","keycloak-15634@domain.local", userRepAfter.getEmail());
+        assertEquals("First name should have been updated","keycloak-15634", userRepAfter.getFirstName());
         assertTrue("LDAP_ID attribute should still be there", userRepAfter.getAttributes().containsKey("LDAP_ID"));
 
         // Clean up

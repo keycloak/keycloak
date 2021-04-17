@@ -199,11 +199,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
                 + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
                 + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"group\": \"company\"},"
-                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"group\": \"contact\"}"
+                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"group\": \"company\"}"
                 + "], \"groups\": ["
-                + "{\"name\": \"company\", \"displayDescription\": \"Company field desc\" },"
-                + "{\"name\": \"contact\" }"
+                + "{\"name\": \"company\", \"displayDescription\": \"Company field desc\" }"
                 + "]}");
 
         loginPage.open();
@@ -243,16 +241,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                         By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#department")
                 ).isDisplayed()
         );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-contact")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#email")
-                ).isDisplayed()
-        );
     }
 
     @Test
@@ -265,8 +253,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
                 + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}},"
                 + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + "}"
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");
 
         loginPage.open();
@@ -293,11 +280,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(
                 driver.findElement(
                         By.cssSelector("form#kc-update-profile-form > div:nth-child(4) > div:nth-child(2) > input#firstName")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
                 ).isDisplayed()
         );
     }
@@ -882,32 +864,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         assertEquals("FirstCC", user.getFirstName());
         assertEquals("LastCC", user.getLastName());
         assertEquals("DepartmentCC", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
-    }
-
-    @Test
-    public void testEmailChangeSetsEmailVerified() {
-        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
-        updateUser(user5Id, true, "", "ExistingLast");
-
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
-                + "]}");
-
-        loginPage.open();
-        loginPage.login("login-test5", "password");
-
-        verifyProfilePage.assertCurrent();
-
-        //submit OK
-        verifyProfilePage.updateEmail("newemail@test.org","FirstCC", "LastCC");
-
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        UserRepresentation user = getUser(user5Id);
-        assertEquals("newemail@test.org", user.getEmail());
-        assertEquals(false, user.isEmailVerified());
     }
 
     @Test
