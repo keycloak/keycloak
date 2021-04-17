@@ -53,6 +53,14 @@ public final class UserProfileContextFactory {
                 AttributeFormDataProcessor.toUserProfile(formData), profileProvider);
     }
 
+    public static DefaultUserProfileContext forEmailUpdate(UserModel currentUser,
+                                                             MultivaluedMap<String, String> formData,
+                                                             KeycloakSession session) {
+        UserProfileProvider profileProvider = getProfileProvider(session);
+        return new DefaultUserProfileContext(UserUpdateEvent.UpdateEmail, new UserModelUserProfile(currentUser, profileProvider),
+                AttributeFormDataProcessor.toUserProfile(formData), profileProvider);
+    }
+
     public static DefaultUserProfileContext forAccountService(UserModel currentUser,
             UserRepresentation rep, KeycloakSession session) {
         UserProfileProvider profileProvider = getProfileProvider(session);

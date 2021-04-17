@@ -85,6 +85,12 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         setSingleAttribute(UserModel.USERNAME, username);
     }
 
+    @JsonIgnore
+    @Override
+    public boolean isEditEmailAllowed() {
+        return true;
+    }
+
     public String getModelUsername() {
         return getFirstAttribute(UserModel.USERNAME);
     }

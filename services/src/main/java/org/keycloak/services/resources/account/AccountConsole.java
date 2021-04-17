@@ -3,6 +3,7 @@ package org.keycloak.services.resources.account;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
+import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.common.Version;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.models.AccountRoles;
@@ -142,6 +143,7 @@ public class AccountConsole {
             map.put("isTotpConfigured", isTotpConfigured);
 
             map.put("deleteAccountAllowed", deleteAccountAllowed);
+            map.put("emailUpdateAllowed", realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name()).isEnabled());
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

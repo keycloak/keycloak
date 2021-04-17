@@ -54,6 +54,8 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     private WebElement cancelBtn;
     @FindBy(id = "delete-account")
     private WebElement deleteAccountSection;
+    @FindBy(id = "update-email-btn")
+    private WebElement updateEmailLink;
 
     @Override
     public String getPageId() {
@@ -80,12 +82,16 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
         return getTextInputValue(email);
     }
 
-    public void setEmail(String value) {
-        setTextInputValue(email, value);
+    public void assertUpdateEmailLinkVisible(boolean expected){
+        if (updateEmailLink == null) {
+            assertFalse(expected);
+            return;
+        }
+        assertEquals(expected, isElementVisible(updateEmailLink));
     }
 
-    public void assertEmailValid(boolean expected) {
-        assertInputElementValid(expected, email);
+    public void clickUpdateEmailLink(){
+        clickLink(updateEmailLink);
     }
 
     public String getFirstName() {
@@ -149,14 +155,13 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     public void setValues(UserRepresentation user, boolean includeUsername) {
         if (includeUsername) {setUsername(user.getUsername());}
-        setEmail(user.getEmail());
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
     }
 
-    public boolean valuesEqual(UserRepresentation user) {
+    public boolean valuesEqual(UserRepresentation user, boolean includeEmail) {
         return user.getUsername().equals(getUsername())
-                && user.getEmail().equals(getEmail())
+                && (!includeEmail || user.getEmail().equals(getEmail()))
                 && user.getFirstName().equals(getFirstName())
                 && user.getLastName().equals(getLastName());
     }

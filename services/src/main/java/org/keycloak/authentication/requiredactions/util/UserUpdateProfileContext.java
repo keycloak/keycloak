@@ -22,7 +22,6 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -32,10 +31,12 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
 
     private final RealmModel realm;
     private final UserModel user;
+    private final boolean editEmailAllowed;
 
-    public UserUpdateProfileContext(RealmModel realm, UserModel user) {
+    public UserUpdateProfileContext(RealmModel realm, UserModel user, boolean editEmailAllowed) {
         this.realm = realm;
         this.user = user;
+        this.editEmailAllowed = editEmailAllowed;
     }
 
     @Override
@@ -51,6 +52,11 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
     @Override
     public void setUsername(String username) {
         user.setUsername(username);
+    }
+
+    @Override
+    public boolean isEditEmailAllowed() {
+        return editEmailAllowed;
     }
 
     @Override

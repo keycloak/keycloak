@@ -58,6 +58,10 @@ public class UserUpdateHelper {
         update(UserUpdateEvent.UpdateProfile, realm, user, updatedProfile.getAttributes(), false);
     }
 
+    public static void updateUserEmail(RealmModel realm, UserModel user, UserProfile updatedProfile) {
+        update(UserUpdateEvent.UpdateEmail, realm, user, updatedProfile.getAttributes(), false);
+    }
+
     public static void updateAccount(RealmModel realm, UserModel user, UserProfile updatedProfile) {
         update(UserUpdateEvent.Account, realm, user, updatedProfile);
     }

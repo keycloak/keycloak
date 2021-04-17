@@ -69,6 +69,10 @@ public class ProfileBean {
         return user.isEditUsernameAllowed();
     }
 
+    public boolean isEditEmailAllowed() {
+        return user.isEditEmailAllowed();
+    }
+
     public String getUsername() { return formData != null ? formData.getFirst("username") : user.getUsername(); }
 
     public String getFirstName() {

@@ -24,10 +24,10 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
     @FindBy(id = "username")
     private WebElement usernameInput;
 
-    public void update(String firstName, String lastName, String email, String username) {
+    public void updateFields(String firstName, String lastName, String username) {
         usernameInput.clear();
         usernameInput.sendKeys(username);
-        update(firstName, lastName, email);
+        update(firstName, lastName);
     }
 
     public String getUsername() {

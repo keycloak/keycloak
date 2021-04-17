@@ -36,6 +36,8 @@ public interface UpdateProfileContext {
 
     void setUsername(String username);
 
+    boolean isEditEmailAllowed();
+
     String getEmail();
 
     void setEmail(String email);

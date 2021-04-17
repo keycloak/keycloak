@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -56,6 +57,11 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         ApiUtil.removeUserByUsername(testRealmResource(), testUser2.getUsername());
     }
 
+    @After
+    public void after() {
+        ApiUtil.removeUserByUsername(testRealmResource(), testUser2.getUsername());
+    }
+
     @Override
     protected AbstractLoggedInPage getAccountPage() {
         return personalInfoPage;
@@ -65,20 +71,20 @@ public class PersonalInfoTest extends BaseAccountPageTest {
     public void updateUserInfo() {
         setEditUsernameAllowed(true);
 
-        assertTrue(personalInfoPage.valuesEqual(testUser));
+        assertTrue(personalInfoPage.valuesEqual(testUser, true));
         personalInfoPage.assertUsernameDisabled(false);
         personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.setValues(testUser2, true);
         assertEquals("test user", personalInfoPage.header().getToolbarLoggedInUser());
-        assertTrue(personalInfoPage.valuesEqual(testUser2));
+        assertTrue(personalInfoPage.valuesEqual(testUser2, false));
         personalInfoPage.assertSaveDisabled(false);
         personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
         personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.navigateTo();
-        personalInfoPage.valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2, true);
         assertEquals("Václav Muzikář", personalInfoPage.header().getToolbarLoggedInUser());
 
         // change just first and last name
@@ -88,7 +94,7 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
         personalInfoPage.navigateTo();
-        personalInfoPage.valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2, true);
         assertEquals("Another Name", personalInfoPage.header().getToolbarLoggedInUser());
     }
 
@@ -102,14 +108,6 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.assertUsernameValid(false);
         personalInfoPage.setUsername("hsimpson");
         personalInfoPage.assertUsernameValid(true);
-
-        // clear email
-        personalInfoPage.setEmail("edewit@");
-        personalInfoPage.assertEmailValid(false);
-        personalInfoPage.setEmail("");
-        personalInfoPage.assertEmailValid(false);
-        personalInfoPage.setEmail("hsimpson@springfield.com");
-        personalInfoPage.assertEmailValid(true);
 
         // clear first name
         personalInfoPage.setFirstName("");
@@ -131,14 +129,10 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.alert().assertDanger();
         // TODO assert actual error message and that the field is marked as invalid (KEYCLOAK-12102)
         personalInfoPage.setUsername(testUser.getUsername());
-        // duplicate email
-        personalInfoPage.setEmail(testUser2.getEmail());
-        personalInfoPage.clickSave();
-        personalInfoPage.alert().assertDanger();
         // TODO assert actual error message and that the field is marked as invalid (KEYCLOAK-12102)
         // check no changes were saved
         personalInfoPage.navigateTo();
-        personalInfoPage.valuesEqual(testUser);
+        personalInfoPage.valuesEqual(testUser, true);
     }
 
     @Test
@@ -146,9 +140,9 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         setEditUsernameAllowed(false);
 
         personalInfoPage.setValues(testUser2, false);
-        personalInfoPage.setEmail("hsimpson@springfield.com");
+        personalInfoPage.setFirstName("foo");
         personalInfoPage.clickCancel();
-        personalInfoPage.valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2, true);
     }
 
     @Test
@@ -162,7 +156,7 @@ public class PersonalInfoTest extends BaseAccountPageTest {
 
         testUser2.setUsername(testUser.getUsername()); // the username should remain the same
         personalInfoPage.navigateTo();
-        personalInfoPage.valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2, true);
     }
     
     @Test
@@ -239,13 +233,13 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.assertCurrent();
 
         // Trigger the JS involved in KEYCLOAK-15634
-        assertEquals("keycloak-15634@test.local", personalInfoPage.getEmail());
-        personalInfoPage.setEmail("keycloak-15634@domain.local");
+        assertEquals("first", personalInfoPage.getFirstName());
+        personalInfoPage.setFirstName("second");
         personalInfoPage.clickSave();
 
         // Check if updateProfile went well and if testAttribute is still there
         UserRepresentation userRepAfter = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
-        assertEquals("keycloak-15634@domain.local", userRepAfter.getEmail());
+        assertEquals("second", userRepAfter.getFirstName());
         assertEquals("testAttribute should still be there","testValue", userRepAfter.getAttributes().get("testAttribute").get(0));
 
         ApiUtil.removeUserByUsername(testRealm, "keycloak-15634");
