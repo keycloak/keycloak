@@ -295,27 +295,14 @@ a.zocial  {
     border-radius: 0;
     white-space: normal;
 }
-a.zocial.nia {
+zocial.nia {
     background: url("../img/nia-logo-01.png") no-repeat left top;
-    width: 100%;
-    font-weight: normal;
-    font-size: 14px;
-    text-shadow: none;
-    border: 0;
-    background: #f5f5f5;
-    color: #72767b;
-    border-radius: 0;
-    white-space: normal;
 }
 
-a.zocial.nia:hover p{
-    background: #dddddd;
+zocial.nia:hover p{
+    background: url("../img/nia-logo-02.png") no-repeat left top;
 }
 
-a.zocial.nia span {
-    padding: 7px 10px;
-    font-size: 14px;
-}
 .zocial:before {
     border-right: 0;
     margin-right: 0;
