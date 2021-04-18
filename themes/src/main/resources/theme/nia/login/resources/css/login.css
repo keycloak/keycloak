@@ -295,14 +295,6 @@ a.zocial  {
     border-radius: 0;
     white-space: normal;
 }
-zocial.nia {
-    background: url("../img/nia-logo-01.png") no-repeat left top;
-}
-
-zocial.nia:hover p{
-    background: url("../img/nia-logo-02.png") no-repeat left top;
-}
-
 .zocial:before {
     border-right: 0;
     margin-right: 0;
@@ -332,6 +324,13 @@ zocial.nia:hover p{
 /* Copy of zocial windows classes to be used for microsoft's social provider button */
 .zocial.microsoft:before{ content: "\f15d"; }
 .zocial.stackoverflow:before{ color: inherit; }
+zocial.nia {
+    background: url("../img/nia-logo-01.png") no-repeat left top;
+}
+
+zocial.nia:hover {
+    background: url("../img/nia-logo-02.png") no-repeat left top !important;
+}
 
 
 @media (min-width: 768px) {
