@@ -324,11 +324,11 @@ a.zocial  {
 /* Copy of zocial windows classes to be used for microsoft's social provider button */
 .zocial.microsoft:before{ content: "\f15d"; }
 .zocial.stackoverflow:before{ color: inherit; }
-zocial.nia {
+.zocial.nia {
     background: url("../img/nia-logo-01.png") no-repeat left top;
 }
 
-zocial.nia:hover {
+.zocial.nia:hover {
     background: url("../img/nia-logo-02.png") no-repeat left top !important;
 }
 
