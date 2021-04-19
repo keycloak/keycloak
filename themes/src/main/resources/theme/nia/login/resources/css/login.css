@@ -321,19 +321,10 @@ a.zocial  {
     text-shadow: none;
 }
 .zocial.nia {
-    width: 100%;
-    font-weight: normal;
-    font-size: 14px;
-    text-shadow: none;
-    border: 0;
-    color: #72767b;
-    border-radius: 0;
-    white-space: normal;
     background-image: url("../img/nia-logo-01.png");
     background-repeat: no-repeat;
     background-position: left top; 
     background-color: #f5f5f5;
-
 }
 
 /* Copy of zocial windows classes to be used for microsoft's social provider button */
