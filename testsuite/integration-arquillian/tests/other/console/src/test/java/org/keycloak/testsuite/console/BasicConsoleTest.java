@@ -22,6 +22,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.openqa.selenium.JavascriptExecutor;
 
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.ApiUtil.assignClientRoles;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
@@ -50,6 +53,7 @@ public class BasicConsoleTest extends AbstractConsoleTest {
         UserRepresentation userRepresentation = createTestUserWithViewUsersRole();
         try {
             loginToTestRealmConsoleAs(userRepresentation);
+            assertThat(driver.getCurrentUrl(), not(containsString("forbidden")));
         } finally {
             ApiUtil.removeUserByUsername(testRealmResource(), TEST_USER_VIEW_USERS_NAME);
         }
