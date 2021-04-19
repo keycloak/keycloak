@@ -10,6 +10,7 @@ import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal"
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
 
 let groupName = "group";
+let groupsList: string[] = [];
 
 describe("Group creation", () => {
   const loginPage = new LoginPage();
@@ -24,7 +25,7 @@ describe("Group creation", () => {
     sidebarPage.goToGroups();
   });
 
-  it("Add group to be joined", () => {
+  it("Add groups to be joined", () => {
     groupName += "_" + (Math.random() + 1).toString(36).substring(7);
 
     groupModal
@@ -32,6 +33,21 @@ describe("Group creation", () => {
       .fillGroupForm(groupName)
       .clickCreate();
 
+    groupsList = [...groupsList, groupName];
+    masthead.checkNotificationMessage("Group created");
+
+    sidebarPage.goToGroups();
+    listingPage.searchItem(groupName, false).itemExist(groupName);
+
+    groupName = "group";
+    groupName += "_" + (Math.random() + 1).toString(36).substring(7);
+
+    groupModal
+      .open("openCreateGroupModal")
+      .fillGroupForm(groupName)
+      .clickCreate();
+
+    groupsList = [...groupsList, groupName];
     masthead.checkNotificationMessage("Group created");
 
     sidebarPage.goToGroups();
@@ -101,7 +117,7 @@ describe("Users test", () => {
       listingPage.searchItem(itemId).itemExist(itemId);
     });
 
-    it("Add user to group test", function () {
+    it("Add user to groups test", function () {
       // Go to user groups
 
       listingPage.searchItem(itemId).itemExist(itemId);
@@ -109,7 +125,11 @@ describe("Users test", () => {
 
       userGroupsPage.goToGroupsTab();
       userGroupsPage.toggleAddGroupModal();
-      cy.getId(`${groupName}`).click();
+
+      groupsList.forEach((element) => {
+        cy.getId(`${element}-check`).click();
+      });
+
       userGroupsPage.joinGroup();
 
       cy.wait(1000);

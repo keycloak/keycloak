@@ -265,23 +265,25 @@ export const UserGroups = () => {
     }
   };
 
-  const addGroup = async (group: GroupRepresentation): Promise<void> => {
-    const newGroup = group;
+  const addGroups = async (groups: GroupRepresentation[]): Promise<void> => {
+    const newGroups = groups;
 
-    try {
-      await adminClient.users.addToGroup({
-        id: id,
-        groupId: newGroup.id!,
-      });
-      setList(true);
-      refresh();
-      addAlert(t("users:addedGroupMembership"), AlertVariant.success);
-    } catch (error) {
-      addAlert(
-        t("users:addedGroupMembershipError", { error }),
-        AlertVariant.danger
-      );
-    }
+    newGroups.forEach(async (group) => {
+      try {
+        await adminClient.users.addToGroup({
+          id: id,
+          groupId: group.id!,
+        });
+        setList(true);
+        refresh();
+        addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+      } catch (error) {
+        addAlert(
+          t("users:addedGroupMembershipError", { error }),
+          AlertVariant.danger
+        );
+      }
+    });
   };
 
   return (
@@ -292,7 +294,7 @@ export const UserGroups = () => {
           <JoinGroupDialog
             open={open}
             onClose={() => setOpen(!open)}
-            onConfirm={addGroup}
+            onConfirm={addGroups}
             toggleDialog={() => toggleModal()}
             username={username}
           />
