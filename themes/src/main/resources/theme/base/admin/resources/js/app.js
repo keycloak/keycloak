@@ -432,18 +432,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
-                },
-                instance : function(IdentityProviderLoader) {
-                    return {};
-                },
-                providerFactory : function(IdentityProviderFactoryLoader) {
-                    return {};
-                },
-                authFlows : function(AuthenticationFlowsLoader) {
-                    return {};
                 }
             },
-            controller : 'RealmIdentityProviderCtrl'
+            controller : 'RealmIdentityProviderListCtrl'
         })
         .when('/create/identity-provider/:realm/:provider_id', {
             templateUrl : function(params){ return resourceUrl + '/partials/realm-identity-provider-' + params.provider_id + '.html'; },

@@ -365,7 +365,7 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $r
             $scope.changed = true;
         }
     }, true);
-    
+
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
         console.log('updating realm...');
@@ -929,6 +929,115 @@ module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, N
         });
     };
 });
+
+module.controller('RealmIdentityProviderListCtrl', function($scope, $filter, realm,	serverInfo, $route,
+		$location, Notifications, Dialog,
+		IdentityProviderUsedProviderIds,
+		IdentityProviderList,
+		IdentityProvider
+		) {
+
+
+    $scope.realm = angular.copy(realm);
+
+    $scope.serverInfo = serverInfo;
+
+    $scope.allProviders = angular.copy(serverInfo.identityProviders);
+
+    $scope.showWelcome = false;
+
+    $scope.search = function(){
+    	$scope.query.realm = realm.realm;
+    	$scope.configuredProviders = IdentityProviderList.query($scope.query, function() {
+    		$scope.showWelcome = ($scope.configuredProviders.length == 0 && $scope.query.keyword == "") ? true : false;
+    		IdentityProviderUsedProviderIds.query({realm : $scope.query.realm}, function(response){
+    			removeUsedSocial(response);
+    		});
+
+    	});
+    }
+
+
+    if($scope.query == null){
+    	$scope.query = {
+	        realm : realm.realm,
+	        brief : true,
+	        keyword : "",
+	        first : 0,
+	        max : 20
+	    };
+    }
+
+
+    $scope.search();
+
+
+    $scope.hasPreviousPage = function () {
+    	return $scope.query.first != 0;
+    }
+
+    $scope.hasNextPage = function () {
+    	return $scope.configuredProviders.length == $scope.query.max;
+    }
+
+    $scope.nextPage = function(){
+    	$scope.query.first += $scope.query.max;
+    	$scope.search();
+    }
+
+    $scope.previousPage = function(){
+    	$scope.query.first -= $scope.query.max;
+    	$scope.search();
+    }
+
+    $scope.firstPage = function(){
+    	$scope.query.first = 0;
+    	$scope.search();
+    }
+
+
+
+
+
+    $scope.addProvider = function(provider) {
+        $location.url("/create/identity-provider/" + realm.realm + "/" + provider.id);
+    };
+
+
+    $scope.removeIdentityProvider = function(identityProvider) {
+        Dialog.confirmDelete(identityProvider.alias, 'provider', function() {
+            IdentityProvider.remove({
+                realm : realm.realm,
+                alias : identityProvider.alias
+            }, function() {
+                $route.reload();
+                Notifications.success("The identity provider has been deleted.");
+            });
+        });
+    };
+
+
+
+    // KEYCLOAK-5932: remove social providers that have already been defined
+    function removeUsedSocial(usedIdentityProviderIds) {
+    	if ($scope.configuredProviders == null)
+    		return;
+        var i = $scope.allProviders.length;
+        while (i--) {
+            if ($scope.allProviders[i].groupName !== 'Social') continue;
+            for (var j = 0; j < usedIdentityProviderIds.length; j++) {
+            	if(usedIdentityProviderIds[j] === $scope.allProviders[i].id) {
+					$scope.allProviders.splice(i, 1);
+					break;
+				}
+            }
+        }
+    };
+
+
+
+});
+
 
 module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload, $http, $route, realm, instance, providerFactory, IdentityProvider, serverInfo, authFlows, $location, Notifications, Dialog) {
     $scope.realm = angular.copy(realm);

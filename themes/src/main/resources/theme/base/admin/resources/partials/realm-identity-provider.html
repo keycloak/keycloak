@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <h1>{{:: 'identity-providers' | translate}}</h1>
-    <div class="blank-slate-pf" data-ng-hide="configuredProviders.length > 0">
+    <div class="blank-slate-pf" ng-show="showWelcome">
         <div class="blank-slate-pf-icon">
             <span class="fa fa-exchange"></span>
         </div>
@@ -26,7 +26,7 @@
 </div>
 
 </div>
-    <form name="realmForm" novalidate class="form-horizontal" ng-show="configuredProviders.length > 0">
+    <form name="realmForm" novalidate ng-hide="configuredProviders.length == 0 && query.keyword=='' && showWelcome">
         <fieldset>
             <div>
                 <table class="table table-striped table-bordered">
@@ -34,12 +34,22 @@
                     <thead>
                     <tr>
                         <th colspan="8" class="kc-table-actions">
-                            <div class="dropdown pull-right" data-ng-show="access.manageIdentityProviders">
-                                <select class="form-control" ng-model="provider"
-                                        ng-options="p.name group by p.groupName for p in allProviders track by p.id"
-                                        data-ng-change="addProvider(provider); provider = null">
-                                    <option value="" disabled selected>{{:: 'add-provider.placeholder' | translate}}</option>
-                                </select>
+                            <div class="form-inline">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="query.keyword" class="form-control search" ng-change="query.first=0" onkeydown="if (event.keyCode == 13) document.getElementById('search').click()">
+                                        <div class="input-group-addon">
+                                            <i class="fa fa-search" id="search" data-ng-click="search()"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown pull-right" data-ng-show="access.manageIdentityProviders">
+                                    <select class="form-control" ng-model="provider"
+                                            ng-options="p.name group by p.groupName for p in allProviders track by p.id"
+                                            data-ng-change="addProvider(provider); provider = null">
+                                        <option value="" disabled selected>{{:: 'add-provider.placeholder' | translate}}</option>
+                                    </select>
+                                </div>
                             </div>
                         </th>
                     </tr>
@@ -53,6 +63,18 @@
                         <th colspan="2">{{:: 'actions' | translate}}</th>
                     </tr>
                     </thead>
+                    <tfoot>
+				        <tr>
+				            <td colspan="8">
+				                <div class="table-nav">
+				                    <button ng-show="query.first != 0" data-ng-click="firstPage()" class="first">{{:: 'first-page' | translate}}</button>
+				                    <button ng-show="hasPreviousPage()" data-ng-click="previousPage()" class="prev">{{:: 'previous-page' | translate}}</button>
+				                    <button ng-show="hasNextPage()" data-ng-click="nextPage()" class="next">{{:: 'next-page' | translate}}</button>
+				                </div>
+				            </td>
+				        </tr>
+			        </tfoot>
+
                     <tbody>
                     <tr ng-repeat="identityProvider in configuredProviders">
                         <td>

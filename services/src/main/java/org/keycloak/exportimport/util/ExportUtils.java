@@ -53,16 +53,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ComponentExportRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.RolesRepresentation;
-import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -93,6 +84,13 @@ public class ExportUtils {
 
         // Project/product version
         rep.setKeycloakVersion(Version.VERSION_KEYCLOAK);
+
+        List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
+                .map(idp -> ModelToRepresentation.toRepresentation(realm, idp)).collect(Collectors.toList());
+        rep.setIdentityProviders(identityProviders);
+        List<IdentityProviderMapperRepresentation> identityProviderMappers =  realm.getIdentityProviderMappersStream()
+                .map(idpMapper -> ModelToRepresentation.toRepresentation(idpMapper)).collect(Collectors.toList());
+        rep.setIdentityProviderMappers(identityProviderMappers);
 
         // Client Scopes
         rep.setClientScopes(realm.getClientScopesStream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList()));

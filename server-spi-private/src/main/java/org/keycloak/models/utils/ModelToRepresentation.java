@@ -421,13 +421,6 @@ public class ModelToRepresentation {
             rep.setRequiredCredentials(reqCredentials);
         }
 
-        List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
-                .map(provider -> toRepresentation(realm, provider)).collect(Collectors.toList());
-        rep.setIdentityProviders(identityProviders);
-
-        List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
-                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
-        rep.setIdentityProviderMappers(identityProviderMappers);
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
         rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
@@ -625,6 +618,19 @@ public class ModelToRepresentation {
         }
 
         return rep;
+    }
+
+    public static IdentityProviderRepresentation toBriefRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+        IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
+
+        providerRep.setInternalId(identityProviderModel.getInternalId());
+        providerRep.setProviderId(identityProviderModel.getProviderId());
+        providerRep.setAlias(identityProviderModel.getAlias());
+        providerRep.setDisplayName(identityProviderModel.getDisplayName());
+        providerRep.setEnabled(identityProviderModel.isEnabled());
+        providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
+
+        return providerRep;
     }
 
     public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
