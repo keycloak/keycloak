@@ -325,13 +325,13 @@ a.zocial  {
 .zocial.microsoft:before{ content: "\f15d"; }
 .zocial.stackoverflow:before{ color: inherit; }
 .zocial.nia {
-    background: url("../img/nia-logo-01.png") no-repeat left top;
+    background: url("../img/nia-logo-01.png") no-repeat left top !important;
 }
-
+/*
 .zocial.nia:hover {
     background: url("../img/nia-logo-02.png") no-repeat left top !important;
 }
-
+*/
 
 @media (min-width: 768px) {
     #kc-container-wrapper {
