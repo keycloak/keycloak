@@ -1,5 +1,5 @@
 [id="proc-deleting-user_{context}"]
-== Deleting a user
+= Deleting a user
 
 You can delete a user, who no longer needs access to applications in the {project_name} console. If a user is deleted, the user profile and data is also deleted.
 
@@ -13,4 +13,3 @@ You can delete a user, who no longer needs access to applications in the {projec
 NOTE: Alternatively, you can use the search bar to find a user.
 +
 . Click *Delete* next to the user you want to remove and confirm deletion.
-

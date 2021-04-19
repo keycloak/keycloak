@@ -1,5 +1,5 @@
 [id="proc-searching-user_{context}"]
-=== Searching for a user
+= Searching for a user
 
 Search for a user to view detailed information about the user's groups and roles. 
 
@@ -21,4 +21,3 @@ NOTE: This action searches only the local {project_name} database and not the fe
 
 .Additional resources
 * For more information on user federation, see <<_user-storage-federation,User Federation>>.
-

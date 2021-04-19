@@ -1,11 +1,12 @@
-[[_client-saml-configuration]]
+[id="proc-creating-saml-client_{context}"]
+
 === SAML Clients
 
 {project_name} supports <<_saml,SAML 2.0>> for registered applications.
 POST and Redirect bindings are supported. You can choose to require client signature validation. You can have the server sign and/or encrypt responses as well.
 
 .Procedure
-. Click `Clients` in the left navigation pane.
+. Click `Clients` in the left navigation pane.  
 
 . Click *Create* to go to the `Add Client` page.
 +
@@ -41,9 +42,9 @@ This switch is enabled by default, so that the `AuthnStatement` element will be 
 
 `Sign Documents`:: When set to ON, {project_name} signs the document using the realms private key.
 
-`Optimize REDIRECT signing key lookup`:: When set to ON, the SP messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys.
+`Optimize REDIRECT signing key lookup`:: When set to ON, the SP messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys. 
 +
-This option applies to REDIRECT bindings where the signature is transferred in query parameters and this information is not found in the signature information. This is contrary to POST binding messages where key ID is always included in document signature.
+This option applies to REDIRECT bindings where the signature is transferred in query parameters and this information is not found in the signature information. This is contrary to POST binding messages where key ID is always included in document signature. 
 +
 This option is used when {project_name} server and adapter provide the IDP and SP. This option is only relevant when `Sign Documents` is set to ON.
 
@@ -61,7 +62,7 @@ This option is used when {project_name} server and adapter provide the IDP and S
 +
 `Canonicalization Method`:: The canonicalization method for XML signatures.
 
-`Encrypt Assertions`:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits.
+`Encrypt Assertions`:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits. 
 
 `Client Signature Required`:: If this switch is set to ON, documents coming from a client are expected to be signed. {project_name} validates this signature using the client public key or certificate set up in the `SAML Keys` tab.
 
@@ -73,13 +74,7 @@ This option is used when {project_name} server and adapter provide the IDP and S
 
 `Name ID Format`:: The Name ID Format for the subject. This format is used if no name ID policy is specified in a request, or if the Force Name ID Format attribute is set to ON.
 
-<<<<<<< HEAD
-Client Signature Required::
-  Expect that documents coming from a client are signed.
-  {project_name} will validate this signature using the client public key or cert set up in the `Keys` tab.
-=======
 `Root URL`:: When {project_name} uses a configured relative URL, this value is prepended to the URL.
->>>>>>> c775d1cd... removing client-saml.adoc
 
 `Valid Redirect URIs`:: Enter a URL pattern and click the + sign to add.  Click the - sign to remove. Click the `Save` button to save these changes.
 Wildcards values are allowed only at the end of a URL. For example, http://host.com/*$$.
@@ -87,43 +82,14 @@ This field is used when the exact SAML endpoints are not registered and {project
 
 `Base URL`:: If {project_name} needs to link to a client, this URL is used.
 
-`Master SAML Processing URL`:: This URL is used for all SAML requests and the response is directed to the SP. It is used as the Assertion Consumer Service URL and the Single Logout Service URL.
+`Master SAML Processing URL`:: This URL is used for all SAML requests and the response is directed to the SP. It is used as the Assertion Consumer Service URL and the Single Logout Service URL. 
 +
 If login requests contain the Assertion Consumer Service URL then those login requests will take precedence. This URL must be validated by a registered Valid Redirect URI pattern.
 
-<<<<<<< HEAD
-Name ID Format::
-  Name ID Format for the subject.
-  If no name ID policy is specified in the request or if the Force Name ID Format attribute is true, this value is used.
-  Properties used for each of the respective formats are defined below.
-  You can change the attribute used by the NameID Mapper.
-
-|===
-|Name ID Format|Properties/Attributes Used|Example
-
-|username (unspecified)
-|Username Property
-|example_user
-
-|email
-|Email Property
-|example_user@example.com
-
-|persistent
-|saml.persistent.name.id.for.$clientId Attribute
-|G-6e2a1050-0fc0-479b-bf6e-29cd3ccb373b
-
-|transient
-|property and attribute values are not used
-|G-bfb85c10-57d7-4331-81bc-52f104599d79
-
-|===
-=======
 `Assertion Consumer Service POST Binding URL`:: POST Binding URL for the Assertion Consumer Service.
->>>>>>> fa08830f... removing client-saml.adoc
 
-`Assertion Consumer Service Redirect Binding URL`:: Redirect Binding URL for the Assertion Consumer Service.
+`Assertion Consumer Service Redirect Binding URL`:: Redirect Binding URL for the Assertion Consumer Service. 
 
 `Logout Service POST Binding URL`:: POST Binding URL for the Logout Service.
 
-`Logout Service Redirect Binding URL`:: Redirect Binding URL for the Logout Service.
+`Logout Service Redirect Binding URL`:: Redirect Binding URL for the Logout Service.     

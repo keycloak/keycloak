@@ -1,5 +1,5 @@
 [id="proc-setting-required-actions_{context}"]
-=== Setting required actions
+== Setting required actions
 
 You can add and remove the required actions for existing users in the admin console. 
 
@@ -13,4 +13,3 @@ image:{project_images}/user-required-action.png[]
 . Select all the actions you want to add to the account. 
 . Click the *X* next to the action name to remove it.  
 . Click *Save* after you select which actions to add.
-
