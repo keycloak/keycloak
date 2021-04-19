@@ -28,13 +28,21 @@ import org.keycloak.adapters.spi.HttpFacade.Request;
  *
  * The easiest way to build a KeycloakDeployment is to use
  * KeycloakDeploymentBuilder , passing the InputStream of an existing
- * keycloak.json to the build() method. 
+ * keycloak.json to the build() method.
+ *
+ * The resolved KeycloakDeployment may not be null
  *
  * @see KeycloakDeploymentBuilder
  * @author Juraci Paixão Kröhling <juraci at kroehling.de>
  */
 public interface KeycloakConfigResolver {
 
+    /**
+     * Resolves the KeycloakDeployment based on the Request
+     *
+     * @param facade The request
+     * @return KeycloakDeployment, may never be null
+     */
     public KeycloakDeployment resolve(Request facade);
 
 }
