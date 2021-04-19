@@ -176,6 +176,16 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send("emailVerificationSubject", "email-verification.ftl", attributes);
     }
 
+    @Override
+    public void sendGroupActionEmail(String groupName, boolean isAdded) throws EmailException {
+        String title = isAdded ? "joinGroupSubject" : "removeGroupSubject";
+        String text = isAdded ? "added you to" : "removed you from";
+        attributes.put("text", text);
+        attributes.put("groupname", groupName);
+        send(title, "group-action.ftl", attributes);
+
+    }
+
     /**
      * Add link info into template attributes.
      * 

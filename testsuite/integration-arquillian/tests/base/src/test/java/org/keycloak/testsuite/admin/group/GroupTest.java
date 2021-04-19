@@ -39,14 +39,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.URLAssert;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.*;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -79,12 +77,14 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
-import org.keycloak.testsuite.util.GroupBuilder;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class GroupTest extends AbstractGroupTest {
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -599,14 +599,14 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
-    public void groupMembership() {
+    public void groupMembership() throws MessagingException, IOException {
         RealmResource realm = adminClient.realms().realm("test");
 
         GroupRepresentation group = new GroupRepresentation();
         group.setName("group");
         String groupId = createGroup(realm, group).getId();
 
-        Response response = realm.users().create(UserBuilder.create().username("user-a").build());
+        Response response = realm.users().create(UserBuilder.create().username("user-a").email("user-a@test.com").build());
         String userAId = ApiUtil.getCreatedId(response);
         response.close();
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userResourcePath(userAId), ResourceType.USER);
@@ -622,17 +622,32 @@ public class GroupTest extends AbstractGroupTest {
         List<UserRepresentation> members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-a");
 
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        Assert.assertEquals("Group join", message.getSubject());
+        String text = MailUtils.getBody(message).getText();
+        Assert.assertTrue(text.contains("Your administrator has just added you to the /group group."));
+
         realm.users().get(userBId).joinGroup(groupId);
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userBId, groupId), group, ResourceType.GROUP_MEMBERSHIP);
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-a", "user-b");
 
+        //user-b does not have email - email do not send
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
         realm.users().get(userAId).leaveGroup(groupId);
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userGroupPath(userAId, groupId), group, ResourceType.GROUP_MEMBERSHIP);
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-b");
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+        message = greenMail.getReceivedMessages()[1];
+        Assert.assertEquals("Group removal", message.getSubject());
+        text = MailUtils.getBody(message).getText();
+        Assert.assertTrue(text.contains("Your administrator has just removed you from the /group group."));
     }
 
     

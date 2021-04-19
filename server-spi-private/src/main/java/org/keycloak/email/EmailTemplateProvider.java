@@ -78,6 +78,14 @@ public interface EmailTemplateProvider extends Provider {
     void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 
     /**
+     * Email notification when user is added/ removed to/from a group
+     * @param groupName
+     * @param isAdded when is true user is added to a group, when false user removed from a group
+     * @throws EmailException
+     */
+    void sendGroupActionEmail(String groupName, boolean isAdded) throws EmailException;
+
+    /**
      * Send formatted email
      *
      * @param subjectFormatKey message property that will be used to format email subject
