@@ -11,7 +11,7 @@ import "./form-panel.css";
 
 type FormPanelProps = {
   title: string;
-  scrollId: string;
+  scrollId?: string;
   children: ReactNode;
 };
 
