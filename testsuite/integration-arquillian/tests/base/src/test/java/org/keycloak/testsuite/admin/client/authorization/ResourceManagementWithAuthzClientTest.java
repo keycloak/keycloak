@@ -61,6 +61,8 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         doCreateResource(new ResourceRepresentation(
                 "/rest/{version}/carts/{cartId}/cartactions/{actionId}", Collections.emptySet(), "/rest/{version}/carts/{cartId}/cartactions/{actionId}", null));
         doCreateResource(new ResourceRepresentation("/rest/v1/carts/{cartId}/cartactions/123", Collections.emptySet(), "/rest/v1/carts/{cartId}/cartactions/123", null));
+        doCreateResource(new ResourceRepresentation("Dummy Name", Collections.emptySet(),
+                new HashSet<>(Arrays.asList("/dummy/605dc7ff310256017a2ec84f", "/dummy/605dc7ff310256017a2ec84f/*")), null));
 
         AuthzClient authzClient = getAuthzClient();
 
@@ -77,6 +79,12 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         assertEquals("/resources-a/*", resources.get(0).getUri());
 
         resources = authzClient.protection().resource().findByMatchingUri("/resources");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/resources/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/resources/");
 
         assertNotNull(resources);
         assertEquals(1, resources.size());
@@ -159,6 +167,12 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         assertNotNull(resources);
         assertEquals(1, resources.size());
         assertEquals("/rest/{version}/carts/{cartId}/cartactions/{actionId}", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/dummy/605dc7ff310256017a2ec84f/nestedObject/605dc7fe310256017a2ec84c");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("Dummy Name", resources.get(0).getName());
     }
 
     @Test

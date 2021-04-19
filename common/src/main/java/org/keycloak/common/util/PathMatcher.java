@@ -140,7 +140,13 @@ public abstract class PathMatcher<P> {
         }
 
         if (endsWithWildcard(expectedUri)) {
-            return targetUri.startsWith(expectedUri.substring(0, expectedUri.length() - 2));
+            String rootPath = expectedUri.substring(0, expectedUri.length() - 1);
+
+            if (targetUri.startsWith(rootPath)) {
+                return true;
+            }
+
+            return targetUri.equals(rootPath.substring(0, rootPath.length() - 1));
         }
 
         String suffix = "/*.";
