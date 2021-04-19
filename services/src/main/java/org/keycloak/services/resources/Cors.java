@@ -135,7 +135,7 @@ public class Cors {
 
     public Response build() {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null || origin.equals("null")) {
+        if (origin == null) {
             logger.trace("No origin header ignoring");
             return builder.build();
         }
@@ -182,7 +182,7 @@ public class Cors {
 
     public void build(HttpResponse response) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null || origin.equals("null")) {
+        if (origin == null) {
             logger.trace("No origin header ignoring");
             return;
         }
