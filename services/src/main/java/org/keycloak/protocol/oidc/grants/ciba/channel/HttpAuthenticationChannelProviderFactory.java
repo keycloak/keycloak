@@ -32,19 +32,7 @@ public class HttpAuthenticationChannelProviderFactory implements AuthenticationC
 
     @Override
     public AuthenticationChannelProvider create(KeycloakSession session) {
-        return new HttpAuthenticationChannelProvider(session, getAuthenticationChannelUri());
-    }
-
-    private String getAuthenticationChannelUri() {
-        if (httpAuthenticationChannelUri == null) {
-            synchronized (this) {
-                if (httpAuthenticationChannelUri == null) {
-                    // should remove this once ciba is fully supported
-                    httpAuthenticationChannelUri = System.getProperty("keycloak.ciba.http.auth.channel.uri");
-                }
-            }
-        }
-        return httpAuthenticationChannelUri;
+        return new HttpAuthenticationChannelProvider(session, httpAuthenticationChannelUri);
     }
 
     @Override
