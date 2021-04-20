@@ -177,7 +177,7 @@ export const AdvancedTab = ({
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection variant="light" className="pf-u-py-0">
       <ScrollForm sections={sections}>
         <>
           <Text className="pf-u-pb-lg">

@@ -40,7 +40,7 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
   return (
     <>
       <ScrollForm
-        className="pf-u-p-lg"
+        className="pf-u-px-lg"
         sections={[
           t("capabilityConfig"),
           t("generalSettings"),

@@ -11,6 +11,7 @@ import {
   ClipboardCopy,
   Divider,
   FormGroup,
+  PageSection,
   Select,
   SelectOption,
   SelectVariant,
@@ -143,109 +144,110 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
   });
 
   return (
-    <FormAccess isHorizontal className="pf-u-mt-md" role="manage-clients">
-      <ClientSecretConfirm />
-      <AccessTokenConfirm />
-      <Card isFlat>
-        <CardBody>
-          <FormGroup
-            label={t("clientAuthenticator")}
-            fieldId="kc-client-authenticator-type"
-            labelIcon={
-              <HelpItem
-                helpText="clients-help:client-authenticator-type"
-                forLabel={t("clientAuthenticator")}
-                forID="kc-client-authenticator-type"
-              />
-            }
-          >
-            <Controller
-              name="clientAuthenticatorType"
-              control={control}
-              render={({ onChange, value }) => (
-                <Select
-                  toggleId="kc-client-authenticator-type"
-                  required
-                  onToggle={() => isOpen(!open)}
-                  onSelect={(_, value) => {
-                    onChange(value as string);
-                    isOpen(false);
-                  }}
-                  selections={value}
-                  variant={SelectVariant.single}
-                  aria-label={t("clientAuthenticator")}
-                  isOpen={open}
-                >
-                  {providers.map((option) => (
-                    <SelectOption
-                      selected={option.id === value}
-                      key={option.id}
-                      value={option.id}
-                    >
-                      {option.displayName}
-                    </SelectOption>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormGroup>
-          {clientAuthenticatorType === "client-jwt" && <SignedJWT />}
-          {clientAuthenticatorType === "client-x509" && <X509 />}
-          <ActionGroup>
-            <Button
-              variant="primary"
-              onClick={() => save()}
-              isDisabled={!isDirty}
+    <PageSection>
+      <FormAccess isHorizontal className="pf-u-mt-md" role="manage-clients">
+        <ClientSecretConfirm />
+        <AccessTokenConfirm />
+        <Card isFlat>
+          <CardBody>
+            <FormGroup
+              label={t("clientAuthenticator")}
+              fieldId="kc-client-authenticator-type"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:client-authenticator-type"
+                  forLabel={t("clientAuthenticator")}
+                  forID="kc-client-authenticator-type"
+                />
+              }
             >
-              {t("common:save")}
-            </Button>
-          </ActionGroup>
-        </CardBody>
-        <CardBody>
+              <Controller
+                name="clientAuthenticatorType"
+                control={control}
+                render={({ onChange, value }) => (
+                  <Select
+                    toggleId="kc-client-authenticator-type"
+                    required
+                    onToggle={() => isOpen(!open)}
+                    onSelect={(_, value) => {
+                      onChange(value as string);
+                      isOpen(false);
+                    }}
+                    selections={value}
+                    variant={SelectVariant.single}
+                    aria-label={t("clientAuthenticator")}
+                    isOpen={open}
+                  >
+                    {providers.map((option) => (
+                      <SelectOption
+                        selected={option.id === value}
+                        key={option.id}
+                        value={option.id}
+                      >
+                        {option.displayName}
+                      </SelectOption>
+                    ))}
+                  </Select>
+                )}
+              />
+            </FormGroup>
+            {clientAuthenticatorType === "client-jwt" && <SignedJWT />}
+            {clientAuthenticatorType === "client-x509" && <X509 />}
+            <ActionGroup>
+              <Button
+                variant="primary"
+                onClick={() => save()}
+                isDisabled={!isDirty}
+              >
+                {t("common:save")}
+              </Button>
+            </ActionGroup>
+          </CardBody>
+          {(clientAuthenticatorType === "client-secret" ||
+            clientAuthenticatorType === "client-secret-jwt") && <Divider />}
           {(clientAuthenticatorType === "client-secret" ||
             clientAuthenticatorType === "client-secret-jwt") && (
-            <>
-              <Divider className="pf-u-mb-md" />
+            <CardBody>
               <ClientSecret
                 secret={secret}
                 toggle={toggleClientSecretConfirm}
               />
-            </>
+            </CardBody>
           )}
-        </CardBody>
-      </Card>
-      <Card isFlat>
-        <CardBody>
-          <FormGroup
-            label={t("registrationAccessToken")}
-            fieldId="kc-access-token"
-            labelIcon={
-              <HelpItem
-                helpText="clients-help:registration-access-token"
-                forLabel={t("registrationAccessToken")}
-                forID="kc-access-token"
-              />
-            }
-          >
-            <Split hasGutter>
-              <SplitItem isFilled>
-                <ClipboardCopy id="kc-access-token" isReadOnly>
-                  {accessToken}
-                </ClipboardCopy>
-              </SplitItem>
-              <SplitItem>
-                <Button
-                  variant="secondary"
-                  onClick={toggleAccessTokenConfirm}
-                  isDisabled={isDirty}
-                >
-                  {t("regenerate")}
-                </Button>
-              </SplitItem>
-            </Split>
-          </FormGroup>
-        </CardBody>
-      </Card>
-    </FormAccess>
+        </Card>
+        <Card isFlat>
+          <CardBody>
+            <FormGroup
+              label={t("registrationAccessToken")}
+              fieldId="kc-access-token"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:registration-access-token"
+                  forLabel={t("registrationAccessToken")}
+                  forID="kc-access-token"
+                />
+              }
+            >
+              <Split hasGutter>
+                <SplitItem isFilled>
+                  <ClipboardCopy id="kc-access-token" isReadOnly>
+                    {accessToken}
+                  </ClipboardCopy>
+                </SplitItem>
+                <SplitItem>
+                  <Button
+                    variant="secondary"
+                    onClick={toggleAccessTokenConfirm}
+                    isDisabled={isDirty}
+                  >
+                    {t("regenerate")}
+                  </Button>
+                </SplitItem>
+              </Split>
+            </FormGroup>
+          </CardBody>
+        </Card>
+      </FormAccess>
+    </PageSection>
   );
 };
