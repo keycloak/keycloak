@@ -24,7 +24,9 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.UNAUTHORIZED;
@@ -36,9 +38,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.hamcrest.CoreMatchers;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -46,6 +51,9 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
+import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -59,10 +67,13 @@ import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelP
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
+import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -77,6 +88,7 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
 
@@ -91,8 +103,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AuthServerContainerExclude({REMOTE, QUARKUS})
 public class CIBATest extends AbstractTestRealmKeycloakTest {
 
-    private final String AUTHENTICATION_CHANNEL_SERVER_NAME = "authentication-channel-server";
-    private final String AUTHENTICATION_CHANNEL_SERVER_PASSWORD = "passwort-authentication-channel-server";
+    private final String SECOND_TEST_CLIENT_NAME = "test-second-client";
+    private final String SECOND_TEST_CLIENT_SECRET = "passwort-test-second-client";
+    private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
+
+    private ClientRegistration reg;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -139,10 +154,22 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
                 .build();
         testRealm.getUsers().add(user);
 
-        ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, AUTHENTICATION_CHANNEL_SERVER_NAME);
-        confApp.setSecret(AUTHENTICATION_CHANNEL_SERVER_PASSWORD);
+        ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, SECOND_TEST_CLIENT_NAME);
+        confApp.setSecret(SECOND_TEST_CLIENT_SECRET);
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
+    }
 
+    @Before
+    public void before() throws Exception {
+        // get initial access token for Dynamic Client Registration with authentication
+        reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", TEST_REALM_NAME).build();
+        ClientInitialAccessPresentation token = adminClient.realm(TEST_REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        reg.auth(Auth.token(token));
+    }
+
+    @After
+    public void after() throws Exception {
+        reg.close();
     }
 
     @BeforeClass
@@ -378,7 +405,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             Assert.assertThat(authenticationChannelReq.getRequest().getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
 
             // different user Authentication Channel completed
-//            oauth.doAuthenticationChannelCallback(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, usernameAuthenticated, authenticationChannelReq.getBearerToken(), SUCCEEDED);
+//            oauth.doAuthenticationChannelCallback(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, usernameAuthenticated, authenticationChannelReq.getBearerToken(), SUCCEEDED);
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
@@ -976,7 +1003,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             doAuthenticationChannelCallback(authenticationChannelReq);
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(AUTHENTICATION_CHANNEL_SERVER_NAME, AUTHENTICATION_CHANNEL_SERVER_PASSWORD, response.getAuthReqId());
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
 
@@ -998,6 +1025,32 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testAuthenticationChannelUnknown() throws Exception {
         testAuthenticationChannelErrorCase(Status.BAD_REQUEST, Status.BAD_REQUEST,  null, OAuthErrorException.AUTHORIZATION_PENDING, Errors.INVALID_REQUEST);
+    }
+
+    @Test
+    public void testInvalidConsumptionDeviceRegistration() throws Exception {
+        try {
+            createClientDynamically("invalid-CIBA-CD", (OIDCClientRepresentation clientRep) -> {
+                clientRep.setBackchannelTokenDeliveryMode("pushpush");
+            });
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
+        }
+    }
+
+    protected String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = new OIDCClientRepresentation();
+        clientRep.setClientName(clientName);
+        clientRep.setClientUri(ServerURLs.getAuthServerContextRoot());
+        clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        op.accept(clientRep);
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        reg.auth(Auth.token(response));
+        // registered components will be removed automatically when a test method finishes regardless of its success or failure.
+        String clientId = response.getClientId();
+        testContext.getOrCreateCleanup(TEST_REALM_NAME).addClientUuid(clientId);
+        return clientId;
     }
 
     private void testAuthenticationChannelErrorCase(Status statusCallback, Status statusTokenEndpont, AuthenticationChannelResponse.Status authStatus, String error, String errorEvent) throws Exception {

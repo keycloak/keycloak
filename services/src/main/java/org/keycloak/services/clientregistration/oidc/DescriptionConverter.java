@@ -26,6 +26,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -165,13 +166,22 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
-        if (clientOIDC.getBackchannelTokenDeliveryMode() != null) {
-            configWrapper.setBackchannelTokenDeliveryMode(clientOIDC.getBackchannelTokenDeliveryMode());
+        String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
+        if (backchannelTokenDeliveryMode != null) {
+            if(isSupportedBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode)) {
+                configWrapper.setBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode);
+            } else {
+                throw new ClientRegistrationException("Unsupported requested backchannel_token_delivery_mode");
+            }
         }
 
         return client;
     }
 
+    private static boolean isSupportedBackchannelTokenDeliveryMode(String mode) {
+        if (mode.equals(CibaConfig.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE)) return true;
+        return false;
+    }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
         if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
