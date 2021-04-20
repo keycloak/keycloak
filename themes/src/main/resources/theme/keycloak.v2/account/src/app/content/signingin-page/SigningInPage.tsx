@@ -78,6 +78,7 @@ interface CredentialContainer {
     updateAction?: string;
     removeable: boolean;
     userCredentials: UserCredential[];
+    open: boolean;
 }
 
 interface SigningInPageProps extends RouteComponentProps {
@@ -86,7 +87,6 @@ interface SigningInPageProps extends RouteComponentProps {
 interface SigningInPageState {
     // Credential containers organized by category then type
     credentialContainers: CredContainerMap;
-    toggle: boolean
 }
 
 /**
@@ -102,7 +102,6 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     
         this.state = {
             credentialContainers: new Map(),
-            toggle: false
         }
 
         this.getCredentialContainers();
@@ -294,8 +293,11 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             <Dropdown
                                 isPlain
                                 position={DropdownPosition.right}
-                                toggle={<KebabToggle onToggle={isOpen => this.setState({ toggle: isOpen })} />}
-                                isOpen={this.state.toggle}
+                                toggle={<KebabToggle onToggle={isOpen => {
+                                    credContainer.open = isOpen;
+                                    this.setState({ credentialContainers: new Map(this.state.credentialContainers) });
+                                }} />}
+                                isOpen={credContainer.open}
                                 dropdownItems={[
                                     <button id={`mob-${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={() => setupAction.execute()}>
                                         <span className="pf-c-button__icon">
