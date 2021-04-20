@@ -538,14 +538,14 @@ form#kc-select-back-form div.login-pf-social-section {
 a.zocial.nia {
     background: url(../img/nia-logo-01.png) no-repeat left top;
     height: 32px;
-    width: 31px;
+    width: auto;
     padding-top: 60px;
 }
 
 a.zocial.nia:hover {
     background: url(../img/nia-logo-01.png) no-repeat left top !important;
     height: 32px;
-    width: 31px;
+    width: auto;
 }
 
 a.zocial.nia span {
@@ -555,14 +555,14 @@ a.zocial.nia span {
 a#social-nia {
     background: url(../img/nia-logo-01.png) no-repeat left top;
     height: 32px;
-    width: 31px;
-   
+    width: auto;
+
 }
 
 a#social-nia:hover {
     background: url(../img/nia-logo-01.png) no-repeat left top !important;
-  height: 32px;
-    width: 31px;;
+    height: 32px;
+    width: auto;
 }
 
 a#social-nia span {
