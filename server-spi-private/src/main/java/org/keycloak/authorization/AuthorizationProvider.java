@@ -358,6 +358,17 @@ public final class AuthorizationProvider implements Provider {
                 if (policy != null) {
                     ResourceServer resourceServer = policy.getResourceServer();
 
+                    // if uma policy (owned by a user) also remove associated policies
+                    if (policy.getOwner() != null) {
+                        for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
+                            // only remove associated policies created from the policy being deleted
+                            if (associatedPolicy.getOwner() != null) {
+                                policy.removeAssociatedPolicy(associatedPolicy);
+                                policyStore.delete(associatedPolicy.getId());
+                            }
+                        }
+                    }
+
                     findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
                         dependentPolicy.removeAssociatedPolicy(policy);
                         if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
