@@ -1,0 +1,13 @@
+=== Terminology
+
+These terms are used in this guide:
+
+* `Clients` are entities that can request Keycloak to authenticate a user. Most often, clients are applications and services that want to use Keycloak to secure themselves and provide a single sign-on solution. Clients can also be entities that just want to request identity information or an access token so that they can securely invoke other services on the network that are secured by Keycloak.
+
+* `Applications` include a wide range of applications that work for specific platforms for each protocol
+
+* A `service account` is built-in account that exists for each client. The client uses this account to obtain an access token.
+
+* `Client adapters` are libraries that make it very easy to secure applications and services with Keycloak. We call them adapters rather than libraries as they provide a tight integration to the underlying platform and framework. This makes our adapters easy to use and they require less boilerplate code than what is typically required by a library.
+
+* `Creating a client` and `registering a client` are the same action. The Admin Console includes a Create Client option which performs the same action that is performed by using the Client Registration Services.

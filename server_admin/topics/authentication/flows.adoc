@@ -39,18 +39,20 @@ This action is configured through the *Actions* > *Config* link. It redirects to
 +
 Since this sub-flow is marked as _alternative_, it will not be executed if the *Cookie* authentication type passed. This sub-flow contains an additional authentication type that needs to be executed. {project_name} loads the executions for this sub-flow and processes them.
 
-The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
+.. The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
 
-The second execution is the *Browser - Conditional OTP* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
+.. The second execution is the *Browser - Conditional OTP* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
 
-The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional OTP* sub-flow executes only when the user has a configured OTP credential.
+.. The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional OTP* sub-flow executes only when the user has a configured OTP credential.
 
-The final execution is the *OTP Form*. {project_name} marks this execution as _required_ but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If not, the user does not see an OTP form.
+.. The final execution is the *OTP Form*. {project_name} marks this execution as _required_ but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If not, the user does not see an OTP form.
+
+[[_execution-requirements]]
+==== Execution requirements
 
 ===== Requirement
 A set of radio buttons that control the execution of an action executes.
 
-[[_execution-requirements]]
 ====== Required
 
 All _Required_ elements in the flow must be successfully sequentially executed. The flow terminates if a required element fails.
@@ -160,7 +162,7 @@ To illustrate the creation of flows, this section describes creating an advanced
 .The common part with the browser flow
 image:images/Passwordless-browser-login-common.png[]
 +
-. Click *Actions for the *Forms* execution.
+. Click *Actions* for the *Forms* execution.
 . Select *Add execution*.
 . Select *Username Form* from the drop-down list.
 . Click *Save*.

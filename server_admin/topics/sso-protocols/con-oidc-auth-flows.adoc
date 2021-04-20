@@ -79,3 +79,222 @@ This is used by clients running on internet-connected devices that have limited 
 . The application requests {project_name} a device code and a user code. {project_name} creates a device code and a user code. {project_name} returns a response including the device code and the user code to the application.
 . The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
+
+[[_client_initiated_backchannel_authentication_grant]]
+===== Client Initiated Backchannel Authentication Grant
+
+:tech_feature_name: Client Initiated Backchannel Authentication Grant
+:tech_feature_setting: -Dkeycloak.profile.feature.ciba=enabled
+include::../templates/techpreview.adoc[]
+
+This is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
+
+. The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
+. After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
+
+An administrator can configure Client Initiated Backchannel Authentication (CIBA) related operations as `CIBA Policy` per realm.
+
+Also please refer to other places of {project_name} documentation like link:{adapterguide_link}#_backchannel_authentication_endpoint[Backchannel Authentication Endpoint section] of {adapterguide_name} and link:{adapterguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adapterguide_name}.
+
+====== CIBA Policy
+
+An administrator carries out the following operations on the `Admin Console` :
+
+- Open the `Authentication -> CIBA Policy` tab.
+- Configure items and click `Save`.
+
+The configurable items and their description follow.
+
+|===
+|Configuration|Description
+
+|Backchannel Token Delivery Mode
+|Specifying how the CD (Consumption Device) gets the authentication result and related tokens. There are three modes, "poll", "ping" and "push". {project_name} only supports "poll". The default setting is "poll". This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.5[CIBA Specification].
+
+|Expires In
+|The expiration time of the "auth_req_id" in seconds since the authentication request was received. The default setting is 120. This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
+
+|Interval
+|The interval in seconds the CD (Consumption Device) needs to wait for between polling requests to the token endpoint. The default setting is 5. This configuration is optional.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
+
+|Authentication Requested User Hint
+|The way of identifying the end-user for whom authentication is being requested. The default setting is "login_hint".  There are three modes, "login_hint", "login_hint_token" and "id_token_hint". {project_name} only supports "login_hint". This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA Specification].
+
+|===
+
+====== Provider Setting
+
+The CIBA grant uses the following two providers.
+
+. Authentication Channel Provider : provides the communication between {project_name} and the entity that actually authenticates the user via AD (Authentication Device).
+. User Resolver Provider : get `UserModel` of {project_name} from the information provided by the client to identify the user.
+
+{project_name} has both default providers. However, the administrator needs to set up Authentication Channel Provider like this:
+
+[source,xml]
+----
+<spi name="ciba-auth-channel">
+    <default-provider>ciba-http-auth-channel</default-provider>
+    <provider name="ciba-http-auth-channel" enabled="true">
+        <properties>
+            <property name="httpAuthenticationChannelUri" value="https://backend.internal.example.com/auth"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The configurable items and their description follow.
+
+|===
+|Configuration|Description
+
+|httpAuthenticationChannelUri
+|Specifying URI of the entity that actually authenticates the user via AD (Authentication Device).
+
+|===
+
+====== Authentication Channel Provider
+
+CIBA standard document does not specify how to authenticate the user by AD. Therefore, it might be implemented at the discretion of products. {project_name} delegates this authentication to an external authentication entity. To communicate with the authentication entity, {project_name} provides Authentication Channel Provider.
+
+Its implementation of {project_name} assumes that the authentication entity is under the control of the administrator of {project_name} so that {project_name} trusts the authentication entity. It is not recommended to use the authentication entity that the administrator of {project_name} cannot control.
+
+Authentication Channel Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called HTTP Authentication Channel Provider that uses HTTP to communicate with the authentication entity.
+
+If a user of {project_name} user want to use the HTTP Authentication Channel Provider, they need to know its contract between {project_name} and the authentication entity consisting of the following two parts.
+
+Authentication Delegation Request/Response:: 
+{project_name} sends an authentication request to the authentication entity.
+
+Authentication Result Notification/ACK:: 
+The authentication entity notifies the result of the authentication to {project_name}.
+
+Authentication Delegation Request/Response consists of the following messaging.
+
+Authentication Delegation Request:: The request is sent from {project_name} to the authentication entity to ask it for user authentication by AD.
+
+----
+POST [delegation_reception]
+----
+
+* Headers
+
+|===
+|Name|Value|Description
+
+|Content-Type|application/json|The message body is json formatted.
+|Authorization|Bearer [token]|The [token] is used when the authentication entity notifies the result of the authentication to {project_name}.
+
+|===
+
+* Parameters
+
+|===
+|Type|Name|Description
+
+|Path
+|delegation_reception|The endpoint provided by the authentication entity to receive the delegation request
+
+|===
+
+* Body
+
+|===
+|Name|Description
+
+|login_hint|It tells the authentication entity who is authenticated by AD. +
+By default, it is the user's "username". +
+This field is required and was defined by CIBA standard document.
+
+|scope|It tells which scopes the authentication entity gets consent from the authenticated user. +
+This field is required and was defined by CIBA standard document.
+
+|is_consent_required|It shows whether the authentication entity needs to get consent from the authenticated user about the scope. +
+ This field is required.
+
+|binding_message|Its value is intended to be shown in both CD and AD's UI to make the user recognize that the authentication by AD is triggered by CD. +
+This field is optional and was defined by CIBA standard document.
+
+|acr_values|It tells the requesting Authentication Context Class Reference from CD. +
+This field is optional and was defined by CIBA standard document.
+
+|===
+
+Authentication Delegation Response:: The response is returned from the authentication entity to {project_name} to notify that the authentication entity received the authentication request from {project_name}.
+
+* Responses
+
+|===
+|HTTP Status Code|Description
+
+|201|It notifies {project_name} of receiving the authentication delegation request.
+
+|===
+
+Authentication Result Notification/ACK consists of the following messaging.
+
+Authentication Result Notification:: The authentication entity sends the result of the authentication request to {project_name}.
+
+----
+POST /auth/realms/[realm]/protocol/openid-connect/ext/ciba/auth/callback
+----
+
+* Headers
+
+|===
+|Name|Value|Description
+
+|Content-Type|application/json|The message body is json formatted.
+|Authorization|Bearer [token]|The [token] must be the one the authentication entity has received from {project_name} in Authentication Delegation Request.
+
+|===
+
+* Parameters
+
+|===
+|Type|Name|Description
+
+|Path
+|realm|The realm name
+
+|===
+
+* Body
+
+|===
+|Name|Description
+
+|status|It tells the result of user authentication by AD. +
+It must be one of the following status. +
+  SUCCEED : The authentication by AD has been successfully completed. +
+  UNAUTHORIZED : The authentication by AD has not been completed. +
+  CANCELLED : The authentication by AD has been cancelled by the user.
+
+|===
+
+Authentication Result ACK:: The response is returned from {project_name} to the authentication entity to notify {project_name} received the result of user authentication by AD from the authentication entity.
+
+* Responses
+
+|===
+|HTTP Status Code|Description
+
+|200|It notifies the authentication entity of receiving the notification of the authentication result.
+
+|===
+
+====== User Resolver Provider
+
+Even if the same user, its representation may differ in each CD, {project_name} and the authentication entity.
+
+For CD, {project_name} and the authentication entity to recognize the same user, this User Resolver Provider converts their own user representations among them.
+
+User Resolver Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called Default User Resolver Provider that has the following characteristics.
+
+* Only support `login_hint` parameter and is used as default.
+* `username` of UserModel in {project_name} is used to represent the user on CD, {project_name} and the authentication entity.
+

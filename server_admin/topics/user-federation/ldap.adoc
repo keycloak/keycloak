@@ -150,8 +150,6 @@ directory entry using `ldapsearch` and base64 decode the `userPassword` attribut
 [[_ldap_troubleshooting]]
 ==== Troubleshooting
 
-- It is useful to increase the logging level to TRACE for the category `org.keycloak.storage.ldap`. You increase this level in the logging
-
 It is useful to increase the logging level to TRACE for the category `org.keycloak.storage.ldap`. You increase this level in the logging
 subsystem in the `standalone(-ha).xml` file. With this setting, many logging messages are sent
 to the `server.log` file in the `TRACE` level, including the logging for all queries to the LDAP server and the parameters, which were
@@ -159,25 +157,24 @@ used to send the queries. When you are creating any LDAP question on user forum 
 enabled TRACE logging. If it is too big, the good alternative is to include just the snippet from server log with the messages, which were
 added to the log during the operation, which causes the issues to you.
 
+When you create LDAP provider, message appear in the server log in the INFO level starting with:
 
-- When you create LDAP provider, message appear in the server log in the INFO level starting with:
-
- When you create LDAP provider, message appear in the server log in the INFO level starting with:
-
-```
+[source,bash,subs=+attributes]
+----
 Creating new LDAP Store for the LDAP storage provider: ...
-```
+----
+
 It shows the configuration of your LDAP provider. Before you are asking the questions or reporting bugs, it will be nice to include this
 message to show your LDAP configuration. Eventually feel free to replace some config changes, which you do not want to include, with some
 placeholder values. One example is `bindDn=some-placeholder` . For `connectionUrl`, feel free to replace it as well, but it is generally
 useful to include at least the protocol, which was used (`ldap` vs `ldaps`)`. Similarly it can be useful to include the details for
 configuration of your LDAP mappers, which are displayed with the message like this at the DEBUG level:
-```
+[source,bash,subs=+attributes]
+----
 Mapper for provider: XXX, Mapper name: YYY, Provider: ZZZ ...
-```
-Note those messages are displayed just with the enabled DEBUG logging.
+----
 
-- For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
+Note those messages are displayed just with the enabled DEBUG logging.
 
 For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
 the LDAP provider to value `all`. This will add lots of additional messages to server log with the included logging for the LDAP connection
@@ -188,11 +185,6 @@ of the LDAP provider connection.
 
 If no more messages appear for connection pooling even after server restart, it can indicate that connection pooling does not work
 with your LDAP server.
-
-- For the case of reporting LDAP issue, you may consider to attach some part of your LDAP tree with the target data, which causes issues
-in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
-of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
-in {project_name} etc.
 
 For the case of reporting LDAP issue, you may consider to attach some part of your LDAP tree with the target data, which causes issues
 in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes

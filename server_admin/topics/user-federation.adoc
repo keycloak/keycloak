@@ -9,7 +9,7 @@ When a user attempts to log in, {project_name} examines that user's storage to f
 
 External user databases rarely have the data necessary to support all the features of {project_name}, so the User Storage Provider can opt to store items locally in {project_name} user data storage. Providers can import users locally and sync periodically with external data storage. This approach depends on the capabilities of the provider and the configuration of the provider.  For example, your external user data storage may not support OTP. The OTP can be handled and stored by {project_name}, depending on the provider.
 
-=== Adding a Provider
+=== Adding a provider
 To add a storage provider, perform the following procedure:
 
 .Procedure
@@ -20,7 +20,7 @@ image:{project_images}/user-federation.png[User Federation]
 +
 . Select the provider type from the *Add Provider* list. {project_name} brings you to that provider's configuration page.
 
-=== Dealing with Provider Failures
+=== Dealing with provider failures
 
 If a User Storage Provider fails, you may not be able to log in and view users in the Admin Console. {project_name} does not detect failures when using a Storage Provider to look up a user, so it cancels the invocation. If you have a Storage Provider with a high priority that fails during user lookup, the login or user query fails with an exception and will not fail over to the next configured provider.
 

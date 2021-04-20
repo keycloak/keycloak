@@ -136,7 +136,7 @@ The password to open the truststore.
 
 See link:https://docs.wildfly.org/19/Admin_Guide.html#https-listener[HTTPS Listener] for the instructions to enable HTTPS in WildFly.
 
-* Add the <https-listener> element.
+Add the <https-listener> element as shown below:
 
 [source,xml,subs="attributes+"]
 ----
@@ -196,41 +196,44 @@ image:images/x509-configuration.png[X509 Configuration]
 *User Identity Source*::
 Defines the method for extracting the user identity from a client certificate.
 
-*Canonical DN representation enabled*::
+*Canonical DN representation enabled (optional)*::
 Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
 
-*Enable Serial Number hexadecimal representation*::
+*Enable Serial Number hexadecimal representation (optional)*::
 Represent the link:https://tools.ietf.org/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC5280. See link:https://tools.ietf.org/html/rfc5280#appendix-B[RFC5280, appendix-B] for more details.
 
-*A regular expression*::
+*A regular expression (optional)*::
 A regular expression to use as a filter for extracting the certificate identity. The expression must contain a single group.
 
 *User Mapping Method*::
 Defines the method to match the certificate identity with an existing user. _Username or email_ searches for existing users by username or email. _Custom Attribute Mapper_ searches for existing users with a custom attribute that matches the certificate identity. The name of the custom attribute is configurable.
 
-*A name of user attribute*::
+*A name of user attribute (optional)*::
 A custom attribute whose value matches against the certificate identity. Use multiple custom attributes when attribute mapping is related to multiple values, For example,  'Certificate Serial Number and IssuerDN'.
 
-*CRL Checking Enabled*::
+WARNING: It is highly recommended that attribute used here is read-only for the users. By default, only the `usercertificate` attribute is read-only by {project_name}.
+If you use a different attribute name, you may need to add it to the list of read-only attributes. See the details in the link:#_read_only_user_attributes[Threat model mitigation chapter].
+
+*CRL Checking Enabled (optional)*::
 Check the revocation status of the certificate by using the Certificate Revocation List. The location of the list is defined in the *CRL file path* attribute.
 
-*Enable CRL Distribution Point to check certificate revocation status*::
+*Enable CRL Distribution Point to check certificate revocation status (optional)*::
 Use CDP to check the certificate revocation status. Most PKI authorities include CDP in their certificates.
 
-*CRL file path*::
+*CRL file path (optional)*::
 The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
 
-*OCSP Checking Enabled*::
+*OCSP Checking Enabled (optional)*::
 Checks the certificate revocation status by using Online Certificate Status Protocol.
 
-*OCSP Responder URI*::
+*OCSP Responder URI (optional)*::
 Override the value of the OCSP responder URI in the certificate.
 
-*Validate Key Usage*::
+*Validate Key Usage (optional)*::
 Verifies the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" verifies if bits 0 and 2 in the KeyUsage extension are set.
 Leave this parameter empty to disable the Key Usage validation. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
 
-*Validate Extended Key Usage*::
+*Validate Extended Key Usage (optional)*::
 Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
 
 *Bypass identity confirmation*::

@@ -32,8 +32,6 @@ image:{project_images}/saml-add-identity-provider.png[Add Identity Provider]
 
 |Principal Type
 |Specifies which part of the SAML assertion will be used to identify and track external user identities. Can be either Subject NameID or SAML attribute (either by name or by friendly name). Subject NameID value can not be set together with 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient' NameID Policy Format value.
-=======
-|Specifies the part of the SAML assertion {project_name} uses to identify and track external user identities. The Principal Type can be Subject NameID or SAML attribute (by name or by friendly name).
 
 |Principal Attribute
 |If a Principal type is non-blank, this field specifies the name ("Attribute [Name]") or the friendly name ("Attribute [Friendly Name]") of the identifying attribute.

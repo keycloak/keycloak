@@ -1,0 +1,21 @@
+These are the basic steps for setting up an application or a service in Keycloak.
+
+Configure a client adapter using one of these options:
+
+* A {project_name} adapter
+
+* A third party library adapter
+
+Register a client using one of these options:
+
+* The Admin Console
+
+* The client registration service
+
+* The CLI
+
+[role="_additional-resources"]
+== Additional resources 
+
+This guide provide the detailed instructions for these steps. Additional information on using the Admin Console exists in the Server Administration Guide. That guide refers to creating a client rather than registering a client.
+
