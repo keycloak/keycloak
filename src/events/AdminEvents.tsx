@@ -160,7 +160,7 @@ export const AdminEvents = () => {
           {
             name: "time",
             displayKey: "events:time",
-            cellRenderer: (row) => moment(row.time).fromNow(),
+            cellRenderer: (row) => moment(row.time).format("LLL"),
           },
           {
             name: "resourcePath",

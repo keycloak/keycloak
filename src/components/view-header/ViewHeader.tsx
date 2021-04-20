@@ -1,4 +1,4 @@
-import React, { ReactElement, useContext, useState } from "react";
+import React, { ReactElement, ReactNode, useContext, useState } from "react";
 import {
   Text,
   PageSection,
@@ -27,7 +27,7 @@ export type ViewHeaderProps = {
   badge?: string;
   badgeId?: string;
   badgeIsRead?: boolean;
-  subKey: string;
+  subKey: string | ReactNode;
   actionsDropdownId?: string;
   subKeyLinkProps?: FormattedLinkProps;
   dropdownItems?: ReactElement[];
@@ -133,7 +133,7 @@ export const ViewHeader = ({
         {enabled && (
           <TextContent id="view-header-subkey">
             <Text>
-              {t(subKey)}
+              {React.isValidElement(subKey) ? subKey : t(subKey as string)}
               {subKeyLinkProps && (
                 <FormattedLink
                   {...subKeyLinkProps}

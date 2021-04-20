@@ -1,7 +1,8 @@
 {
   "events": {
     "title": "Events",
-    "eventExplain": "If you want to configure user events, Admin events or Event listeners, please enter Event configs page realm settings to configure.",
+    "eventExplain": "If you want to configure user events, Admin events or Event listeners, please enter <1>Event configs</1> page realm settings to configure.",
+    "eventConfigs": "Event configs",
     "userEvents": "User events",
     "adminEvents": "Admin events",
     "searchForEvent": "Search user event",

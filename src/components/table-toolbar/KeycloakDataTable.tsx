@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { isValidElement, ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useErrorHandler } from "react-error-boundary";
 import {
@@ -20,21 +20,33 @@ import { asyncStateFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 
-type Row<T> = {
+type TitleCell = { title: JSX.Element };
+type Cell<T> = keyof T | JSX.Element | TitleCell;
+
+type BaseRow<T> = {
   data: T;
+  cells: Cell<T>[];
+};
+
+type Row<T> = BaseRow<T> & {
   selected: boolean;
+  isOpen: boolean;
   disableSelection: boolean;
   disableActions: boolean;
-  cells: (keyof T | JSX.Element)[];
+};
+
+type SubRow<T> = BaseRow<T> & {
+  parent: number;
 };
 
 type DataTableProps<T> = {
   ariaLabelKey: string;
   columns: Field<T>[];
-  rows: Row<T>[];
+  rows: (Row<T> | SubRow<T>)[];
   actions?: IActions;
   actionResolver?: IActionsResolver;
   onSelect?: (isSelected: boolean, rowIndex: number) => void;
+  onCollapse?: (isOpen: boolean, rowIndex: number) => void;
   canSelectAll: boolean;
 };
 
@@ -45,6 +57,7 @@ function DataTable<T>({
   actionResolver,
   ariaLabelKey,
   onSelect,
+  onCollapse,
   canSelectAll,
   ...props
 }: DataTableProps<T>) {
@@ -56,6 +69,11 @@ function DataTable<T>({
       onSelect={
         onSelect
           ? (_, isSelected, rowIndex) => onSelect(isSelected, rowIndex)
+          : undefined
+      }
+      onCollapse={
+        onCollapse
+          ? (_, rowIndex, isOpen) => onCollapse(isOpen, rowIndex)
           : undefined
       }
       canSelectAll={canSelectAll}
@@ -81,6 +99,12 @@ export type Field<T> = {
   cellRenderer?: (row: T) => ReactNode;
 };
 
+export type DetailField<T> = {
+  name: string;
+  enabled?: (row: T) => boolean;
+  cellRenderer?: (row: T) => ReactNode;
+};
+
 export type Action<T> = IAction & {
   onRowClick?: (row: T) => Promise<boolean> | void;
 };
@@ -89,6 +113,7 @@ export type DataListProps<T> = {
   loader: (first?: number, max?: number, search?: string) => Promise<T[]>;
   onSelect?: (value: T[]) => void;
   canSelectAll?: boolean;
+  detailColumns?: DetailField<T>[];
   isRowDisabled?: (value: T) => boolean;
   isPaginated?: boolean;
   ariaLabelKey: string;
@@ -119,6 +144,7 @@ export type DataListProps<T> = {
  * @param {boolean} props.isPaginated - if true the the loader will be called with first, max and search and a pager will be added in the header
  * @param {(first?: number, max?: number, search?: string) => Promise<T[]>} props.loader - loader function that will fetch the data to display first, max and search are only applicable when isPaginated = true
  * @param {Field<T>} props.columns - definition of the columns
+ * @param {Field<T>} props.detailColumns - definition of the columns expandable columns
  * @param {Action[]} props.actions - the actions that appear on the row
  * @param {IActionsResolver} props.actionResolver Resolver for the given action
  * @param {ReactNode} props.toolbarItem - Toolbar items that appear on the top of the table {@link ToolbarItem}
@@ -130,6 +156,7 @@ export function KeycloakDataTable<T>({
   isPaginated = false,
   onSelect,
   canSelectAll = false,
+  detailColumns,
   isRowDisabled,
   loader,
   columns,
@@ -143,9 +170,9 @@ export function KeycloakDataTable<T>({
 }: DataListProps<T>) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<T[]>([]);
-  const [rows, setRows] = useState<Row<T>[]>();
+  const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
-  const [filteredData, setFilteredData] = useState<Row<T>[]>();
+  const [filteredData, setFilteredData] = useState<(Row<T> | SubRow<T>)[]>();
   const [loading, setLoading] = useState(false);
 
   const [max, setMax] = useState(10);
@@ -194,7 +221,7 @@ export function KeycloakDataTable<T>({
     );
   }, [key, first, max, search]);
 
-  const getNodeText = (node: keyof T | JSX.Element): string => {
+  const getNodeText = (node: Cell<T>): string => {
     if (["string", "number"].includes(typeof node)) {
       return node!.toString();
     }
@@ -202,27 +229,55 @@ export function KeycloakDataTable<T>({
       return node.map(getNodeText).join("");
     }
     if (typeof node === "object" && node) {
-      return getNodeText(node.props.children);
+      return getNodeText(
+        isValidElement((node as TitleCell).title)
+          ? (node as TitleCell).title.props.children
+          : (node as JSX.Element).props.children
+      );
     }
     return "";
   };
 
-  const convertToColumns = (data: T[]) => {
-    return data!.map((value) => {
-      const disabledRow = isRowDisabled ? isRowDisabled(value) : false;
-      return {
-        data: value,
-        disableSelection: disabledRow,
-        disableActions: disabledRow,
-        selected: !!selected.find((v) => (v as any).id === (value as any).id),
-        cells: columns.map((col) => {
-          if (col.cellRenderer) {
-            return col.cellRenderer(value);
-          }
-          return _.get(value, col.name);
-        }),
-      };
-    });
+  const convertToColumns = (data: T[]): (Row<T> | SubRow<T>)[] => {
+    return data!
+      .map((value, index) => {
+        const disabledRow = isRowDisabled ? isRowDisabled(value) : false;
+        const row: (Row<T> | SubRow<T>)[] = [
+          {
+            data: value,
+            disableSelection: disabledRow,
+            disableActions: disabledRow,
+            selected: !!selected.find(
+              (v) => _.get(v, "id") === _.get(value, "id")
+            ),
+            isOpen: false,
+            cells: columns.map((col) => {
+              if (col.cellRenderer) {
+                return { title: col.cellRenderer(value) };
+              }
+              return _.get(value, col.name);
+            }),
+          },
+        ];
+        if (
+          detailColumns &&
+          detailColumns[0] &&
+          detailColumns[0].enabled &&
+          detailColumns[0].enabled(value)
+        ) {
+          row.push({
+            parent: index * 2,
+            cells: detailColumns!.map((col) => {
+              if (col.cellRenderer) {
+                return { title: col.cellRenderer(value) };
+              }
+              return _.get(value, col.name);
+            }),
+          } as SubRow<T>);
+        }
+        return row;
+      })
+      .flat();
   };
 
   const filter = (search: string) => {
@@ -247,6 +302,9 @@ export function KeycloakDataTable<T>({
           (filteredData || rows)![rowIndex].data
         );
         if (result) {
+          if (!isPaginated) {
+            setFilteredData(undefined);
+          }
           refresh();
         }
       };
@@ -264,12 +322,12 @@ export function KeycloakDataTable<T>({
     if (rowIndex === -1) {
       setRows(
         data!.map((row) => {
-          row.selected = isSelected;
+          (row as Row<T>).selected = isSelected;
           return row;
         })
       );
     } else {
-      data![rowIndex].selected = isSelected;
+      (data![rowIndex] as Row<T>).selected = isSelected;
 
       setRows([...rows!]);
     }
@@ -284,11 +342,17 @@ export function KeycloakDataTable<T>({
     // Selected rows are any rows previously selected from a different page, plus current page selections
     const selectedRows = [
       ...difference,
-      ...data!.filter((row) => row.selected).map((row) => row.data),
+      ...data!.filter((row) => (row as Row<T>).selected).map((row) => row.data),
     ];
 
     setSelected(selectedRows);
     onSelect!(selectedRows);
+  };
+
+  const onCollapse = (isOpen: boolean, rowIndex: number) => {
+    const data = filteredData || rows;
+    (data![rowIndex] as Row<T>).isOpen = isOpen;
+    setRows([...data!]);
   };
 
   return (
@@ -319,6 +383,7 @@ export function KeycloakDataTable<T>({
               {...props}
               canSelectAll={canSelectAll}
               onSelect={onSelect ? _onSelect : undefined}
+              onCollapse={detailColumns ? onCollapse : undefined}
               actions={convertAction()}
               actionResolver={actionResolver}
               rows={filteredData || rows}

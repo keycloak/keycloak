@@ -7,7 +7,6 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter, boolFormatter } from "../util";
@@ -108,7 +107,6 @@ export const RolesList = ({
             name: "name",
             displayKey: "roles:roleName",
             cellRenderer: RoleDetailLink,
-            cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
           },
           {
             name: "composite",
