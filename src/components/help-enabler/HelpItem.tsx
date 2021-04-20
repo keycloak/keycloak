@@ -9,6 +9,7 @@ type HelpItemProps = {
   forLabel: string;
   forID: string;
   noVerticalAlign?: boolean;
+  unWrap?: boolean;
 };
 
 export const HelpItem = ({
@@ -16,6 +17,7 @@ export const HelpItem = ({
   forLabel,
   forID,
   noVerticalAlign = true,
+  unWrap = false,
 }: HelpItemProps) => {
   const { t } = useTranslation();
   const { enabled } = useContext(HelpContext);
@@ -23,15 +25,20 @@ export const HelpItem = ({
     <>
       {enabled && (
         <Popover bodyContent={t(helpText)}>
-          <button
-            id={helpText}
-            aria-label={t(`helpLabel`, { label: forLabel })}
-            onClick={(e) => e.preventDefault()}
-            aria-describedby={forID}
-            className="pf-c-form__group-label-help"
-          >
-            <HelpIcon noVerticalAlign={noVerticalAlign} />
-          </button>
+          <>
+            {!unWrap && (
+              <button
+                id={helpText}
+                aria-label={t(`helpLabel`, { label: forLabel })}
+                onClick={(e) => e.preventDefault()}
+                aria-describedby={forID}
+                className="pf-c-form__group-label-help"
+              >
+                <HelpIcon noVerticalAlign={noVerticalAlign} />
+              </button>
+            )}
+            {unWrap && <HelpIcon noVerticalAlign={noVerticalAlign} />}
+          </>
         </Popover>
       )}
     </>

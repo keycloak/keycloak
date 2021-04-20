@@ -408,6 +408,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                     forLabel={t("effectiveProtocolMappers")}
                     helpText="clients-help:effectiveProtocolMappers"
                     noVerticalAlign={false}
+                    unWrap
                   />
                 </TabTitleText>
               }
@@ -425,6 +426,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                     forLabel={t("effectiveRoleScopeMappings")}
                     helpText="clients-help:effectiveRoleScopeMappings"
                     noVerticalAlign={false}
+                    unWrap
                   />
                 </TabTitleText>
               }
@@ -442,6 +444,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                     forLabel={t("generatedAccessToken")}
                     helpText="clients-help:generatedAccessToken"
                     noVerticalAlign={false}
+                    unWrap
                   />
                 </TabTitleText>
               }
