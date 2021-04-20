@@ -47,7 +47,7 @@ public class MapComponentEntity implements UpdatableEntity {
         entity.setProviderType(model.getProviderType());
         entity.setSubType(model.getSubType());
         entity.setParentId(model.getParentId());
-        entity.setConfig(model.getConfig());
+        entity.setConfig(model.getConfig() == null ? null : new MultivaluedHashMap<>(model.getConfig()));
         return entity;
     }
 
@@ -60,7 +60,7 @@ public class MapComponentEntity implements UpdatableEntity {
         model.setProviderType(entity.getProviderType());
         model.setSubType(entity.getSubType());
         model.setParentId(entity.getParentId());
-        model.setConfig(entity.getConfig());
+        model.setConfig(entity.getConfig() == null ? null : new MultivaluedHashMap<>(entity.getConfig()));
         return model;
     }
 

@@ -57,7 +57,7 @@ public class MapWebAuthnPolicyEntity implements UpdatableEntity {
         entity.setUserVerificationRequirement(model.getUserVerificationRequirement());
         entity.setCreateTimeout(model.getCreateTimeout());
         entity.setAvoidSameAuthenticatorRegister(model.isAvoidSameAuthenticatorRegister());
-        entity.setAcceptableAaguids(model.getAcceptableAaguids());
+        entity.setAcceptableAaguids(model.getAcceptableAaguids() == null ? null : new LinkedList<>(model.getAcceptableAaguids()));
         return entity;
     }
 
@@ -73,7 +73,7 @@ public class MapWebAuthnPolicyEntity implements UpdatableEntity {
         model.setUserVerificationRequirement(entity.getUserVerificationRequirement());
         model.setCreateTimeout(entity.getCreateTimeout());
         model.setAvoidSameAuthenticatorRegister(entity.isAvoidSameAuthenticatorRegister());
-        model.setAcceptableAaguids(entity.getAcceptableAaguids());
+        model.setAcceptableAaguids(entity.getAcceptableAaguids() == null ? null : new LinkedList<>(entity.getAcceptableAaguids()));
         return model;
     }
 
