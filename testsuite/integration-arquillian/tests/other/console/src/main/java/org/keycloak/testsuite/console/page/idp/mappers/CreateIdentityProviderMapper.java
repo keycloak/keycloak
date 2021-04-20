@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.console.page.idp;
+package org.keycloak.testsuite.console.page.idp.mappers;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.AdminConsoleCreate;

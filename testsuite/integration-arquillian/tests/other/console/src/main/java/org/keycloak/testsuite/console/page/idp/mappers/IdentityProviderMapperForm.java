@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.console.page.idp;
+package org.keycloak.testsuite.console.page.idp.mappers;
 
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
@@ -34,6 +34,9 @@ public class IdentityProviderMapperForm extends Form {
     @FindBy(id = "syncMode")
     private Select syncMode;
 
+    @FindBy(id = "mapperTypeCreate")
+    private Select mapperType;
+
     public void setName(final String value) {
         setTextInputValue(name, value);
     }
@@ -44,5 +47,13 @@ public class IdentityProviderMapperForm extends Form {
 
     public String syncMode() {
         return syncMode.getFirstSelectedOption().getText();
+    }
+
+    public void setMapperType(final String value) {
+        mapperType.selectByVisibleText(value);
+    }
+
+    public String getMapperType() {
+        return mapperType.getFirstSelectedOption().getText();
     }
 }

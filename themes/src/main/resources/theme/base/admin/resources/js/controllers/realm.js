@@ -2198,14 +2198,19 @@ module.controller('IdentityProviderMapperListCtrl', function($scope, realm, iden
     $scope.mappers = mappers;
 });
 
-module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identityProvider, mapperTypes, mapper, IdentityProviderMapper, Notifications, Dialog, $location) {
+module.controller('IdentityProviderMapperCtrl', function ($scope, realm, identityProvider, mapperTypes, mapper, IdentityProviderMapper, Notifications, Dialog, ComponentUtils, $location) {
     $scope.realm = realm;
     $scope.identityProvider = identityProvider;
     $scope.create = false;
-    $scope.mapper = angular.copy(mapper);
     $scope.changed = false;
     $scope.mapperType = mapperTypes[mapper.identityProviderMapper];
-    $scope.$watch(function() {
+
+    ComponentUtils.convertAllMultivaluedStringValuesToList($scope.mapperType.properties, mapper.config);
+    ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.mapperType.properties, mapper.config);
+
+    $scope.mapper = angular.copy(mapper);
+
+    $scope.$watch(function () {
         return $location.path();
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
@@ -2218,12 +2223,16 @@ module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identit
     }, true);
 
     $scope.save = function() {
+        let mapperCopy = angular.copy($scope.mapper);
+        ComponentUtils.convertAllListValuesToMultivaluedString($scope.mapperType.properties, mapperCopy.config);
+
         IdentityProviderMapper.update({
             realm : realm.realm,
-            alias: identityProvider.alias,
+            alias : identityProvider.alias,
             mapperId : mapper.id
-        }, $scope.mapper, function() {
+        }, mapperCopy, function () {
             $scope.changed = false;
+            ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.mapperType.properties, $scope.mapper.config);
             mapper = angular.copy($scope.mapper);
             $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers/" + mapper.id);
             Notifications.success("Your changes have been saved.");
@@ -2251,7 +2260,7 @@ module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identit
 
 });
 
-module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, identityProvider, mapperTypes, IdentityProviderMapper, Notifications, Dialog, $location) {
+module.controller('IdentityProviderMapperCreateCtrl', function ($scope, realm, identityProvider, mapperTypes, IdentityProviderMapper, Notifications, Dialog, ComponentUtils, $location) {
     $scope.realm = realm;
     $scope.identityProvider = identityProvider;
     $scope.create = true;
@@ -2268,11 +2277,15 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.save = function() {
+    $scope.save = function () {
         $scope.mapper.identityProviderMapper = $scope.mapperType.id;
+        let copyMapper = angular.copy($scope.mapper);
+        ComponentUtils.convertAllListValuesToMultivaluedString($scope.mapperType.properties, copyMapper.config);
+
         IdentityProviderMapper.save({
-            realm : realm.realm, alias: identityProvider.alias
-        }, $scope.mapper, function(data, headers) {
+            realm : realm.realm,
+            alias : identityProvider.alias
+        }, copyMapper, function (data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);
             $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers/" + id);
