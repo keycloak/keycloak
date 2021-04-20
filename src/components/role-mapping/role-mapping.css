@@ -1,5 +1,5 @@
 
 
-.keycloak-admin--service-account__client-name {
+.keycloak-admin--role-mapping__client-name {
   margin-right: var(--pf-global--spacer--sm);
 }

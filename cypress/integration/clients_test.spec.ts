@@ -8,7 +8,7 @@ import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedT
 import AdminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
 import { keycloakBefore } from "../support/util/keycloak_before";
-import ServiceAccountTab from "../support/pages/admin_console/manage/clients/ServiceAccountTab";
+import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -165,7 +165,7 @@ describe("Clients test", function () {
   });
 
   describe("Service account tab test", () => {
-    const serviceAccountTab = new ServiceAccountTab();
+    const serviceAccountTab = new RoleMappingTab();
     const serviceAccountName = "service-account-client";
 
     beforeEach(() => {
@@ -194,7 +194,7 @@ describe("Clients test", function () {
         .searchItem(serviceAccountName)
         .goToItemDetails(serviceAccountName);
       serviceAccountTab
-        .goToTab()
+        .goToServiceAccountTab()
         .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
     });
   });

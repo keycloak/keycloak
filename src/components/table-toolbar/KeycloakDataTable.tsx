@@ -173,10 +173,9 @@ export function KeycloakDataTable<T>({
   }, [selected]);
 
   useEffect(() => {
+    setLoading(true);
     return asyncStateFetch(
       async () => {
-        setLoading(true);
-
         let data = unPaginatedData || (await loader(first, max, search));
 
         if (!isPaginated) {

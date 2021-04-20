@@ -1,52 +1,21 @@
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AlertVariant,
-  Badge,
-  Button,
-  Checkbox,
-  ToolbarItem,
-} from "@patternfly/react-core";
+import { AlertVariant } from "@patternfly/react-core";
 
 import RoleRepresentation, {
   RoleMappingPayload,
 } from "keycloak-admin/lib/defs/roleRepresentation";
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { RealmContext } from "../../context/realm-context/RealmContext";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import { emptyFormatter } from "../../util";
-import { AddServiceAccountModal } from "./AddServiceAccountModal";
-
-import "./service-account.css";
 import { useAlerts } from "../../components/alert/Alerts";
+import {
+  CompositeRole,
+  RoleMapping,
+  Row,
+} from "../../components/role-mapping/RoleMapping";
 
 type ServiceAccountProps = {
   clientId: string;
-};
-
-export type Row = {
-  client?: ClientRepresentation;
-  role: CompositeRole | RoleRepresentation;
-};
-
-export const ServiceRole = ({ role, client }: Row) => (
-  <>
-    {client && (
-      <Badge
-        key={`${client.id}-${role.id}`}
-        isRead
-        className="keycloak-admin--service-account__client-name"
-      >
-        {client.clientId}
-      </Badge>
-    )}
-    {role.name}
-  </>
-);
-
-type CompositeRole = RoleRepresentation & {
-  parent: RoleRepresentation;
 };
 
 export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
@@ -55,12 +24,9 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
   const { realm } = useContext(RealmContext);
   const { addAlert } = useAlerts();
 
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
-
   const [hide, setHide] = useState(false);
   const [serviceAccountId, setServiceAccountId] = useState("");
-  const [showAssign, setShowAssign] = useState(false);
+  const [name, setName] = useState("");
 
   const loader = async () => {
     const serviceAccount = await adminClient.clients.getServiceAccountUser({
@@ -75,6 +41,7 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
     });
 
     const clients = await adminClient.clients.find();
+    setName(clients.find((c) => c.id === clientId)?.clientId!);
     const clientRoles = (
       await Promise.all(
         clients.map(async (client) => {
@@ -152,7 +119,6 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
           )
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
-      refresh();
     } catch (error) {
       addAlert(
         t("roleMappingUpdatedError", {
@@ -163,57 +129,13 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
     }
   };
   return (
-    <>
-      {showAssign && (
-        <AddServiceAccountModal
-          clientId={clientId}
-          serviceAccountId={serviceAccountId}
-          onAssign={assignRoles}
-          onClose={() => setShowAssign(false)}
-        />
-      )}
-      <KeycloakDataTable
-        data-testid="assigned-roles"
-        key={key}
-        loader={loader}
-        onSelect={() => {}}
-        searchPlaceholderKey="clients:searchByName"
-        ariaLabelKey="clients:clientScopeList"
-        toolbarItem={
-          <>
-            <ToolbarItem>
-              <Checkbox
-                label={t("hideInheritedRoles")}
-                id="hideInheritedRoles"
-                isChecked={hide}
-                onChange={setHide}
-              />
-            </ToolbarItem>
-            <ToolbarItem>
-              <Button onClick={() => setShowAssign(true)}>
-                {t("assignRole")}
-              </Button>
-            </ToolbarItem>
-          </>
-        }
-        columns={[
-          {
-            name: "role.name",
-            displayKey: t("name"),
-            cellRenderer: ServiceRole,
-          },
-          {
-            name: "role.parent.name",
-            displayKey: t("inherentFrom"),
-            cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "role.description",
-            displayKey: t("description"),
-            cellFormatters: [emptyFormatter()],
-          },
-        ]}
-      />
-    </>
+    <RoleMapping
+      name={name}
+      id={serviceAccountId}
+      type={"service-account"}
+      loader={loader}
+      save={assignRoles}
+      onHideRolesToggle={() => setHide(!hide)}
+    />
   );
 };

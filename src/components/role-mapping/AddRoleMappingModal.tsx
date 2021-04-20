@@ -17,18 +17,22 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import {
   asyncStateFetch,
   useAdminClient,
 } from "../../context/auth/AdminClient";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { FilterIcon } from "@patternfly/react-icons";
-import { Row, ServiceRole } from "./ServiceAccount";
+import { Row, ServiceRole } from "./RoleMapping";
+import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 
-type AddServiceAccountModalProps = {
-  clientId: string;
-  serviceAccountId: string;
+export type MappingType = "service-account" | "client-scope";
+
+type AddRoleMappingModalProps = {
+  id: string;
+  type: MappingType;
+  name: string;
   onAssign: (rows: Row[]) => void;
   onClose: () => void;
 };
@@ -41,18 +45,18 @@ const realmRole = {
   name: "realmRoles",
 } as ClientRepresentation;
 
-export const AddServiceAccountModal = ({
-  clientId,
-  serviceAccountId,
+export const AddRoleMappingModal = ({
+  id,
+  name,
+  type,
   onAssign,
   onClose,
-}: AddServiceAccountModalProps) => {
+}: AddRoleMappingModalProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const errorHandler = useErrorHandler();
 
   const [clients, setClients] = useState<ClientRole[]>([]);
-  const [name, setName] = useState<string>();
   const [searchToggle, setSearchToggle] = useState(false);
 
   const [key, setKey] = useState(0);
@@ -66,16 +70,25 @@ export const AddServiceAccountModal = ({
       asyncStateFetch(
         async () => {
           const clients = await adminClient.clients.find();
-          setName(clients.find((client) => client.id === clientId)?.clientId);
           return (
             await Promise.all(
               clients.map(async (client) => {
-                const roles = await adminClient.users.listAvailableClientRoleMappings(
-                  {
-                    id: serviceAccountId,
-                    clientUniqueId: client.id!,
-                  }
-                );
+                let roles: RoleRepresentation[] = [];
+                if (type === "service-account") {
+                  roles = await adminClient.users.listAvailableClientRoleMappings(
+                    {
+                      id: id,
+                      clientUniqueId: client.id!,
+                    }
+                  );
+                } else if (type === "client-scope") {
+                  roles = await adminClient.clientScopes.listAvailableClientScopeMappings(
+                    {
+                      id,
+                      client: client.id!,
+                    }
+                  );
+                }
                 return {
                   roles,
                   client,
@@ -114,11 +127,18 @@ export const AddServiceAccountModal = ({
         (client) => client.name !== "realmRoles"
       );
     }
-    const realmRoles = (
-      await adminClient.users.listAvailableRealmRoleMappings({
-        id: serviceAccountId,
-      })
-    ).map((role) => {
+
+    let availableRoles: RoleRepresentation[] = [];
+    if (type === "service-account") {
+      availableRoles = await adminClient.users.listAvailableRealmRoleMappings({
+        id,
+      });
+    } else if (type === "client-scope") {
+      availableRoles = await adminClient.clientScopes.listAvailableRealmScopeMappings(
+        { id }
+      );
+    }
+    const realmRoles = availableRoles.map((role) => {
       return {
         role,
         client: undefined,
@@ -132,19 +152,27 @@ export const AddServiceAccountModal = ({
 
     const roles = (
       await Promise.all(
-        allClients.map(async (client) =>
-          (
-            await adminClient.users.listAvailableClientRoleMappings({
-              id: serviceAccountId,
-              clientUniqueId: client.id!,
-            })
-          ).map((role) => {
+        allClients.map(async (client) => {
+          let clientAvailableRoles: RoleRepresentation[] = [];
+          if (type === "service-account") {
+            clientAvailableRoles = await adminClient.users.listAvailableClientRoleMappings(
+              {
+                id,
+                clientUniqueId: client.id!,
+              }
+            );
+          } else if (type === "client-scope") {
+            clientAvailableRoles = await adminClient.clientScopes.listAvailableClientScopeMappings(
+              { id, client: client.id! }
+            );
+          }
+          return clientAvailableRoles.map((role) => {
             return {
               role,
               client,
             };
-          })
-        )
+          });
+        })
       )
     ).flat();
 
@@ -173,9 +201,7 @@ export const AddServiceAccountModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("assignRolesTo", {
-        client: name,
-      })}
+      title={t("assignRolesTo", { client: name })}
       isOpen={true}
       onClose={onClose}
       actions={[
