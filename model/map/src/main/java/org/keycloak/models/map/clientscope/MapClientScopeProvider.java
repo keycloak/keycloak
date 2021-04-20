@@ -32,12 +32,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 public class MapClientScopeProvider<K> implements ClientScopeProvider {
 
@@ -55,16 +56,10 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapClientScopeEntity<K> registerEntityForChanges(MapClientScopeEntity<K> origEntity) {
-        final MapClientScopeEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapClientScopeEntity<K>::isUpdated);
-        return res;
-    }
-
     private Function<MapClientScopeEntity<K>, ClientScopeModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapClientScopeAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapClientScopeAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return clientScopeStore.getKeyConvertor().keyToString(entity.getId());

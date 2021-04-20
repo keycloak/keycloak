@@ -27,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapScopeAdapter;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -39,6 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapScopeStore<K> implements ScopeStore {
@@ -55,16 +55,10 @@ public class MapScopeStore<K> implements ScopeStore {
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapScopeEntity<K> registerEntityForChanges(MapScopeEntity<K> origEntity) {
-        final MapScopeEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapScopeEntity<K>::isUpdated);
-        return res;
-    }
-
     private Scope entityToAdapter(MapScopeEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapScopeAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapScopeAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return scopeStore.getKeyConvertor().keyToString(entity.getId());

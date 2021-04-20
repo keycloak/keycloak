@@ -25,7 +25,6 @@ import org.keycloak.models.RealmModel;
 
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -33,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 import org.keycloak.models.RoleContainerModel;
@@ -71,19 +71,12 @@ public class MapRoleProvider<K> implements RoleProvider {
 
     private Function<MapRoleEntity<K>, RoleModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-
-        return origEntity -> new MapRoleAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapRoleAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return roleStore.getKeyConvertor().keyToString(entity.getId());
             }
         };
-    }
-
-    private MapRoleEntity<K> registerEntityForChanges(MapRoleEntity<K> origEntity) {
-        final MapRoleEntity<K> res = Serialization.from(origEntity);
-        tx.updateIfChanged(origEntity.getId(), res, MapRoleEntity<K>::isUpdated);
-        return res;
     }
 
     @Override
@@ -183,7 +176,7 @@ public class MapRoleProvider<K> implements RoleProvider {
                     //
                     // TODO: Investigate what this is for - the return value is ignored
                     //
-                    registerEntityForChanges(origEntity);
+                    registerEntityForChanges(tx, origEntity);
                     origEntity.removeCompositeRole(role.getId());
                 });
         }
@@ -207,7 +200,7 @@ public class MapRoleProvider<K> implements RoleProvider {
                         //
                         // TODO: Investigate what this is for - the return value is ignored
                         //
-                        registerEntityForChanges(origEntity);
+                        registerEntityForChanges(tx, origEntity);
                         origEntity.removeCompositeRole(role.getId());
                     });
             }
