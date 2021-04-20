@@ -502,9 +502,13 @@ Options are same as for the createLoginUrl method but 'action' is set to 'regist
 
 Redirects to the Account Management Console.
 
-====== createAccountUrl()
+====== createAccountUrl(options)
 
 Returns the URL to the Account Management Console.
+
+Options is an Object, where:
+
+* redirectUri - Specifies the uri to redirect to when redirecting back to the application.
 
 ====== hasRealmRole(role)
 
