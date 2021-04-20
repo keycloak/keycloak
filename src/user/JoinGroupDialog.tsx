@@ -63,52 +63,44 @@ export const JoinGroupDialog = ({
 
   const { id } = useParams<{ id: string }>();
 
-  if (id) {
-    useEffect(
-      () =>
-        asyncStateFetch(
-          async () => {
+  useEffect(
+    () =>
+      asyncStateFetch(
+        async () => {
+          const allGroups = await adminClient.groups.find();
+
+          if (groupId) {
+            const group = await adminClient.groups.findOne({ id: groupId });
+            return { group, groups: group.subGroups! };
+          } else if (id) {
             const existingUserGroups = await adminClient.users.listGroups({
               id,
             });
-            const allGroups = await adminClient.groups.find();
 
-            if (groupId) {
-              const group = await adminClient.groups.findOne({ id: groupId });
-              return { group, groups: group.subGroups! };
-            } else {
-              return {
-                groups: _.differenceBy(allGroups, existingUserGroups, "id"),
-              };
-            }
-          },
-          async ({ group: selectedGroup, groups }) => {
-            if (selectedGroup) {
-              setNavigation([...navigation, selectedGroup]);
-            }
-
-            groups.forEach((group: Group) => {
-              group.checked = !!selectedRows.find((r) => r.id === group.id);
-            });
-            setGroups(groups);
-          },
-          errorHandler
-        ),
-      [groupId]
-    );
-  } else if (!id) {
-    useEffect(() => {
-      return asyncStateFetch(
-        () => {
-          return Promise.resolve(adminClient.groups.find());
+            return {
+              groups: _.differenceBy(allGroups, existingUserGroups, "id"),
+            };
+          } else
+            return {
+              groups: allGroups,
+            };
         },
-        (groups) => {
-          setGroups([...groups.filter((row) => !chips.includes(row.name))]);
+        async ({ group: selectedGroup, groups }) => {
+          if (selectedGroup) {
+            setNavigation([...navigation, selectedGroup]);
+          }
+
+          groups.forEach((group: Group) => {
+            group.checked = !!selectedRows.find((r) => r.id === group.id);
+          });
+          id
+            ? setGroups(groups)
+            : setGroups([...groups.filter((row) => !chips.includes(row.name))]);
         },
         errorHandler
-      );
-    }, []);
-  }
+      ),
+    [groupId]
+  );
 
   return (
     <Modal
