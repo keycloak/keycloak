@@ -320,12 +320,6 @@ a.zocial  {
     box-shadow: none;
     text-shadow: none;
 }
-.zocial.nia {
-    background-image: url("../img/nia-logo-01.png") !important;
-    background-repeat: no-repeat !important;
-    background-position: left top !important; 
-    background-color: #f5f5f5 !important;
-}
 
 /* Copy of zocial windows classes to be used for microsoft's social provider button */
 .zocial.microsoft:before{ content: "\f15d"; }
@@ -538,4 +532,39 @@ a.zocial  {
 form#kc-select-back-form div.login-pf-social-section {
     padding-left: 0px;
     border-left: 0px;
+}
+
+
+a.zocial.nia {
+    background: url(../img/nia-logo-01.png) no-repeat left top;
+    height: 32px;
+    width: 31px;
+    padding-top: 60px;
+}
+
+a.zocial.nia:hover {
+    background: url(../img/nia-logo-01.png) no-repeat left top !important;
+    height: 32px;
+    width: 31px;
+}
+
+a.zocial.nia span {
+    display:none;
+}
+
+a#social-nia {
+    background: url(../img/nia-logo-01.png) no-repeat left top;
+    height: 32px;
+    width: 31px;
+   
+}
+
+a#social-nia:hover {
+    background: url(../img/nia-logo-01.png) no-repeat left top !important;
+  height: 32px;
+    width: 31px;;
+}
+
+a#social-nia span {
+    display:none;
 }
