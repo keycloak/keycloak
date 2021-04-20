@@ -304,7 +304,7 @@ a.zocial  {
     font-size: 14px;
 }
 .zocial:hover {
-    background: #ededed !important;
+    background: #ededed;
 }
 
 .zocial.facebook,
