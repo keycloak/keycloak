@@ -1,4 +1,4 @@
-[[_client_saml_configuration]]
+[[_client-saml-configuration]]
 === SAML Clients
 
 {project_name} supports <<_saml,SAML 2.0>> for registered applications.

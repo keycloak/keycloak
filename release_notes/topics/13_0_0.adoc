@@ -16,7 +16,7 @@ and https://github.com/Michito-Okai[Michito Okai].
 
 Keycloak now supports communication with clients using SAML _Artifact_ binding. A new `Force Artifact Binding` option
 was introduced in the client configuration, that forces communication with the client using artifact messages. For more
-details proceed to link:{adminguide_link_latest}#_client_saml_configuration[{adminguide_name}]. Please note, that with
-this version, Keycloak SAML client adapter does NOT support _Artifact_ binding.
+details proceed to link:{adminguide_link}#_client-saml-configuration[{adminguide_name}]. Please note, that with
+this version, Keycloak SAML client adapter does NOT support Artifact binding.
 
 Thanks to https://github.com/AlistairDoswald[AlistairDoswald] and https://github.com/harture[harture].
