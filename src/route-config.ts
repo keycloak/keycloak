@@ -29,8 +29,8 @@ import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 import { SearchGroups } from "./groups/SearchGroups";
 import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
-import { LdapMappingDetails } from "./user-federation/ldap/mappers/LdapMappingDetails";
 import { RealmSettingsTabs } from "./realm-settings/RealmSettingsTabs";
+import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
 
 export type RouteDef = BreadcrumbsRoute & {
   access: AccessType;
@@ -227,6 +227,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
+    path: "/:realm/user-federation/ldap/new",
+    component: UserFederationLdapSettings,
+    breadcrumb: t("common:settings"),
+    access: "view-realm",
+  },
+  {
     path: "/:realm/user-federation/ldap/:id/:tab?",
     component: UserFederationLdapSettings,
     breadcrumb: t("common:settings"),
@@ -234,14 +240,8 @@ export const routes: RoutesFn = (t: TFunction) => [
   },
   {
     path: "/:realm/user-federation/ldap/:id/:tab/:mapperId",
-    component: LdapMappingDetails,
+    component: LdapMapperDetails,
     breadcrumb: t("common:mappingDetails"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/ldap/new",
-    component: UserFederationLdapSettings,
-    breadcrumb: t("common:settings"),
     access: "view-realm",
   },
   {

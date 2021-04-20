@@ -143,9 +143,9 @@ export const MappingDetails = () => {
       } else {
         await adminClient.clientScopes.addProtocolMapper({ id }, map);
       }
-      addAlert(t(`mapping${key}Success`), AlertVariant.success);
+      addAlert(t(`common:mapping${key}Success`), AlertVariant.success);
     } catch (error) {
-      addAlert(t(`mapping${key}Error`, { error }), AlertVariant.danger);
+      addAlert(t(`common:mapping${key}Error`, { error }), AlertVariant.danger);
     }
   };
 
