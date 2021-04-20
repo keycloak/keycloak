@@ -60,7 +60,7 @@ public class MapIdentityProviderEntity implements UpdatableEntity {
         entity.setLinkOnly(model.isLinkOnly());
         entity.setAddReadTokenRoleOnCreate(model.isAddReadTokenRoleOnCreate());
         entity.setAuthenticateByDefault(model.isAuthenticateByDefault());
-        entity.setConfig(model.getConfig());
+        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
         return entity;
     }
 
@@ -79,7 +79,7 @@ public class MapIdentityProviderEntity implements UpdatableEntity {
         model.setLinkOnly(entity.isLinkOnly());
         model.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
         model.setAuthenticateByDefault(entity.isAuthenticateByDefault());
-        model.setConfig(entity.getConfig());
+        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
         return model;
     }
 

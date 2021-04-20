@@ -50,7 +50,7 @@ public class MapRequiredActionProviderEntity implements UpdatableEntity {
         entity.setPriority(model.getPriority());
         entity.setEnabled(model.isEnabled());
         entity.setDefaultAction(model.isDefaultAction());
-        entity.setConfig(model.getConfig());
+        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
         return entity;
     }
 
@@ -64,7 +64,7 @@ public class MapRequiredActionProviderEntity implements UpdatableEntity {
         model.setPriority(entity.getPriority());
         model.setEnabled(entity.isEnabled());
         model.setDefaultAction(entity.isDefaultAction());
-        model.setConfig(entity.getConfig());
+        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
         return model;
     }
 
