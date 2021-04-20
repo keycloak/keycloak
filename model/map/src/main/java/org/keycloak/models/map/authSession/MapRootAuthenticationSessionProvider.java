@@ -23,7 +23,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -40,6 +39,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -64,18 +64,12 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
     private Function<MapRootAuthenticationSessionEntity<K>, RootAuthenticationSessionModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapRootAuthenticationSessionAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapRootAuthenticationSessionAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return sessionStore.getKeyConvertor().keyToString(entity.getId());
             }
         };
-    }
-
-    private MapRootAuthenticationSessionEntity<K> registerEntityForChanges(MapRootAuthenticationSessionEntity<K> origEntity) {
-        MapRootAuthenticationSessionEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapRootAuthenticationSessionEntity<K>::isUpdated);
-        return res;
     }
 
     private Predicate<MapRootAuthenticationSessionEntity<K>> entityRealmFilter(String realmId) {

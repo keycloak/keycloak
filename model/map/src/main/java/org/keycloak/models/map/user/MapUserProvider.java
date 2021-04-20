@@ -41,7 +41,6 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.SearchableFields;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -70,6 +69,7 @@ import static org.keycloak.models.UserModel.EMAIL_VERIFIED;
 import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialStore.Streams {
@@ -86,15 +86,9 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapUserEntity<K> registerEntityForChanges(MapUserEntity<K> origEntity) {
-        MapUserEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapUserEntity<K>::isUpdated);
-        return res;
-    }
-
     private Function<MapUserEntity<K>, UserModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapUserAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapUserAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return userStore.getKeyConvertor().keyToString(entity.getId());
@@ -134,7 +128,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
 
     private MapUserEntity<K> getRegisteredEntityByIdOrThrow(RealmModel realm, String id) {
         return getEntityById(realm, id)
-                .map(this::registerEntityForChanges)
+                .map(e -> registerEntityForChanges(tx, e))
                 .orElseThrow(this::userDoesntExistException);
     }
 
@@ -148,7 +142,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
     }
 
     private Optional<MapUserEntity<K>> getRegisteredEntityById(RealmModel realm, String id) {
-        return getEntityById(realm, id).map(this::registerEntityForChanges);
+        return getEntityById(realm, id).map(e -> registerEntityForChanges(tx, e));
     }
 
     @Override
@@ -180,7 +174,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialProvider);
 
         tx.getUpdatedNotRemoved(mcb)
-                .map(this::registerEntityForChanges)
+                .map(e -> registerEntityForChanges(tx, e))
                 .forEach(userEntity -> userEntity.removeFederatedIdentity(socialProvider));
     }
 
@@ -389,7 +383,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
         try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
-            s.map(this::registerEntityForChanges)
+            s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.setFederationLink(null));
         }
     }
@@ -403,7 +397,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, roleId);
 
         try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
-            s.map(this::registerEntityForChanges)
+            s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.removeRolesMembership(roleId));
         }
     }
@@ -417,7 +411,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, groupId);
 
         try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
-            s.map(this::registerEntityForChanges)
+            s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.removeGroupsMembership(groupId));
         }
     }
@@ -431,7 +425,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.CONSENT_FOR_CLIENT, Operator.EQ, clientId);
 
         try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
-            s.map(this::registerEntityForChanges)
+            s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.removeUserConsent(clientId));
         }
     }
@@ -483,7 +477,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
               .collect(Collectors.toList());
 
             if (! consentClientIds.isEmpty()) {
-                userEntity = registerEntityForChanges(userEntity);
+                userEntity = registerEntityForChanges(tx, userEntity);
                 consentClientIds.forEach(userEntity::removeUserConsent);
             }
         };
@@ -497,7 +491,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
-            s.map(this::registerEntityForChanges)
+            s.map(e -> registerEntityForChanges(tx, e))
               .forEach(entity -> entity.addRolesMembership(roleId));
         }
     }
@@ -540,7 +534,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
             throw new ModelDuplicateException("Multiple users with email '" + email + "' exist in Keycloak.");
         }
 
-        MapUserEntity<K> userEntity = registerEntityForChanges(usersWithEmail.get(0));
+        MapUserEntity<K> userEntity = registerEntityForChanges(tx, usersWithEmail.get(0));
         
         if (!realm.isDuplicateEmailsAllowed()) {
             if (userEntity.getEmail() != null && !userEntity.getEmail().equals(userEntity.getEmailConstraint())) {

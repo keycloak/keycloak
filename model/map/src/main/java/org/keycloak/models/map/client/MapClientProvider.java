@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +44,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.ClientScopeModel;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -80,16 +80,10 @@ public class MapClientProvider<K> implements ClientProvider {
         };
     }
 
-    private MapClientEntity<K> registerEntityForChanges(MapClientEntity<K> origEntity) {
-        final MapClientEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapClientEntity<K>::isUpdated);
-        return res;
-    }
-
     private Function<MapClientEntity<K>, ClientModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapClientAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapClientAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return clientStore.getKeyConvertor().keyToString(entity.getId());
