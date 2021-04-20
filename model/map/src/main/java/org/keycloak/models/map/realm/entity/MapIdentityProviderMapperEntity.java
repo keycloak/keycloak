@@ -44,7 +44,7 @@ public class MapIdentityProviderMapperEntity implements UpdatableEntity {
         entity.setName(model.getName());
         entity.setIdentityProviderAlias(model.getIdentityProviderAlias());
         entity.setIdentityProviderMapper(model.getIdentityProviderMapper());
-        entity.setConfig(model.getConfig());
+        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
         return entity;
     }
 
@@ -55,7 +55,7 @@ public class MapIdentityProviderMapperEntity implements UpdatableEntity {
         model.setName(entity.getName());
         model.setIdentityProviderAlias(entity.getIdentityProviderAlias());
         model.setIdentityProviderMapper(entity.getIdentityProviderMapper());
-        model.setConfig(entity.getConfig());
+        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
         return model;
     }
 
