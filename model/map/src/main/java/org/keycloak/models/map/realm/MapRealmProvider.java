@@ -32,12 +32,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmModel.SearchableFields;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 public class MapRealmProvider<K> implements RealmProvider {
 
@@ -54,20 +54,12 @@ public class MapRealmProvider<K> implements RealmProvider {
     }
 
     private RealmModel entityToAdapter(MapRealmEntity<K> entity) {
-        // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-
-        return new MapRealmAdapter<K>(session, registerEntityForChanges(entity)) {
+        return new MapRealmAdapter<K>(session, registerEntityForChanges(tx, entity)) {
             @Override
             public String getId() {
                 return realmStore.getKeyConvertor().keyToString(entity.getId());
             }
         };
-    }
-
-    private MapRealmEntity<K> registerEntityForChanges(MapRealmEntity<K> origEntity) {
-        final MapRealmEntity<K> res = Serialization.from(origEntity);
-        tx.updateIfChanged(origEntity.getId(), res, MapRealmEntity<K>::isUpdated);
-        return res;
     }
 
     @Override
@@ -183,7 +175,7 @@ public class MapRealmProvider<K> implements RealmProvider {
                 .compare(SearchableFields.CLIENT_INITIAL_ACCESS, Operator.EXISTS);
 
         tx.getUpdatedNotRemoved(mcb)
-                .map(this::registerEntityForChanges)
+                .map(e -> registerEntityForChanges(tx, e))
                 .forEach(MapRealmEntity<K>::removeExpiredClientInitialAccesses);
     }
 

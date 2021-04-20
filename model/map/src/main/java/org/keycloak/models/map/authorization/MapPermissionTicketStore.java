@@ -29,7 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapPermissionTicketAdapter;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -45,6 +44,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -62,16 +62,10 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapPermissionTicketEntity<K> registerEntityForChanges(MapPermissionTicketEntity<K> origEntity) {
-        final MapPermissionTicketEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapPermissionTicketEntity<K>::isUpdated);
-        return res;
-    }
-
     private PermissionTicket entityToAdapter(MapPermissionTicketEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPermissionTicketAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapPermissionTicketAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return permissionTicketStore.getKeyConvertor().keyToString(entity.getId());

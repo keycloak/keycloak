@@ -21,7 +21,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -29,6 +28,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import java.util.function.Function;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -50,18 +50,12 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
     private Function<MapUserLoginFailureEntity<K>, UserLoginFailureModel> userLoginFailureEntityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapUserLoginFailureAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapUserLoginFailureAdapter<K>(session, realm, registerEntityForChanges(userLoginFailureTx, origEntity)) {
             @Override
             public String getId() {
                 return userLoginFailureStore.getKeyConvertor().keyToString(entity.getId());
             }
         };
-    }
-
-    private MapUserLoginFailureEntity<K> registerEntityForChanges(MapUserLoginFailureEntity<K> origEntity) {
-        MapUserLoginFailureEntity<K> res = userLoginFailureTx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        userLoginFailureTx.updateIfChanged(origEntity.getId(), res, MapUserLoginFailureEntity<K>::isUpdated);
-        return res;
     }
 
     @Override

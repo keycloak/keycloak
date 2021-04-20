@@ -27,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -42,6 +41,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapResourceStore<K extends Comparable<K>> implements ResourceStore {
@@ -58,16 +58,10 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         authorizationProvider = provider;
     }
 
-    private MapResourceEntity<K> registerEntityForChanges(MapResourceEntity<K> origEntity) {
-        final MapResourceEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapResourceEntity<K>::isUpdated);
-        return res;
-    }
-    
     private Resource entityToAdapter(MapResourceEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapResourceAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return resourceStore.getKeyConvertor().keyToString(entity.getId());

@@ -34,12 +34,12 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.storage.StorageId;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 public class MapResourceServerStore<K> implements ResourceServerStore {
 
@@ -55,16 +55,10 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapResourceServerEntity<K> registerEntityForChanges(MapResourceServerEntity<K> origEntity) {
-        final MapResourceServerEntity<K> res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapResourceServerEntity<K>::isUpdated);
-        return res;
-    }
-
     private ResourceServer entityToAdapter(MapResourceServerEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceServerAdapter<K>(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapResourceServerAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return resourceServerStore.getKeyConvertor().keyToString(entity.getId());

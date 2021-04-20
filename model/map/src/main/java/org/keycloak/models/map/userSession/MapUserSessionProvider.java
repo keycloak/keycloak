@@ -27,7 +27,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -48,6 +47,7 @@ import java.util.stream.Stream;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.models.UserSessionModel.SessionPersistenceState.TRANSIENT;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.userSession.SessionExpiration.setClientSessionExpiration;
 import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessionExpiration;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
@@ -92,7 +92,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 return null;
             } else {
                 return new MapUserSessionAdapter<UK>(session, realm,
-                        Objects.equals(origEntity.getPersistenceState(), TRANSIENT) ? origEntity : registerEntityForChanges(origEntity)) {
+                        Objects.equals(origEntity.getPersistenceState(), TRANSIENT) ? origEntity : registerEntityForChanges(userSessionTx, origEntity)) {
                     @Override
                     public String getId() {
                         return userSessionStore.getKeyConvertor().keyToString(entity.getId());
@@ -124,7 +124,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 clientSessionTx.delete(origEntity.getId());
                 return null;
             } else {
-                return new MapAuthenticatedClientSessionAdapter<CK>(session, realm, client, userSession, registerEntityForChanges(origEntity)) {
+                return new MapAuthenticatedClientSessionAdapter<CK>(session, realm, client, userSession, registerEntityForChanges(clientSessionTx, origEntity)) {
                     @Override
                     public String getId() {
                         return clientSessionStore.getKeyConvertor().keyToString(entity.getId());
@@ -146,18 +146,6 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 };
             }
         };
-    }
-
-    private MapUserSessionEntity<UK> registerEntityForChanges(MapUserSessionEntity<UK> origEntity) {
-        MapUserSessionEntity<UK> res = userSessionTx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        userSessionTx.updateIfChanged(origEntity.getId(), res, MapUserSessionEntity<UK>::isUpdated);
-        return res;
-    }
-
-    private MapAuthenticatedClientSessionEntity<CK> registerEntityForChanges(MapAuthenticatedClientSessionEntity<CK> origEntity) {
-        MapAuthenticatedClientSessionEntity<CK> res = clientSessionTx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        clientSessionTx.updateIfChanged(origEntity.getId(), res, MapAuthenticatedClientSessionEntity<CK>::isUpdated);
-        return res;
     }
 
     @Override
@@ -639,7 +627,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         if (userSessionEntity == null) {
             MapUserSessionEntity<UK> userSession = userSessionTx.read(id);
-            return userSession != null ? registerEntityForChanges(userSession) : null;
+            return userSession != null ? registerEntityForChanges(userSessionTx, userSession) : null;
         }
         return userSessionEntity;
     }

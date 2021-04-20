@@ -25,7 +25,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
@@ -38,6 +37,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapGroupProvider<K> implements GroupProvider {
@@ -54,15 +54,9 @@ public class MapGroupProvider<K> implements GroupProvider {
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapGroupEntity<K> registerEntityForChanges(MapGroupEntity<K> origEntity) {
-        final MapGroupEntity<K> res = Serialization.from(origEntity);
-        tx.updateIfChanged(origEntity.getId(), res, MapGroupEntity<K>::isUpdated);
-        return res;
-    }
-
     private Function<MapGroupEntity<K>, GroupModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapGroupAdapter<K>(session, realm, registerEntityForChanges(origEntity)) {
+        return origEntity -> new MapGroupAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return groupStore.getKeyConvertor().keyToString(entity.getId());
