@@ -304,7 +304,7 @@ a.zocial  {
     font-size: 14px;
 }
 .zocial:hover {
-    background: #ededed;
+    background: #ededed !important;
 }
 
 .zocial.facebook,
@@ -321,10 +321,10 @@ a.zocial  {
     text-shadow: none;
 }
 .zocial.nia {
-    background-image: url("../img/nia-logo-01.png");
-    background-repeat: no-repeat;
-    background-position: left top; 
-    background-color: #f5f5f5;
+    background-image: url("../img/nia-logo-01.png") !important;
+    background-repeat: no-repeat !important;
+    background-position: left top !important; 
+    background-color: #f5f5f5 !important;
 }
 
 /* Copy of zocial windows classes to be used for microsoft's social provider button */
