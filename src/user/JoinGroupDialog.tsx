@@ -96,27 +96,19 @@ export const JoinGroupDialog = ({
         ),
       [groupId]
     );
+  } else if (!id) {
+    useEffect(() => {
+      return asyncStateFetch(
+        () => {
+          return Promise.resolve(adminClient.groups.find());
+        },
+        (groups) => {
+          setGroups([...groups.filter((row) => !chips.includes(row.name))]);
+        },
+        errorHandler
+      );
+    }, []);
   }
-
-  else if (!id) {
-  useEffect(() => {
-    return asyncStateFetch(
-      () => {
-        // adminClient.groups.find();
-        return Promise.resolve(adminClient.groups.find());
-      },
-      (groups) => {
-        console.log(groups);
-        console.log("potato", chips)
-        // setGroups(groups.filter((item) => item.name !== chips));
-        setGroups([...groups.filter((row) => !chips.includes(row.name))]);
-
-        // setupForm(realm);
-      },
-      errorHandler
-    );
-  }, []);
-}
 
   return (
     <Modal
@@ -128,7 +120,7 @@ export const JoinGroupDialog = ({
       onClose={onClose}
       actions={[
         <Button
-          data-testid="joinGroup"
+          data-testid="join-button"
           key="confirm"
           variant="primary"
           form="group-form"

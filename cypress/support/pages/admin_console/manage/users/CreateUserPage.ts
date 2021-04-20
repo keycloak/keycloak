@@ -4,6 +4,8 @@ export default class CreateUserPage {
   emptyStateCreateUserBtn: string;
   searchPgCreateUserBtn: string;
   addUserBtn: string;
+  joinGroupsBtn: string;
+  joinBtn: string;
   saveBtn: string;
   cancelBtn: string;
 
@@ -14,6 +16,8 @@ export default class CreateUserPage {
     this.emptyStateCreateUserBtn = "empty-primary-action";
     this.searchPgCreateUserBtn = "create-new-user";
     this.addUserBtn = "add-user";
+    this.joinGroupsBtn = "join-groups-button";
+    this.joinBtn = "join-button";
     this.saveBtn = "create-user";
     this.cancelBtn = "cancel-create-user";
   }
@@ -40,6 +44,18 @@ export default class CreateUserPage {
         cy.getId(this.addUserBtn).click();
       }
     });
+
+    return this;
+  }
+
+  toggleAddGroupModal() {
+    cy.getId(this.joinGroupsBtn).click();
+
+    return this;
+  }
+
+  joinGroups() {
+    cy.getId(this.joinBtn).click();
 
     return this;
   }
