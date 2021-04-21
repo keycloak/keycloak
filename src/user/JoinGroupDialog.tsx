@@ -106,7 +106,7 @@ export const JoinGroupDialog = ({
     <Modal
       variant={ModalVariant.small}
       title={
-        username ? `Join groups for user ${username}` : "Select groups to join"
+        username ? t("users:joinGroupsFor") + username : t("users:selectGroups")
       }
       isOpen={open}
       onClose={onClose}
