@@ -10,6 +10,9 @@
     "noGroups": "No groups",
     "noGroupsText": "You haven't added this user to any groups. Join a group to get started.",
     "joinGroup": "Join Group",
+    "joinGroups": "Join Groups",
+    "joinGroupsFor": "Join groups for user ",
+    "selectGroups": "Select groups to join",
     "searchForGroups": "Search for groups",
     "leave": "Leave",
     "leaveGroup": "Leave group {{name}}?",
@@ -56,7 +59,5 @@
     "consents": "Consents",
     "noConsents": "No consents",
     "noConsentsText": "The consents will only be recorded when users try to access a client that is configured to require consent. In that case, users will get a consent page which asks them to grant access to the client."
-
-
   }
 }

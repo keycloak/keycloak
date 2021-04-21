@@ -6,7 +6,7 @@ export default class UserGroupsPage {
   constructor() {
     this.userGroupsTab = "user-groups-tab";
     this.addGroupButton = "add-group-button";
-    this.joinGroupButton = "joinGroup";
+    this.joinGroupButton = "join-button";
   }
 
   goToGroupsTab() {
@@ -21,7 +21,7 @@ export default class UserGroupsPage {
     return this;
   }
 
-  joinGroup() {
+  joinGroups() {
     cy.getId(this.joinGroupButton).click();
 
     return this;

@@ -31,8 +31,9 @@ export type JoinGroupDialogProps = {
   open: boolean;
   toggleDialog: () => void;
   onClose: () => void;
-  username: string;
+  username?: string;
   onConfirm: (newGroups: Group[]) => void;
+  chips?: any;
 };
 
 type Group = GroupRepresentation & {
@@ -45,6 +46,7 @@ export const JoinGroupDialog = ({
   toggleDialog,
   onConfirm,
   username,
+  chips,
 }: JoinGroupDialogProps) => {
   const { t } = useTranslation("roles");
   const adminClient = useAdminClient();
@@ -65,17 +67,23 @@ export const JoinGroupDialog = ({
     () =>
       asyncStateFetch(
         async () => {
-          const existingUserGroups = await adminClient.users.listGroups({ id });
           const allGroups = await adminClient.groups.find();
 
           if (groupId) {
             const group = await adminClient.groups.findOne({ id: groupId });
             return { group, groups: group.subGroups! };
-          } else {
+          } else if (id) {
+            const existingUserGroups = await adminClient.users.listGroups({
+              id,
+            });
+
             return {
               groups: _.differenceBy(allGroups, existingUserGroups, "id"),
             };
-          }
+          } else
+            return {
+              groups: allGroups,
+            };
         },
         async ({ group: selectedGroup, groups }) => {
           if (selectedGroup) {
@@ -85,7 +93,9 @@ export const JoinGroupDialog = ({
           groups.forEach((group: Group) => {
             group.checked = !!selectedRows.find((r) => r.id === group.id);
           });
-          setGroups(groups);
+          id
+            ? setGroups(groups)
+            : setGroups([...groups.filter((row) => !chips.includes(row.name))]);
         },
         errorHandler
       ),
@@ -95,12 +105,14 @@ export const JoinGroupDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={`Join groups for user ${username}`}
+      title={
+        username ? t("users:joinGroupsFor") + username : t("users:selectGroups")
+      }
       isOpen={open}
       onClose={onClose}
       actions={[
         <Button
-          data-testid="joinGroup"
+          data-testid="join-button"
           key="confirm"
           variant="primary"
           form="group-form"
