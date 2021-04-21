@@ -75,7 +75,7 @@ export const ClientsSection = () => {
         {client.clientId}
         {!client.enabled && (
           <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-            Disabled
+            {t("common:disabled")}
           </Badge>
         )}
       </Link>

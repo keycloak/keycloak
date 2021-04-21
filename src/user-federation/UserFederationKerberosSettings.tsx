@@ -51,11 +51,10 @@ const KerberosSettingsHeader = ({
     <>
       <DisableConfirm />
       {id === "new" ? (
-        <ViewHeader titleKey="Kerberos" subKey="" />
+        <ViewHeader titleKey="Kerberos" />
       ) : (
         <ViewHeader
           titleKey="Kerberos"
-          subKey=""
           dropdownItems={[
             <DropdownItem
               key="delete"

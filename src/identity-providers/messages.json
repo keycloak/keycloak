@@ -1,0 +1,30 @@
+{
+  "identity-providers": {
+    "listExplain": "Through Identity Brokering it's easy to allow users to authenticate to Keycloak using external Identity Provider or Social Networks.",
+    "searchForProvider": "Search for provider",
+    "provider": "Provider",
+    "addProvider": "Add provider",
+    "manageDisplayOrder": "Manage display order",
+    "deleteProvider": "Delete provider?",
+    "deleteConfirm": "Are you sure you want to permanently delete the provider '{{provider}}'",
+    "deletedSuccess": "Provider successfully deleted",
+    "deleteError": "Could not delete the provider {{error}}",
+    "getStarted": "To get started, select a provider from the list below.",
+    "addIdentityProvider": "Add {{provider}} provider",
+    "redirectURI": "Redirect URI",
+    "clientId": "Client ID",
+    "clientSecret": "Client Secret",
+    "displayOrder": "Display order",
+    "createSuccess": "Identity provider successfully created",
+    "createError": "Could not create the identity provider provider {{error}}",
+    "oderDialogIntro": "The order that the providers are listed in the login page or the account console. You can drag the row handles to change the order.",
+    "manageOrderTableAria": "List of identity providers in the order listed on the login page",
+    "manageOrderItemAria": "Press space or enter to begin dragging, and use the arrow keys to navigate up or down. Press enter to confirm the drag, or any other key to cancel the drag operation.",
+    "onDragStart": "Dragging started for item {{id}}",
+    "onDragMove": "Dragging item {{id}}",
+    "onDragCancel": "Dragging cancelled. List is unchanged.",
+    "onDragFinish": "Dragging finished {{list}}",
+    "orderChangeSuccess": "Successfully changed display order of identity providers",
+    "orderChangeError": "Could not change display order of identity providers {{error}}"
+  }
+}

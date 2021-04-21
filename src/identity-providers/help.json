@@ -1,0 +1,8 @@
+{
+  "identity-providers-help": {
+    "redirectURI": "The redirect uri to use when configuring the identity provider.",
+    "clientId": "The client identifier registered with the identity provider.",
+    "clientSecret": "The client secret registered with the identity provider. This field is able to obtain its value from vault, use ${vault.ID} format.",
+    "displayOrder": "Number defining order of the provider in GUI (for example, on Login page)."
+  }
+}

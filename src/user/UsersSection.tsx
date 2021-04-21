@@ -175,7 +175,7 @@ export const UsersSection = () => {
   return (
     <>
       <DeleteConfirm />
-      <ViewHeader titleKey="users:title" subKey="" />
+      <ViewHeader titleKey="users:title" />
       <PageSection
         data-testid="users-page"
         variant="light"

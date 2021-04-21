@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { boolFormatter, emptyFormatter } from "../util";
+import { upperCaseFormatter, emptyFormatter } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -124,7 +124,7 @@ export const UsersInRoleTab = () => {
             {
               name: "firstName",
               displayKey: "roles:firstName",
-              cellFormatters: [boolFormatter(), emptyFormatter()],
+              cellFormatters: [upperCaseFormatter(), emptyFormatter()],
             },
           ]}
         />

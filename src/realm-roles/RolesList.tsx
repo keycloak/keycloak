@@ -9,7 +9,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter, boolFormatter } from "../util";
+import { emptyFormatter, upperCaseFormatter } from "../util";
 
 type RolesListProps = {
   paginated?: boolean;
@@ -111,7 +111,7 @@ export const RolesList = ({
           {
             name: "composite",
             displayKey: "roles:composite",
-            cellFormatters: [boolFormatter(), emptyFormatter()],
+            cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "description",

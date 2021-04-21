@@ -21,6 +21,8 @@ import authentication from "./authentication/messages.json";
 import storybook from "./stories/messages.json";
 import userFederation from "./user-federation/messages.json";
 import userFederationHelp from "./user-federation/help.json";
+import identityProviders from "./identity-providers/messages.json";
+import identityProvidersHelp from "./identity-providers/help.json";
 
 const initOptions = {
   defaultNS: "common",
@@ -44,9 +46,11 @@ const initOptions = {
       ...realmSettings,
       ...realmSettingsHelp,
       ...authentication,
-      ...storybook,
+      ...identityProviders,
+      ...identityProvidersHelp,
       ...userFederation,
       ...userFederationHelp,
+      ...storybook,
     },
   },
   lng: "en",

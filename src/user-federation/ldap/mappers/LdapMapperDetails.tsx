@@ -124,7 +124,6 @@ export const LdapMapperDetails = () => {
     <>
       <ViewHeader
         titleKey={mapping ? mapping.name! : t("common:createNewMapper")}
-        subKey=""
       />
       <PageSection variant="light" isFilled>
         <FormAccess role="manage-realm" isHorizontal>

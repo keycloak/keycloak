@@ -54,6 +54,8 @@
     "priority": "Priority",
     "unexpectedError": "An unexpected error occurred: '{{error}}'",
     "retry": "Retry",
+    "plus": "Plus",
+    "minus": "Minus",
 
     "clientScope": {
       "default": "Default",

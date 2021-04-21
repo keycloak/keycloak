@@ -82,7 +82,6 @@ const RealmSettingsHeader = ({
       />
       <ViewHeader
         titleKey={toUpperCase(realmName)}
-        subKey=""
         divider={false}
         dropdownItems={[
           <DropdownItem

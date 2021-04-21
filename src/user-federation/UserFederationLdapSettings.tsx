@@ -124,11 +124,10 @@ const LdapSettingsHeader = ({
     <>
       <DisableConfirm />
       {!id ? (
-        <ViewHeader titleKey="LDAP" subKey="" />
+        <ViewHeader titleKey="LDAP" />
       ) : (
         <ViewHeader
           titleKey="LDAP"
-          subKey=""
           dropdownItems={[
             <DropdownItem key="sync" onClick={syncChangedUsers}>
               {t("syncChangedUsers")}

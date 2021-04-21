@@ -78,12 +78,12 @@ export const emptyFormatter = (): IFormatter => (
   return data ? data : "—";
 };
 
-export const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-  const boolVal = data?.toString();
+export const upperCaseFormatter = (): IFormatter => (
+  data?: IFormatterValueType
+) => {
+  const value = data?.toString();
 
-  return (boolVal
-    ? boolVal.charAt(0).toUpperCase() + boolVal.slice(1)
-    : undefined) as string;
+  return (value ? toUpperCase(value) : undefined) as string;
 };
 
 export const getBaseUrl = (adminClient: KeycloakAdminClient) => {

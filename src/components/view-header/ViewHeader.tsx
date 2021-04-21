@@ -27,7 +27,7 @@ export type ViewHeaderProps = {
   badge?: string;
   badgeId?: string;
   badgeIsRead?: boolean;
-  subKey: string | ReactNode;
+  subKey?: string | ReactNode;
   actionsDropdownId?: string;
   subKeyLinkProps?: FormattedLinkProps;
   dropdownItems?: ReactElement[];
@@ -133,7 +133,11 @@ export const ViewHeader = ({
         {enabled && (
           <TextContent id="view-header-subkey">
             <Text>
-              {React.isValidElement(subKey) ? subKey : t(subKey as string)}
+              {React.isValidElement(subKey)
+                ? subKey
+                : subKey
+                ? t(subKey as string)
+                : ""}
               {subKeyLinkProps && (
                 <FormattedLink
                   {...subKeyLinkProps}
