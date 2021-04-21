@@ -30,19 +30,19 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CibaEndpoint implements OIDCExtProvider, OIDCExtProviderFactory, EnvironmentDependentProviderFactory {
+public class CibaRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "ciba";
 
     private final KeycloakSession session;
     private EventBuilder event;
 
-    public CibaEndpoint() {
+    public CibaRootEndpoint() {
         // for reflection
         this(null);
     }
 
-    public CibaEndpoint(KeycloakSession session) {
+    public CibaRootEndpoint(KeycloakSession session) {
         this.session = session;
     }
 
@@ -76,7 +76,7 @@ public class CibaEndpoint implements OIDCExtProvider, OIDCExtProviderFactory, En
 
     @Override
     public OIDCExtProvider create(KeycloakSession session) {
-        return new CibaEndpoint(session);
+        return new CibaRootEndpoint(session);
     }
 
     @Override
