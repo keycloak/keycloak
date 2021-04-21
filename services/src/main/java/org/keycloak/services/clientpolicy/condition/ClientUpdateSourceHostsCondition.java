@@ -74,8 +74,6 @@ public class ClientUpdateSourceHostsCondition implements ClientPolicyConditionPr
 
         @JsonProperty("trusted-hosts")
         protected List<String> trustedHosts;
-        @JsonProperty("host-sending-request-must-match")
-        protected List<Boolean> hostSendingRequestMustMatch;
 
         public List<String> getTrustedHosts() {
             return trustedHosts;
@@ -83,14 +81,6 @@ public class ClientUpdateSourceHostsCondition implements ClientPolicyConditionPr
 
         public void setTrustedHosts(List<String> trustedHosts) {
             this.trustedHosts = trustedHosts;
-        }
-
-        public List<Boolean> getHostSendingRequestMustMatch() {
-            return hostSendingRequestMustMatch;
-        }
-
-        public void setHostSendingRequestMustMatch(List<Boolean> hostSendingRequestMustMatch) {
-            this.hostSendingRequestMustMatch = hostSendingRequestMustMatch;
         }
     }
 
@@ -109,7 +99,6 @@ public class ClientUpdateSourceHostsCondition implements ClientPolicyConditionPr
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
-            if (!isHostMustMatch()) return ClientPolicyVote.ABSTAIN;
             if (isHostMatched()) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
@@ -195,11 +184,5 @@ public class ClientUpdateSourceHostsCondition implements ClientPolicyConditionPr
         }
 
         return null;
-    }
-
-    boolean isHostMustMatch() {
-        List<Boolean> l = configuration.getHostSendingRequestMustMatch();
-        if (l != null && !l.isEmpty()) return l.get(0).booleanValue();
-        return true;
     }
 }

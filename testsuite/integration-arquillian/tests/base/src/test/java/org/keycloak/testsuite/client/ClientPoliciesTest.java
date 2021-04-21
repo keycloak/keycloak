@@ -644,7 +644,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                    (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Prvni Politika", Boolean.FALSE, Boolean.TRUE, null, null)
                        .addCondition(ClientUpdateSourceHostsConditionFactory.PROVIDER_ID, 
-                            createClientUpdateSourceHostsConditionConfig(Arrays.asList("localhost", "127.0.0.1"), Arrays.asList(Boolean.TRUE, Boolean.TRUE)))
+                            createClientUpdateSourceHostsConditionConfig(Arrays.asList("localhost", "127.0.0.1")))
                        .addProfile(PROFILE_NAME)
                        .toRepresentation()
                ).toString();
@@ -665,7 +665,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                    (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Aktualizovana Prvni Politika", Boolean.FALSE, Boolean.TRUE, null, null)
                        .addCondition(ClientUpdateSourceHostsConditionFactory.PROVIDER_ID, 
-                           createClientUpdateSourceHostsConditionConfig(Arrays.asList("example.com"), Arrays.asList(Boolean.TRUE)))
+                           createClientUpdateSourceHostsConditionConfig(Arrays.asList("example.com")))
                        .addProfile(PROFILE_NAME)
                        .toRepresentation()
                 ).toString();
