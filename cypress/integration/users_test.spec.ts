@@ -16,7 +16,6 @@ describe("Group creation", () => {
   const loginPage = new LoginPage();
   const masthead = new Masthead();
   const sidebarPage = new SidebarPage();
-  const listingPage = new ListingPage();
   const groupModal = new GroupModal();
 
   beforeEach(function () {
@@ -37,7 +36,6 @@ describe("Group creation", () => {
     masthead.checkNotificationMessage("Group created");
 
     sidebarPage.goToGroups();
-    // listingPage.searchItem(groupName, false).itemExist(groupName);
   }
 
   it("Add groups to be joined", () => {
