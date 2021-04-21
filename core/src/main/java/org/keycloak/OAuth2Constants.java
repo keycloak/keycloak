@@ -107,11 +107,15 @@ public interface OAuth2Constants {
     String PKCE_METHOD_PLAIN = "plain";
     String PKCE_METHOD_S256 = "S256";
 
+    // https://tools.ietf.org/html/rfc8693#section-2.1
     String TOKEN_EXCHANGE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:token-exchange";
     String AUDIENCE="audience";
+    String RESOURCE="resource";
     String REQUESTED_SUBJECT="requested_subject";
     String SUBJECT_TOKEN="subject_token";
     String SUBJECT_TOKEN_TYPE="subject_token_type";
+    String ACTOR_TOKEN="actor_token";
+    String ACTOR_TOKEN_TYPE="actor_token_type";
     String REQUESTED_TOKEN_TYPE="requested_token_type";
     String ISSUED_TOKEN_TYPE="issued_token_type";
     String REQUESTED_ISSUER="requested_issuer";
