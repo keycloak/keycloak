@@ -34,12 +34,7 @@ public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyCond
 
     public static final String TRUSTED_HOSTS = "trusted-hosts";
 
-    public static final String HOST_SENDING_REQUEST_MUST_MATCH = "host-sending-request-must-match";
-
     private static final ProviderConfigProperty TRUSTED_HOSTS_PROPERTY = new ProviderConfigProperty(TRUSTED_HOSTS, "clientupdate-trusted-hosts.label", "clientupdate-trusted-hosts.tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
-
-    private static final ProviderConfigProperty HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH_PROPERTY = new ProviderConfigProperty(HOST_SENDING_REQUEST_MUST_MATCH, "host-sending-request-must-match.label",
-            "host-sending-request-must-match.tooltip", ProviderConfigProperty.BOOLEAN_TYPE, "true");
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session) {
@@ -70,7 +65,7 @@ public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyCond
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Arrays.asList(TRUSTED_HOSTS_PROPERTY, HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH_PROPERTY);
+        return Arrays.asList(TRUSTED_HOSTS_PROPERTY);
     }
 
 }
