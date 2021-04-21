@@ -435,7 +435,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String userId = loginEvent.getUserId();
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), true);
+            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
             String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
@@ -537,7 +537,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
             setTimeOffset(3);
 
-            tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), false);
+            tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
             String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
@@ -601,7 +601,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(5);
 
             // user Token Request again
-            tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), false);
+            tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
             String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
@@ -709,10 +709,10 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String secondUserSessionCodeId = secondUserloginEvent.getDetails().get(Details.CODE_ID);
 
             // second user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondUserSessionCodeId, secondUserSessionId, secondUsername, secondUserAuthReqId, false);
+            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondUsername, secondUserAuthReqId);
 
             // first user Token Request
-            tokenRes = doBackchannelAuthenticationTokenRequest(firstUserSessionCodeId, firstUserSessionId, firstUsername, firstUserAuthReqId, false);
+            tokenRes = doBackchannelAuthenticationTokenRequest(firstUsername, firstUserAuthReqId);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -750,7 +750,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String clientSessionCodeId = clientloginEvent.getDetails().get(Details.CODE_ID);
 
             // client Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(clientName, clientPassword, clientSessionCodeId, clientSessionId, username, clientAuthReqId, false);
+            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(clientName, clientPassword, username, clientAuthReqId);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -803,10 +803,10 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String secondClientSessionCodeId = null;
 
             // second client Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, secondClientSessionCodeId, secondClientSessionId, username, secondClientAuthReqId, false);
+            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, username, secondClientAuthReqId);
 
             // first client Token Request
-            tokenRes = doBackchannelAuthenticationTokenRequest(firstClientName, firstClientPassword, firstClientSessionCodeId, firstClientSessionId, username, firstClientAuthReqId, false);
+            tokenRes = doBackchannelAuthenticationTokenRequest(firstClientName, firstClientPassword, username, firstClientAuthReqId);
 
         } finally {
             revertCIBASettings(firstClientResource, firstClientRep);
@@ -1139,14 +1139,14 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         return events.expect(EventType.LOGIN_ERROR).clearDetails().client(clientId).error(error).user((String)null).session(CoreMatchers.nullValue(String.class)).assertEvent();
     }
 
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String codeId, String sessionId, String username, String authReqId, boolean isOfflineAccess) throws Exception {
-        return doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, codeId, sessionId, username, authReqId, isOfflineAccess);
+    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String username, String authReqId) throws Exception {
+        return doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, authReqId);
     }
 
-    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String codeId, String sessionId, String username, String authReqId, boolean isOfflineAccess) throws Exception {
+    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String username, String authReqId) throws Exception {
         OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, authReqId);
         Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
-        EventRepresentation event = events.expectAuthReqIdToToken(codeId, sessionId).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
+        EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         Assert.assertThat(accessToken.getIssuedFor(), is(equalTo(clientId)));
@@ -1287,7 +1287,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             String userId = loginEvent.getUserId();
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(codeId, sessionId, username, response.getAuthReqId(), isOfflineAccess);
+            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
             String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
