@@ -103,10 +103,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logFailure(event);
 
         String userId = event.userId;
-        UserModel user = session.users().getUserById(realm, userId);
-        if (user == null) {
-            return;
-        }
 
         UserLoginFailureModel userLoginFailure = getUserModel(session, event);
         if (userLoginFailure == null) {
@@ -126,6 +122,10 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
             if(userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
+                UserModel user = session.users().getUserById(realm, userId);
+                if (user == null) {
+                    return;
+                }
                 logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
                 user.setEnabled(false);
                 return;
@@ -251,12 +251,13 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     private void success(KeycloakSession session, LoginEvent event) {
         String userId = event.userId;
-        UserModel model = session.users().getUserById(getRealmModel(session, event), userId);
 
         UserLoginFailureModel user = getUserModel(session, event);
         if(user == null) return;
-
-        logger.debugv("user {0} successfully logged in, clearing all failures", model.getUsername());
+        if (logger.isDebugEnabled()) {
+            UserModel model = session.users().getUserById(getRealmModel(session, event), userId);
+            logger.debugv("user {0} successfully logged in, clearing all failures", model.getUsername());
+        }
         user.clearFailures();
     }
 
