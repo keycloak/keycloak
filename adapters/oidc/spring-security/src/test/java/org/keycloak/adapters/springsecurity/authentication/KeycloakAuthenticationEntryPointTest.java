@@ -84,7 +84,7 @@ public class KeycloakAuthenticationEntryPointTest {
     @Test
     public void testCommenceWithRedirectAndQueryParameters() throws Exception {
         configureBrowserRequest();
-        request.addParameter("prompt", "login");
+        request.setQueryString("prompt=login");
         authenticationEntryPoint.commence(request, response, null);
         assertEquals(HttpStatus.FOUND.value(), response.getStatus());
         assertNotEquals(KeycloakAuthenticationEntryPoint.DEFAULT_LOGIN_URI, response.getHeader("Location"));
