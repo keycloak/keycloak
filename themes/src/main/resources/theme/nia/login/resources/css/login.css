@@ -536,16 +536,37 @@ form#kc-select-back-form div.login-pf-social-section {
 
 
 a.zocial.nia {
-    background: url(../img/nia-logo-01.png) no-repeat left top;
+    background-image: url(../img/nia-logo-01.png);
+    background-color: #f5f5f5;
+    background-repeat: no-repeat;
+    background-position: left top;
     height: 32px;
     width: auto;
     padding-top: 60px;
+    font-weight: normal;
+    font-size: 14px;
+    text-shadow: none;
+    border: 0;
+    color: #72767b;
+    border-radius: 0;
+    white-space: normal;
 }
 
 a.zocial.nia:hover {
-    background: url(../img/nia-logo-01.png) no-repeat left top !important;
+    background-image: url(../img/nia-logo-02.png) !important;
+    background-color: #f5f5f5;
+    background-repeat: no-repeat;
+    background-position: left top;
     height: 32px;
     width: auto;
+    padding-top: 60px;
+    font-weight: normal;
+    font-size: 14px;
+    text-shadow: none;
+    border: 0;
+    color: #72767b;
+    border-radius: 0;
+    white-space: normal;
 }
 
 a.zocial.nia span {
@@ -553,16 +574,38 @@ a.zocial.nia span {
 }
 
 a#social-nia {
-    background: url(../img/nia-logo-01.png) no-repeat left top;
+    background-image: url(../img/nia-logo-01.png);
+    background-color: #f5f5f5;
+    background-repeat: no-repeat;
+    background-position: left top;
     height: 32px;
     width: auto;
+    padding-top: 60px;
+    font-weight: normal;
+    font-size: 14px;
+    text-shadow: none;
+    border: 0;
+    color: #72767b;
+    border-radius: 0;
+    white-space: normal;
 
 }
 
 a#social-nia:hover {
-    background: url(../img/nia-logo-01.png) no-repeat left top !important;
+   background-image: url(../img/nia-logo-02.png) !important;
+    background-color: #f5f5f5;
+    background-repeat: no-repeat;
+    background-position: left top;
     height: 32px;
     width: auto;
+    padding-top: 60px;
+    font-weight: normal;
+    font-size: 14px;
+    text-shadow: none;
+    border: 0;
+    color: #72767b;
+    border-radius: 0;
+    white-space: normal;
 }
 
 a#social-nia span {
