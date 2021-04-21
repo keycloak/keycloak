@@ -116,24 +116,18 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsCondi
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesConditionFactory;
-import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -255,7 +249,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                     .addCondition(ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, 
                             createClientUpdateSourceGroupsConditionConfig(Arrays.asList("topGroup")))
                     .addCondition(ClientUpdateSourceHostsConditionFactory.PROVIDER_ID, 
-                            createClientUpdateSourceHostsConditionConfig(Arrays.asList("localhost", "127.0.0.1"), Arrays.asList(Boolean.TRUE, Boolean.TRUE)))
+                            createClientUpdateSourceHostsConditionConfig(Arrays.asList("localhost", "127.0.0.1")))
                     .addCondition(ClientUpdateSourceRolesConditionFactory.PROVIDER_ID, 
                             createClientUpdateSourceRolesConditionConfig(Arrays.asList(AdminRoles.CREATE_CLIENT)))
                     .toRepresentation();
@@ -1034,10 +1028,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return config;
     }
 
-    protected Object createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts, List<Boolean> hostSendingRequestMustMatch) {
+    protected Object createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts) {
         ClientUpdateSourceHostsCondition.Configuration config = new ClientUpdateSourceHostsCondition.Configuration();
         config.setTrustedHosts(trustedHosts);
-        config.setHostSendingRequestMustMatch(hostSendingRequestMustMatch);
         return config;
     }
 
