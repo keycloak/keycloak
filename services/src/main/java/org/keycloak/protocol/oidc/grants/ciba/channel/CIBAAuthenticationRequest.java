@@ -49,17 +49,17 @@ import org.keycloak.util.TokenUtil;
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class AuthenticationRequest extends JsonWebToken {
+public class CIBAAuthenticationRequest extends JsonWebToken {
 
     /**
-     * Deserialize the given {@code jwe} to a {@link AuthenticationRequest} instance.
+     * Deserialize the given {@code jwe} to a {@link CIBAAuthenticationRequest} instance.
      *
      * @param session the session
      * @param jwe the authentication request in JWE format.
      * @return the authentication request instance
      * @throws Exception
      */
-    public static AuthenticationRequest deserialize(KeycloakSession session, String jwe) {
+    public static CIBAAuthenticationRequest deserialize(KeycloakSession session, String jwe) {
         SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
         SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
 
@@ -70,7 +70,7 @@ public class AuthenticationRequest extends JsonWebToken {
             throw new RuntimeException("Error decoding auth_req_id.", e);
         }
 
-        return session.tokens().decode(jwe, AuthenticationRequest.class);
+        return session.tokens().decode(jwe, CIBAAuthenticationRequest.class);
     }
 
     public static final String SESSION_STATE = IDToken.SESSION_STATE;
@@ -94,11 +94,11 @@ public class AuthenticationRequest extends JsonWebToken {
     @JsonIgnore
     protected UserModel user;
 
-    public AuthenticationRequest() {
+    public CIBAAuthenticationRequest() {
         // for reflection
     }
 
-    public AuthenticationRequest(KeycloakSession session, UserModel user, ClientModel client) {
+    public CIBAAuthenticationRequest(KeycloakSession session, UserModel user, ClientModel client) {
         id(KeycloakModelUtils.generateId());
         issuedNow();
         RealmModel realm = session.getContext().getRealm();

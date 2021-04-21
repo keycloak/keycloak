@@ -53,7 +53,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
     }
 
     @Override
-    public boolean requestAuthentication(AuthenticationRequest request, String infoUsedByAuthenticator) {
+    public boolean requestAuthentication(CIBAAuthenticationRequest request, String infoUsedByAuthenticator) {
         // Creates JWT formatted/JWS signed/JWE encrypted Authentication Channel ID by the same manner in creating auth_req_id.
         // Authentication Channel ID binds Backchannel Authentication Request with Authentication by Authentication Device (AD).
         // JWE serialized Authentication Channel ID works as a bearer token. It includes client_id 
@@ -94,7 +94,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         return false;
     }
 
-    private String createBearerToken(AuthenticationRequest request, ClientModel client) {
+    private String createBearerToken(CIBAAuthenticationRequest request, ClientModel client) {
         AccessToken bearerToken = new AccessToken();
 
         bearerToken.type(TokenUtil.TOKEN_TYPE_BEARER);

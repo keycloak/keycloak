@@ -43,7 +43,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.CibaRootEndpoint;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
@@ -112,10 +112,10 @@ public class CibaGrantType {
 
         logger.tracev("CIBA Grant :: authReqId = {0}", jwe);
 
-        AuthenticationRequest request;
+        CIBAAuthenticationRequest request;
 
         try {
-            request = AuthenticationRequest.deserialize(session, jwe);
+            request = CIBAAuthenticationRequest.deserialize(session, jwe);
         } catch (Exception e) {
             logger.warnf("illegal format of auth_req_id : e.getMessage() = %s", e.getMessage());
             // Auth Req ID has not put onto cache, no need to remove Auth Req ID.
@@ -180,7 +180,7 @@ public class CibaGrantType {
 
     }
 
-    private UserSessionModel createUserSession(AuthenticationRequest request) {
+    private UserSessionModel createUserSession(CIBAAuthenticationRequest request) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
         // here Client Model of CD(Consumption Device) needs to be used to bind its Client Session with User Session.
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -258,7 +258,7 @@ public class CibaGrantType {
         return userSession;
     }
 
-    private static void logDebug(String message, AuthenticationRequest request) {
+    private static void logDebug(String message, CIBAAuthenticationRequest request) {
         logger.debugf("CIBA Grant :: authentication channel %s clientId = %s, authResultId = %s", message, request.getIssuedFor(), request.getAuthResultId());
     }
 }

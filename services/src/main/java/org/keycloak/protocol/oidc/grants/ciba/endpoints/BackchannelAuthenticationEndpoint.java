@@ -48,7 +48,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.JsonSerialization;
@@ -69,7 +69,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response processGrantRequest(@Context HttpRequest httpRequest) {
-        AuthenticationRequest request = authorizeClient(httpRequest.getDecodedFormParameters());
+        CIBAAuthenticationRequest request = authorizeClient(httpRequest.getDecodedFormParameters());
 
         try {
             String authReqId = request.serialize(session);
@@ -119,7 +119,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
      * but probably make the {@link OAuth2DeviceTokenStoreProvider} more generic for ciba, device, or any other use case
      * that relies on cross-references for unsolicited user authentication requests from devices.
      */
-    private void storeAuthenticationRequest(AuthenticationRequest request, CibaConfig cibaConfig) {
+    private void storeAuthenticationRequest(CIBAAuthenticationRequest request, CibaConfig cibaConfig) {
         ClientModel client = request.getClient();
         int expiresIn = cibaConfig.getExpiresIn();
         int poolingInterval = cibaConfig.getPoolingInterval();
@@ -139,11 +139,11 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         store.put(deviceCode, userCode, lifespanSeconds);
     }
 
-    private AuthenticationRequest authorizeClient(MultivaluedMap<String, String> params) {
+    private CIBAAuthenticationRequest authorizeClient(MultivaluedMap<String, String> params) {
         ClientModel client = authenticateClient();
         UserModel user = resolveUser(params, realm.getCibaPolicy().getAuthRequestedUserHint());
 
-        AuthenticationRequest request = new AuthenticationRequest(session, user, client);
+        CIBAAuthenticationRequest request = new CIBAAuthenticationRequest(session, user, client);
 
         request.setClient(client);
 

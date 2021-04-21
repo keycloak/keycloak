@@ -32,5 +32,5 @@ public interface AuthenticationChannelProvider extends Provider {
      * @param infoUsedByAuthenticator some value to help the AD to identify the user
      * @return
      */
-    boolean requestAuthentication(AuthenticationRequest request, String infoUsedByAuthenticator);
+    boolean requestAuthentication(CIBAAuthenticationRequest request, String infoUsedByAuthenticator);
 }
