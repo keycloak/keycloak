@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
@@ -55,6 +56,20 @@ public class GroupUpdatedEvent extends InvalidationEvent implements RealmCacheIn
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         // Nothing. ID already invalidated
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        GroupUpdatedEvent that = (GroupUpdatedEvent) o;
+        return Objects.equals(groupId, that.groupId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), groupId);
     }
 
     public static class ExternalizerImpl implements Externalizer<GroupUpdatedEvent> {

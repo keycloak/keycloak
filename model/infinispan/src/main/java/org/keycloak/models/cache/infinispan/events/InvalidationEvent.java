@@ -17,12 +17,15 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
+import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class InvalidationEvent implements ClusterEvent {
+
+    private static final Logger log = Logger.getLogger(InvalidationEvent.class);
 
     public abstract String getId();
 
@@ -39,5 +42,10 @@ public abstract class InvalidationEvent implements ClusterEvent {
         InvalidationEvent that = (InvalidationEvent) obj;
         if (!that.getId().equals(getId())) return false;
         return true;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
     }
 }

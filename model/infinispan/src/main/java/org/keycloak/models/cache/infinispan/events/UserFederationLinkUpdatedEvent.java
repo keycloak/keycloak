@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.UserCacheManager;
@@ -53,6 +54,20 @@ public class UserFederationLinkUpdatedEvent extends InvalidationEvent implements
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
         userCache.federatedIdentityLinkUpdatedInvalidation(userId, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UserFederationLinkUpdatedEvent that = (UserFederationLinkUpdatedEvent) o;
+        return Objects.equals(userId, that.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), userId);
     }
 
     public static class ExternalizerImpl implements Externalizer<UserFederationLinkUpdatedEvent> {
