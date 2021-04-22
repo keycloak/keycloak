@@ -54,25 +54,43 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
             SamlClient samlClient = new SamlClient(client);
             String assertionUrl;
             String logoutUrl;
-            URI binding;
+            URI loginBinding;
+            URI logoutBinding = null;
+
             if (samlClient.forcePostBinding()) {
                 assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
                 logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
-                binding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
+                loginBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             } else { //redirect binding
                 assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
                 logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
-                binding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
+                loginBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
             }
+            
+            if (samlClient.forceArtifactBinding()) {
+                if (client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE) != null) {
+                    logoutBinding = JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri();
+                    logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE);
+                } else {
+                    logoutBinding = loginBinding;
+                }
+                
+                assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE);
+                loginBinding = JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri();
+
+            }
+
             if (assertionUrl == null || assertionUrl.trim().isEmpty()) assertionUrl = client.getManagementUrl();
             if (assertionUrl == null || assertionUrl.trim().isEmpty()) assertionUrl = FALLBACK_ERROR_URL_STRING;
             if (logoutUrl == null || logoutUrl.trim().isEmpty()) logoutUrl = client.getManagementUrl();
             if (logoutUrl == null || logoutUrl.trim().isEmpty()) logoutUrl = FALLBACK_ERROR_URL_STRING;
+            if (logoutBinding == null) logoutBinding = loginBinding;
+
             String nameIdFormat = samlClient.getNameIDFormat();
             if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
             Element spCertificate = SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientSigningCertificate());
             Element encCertificate = SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientEncryptingCertificate());
-            return SPMetadataDescriptor.getSPDescriptor(binding, new URI(assertionUrl), new URI(logoutUrl), samlClient.requiresClientSignature(), 
+            return SPMetadataDescriptor.getSPDescriptor(loginBinding, logoutBinding, new URI(assertionUrl), new URI(logoutUrl), samlClient.requiresClientSignature(),
                     samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(),
                     client.getClientId(), nameIdFormat, Arrays.asList(spCertificate), Arrays.asList(encCertificate));
         } catch (Exception ex) {

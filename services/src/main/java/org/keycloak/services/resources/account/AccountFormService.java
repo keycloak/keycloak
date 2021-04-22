@@ -102,7 +102,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -837,15 +837,15 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 policyStore.delete(policy.getId());
             }
         } else {
-            Map<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.RESOURCE, resource.getId());
-            filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(realm, requester).getId());
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, session.users().getUserByUsername(realm, requester).getId());
 
             if (isRevoke) {
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
             } else {
-                filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
             List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
@@ -931,11 +931,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return account.setError(Status.BAD_REQUEST, Messages.INVALID_USER).createResponse(AccountPages.RESOURCE_DETAIL);
             }
 
-            Map<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.RESOURCE, resource.getId());
-            filters.put(PermissionTicket.OWNER, auth.getUser().getId());
-            filters.put(PermissionTicket.REQUESTER, user.getId());
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+            filters.put(PermissionTicket.FilterOption.OWNER, auth.getUser().getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
             List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
 
@@ -1003,15 +1003,15 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
             }
 
-            HashMap<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.REQUESTER, auth.getUser().getId());
-            filters.put(PermissionTicket.RESOURCE, resource.getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, auth.getUser().getId());
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
             if ("cancel".equals(action)) {
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
             } else if ("cancelRequest".equals(action)) {
-                filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
             for (PermissionTicket ticket : ticketStore.find(filters, resource.getResourceServer(), -1, -1)) {

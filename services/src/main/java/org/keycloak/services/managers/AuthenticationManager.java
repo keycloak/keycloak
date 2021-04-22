@@ -68,6 +68,7 @@ import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -387,6 +388,7 @@ public class AuthenticationManager {
         Set<AuthenticatedClientSessionModel> notLoggedOutSessions = acs.entrySet().stream()
           .filter(me -> ! Objects.equals(AuthenticationSessionModel.Action.LOGGED_OUT, getClientLogoutAction(logoutAuthSession, me.getKey())))
           .filter(me -> ! Objects.equals(AuthenticationSessionModel.Action.LOGGED_OUT.name(), me.getValue().getAction()))
+          .filter(me -> ! Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), me.getValue().getAction()))
           .filter(me -> Objects.nonNull(me.getValue().getProtocol()))   // Keycloak service-like accounts
           .map(Map.Entry::getValue)
           .collect(Collectors.toSet());
@@ -473,7 +475,7 @@ public class AuthenticationManager {
         UserSessionModel userSession = clientSession.getUserSession();
         ClientModel client = clientSession.getClient();
 
-        if (! client.isFrontchannelLogout() || AuthenticationSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) {
+        if (!client.isFrontchannelLogout() || AuthenticationSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) {
             return null;
         }
 
@@ -500,7 +502,9 @@ public class AuthenticationManager {
                 logger.debug("returning frontchannel logout request to client");
                 // setting this to logged out cuz I'm not sure protocols can always verify that the client was logged out or not
 
-                setClientLogoutAction(logoutAuthSession, client.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
+                if (!AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(clientSession.getAction())) {
+                    setClientLogoutAction(logoutAuthSession, client.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
+                }
 
                 return response;
             }
@@ -599,7 +603,8 @@ public class AuthenticationManager {
 
     private static Response browserLogoutAllClients(UserSessionModel userSession, KeycloakSession session, RealmModel realm, HttpHeaders headers, UriInfo uriInfo, AuthenticationSessionModel logoutAuthSession) {
         Map<Boolean, List<AuthenticatedClientSessionModel>> acss = userSession.getAuthenticatedClientSessions().values().stream()
-          .filter(clientSession -> ! Objects.equals(AuthenticationSessionModel.Action.LOGGED_OUT.name(), clientSession.getAction()))
+          .filter(clientSession -> !Objects.equals(AuthenticationSessionModel.Action.LOGGED_OUT.name(), clientSession.getAction())
+                                && !Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), clientSession.getAction()))
           .filter(clientSession -> clientSession.getProtocol() != null)
           .collect(Collectors.partitioningBy(clientSession -> clientSession.getClient().isFrontchannelLogout()));
 
@@ -623,9 +628,10 @@ public class AuthenticationManager {
 
         checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
 
+        // For resolving artifact we don't need any cookie, all details are stored in session storage so we can remove
         expireIdentityCookie(realm, uriInfo, connection);
         expireRememberMeCookie(realm, uriInfo, connection);
-        userSession.setState(UserSessionModel.State.LOGGED_OUT);
+
         String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
         EventBuilder event = new EventBuilder(realm, session, connection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
@@ -633,10 +639,49 @@ public class AuthenticationManager {
                 .setHttpHeaders(headers)
                 .setUriInfo(uriInfo)
                 .setEventBuilder(event);
+
+
         Response response = protocol.finishLogout(userSession);
-        session.sessions().removeUserSession(realm, userSession);
+
+        // It may be possible that there are some client sessions that are still in LOGGING_OUT state
+        long numberOfUnconfirmedSessions = userSession.getAuthenticatedClientSessions().values().stream()
+                .filter(clientSessionModel -> CommonClientSessionModel.Action.LOGGING_OUT.name().equals(clientSessionModel.getAction()))
+                .count();
+
+        // If logout flow end up correctly there should be at maximum 1 client session in LOGGING_OUT action, if there are more, something went wrong
+        if (numberOfUnconfirmedSessions > 1) {
+            logger.warnf("There are more than one clientSession in logging_out state. Perhaps some client did not finish logout flow correctly.");
+        }
+
+        // By setting LOGGED_OUT_UNCONFIRMED state we are saying that anybody who will turn the last client session into
+        // LOGGED_OUT action can remove UserSession
+        if (numberOfUnconfirmedSessions >= 1) {
+            userSession.setState(UserSessionModel.State.LOGGED_OUT_UNCONFIRMED);
+        } else {
+            userSession.setState(UserSessionModel.State.LOGGED_OUT);
+        }
+
+        // Do not remove user session, it will be removed when last clientSession will be logged out
+        if (numberOfUnconfirmedSessions < 1) {
+            session.sessions().removeUserSession(realm, userSession);
+        }
+
         session.authenticationSessions().removeRootAuthenticationSession(realm, logoutAuthSession.getParentSession());
+
         return response;
+    }
+    
+    public static void finishUnconfirmedUserSession(KeycloakSession session, RealmModel realm, UserSessionModel userSessionModel) {
+        if (userSessionModel.getAuthenticatedClientSessions().values().stream().anyMatch(cs -> !CommonClientSessionModel.Action.LOGGED_OUT.name().equals(cs.getAction()))) {
+            logger.warnf("UserSession with id %s is removed while there are still some user sessions that are not logged out properly.", userSessionModel.getId());
+            if (logger.isTraceEnabled()) {
+                logger.trace("Client sessions with their states:");
+                userSessionModel.getAuthenticatedClientSessions().values()
+                        .forEach(clientSessionModel -> logger.tracef("Client session for clientId: %s has action: %s", clientSessionModel.getClient().getClientId(), clientSessionModel.getAction()));
+            }
+        }
+
+        session.sessions().removeUserSession(realm, userSessionModel);
     }
 
 

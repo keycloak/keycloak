@@ -714,10 +714,7 @@ public final class KeycloakModelUtils {
                 .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
                 .findFirst()
                 // check if we are referencing a client instead of a scope
-                .orElse(realm.getClientsStream()
-                        .filter(c -> Objects.equals(clientScopeName, c.getClientId()))
-                        .findFirst()
-                        .orElse(null));
+                .orElseGet(() -> realm.getClientByClientId(clientScopeName));
     }
 
     /**
