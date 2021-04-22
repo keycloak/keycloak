@@ -67,12 +67,16 @@ public class SamlClientBuilder {
      * @return Client that executed the steps
      */
     public SamlClient execute(Consumer<CloseableHttpResponse> resultConsumer) {
-        final SamlClient samlClient = new SamlClient();
+        final SamlClient samlClient = createSamlClient();
         samlClient.executeAndTransform(r -> {
             resultConsumer.accept(r);
             return null;
         }, steps);
         return samlClient;
+    }
+    
+    protected SamlClient createSamlClient() {
+        return new SamlClient();
     }
 
     /**
@@ -81,7 +85,7 @@ public class SamlClientBuilder {
      * @return Value returned by {@code resultTransformer}
      */
     public <T> T executeAndTransform(ResultExtractor<T> resultTransformer) {
-        return new SamlClient().executeAndTransform(resultTransformer, steps);
+        return createSamlClient().executeAndTransform(resultTransformer, steps);
     }
 
     public List<Step> getSteps() {
