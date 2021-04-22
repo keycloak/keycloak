@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.common.util.ObjectUtil;
@@ -192,6 +193,12 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     boolean isFullScopeAllowed();
     void setFullScopeAllowed(boolean value);
 
+    @Override
+    default boolean hasDirectScope(RoleModel role) {
+        if (getScopeMappingsStream().anyMatch(r -> Objects.equals(r, role))) return true;
+
+        return getRolesStream().anyMatch(r -> Objects.equals(r, role));
+    }
 
     boolean isPublicClient();
     void setPublicClient(boolean flag);

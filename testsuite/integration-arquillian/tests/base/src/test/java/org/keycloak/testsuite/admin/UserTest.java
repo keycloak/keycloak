@@ -2092,7 +2092,7 @@ public class UserTest extends AbstractAdminTest {
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
-        assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
+        assertNames(roles.realmLevel().listAvailable(), "realm-child", "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
         assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // List realm effective role with full representation
@@ -2103,7 +2103,7 @@ public class UserTest extends AbstractAdminTest {
         
         // List client roles
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-role", "client-composite");
-        assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2");
+        assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2", "client-child");
         assertNames(roles.clientLevel(clientUuid).listEffective(), "client-role", "client-composite", "client-child");
         
         // List client effective role with full representation
@@ -2131,6 +2131,103 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
+    }
+
+    /**
+     * Test for KEYCLOAK-10603.
+     */
+    @Test
+    public void rolesCanBeAssignedEvenWhenTheyAreAlreadyIndirectlyAssigned() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").build();
+        realm.roles().create(realmCompositeRole);
+        realm.roles().create(RoleBuilder.create().name("realm-child").build());
+        realm.roles().get("realm-composite")
+                .addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        realm.roles().create(RoleBuilder.create().name("realm-role-in-group").build());
+
+        Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
+        String clientUuid = ApiUtil.getCreatedId(response);
+        response.close();
+
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        realm.clients().get(clientUuid).roles().create(clientCompositeRole);
+        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
+        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role-in-group").build());
+
+        GroupRepresentation group = GroupBuilder.create().name("mygroup").build();
+        response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        response = realm.users().create(UserBuilder.create().username("myuser").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        // Make indirect assignments
+        // .. add roles to the group and add it to the user
+        realm.groups().group(groupId).roles().realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-role-in-group").toRepresentation()));
+        realm.groups().group(groupId).roles().clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-role-in-group").toRepresentation()));
+        realm.users().get(userId).joinGroup(groupId);
+        // .. assign composite roles
+        RoleMappingResource userRoles = realm.users().get(userId).roles();
+        userRoles.realmLevel().add(Collections.singletonList(realm.roles().get("realm-composite").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation()));
+
+        // check state before making the direct assignments
+        assertNames(userRoles.realmLevel().listAll(), "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(userRoles.realmLevel().listAvailable(), "realm-child", "realm-role-in-group",
+                "admin", "customer-user-premium", "realm-composite-role",
+                "sample-realm-role",
+                "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(userRoles.realmLevel().listEffective(), "realm-composite", "realm-child", "realm-role-in-group",
+                "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+
+        assertNames(userRoles.clientLevel(clientUuid).listAll(), "client-composite");
+        assertNames(userRoles.clientLevel(clientUuid).listAvailable(), "client-child",
+                "client-role-in-group");
+        assertNames(userRoles.clientLevel(clientUuid).listEffective(), "client-composite", "client-child",
+                "client-role-in-group");
+
+        // Make direct assignments for roles which are already indirectly assigned
+        userRoles.realmLevel().add(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        userRoles.realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-role-in-group").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-role-in-group").toRepresentation()));
+
+        // List realm roles
+        assertNames(userRoles.realmLevel().listAll(), "realm-composite",
+                "realm-child", "realm-role-in-group", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(userRoles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role",
+                "sample-realm-role", "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(userRoles.realmLevel().listEffective(), "realm-composite", "realm-child", "realm-role-in-group",
+                "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+
+        // List client roles
+        assertNames(userRoles.clientLevel(clientUuid).listAll(), "client-composite", "client-child",
+                "client-role-in-group");
+        assertNames(userRoles.clientLevel(clientUuid).listAvailable());
+        assertNames(userRoles.clientLevel(clientUuid).listEffective(), "client-composite", "client-child",
+                "client-role-in-group");
+
+        // Get mapping representation
+        MappingsRepresentation all = userRoles.getAll();
+        assertNames(all.getRealmMappings(), "realm-composite",
+                "realm-child", "realm-role-in-group", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertEquals(1, all.getClientMappings().size());
+        assertNames(all.getClientMappings().get("myclient").getMappings(), "client-composite", "client-child",
+                "client-role-in-group");
     }
 
     @Test

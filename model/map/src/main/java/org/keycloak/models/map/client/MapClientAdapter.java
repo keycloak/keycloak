@@ -420,6 +420,16 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     }
 
     @Override
+    public boolean hasDirectScope(RoleModel role) {
+        final String id = role == null ? null : role.getId();
+        if (id != null && this.entity.getScopeMappings().contains(id)) {
+            return true;
+        }
+
+        return getRolesStream().anyMatch(r -> (Objects.equals(r, role)));
+    }
+
+    @Override
     public boolean hasScope(RoleModel role) {
         if (isFullScopeAllowed()) return true;
 
