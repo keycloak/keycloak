@@ -182,6 +182,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     static Event convertEvent(EventEntity eventEntity) {
         Event event = new Event();
+        event.setId(eventEntity.getId());
         event.setTime(eventEntity.getTime());
         event.setType(EventType.valueOf(eventEntity.getType()));
         event.setRealmId(eventEntity.getRealmId());
@@ -222,6 +223,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     static AdminEvent convertAdminEvent(AdminEventEntity adminEventEntity) {
         AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setId(adminEventEntity.getId());
         adminEvent.setTime(adminEventEntity.getTime());
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
