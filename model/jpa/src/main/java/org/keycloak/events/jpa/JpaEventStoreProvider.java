@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -146,7 +145,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     private EventEntity convertEvent(Event event) {
         EventEntity eventEntity = new EventEntity();
-        eventEntity.setId(UUID.randomUUID().toString());
+        eventEntity.setId(event.getId());
         eventEntity.setTime(event.getTime());
         eventEntity.setType(event.getType().toString());
         eventEntity.setRealmId(event.getRealmId());
@@ -202,7 +201,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     
     static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
-        adminEventEntity.setId(UUID.randomUUID().toString());
+        adminEventEntity.setId(adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());

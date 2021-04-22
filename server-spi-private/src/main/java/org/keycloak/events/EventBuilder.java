@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -178,6 +179,7 @@ public class EventBuilder {
 
     private void send() {
         event.setTime(Time.currentTimeMillis());
+        event.setId(UUID.randomUUID().toString());
 
         if (store != null) {
             Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());

@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventPersistenceFailedException;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -36,6 +37,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class AdminEventBuilder {
@@ -238,10 +240,13 @@ public class AdminEventBuilder {
         // Event needs to be copied because the same builder can be used with another event
         AdminEvent eventCopy = new AdminEvent(adminEvent);
         eventCopy.setTime(Time.currentTimeMillis());
+        eventCopy.setId(UUID.randomUUID().toString());
 
         if (store != null) {
             try {
                 store.onEvent(eventCopy, includeRepresentation);
+            } catch (EventPersistenceFailedException e) {
+                throw e;
             } catch (Throwable t) {
                 ServicesLogger.LOGGER.failedToSaveEvent(t);
             }
