@@ -205,7 +205,7 @@ public class KeycloakInstalled {
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
-        getDesktopProvider().browse(new URI(authUrl));
+        desktopProvider.browse(new URI(authUrl));
 
         try {
             callback.await();
@@ -273,7 +273,7 @@ public class KeycloakInstalled {
                 .queryParam("id_token_hint", idTokenString)
                 .build().toString();
 
-        getDesktopProvider().browse(new URI(logoutUrl));
+        desktopProvider.browse(new URI(logoutUrl));
 
         try {
             callback.await();
@@ -631,12 +631,12 @@ public class KeycloakInstalled {
         return tokenResponse;
     }
 
-    public DesktopProvider getDesktopProvider() {
-        return desktopProvider;
+    public void setDesktopProvider(DesktopProvider desktopProvider) {
+        this.desktopProvider = desktopProvider;
     }
 
     public boolean isDesktopSupported() {
-        return getDesktopProvider().isDesktopSupported();
+        return desktopProvider.isDesktopSupported();
     }
 
     public KeycloakDeployment getDeployment() {
