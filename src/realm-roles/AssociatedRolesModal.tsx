@@ -33,7 +33,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   const { t } = useTranslation("roles");
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
-  const [selectedRows, setSelectedRows] = useState<Role[]>([]);
+  const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
   const errorHandler = useErrorHandler();
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
@@ -69,10 +69,10 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           )!.clientId!)
       );
 
-    return alphabetize(filterDupes).filter((role: Role) => {
+    return alphabetize(filterDupes).filter((role: RoleRepresentation) => {
       return (
         props.existingCompositeRoles.find(
-          (existing: Role) => existing.name === role.name
+          (existing: RoleRepresentation) => existing.name === role.name
         ) === undefined && role.name !== name
       );
     });
@@ -170,7 +170,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           onClick={() => {
             props.toggleDialog();
             props.onConfirm(selectedRows);
-            console.log(selectedRows);
           }}
         >
           {t("common:add")}

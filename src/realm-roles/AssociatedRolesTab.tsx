@@ -134,7 +134,7 @@ export const AssociatedRolesTab = ({
     refresh();
   }, [additionalRoles, isInheritedHidden]);
 
-  const InheritedRoleName = (role: Role) => {
+  const InheritedRoleName = (role: RoleRepresentation) => {
     return <>{inheritanceMap.current[role.id!]}</>;
   };
 
