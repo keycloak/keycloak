@@ -146,8 +146,13 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
     }
 
     @Override
-    public boolean hasRole(RoleModel role) {
+    public boolean hasDirectRole(RoleModel role) {
         return entity.getGrantedRoles().contains(role.getId());
+    }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+        return hasDirectRole(role);
     }
 
     @Override
