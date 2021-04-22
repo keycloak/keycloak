@@ -31,7 +31,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -79,7 +81,10 @@ public class MigrateTo1_4_0 implements Migration {
     }
 
     private void migrateUsers(KeycloakSession session, RealmModel realm) {
-        session.userLocalStorage().getUsersStream(realm, false)
+        Map<String, String> searchAttributes = new HashMap<>(1);
+        searchAttributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString());
+
+        session.userLocalStorage().searchForUserStream(realm, searchAttributes)
                 .forEach(user -> {
                     String email = KeycloakModelUtils.toLowerCaseSafe(user.getEmail());
                     if (email != null && !email.equals(user.getEmail())) {
