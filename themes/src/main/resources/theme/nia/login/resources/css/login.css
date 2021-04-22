@@ -440,6 +440,7 @@ a.zocial  {
 
 .card-pf {
     background: #fff;
+    opacity: 0.5;
     margin: 0 auto;
     padding: 0 20px;
     max-width: 500px;
