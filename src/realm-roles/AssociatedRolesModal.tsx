@@ -116,7 +116,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           )!.clientId!)
       );
 
-    return alphabetize(rolesList).filter((role: Role) => {
+    return alphabetize(rolesList).filter((role: RoleRepresentation) => {
       return (
         existingAdditionalRoles.find(
           (existing: RoleRepresentation) => existing.name === role.name
