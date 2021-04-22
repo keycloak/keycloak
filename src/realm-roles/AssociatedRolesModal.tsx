@@ -170,7 +170,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           onClick={() => {
             props.toggleDialog();
             props.onConfirm(selectedRows);
-            console.log(selectedRows)
+            console.log(selectedRows);
           }}
         >
           {t("common:add")}

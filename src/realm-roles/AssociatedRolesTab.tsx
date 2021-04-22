@@ -143,9 +143,9 @@ export const AssociatedRolesTab = ({
       <>
         {clientId && (
           <Label color="blue" key={`label-${id}`}>
-          {clientId}
-        </Label>
-      )}{" "}
+            {clientId}
+          </Label>
+        )}{" "}
         {name}
       </>
     );
