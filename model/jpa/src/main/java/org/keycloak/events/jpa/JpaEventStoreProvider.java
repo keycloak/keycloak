@@ -146,7 +146,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     private EventEntity convertEvent(Event event) {
         EventEntity eventEntity = new EventEntity();
-        eventEntity.setId(UUID.randomUUID().toString());
+        eventEntity.setId(event.getId() == null ? UUID.randomUUID().toString() : event.getId());
         eventEntity.setTime(event.getTime());
         eventEntity.setType(event.getType().toString());
         eventEntity.setRealmId(event.getRealmId());
@@ -183,6 +183,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     static Event convertEvent(EventEntity eventEntity) {
         Event event = new Event();
+        event.setId(eventEntity.getId() == null ? UUID.randomUUID().toString() : eventEntity.getId());
         event.setTime(eventEntity.getTime());
         event.setType(EventType.valueOf(eventEntity.getType()));
         event.setRealmId(eventEntity.getRealmId());
@@ -202,7 +203,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     
     static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
-        adminEventEntity.setId(UUID.randomUUID().toString());
+        adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
@@ -223,6 +224,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     static AdminEvent convertAdminEvent(AdminEventEntity adminEventEntity) {
         AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setId(adminEventEntity.getId() == null ? UUID.randomUUID().toString() : adminEventEntity.getId());
         adminEvent.setTime(adminEventEntity.getTime());
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);

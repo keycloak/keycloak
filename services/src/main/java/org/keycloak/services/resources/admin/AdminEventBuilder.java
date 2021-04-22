@@ -36,6 +36,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class AdminEventBuilder {
@@ -238,6 +239,7 @@ public class AdminEventBuilder {
         // Event needs to be copied because the same builder can be used with another event
         AdminEvent eventCopy = new AdminEvent(adminEvent);
         eventCopy.setTime(Time.currentTimeMillis());
+        eventCopy.setId(UUID.randomUUID().toString());
 
         if (store != null) {
             try {
