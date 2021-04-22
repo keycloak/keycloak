@@ -20,6 +20,7 @@ import org.keycloak.cluster.ClusterEvent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -62,6 +63,19 @@ public class MapAuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent
 
     public Map<String, String> getAuthNotesFragment() {
         return authNotesFragment;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MapAuthenticationSessionAuthNoteUpdateEvent that = (MapAuthenticationSessionAuthNoteUpdateEvent) o;
+        return Objects.equals(authSessionId, that.authSessionId) && Objects.equals(tabId, that.tabId) && Objects.equals(clientUUID, that.clientUUID);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(authSessionId, tabId, clientUUID);
     }
 
     @Override
