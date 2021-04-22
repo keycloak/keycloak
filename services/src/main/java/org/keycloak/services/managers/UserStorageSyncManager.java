@@ -340,6 +340,19 @@ public class UserStorageSyncManager {
             notification.setStorageProvider(provider);
             return notification;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UserStorageProviderClusterEvent that = (UserStorageProviderClusterEvent) o;
+            return removed == that.removed && Objects.equals(realmId, that.realmId) && Objects.equals(storageProvider.getId(), that.storageProvider.getId());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(removed, realmId, storageProvider.getId());
+        }
     }
 
 }

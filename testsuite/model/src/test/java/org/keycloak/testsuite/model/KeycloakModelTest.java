@@ -77,6 +77,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
@@ -172,6 +173,19 @@ public abstract class KeycloakModelTest {
                 res = kmp.instanceRule(res, description);
             }
             return res;
+        }
+    };
+
+    @Rule
+    public final TestRule watcher = new TestWatcher() {
+        @Override
+        protected void starting(Description description) {
+            log.infof("%s STARTED", description.getMethodName());
+        }
+
+        @Override
+        protected void finished(Description description) {
+            log.infof("%s FINISHED\n\n", description.getMethodName());
         }
     };
 

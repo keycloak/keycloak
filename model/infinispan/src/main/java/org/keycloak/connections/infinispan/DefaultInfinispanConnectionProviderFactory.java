@@ -310,7 +310,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             configureRemoteCacheStore(replicationConfigBuilder, async, InfinispanConnectionProvider.WORK_CACHE_NAME, false);
         }
 
-        Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
+        Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder
+          .expiration().enableReaper().wakeUpInterval(15, TimeUnit.SECONDS)
+          .build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationEvictionCacheConfiguration);
         cacheManager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME, true);
 
