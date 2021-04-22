@@ -13,7 +13,6 @@ import {
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../util";
@@ -135,7 +134,7 @@ export const AssociatedRolesTab = ({
     refresh();
   }, [additionalRoles, isInheritedHidden]);
 
-  const InheritedRoleName = (role: RoleRepresentation) => {
+  const InheritedRoleName = (role: Role) => {
     return <>{inheritanceMap.current[role.id!]}</>;
   };
 
@@ -144,9 +143,9 @@ export const AssociatedRolesTab = ({
       <>
         {clientId && (
           <Label color="blue" key={`label-${id}`}>
-            {clientId}
-          </Label>
-        )}{" "}
+          {clientId}
+        </Label>
+      )}{" "}
         {name}
       </>
     );
@@ -268,7 +267,7 @@ export const AssociatedRolesTab = ({
               name: "name",
               displayKey: "roles:roleName",
               cellRenderer: AliasRenderer,
-              cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
+              cellFormatters: [emptyFormatter()],
             },
             {
               name: "containerId",
