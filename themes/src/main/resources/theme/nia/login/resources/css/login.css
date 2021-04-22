@@ -536,15 +536,15 @@ form#kc-select-back-form div.login-pf-social-section {
 
 
 a.zocial.nia {
-    background: url(../img/eidentita_02.png) no-repeat left top;
-    height: 70px;
+    background: url(../img/eidentita_02.png) no-repeat top;
+    height: 50px;
     width: auto;
     padding-top: 60px;
 }
 
 a.zocial.nia:hover {
-    background: url(../img/eidentita_01.png)  no-repeat left top !important;
-    height: 70px;
+    background: url(../img/eidentita_01.png)  no-repeat top !important;
+    height: 50px;
     width: auto;
 }
 
@@ -553,16 +553,16 @@ a.zocial.nia span {
 }
 
 a#social-nia {
-    background: url(../img/eidentita_02.png) no-repeat left top;
-    height: 70px;
+    background: url(../img/eidentita_02.png) no-repeat top;
+    height: 50px;
     width: auto;
     padding-top: 60px;
 
 }
 
 a#social-nia:hover {
-    background: url(../img/eidentita_01.png)  no-repeat left top !important;
-    height: 70px;
+    background: url(../img/eidentita_01.png)  no-repeat top !important;
+    height: 50px;
     width: auto;
 }
 
