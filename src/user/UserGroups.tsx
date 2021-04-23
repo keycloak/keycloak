@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,6 +7,7 @@ import {
   ButtonVariant,
   Checkbox,
   PageSection,
+  Popover,
 } from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -20,6 +21,8 @@ import { useErrorHandler } from "react-error-boundary";
 import _ from "lodash";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { JoinGroupDialog } from "./JoinGroupDialog";
+import { HelpContext } from "../components/help-enabler/HelpHeader";
+import { QuestionCircleIcon } from "@patternfly/react-icons";
 
 type GroupTableData = GroupRepresentation & {
   membersLength?: number;
@@ -54,6 +57,8 @@ export const UserGroups = () => {
     GroupRepresentation[]
   >([]);
   const [open, setOpen] = useState(false);
+
+  const { enabled } = useContext(HelpContext);
 
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
@@ -325,6 +330,22 @@ export const UserGroups = () => {
                 onChange={() => setDirectMembership(!isDirectMembership)}
                 isChecked={isDirectMembership}
               />
+              {enabled && (
+                <Popover
+                  aria-label="Basic popover"
+                  position="bottom"
+                  bodyContent={<div>{t("users:whoWillAppearPopoverText")}</div>}
+                >
+                  <Button
+                    variant="link"
+                    className="kc-who-will-appear-button"
+                    key="who-will-appear-button"
+                    icon={<QuestionCircleIcon />}
+                  >
+                    {t("users:whoWillAppearLinkText")}
+                  </Button>
+                </Popover>
+              )}
             </>
           }
           columns={[
