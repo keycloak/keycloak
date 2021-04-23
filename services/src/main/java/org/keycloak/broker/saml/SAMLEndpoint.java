@@ -134,6 +134,7 @@ public class SAMLEndpoint {
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
+    public static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION"
     protected RealmModel realm;
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
@@ -284,11 +285,16 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
-                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
-                event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+
+            String requestDestination = requestAbstractType.getDestination();
+
+            if (!destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestDestination)) {
+                if(!this.isUrlInAllowedDestinations(requestDestination)) {
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.detail(Details.REASON, Errors.INVALID_DESTINATION);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                }
             }
             if (config.isValidateSignature()) {
                 try {
@@ -603,16 +609,9 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             String responseDestination = statusResponse.getDestination();
-            String allowedDestination = System.getenv("KEYCLOAK_SAML_ALLOWED_DESTINATION");
 
-            logger.debug("Session absolute path");
-            logger.debug(session.getContext().getUri().getAbsolutePath());
-            logger.debug("Status response destination");
-            logger.debug(responseDestination);
-            logger.debug("Allowed destination defined from environment");
-            logger.debug(allowedDestination);
             if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), responseDestination)) {
-                if (!destinationValidator.validate(allowedDestination, responseDestination)) {
+                if (!this.isUrlInAllowedDestinations(responseDestination)) {
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                     event.error(Errors.INVALID_SAML_RESPONSE);
@@ -792,5 +791,21 @@ public class SAMLEndpoint {
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         return subType != null ? (NameIDType) subType.getBaseID() : null;
+    }
+
+    private boolean isUrlInAllowedDestinations(String url) {
+        logger.debug("Session absolute path");
+        logger.debug(url);
+        logger.debug("Allowed destination defined from environment");
+        logger.debug(System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION));
+        String[] allowedDestinations = System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
+
+        for(String item : allowedDestinations) {
+            if (destinationValidator.validate(allowedDestinations, requestDestination)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
