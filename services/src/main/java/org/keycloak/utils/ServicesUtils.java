@@ -17,11 +17,19 @@
 
 package org.keycloak.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
+import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
+import org.keycloak.broker.oidc.OIDCIdentityProvider;
+import org.keycloak.broker.oidc.mappers.AbstractClaimMapper;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.GroupRepresentation;
 
 import java.util.concurrent.ExecutorService;
@@ -38,6 +46,9 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 public class ServicesUtils {
 
     private static final Logger logger = Logger.getLogger(ServicesUtils.class);
+
+    private static final String EMAIL = "email";
+    private static final String EMAIL_VERIFIED = "email_verified";
 
     public static <T, R> Function<? super T,? extends Stream<? extends R>> timeBound(KeycloakSession session,
                                                                                      long timeout,
@@ -134,5 +145,34 @@ public class ServicesUtils {
 
     public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
         return ModelToRepresentation.toRepresentation(g, false);
+    }
+
+    public static boolean isEmailVerifiedFromClaim(BrokeredIdentityContext context) {
+        IdentityProviderModel idp =context.getIdpConfig();
+        if (("oidc".equals(idp.getProviderId()) || "google".equals(idp.getProviderId())) && "true".equals(idp.getConfig().get("conditionalTrustEmail"))) {
+
+            //check conditional email flag for oidc and google IdPs with conditionalTrustEmail = true
+            JsonWebToken token = (JsonWebToken) context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
+            if ( token!= null && AbstractClaimMapper.getClaimValue(token, EMAIL) != null) {
+                Object emailVerifiedValue =  AbstractClaimMapper.getClaimValue(token, EMAIL);
+                if (emailVerifiedValue != null && "true".equals(emailVerifiedValue.toString()))
+                    return  true;
+            }
+
+            token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ID_TOKEN);
+            if ( token!= null && AbstractClaimMapper.getClaimValue(token, EMAIL) != null) {
+                Object emailVerifiedValue =  AbstractClaimMapper.getClaimValue(token, EMAIL);
+                if (emailVerifiedValue != null && "true".equals(emailVerifiedValue.toString()))
+                    return  true;
+            }
+
+            JsonNode profileJsonNode = (JsonNode) context.getContextData().get(OIDCIdentityProvider.USER_INFO);
+            if (token!= null && AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, EMAIL) != null) {
+                Object emailVerifiedValue = AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, EMAIL_VERIFIED);
+                if (emailVerifiedValue != null && "true".equals(emailVerifiedValue.toString()))
+                    return  true;
+            }
+        }
+        return false;
     }
 }

@@ -19,3 +19,10 @@
     </div>
     <kc-tooltip>{{:: 'identity-provider.google-offlineAccess.tooltip' | translate}}</kc-tooltip>
 </div>
+<div class="form-group" data-ng-hide="identityProvider.trustEmail">
+    <label class="col-md-2 control-label" for="conditionalTrustEmail">{{:: 'conditional-trust-email' | translate}}</label>
+    <div class="col-md-6">
+        <input ng-model="identityProvider.config.conditionalTrustEmail" name="identityProvider.config.conditionalTrustEmail" id="conditionalTrustEmail" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+    </div>
+    <kc-tooltip>{{:: 'conditional-trust-email.tooltip' | translate}}</kc-tooltip>
+</div>
