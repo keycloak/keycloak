@@ -285,16 +285,11 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-
-            String requestDestination = requestAbstractType.getDestination();
-
-            if (!destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestDestination)) {
-                if(!this.isUrlInAllowedDestinations(requestDestination)) {
-                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                    event.detail(Details.REASON, Errors.INVALID_DESTINATION);
-                    event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
+            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
+                event.error(Errors.INVALID_SAML_RESPONSE);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             if (config.isValidateSignature()) {
                 try {
@@ -801,7 +796,7 @@ public class SAMLEndpoint {
         String[] allowedDestinations = System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
 
         for(String item : allowedDestinations) {
-            if (destinationValidator.validate(allowedDestinations, requestDestination)) {
+            if (destinationValidator.validate(allowedDestinations, url)) {
                 return true;
             }
         }
