@@ -106,7 +106,8 @@ import org.w3c.dom.NodeList;
 public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
-
+    
+    private static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION";
     private final DestinationValidator destinationValidator;
 
     public SamlService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
@@ -517,9 +518,11 @@ public class SamlService extends AuthorizationEndpointBase {
                 return false;
             }
             if (! destinationValidator.validate(this.getExpectedDestinationUri(session), req.getDestination())) {
-                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
-                event.error(errorCode);
-                return false;
+                if(!this.isUrlInAllowedDestinations(req.getDestination())){
+                    event.detail(Details.REASON, Errors.INVALID_DESTINATION);
+                    event.error(errorCode);
+                    return false;
+                }
             }
             return true;
         }
@@ -552,6 +555,26 @@ public class SamlService extends AuthorizationEndpointBase {
             final String realmName = session.getContext().getRealm().getName();
             final URI baseUri = session.getContext().getUri().getBaseUri();
             return Urls.samlRequestEndpoint(baseUri, realmName);
+        }
+
+        private boolean isUrlInAllowedDestinations(String url) {
+            return this.isUrlInAllowedDestinations(URI.create(url));
+        }
+
+        private boolean isUrlInAllowedDestinations(URI url) {
+            logger.debug("SamlService Session absolute path");
+            logger.debug(url);
+            logger.debug("SamlService Allowed destination defined from environment");
+            logger.debug(System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION));
+            String[] allowedDestinations = System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
+    
+            for(String item : allowedDestinations) {
+                if (destinationValidator.validate(allowedDestinations, url)) {
+                    return true;
+                }
+            }
+    
+            return false;
         }
     }
 
