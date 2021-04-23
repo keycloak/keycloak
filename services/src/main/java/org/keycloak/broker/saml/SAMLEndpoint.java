@@ -658,10 +658,10 @@ public class SAMLEndpoint {
         }
 
         private boolean isUrlInAllowedDestinations(String url) {
-            logger.debug("Session absolute path");
-            logger.debug(url);
-            logger.debug("Allowed destination defined from environment");
-            logger.debug(System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION));
+            logger.info("Session absolute path");
+            logger.info(url);
+            logger.info("Allowed destination defined from environment");
+            logger.info(System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION));
             String[] allowedDestinations = System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
 
             for(String item : allowedDestinations) {

@@ -562,10 +562,10 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         private boolean isUrlInAllowedDestinations(URI url) {
-            logger.debug("SamlService Session absolute path");
-            logger.debug(url);
-            logger.debug("SamlService Allowed destination defined from environment");
-            logger.debug(System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION));
+            logger.info("SamlService Session absolute path");
+            logger.info(url);
+            logger.info("SamlService Allowed destination defined from environment");
+            logger.info(System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION));
             String[] allowedDestinations = System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
     
             for(String item : allowedDestinations) {
