@@ -134,7 +134,7 @@ public class SAMLEndpoint {
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
-    public static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION"
+    public static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION";
     protected RealmModel realm;
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
