@@ -23,7 +23,9 @@ import org.keycloak.policy.PasswordPolicyProvider;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,11 +50,14 @@ public class PasswordPolicy implements Serializable {
 
     public static final String RECOVERY_CODES_WARNING_THRESHOLD_ID = "recoveryCodesWarningThreshold";
 
+    public static final String REGEX_PATTERNS_ID = "regexPattern";
+
     private Map<String, Object> policyConfig;
+    private Set<Object> regexPolicyConfig;
     private Builder builder;
 
     public static PasswordPolicy empty() {
-        return new PasswordPolicy(null, new HashMap<>());
+        return new PasswordPolicy(null, new HashMap<>(), new HashSet<>());
     }
 
     public static Builder build() {
@@ -63,17 +68,26 @@ public class PasswordPolicy implements Serializable {
         return new Builder(policyString).build(session);
     }
 
-    private PasswordPolicy(Builder builder, Map<String, Object> policyConfig) {
+    private PasswordPolicy(Builder builder, Map<String, Object> policyConfig, Set<Object> regexPolicyConfig) {
         this.builder = builder;
         this.policyConfig = policyConfig;
+        this.regexPolicyConfig = regexPolicyConfig;
     }
 
     public Set<String> getPolicies() {
-        return policyConfig.keySet();
+        Set<String> policies = new HashSet<>();
+        policies.addAll(policyConfig.keySet());
+        if (!regexPolicyConfig.isEmpty())
+            policies.add(REGEX_PATTERNS_ID);
+        return policies;
     }
 
     public <T> T getPolicyConfig(String key) {
         return (T) policyConfig.get(key);
+    }
+
+    public Set<Object> getRegexPolicyConfig() {
+        return regexPolicyConfig;
     }
 
     public String getHashAlgorithm() {
@@ -128,17 +142,21 @@ public class PasswordPolicy implements Serializable {
     public static class Builder {
 
         private LinkedHashMap<String, String> map;
+        private LinkedHashSet<String> regexSet;
 
         private Builder() {
             this.map = new LinkedHashMap<>();
+            this.regexSet = new LinkedHashSet<>();
         }
 
-        private Builder(LinkedHashMap<String, String> map) {
+        private Builder(LinkedHashMap<String, String> map, LinkedHashSet<String> regexSet) {
             this.map = map;
+            this.regexSet = regexSet;
         }
 
         private Builder(String policyString) {
             map = new LinkedHashMap<>();
+            regexSet = new LinkedHashSet<>();
 
             if (policyString != null && !policyString.trim().isEmpty()) {
                 for (String policy : policyString.split(" and ")) {
@@ -155,31 +173,39 @@ public class PasswordPolicy implements Serializable {
                         config = policy.substring(i + 1, policy.length() - 1);
                     }
 
-                    map.put(key, config);
+                    put(key, config);
                 }
             }
         }
 
         public boolean contains(String key) {
-            return map.containsKey(key);
+            return key.equals(REGEX_PATTERNS_ID) ? !regexSet.isEmpty() : map.containsKey(key);
         }
 
+        // do not use for regexSet.
         public String get(String key) {
             return map.get(key);
         }
 
         public Builder put(String key, String value) {
-            map.put(key, value);
+            if (key.equals(REGEX_PATTERNS_ID))
+                regexSet.add(value);
+            else
+                map.put(key, value);
             return this;
         }
 
         public Builder remove(String key) {
-            map.remove(key);
+            if (key.equals(REGEX_PATTERNS_ID))
+                regexSet.clear();
+            else
+                map.remove(key);
             return this;
         }
 
         public PasswordPolicy build(KeycloakSession session) {
             Map<String, Object> config = new HashMap<>();
+            Set<Object> regexConfig = new HashSet<>();
             for (Map.Entry<String, String> e : map.entrySet()) {
 
                 PasswordPolicyProvider provider = session.getProvider(PasswordPolicyProvider.class, e.getKey());
@@ -196,11 +222,28 @@ public class PasswordPolicy implements Serializable {
 
                 config.put(e.getKey(), o);
             }
-            return new PasswordPolicy(this, config);
+            
+            for (String e : regexSet) {
+                PasswordPolicyProvider provider = session.getProvider(PasswordPolicyProvider.class, REGEX_PATTERNS_ID);
+                if (provider == null) {
+                    throw new PasswordPolicyConfigException("Password policy not found");
+                }
+
+                Object o;
+                try {
+                    o = provider.parseConfig(e);
+                } catch (PasswordPolicyConfigException ex) {
+                    throw new ModelException("Invalid config for " + REGEX_PATTERNS_ID + ": " + ex.getMessage());
+                }
+
+                regexConfig.add(o);
+            }
+            
+            return new PasswordPolicy(this, config, regexConfig);
         }
 
         public String asString() {
-            if (map.isEmpty()) {
+            if (map.isEmpty() && regexSet.isEmpty()) {
                 return null;
             }
 
@@ -222,11 +265,28 @@ public class PasswordPolicy implements Serializable {
                     sb.append(")");
                 }
             }
+
+            for (String e : regexSet) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(" and ");
+                }
+
+                sb.append(REGEX_PATTERNS_ID);
+
+                if (e != null && !e.trim().isEmpty()) {
+                    sb.append("(");
+                    sb.append(e);
+                    sb.append(")");
+                }
+            }
+
             return sb.toString();
         }
 
         public Builder clone() {
-            return new Builder((LinkedHashMap<String, String>) map.clone());
+            return new Builder((LinkedHashMap<String, String>) map.clone(), (LinkedHashSet<String>) regexSet.clone());
         }
 
     }

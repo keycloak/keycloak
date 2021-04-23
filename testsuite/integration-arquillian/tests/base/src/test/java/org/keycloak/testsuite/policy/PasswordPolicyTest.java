@@ -230,7 +230,6 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
-            PasswordPolicy policy = null;
             try {
                 realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern"));
                 fail("Expected NullPointerException: Regex Pattern cannot be null.");
@@ -252,13 +251,17 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
                 assertEquals("Invalid config for regexPattern: Not a valid regular expression", e.getMessage());
             }
 
-            //Fails to match one of the regex pattern
+            // Fails to match one of the regex pattern
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(jdoe) and regexPattern(j*d)"));
             Assert.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
 
-            ////Fails to match all of the regex patterns
+            // Fails to match all of the regex patterns
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(j*p) and regexPattern(j*d) and regexPattern(adoe)"));
             Assert.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
+
+            realmModel
+                .setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(jdoe) and regexPattern([a-z][a-z][a-z][a-z])"));
+            assertNull(policyManager.validate("jdoe", "jdoe"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern([a-z][a-z][a-z][a-z][0-9])"));
             Assert.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
