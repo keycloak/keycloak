@@ -187,11 +187,12 @@ export const CapabilityConfig = ({
                           label={t("serviceAccount")}
                           id="kc-flow-service-account"
                           name="serviceAccountsEnabled"
-                          isChecked={value}
-                          onChange={onChange}
-                          isDisabled={
-                            !clientAuthentication || clientAuthorization
+                          isChecked={
+                            value ||
+                            (clientAuthentication && clientAuthorization)
                           }
+                          onChange={onChange}
+                          isDisabled={clientAuthorization}
                         />
                         <HelpItem
                           helpText="clients-help:serviceAccount"
