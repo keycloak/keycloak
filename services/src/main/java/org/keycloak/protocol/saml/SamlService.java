@@ -107,7 +107,6 @@ public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
     
-    private static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION";
     private final DestinationValidator destinationValidator;
 
     public SamlService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
@@ -117,6 +116,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
     public abstract class BindingProtocol {
 
+        private static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION";
         // this is to support back button on browser
         // if true, we redirect to authenticate URL otherwise back button behavior has bad side effects
         // and we want to turn it off.
@@ -565,8 +565,8 @@ public class SamlService extends AuthorizationEndpointBase {
             logger.debug("SamlService Session absolute path");
             logger.debug(url);
             logger.debug("SamlService Allowed destination defined from environment");
-            logger.debug(System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION));
-            String[] allowedDestinations = System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
+            logger.debug(System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION));
+            String[] allowedDestinations = System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
     
             for(String item : allowedDestinations) {
                 if (destinationValidator.validate(item, url)) {

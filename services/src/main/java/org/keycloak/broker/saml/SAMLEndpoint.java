@@ -656,6 +656,22 @@ public class SAMLEndpoint {
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
+
+        private boolean isUrlInAllowedDestinations(String url) {
+            logger.debug("Session absolute path");
+            logger.debug(url);
+            logger.debug("Allowed destination defined from environment");
+            logger.debug(System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION));
+            String[] allowedDestinations = System.getenv(KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
+
+            for(String item : allowedDestinations) {
+                if (destinationValidator.validate(item, url)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     protected class PostBinding extends Binding {
@@ -786,21 +802,5 @@ public class SAMLEndpoint {
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         return subType != null ? (NameIDType) subType.getBaseID() : null;
-    }
-
-    private boolean isUrlInAllowedDestinations(String url) {
-        logger.debug("Session absolute path");
-        logger.debug(url);
-        logger.debug("Allowed destination defined from environment");
-        logger.debug(System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION));
-        String[] allowedDestinations = System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
-
-        for(String item : allowedDestinations) {
-            if (destinationValidator.validate(item, url)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
