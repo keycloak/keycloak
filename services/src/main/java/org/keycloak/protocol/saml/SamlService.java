@@ -569,7 +569,7 @@ public class SamlService extends AuthorizationEndpointBase {
             String[] allowedDestinations = System.getenv(this.KEYCLOAK_SAML_ALLOWED_DESTINATION).split(",");
     
             for(String item : allowedDestinations) {
-                if (destinationValidator.validate(allowedDestinations, url)) {
+                if (destinationValidator.validate(item, url)) {
                     return true;
                 }
             }
