@@ -56,6 +56,8 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
+    protected static final Logger logger = Logger.getLogger(SamlEcpProfileService.class);
+
     public SamlEcpProfileService(RealmModel realm, EventBuilder event, DestinationValidator destinationValidator) {
         super(realm, event, destinationValidator);
     }
@@ -152,6 +154,7 @@ public class SamlEcpProfileService extends SamlService {
 
             @Override
             protected Response buildLogoutResponse(UserSessionModel userSession, String logoutBindingUri, SAML2LogoutResponseBuilder builder, JaxrsSAML2BindingBuilder binding) throws ConfigurationException, ProcessingException, IOException {
+                logger.debug("ECPProfileService: Logout response not supported.");
                 return Soap.createFault().reason("Logout not supported.").build();
             }
         }.setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(session.getContext().getUri());
