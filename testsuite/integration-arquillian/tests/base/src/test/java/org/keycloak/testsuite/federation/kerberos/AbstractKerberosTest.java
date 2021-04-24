@@ -162,7 +162,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     @After
     @Override
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         cleanupApacheHttpClient();
 
         super.afterAbstractKeycloakTest();

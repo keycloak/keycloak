@@ -246,6 +246,9 @@ public class Messages {
     public static final String DELEGATION_FAILED = "delegationFailedMessage";
     public static final String DELEGATION_FAILED_HEADER = "delegationFailedHeader";
 
+    public static final String ARTIFACT_RESOLUTION_SERVICE_ERROR = "artifactResolutionServiceError";
+    public static final String ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE = "saml.artifactResolutionServiceInvalidResponse";
+
     // WebAuthn
     public static final String WEBAUTHN_REGISTER_TITLE = "webauthn-registration-title";
     public static final String WEBAUTHN_LOGIN_TITLE = "webauthn-login-title";
@@ -258,6 +261,9 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_AUTH_VERIFICATION = "webauthn-error-auth-verification";
     public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
     public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
+
+    // Conditions in Conditional Flow
+    public static final String ACCESS_DENIED = "access-denied";
 
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
     public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";

@@ -31,13 +31,21 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.protocol.saml.profile.util.Soap;
+import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
@@ -47,14 +55,27 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.testsuite.util.saml.StepWithCheckers;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -68,29 +89,15 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
+import java.util.concurrent.TimeUnit;
 
-import org.jboss.logging.Logger;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import org.keycloak.common.VerificationException;
-import org.keycloak.protocol.saml.SamlProtocolUtils;
-import org.keycloak.rotation.KeyLocator;
-
 import static org.keycloak.saml.common.constants.GeneralConstants.RELAY_STATE;
-import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
-import org.w3c.dom.Node;
-
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlUtils.getSamlDeploymentForClient;
 
 /**
  * @author hmlnarik
@@ -446,7 +453,7 @@ public class SamlClient {
                     envelope.addNamespaceDeclaration(NS_PREFIX_PAOS_BINDING, JBossSAMLURIConstants.PAOS_BINDING.get());
                     envelope.addNamespaceDeclaration(NS_PREFIX_PROFILE_ECP, JBossSAMLURIConstants.ECP_PROFILE.get());
 
-                    SamlDeployment deployment = SamlUtils.getSamlDeploymentForClient("ecp-sp"); // TODO: Make more general for any client, currently SOAP is usable only with http://localhost:8280/ecp-sp/ client
+                    SamlDeployment deployment = getSamlDeploymentForClient("ecp-sp"); // TODO: Make more general for any client, currently SOAP is usable only with http://localhost:8280/ecp-sp/ client
 
                     createPaosRequestHeader(envelope, deployment);
                     createEcpRequestHeader(envelope, deployment);
@@ -490,8 +497,88 @@ public class SamlClient {
             public String extractRelayState(CloseableHttpResponse response) throws IOException {
                 return null;
             }
-        }
-        ;
+        },
+        ARTIFACT_RESPONSE {
+            private Document extractSoapMessage(CloseableHttpResponse response) throws IOException {
+                ByteArrayInputStream bais = new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
+                Document soapBody = Soap.extractSoapMessage(bais);
+                response.close();
+                return soapBody;
+            }
+
+            @Override
+            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
+                assertThat(response, statusCodeIsHC(Response.Status.OK));
+                Document soapBodyContents = extractSoapMessage(response);
+
+                SAMLDocumentHolder samlDoc = null;
+                try {
+                    samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
+                } catch (ProcessingException | ParsingException e) {
+                    throw new RuntimeException("Unable to get documentHolder from soapBodyResponse: " + DocumentUtil.asString(soapBodyContents));
+                }
+                if (!(samlDoc.getSamlObject() instanceof ArtifactResponseType)) {
+                    throw new RuntimeException("Message received from ArtifactResolveService is not an ArtifactResponseMessage");
+                }
+
+                ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
+
+                try {
+                    Object artifactResponseContent = art.getAny();
+                    if (artifactResponseContent instanceof ResponseType) {
+                        Document doc = SAML2Request.convert((ResponseType) artifactResponseContent);
+                        return new SAMLDocumentHolder((ResponseType) artifactResponseContent, doc);
+                    } else if (artifactResponseContent instanceof RequestAbstractType) {
+                        Document doc = SAML2Request.convert((RequestAbstractType) art.getAny());
+                        return new SAMLDocumentHolder((RequestAbstractType) artifactResponseContent, doc);
+                    } else {
+                        throw new RuntimeException("Can not recognise message contained in ArtifactResponse");
+                    }
+                } catch (ParsingException | ConfigurationException | ProcessingException e) {
+                    throw new RuntimeException("Can not obtain document from artifact response: " + DocumentUtil.asString(soapBodyContents));
+                }
+            }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return null;
+            }
+
+            @Override
+            public URI getBindingUri() {
+                return JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri();
+            }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return null;
+            }
+
+            @Override
+            public String extractRelayState(CloseableHttpResponse response) throws IOException {
+                return null;
+            }
+        };
 
         public abstract SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException;
 
@@ -688,7 +775,18 @@ public class SamlClient {
                 }
 
                 LOG.infof("Executing HTTP request to %s", request.getURI());
+                
+                if (s instanceof StepWithCheckers) {
+                    Runnable beforeChecker = ((StepWithCheckers) s).getBeforeStepChecker();
+                    if (beforeChecker != null) beforeChecker.run();
+                }
+
                 currentResponse = client.execute(request, context);
+
+                if (s instanceof StepWithCheckers) {
+                    Runnable afterChecker = ((StepWithCheckers) s).getAfterStepChecker();
+                    if (afterChecker != null) afterChecker.run();
+                }
 
                 currentUri = request.getURI();
                 List<URI> locations = context.getRedirectLocations();
@@ -716,6 +814,8 @@ public class SamlClient {
     }
 
     protected HttpClientBuilder createHttpClientBuilderInstance() {
-        return HttpClientBuilder.create();
+        return HttpClientBuilder
+                .create()
+                .evictIdleConnections(100, TimeUnit.MILLISECONDS);
     }
 }

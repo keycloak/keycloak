@@ -171,6 +171,15 @@
                 </div>
                 <kc-tooltip>{{:: 'include-onetimeuse-condition.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlArtifactBinding">{{:: 'artifact-binding' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="samlArtifactBinding" ng-click="switchChange()" name="samlArtifactBinding" id="samlArtifactBinding" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'artifact-binding.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlServerSignature">{{:: 'sign-documents' | translate}}</label>
                 <div class="col-sm-6">
@@ -416,11 +425,34 @@
                 <kc-tooltip>{{:: 'logout-service-post-binding-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="logoutPostBinding">{{:: 'logout-service-redir-binding-url' | translate}}</label>
+                <label class="col-md-2 control-label" for="logoutRedirectBinding">{{:: 'logout-service-redir-binding-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="clientEdit.attributes.saml_single_logout_service_url_redirect" class="form-control" type="text" name="logoutRedirectBinding" id="logoutRedirectBinding" />
                 </div>
                 <kc-tooltip>{{:: 'logout-service-redir-binding-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="logoutArtifactBinding">{{:: 'logout-service-artifact-binding-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes.saml_single_logout_service_url_artifact" class="form-control" type="text" name="logoutRedirectBinding" id="logoutArtifactBinding" />
+                </div>
+                <kc-tooltip>{{:: 'logout-service-artifact-binding-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="artifactBindingUrl">{{:: 'artifact-binding-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes.saml_artifact_binding_url" class="form-control" type="text" name="artifactBindingUrl" id="artifactBindingUrl" />
+                </div>
+                <kc-tooltip>{{:: 'artifact-binding-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="artifactResolutionServiceUrl">{{:: 'artifact-resolution-service-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes.saml_artifact_resolution_service_url" class="form-control" type="text" name="artifactResolutionServiceUrl" id="artifactResolutionServiceUrl" />
+                </div>
+                <kc-tooltip>{{:: 'artifact-resolution-service-url.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
@@ -558,6 +590,14 @@
                     <input ng-model="excludeSessionStateFromAuthResponse" ng-click="switchChange()" name="excludeSessionStateFromAuthResponse" id="excludeSessionStateFromAuthResponse" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'exclude-session-state-from-auth-response.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="useRefreshTokens">{{:: 'use-refresh-tokens' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="useRefreshTokens" ng-click="switchChange()" name="useRefreshTokens" id="useRefreshTokens"
+                        onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'use-refresh-tokens.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="useRefreshTokenForClientCredentialsGrant">{{:: 'use-refresh-token-for-client-credentials-grant' | translate}}</label>

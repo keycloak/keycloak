@@ -337,11 +337,14 @@ public class TokenManager {
             validation.newToken.setAuthorization(refreshToken.getAuthorization());
         }
 
-        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSessionCtx)
-                .accessToken(validation.newToken)
-                .generateRefreshToken();
+        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
+            validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
+        if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+            responseBuilder.generateRefreshToken();
+        }
 
-        if (validation.newToken.getAuthorization() != null) {
+        if (validation.newToken.getAuthorization() != null
+            && OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
         }
 
@@ -351,7 +354,9 @@ public class TokenManager {
         AccessToken.CertConf certConf = refreshToken.getCertConf();
         if (certConf != null) {
             responseBuilder.getAccessToken().setCertConf(certConf);
-            responseBuilder.getRefreshToken().setCertConf(certConf);
+            if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+                responseBuilder.getRefreshToken().setCertConf(certConf);
+            }
         }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -758,7 +763,7 @@ public class TokenManager {
             }
 
             if (clientSessionMaxLifespan > 0) {
-                int clientSessionExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                int clientSessionExpiration = clientSession.getTimestamp() + clientSessionMaxLifespan;
                 return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
             }
         }

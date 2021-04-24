@@ -280,11 +280,6 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
 
     }
 
-    @Override
-    public boolean isFetched(String association) {
-        return modelSupplier.get().isFetched(association);
-    }
-
     protected Set<Scope> scopes;
 
     @Override

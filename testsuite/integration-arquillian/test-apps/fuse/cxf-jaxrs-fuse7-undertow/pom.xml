@@ -34,10 +34,10 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             javax.ws.rs;version="[2,3)",
-            META-INF.cxf;version="[2.7,3.3)",
-            META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
-            org.apache.cxf.transport.http;version="[2.7,3.3)",
-            org.apache.cxf.*;version="[2.7,3.3)",
+            META-INF.cxf;version="[2.7,3.4)",
+            META-INF.cxf.osgi;version="[2.7,3.4)";resolution:=optional,
+            org.apache.cxf.transport.http;version="[2.7,3.4)",
+            org.apache.cxf.*;version="[2.7,3.4)",
             com.fasterxml.jackson.jaxrs.json;version="[2.8,3)",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional

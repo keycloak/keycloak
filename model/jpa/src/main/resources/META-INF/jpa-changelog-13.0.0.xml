@@ -51,4 +51,9 @@
         <modifyDataType newDataType="VARCHAR(255)" tableName="CLIENT_SCOPE_CLIENT" columnName="CLIENT_ID"/>
         <modifyDataType newDataType="VARCHAR(255)" tableName="CLIENT_SCOPE_CLIENT" columnName="SCOPE_ID"/>
     </changeSet>
+
+    <changeSet author="keycloak" id="json-string-accomodation">
+        <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NCLOB"/>
+    </changeSet>
+
 </databaseChangeLog>
