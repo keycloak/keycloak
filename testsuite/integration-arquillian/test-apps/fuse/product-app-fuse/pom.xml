@@ -36,8 +36,8 @@
             javax.xml.namespace,
             org.eclipse.jetty.security;version="[8.1,10)",
             org.eclipse.jetty.util.security;version="[8.1,10)",
-            org.apache.cxf.service.model;version="[2.7,3.2)",
-            org.apache.cxf.*;version="[2.7,3.2)",
+            org.apache.cxf.service.model;version="[2.7,3.4)",
+            org.apache.cxf.*;version="[2.7,3.4)",
             org.keycloak.adapters.jetty;version="${project.version}",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional

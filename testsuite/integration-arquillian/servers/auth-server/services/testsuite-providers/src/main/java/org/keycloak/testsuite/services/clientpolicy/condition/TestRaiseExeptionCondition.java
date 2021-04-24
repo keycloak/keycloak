@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,35 +17,41 @@
 
 package org.keycloak.testsuite.services.clientpolicy.condition;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionConfiguration;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 
-public class TestRaiseExeptionCondition implements ClientPolicyConditionProvider {
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class TestRaiseExeptionCondition implements ClientPolicyConditionProvider<TestRaiseExeptionCondition.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(TestRaiseExeptionCondition.class);
+    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+    private Configuration configuration = new Configuration();
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
-    public TestRaiseExeptionCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+    public TestRaiseExeptionCondition(KeycloakSession session) {
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    public static class Configuration extends ClientPolicyConditionConfiguration {
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return TestRaiseExeptionConditionFactory.PROVIDER_ID;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,28 +21,90 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
-public class ClientScopesCondition extends AbstractClientPolicyConditionProvider {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientScopesCondition implements ClientPolicyConditionProvider<ClientScopesCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientScopesCondition.class);
 
-    public ClientScopesCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+    private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
+
+    public ClientScopesCondition(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
+        protected String type;
+        protected List<String> scope;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public List<String> getScope() {
+            return scope;
+        }
+
+        public void setScope(List<String> scope) {
+            this.scope = scope;
+        }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
+    }
+
+    @Override
+    public String getProviderId() {
+        return ClientScopesConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -75,25 +137,27 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
         Set<String> defaultScopes = client.getClientScopes(true).keySet();
         Set<String> optionalScopes = client.getClientScopes(false).keySet();
         Set<String> expectedScopes = getScopesForMatching();
-        if (expectedScopes == null) expectedScopes = new HashSet<>();
+        if (expectedScopes == null) return false;
 
         if (logger.isTraceEnabled()) {
-            explicitSpecifiedScopes.stream().forEach(i -> ClientPolicyLogger.log(logger, " explicit specified client scope = " + i));
-            defaultScopes.stream().forEach(i -> ClientPolicyLogger.log(logger, " default client scope = " + i));
-            optionalScopes.stream().forEach(i -> ClientPolicyLogger.log(logger, " optional client scope = " + i));
-            expectedScopes.stream().forEach(i -> ClientPolicyLogger.log(logger, " expected scope = " + i));
+            explicitSpecifiedScopes.forEach(i -> logger.tracev("explicit specified client scope = {0}", i));
+            defaultScopes.forEach(i -> logger.tracev("default client scope = {0}", i));
+            optionalScopes.forEach(i -> logger.tracev("optional client scope = {0}", i));
+            expectedScopes.forEach(i -> logger.tracev("expected scope = {0}", i));
         }
 
-        boolean isDefaultScope = ClientScopesConditionFactory.DEFAULT.equals(componentModel.getConfig().getFirst(ClientScopesConditionFactory.TYPE));
+        boolean isDefaultScope = ClientScopesConditionFactory.DEFAULT.equals(configuration.getType());
 
         if (isDefaultScope) {
-            expectedScopes.retainAll(defaultScopes);
+            expectedScopes.retainAll(defaultScopes); // may change expectedScopes so that it has needed to be instantiated.
             return expectedScopes.isEmpty() ? false : true;
         } else {
             explicitSpecifiedScopes.retainAll(expectedScopes);
             explicitSpecifiedScopes.retainAll(optionalScopes);
             if (!explicitSpecifiedScopes.isEmpty()) {
-                explicitSpecifiedScopes.stream().forEach(i->{ClientPolicyLogger.log(logger, " matched scope = " + i);});
+                if (logger.isTraceEnabled()) {
+                    explicitSpecifiedScopes.forEach(i->logger.tracev("matched scope = {0}", i));
+                }
                 return true;
             }
         }
@@ -101,9 +165,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
     }
 
     private Set<String> getScopesForMatching() {
-        if (componentModel.getConfig() == null) return null;
-        List<String> scopes = componentModel.getConfig().get(ClientScopesConditionFactory.SCOPES);
+        List<String> scopes = configuration.getScope();
         if (scopes == null) return null;
         return new HashSet<>(scopes);
     }
+
 }

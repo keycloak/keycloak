@@ -67,7 +67,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     @After
     @Override
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         log.debug("--DC: after AbstractCrossDCTest");
         CrossDCTestEnricher.startAuthServerBackendNode(DC.FIRST, 0);    // make sure first node is started
         enableOnlyFirstNodeInFirstDc();

@@ -31,10 +31,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,27 +52,34 @@ public class ProductPortalServlet extends HttpServlet {
         resp.setContentType("text/html");
 
         // Send jaxws request
-        PrintWriter out = resp.getWriter();
-        out.println("<html><head><title>Product Portal Page</title></head><body>");
+        try (PrintWriter out = resp.getWriter()) {
+            out.println("<html><head><title>Product Portal Page</title></head><body>");
 
-        String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-                .queryParam("redirect_uri", "http://localhost:8181/product-portal").build("demo").toString();
-        String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
-                .queryParam("referrer", "product-portal").build("demo").toString();
+            String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
+                    .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+                    .queryParam("redirect_uri", "http://localhost:8181/product-portal")
+                    .build("demo")
+                    .toString();
 
-        out.println("<p>Goto: <a href=\"/customer-portal\">customers</a> | <a href=\"" + logoutUri + "\">logout</a> | <a href=\"" + acctUri + "\">manage acct</a></p>");
-        out.println("Servlet User Principal <b>" + req.getUserPrincipal() + "</b> made this request.");
+            String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
+                    .path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
+                    .queryParam("referrer", "product-portal")
+                    .build("demo")
+                    .toString();
 
-        String unsecuredWsClientResponse = sendWsReq(req, "1", false);
-        String securedWsClientResponse = sendWsReq(req, "1", true);
-        String securedWsClient2Response = sendWsReq(req, "2", true);
+            out.println("<p>Goto: <a href=\"/customer-portal\">customers</a> | <a href=\"" + logoutUri + "\">logout</a> | <a href=\"" + acctUri + "\">manage acct</a></p>");
+            out.println("Servlet User Principal <b>" + req.getUserPrincipal() + "</b> made this request.");
 
-        out.println("<p>Product with ID 1 - unsecured request (it should end with failure): <b>" + unsecuredWsClientResponse + "</b></p><br>");
-        out.println("<p>Product with ID 1 - secured request: <b>" + securedWsClientResponse + "</b></p><br>");
-        out.println("<p>Product with ID 2 - secured request: <b>" + securedWsClient2Response + "</b></p><br>");
-        out.println("</body></html>");
-        out.flush();
-        out.close();
+            String unsecuredWsClientResponse = sendWsReq(req, "1", false);
+            String securedWsClientResponse = sendWsReq(req, "1", true);
+            String securedWsClient2Response = sendWsReq(req, "2", true);
+
+            out.println("<p>Product with ID 1 - unsecured request (it should end with failure): <b>" + unsecuredWsClientResponse + "</b></p><br>");
+            out.println("<p>Product with ID 1 - secured request: <b>" + securedWsClientResponse + "</b></p><br>");
+            out.println("<p>Product with ID 2 - secured request: <b>" + securedWsClient2Response + "</b></p><br>");
+            out.println("</body></html>");
+            out.flush();
+        }
     }
 
     private String sendWsReq(HttpServletRequest req, String productId, boolean secured) {
@@ -79,18 +87,19 @@ public class ProductPortalServlet extends HttpServlet {
         factory.setServiceClass(Product.class);
         factory.setAddress("http://localhost:8282/ProductServiceCF");
 
-        Product simpleClient = (Product)factory.create();
-        java.lang.String _getProduct_productIdVal = productId;
-        javax.xml.ws.Holder<java.lang.String> _getProduct_productId = new javax.xml.ws.Holder<java.lang.String>(_getProduct_productIdVal);
-        javax.xml.ws.Holder<java.lang.String> _getProduct_name = new javax.xml.ws.Holder<java.lang.String>();
+        Product simpleClient = (Product) factory.create();
+        Holder<String> _getProduct_productId = new Holder<>(productId);
+        Holder<String> _getProduct_name = new Holder<>();
 
         // Attach Authorization header
         if (secured) {
             Client clientProxy = ClientProxy.getClient(simpleClient);
 
             KeycloakSecurityContext session = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
-            Map<String, List<String>> headers = new HashMap<String, List<String>>();
-            headers.put("Authorization", Arrays.asList("Bearer " + session.getTokenString()));
+            if (session == null) throw new RuntimeException("Keycloak Security Context is null.");
+
+            Map<String, List<String>> headers = new HashMap<>();
+            headers.put("Authorization", Collections.singletonList("Bearer " + session.getTokenString()));
 
             clientProxy.getRequestContext().put(Message.PROTOCOL_HEADERS, headers);
         }

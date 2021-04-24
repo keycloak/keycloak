@@ -32,13 +32,14 @@ import org.keycloak.authorization.model.ResourceServer;
 public interface PermissionTicketStore {
 
     /**
-     * Returns a list of {@link PermissionTicket}, filtered by the given attributes.
+     * Returns count of {@link PermissionTicket}, filtered by the given attributes.
      *
-     * @param attributes permission tickets that do not match the attributes are not included with the count.
+     * @param attributes permission tickets that do not match the attributes are not included with the count; possible filter options are given by {@link PermissionTicket.FilterOption}
      * @param resourceServerId the resource server id
      * @return an integer indicating the amount of permission tickets
+     * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    long count(Map<String, String> attributes, String resourceServerId);
+    long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId);
 
     /**
      * Creates a new {@link PermissionTicket} instance.
@@ -99,7 +100,19 @@ public interface PermissionTicketStore {
      */
     List<PermissionTicket> findByScope(String scopeId, String resourceServerId);
 
-    List<PermissionTicket> find(Map<String, String> attributes, String resourceServerId, int firstResult, int maxResult);
+    /**
+     * Returns a list of {@link PermissionTicket}, filtered by the given attributes.
+     *
+     * @param attributes a map of keys and values to filter on; possible filter options are given by {@link PermissionTicket.FilterOption}
+     * @param resourceServerId an id of resource server that resulting tickets should belong to. Ignored if {@code null}
+     * @param firstResult first result to return; Ignored if negative or zero
+     * @param maxResult maximum number of results to return; Ignored if negative
+     * @return a list of filtered and paginated permissions
+     *
+     * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
+     *
+     */
+    List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult);
 
     /**
      * Returns a list of {@link PermissionTicket} granted to the given {@code userId}.

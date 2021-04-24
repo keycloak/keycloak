@@ -27,7 +27,7 @@ import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -64,12 +64,13 @@ public class ResourcesService extends AbstractResourceService {
     public Response getResources(@QueryParam("name") String name,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
-        Map<String, String[]> filters = new HashMap<>();
+        Map<org.keycloak.authorization.model.Resource.FilterOption, String[]> filters =
+                new EnumMap<>(org.keycloak.authorization.model.Resource.FilterOption.class);
 
-        filters.put("owner", new String[] { user.getId() });
+        filters.put(org.keycloak.authorization.model.Resource.FilterOption.OWNER, new String[] { user.getId() });
 
         if (name != null) {
-            filters.put("name", new String[] { name });
+            filters.put(org.keycloak.authorization.model.Resource.FilterOption.NAME, new String[] { name });
         }
 
         return queryResponse((f, m) -> resourceStore.findByResourceServer(filters, null, f, m).stream()
@@ -117,10 +118,10 @@ public class ResourcesService extends AbstractResourceService {
     @Path("pending-requests")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPendingRequests() {
-        Map<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        filters.put(PermissionTicket.REQUESTER, user.getId());
-        filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
+        filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
 
         final List<PermissionTicket> permissionTickets = ticketStore.find(filters, null, -1, -1);
 
@@ -160,11 +161,11 @@ public class ResourcesService extends AbstractResourceService {
             List<PermissionTicket> tickets;
 
             if (withRequesters) {
-                Map<String, String> filters = new HashMap<>();
+                Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-                filters.put(PermissionTicket.OWNER, user.getId());
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
-                filters.put(PermissionTicket.RESOURCE, resource.getId());
+                filters.put(PermissionTicket.FilterOption.OWNER, user.getId());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
+                filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
                 tickets = ticketStore.find(filters, null, -1, -1);
             } else {

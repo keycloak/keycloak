@@ -17,24 +17,35 @@
 package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.authorization.model.Policy.FilterOption.OWNER;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.NotFoundException;
 
 import org.junit.Test;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.PolicyResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -49,6 +60,7 @@ import org.keycloak.representations.idm.authorization.UmaPermissionRepresentatio
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -860,6 +872,69 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         } catch (Exception e) {
             assertTrue(AuthorizationDeniedException.class.isInstance(e));
         }
+    }
+
+    @Test
+    public void testRemovePoliciesOnResourceDelete() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection().resource().create(resource);
+
+        UmaPermissionRepresentation newPermission = new UmaPermissionRepresentation();
+
+        newPermission.setName("Custom User-Managed Permission");
+        newPermission.setDescription("Users from specific roles are allowed to access");
+        newPermission.addScope("Scope A", "Scope B", "Scope C");
+        newPermission.addRole("role_a", "role_b", "role_c", "role_d");
+        newPermission.addGroup("/group_a", "/group_a/group_b", "/group_c");
+        newPermission.addClient("client-a", "resource-server-test");
+
+        if (Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS)) {
+            newPermission.setCondition("$evaluation.grant()");
+        }
+
+        newPermission.addUser("kolo");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        protection.policy(resource.getId()).create(newPermission);
+
+        getTestingClient().server().run((RunOnServer) UserManagedPermissionServiceTest::testRemovePoliciesOnResourceDelete);
+    }
+
+    private static void testRemovePoliciesOnResourceDelete(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        ClientModel client = realm.getClientByClientId("resource-server-test");
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        UserModel user = session.users().getUserByUsername(realm, "marta");
+        Map<Policy.FilterOption, String[]> filters = new HashMap<>();
+
+        filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
+        filters.put(OWNER, new String[] {user.getId()});
+
+        List<Policy> policies = provider.getStoreFactory().getPolicyStore()
+                .findByResourceServer(filters, client.getId(), -1, -1);
+        assertEquals(1, policies.size());
+
+        Policy policy = policies.get(0);
+        assertFalse(policy.getResources().isEmpty());
+
+        Resource resource = policy.getResources().iterator().next();
+        assertEquals("Resource A", resource.getName());
+
+        provider.getStoreFactory().getResourceStore().delete(resource.getId());
+
+        filters = new HashMap<>();
+
+        filters.put(OWNER, new String[] {user.getId()});
+        policies = provider.getStoreFactory().getPolicyStore()
+                .findByResourceServer(filters, client.getId(), -1, -1);
+        assertTrue(policies.isEmpty());
     }
 
     private List<PolicyRepresentation> getAssociatedPolicies(UmaPermissionRepresentation permission) {

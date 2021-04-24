@@ -44,6 +44,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
@@ -274,6 +275,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private void resetLiquibaseServices(Liquibase liquibase) {
         Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
         Reflections.invokeMethod(true, resetServices, liquibase);
+
+        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
     }
 
     @SuppressWarnings("unchecked")

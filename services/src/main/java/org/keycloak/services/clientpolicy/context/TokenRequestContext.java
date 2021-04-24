@@ -23,6 +23,9 @@ import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class TokenRequestContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;

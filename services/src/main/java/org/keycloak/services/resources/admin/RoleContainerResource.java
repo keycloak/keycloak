@@ -53,6 +53,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -130,6 +131,13 @@ public class RoleContainerResource extends RoleResource {
         try {
             RoleModel role = roleContainer.addRole(rep.getName());
             role.setDescription(rep.getDescription());
+
+            Map<String, List<String>> attributes = rep.getAttributes();
+            if (attributes != null) {
+                for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
+                    role.setAttribute(attr.getKey(), attr.getValue());
+                }
+            }
 
             rep.setId(role.getId());
 

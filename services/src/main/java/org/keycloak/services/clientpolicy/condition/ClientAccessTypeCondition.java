@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,22 +19,75 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProvider {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientAccessTypeCondition implements ClientPolicyConditionProvider<ClientAccessTypeCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientAccessTypeCondition.class);
 
-    public ClientAccessTypeCondition(KeycloakSession session, ComponentModel componentModel) {
-        super(session, componentModel);
+    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
+    private Configuration configuration = new Configuration();
+    private final KeycloakSession session;
+
+    public ClientAccessTypeCondition(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends ClientPolicyConditionConfiguration {
+        @JsonProperty("is-negative-logic")
+        protected Boolean negativeLogic;
+
+        public Boolean isNegativeLogic() {
+            return negativeLogic;
+        }
+
+        public void setNegativeLogic(Boolean negativeLogic) {
+            this.negativeLogic = negativeLogic;
+        }
+
+        protected List<String> type;
+
+        public List<String> getType() {
+            return type;
+        }
+
+        public void setType(List<String> type) {
+            this.type = type;
+        }
+    }
+
+    @Override
+    public boolean isNegativeLogic() {
+        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
+    }
+
+    @Override
+    public String getProviderId() {
+        return ClientAccessTypeConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -65,22 +118,16 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
 
     private boolean isClientAccessTypeMatched() {
         final String accessType = getClientAccessType();
+        if (accessType == null) return false;
 
-        List<String> expectedAccessTypes = componentModel.getConfig().get(ClientAccessTypeConditionFactory.TYPE);
-        if (expectedAccessTypes == null) expectedAccessTypes = Collections.emptyList();
+        List<String> expectedAccessTypes = Optional.ofNullable(configuration.getType()).orElse(Collections.emptyList());
 
         if (logger.isTraceEnabled()) {
-            ClientPolicyLogger.log(logger, "client access type = " + accessType);
-            expectedAccessTypes.stream().forEach(i -> ClientPolicyLogger.log(logger, "client access type expected = " + i));
+            logger.tracev("accessType = {0}", accessType);
+            expectedAccessTypes.stream().forEach(i -> logger.tracev("expected accessType = {0}", i));
         }
 
-        boolean isMatched = expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
-        if (isMatched) {
-            ClientPolicyLogger.log(logger, "client access type matched.");
-        } else {
-            ClientPolicyLogger.log(logger, "client access type unmatched.");
-        }
-        return isMatched;
+        return expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
     }
 
 }

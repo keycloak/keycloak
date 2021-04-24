@@ -1,0 +1,163 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.models.map.authorization;
+
+import org.jboss.logging.Logger;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.model.Scope.SearchableFields;
+import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.map.authorization.adapter.MapScopeAdapter;
+import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
+public class MapScopeStore implements ScopeStore {
+
+    private static final Logger LOG = Logger.getLogger(MapScopeStore.class);
+    private final AuthorizationProvider authorizationProvider;
+    final MapKeycloakTransaction<UUID, MapScopeEntity, Scope> tx;
+    private final MapStorage<UUID, MapScopeEntity, Scope> scopeStore;
+
+    public MapScopeStore(KeycloakSession session, MapStorage<UUID, MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
+        this.authorizationProvider = provider;
+        this.scopeStore = scopeStore;
+        this.tx = scopeStore.createTransaction(session);
+        session.getTransactionManager().enlist(tx);
+    }
+
+    private MapScopeEntity registerEntityForChanges(MapScopeEntity origEntity) {
+        final MapScopeEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapScopeEntity::isUpdated);
+        return res;
+    }
+
+    private Scope entityToAdapter(MapScopeEntity origEntity) {
+        if (origEntity == null) return null;
+        // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
+        return new MapScopeAdapter(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory());
+    }
+
+    private ModelCriteriaBuilder<Scope> forResourceServer(String resourceServerId) {
+        ModelCriteriaBuilder<Scope> mcb = scopeStore.createCriteriaBuilder();
+
+        return resourceServerId == null
+                ? mcb
+                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.EQ,
+                resourceServerId);
+    }
+
+    @Override
+    public Scope create(String id, String name, ResourceServer resourceServer) {
+        LOG.tracef("create(%s, %s, %s)%s", id, name, resourceServer, getShortStackTrace());
+
+
+        // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
+        ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServer.getId())
+                .compare(SearchableFields.NAME, Operator.EQ, name);
+
+        if (tx.getCount(mcb) > 0) {
+            throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
+        }
+
+        UUID uid = id == null ? UUID.randomUUID() : UUID.fromString(id);
+        MapScopeEntity entity = new MapScopeEntity(uid);
+
+        entity.setName(name);
+        entity.setResourceServerId(resourceServer.getId());
+
+        tx.create(uid, entity);
+
+        return entityToAdapter(entity);
+    }
+
+    @Override
+    public void delete(String id) {
+        LOG.tracef("delete(%s)%s", id, getShortStackTrace());
+        tx.delete(UUID.fromString(id));
+    }
+
+    @Override
+    public Scope findById(String id, String resourceServerId) {
+        LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
+
+        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+                    .compare(Scope.SearchableFields.ID, Operator.EQ, id))
+                .findFirst()
+                .map(this::entityToAdapter)
+                .orElse(null);
+    }
+
+    @Override
+    public Scope findByName(String name, String resourceServerId) {
+        LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
+
+        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
+                Operator.EQ, name))
+                .findFirst()
+                .map(this::entityToAdapter)
+                .orElse(null);
+    }
+
+    @Override
+    public List<Scope> findByResourceServer(String id) {
+        LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
+
+        return tx.getUpdatedNotRemoved(forResourceServer(id))
+                .map(this::entityToAdapter)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServerId);
+
+        for (Scope.FilterOption filterOption : attributes.keySet()) {
+            String[] value = attributes.get(filterOption);
+            
+            switch (filterOption) {
+                case ID:
+                    mcb = mcb.compare(Scope.SearchableFields.ID, Operator.IN, Arrays.asList(value));
+                    break;
+                case NAME:
+                    mcb = mcb.compare(Scope.SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
+            }
+        }
+
+        return paginatedStream(tx.getUpdatedNotRemoved(mcb).map(this::entityToAdapter), firstResult, maxResult)
+                .collect(Collectors.toList());
+    }
+}

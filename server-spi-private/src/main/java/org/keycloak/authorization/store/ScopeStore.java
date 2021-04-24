@@ -40,13 +40,15 @@ public interface ScopeStore {
      *
      * @return a new instance of {@link Scope}
      */
-    Scope create(String name, ResourceServer resourceServer);
+    default Scope create(String name, ResourceServer resourceServer) {
+        return create(null, name, resourceServer);
+    }
 
     /**
      * Creates a new {@link Scope} instance. The new instance is not necessarily persisted though, which may require
      * a call to the {#save} method to actually make it persistent.
      *
-     * @param id the id of the scope
+     * @param id the id of the scope. Is generated randomly when null
      * @param name the name of the scope
      * @param resourceServer the resource server to which this scope belongs
      *
@@ -92,10 +94,12 @@ public interface ScopeStore {
     /**
      * Returns a list of {@link Scope} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     * @param attributes a map holding the attributes that will be used as a filter
+     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Scope.FilterOption}
      * @param resourceServerId the identifier of a resource server
-     *
      * @return a list of scopes that belong to the given resource server
+     * 
+     * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
+     * 
      */
-    List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
 }

@@ -131,6 +131,16 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
     }
 
+    public boolean isUseRefreshToken() {
+        String useRefreshToken = getAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        return Boolean.parseBoolean(useRefreshToken);
+    }
+
+    public void setUseRefreshToken(boolean useRefreshToken) {
+        String val = String.valueOf(useRefreshToken);
+        setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, val);
+    }
+
     /**
      * If true, then Client Credentials Grant generates refresh token and creates user session. This is not per specs, so it is false by default
      * For the details @see https://tools.ietf.org/html/rfc6749#section-4.4.3

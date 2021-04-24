@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -80,11 +81,11 @@ public class ResourceService extends AbstractResourceService {
     @Path("permissions")
     @Produces(MediaType.APPLICATION_JSON)
     public Collection<Permission> toPermissions() {
-        Map<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        filters.put(PermissionTicket.OWNER, user.getId());
-        filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
-        filters.put(PermissionTicket.RESOURCE, resource.getId());
+        filters.put(PermissionTicket.FilterOption.OWNER, user.getId());
+        filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
         Collection<ResourcePermission> resources = toPermissions(ticketStore.find(filters, null, -1, -1));
         Collection<Permission> permissions = Collections.EMPTY_LIST;
@@ -125,14 +126,14 @@ public class ResourceService extends AbstractResourceService {
             throw new BadRequestException("invalid_permissions");    
         }
         
-        Map<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        filters.put(PermissionTicket.RESOURCE, resource.getId());
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
         for (Permission permission : permissions) {
             UserModel user = getUser(permission.getUsername());
 
-            filters.put(PermissionTicket.REQUESTER, user.getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
             List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
 
@@ -187,11 +188,11 @@ public class ResourceService extends AbstractResourceService {
     @Path("permissions/requests")
     @Produces(MediaType.APPLICATION_JSON)
     public Collection<Permission> getPermissionRequests() {
-        Map<String, String> filters = new HashMap<>();
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-        filters.put(PermissionTicket.OWNER, user.getId());
-        filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
-        filters.put(PermissionTicket.RESOURCE, resource.getId());
+        filters.put(PermissionTicket.FilterOption.OWNER, user.getId());
+        filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
         
         Map<String, Permission> requests = new HashMap<>();
 

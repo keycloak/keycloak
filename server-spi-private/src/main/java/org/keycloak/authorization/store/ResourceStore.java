@@ -20,6 +20,8 @@ package org.keycloak.authorization.store;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -39,12 +41,14 @@ public interface ResourceStore {
      * @param owner the owner of this resource or null if the resource server is the owner
      * @return an instance backed by the underlying storage implementation
      */
-    Resource create(String name, ResourceServer resourceServer, String owner);
+    default Resource create(String name, ResourceServer resourceServer, String owner) {
+        return create(null, name, resourceServer, owner);
+    }
 
     /**
      * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
      *
-     * @param id the id of this resource. It must be unique.
+     * @param id the id of this resource. It must be unique. Will be randomly generated if null.
      * @param name the name of this resource. It must be unique.
      * @param resourceServer the resource server to where the given resource belongs to
      * @param owner the owner of this resource or null if the resource server is the owner
@@ -73,7 +77,13 @@ public interface ResourceStore {
      * @param ownerId the identifier of the owner
      * @return a list with all resource instances owned by the given owner
      */
-    List<Resource> findByOwner(String ownerId, String resourceServerId);
+    default List<Resource> findByOwner(String ownerId, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByOwner(ownerId, resourceServerId, list::add);
+
+        return list;
+    }
 
     void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer);
 
@@ -98,11 +108,13 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     * @param attributes a map holding the attributes that will be used as a filter
+     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Resource.FilterOption}
      * @param resourceServerId the identifier of the resource server
      * @return a list with all resources associated with the given resource server
+     *
+     * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
 
     /**
      * Finds all {@link Resource} associated with a given scope.
@@ -110,7 +122,13 @@ public interface ResourceStore {
      * @param id one or more scope identifiers
      * @return a list of resources associated with the given scope(s)
      */
-    List<Resource> findByScope(List<String> id, String resourceServerId);
+    default List<Resource> findByScope(List<String> id, String resourceServerId) {
+        List<Resource> result = new ArrayList<>();
+
+        findByScope(id, resourceServerId, result::add);
+
+        return result;
+    }
 
     void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer);
 
@@ -139,7 +157,13 @@ public interface ResourceStore {
      * @param type the type of the resource
      * @return a list of resources with the given type
      */
-    List<Resource> findByType(String type, String resourceServerId);
+    default List<Resource> findByType(String type, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByType(type, resourceServerId, list::add);
+
+        return list;
+    }
 
     /**
      * Finds all {@link Resource} with the given type.
@@ -148,7 +172,13 @@ public interface ResourceStore {
      * @param owner the resource owner or null for any resource with a given type
      * @return a list of resources with the given type
      */
-    List<Resource> findByType(String type, String owner, String resourceServerId);
+    default List<Resource> findByType(String type, String owner, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByType(type, owner, resourceServerId, list::add);
+
+        return list;
+    }
 
     /**
      * Finds all {@link Resource} with the given type.
@@ -171,7 +201,13 @@ public interface ResourceStore {
      */
     void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer);
 
-    List<Resource> findByTypeInstance(String type, String resourceServerId);
+    default List<Resource> findByTypeInstance(String type, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByTypeInstance(type, resourceServerId, list::add);
+
+        return list;
+    }
 
     void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer);
 }

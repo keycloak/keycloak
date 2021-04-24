@@ -22,3 +22,7 @@ echo ** Adding spi=userProfile with legacy-user-profile configuration of read-on
 /subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:add(properties={},enabled=true)
 /subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=read-only-attributes,value=[deniedFoo,deniedBar*,deniedSome/thing,deniedsome*thing])
 /subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value=[deniedSomeAdmin])
+
+echo ** Do not reuse connections for HttpClientProvider within testsuite **
+/subsystem=keycloak-server/spi=connectionsHttpClient/provider=default/:map-put(name=properties,key=reuse-connections,value=false)
+

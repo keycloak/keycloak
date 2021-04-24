@@ -26,12 +26,13 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 
-import java.math.BigInteger;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -113,8 +114,6 @@ public class JWKBuilder {
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
         int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
-        BigInteger affineX = ecKey.getW().getAffineX();
-        BigInteger affineY = ecKey.getW().getAffineY();
 
         k.setKeyId(kid);
         k.setKeyType(KeyType.EC);
@@ -126,32 +125,4 @@ public class JWKBuilder {
         
         return k;
     }
-
-    /**
-     * Copied from org.apache.commons.codec.binary.Base64
-     */
-    private static byte[] toIntegerBytes(final BigInteger bigInt) {
-        int bitlen = bigInt.bitLength();
-        // round bitlen
-        bitlen = ((bitlen + 7) >> 3) << 3;
-        final byte[] bigBytes = bigInt.toByteArray();
-
-        if (((bigInt.bitLength() % 8) != 0) && (((bigInt.bitLength() / 8) + 1) == (bitlen / 8))) {
-            return bigBytes;
-        }
-        // set up params for copying everything but sign bit
-        int startSrc = 0;
-        int len = bigBytes.length;
-
-        // if bigInt is exactly byte-aligned, just skip signbit in copy
-        if ((bigInt.bitLength() % 8) == 0) {
-            startSrc = 1;
-            len--;
-        }
-        final int startDst = bitlen / 8 - len; // to pad w/ nulls as per spec
-        final byte[] resizedBytes = new byte[bitlen / 8];
-        System.arraycopy(bigBytes, startSrc, resizedBytes, startDst, len);
-        return resizedBytes;
-    }
-
 }
