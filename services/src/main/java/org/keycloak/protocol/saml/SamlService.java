@@ -631,7 +631,7 @@ public class SamlService extends AuthorizationEndpointBase {
             
             NameIDType nameIDType = new NameIDType();
             nameIDType.setValue(nameIDValue);
-            nameIDType.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME);
+            nameIDType.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.getUri());
 
             builder.issuer(nameIDType);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session).relayState(logoutRelayState);
