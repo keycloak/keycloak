@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml.profile.ecp;
 
+import org.jboss.logging.Logger;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
