@@ -58,9 +58,11 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
         }
 
         private Response createResponse(String actionUrl, String key) throws ProcessingException, ConfigurationException, IOException {
+            String samlResponse = BaseSAML2BindingBuilder.getSAMLResponse(document);
+            logger.tracev("Created SAML response: {0}", samlResponse);
             MultivaluedMap<String,String> formData = new MultivaluedHashMap<>();
             formData.add(GeneralConstants.URL, actionUrl);
-            formData.add(key, BaseSAML2BindingBuilder.getSAMLResponse(document));
+            formData.add(key, samlResponse);
 
             if (this.getRelayState() != null) {
                 formData.add(GeneralConstants.RELAY_STATE, this.getRelayState());
