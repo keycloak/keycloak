@@ -168,6 +168,7 @@ public class SamlService extends AuthorizationEndpointBase {
     public abstract class BindingProtocol {
 
         private static final String KEYCLOAK_SAML_ALLOWED_DESTINATION = "KEYCLOAK_SAML_ALLOWED_DESTINATION";
+        private static final String KEYCLOAK_SAML_LOGOUT_RESPONSE_NAME_ID = "KEYCLOAK_SAML_LOGOUT_RESPONSE_NAME_ID";
         // this is to support back button on browser
         // if true, we redirect to authenticate URL otherwise back button behavior has bad side effects
         // and we want to turn it off.
@@ -624,7 +625,13 @@ public class SamlService extends AuthorizationEndpointBase {
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(logoutRequest.getID());
             builder.destination(logoutBindingUri);
-            builder.issuer(RealmsResource.realmBaseUrl(session.getContext().getUri()).build(realm.getName()).toString());
+            // builder.issuer(RealmsResource.realmBaseUrl(session.getContext().getUri()).build(realm.getName()).toString());
+            String nameIDValue = System.getenv(KEYCLOAK_SAML_LOGOUT_RESPONSE_NAME_ID);
+            logger.debugv("nameIDValue={0}", nameIDValue);
+            
+            NameIDType nameIDType = new NameIDType();
+            nameIDType.setValue(nameIDValue);
+            builder.issuer(nameIDType);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session).relayState(logoutRelayState);
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
