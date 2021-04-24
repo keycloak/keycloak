@@ -533,7 +533,7 @@ public class SamlService extends AuthorizationEndpointBase {
         protected abstract String getBindingType();
 
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
-            logger.debug("Binding.")
+            logger.debug("logoutRequest starts!");
             SamlClient samlClient = new SamlClient(client);
             if (! validateDestination(logoutRequest, samlClient, Errors.INVALID_SAML_LOGOUT_REQUEST)) {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
