@@ -1110,6 +1110,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     $scope.disableCredentialsTab = client.publicClient;
     $scope.oauth2DeviceAuthorizationGrantEnabled = false;
+    $scope.oidcCibaGrantEnabled = false;
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
@@ -1299,6 +1300,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                $scope.oauth2DeviceAuthorizationGrantEnabled = true;
            } else {
                $scope.oauth2DeviceAuthorizationGrantEnabled = false;
+           }
+       }
+
+       if ($scope.client.attributes["oidc.ciba.grant.enabled"]) {
+           if ($scope.client.attributes["oidc.ciba.grant.enabled"] == "true") {
+               $scope.oidcCibaGrantEnabled = true;
+           } else {
+               $scope.oidcCibaGrantEnabled = false;
            }
        }
 
@@ -1720,6 +1729,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "true";
         } else {
             $scope.clientEdit.attributes["oauth2.device.authorization.grant.enabled"] = "false";
+        }
+
+        if ($scope.oidcCibaGrantEnabled == true) {
+            $scope.clientEdit.attributes["oidc.ciba.grant.enabled"] = "true";
+        } else {
+            $scope.clientEdit.attributes["oidc.ciba.grant.enabled"] = "false";
         }
 
         if ($scope.useRefreshTokens == true) {

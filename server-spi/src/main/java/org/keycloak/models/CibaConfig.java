@@ -23,13 +23,13 @@ import org.keycloak.utils.StringUtil;
 
 public class CibaConfig implements Serializable {
 
-    // CIBA policy attribute key for persitent store
+    // realm attribute names
     public static final String CIBA_BACKCHANNEL_TOKENDELIVERY_MODE = "cibaBackchannelTokenDeliveryMode";
     public static final String CIBA_EXPIRES_IN = "cibaExpiresIn";
     public static final String CIBA_INTERVAL = "cibaInterval";
     public static final String CIBA_AUTH_REQUESTED_USER_HINT = "cibaAuthRequestedUserHint";
 
-    // CIBA policy default value
+    // default value
     public static final String DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE = "poll";
     public static final int DEFAULT_CIBA_POLICY_EXPIRES_IN = 120;
     public static final int DEFAULT_CIBA_POLICY_INTERVAL = 5;
@@ -39,6 +39,9 @@ public class CibaConfig implements Serializable {
     private int expiresIn = DEFAULT_CIBA_POLICY_EXPIRES_IN;
     private int poolingInterval = DEFAULT_CIBA_POLICY_INTERVAL;
     private String authRequestedUserHint = DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
+
+    // client attribute names
+    public static final String OIDC_CIBA_GRANT_ENABLED = "oidc.ciba.grant.enabled";
 
     private transient Supplier<RealmModel> realm;
 
@@ -124,5 +127,10 @@ public class CibaConfig implements Serializable {
         }
         this.authRequestedUserHint = hint;
         realm.get().setAttribute(CIBA_AUTH_REQUESTED_USER_HINT, hint);
+    }
+
+    public boolean isOIDCCIBAGrantEnabled(ClientModel client) {
+        String enabled = client.getAttribute(OIDC_CIBA_GRANT_ENABLED);
+        return Boolean.parseBoolean(enabled);
     }
 }

@@ -103,6 +103,13 @@ public class CibaGrantType {
 
     public Response cibaGrant() {
         ProfileHelper.requireFeature(Profile.Feature.CIBA);
+
+        if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                "Client not allowed OIDC CIBA Grant", Response.Status.BAD_REQUEST);
+        }
+
         String jwe = formParams.getFirst(AUTH_REQ_ID);
 
         if (jwe == null) {

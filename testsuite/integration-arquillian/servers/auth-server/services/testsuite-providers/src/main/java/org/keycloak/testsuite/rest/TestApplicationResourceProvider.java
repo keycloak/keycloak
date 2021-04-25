@@ -46,6 +46,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,7 +63,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
-    private final BlockingQueue<TestAuthenticationChannelRequest> authenticationChannelRequests;
+    private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
 
     @Context
     HttpRequest request;
@@ -72,7 +73,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
             TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            BlockingQueue<TestAuthenticationChannelRequest> authenticationChannelRequests) {
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;

@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
+import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -335,6 +336,10 @@ public class DescriptionConverter {
         boolean oauth2DeviceEnabled = client.getAttributes() != null && Boolean.parseBoolean(client.getAttributes().get(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
         if (oauth2DeviceEnabled) {
             grantTypes.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
+        }
+        boolean oidcCibaEnabled = client.getAttributes() != null && Boolean.parseBoolean(client.getAttributes().get(OIDC_CIBA_GRANT_ENABLED));
+        if (oidcCibaEnabled) {
+            grantTypes.add(OAuth2Constants.CIBA_GRANT_TYPE);
         }
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
             grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);

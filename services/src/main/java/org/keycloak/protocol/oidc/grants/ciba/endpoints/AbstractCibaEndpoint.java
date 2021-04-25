@@ -21,6 +21,7 @@ import javax.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -52,6 +53,12 @@ public abstract class AbstractCibaEndpoint {
 
         if (client.isBearerOnly()) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
+        }
+
+        if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,
+                    "Client not allowed OIDC CIBA Grant", Response.Status.BAD_REQUEST);
         }
 
         event.client(client);

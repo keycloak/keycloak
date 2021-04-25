@@ -97,6 +97,6 @@ public interface TestOIDCEndpointsApplicationResource {
     @GET
     @Path("/get-authentication-channel")
     @Produces(MediaType.APPLICATION_JSON)
-    TestAuthenticationChannelRequest getAuthenticationChannel();
+    TestAuthenticationChannelRequest getAuthenticationChannel(@QueryParam("bindingMessage") String bindingMessage);
 
 }

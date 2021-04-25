@@ -78,7 +78,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -89,10 +92,11 @@ public class TestingOIDCEndpointsApplicationResource {
     public static final String PUBLIC_KEY = "publicKey";
 
     private final TestApplicationResourceProviderFactory.OIDCClientData clientData;
-    private final BlockingQueue<TestAuthenticationChannelRequest> authenticationChannelRequests;
+    private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
+
 
     public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            BlockingQueue<TestAuthenticationChannelRequest>  authenticationChannelRequests) {
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests) {
         this.clientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
     }
@@ -542,11 +546,8 @@ public class TestingOIDCEndpointsApplicationResource {
         // optional
         // for testing purpose
         if (request.getBindingMessage() != null && request.getBindingMessage().equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
-        try {
-            authenticationChannelRequests.put(new TestAuthenticationChannelRequest(request, rawBearerToken));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
+        authenticationChannelRequests.put(request.getBindingMessage(), new TestAuthenticationChannelRequest(request, rawBearerToken));
 
         return Response.status(Status.CREATED).build();
     }
@@ -555,13 +556,7 @@ public class TestingOIDCEndpointsApplicationResource {
     @Path("/get-authentication-channel")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public TestAuthenticationChannelRequest getAuthenticationChannel() {
-        TestAuthenticationChannelRequest request = null;
-        try {
-            request = authenticationChannelRequests.take();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return request;
+    public TestAuthenticationChannelRequest getAuthenticationChannel(@QueryParam("bindingMessage") String bindingMessage) {
+        return authenticationChannelRequests.get(bindingMessage);
     }
 }

@@ -35,6 +35,8 @@ import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelReque
 import java.security.KeyPair;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -48,7 +50,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
 
     private final OIDCClientData oidcClientData = new OIDCClientData();
-    private BlockingQueue<TestAuthenticationChannelRequest> authenticationChannelRequests = new LinkedBlockingDeque();
+    private ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests = new ConcurrentHashMap<String, TestAuthenticationChannelRequest>();
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
