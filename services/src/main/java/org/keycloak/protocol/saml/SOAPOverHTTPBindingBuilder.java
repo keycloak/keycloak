@@ -39,7 +39,7 @@ public class SOAPOverHTTPBindingBuilder extends JaxrsSAML2BindingBuilder {
     private final KeycloakSession session;
 
     public SOAPOverHTTPBindingBuilder(KeycloakSession session) {
-        this.session = session;
+        super(session);
     }
 
     public class SOAPBindingBuilder extends JaxrsSAML2BindingBuilder.PostBindingBuilder {
