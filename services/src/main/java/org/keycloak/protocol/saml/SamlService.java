@@ -632,10 +632,18 @@ public class SamlService extends AuthorizationEndpointBase {
             NameIDType nameIDType = new NameIDType();
             nameIDType.setValue(nameIDValue);
             nameIDType.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.getUri());
-
             builder.issuer(nameIDType);
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session).relayState(logoutRelayState);
+            
+            JaxrsSAML2BindingBuilder binding;
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
+            boolean isSOAPBinding = SamlProtocol.SAML_SOAP_BINDING.equals(logoutBinding);
+
+            if (isSOAPBinding) {
+                binding = new SOAPOverHTTPBindingBuilder(session).relayState(logoutRelayState);
+            } else {
+                binding = new JaxrsSAML2BindingBuilder(session).relayState(logoutRelayState);
+            }
+
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
@@ -647,6 +655,9 @@ public class SamlService extends AuthorizationEndpointBase {
             try {
                 if (postBinding) {
                     logger.debugv("PostBinding logout response to {0}", logoutBindingUri);
+                    return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
+                } else if (isSOAPBinding) {
+                    logger.debugv("SOAPBinding logout response to {0}", logoutBindingUri);
                     return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
                 } else {
                     logger.debugv("RedirectBinding logout response to {0}", logoutBindingUri);
