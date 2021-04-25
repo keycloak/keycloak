@@ -75,7 +75,7 @@ public class SamlEcpProfileService extends SamlService {
                     return SamlProtocol.SAML_SOAP_BINDING;
                 }
 
-                @override
+                @Override
                 protected String getBindingType() {
                     return SamlProtocol.SAML_SOAP_BINDING;
                 }
