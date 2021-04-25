@@ -49,7 +49,10 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -89,6 +92,7 @@ public class DescriptionConverter {
             if (oidcGrantTypes != null) {
                 client.setDirectAccessGrantsEnabled(oidcGrantTypes.contains(OAuth2Constants.PASSWORD));
                 client.setServiceAccountsEnabled(oidcGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS));
+                setOidcCibaGrantEnabled(client, oidcGrantTypes.contains(OAuth2Constants.CIBA_GRANT_TYPE));
             }
         } catch (IllegalArgumentException iae) {
             throw new ClientRegistrationException(iae.getMessage(), iae);
@@ -177,6 +181,13 @@ public class DescriptionConverter {
         }
 
         return client;
+    }
+
+    private static void setOidcCibaGrantEnabled(ClientRepresentation client, Boolean isEnabled) {
+        if (isEnabled == null) return;
+        Map<String, String> attributes = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+        attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, isEnabled.toString());
+        client.setAttributes(attributes);
     }
 
     private static boolean isSupportedBackchannelTokenDeliveryMode(String mode) {

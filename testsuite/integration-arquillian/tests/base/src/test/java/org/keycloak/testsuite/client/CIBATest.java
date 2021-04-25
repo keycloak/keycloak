@@ -34,8 +34,10 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -1083,7 +1085,25 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    protected String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
+    @Test
+    public void testCibaGrantSettingByDynamicClientRegistration() throws Exception {
+        String clientId = createClientDynamically("valid-CIBA-CD", (OIDCClientRepresentation clientRep) -> {
+        });
+
+        OIDCClientRepresentation rep = getClientDynamically(clientId);
+        Assert.assertTrue(!rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
+
+        updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
+            List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
+            grantTypes.add(OAuth2Constants.CIBA_GRANT_TYPE);
+            clientRep.setGrantTypes(grantTypes);
+        });
+
+        rep = getClientDynamically(clientId);
+        Assert.assertTrue(rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
+    }
+
+    private String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
         OIDCClientRepresentation clientRep = new OIDCClientRepresentation();
         clientRep.setClientName(clientName);
         clientRep.setClientUri(ServerURLs.getAuthServerContextRoot());
@@ -1095,6 +1115,17 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         String clientId = response.getClientId();
         testContext.getOrCreateCleanup(TEST_REALM_NAME).addClientUuid(clientId);
         return clientId;
+    }
+
+    private OIDCClientRepresentation getClientDynamically(String clientId) throws ClientRegistrationException {
+        return reg.oidc().get(clientId);
+    }
+
+    protected void updateClientDynamically(String clientId, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = reg.oidc().get(clientId);
+        op.accept(clientRep);
+        OIDCClientRepresentation response = reg.oidc().update(clientRep);
+        reg.auth(Auth.token(response));
     }
 
     private void testAuthenticationChannelErrorCase(Status statusCallback, Status statusTokenEndpont, AuthenticationChannelResponse.Status authStatus, String error, String errorEvent) throws Exception {
