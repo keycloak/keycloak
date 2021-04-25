@@ -35,9 +35,6 @@ import java.io.IOException;
 import java.net.URI;
 
 public class SOAPOverHTTPBindingBuilder extends JaxrsSAML2BindingBuilder {
-
-    private final KeycloakSession session;
-
     public SOAPOverHTTPBindingBuilder(KeycloakSession session) {
         super(session);
     }
