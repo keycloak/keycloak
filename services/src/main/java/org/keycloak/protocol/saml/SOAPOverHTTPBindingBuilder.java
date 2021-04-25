@@ -24,7 +24,7 @@ import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util;
+import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.CacheControl;
