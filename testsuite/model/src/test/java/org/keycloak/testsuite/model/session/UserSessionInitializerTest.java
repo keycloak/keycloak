@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.session;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,6 +39,8 @@ import org.keycloak.services.managers.UserSessionManager;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 

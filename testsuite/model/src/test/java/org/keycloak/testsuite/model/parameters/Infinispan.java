@@ -36,12 +36,15 @@ import com.google.common.collect.ImmutableSet;
 import org.keycloak.timer.TimerProviderFactory;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  * @author hmlnarik
  */
 public class Infinispan extends KeycloakModelParameters {
+
+    private static final AtomicInteger NODE_COUNTER = new AtomicInteger();
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(CacheRealmProviderSpi.class)
@@ -67,7 +70,9 @@ public class Infinispan extends KeycloakModelParameters {
     public void updateConfig(Config cf) {
         cf.spi("connectionsInfinispan")
             .provider("default")
-              .config("embedded", "true");
+              .config("embedded", "true")
+              .config("clustered", "true")
+              .config("nodeName", "node-" + NODE_COUNTER.incrementAndGet());
     }
 
     public Infinispan() {
