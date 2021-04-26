@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import com.google.common.collect.ImmutableMap;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.page.Page;
@@ -25,10 +26,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.common.Profile;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
@@ -44,6 +47,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -703,6 +707,82 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
                         ));
                 Assert.assertEquals(403, response.getStatus());
             }
+        } finally {
+            httpClient.close();
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExternalExchangeUsingIDToken() throws Exception {
+        RealmResource childRealm = adminClient.realms().realm(CHILD_IDP);
+
+        oauth.scope("openid");
+
+        OAuthClient.AccessTokenResponse tokenResponse1 = oauth
+                .doGrantAccessTokenRequest(PARENT_IDP, PARENT2_USERNAME, "password", null, PARENT_CLIENT, "password");
+        String idToken = tokenResponse1.getIdToken();
+        Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
+        Client httpClient = AdminClientUtil.createResteasyClient();
+        try {
+            WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
+            System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
+
+            checkFeature(200);
+
+            IdentityProviderRepresentation rep = adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).toRepresentation();
+            rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, String.valueOf(true));
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, String.valueOf(true));
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, parentJwksUrl());
+            String parentIssuer = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .path("/realms")
+                    .path(PARENT_IDP)
+                    .build().toString();
+            rep.getConfig().put("issuer", parentIssuer);
+            IdentityProviderResource providerResource = adminClient.realm(CHILD_IDP).identityProviders()
+                    .get(PARENT_IDP);
+
+            providerResource.update(rep);
+            IdentityProviderMapperRepresentation advancedClaimToRoleMapper = new IdentityProviderMapperRepresentation();
+            advancedClaimToRoleMapper.setName("user-attribute-mapper");
+            advancedClaimToRoleMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+            advancedClaimToRoleMapper.setConfig(ImmutableMap.<String, String>builder()
+                    .put(UserAttributeMapper.CLAIM, "test")
+                    .put(UserAttributeMapper.CLAIM_VALUE, "test")
+                    .put(UserAttributeMapper.USER_ATTRIBUTE, "test")
+                    .build());
+
+            advancedClaimToRoleMapper.setIdentityProviderAlias(rep.getAlias());
+            providerResource.addMapper(advancedClaimToRoleMapper);
+
+            String exchangedUserId;
+            String exchangedUsername;
+
+            // test signature validation
+            Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, idToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
+                                    .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
+
+                    ));
+            Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+            idToken = tokenResponse.getIdToken();
+            JWSInput jws = new JWSInput(tokenResponse.getToken());
+            AccessToken token = jws.readJsonContent(AccessToken.class);
+            response.close();
+
+            exchangedUserId = token.getSubject();
+            exchangedUsername = token.getPreferredUsername();
+
+            System.out.println("exchangedUserId: " + exchangedUserId);
+            System.out.println("exchangedUsername: " + exchangedUsername);
         } finally {
             httpClient.close();
         }
