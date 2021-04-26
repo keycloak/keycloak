@@ -22,14 +22,11 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import java.util.stream.Collectors;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -38,39 +35,33 @@ import static org.junit.Assert.assertThat;
 @RequireProvider(EventStoreProvider.class)
 public class AdminEventQueryTest extends KeycloakModelTest {
 
-    private final KeycloakSession session = FACTORY.create();
-    private final EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
     @Test
     public void testClear() {
-        eventStore.clear();
-    }
-
-    @Before
-    public void startTransaction() {
-        session.getTransactionManager().begin();
-    }
-
-    @After
-    public void stopTransaction() {
-        session.getTransactionManager().rollback();
+        inRolledBackTransaction(null, (session, t) -> {
+            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+            eventStore.clear();
+        });
     }
 
     @Test
     public void testQuery() {
-        RealmModel realm = session.realms().createRealm("realm");
-        ClientConnection cc = new DummyClientConnection();
-        eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u1").getEvent());
-        eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u2").getEvent());
-        eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u3").getEvent());
-        eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u4").getEvent());
+        inRolledBackTransaction(null, (session, t) -> {
+            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+            RealmModel realm = session.realms().createRealm("realm");
+            ClientConnection cc = new DummyClientConnection();
+            eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u1").getEvent());
+            eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u2").getEvent());
+            eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u3").getEvent());
+            eventStore.onEvent(new EventBuilder(realm, null, cc).event(EventType.LOGIN).user("u4").getEvent());
 
-        assertThat(eventStore.createQuery()
-          .firstResult(2)
-          .getResultStream()
-          .collect(Collectors.counting()),
-          is(2L)
-        );
+            assertThat(eventStore.createQuery()
+              .firstResult(2)
+              .getResultStream()
+              .collect(Collectors.counting()),
+              is(2L)
+            );
+        });
     }
 
     private static class DummyClientConnection implements ClientConnection {

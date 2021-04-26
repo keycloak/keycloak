@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -253,6 +254,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         List<PersistentUserSessionAdapter> result = closing(paginateQuery(query, firstResult, maxResults).getResultStream()
                 .map(this::toAdapter))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         Map<String, PersistentUserSessionAdapter> sessionsById = result.stream()
@@ -290,6 +292,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private PersistentUserSessionAdapter toAdapter(PersistentUserSessionEntity entity) {
         RealmModel realm = session.realms().getRealm(entity.getRealmId());
+        if (realm == null) {    // Realm has been deleted concurrently, ignore the entity
+            return null;
+        }
         return toAdapter(realm, entity);
     }
 
