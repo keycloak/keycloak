@@ -384,6 +384,10 @@ public class HttpClientBuilder {
             establishConnectionTimeout(adapterConfig.getConnectionTimeout(), TimeUnit.MILLISECONDS);
         }
 
+        if (connectionTTL == -1 && adapterConfig.getConnectionTTL() > 0) {
+            connectionTTL(adapterConfig.getConnectionTTL(), TimeUnit.MILLISECONDS);
+        }
+
         return build();
     }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2021 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -522,6 +522,11 @@
         <xs:attribute name="connectionTimeout" type="xs:long" default="-1">
             <xs:annotation>
                 <xs:documentation>Defines timeout for establishing the connection with the remote host in milliseconds.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connectionTTL" type="xs:long" default="-1">
+            <xs:annotation>
+                <xs:documentation>Defines the connection time to live.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>

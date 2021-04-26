@@ -216,6 +216,7 @@ public class KeycloakSamlAdapterXMLParserTest {
         assertThat(idp.getHttpClientConfig().isDisableTrustManager(), is(true));
         assertThat(idp.getHttpClientConfig().getSocketTimeout(), is(6000L));
         assertThat(idp.getHttpClientConfig().getConnectionTimeout(), is(7000L));
+        assertThat(idp.getHttpClientConfig().getConnectionTTL(), is(200L));
     }
 
     @Test

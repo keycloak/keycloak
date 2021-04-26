@@ -7,5 +7,6 @@
   "cors-max-age": 100,
   "connection-pool-size": "${con.pool.size}",
   "socket-timeout": "${socket.timeout.millis}",
-  "connection-timeout": "${connection.timeout.millis}"
+  "connection-timeout": "${connection.timeout.millis}",
+  "connection-ttl": "${connection.ttl.millis}"
 }
