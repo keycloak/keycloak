@@ -81,6 +81,24 @@ class SharedAttributeDefinitons {
                     .setAllowExpression(true)
                     .setValidator(new IntRangeValidator(0, true))
                     .build();
+    protected static final SimpleAttributeDefinition CONNECTION_SOCKET_TIMEOUT =
+            new SimpleAttributeDefinitionBuilder("connection-socket-timeout", ModelType.INT, true)
+                    .setXmlName("connection-socket-timeout")
+                    .setAllowExpression(true)
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .build();
+    protected static final SimpleAttributeDefinition CONNECTION_TTL =
+            new SimpleAttributeDefinitionBuilder("connection-ttl", ModelType.INT, true)
+                    .setXmlName("connection-ttl")
+                    .setAllowExpression(true)
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .build();
+    protected static final SimpleAttributeDefinition ESTABLISH_CONNECTION_TIMEOUT =
+            new SimpleAttributeDefinitionBuilder("establish-connection-timeout", ModelType.INT, true)
+                    .setXmlName("establish-connection-timeout")
+                    .setAllowExpression(true)
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .build();
 
     protected static final SimpleAttributeDefinition ENABLE_CORS =
             new SimpleAttributeDefinitionBuilder("enable-cors", ModelType.BOOLEAN, true)
@@ -192,6 +210,9 @@ class SharedAttributeDefinitons {
         ATTRIBUTES.add(ALLOW_ANY_HOSTNAME);
         ATTRIBUTES.add(DISABLE_TRUST_MANAGER);
         ATTRIBUTES.add(CONNECTION_POOL_SIZE);
+        ATTRIBUTES.add(CONNECTION_SOCKET_TIMEOUT);
+        ATTRIBUTES.add(CONNECTION_TTL);
+        ATTRIBUTES.add(ESTABLISH_CONNECTION_TIMEOUT);
         ATTRIBUTES.add(ENABLE_CORS);
         ATTRIBUTES.add(CLIENT_KEYSTORE);
         ATTRIBUTES.add(CLIENT_KEYSTORE_PASSWORD);

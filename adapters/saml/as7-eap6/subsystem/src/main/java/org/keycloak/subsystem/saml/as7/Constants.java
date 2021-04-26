@@ -87,6 +87,9 @@ public class Constants {
         static final String CLIENT_KEYSTORE = "clientKeystore";
         static final String CLIENT_KEYSTORE_PASSWORD = "clientKeystorePassword";
         static final String CONNECTION_POOL_SIZE = "connectionPoolSize";
+        static final String CONNECTION_SOCKET_TIMEOUT = "connectionSocketTimeout";
+        static final String CONNECTION_TTL = "connectionTTL";
+        static final String ESTABLISH_CONNECTION_TIMEOUT = "establishConnectionTimeout";
         static final String DISABLE_TRUST_MANAGER = "disableTrustManager";
         static final String PROXY_URL = "proxyUrl";
         static final String TRUSTSTORE = "truststore";
@@ -166,6 +169,9 @@ public class Constants {
         static final String CLIENT_KEYSTORE = "clientKeystore";
         static final String CLIENT_KEYSTORE_PASSWORD = "clientKeystorePassword";
         static final String CONNECTION_POOL_SIZE = "connectionPoolSize";
+        static final String CONNECTION_SOCKET_TIMEOUT = "connectionSocketTimeout";
+        static final String CONNECTION_TTL = "connectionTTL";
+        static final String ESTABLISH_CONNECTION_TIMEOUT = "establishConnectionTimeout";
         static final String DISABLE_TRUST_MANAGER = "disableTrustManager";
         static final String PROXY_URL = "proxyUrl";
         static final String TRUSTSTORE = "truststore";

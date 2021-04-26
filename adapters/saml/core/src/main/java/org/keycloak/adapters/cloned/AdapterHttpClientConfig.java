@@ -72,4 +72,18 @@ public interface AdapterHttpClientConfig {
      */
     public String getProxyUrl();
 
+    /**
+     * Returns the connection SocketTimeout
+     */
+    int getConnectionSocketTimeout();
+
+    /**
+     * Returns the connection time-to-live
+     */
+    int getConnectionTTL();
+
+    /**
+     * Returns the timeout set to establish a connection
+     */
+    int getEstablishConnectionTimeout();
 }

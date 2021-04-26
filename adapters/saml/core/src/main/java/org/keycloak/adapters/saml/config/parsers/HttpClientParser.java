@@ -55,7 +55,9 @@ public class HttpClientParser extends AbstractKeycloakSamlAdapterV1Parser<HttpCl
         config.setProxyUrl(StaxParserUtil.getAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_PROXY_URL));
         config.setTruststore(StaxParserUtil.getAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_TRUSTSTORE));
         config.setTruststorePassword(StaxParserUtil.getAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_TRUSTSTORE_PASSWORD));
-
+        config.setConnectionSocketTimeout(StaxParserUtil.getIntegerAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_CONNECTION_SOCKET_TIMEOUT));
+        config.setConnectionTTL(StaxParserUtil.getIntegerAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_CONNECTION_TTL));
+        config.setEstablishConnectionTimeout(StaxParserUtil.getIntegerAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_ESTABLISH_CONNECTION_TIMEOUT));
         return config;
     }
 

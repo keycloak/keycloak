@@ -43,7 +43,7 @@ import org.hamcrest.Matchers;
  */
 public class KeycloakSamlAdapterXMLParserTest {
 
-    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_12.xsd";
+    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_13.xsd";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -211,6 +211,9 @@ public class KeycloakSamlAdapterXMLParserTest {
         assertThat(idp.getHttpClientConfig().getConnectionPoolSize(), is(42));
         assertThat(idp.getHttpClientConfig().isAllowAnyHostname(), is(true));
         assertThat(idp.getHttpClientConfig().isDisableTrustManager(), is(true));
+        assertThat(idp.getHttpClientConfig().getConnectionSocketTimeout(), is(10000));
+        assertThat(idp.getHttpClientConfig().getConnectionTTL(), is(200));
+        assertThat(idp.getHttpClientConfig().getEstablishConnectionTimeout(), is(2000));
     }
 
     @Test

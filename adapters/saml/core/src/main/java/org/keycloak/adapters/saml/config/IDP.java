@@ -189,6 +189,9 @@ public class IDP implements Serializable {
         private boolean disableTrustManager;
         private int connectionPoolSize;
         private String proxyUrl;
+        private int connectionSocketTimeout;
+        private int connectionTTL;
+        private int establishConnectionTimeout;
 
         @Override
         public String getTruststore() {
@@ -260,6 +263,34 @@ public class IDP implements Serializable {
 
         public void setProxyUrl(String proxyUrl) {
             this.proxyUrl = proxyUrl;
+        }
+
+
+        @Override
+        public int getConnectionSocketTimeout() {
+            return connectionSocketTimeout;
+        }
+
+        public void setConnectionSocketTimeout(int connectionSocketTimeout) {
+            this.connectionSocketTimeout = connectionSocketTimeout;
+        }
+
+        @Override
+        public int getConnectionTTL() {
+            return connectionTTL;
+        }
+
+        public void setConnectionTTL(int connectionTTL) {
+            this.connectionTTL = connectionTTL;
+        }
+
+        @Override
+        public int getEstablishConnectionTimeout() {
+            return establishConnectionTimeout;
+        }
+
+        public void setEstablishConnectionTimeout(int establishConnectionTimeout) {
+            this.establishConnectionTimeout = establishConnectionTimeout;
         }
     }
 

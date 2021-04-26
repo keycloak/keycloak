@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
         "expose-token", "bearer-only", "autodetect-bearer-only",
-        "connection-pool-size",
+        "connection-pool-size", "connection-socket-timeout", "connection-ttl", "establish-connection-timeout",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
@@ -60,6 +60,12 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected String clientKeyPassword;
     @JsonProperty("connection-pool-size")
     protected int connectionPoolSize = 20;
+    @JsonProperty("connection-socket-timeout")
+    protected int connectionSocketTimeout;
+    @JsonProperty("connection-ttl")
+    protected int connectionTTL;
+    @JsonProperty("establish-connection-timeout")
+    protected int establishConnectionTimeout;
     @JsonProperty("always-refresh-token")
     protected boolean alwaysRefreshToken = false;
     @JsonProperty("register-node-at-startup")
@@ -165,6 +171,32 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setConnectionPoolSize(int connectionPoolSize) {
         this.connectionPoolSize = connectionPoolSize;
+    }
+
+    @Override
+    public int getConnectionSocketTimeout() {
+        return connectionSocketTimeout;
+    }
+
+    public void setConnectionSocketTimeout(int connectionSocketTimeout) {
+        this.connectionSocketTimeout = connectionSocketTimeout;
+    }
+
+    @Override
+    public int getConnectionTTL() {
+        return connectionTTL;
+    }
+
+    public void setConnectionTTL(int connectionTTL) {
+        this.connectionTTL = connectionTTL;
+    }
+
+    public int getEstablishConnectionTimeout() {
+        return establishConnectionTimeout;
+    }
+
+    public void setEstablishConnectionTimeout(int establishConnectionTimeout) {
+        this.establishConnectionTimeout = establishConnectionTimeout;
     }
 
     public boolean isAlwaysRefreshToken() {
@@ -288,4 +320,5 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     public void setVerifyTokenAudience(boolean verifyTokenAudience) {
         this.verifyTokenAudience = verifyTokenAudience;
     }
+
 }

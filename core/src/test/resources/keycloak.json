@@ -5,5 +5,8 @@
   "public-client" : true,
   "allow-any-hostname": "${allow.any.hostname}",
   "cors-max-age": 100,
-  "connection-pool-size": "${con.pool.size}"
+  "connection-pool-size": "${con.pool.size}",
+  "connection-socket-timeout": "${con.timeout}",
+  "connection-ttl": "${con.ttl}",
+  "establish-connection-timeout": "${con.est.timeout}"
 }

@@ -23,6 +23,9 @@ public class ClientBuilderWrapper {
             Object o = clazz.newInstance();
             clazz.getMethod("sslContext", SSLContext.class).invoke(o, sslContext);
             clazz.getMethod("connectionPoolSize", int.class).invoke(o, 10);
+            clazz.getMethod("connectionSocketTimeout", int.class).invoke(o, -1);
+            clazz.getMethod("connectionTTL", int.class).invoke(o, -1);
+            clazz.getMethod("establishConnectionTimeout", int.class).invoke(o, -1);
             if (disableTrustManager) {
                 clazz.getMethod("disableTrustManager").invoke(o);
             }

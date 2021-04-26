@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+<subsystem xmlns="urn:jboss:domain:keycloak:1.2">
     <realm name="master">
         <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB</realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
@@ -26,6 +26,9 @@
         <allow-any-hostname>false</allow-any-hostname>
         <disable-trust-manager>true</disable-trust-manager>
         <connection-pool-size>20</connection-pool-size>
+        <connection-socket-timeout>2000</connection-socket-timeout>
+        <connection-ttl>5000</connection-ttl>
+        <establish-connection-timeout>3000</establish-connection-timeout>
         <enable-cors>true</enable-cors>
         <client-keystore>keys.jks</client-keystore>
         <client-keystore-password>secret</client-keystore-password>
@@ -85,6 +88,9 @@
         <resource>wildfly-management</resource>
         <bearer-only>true</bearer-only>
         <ssl-required>EXTERNAL</ssl-required>
+        <connection-socket-timeout>10000</connection-socket-timeout>
+        <connection-ttl>40000</connection-ttl>
+        <establish-connection-timeout>50000</establish-connection-timeout>
         <principal-attribute>preferred_username</principal-attribute>
     </secure-deployment>
     <secure-server name="wildfly-console">
