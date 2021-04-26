@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Controller, useFormContext } from "react-hook-form";
 import {
   FormGroup,
   Switch,
@@ -8,10 +9,12 @@ import {
   GridItem,
   InputGroup,
 } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
+
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ClientForm } from "../ClientDetails";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+
+import "./capability-config.css";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -26,10 +29,15 @@ export const CapabilityConfig = ({
   const { control, watch, setValue } = useFormContext<ClientForm>();
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
-  const clientAuthorization = watch("authorizationServicesEnabled");
+  const authorization = watch("authorizationServicesEnabled");
 
   return (
-    <FormAccess isHorizontal role="manage-clients" unWrap={unWrap}>
+    <FormAccess
+      isHorizontal
+      role="manage-clients"
+      unWrap={unWrap}
+      className="keycloak__capability-config__form"
+    >
       <>
         {protocol === "openid-connect" && (
           <>
@@ -47,7 +55,7 @@ export const CapabilityConfig = ({
             >
               <Controller
                 name="publicClient"
-                defaultValue={true}
+                defaultValue={false}
                 control={control}
                 render={({ onChange, value }) => (
                   <Switch
@@ -57,7 +65,13 @@ export const CapabilityConfig = ({
                     label={t("common:on")}
                     labelOff={t("common:off")}
                     isChecked={!value}
-                    onChange={(value) => onChange(!value)}
+                    onChange={(value) => {
+                      onChange(!value);
+                      if (!value) {
+                        setValue("authorizationServicesEnabled", false);
+                        setValue("serviceAccountsEnabled", false);
+                      }
+                    }}
                   />
                 )}
               />
@@ -85,7 +99,7 @@ export const CapabilityConfig = ({
                     name="authorizationServicesEnabled"
                     label={t("common:on")}
                     labelOff={t("common:off")}
-                    isChecked={value}
+                    isChecked={value && !clientAuthentication}
                     onChange={(value) => {
                       onChange(value);
                       if (value) {
@@ -103,7 +117,7 @@ export const CapabilityConfig = ({
               fieldId="kc-flow"
             >
               <Grid>
-                <GridItem lg={3} sm={6}>
+                <GridItem lg={4} sm={6}>
                   <Controller
                     name="standardFlowEnabled"
                     defaultValue={true}
@@ -127,7 +141,7 @@ export const CapabilityConfig = ({
                     )}
                   />
                 </GridItem>
-                <GridItem lg={9} sm={6}>
+                <GridItem lg={8} sm={6}>
                   <Controller
                     name="directAccessGrantsEnabled"
                     defaultValue={true}
@@ -151,7 +165,7 @@ export const CapabilityConfig = ({
                     )}
                   />
                 </GridItem>
-                <GridItem lg={3} sm={6}>
+                <GridItem lg={4} sm={6}>
                   <Controller
                     name="implicitFlowEnabled"
                     defaultValue={false}
@@ -175,7 +189,7 @@ export const CapabilityConfig = ({
                     )}
                   />
                 </GridItem>
-                <GridItem lg={9} sm={6}>
+                <GridItem lg={8} sm={6}>
                   <Controller
                     name="serviceAccountsEnabled"
                     defaultValue={false}
@@ -187,10 +201,13 @@ export const CapabilityConfig = ({
                           label={t("serviceAccount")}
                           id="kc-flow-service-account"
                           name="serviceAccountsEnabled"
-                          isChecked={value}
+                          isChecked={
+                            value || (clientAuthentication && authorization)
+                          }
                           onChange={onChange}
                           isDisabled={
-                            !clientAuthentication || clientAuthorization
+                            (clientAuthentication && !authorization) ||
+                            (!clientAuthentication && authorization)
                           }
                         />
                         <HelpItem
