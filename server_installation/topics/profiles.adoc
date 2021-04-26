@@ -71,6 +71,12 @@ ifeval::[{project_product}==true]
 |No
 |Preview
 endif::[]
+
+|ciba
+|OpenID Connect Client Initiated Backchannel Authentication (CIBA)
+|No
+|Preview
+
 |===
 
 To enable all preview features start the server with:

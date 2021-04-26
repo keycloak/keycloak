@@ -97,6 +97,80 @@ This is used by clients running on internet-connected devices that have limited 
 . The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
+===== Client Initiated Backchannel Authentication Grant
+
+:tech_feature_name: Client Initiated Backchannel Authentication Grant
+:tech_feature_setting: -Dkeycloak.profile.feature.ciba=enabled
+include::../templates/techpreview.adoc[]
+
+This is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
+
+. The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
+. After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
+
+An administrator can configure Client Initiated Backchannel Authentication (CIBA) related operations as `CIBA Policy` per realm.
+
+====== CIBA Policy
+
+An administrator carries out the following operations on the `Admin Console` :
+
+- Open the `Authentication -> CIBA Policy` tab.
+- Configure items and click `Save`.
+
+The configurable items and their description follow.
+
+|===
+|Configuration|Description
+
+|Backchannel Token Delivery Mode
+|Specifying how the CD (Consumption Device) gets the authentication result and related tokens. There are three modes, "poll", "ping" and "push". {project_name} only supports "poll". The default setting is "poll". This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.5[CIBA Specification].
+
+|Expires In
+|The expiration time of the "auth_req_id" in seconds since the authentication request was received. The default setting is 120. This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
+
+|Interval
+|The interval in seconds the CD (Consumption Device) needs to wait for between polling requests to the token endpoint. The default setting is 5. This configuration is optional.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
+
+|Authentication Requested User Hint
+|The way of identifying the end-user for whom authentication is being requested. The default setting is "login_hint".  There are three modes, "login_hint", "login_hint_token" and "id_token_hint". {project_name} only supports "login_hint". This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA Specification].
+
+|===
+
+====== Provider Setting
+
+The CIBA grant uses the following two providers.
+
+. Authentication Channel Provider : provides the communication between {project_name} and the entity that actually authenticates the user via AD (Authentication Device).
+. User Resolver Provider : get `UserModel` of {project_name} from the information provided by the client to identify the user.
+
+{project_name} has both default providers. However, the administrator needs to set up Authentication Channel Provider like this:
+
+[source,xml]
+----
+<spi name="ciba-auth-channel">
+    <default-provider>ciba-http-auth-channel</default-provider>
+    <provider name="ciba-http-auth-channel" enabled="true">
+        <properties>
+            <property name="httpAuthenticationChannelUri" value="http://backend.internal.example.com/auth"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The configurable items and their description follow.
+
+|===
+|Configuration|Description
+
+|httpAuthenticationChannelUri
+|Specifying URI of the entity that actually authenticates the user via AD (Authentication Device).
+
+|===
+
 [[_oidc-endpoints]]
 ====  {project_name} Server OIDC URI Endpoints
 
@@ -122,5 +196,7 @@ You can also find these endpoints under "OpenID Endpoint Configuration" in your 
   This is the URL endpoint for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)
 /realms/{realm-name}/protocol/openid-connect/auth/device::
   This is the URL endpoint for Device Authorization Grant to obtain a device code and a user code.
+/realms/{realm-name}/protocol/openid-connect/ext/ciba/auth::
+  This is the URL endpoint for Client Initiated Backchannel Authentication Grant to obtain an auth_req_id that identifies the authentication request made by the client.
 
 In all of these replace _{realm-name}_ with the name of the realm.

@@ -83,6 +83,10 @@ If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Acc
 
 If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Device Authorization Grant>>.
 
+*OpenID Connect Client Initiated Backchannel Authentication Grant Enabled*
+
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Client Initiated Backchannel Authentication Grant>>.
+
 *Root URL*
 
 If {project_name} uses any configured relative URLs, this value is prepended to them.
