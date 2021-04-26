@@ -83,4 +83,8 @@ public interface AdapterHttpClientConfig {
      */
     long getConnectionTimeout();
 
+    /**
+     * Returns the connection time-to-live
+     */
+    long getConnectionTTL();
 }

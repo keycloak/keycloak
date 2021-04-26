@@ -81,4 +81,9 @@ public interface AdapterHttpClientConfig {
      * Returns timeout for establishing the connection with the remote host in milliseconds.
      */
     long getConnectionTimeout();
+
+    /**
+     * Returns the connection time-to-live
+     */
+    long getConnectionTTL();
 }

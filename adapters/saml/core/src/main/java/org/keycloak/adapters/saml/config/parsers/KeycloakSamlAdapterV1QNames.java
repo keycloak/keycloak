@@ -93,6 +93,7 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     ATTR_KEEP_DOM_ASSERTION(null, "keepDOMAssertion"),
     ATTR_SOCKET_TIMEOUT(null, "socketTimeout"),
     ATTR_CONNECTION_TIMEOUT(null, "connectionTimeout"),
+    ATTR_CONNECTION_TTL(null, "connectionTTL"),
 
     UNKNOWN_ELEMENT("");
 

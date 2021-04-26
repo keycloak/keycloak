@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2020 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2021 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,6 +84,8 @@
                             truststore="/tmp/truststore.jks"
                             truststorePassword="trustpwd#*"
                             socketTimeout="6000"
+                            connectionTTL="130"
+                            connectionTimeout="7000"
                 />
             </IDP>
         </SP>

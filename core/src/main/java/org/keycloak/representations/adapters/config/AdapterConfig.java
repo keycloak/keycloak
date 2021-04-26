@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
         "expose-token", "bearer-only", "autodetect-bearer-only",
-        "connection-pool-size",
+        "connection-pool-size", "socket-timeout", "connection-ttl", "connection-timeout",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
@@ -91,9 +91,11 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected boolean verifyTokenAudience = false;
 
     @JsonProperty("socket-timeout")
-    protected long socketTimeout = -1;
+    protected long socketTimeout = -1L;
     @JsonProperty("connection-timeout")
-    protected long connectionTimeout = -1;
+    protected long connectionTimeout = -1L;
+    @JsonProperty("connection-ttl")
+    protected long connectionTTL = -1L;
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -308,5 +310,14 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setConnectionTimeout(long connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
+    }
+
+    @Override
+    public long getConnectionTTL() {
+        return connectionTTL;
+    }
+
+    public void setConnectionTTL(long connectionTTL) {
+        this.connectionTTL = connectionTTL;
     }
 }
