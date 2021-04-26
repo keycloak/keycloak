@@ -33,6 +33,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleSpi;
+import org.keycloak.models.ServerInfoProviderFactory;
+import org.keycloak.models.ServerInfoSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.UserSpi;
@@ -42,21 +44,28 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.timer.TimerSpi;
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
@@ -70,13 +79,10 @@ import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.keycloak.timer.TimerSpi;
-import org.keycloak.models.ServerInfoProviderFactory;
-import org.keycloak.models.ServerInfoSpi;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
- * will have access to a shared {@link KeycloakSessionFactory} in the {@link #FACTORY}
+ * will have access to a shared {@link KeycloakSessionFactory} in the {@link #LOCAL_FACTORY}
  * field that can be used to obtain a session and e.g. start / stop transaction.
  * <p>
  * This class expects {@code keycloak.model.parameters} system property to contain
@@ -90,7 +96,9 @@ import org.keycloak.models.ServerInfoSpi;
 public abstract class KeycloakModelTest {
 
     private static final Logger LOG = Logger.getLogger(KeycloakModelParameters.class);
+    private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();
     protected final Logger log = Logger.getLogger(getClass());
+    private static final List<String> MAIN_THREAD_NAMES = Arrays.asList("main", "Time-limited test");
 
     @ClassRule
     public static final TestRule GUARANTEE_REQUIRED_FACTORY = new TestRule() {
@@ -104,8 +112,8 @@ public abstract class KeycloakModelTest {
             }
             List<Class<? extends Provider>> notFound = st
               .filter(rp -> rp.only().length == 0 
-                ? FACTORY.getProviderFactory(rp.value()) == null
-                : Stream.of(rp.only()).allMatch(provider -> FACTORY.getProviderFactory(rp.value(), provider) == null))
+                ? getFactory().getProviderFactory(rp.value()) == null
+                : Stream.of(rp.only()).allMatch(provider -> getFactory().getProviderFactory(rp.value(), provider) == null))
               .map(RequireProvider::value)
               .collect(Collectors.toList());
             Assume.assumeThat("Some required providers not found", notFound, Matchers.empty());
@@ -138,7 +146,7 @@ public abstract class KeycloakModelTest {
                 String[] only = rpInner.only();
 
                 if (only.length == 0) {
-                    if (FACTORY.getProviderFactory(providerClass) == null) {
+                    if (getFactory().getProviderFactory(providerClass) == null) {
                         return new Statement() {
                             @Override
                             public void evaluate() throws Throwable {
@@ -147,7 +155,7 @@ public abstract class KeycloakModelTest {
                         };
                     }
                 } else {
-                    boolean notFoundAny = Stream.of(only).allMatch(provider -> FACTORY.getProviderFactory(providerClass, provider) == null);
+                    boolean notFoundAny = Stream.of(only).allMatch(provider -> getFactory().getProviderFactory(providerClass, provider) == null);
                     if (notFoundAny) {
                         return new Statement() {
                             @Override
@@ -192,10 +200,14 @@ public abstract class KeycloakModelTest {
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
-    protected static Config CONFIG;
-    protected static DefaultKeycloakSessionFactory FACTORY;
+    protected static final Config CONFIG = new Config();
+    private static volatile KeycloakSessionFactory DEFAULT_FACTORY;
+    private static final ThreadLocal<KeycloakSessionFactory> LOCAL_FACTORY = new ThreadLocal<>();
+    protected static boolean USE_DEFAULT_FACTORY = false;
 
     static {
+        org.keycloak.Config.init(CONFIG);
+
         KeycloakModelParameters basicParameters = new KeycloakModelParameters(ALLOWED_SPIS, ALLOWED_FACTORIES);
         MODEL_PARAMETERS = Stream.concat(
           Stream.of(basicParameters),
@@ -210,13 +222,23 @@ public abstract class KeycloakModelTest {
           .collect(Collectors.toList());
 
         reinitializeKeycloakSessionFactory();
+        DEFAULT_FACTORY = getFactory();
     }
 
-    public static DefaultKeycloakSessionFactory createKeycloakSessionFactory() {
-        CONFIG = new Config();
+    /**
+     * Creates a fresh initialized {@link KeycloakSessionFactory}. The returned factory uses configuration
+     * local to the thread that calls this method, allowing for per-thread customization. This in turn allows
+     * testing of several parallel session factories which can be used to simulate several servers
+     * running in parallel.
+     * @return
+     */
+    public static KeycloakSessionFactory createKeycloakSessionFactory() {
+        int factoryIndex = FACTORY_COUNT.incrementAndGet();
+        String threadName = Thread.currentThread().getName();
+        CONFIG.reset();
         MODEL_PARAMETERS.forEach(m -> m.updateConfig(CONFIG));
-        LOG.debug("Using the following configuration:\n    " + CONFIG);
-        org.keycloak.Config.init(CONFIG);
+
+        LOG.debugf("Creating factory %d in %s using the following configuration:\n    %s", factoryIndex, threadName, CONFIG);
 
         DefaultKeycloakSessionFactory res = new DefaultKeycloakSessionFactory() {
             @Override
@@ -237,17 +259,96 @@ public abstract class KeycloakModelTest {
             private boolean isFactoryAllowed(ProviderFactory factory) {
                 return MODEL_PARAMETERS.stream().anyMatch(p -> p.isFactoryAllowed(factory));
             }
+
+            @Override
+            public String toString() {
+                return "KeycloakSessionFactory " + factoryIndex + " (from " + threadName + " thread)";
+            }
         };
         res.init();
         res.publish(new PostMigrationEvent());
         return res;
     }
 
-    public static void reinitializeKeycloakSessionFactory() {
-        if (FACTORY != null) {
-            FACTORY.close();
+    /**
+     * Closes and initializes new {@link #LOCAL_FACTORY}. This has the same effect as server restart in full-blown server scenario.
+     */
+    public static synchronized void reinitializeKeycloakSessionFactory() {
+        closeKeycloakSessionFactory();
+        setFactory(createKeycloakSessionFactory());
+    }
+
+    public static synchronized void closeKeycloakSessionFactory() {
+        KeycloakSessionFactory f = getFactory();
+        setFactory(null);
+        if (f != null) {
+            LOG.debugf("Closing %s", f);
+            f.close();
         }
-        FACTORY = createKeycloakSessionFactory();
+    }
+
+    /**
+     * Runs the given {@code task} in {@code numThreads} parallel threads, each thread operating
+     * in the context of a fresh {@link KeycloakSessionFactory} independent of each other thread.
+     *
+     * @see #inIndependentFactory
+     *
+     * @param numThreads
+     * @param timeoutSeconds
+     * @param task
+     * @throws InterruptedException
+     */
+    public static void inIndependentFactories(int numThreads, int timeoutSeconds, Runnable task) throws InterruptedException {
+        ExecutorService es = Executors.newFixedThreadPool(numThreads);
+        try {
+            Callable<?> independentTask = () -> inIndependentFactory(() -> { task.run(); return null; });
+            es.invokeAll(
+              IntStream.range(0, numThreads)
+                .mapToObj(i -> independentTask)
+                .collect(Collectors.toList()),
+              timeoutSeconds, TimeUnit.SECONDS
+            );
+        } finally {
+            es.shutdownNow();
+        }
+    }
+
+    /**
+     * Runs the given {@code task} in a context of a fresh {@link KeycloakSessionFactory} which is created before
+     * running the task and destroyed afterwards.
+     * @return
+     */
+    public static <T> T inIndependentFactory(Callable<T> task) {
+        if (USE_DEFAULT_FACTORY) {
+            throw new IllegalStateException("USE_DEFAULT_FACTORY must be false to use an independent factory");
+        }
+        KeycloakSessionFactory original = getFactory();
+        KeycloakSessionFactory factory = createKeycloakSessionFactory();
+        try {
+            setFactory(factory);
+            return task.call();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            closeKeycloakSessionFactory();
+            setFactory(original);
+        }
+    }
+
+    private static boolean isOnMainThread() {
+        return MAIN_THREAD_NAMES.contains(Thread.currentThread().getName());
+    }
+
+    protected static KeycloakSessionFactory getFactory() {
+        return (USE_DEFAULT_FACTORY || isOnMainThread()) ? DEFAULT_FACTORY : LOCAL_FACTORY.get();
+    }
+
+    private static void setFactory(KeycloakSessionFactory factory) {
+        if (USE_DEFAULT_FACTORY || isOnMainThread()) {
+            DEFAULT_FACTORY = factory;
+        } else {
+            LOCAL_FACTORY.set(factory);
+        }
     }
 
     @BeforeClass
@@ -263,12 +364,16 @@ public abstract class KeycloakModelTest {
 
     @Before
     public void createEnvironment() {
-        KeycloakModelUtils.runJobInTransaction(FACTORY, this::createEnvironment);
+        USE_DEFAULT_FACTORY = isUseSameKeycloakSessionFactoryForAllThreads();
+        KeycloakModelUtils.runJobInTransaction(getFactory(), this::createEnvironment);
     }
 
     @After
     public void cleanEnvironment() {
-        KeycloakModelUtils.runJobInTransaction(FACTORY, this::cleanEnvironment);
+        if (getFactory() == null) {
+            reinitializeKeycloakSessionFactory();
+        }
+        KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
     }
 
     protected <T> Stream<T> getParameters(Class<T> clazz) {
@@ -280,7 +385,7 @@ public abstract class KeycloakModelTest {
     }
 
     protected <T> void inRolledBackTransaction(T parameter, BiConsumer<KeycloakSession, T> what) {
-        KeycloakSession session = new DefaultKeycloakSession(FACTORY);
+        KeycloakSession session = getFactory().create();
         session.getTransactionManager().begin();
 
         what.accept(session, parameter);
@@ -297,12 +402,12 @@ public abstract class KeycloakModelTest {
     }
 
     protected <R> R inComittedTransaction(Function<KeycloakSession, R> what) {
-        return inComittedTransaction(1, (a,b) -> what.apply(a));
+        return inComittedTransaction(1, (a,b) -> what.apply(a), null, null);
     }
 
     protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what, BiConsumer<KeycloakSession, T> onCommit, BiConsumer<KeycloakSession, T> onRollback) {
         AtomicReference<R> res = new AtomicReference<>();
-        KeycloakModelUtils.runJobInTransaction(FACTORY, session -> {
+        KeycloakModelUtils.runJobInTransaction(getFactory(), session -> {
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
@@ -319,6 +424,15 @@ public abstract class KeycloakModelTest {
         return res.get();
     }
 
+    /**
+     * Convenience method for {@link #inComittedTransaction(java.util.function.Consumer)} that
+     * obtains realm model from the session and puts it into session context before
+     * running the {@code what} task.
+     * @param <R>
+     * @param realmId
+     * @param what
+     * @return
+     */
     protected <R> R withRealm(String realmId, BiFunction<KeycloakSession, RealmModel, R> what) {
         return inComittedTransaction(session -> {
             final RealmModel realm = session.realms().getRealm(realmId);
@@ -327,4 +441,7 @@ public abstract class KeycloakModelTest {
         });
     }
 
+    protected boolean isUseSameKeycloakSessionFactoryForAllThreads() {
+        return false;
+    }
 }

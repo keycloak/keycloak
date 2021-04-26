@@ -34,7 +34,16 @@ public class Config implements ConfigProvider {
 
     private final Properties systemProperties = new SystemEnvProperties();
 
-    private final Map<String, String> properties = new HashMap<>();
+    private final ThreadLocal<Map<String, String>> properties = new ThreadLocal<Map<String, String>>() {
+        @Override
+        protected Map<String, String> initialValue() {
+            return new HashMap<>();
+        }
+    };
+
+    void reset() {
+        properties.remove();
+    }
 
     public class SpiConfig {
 
@@ -54,9 +63,9 @@ public class Config implements ConfigProvider {
 
         public SpiConfig config(String key, String value) {
             if (value == null) {
-                properties.remove(prefix + key);
+                properties.get().remove(prefix + key);
             } else {
-                properties.put(prefix + key, value);
+                properties.get().put(prefix + key, value);
             }
             return this;
         }
@@ -78,9 +87,9 @@ public class Config implements ConfigProvider {
 
         public ProviderConfig config(String key, String value) {
             if (value == null) {
-                properties.remove(prefix + key);
+                properties.get().remove(prefix + key);
             } else {
-                properties.put(prefix + key, value);
+                properties.get().put(prefix + key, value);
             }
             return this;
         }
@@ -103,7 +112,7 @@ public class Config implements ConfigProvider {
 
         @Override
         public String get(String key, String defaultValue) {
-            String v = replaceProperties(properties.get(prefix + key));
+            String v = replaceProperties(properties.get().get(prefix + key));
             if (v == null || v.isEmpty()) {
                 v = System.getProperty("keycloak." + prefix + key, defaultValue);
             }
@@ -124,7 +133,7 @@ public class Config implements ConfigProvider {
 
     @Override
     public String getProvider(String spiName) {
-        return properties.get(spiName + ".provider");
+        return properties.get().get(spiName + ".provider");
     }
 
     private String replaceProperties(String value) {
@@ -147,7 +156,7 @@ public class Config implements ConfigProvider {
 
     @Override
     public String toString() {
-        return properties.entrySet().stream()
+        return properties.get().entrySet().stream()
           .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
           .map(e -> e.getKey() + " = " + e.getValue())
           .collect(Collectors.joining("\n    "));

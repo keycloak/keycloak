@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.session;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,8 +41,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.keycloak.testsuite.model.UserSessionPersisterProviderTest.createClients;
-import static org.keycloak.testsuite.model.UserSessionPersisterProviderTest.createSessions;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
+import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
+import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.model.session;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,6 +53,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.models.Constants;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.hamcrest.Matchers;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
