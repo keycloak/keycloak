@@ -7,7 +7,6 @@ import {
   WizardFooter,
   WizardContextConsumer,
   Button,
-  WizardStepFunctionType,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";

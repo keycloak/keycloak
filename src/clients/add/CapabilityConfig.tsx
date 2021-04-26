@@ -26,7 +26,7 @@ export const CapabilityConfig = ({
   const { control, watch, setValue } = useFormContext<ClientForm>();
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
-  const clientAuthorization = watch("authorizationServicesEnabled");
+  const authorization = watch("authorizationServicesEnabled");
 
   return (
     <FormAccess isHorizontal role="manage-clients" unWrap={unWrap}>
@@ -47,7 +47,7 @@ export const CapabilityConfig = ({
             >
               <Controller
                 name="publicClient"
-                defaultValue={true}
+                defaultValue={false}
                 control={control}
                 render={({ onChange, value }) => (
                   <Switch
@@ -85,7 +85,7 @@ export const CapabilityConfig = ({
                     name="authorizationServicesEnabled"
                     label={t("common:on")}
                     labelOff={t("common:off")}
-                    isChecked={value}
+                    isChecked={value && !clientAuthentication}
                     onChange={(value) => {
                       onChange(value);
                       if (value) {
@@ -188,11 +188,13 @@ export const CapabilityConfig = ({
                           id="kc-flow-service-account"
                           name="serviceAccountsEnabled"
                           isChecked={
-                            value ||
-                            (clientAuthentication && clientAuthorization)
+                            value || (clientAuthentication && authorization)
                           }
                           onChange={onChange}
-                          isDisabled={clientAuthorization}
+                          isDisabled={
+                            (clientAuthentication && !authorization) ||
+                            (!clientAuthentication && authorization)
+                          }
                         />
                         <HelpItem
                           helpText="clients-help:serviceAccount"
