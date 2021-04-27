@@ -1698,9 +1698,9 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
         getDelegateForUpdate();
-        updated.patchRealmLocalizationTexts(locale, localizationTexts);
+        updated.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
     }
 
     @Override
