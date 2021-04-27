@@ -53,7 +53,12 @@
     </changeSet>
 
     <changeSet author="keycloak" id="json-string-accomodation">
-        <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NCLOB"/>
+        <addColumn tableName="REALM_ATTRIBUTE">
+            <column name="VALUE_NEW" type="NCLOB" />
+        </addColumn>
+        <sql>UPDATE REALM_ATTRIBUTE SET VALUE_NEW = VALUE, VALUE = NULL</sql>
+        <dropColumn tableName="REALM_ATTRIBUTE" columnName="VALUE"/>
+        <renameColumn tableName="REALM_ATTRIBUTE" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
     </changeSet>
 
 </databaseChangeLog>
