@@ -34,8 +34,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -80,11 +80,11 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return form.createLoginUsernamePassword();
     }
 
-    protected String tempDisabledError() {
+    protected String disabledByBruteForceError() {
         return Messages.INVALID_USER;
     }
 
-    protected String tempDisabledFieldError(){
+    protected String disabledByBruteForceFieldError(){
         return FIELD_USERNAME;
     }
 
@@ -129,6 +129,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     public boolean enabledUser(AuthenticationFlowContext context, UserModel user) {
+        if (isDisabledByBruteForce(context, user)) return false;
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
@@ -136,7 +137,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.forceChallenge(challengeResponse);
             return false;
         }
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
         return true;
     }
 
@@ -213,7 +213,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return badPasswordHandler(context, user, clearUser,true);
         }
 
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
+        if (isDisabledByBruteForce(context, user)) return false;
 
         if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
             return true;
@@ -239,12 +239,15 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return false;
     }
 
-    protected boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+    protected boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
         if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
+            BruteForceProtector protector = context.getProtector();
+            boolean isPermanentlyLockedOut = protector.isPermanentlyLockedOut(context.getSession(), context.getRealm(), user);
+
+            if (isPermanentlyLockedOut || protector.isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
                 context.getEvent().user(user);
-                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = challenge(context, tempDisabledError(), tempDisabledFieldError());
+                context.getEvent().error(isPermanentlyLockedOut ? Errors.USER_DISABLED : Errors.USER_TEMPORARILY_DISABLED);
+                Response challengeResponse = challenge(context, disabledByBruteForceError(), disabledByBruteForceFieldError());
                 context.forceChallenge(challengeResponse);
                 return true;
             }
