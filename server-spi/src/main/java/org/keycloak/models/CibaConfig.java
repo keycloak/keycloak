@@ -24,7 +24,8 @@ import org.keycloak.utils.StringUtil;
 public class CibaConfig implements Serializable {
 
     // realm attribute names
-    public static final String CIBA_BACKCHANNEL_TOKENDELIVERY_MODE = "cibaBackchannelTokenDeliveryMode";
+    public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE = "cibaBackchannelTokenDeliveryMode";
+	public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT = "ciba.backchannel.token.delivery.mode";
     public static final String CIBA_EXPIRES_IN = "cibaExpiresIn";
     public static final String CIBA_INTERVAL = "cibaInterval";
     public static final String CIBA_AUTH_REQUESTED_USER_HINT = "cibaAuthRequestedUserHint";
@@ -48,7 +49,7 @@ public class CibaConfig implements Serializable {
     public CibaConfig(RealmModel realm) {
         this.realm = () -> realm;
 
-        setBackchannelTokenDeliveryMode(realm.getAttribute(CIBA_BACKCHANNEL_TOKENDELIVERY_MODE));
+        setBackchannelTokenDeliveryMode(realm.getAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE));
 
         String expiresIn = realm.getAttribute(CIBA_EXPIRES_IN);
 
@@ -65,6 +66,14 @@ public class CibaConfig implements Serializable {
         setAuthRequestedUserHint(realm.getAttribute(CIBA_AUTH_REQUESTED_USER_HINT));
     }
 
+    public String getBackchannelTokenDeliveryMode(ClientModel client) {
+        String mode = client.getAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
+        if (StringUtil.isBlank(mode)) {
+            mode = getBackchannelTokenDeliveryMode();
+        }
+        return mode;
+    }
+
     public String getBackchannelTokenDeliveryMode() {
         return backchannelTokenDeliveryMode;
     }
@@ -74,7 +83,7 @@ public class CibaConfig implements Serializable {
             mode = DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
         }
         this.backchannelTokenDeliveryMode = mode;
-        realm.get().setAttribute(CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, mode);
+        realm.get().setAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, mode);
     }
 
     public int getExpiresIn() {

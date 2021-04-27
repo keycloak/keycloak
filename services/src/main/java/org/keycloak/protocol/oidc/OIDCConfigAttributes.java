@@ -64,8 +64,6 @@ public final class OIDCConfigAttributes {
 
     public static final String USE_REFRESH_TOKEN = "use.refresh.tokens";
 
-    public static final String BACKCHANNEL_TOKEN_DELIVERY_MODE = "backchannel.token.delivery.mode";
-
     private OIDCConfigAttributes() {
     }
 

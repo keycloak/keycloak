@@ -181,7 +181,7 @@ public class RealmTest extends AbstractAdminTest {
         try {
             RealmRepresentation rep2 = adminClient.realm("attributes").toRepresentation();
             if (rep2.getAttributes() != null) {
-                Arrays.asList(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE,
+                Arrays.asList(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE,
                         CibaConfig.CIBA_EXPIRES_IN,
                         CibaConfig.CIBA_INTERVAL,
                         CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT).stream().forEach(i -> rep2.getAttributes().remove(i));

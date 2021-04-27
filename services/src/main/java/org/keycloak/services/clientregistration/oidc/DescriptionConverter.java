@@ -43,6 +43,7 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.utils.StringUtil;
 
 import java.net.URI;
 import java.security.PublicKey;
@@ -174,7 +175,9 @@ public class DescriptionConverter {
         String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
         if (backchannelTokenDeliveryMode != null) {
             if(isSupportedBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode)) {
-                configWrapper.setBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode);
+                Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+                attr.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, backchannelTokenDeliveryMode);
+                client.setAttributes(attr);
             } else {
                 throw new ClientRegistrationException("Unsupported requested backchannel_token_delivery_mode");
             }
@@ -296,8 +299,11 @@ public class DescriptionConverter {
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
         response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
 
-        if (config.getBackchannelTokenDeliveryMode() != null) {
-            response.setBackchannelTokenDeliveryMode(config.getBackchannelTokenDeliveryMode());
+        if (client.getAttributes() != null) {
+            String mode = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
+            if (StringUtil.isNotBlank(mode)) {
+                response.setBackchannelTokenDeliveryMode(mode);
+            }
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

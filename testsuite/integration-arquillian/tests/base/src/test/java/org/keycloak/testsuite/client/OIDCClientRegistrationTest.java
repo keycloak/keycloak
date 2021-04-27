@@ -31,6 +31,7 @@ import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -49,7 +50,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -396,8 +396,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
         // Test Keycloak representation
         ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertEquals("poll", config.getBackchannelTokenDeliveryMode());
+        Assert.assertEquals("poll", kcClient.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT));
 
         // update
         clientRep.setBackchannelTokenDeliveryMode("ping");

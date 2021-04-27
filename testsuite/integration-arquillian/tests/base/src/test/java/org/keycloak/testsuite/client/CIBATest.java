@@ -60,7 +60,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
@@ -626,7 +625,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // null input - default values used
             RealmRepresentation rep = backupCIBAPolicy();
             Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, null);
+            attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, null);
             attrMap.put(CibaConfig.CIBA_EXPIRES_IN, null);
             attrMap.put(CibaConfig.CIBA_INTERVAL, null);
             attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, null);
@@ -635,7 +634,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
             rep = testRealm().toRepresentation();
             attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            Assert.assertThat(attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE), is(equalTo("poll")));
+            Assert.assertThat(attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE), is(equalTo("poll")));
             Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_EXPIRES_IN)), is(equalTo(120)));
             Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_INTERVAL)), is(equalTo(5)));
             Assert.assertThat(attrMap.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT), is(equalTo("login_hint")));
@@ -643,7 +642,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // valid input
             rep = backupCIBAPolicy();
             attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-            attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, "poll");
+            attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, "poll");
             attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(736));
             attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(7));
             attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, "login_hint");
@@ -651,7 +650,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             testRealm().update(rep);
 
             rep = testRealm().toRepresentation();
-            Assert.assertThat(attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE), is(equalTo("poll")));
+            Assert.assertThat(attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE), is(equalTo("poll")));
             Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_EXPIRES_IN)), is(equalTo(736)));
             Assert.assertThat(Integer.parseInt(attrMap.get(CibaConfig.CIBA_INTERVAL)), is(equalTo(7)));
             Assert.assertThat(attrMap.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT), is(equalTo("login_hint")));
@@ -1038,8 +1037,8 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // prepare CIBA settings with ciba grant deactivated
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setBackchannelTokenDeliveryMode("poll");
-            Map<String, String> attributes = clientRep.getAttributes();
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
             attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, null);
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
@@ -1159,22 +1158,24 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     private void prepareCIBASettings(ClientResource clientResource, ClientRepresentation clientRep) {
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setBackchannelTokenDeliveryMode("poll");
-        Map<String, String> attributes = clientRep.getAttributes();
+        Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+        attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
         attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
         clientRep.setAttributes(attributes);
         clientResource.update(clientRep);
     }
 
     private void revertCIBASettings(ClientResource clientResource, ClientRepresentation clientRep) {
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setBackchannelTokenDeliveryMode(null);
+        Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+        attributes.remove(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
+        clientRep.setAttributes(attributes);
         clientResource.update(clientRep);
     }
 
     private RealmRepresentation backupCIBAPolicy() {
         RealmRepresentation rep = testRealm().toRepresentation();
         Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-        cibaBackchannelTokenDeliveryMode = attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE);
+        cibaBackchannelTokenDeliveryMode = attrMap.get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE);
         cibaExpiresIn = Integer.parseInt(attrMap.get(CibaConfig.CIBA_EXPIRES_IN));
         cibaInterval = Integer.parseInt(attrMap.get(CibaConfig.CIBA_INTERVAL));
         cibaAuthRequestedUserHint = attrMap.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT);
@@ -1184,7 +1185,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     private void restoreCIBAPolicy() {
         RealmRepresentation rep = testRealm().toRepresentation();
         Map<String, String> attrMap = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-        attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, cibaBackchannelTokenDeliveryMode);
+        attrMap.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, cibaBackchannelTokenDeliveryMode);
         attrMap.put(CibaConfig.CIBA_EXPIRES_IN, String.valueOf(cibaExpiresIn));
         attrMap.put(CibaConfig.CIBA_INTERVAL, String.valueOf(cibaInterval));
         attrMap.put(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT, cibaAuthRequestedUserHint);
