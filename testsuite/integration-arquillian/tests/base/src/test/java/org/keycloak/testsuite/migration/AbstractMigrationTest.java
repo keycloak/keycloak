@@ -292,11 +292,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testDeleteAccount(migrationRealm);
     }
 
-    protected void testMigrationTo13_0_0() {
+    protected void testMigrationTo13_0_0(boolean testRealmAttributesMigration) {
         testDefaultRoles(masterRealm);
         testDefaultRoles(migrationRealm);
 
         testDefaultRolesNameWhenTaken();
+        if (testRealmAttributesMigration) {
+            testRealmAttributesMigration();
+        }
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -912,9 +915,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo9_x() {
         testMigrationTo9_0_0();
     }
-    protected void testMigrationTo12_x() {
+
+    // Realm attributes supported since Keycloak 3
+    protected void testMigrationTo12_x(boolean testRealmAttributesMigration) {
         testMigrationTo12_0_0();
-        testMigrationTo13_0_0();
+        testMigrationTo13_0_0(testRealmAttributesMigration);
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
@@ -954,5 +959,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testDefaultRolesNameWhenTaken() {
         // 'default-roles-migration2' name is used, we test that 'default-roles-migration2-1' is created instead
         assertThat(migrationRealm2.toRepresentation().getDefaultRole().getName(), equalTo("default-roles-migration2-1"));
+    }
+
+    protected void testRealmAttributesMigration() {
+        log.info("testing realm attributes migration");
+        Map<String, String> realmAttributes = migrationRealm.toRepresentation().getAttributes();
+        assertEquals("custom_value", realmAttributes.get("custom_attribute"));
     }
 }
