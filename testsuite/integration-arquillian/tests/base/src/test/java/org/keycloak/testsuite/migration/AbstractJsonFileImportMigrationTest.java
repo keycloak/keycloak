@@ -48,9 +48,12 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
     }
 
     @Override
-    protected void testMigrationTo13_0_0() {
+    protected void testMigrationTo13_0_0(boolean testRealmAttributesMigration) {
         testDefaultRoles(migrationRealm);
 
         testDefaultRolesNameWhenTaken();
+        if (testRealmAttributesMigration) {
+            testRealmAttributesMigration();
+        }
     }
 }
