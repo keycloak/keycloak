@@ -30,6 +30,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.BruteForceProtector;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -118,21 +119,24 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+        if (context.getRealm().isBruteForceProtected()) {
+            BruteForceProtector protector = context.getProtector();
+            boolean isPermanentlyLockedOut = protector.isPermanentlyLockedOut(context.getSession(), context.getRealm(), user);
+
+            if (isPermanentlyLockedOut || protector.isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
+                context.getEvent().user(user);
+                context.getEvent().error(isPermanentlyLockedOut ? Errors.USER_DISABLED : Errors.USER_TEMPORARILY_DISABLED);
+                Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
+                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+                return;
+            }
+        }
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account disabled");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
-        }
-        if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                context.getEvent().user(user);
-                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account temporarily disabled");
-                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
-                return;
-            }
         }
         context.setUser(user);
         context.success();
