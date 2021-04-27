@@ -1229,8 +1229,11 @@ public class TokenEndpoint {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
             }
             if (realm.isBruteForceProtected()) {
-                if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
-                    event.error(Errors.USER_TEMPORARILY_DISABLED);
+                BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
+                boolean isPermanentlyLockedOut = protector.isPermanentlyLockedOut(session, realm, user);
+
+                if (isPermanentlyLockedOut || protector.isTemporarilyDisabled(session, realm, user)) {
+                    event.error(isPermanentlyLockedOut ? Errors.USER_DISABLED : Errors.USER_TEMPORARILY_DISABLED);
                     throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
                 }
             }

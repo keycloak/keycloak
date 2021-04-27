@@ -33,6 +33,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static org.keycloak.models.UserModel.DISABLED_REASON;
+
 /**
  * A single thread will log failures.  This is so that we can avoid concurrent writes as we want an accurate failure count
  *
@@ -128,6 +130,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                 }
                 logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
                 user.setEnabled(false);
+                user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
                 return;
             }
 
@@ -318,6 +321,19 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
         return false;
     }
+
+    @Override
+    public boolean isPermanentlyLockedOut(KeycloakSession session, RealmModel realm, UserModel user) {
+        return !user.isEnabled() && DISABLED_BY_PERMANENT_LOCKOUT.equals(user.getFirstAttribute(DISABLED_REASON));
+    }
+
+    @Override
+    public void cleanUpPermanentLockout(KeycloakSession session, RealmModel realm, UserModel user) {
+        if (DISABLED_BY_PERMANENT_LOCKOUT.equals(user.getFirstAttribute(DISABLED_REASON))) {
+            user.removeAttribute(DISABLED_REASON);
+        }
+    }
+
     @Override
     public void close() {
 

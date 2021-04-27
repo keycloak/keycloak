@@ -99,7 +99,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -162,11 +161,13 @@ public class UserResource {
         auth.users().requireManage(user);
         try {
 
+            boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 UserLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, user.getId());
                 if (failureModel != null) {
                     failureModel.clearFailures();
                 }
+                wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
 
             Response response = validateUserProfile(user, rep, session);
@@ -175,6 +176,12 @@ public class UserResource {
             }
             updateUserFromRep(user, rep, session, true);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
+
+            // we need to do it here as the attributes would be overwritten by what is in the rep
+            if (wasPermanentlyLockedOut) {
+                session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
+            }
+
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
