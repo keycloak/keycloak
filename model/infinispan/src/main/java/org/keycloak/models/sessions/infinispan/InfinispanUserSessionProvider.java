@@ -464,9 +464,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     public void removeAllExpired() {
         // Rely on expiration of cache entries provided by infinispan. Just expire entries from persister is needed
-        // TODO: Avoid iteration over all realms here (Details in the KEYCLOAK-16802)
-        session.realms().getRealmsStream().forEach(this::removeExpired);
-
+        session.getProvider(UserSessionPersisterProvider.class).removeAllExpired();
     }
 
     @Override

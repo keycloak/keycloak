@@ -37,6 +37,10 @@ import java.io.Serializable;
         @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
         @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
         @NamedQuery(name="deleteExpiredClientSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
+        @NamedQuery(name="deleteExpiredClientSessionsCrossRealm", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN" +
+                " (select u.userSessionId from PersistentUserSessionEntity u where"
+                + " u.realmId in (select realm.id from RealmEntity realm where realm.offlineSessionIdleTimeout = :offlineSessionIdle)"
+                + " AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
         @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline"),
         @NamedQuery(name="findClientSessionsByUserSessions", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId IN (:userSessionIds) order by sess.userSessionId")
 })
