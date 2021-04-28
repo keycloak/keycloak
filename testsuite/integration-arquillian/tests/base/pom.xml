@@ -1176,6 +1176,32 @@
                 </pluginManagement>
             </build>
         </profile>
+        <profile>
+            <id>map-storage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.realm.provider>map</keycloak.realm.provider>
+                                <keycloak.client.provider>map</keycloak.client.provider>
+                                <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
+                                <keycloak.group.provider>map</keycloak.group.provider>
+                                <keycloak.role.provider>map</keycloak.role.provider>
+                                <keycloak.user.provider>map</keycloak.user.provider>
+                                <keycloak.serverInfo.provider>map</keycloak.serverInfo.provider>
+                                <keycloak.authSession.provider>map</keycloak.authSession.provider>
+                                <keycloak.userSession.provider>map</keycloak.userSession.provider>
+                                <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
+                                <keycloak.authorization.provider>map</keycloak.authorization.provider>
+                          </systemPropertyVariables>
+                      </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
