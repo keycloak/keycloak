@@ -136,6 +136,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
+import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
@@ -1234,14 +1235,11 @@ public class TokenEndpoint {
                 event.error(Errors.USER_DISABLED);
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
             }
-            if (realm.isBruteForceProtected()) {
-                BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
-                boolean isPermanentlyLockedOut = protector.isPermanentlyLockedOut(session, realm, user);
 
-                if (isPermanentlyLockedOut || protector.isTemporarilyDisabled(session, realm, user)) {
-                    event.error(isPermanentlyLockedOut ? Errors.USER_DISABLED : Errors.USER_TEMPORARILY_DISABLED);
-                    throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
-                }
+            String bruteForceError = getDisabledByBruteForceEventError(session.getProvider(BruteForceProtector.class), session, realm, user);
+            if (bruteForceError != null) {
+                event.error(bruteForceError);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
             }
 
             context.getIdp().updateBrokeredUser(session, realm, user, context);

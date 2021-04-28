@@ -31,12 +31,13 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -75,18 +76,16 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
-        if (context.getRealm().isBruteForceProtected()) {
-            BruteForceProtector protector = context.getProtector();
-            boolean isPermanentlyLockedOut = protector.isPermanentlyLockedOut(context.getSession(), context.getRealm(), user);
 
-            if (isPermanentlyLockedOut || protector.isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                context.getEvent().user(user);
-                context.getEvent().error(isPermanentlyLockedOut ? Errors.USER_DISABLED : Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
-                return;
-            }
+        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        if (bruteForceError != null) {
+            context.getEvent().user(user);
+            context.getEvent().error(bruteForceError);
+            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return;
         }
+
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
