@@ -29,6 +29,29 @@ export default class ProviderPage {
   cachePolicyInput: string;
   cachePolicyList: string;
 
+  userModelAttInput: string;
+  ldapAttInput: string;
+  userModelAttNameInput: string;
+  attValueInput: string;
+  ldapFullNameAttInput: string;
+  ldapAttNameInput: string;
+  ldapAttValueInput: string;
+  groupInput: string;
+
+  msadUserAcctMapper: string;
+  msadLdsUserAcctMapper: string;
+  userAttLdapMapper: string;
+  hcAttMapper: string;
+  certLdapMapper: string;
+  fullNameLdapMapper: string;
+  hcLdapAttMapper: string;
+  hcLdapGroupMapper: string;
+  // roleMapper: string;
+  // groupLdapMapper: string;
+  // hcLdapRoleMapper string;
+
+  groupName: string;
+
   constructor() {
     // KerberosSettingsRequired required input values
     this.kerberosNameInput = "data-testid=kerberos-name";
@@ -64,6 +87,32 @@ export default class ProviderPage {
     this.cacheMinuteList = "#kc-eviction-minute + ul";
     this.cachePolicyInput = "#kc-cache-policy";
     this.cachePolicyList = "#kc-cache-policy + ul";
+
+    // Mapper required input values
+    this.userModelAttInput = "data-testid=mapper-userModelAttribute-fld";
+    this.ldapAttInput = "data-testid=mapper-ldapAttribute-fld";
+    this.userModelAttNameInput =
+      "data-testid=mapper-userModelAttributeName-fld";
+    this.attValueInput = "data-testid=mapper-attributeValue-fld";
+    this.ldapFullNameAttInput = "data-testid=mapper-fullNameAttribute-fld";
+    this.ldapAttNameInput = "data-testid=mapper-ldapAttributeName-fld";
+    this.ldapAttValueInput = "data-testid=mapper-ldapAttributeValue-fld";
+    this.groupInput = "data-testid=mapper-group-fld";
+
+    // mapper types
+    this.msadUserAcctMapper = "msad-user-account-control-mapper";
+    this.msadLdsUserAcctMapper = "msad-lds-user-account-control-mapper";
+    this.userAttLdapMapper = "user-attribute-ldap-mapper";
+    this.hcAttMapper = "hardcoded-attribute-mapper";
+    this.certLdapMapper = "certificate-ldap-mapper";
+    this.fullNameLdapMapper = "full-name-ldap-mapper";
+    this.hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
+    this.hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
+    // this.groupLdapMapper = "group-ldap-mapper";
+    // this.roleMapper = "role-ldap-mapper";
+    // this.hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
+
+    this.groupName = "my-mappers-group";
   }
 
   changeCacheTime(unit: string, time: string) {
@@ -99,7 +148,7 @@ export default class ProviderPage {
     cy.get(`[data-testid="delete-${providerType}-cmd"]`).click();
     return this;
   }
-  
+
   fillKerberosRequiredData(
     name: string,
     realm: string,
@@ -183,6 +232,102 @@ export default class ProviderPage {
     cy.get(this.cachePolicyInput).click();
     cy.get(this.cachePolicyList).contains(cacheType).click();
     return this;
+  }
+
+  goToMappers() {
+    cy.get(`[data-testid="ldap-mappers-tab"]`).click();
+  }
+
+  createNewMapper(mapperType: string) {
+    const userModelAttValue = "firstName";
+    const ldapAttValue = "cn";
+
+    cy.get(`[data-testid="add-mapper-btn"]`).click();
+    cy.wait(1000);
+
+    cy.get("#kc-providerId").click();
+    cy.get("#kc-providerId + ul").contains(mapperType).click();
+
+    cy.get(`[data-testid="ldap-mapper-name"]`).type(`${mapperType}-test`);
+
+    switch (mapperType) {
+      case this.msadUserAcctMapper:
+      case this.msadLdsUserAcctMapper:
+        break;
+      case this.userAttLdapMapper:
+      case this.certLdapMapper:
+        cy.get(`[${this.userModelAttInput}]`).type(userModelAttValue);
+        cy.get(`[${this.ldapAttInput}]`).type(ldapAttValue);
+        break;
+      case this.hcAttMapper:
+        cy.get(`[${this.userModelAttNameInput}]`).type(userModelAttValue);
+        cy.get(`[${this.attValueInput}]`).type(ldapAttValue);
+        break;
+      case this.fullNameLdapMapper:
+        cy.get(`[${this.ldapFullNameAttInput}]`).type(ldapAttValue);
+        break;
+      case this.hcLdapAttMapper:
+        cy.get(`[${this.ldapAttNameInput}]`).type(userModelAttValue);
+        cy.get(`[${this.ldapAttValueInput}]`).type(ldapAttValue);
+        break;
+      case this.hcLdapGroupMapper:
+        cy.get(`[${this.groupInput}]`).type(this.groupName);
+        break;
+      // case this.groupLdapMapper:
+      //   break;
+      // case this.roleMapper:
+      //   break;
+      // case this.hcLdapRoleMapper:
+      //   break;
+      default:
+        console.log("Invalid mapper type.");
+        break;
+    }
+  }
+
+  updateMapper(mapperType: string) {
+    const userModelAttValue = "lastName";
+    const ldapAttValue = "sn";
+
+    switch (mapperType) {
+      case this.msadUserAcctMapper:
+      case this.msadLdsUserAcctMapper:
+        break;
+      case this.userAttLdapMapper:
+      case this.certLdapMapper:
+        cy.get(`[${this.userModelAttInput}]`).clear();
+        cy.get(`[${this.userModelAttInput}]`).type(userModelAttValue);
+        cy.get(`[${this.ldapAttInput}]`).clear();
+        cy.get(`[${this.ldapAttInput}]`).type(ldapAttValue);
+        break;
+      case this.hcAttMapper:
+        cy.get(`[${this.userModelAttNameInput}]`).clear();
+        cy.get(`[${this.userModelAttNameInput}]`).type(userModelAttValue);
+        cy.get(`[${this.attValueInput}]`).clear();
+        cy.get(`[${this.attValueInput}]`).type(ldapAttValue);
+        break;
+      case this.fullNameLdapMapper:
+        cy.get(`[${this.ldapFullNameAttInput}]`).clear();
+        cy.get(`[${this.ldapFullNameAttInput}]`).type(ldapAttValue);
+        break;
+      case this.hcLdapAttMapper:
+        cy.get(`[${this.ldapAttNameInput}]`).clear();
+        cy.get(`[${this.ldapAttNameInput}]`).type(userModelAttValue);
+        cy.get(`[${this.ldapAttValueInput}]`).clear;
+        cy.get(`[${this.ldapAttValueInput}]`).type(ldapAttValue);
+        break;
+      // case this.hcLdapGroupMapper:
+      //   break;
+      // case this.groupLdapMapper:
+      //   break;
+      // case this.roleMapper:
+      //   break;
+      // case this.hcLdapRoleMapper:
+      //   break;
+      default:
+        console.log("Invalid mapper name.");
+        break;
+    }
   }
 
   clickExistingCard(cardName: string) {

@@ -325,6 +325,7 @@ export const UserFederationLdapSettings = () => {
               id="mappers"
               eventKey="mappers"
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+              data-testid="ldap-mappers-tab"
             >
               <LdapMapperList />
             </Tab>

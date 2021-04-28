@@ -32,7 +32,7 @@ export const LdapMapperHardcodedLdapAttribute = ({
           isRequired
           type="text"
           id="kc-ldap-attribute-name"
-          data-testid="ldap-attribute-name"
+          data-testid="mapper-ldapAttributeName-fld"
           name="config.ldap-attribute-name[0]"
           ref={form.register}
         />
@@ -53,7 +53,7 @@ export const LdapMapperHardcodedLdapAttribute = ({
           isRequired
           type="text"
           id="kc-ldap-attribute-value"
-          data-testid="ldap-attribute-value"
+          data-testid="mapper-ldapAttributeValue-fld"
           name="config.ldap-attribute-value[0]"
           ref={form.register}
         />

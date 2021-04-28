@@ -165,7 +165,7 @@ export const LdapMapperDetails = () => {
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
               type="text"
               id="kc-ldap-parentId"
-              data-testid="ldap-parentId"
+              data-testid="ldap-mapper-parentId"
               name="parentId"
               ref={form.register}
             />
@@ -174,7 +174,7 @@ export const LdapMapperDetails = () => {
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
               type="text"
               id="kc-ldap-provider-type"
-              data-testid="ldap-provider-type"
+              data-testid="ldap-mapper-provider-type"
               name="providerType"
               ref={form.register}
             />
@@ -197,7 +197,7 @@ export const LdapMapperDetails = () => {
                 isRequired
                 type="text"
                 id="kc-ldap-mapper-type"
-                data-testid="ldap-mapper-type"
+                data-testid="ldap-mapper-type-fld"
                 name="providerId"
                 ref={form.register}
               />
@@ -219,6 +219,7 @@ export const LdapMapperDetails = () => {
                 name="providerId"
                 defaultValue=" "
                 control={form.control}
+                data-testid="ldap-mapper-type-select"
                 render={({ onChange, value }) => (
                   <Select
                     toggleId="kc-providerId"
@@ -366,7 +367,7 @@ export const LdapMapperDetails = () => {
               isDisabled={!form.formState.isDirty}
               variant="primary"
               type="submit"
-              data-testid="ldap-save"
+              data-testid="ldap-mapper-save"
             >
               {t("common:save")}
             </Button>
@@ -381,7 +382,7 @@ export const LdapMapperDetails = () => {
                       }/mappers`
                     )
               }
-              data-testid="ldap-cancel"
+              data-testid="ldap-mapper-cancel"
             >
               {t("common:cancel")}
             </Button>

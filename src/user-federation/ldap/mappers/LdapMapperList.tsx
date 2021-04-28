@@ -96,7 +96,7 @@ export const LdapMapperList = () => {
         toolbarItem={
           <ToolbarItem>
             <Button
-              data-testid="createMapperBtn"
+              data-testid="add-mapper-btn"
               variant="primary"
               onClick={() => history.push(`${url}/new`)}
             >
