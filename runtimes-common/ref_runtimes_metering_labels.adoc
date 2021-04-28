@@ -1,0 +1,26 @@
+//Include this reference module in product release notes.
+//Be sure you declare runtimes-attributes.doc
+//Content is intended for runtimes doc projects.
+
+[id='runtimes_metering_labels-{context}']
+= {ProductName} metering labels for Red Hat OpenShift
+
+You can add metering labels to your {ProductName} pods and check Red Hat subscription details with the OpenShift Metering Operator.
+
+[NOTE]
+====
+Do not add metering labels to any pods that an operator deploys and manages.
+====
+
+{ProductName} can use the following metering labels:
+
+* `com.redhat.component-name: {component-name}`
+* `com.redhat.component-type: {component-type}`
+* `com.redhat.component-version: {component-version}`
+* `com.redhat.product-name: {product-name}`
+* `com.redhat.product-version: {product-version}`
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{metering-doc-root}[Configuring and using Metering in OpenShift Container Platform]

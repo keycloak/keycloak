@@ -1,0 +1,44 @@
+//
+// This file contains attributes for Red Hat Runtimes product docs.
+//
+
+//
+//Metering labels: product specific
+//
+
+//Each product team must uniquely define two attributes in their projects.
+//This file gets automatically overwritten so treat it as READ only!!
+
+//Define the correct product version.
+//:component-version: x.y.z
+
+//Define the component name.
+//:component-name: "Data_Grid"
+//:component-name: "Vert.X"
+//:component-name: "EAP"
+//:component-name: "JBoss_Web_Server"
+//:component-name: "SSO"
+//:component-name: "AMQ_Broker"
+//:component-name: "Quarkus"
+//:component-name: "Spring_Boot"
+//:component-name: "Thorntail"
+//:component-name: "Node.js"
+
+//Be sure ProductName resolves if you don't already define it.
+//:ProductName: Data Grid
+
+//
+//Metering labels: common
+//
+
+//These metering labels apply to all Runtimes products. Do not change them.
+
+:component-type: application
+:product-name: "Red_Hat_Runtimes"
+:product-version: 2020/Q2
+
+//
+//Links
+//
+
+:metering-doc-root: https://access.redhat.com/documentation/en-us/openshift_container_platform/4.6/html/metering/index

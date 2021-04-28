@@ -3,7 +3,6 @@
 :linkattrs:
 
 include::topics/templates/document-attributes-product.adoc[]
-include::runtimes-common/attributes/runtimes-attributes.adoc[]
 
 :release_notes:
 :context: release_notes
@@ -15,4 +14,14 @@ include::topics/templates/making-open-source-more-inclusive.adoc[]
 == {project_name_full} 7.4.0.GA
 
 include::topics/product/7_4_final.adoc[leveloffset=2]
+
+ifeval::[{project_product}==true]
+
+// Define attributes expected by metering labels
+:ProductName: {project_name}
+:component-name: {project_name}
+:component-version: {project_version_base}
+// Include the metering labels
+include::runtimes-common/attributes/runtimes-attributes.adoc[]
 include::runtimes-common/ref_runtimes_metering_labels.adoc[leveloffset=2]
+endif::[]
