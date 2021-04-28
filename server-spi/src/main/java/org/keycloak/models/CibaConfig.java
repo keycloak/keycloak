@@ -46,6 +46,9 @@ public class CibaConfig implements Serializable {
 
     private transient Supplier<RealmModel> realm;
 
+    // Make sure setters are not called when calling this from constructor to avoid DB updates
+    private transient Supplier<RealmModel> realmForWrite;
+
     public CibaConfig(RealmModel realm) {
         this.realm = () -> realm;
 
@@ -64,6 +67,8 @@ public class CibaConfig implements Serializable {
         }
 
         setAuthRequestedUserHint(realm.getAttribute(CIBA_AUTH_REQUESTED_USER_HINT));
+
+        this.realmForWrite = () -> realm;
     }
 
     public String getBackchannelTokenDeliveryMode(ClientModel client) {
@@ -83,7 +88,7 @@ public class CibaConfig implements Serializable {
             mode = DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
         }
         this.backchannelTokenDeliveryMode = mode;
-        realm.get().setAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, mode);
+        persistRealmAttribute(CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE, mode);
     }
 
     public int getExpiresIn() {
@@ -103,7 +108,7 @@ public class CibaConfig implements Serializable {
             expiresIn = DEFAULT_CIBA_POLICY_EXPIRES_IN;
         }
         this.expiresIn = expiresIn;
-        realm.get().setAttribute(CIBA_EXPIRES_IN, expiresIn);
+        persistRealmAttribute(CIBA_EXPIRES_IN, expiresIn);
     }
 
     public int getPoolingInterval() {
@@ -123,7 +128,7 @@ public class CibaConfig implements Serializable {
             interval = DEFAULT_CIBA_POLICY_INTERVAL;
         }
         this.poolingInterval = interval;
-        realm.get().setAttribute(CIBA_INTERVAL, interval);
+        persistRealmAttribute(CIBA_INTERVAL, interval);
     }
 
     public String getAuthRequestedUserHint() {
@@ -135,11 +140,25 @@ public class CibaConfig implements Serializable {
             hint = DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
         }
         this.authRequestedUserHint = hint;
-        realm.get().setAttribute(CIBA_AUTH_REQUESTED_USER_HINT, hint);
+        persistRealmAttribute(CIBA_AUTH_REQUESTED_USER_HINT, hint);
     }
 
     public boolean isOIDCCIBAGrantEnabled(ClientModel client) {
         String enabled = client.getAttribute(OIDC_CIBA_GRANT_ENABLED);
         return Boolean.parseBoolean(enabled);
+    }
+
+    private void persistRealmAttribute(String name, String value) {
+        RealmModel realm = realmForWrite == null ? null : this.realmForWrite.get();
+        if (realm != null) {
+            realm.setAttribute(name, value);
+        }
+    }
+
+    private void persistRealmAttribute(String name, Integer value) {
+        RealmModel realm = realmForWrite == null ? null : this.realmForWrite.get();
+        if (realm != null) {
+            realm.setAttribute(name, value);
+        }
     }
 }
