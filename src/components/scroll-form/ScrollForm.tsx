@@ -10,11 +10,14 @@ import {
 } from "@patternfly/react-core";
 
 import { mainPageContentId } from "../../App";
+import { ScrollPanel } from "./ScrollPanel";
 import { FormPanel } from "./FormPanel";
+
 import "./scroll-form.css";
 
 type ScrollFormProps = GridProps & {
   sections: string[];
+  borders?: boolean;
   children: React.ReactNode;
 };
 
@@ -24,6 +27,7 @@ const spacesToHyphens = (string: string): string => {
 
 export const ScrollForm = ({
   sections,
+  borders = false,
   children,
   ...rest
 }: ScrollFormProps) => {
@@ -34,9 +38,22 @@ export const ScrollForm = ({
     <Grid hasGutter {...rest}>
       <GridItem span={8}>
         {sections.map((cat, index) => (
-          <FormPanel scrollId={spacesToHyphens(cat)} key={cat} title={cat}>
-            {nodes[index]}
-          </FormPanel>
+          <>
+            {!borders && (
+              <ScrollPanel
+                scrollId={spacesToHyphens(cat)}
+                key={cat}
+                title={cat}
+              >
+                {nodes[index]}
+              </ScrollPanel>
+            )}
+            {borders && (
+              <FormPanel scrollId={spacesToHyphens(cat)} key={cat} title={cat}>
+                {nodes[index]}
+              </FormPanel>
+            )}
+          </>
         ))}
       </GridItem>
       <GridItem span={4}>

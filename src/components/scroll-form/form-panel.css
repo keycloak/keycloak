@@ -2,3 +2,7 @@
   margin-top: var(--pf-global--spacer--lg);
   padding-bottom: var(--pf-global--spacer--2xl);
 }
+
+.kc-form-panel__title {
+  margin-bottom: var(--pf-global--spacer--lg);
+}
