@@ -31,6 +31,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
   const [certificate, setCertificate] = useState("");
 
   const loader = async () => {
+<<<<<<< HEAD
     return keys;
   };
 
@@ -55,6 +56,37 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     noCancelButton: true,
     onConfirm: async () => {},
   });
+=======
+
+    const keysMetaData = allKeys;
+    
+    console.log("keyz", allKeys);
+
+    return keysMetaData.map((key) => { 
+            key.provider = realmComponents.find(
+              (component) => component.id === key.providerId
+            )?.name!;
+          });
+  };
+
+    // let f = 
+    // keys.map((key) => { 
+    //     key.provider = realmComponents.find(
+    //       (component) => component.id === key.providerId
+    //     )?.name!;
+    //   });
+
+    //   console.log(typeof f)
+
+  //   keys.forEach((item) => {
+  //       if (item.name === "ecdsa-generated" )
+  //       console.log(item.config!.ecdsaEllipticCurveKey[0].slice(-3))
+  //     }
+  //       )
+  //   keys.config!.ecdsaEllipticCurveKey.slice(-2)
+
+  const toggleModal = () => setOpen(!open);
+>>>>>>> keys
 
   const goToCreate = () => history.push(`${url}/add-role`);
 
@@ -62,8 +94,15 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     return <>{provider}</>;
   };
 
+<<<<<<< HEAD
   const ButtonRenderer = ({ provider, publicKey, certificate }: KeyData) => {
     if (provider === "ecdsa-generated") {
+=======
+};
+
+  const ButtonRenderer = ({ name }: ComponentRepresentation) => {
+    if (name === "ecdsa-generated") {
+>>>>>>> keys
       return (
         <>
           <Button
