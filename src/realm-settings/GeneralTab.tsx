@@ -43,6 +43,35 @@ export const RealmSettingsGeneralTab = ({
 
   const requireSslTypes = ["all", "external", "none"];
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    return asyncStateFetch(
+      () => adminClient.realms.findOne({ realm: realmName }),
+      (realm) => {
+        console.log(realm)
+        setRealm(realm);
+        setupForm(realm);
+      },
+      handleError
+    );
+  }, []);
+
+  const setupForm = (realm: RealmRepresentation) => {
+    Object.entries(realm).map((entry) => setValue(entry[0], entry[1]));
+  };
+
+  const save = async (realm: RealmRepresentation) => {
+    try {
+      await adminClient.realms.update({ realm: realmName }, realm);
+      setRealm(realm);
+      addAlert(t("saveSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("saveError", { error }), AlertVariant.danger);
+    }
+  };
+
+>>>>>>> wip keys
   return (
     <>
       <PageSection variant="light">

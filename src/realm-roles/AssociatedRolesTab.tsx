@@ -21,6 +21,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import type { RoleFormType } from "./RealmRoleTabs";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import _ from "lodash";
+import { filter } from "cypress/types/bluebird";
 
 type AssociatedRolesTabProps = {
   additionalRoles: Role[];
@@ -125,6 +126,15 @@ export const AssociatedRolesTab = ({
               (client) => client.id === role.containerId
             )!.clientId!)
         );
+
+        console.log(filterDupes
+          .filter((role) => role.clientRole)
+          .map(
+            (role) =>
+              (role.clientId = clients.find(
+                (client) => client.id === role.containerId
+              )!.clientId!)
+          ))
 
       return alphabetize(additionalRoles);
     });
