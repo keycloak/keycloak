@@ -97,6 +97,7 @@ This is used by clients running on internet-connected devices that have limited 
 . The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
+[[_client_initiated_backchannel_authentication_grant]]
 ===== Client Initiated Backchannel Authentication Grant
 
 :tech_feature_name: Client Initiated Backchannel Authentication Grant
@@ -109,6 +110,8 @@ This is used by clients who want to initiate the authentication flow by communic
 . After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
 
 An administrator can configure Client Initiated Backchannel Authentication (CIBA) related operations as `CIBA Policy` per realm.
+
+Also please refer to other places of {project_name} documentation like link:{adapterguide_link}#_backchannel_authentication_endpoint[Backchannel Authentication Endpoint section] of {adapterguide_name} and link:{adapterguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adapterguide_name}.
 
 ====== CIBA Policy
 
@@ -155,7 +158,7 @@ The CIBA grant uses the following two providers.
     <default-provider>ciba-http-auth-channel</default-provider>
     <provider name="ciba-http-auth-channel" enabled="true">
         <properties>
-            <property name="httpAuthenticationChannelUri" value="http://backend.internal.example.com/auth"/>
+            <property name="httpAuthenticationChannelUri" value="https://backend.internal.example.com/auth"/>
         </properties>
     </provider>
 </spi>
@@ -170,6 +173,148 @@ The configurable items and their description follow.
 |Specifying URI of the entity that actually authenticates the user via AD (Authentication Device).
 
 |===
+
+====== Authentication Channel Provider
+
+CIBA standard document does not specify how to authenticate the user by AD. Therefore, it might be implemented at the discretion of products. Keycloak delegates this authentication to an external authentication entity. To communicate with the authentication entity, keycloak provides Authentication Channel Provider.
+
+Its implementation of keycloak assumes that the authentication entity is under the control of the keycloak's administrator so that keycloak trusts the authentication entity. It is not recommended to use the authentication entity that the keycloak's administrator cannot control.
+
+Authentication Channel Provider is provided as SPI provider so that keycloak's users can implement their own provider in order to meet their environment. Keycloak provides its default provider called HTTP Authentication Channel Provider that uses HTTP to communicate with the authentication entity.
+
+If keycloak's user want to use the HTTP Authentication Channel Provider, they need to know its contract between keycloak and the authentication entity consisting of the following two parts.
+
+Authentication Delegation Request/Response:: 
+Keycloak sends an authentication request to the authentication entity.
+
+Authentication Result Notification/ACK:: 
+The authentication entity notifies the result of the authentication to keycloak.
+
+Authentication Delegation Request/Response consists of the following messaging.
+
+Authentication Delegation Request:: The request is sent from keycloak to the authentication entity to ask it for user authentication by AD.
+
+----
+POST {delegation_reception}
+----
+
+* Headers
+
+|===
+|Name|Value|Description
+
+|Content-Type|application/json|The message body is json formatted.
+|Authorization|Bearer [token]|The [token] is used when the authentication entity notifies the result of the authentication to keycloak.
+
+|===
+
+* Parameters
+
+|===
+|Type|Name|Description
+
+|Path
+|delegation_reception|The endpoint provided by the authentication entity to receive the delegation request
+
+|===
+
+* Body
+
+|===
+|Name|Description
+
+|login_hint|It tells the authentication entity who is authenticated by AD. +
+By default, it is the user's "username". +
+This field is required and was defined by CIBA standard document.
+
+|scope|It tells which scopes the authentication entity gets consent from the authenticated user. +
+This field is required and was defined by CIBA standard document.
+
+|is_consent_required|It shows whether the authentication entity needs to get consent from the authenticated user about the scope. +
+ This field is required.
+
+|binding_message|Its value is intended to be shown in both CD and AD's UI to make the user recognize that the authentication by AD is triggered by CD. +
+This field is optional and was defined by CIBA standard document.
+
+|acr_values|It tells the requesting Authentication Context Class Reference from CD. +
+This field is optional and was defined by CIBA standard document.
+
+|===
+
+Authentication Delegation Response:: The response is returned from the authentication entity to keycloak to notify that the authentication entity received the authentication request from keycloak.
+
+* Responses
+
+|===
+|HTTP Status Code|Description
+
+|204|It notifies keycloak of receiving the authentication delegation request.
+
+|===
+
+Authentication Result Notification/ACK consists of the following messaging.
+
+Authentication Result Notification:: The authentication entity sends the result of the authentication request to keycloak.
+
+----
+POST /auth/realms/{realm}/protocol/openid-connect/ext/ciba/auth/callback
+----
+
+* Headers
+
+|===
+|Name|Value|Description
+
+|Content-Type|application/json|The message body is json formatted.
+|Authorization|Bearer [token]|The [token] must be the one the authentication entity has received from keycloak in Authentication Delegation Request.
+
+|===
+
+* Parameters
+
+|===
+|Type|Name|Description
+
+|Path
+|realm|The realm name
+
+|===
+
+* Body
+
+|===
+|Name|Description
+
+|status|It tells the result of user authentication by AD. +
+It must be one of the following status. +
+  SUCCEED : The authentication by AD has been successfully completed. +
+  UNAUTHORIZED : The authentication by AD has not been completed. +
+  CANCELLED : The authentication by AD has been cancelled by the user.
+
+|===
+
+Authentication Result ACK:: The response is returned from keycloak to the authentication entity to notify keycloak received the result of user authentication by AD from the authentication entity.
+
+* Responses
+
+|===
+|HTTP Status Code|Description
+
+|200|It notifies the authentication entity of receiving the notification of the authentication result.
+
+|===
+
+====== User Resolver Provider
+
+Even if the same user, its representation may differ in each CD, keycloak and the authentication entity.
+
+For CD, keycloak and the authentication entity to recognize the same user, this User Resolver Provider converts their own user representations among them.
+
+User Resolver Provider is provided as SPI provider so that keycloak's users can implement their own provider in order to meet their environment. Keycloak provides its default provider called Default User Resolver Provider that has the following characteristics.
+
+* Only support `login_hint` parameter and is used as default.
+* `username` of UserModel in keycloak is used to represent the user on CD, keycloak and the authentication entity.
+
 
 [[_oidc-endpoints]]
 ====  {project_name} Server OIDC URI Endpoints

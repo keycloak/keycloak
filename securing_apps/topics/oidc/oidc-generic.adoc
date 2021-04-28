@@ -103,6 +103,7 @@ The device authorization endpoint is used to obtain a device code and a user cod
 
 For more details on how to invoke on this endpoint, see https://tools.ietf.org/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
+[[_backchannel_authentication_endpoint]]
 ===== Backchannel Authentication Endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/ext/ciba/auth
@@ -111,6 +112,8 @@ For more details on how to invoke on this endpoint, see https://tools.ietf.org/h
 The backchannel authentication endpoint is used to obtain an auth_req_id that identifies the authentication request made by the client. It can only be invoked by confidential clients.
 
 For more details on how to invoke on this endpoint, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html[OpenID Connect Client Initiated Backchannel Authentication Flow specification].
+
+Also please refer to other places of {project_name} documentation like <<_client_initiated_backchannel_authentication_grant,Client Initiated Backchannel Authentication Grant section of this guide>> and link:{adminguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adminguide_name}.
 
 ==== Validating Access Tokens
 
@@ -209,6 +212,7 @@ If user authentication is complete, the application obtains the device code. The
 
 For more details refer to the https://tools.ietf.org/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
+[[_client_initiated_backchannel_authentication_grant]]
 ===== Client Initiated Backchannel Authentication Grant
 
 Client Initiated Backchannel Authentication Grant is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant.
@@ -218,6 +222,8 @@ The client requests {project_name} an auth_req_id that identifies the authentica
 After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
 
 For more details refer to https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html[OpenID Connect Client Initiated Backchannel Authentication Flow specification].
+
+Also please refer to other places of {project_name} documentation like <<_backchannel_authentication_endpoint,Backchannel Authentication Endpoint of this guide>> and link:{adminguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adminguide_name}.
 
 ==== Redirect URIs
 
