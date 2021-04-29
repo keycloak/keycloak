@@ -1,0 +1,62 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>{{:: 'authentication' | translate}}</h1>
+    <kc-tabs-authentication></kc-tabs-authentication>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+
+        <div class="form-group">
+            <label for="tokendelivery" class="col-md-2 control-label"><span class="required">*</span>{{:: 'ciba-backchannel-tokendelivery-mode' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <select id="tokendelivery" ng-model="realm.attributes.cibaBackchannelTokenDeliveryMode" class="form-control">
+                        <option value="poll">Poll</option>
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'ciba-backchannel-tokendelivery-mode.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label for="expiresin" class="col-md-2 control-label"><span class="required">*</span>{{:: 'ciba-expires-in' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <input id="expiresin" type="number" min="10" max="600" string-to-number ng-model="realm.attributes.cibaExpiresIn" class="form-control"/>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'ciba-expires-in.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label for="interval" class="col-md-2 control-label">{{:: 'ciba-interval' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <input id="interval"" type="number" min="0" max="600" string-to-number ng-model="realm.attributes.cibaInterval" class="form-control"/>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'ciba-interval.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label for="authRequestedUserHint" class="col-md-2 control-label"><span class="required">*</span>{{:: 'ciba-auth-requested-user-hint' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <select id="authRequestedUserHint" ng-model="realm.attributes.cibaAuthRequestedUserHint" class="form-control">
+                        <option value="login_hint">login_hint</option>
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'ciba-auth-requested-user-hint.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+
+<kc-menu></kc-menu>

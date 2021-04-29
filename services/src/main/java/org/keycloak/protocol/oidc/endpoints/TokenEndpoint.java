@@ -62,6 +62,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -149,7 +150,7 @@ public class TokenEndpoint {
     private Map<String, String> clientAuthAttributes;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE, CIBA
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
@@ -231,6 +232,8 @@ public class TokenEndpoint {
                 return permissionGrant();
             case OAUTH2_DEVICE_CODE:
                 return oauth2DeviceCodeToToken();
+            case CIBA:
+                return cibaGrant();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -305,6 +308,9 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) {
             event.event(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN);
             action = Action.OAUTH2_DEVICE_CODE;
+        } else if (grantType.equals(OAuth2Constants.CIBA_GRANT_TYPE)) {
+            event.event(EventType.AUTHREQID_TO_TOKEN);
+            action = Action.CIBA;
         } else {
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
                 "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
@@ -449,10 +455,10 @@ public class TokenEndpoint {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
-        return codeOrDeviceCodeToToken(user, userSession, clientSessionCtx, scopeParam, true);
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);
     }
 
-    public Response codeOrDeviceCodeToToken(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
+    public Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
         String scopeParam, boolean code) {
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
 
@@ -1390,6 +1396,11 @@ public class TokenEndpoint {
     public Response oauth2DeviceCodeToToken() {
         DeviceGrantType deviceGrantType = new DeviceGrantType(formParams, client, session, this, realm, event, cors);
         return deviceGrantType.oauth2DeviceFlow();
+    }
+
+    public Response cibaGrant() {
+        CibaGrantType grantType = new CibaGrantType(formParams, client, session, this, realm, event, cors);
+        return grantType.cibaGrant();
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1

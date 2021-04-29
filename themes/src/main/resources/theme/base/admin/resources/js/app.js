@@ -2079,6 +2079,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmWebAuthnPasswordlessPolicyCtrl'
         })
+        .when('/realms/:realm/authentication/ciba-policy', {
+            templateUrl : resourceUrl + '/partials/ciba-policy.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmCibaPolicyCtrl'
+        })
         .when('/realms/:realm/authentication/flows/:flow/config/:provider/:config', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {

@@ -128,7 +128,11 @@ public interface OAuth2Constants {
     String DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     String DEVICE_CODE = "device_code";
 
+    String CIBA_GRANT_TYPE = "urn:openid:params:grant-type:ciba";
+
     String DISPLAY_CONSOLE = "console";
+    String INTERVAL = "interval";
+    String USER_CODE = "user_code";
 }
 
 

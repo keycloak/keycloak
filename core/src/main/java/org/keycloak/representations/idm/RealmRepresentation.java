@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1325,5 +1326,10 @@ public class RealmRepresentation {
 
     public Boolean isUserManagedAccessAllowed() {
         return userManagedAccessAllowed;
+    }
+
+    @JsonIgnore
+    public Map<String, String> getAttributesOrEmpty() {
+        return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
     }
 }
