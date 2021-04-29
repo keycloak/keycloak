@@ -31,13 +31,13 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.13.2.Final</quarkus.version>
+        <quarkus.version>1.13.3.Final</quarkus.version>
         <resteasy.version>4.5.9.Final</resteasy.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.version>5.4.29.Final</hibernate.version>
-        <mysql-connector-java.version>8.0.23</mysql-connector-java.version>
-        <postgresql.version>42.2.19</postgresql.version>
+        <mysql-connector-java.version>8.0.24</mysql-connector-java.version>
+        <postgresql.version>42.2.20</postgresql.version>
         <picocli.version>4.6.1</picocli.version>
         <snakeyaml.version>1.28</snakeyaml.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
