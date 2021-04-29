@@ -176,23 +176,23 @@ The configurable items and their description follow.
 
 ====== Authentication Channel Provider
 
-CIBA standard document does not specify how to authenticate the user by AD. Therefore, it might be implemented at the discretion of products. Keycloak delegates this authentication to an external authentication entity. To communicate with the authentication entity, keycloak provides Authentication Channel Provider.
+CIBA standard document does not specify how to authenticate the user by AD. Therefore, it might be implemented at the discretion of products. {project_name} delegates this authentication to an external authentication entity. To communicate with the authentication entity, {project_name} provides Authentication Channel Provider.
 
-Its implementation of keycloak assumes that the authentication entity is under the control of the keycloak's administrator so that keycloak trusts the authentication entity. It is not recommended to use the authentication entity that the keycloak's administrator cannot control.
+Its implementation of {project_name} assumes that the authentication entity is under the control of the administrator of {project_name} so that {project_name} trusts the authentication entity. It is not recommended to use the authentication entity that the administrator of {project_name} cannot control.
 
-Authentication Channel Provider is provided as SPI provider so that keycloak's users can implement their own provider in order to meet their environment. Keycloak provides its default provider called HTTP Authentication Channel Provider that uses HTTP to communicate with the authentication entity.
+Authentication Channel Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called HTTP Authentication Channel Provider that uses HTTP to communicate with the authentication entity.
 
-If keycloak's user want to use the HTTP Authentication Channel Provider, they need to know its contract between keycloak and the authentication entity consisting of the following two parts.
+If a user of {project_name} user want to use the HTTP Authentication Channel Provider, they need to know its contract between {project_name} and the authentication entity consisting of the following two parts.
 
 Authentication Delegation Request/Response:: 
-Keycloak sends an authentication request to the authentication entity.
+{project_name} sends an authentication request to the authentication entity.
 
 Authentication Result Notification/ACK:: 
-The authentication entity notifies the result of the authentication to keycloak.
+The authentication entity notifies the result of the authentication to {project_name}.
 
 Authentication Delegation Request/Response consists of the following messaging.
 
-Authentication Delegation Request:: The request is sent from keycloak to the authentication entity to ask it for user authentication by AD.
+Authentication Delegation Request:: The request is sent from {project_name} to the authentication entity to ask it for user authentication by AD.
 
 ----
 POST [delegation_reception]
@@ -204,7 +204,7 @@ POST [delegation_reception]
 |Name|Value|Description
 
 |Content-Type|application/json|The message body is json formatted.
-|Authorization|Bearer [token]|The [token] is used when the authentication entity notifies the result of the authentication to keycloak.
+|Authorization|Bearer [token]|The [token] is used when the authentication entity notifies the result of the authentication to {project_name}.
 
 |===
 
@@ -241,20 +241,20 @@ This field is optional and was defined by CIBA standard document.
 
 |===
 
-Authentication Delegation Response:: The response is returned from the authentication entity to keycloak to notify that the authentication entity received the authentication request from keycloak.
+Authentication Delegation Response:: The response is returned from the authentication entity to {project_name} to notify that the authentication entity received the authentication request from {project_name}.
 
 * Responses
 
 |===
 |HTTP Status Code|Description
 
-|204|It notifies keycloak of receiving the authentication delegation request.
+|204|It notifies {project_name} of receiving the authentication delegation request.
 
 |===
 
 Authentication Result Notification/ACK consists of the following messaging.
 
-Authentication Result Notification:: The authentication entity sends the result of the authentication request to keycloak.
+Authentication Result Notification:: The authentication entity sends the result of the authentication request to {project_name}.
 
 ----
 POST /auth/realms/[realm]/protocol/openid-connect/ext/ciba/auth/callback
@@ -266,7 +266,7 @@ POST /auth/realms/[realm]/protocol/openid-connect/ext/ciba/auth/callback
 |Name|Value|Description
 
 |Content-Type|application/json|The message body is json formatted.
-|Authorization|Bearer [token]|The [token] must be the one the authentication entity has received from keycloak in Authentication Delegation Request.
+|Authorization|Bearer [token]|The [token] must be the one the authentication entity has received from {project_name} in Authentication Delegation Request.
 
 |===
 
@@ -293,7 +293,7 @@ It must be one of the following status. +
 
 |===
 
-Authentication Result ACK:: The response is returned from keycloak to the authentication entity to notify keycloak received the result of user authentication by AD from the authentication entity.
+Authentication Result ACK:: The response is returned from {project_name} to the authentication entity to notify {project_name} received the result of user authentication by AD from the authentication entity.
 
 * Responses
 
@@ -306,14 +306,14 @@ Authentication Result ACK:: The response is returned from keycloak to the authen
 
 ====== User Resolver Provider
 
-Even if the same user, its representation may differ in each CD, keycloak and the authentication entity.
+Even if the same user, its representation may differ in each CD, {project_name} and the authentication entity.
 
-For CD, keycloak and the authentication entity to recognize the same user, this User Resolver Provider converts their own user representations among them.
+For CD, {project_name} and the authentication entity to recognize the same user, this User Resolver Provider converts their own user representations among them.
 
-User Resolver Provider is provided as SPI provider so that keycloak's users can implement their own provider in order to meet their environment. Keycloak provides its default provider called Default User Resolver Provider that has the following characteristics.
+User Resolver Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called Default User Resolver Provider that has the following characteristics.
 
 * Only support `login_hint` parameter and is used as default.
-* `username` of UserModel in keycloak is used to represent the user on CD, keycloak and the authentication entity.
+* `username` of UserModel in {project_name} is used to represent the user on CD, {project_name} and the authentication entity.
 
 
 [[_oidc-endpoints]]
