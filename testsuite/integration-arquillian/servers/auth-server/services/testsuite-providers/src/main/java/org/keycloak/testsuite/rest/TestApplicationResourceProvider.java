@@ -30,6 +30,7 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.utils.MediaType;
 
@@ -45,6 +46,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,6 +63,8 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
+    private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
+
     @Context
     HttpRequest request;
 
@@ -68,13 +72,15 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
             BlockingQueue<LogoutToken> backChannelLogoutTokens,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
-            TestApplicationResourceProviderFactory.OIDCClientData oidcClientData) {
+            TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;
         this.adminPushNotBeforeActions = adminPushNotBeforeActions;
         this.adminTestAvailabilityAction = adminTestAvailabilityAction;
         this.oidcClientData = oidcClientData;
+        this.authenticationChannelRequests = authenticationChannelRequests;
     }
 
     @POST
@@ -227,7 +233,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     @Path("/oidc-client-endpoints")
     public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
-        return new TestingOIDCEndpointsApplicationResource(oidcClientData);
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests);
     }
 
     @Override

@@ -259,7 +259,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     }
 
     private Response processVerification(OAuth2DeviceCodeModel deviceCode, String userCode) {
-        int expiresIn = deviceCode.getExpiration() - Time.currentTime();
+        long expiresIn = deviceCode.getExpiration() - Time.currentTime();
         if (expiresIn < 0) {
             event.error(Errors.EXPIRED_OAUTH2_USER_CODE);
             return createVerificationPage(Messages.OAUTH2_DEVICE_INVALID_USER_CODE);

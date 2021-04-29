@@ -30,6 +30,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -179,6 +180,12 @@ public class RealmTest extends AbstractAdminTest {
 
         try {
             RealmRepresentation rep2 = adminClient.realm("attributes").toRepresentation();
+            if (rep2.getAttributes() != null) {
+                Arrays.asList(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE,
+                        CibaConfig.CIBA_EXPIRES_IN,
+                        CibaConfig.CIBA_INTERVAL,
+                        CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT).stream().forEach(i -> rep2.getAttributes().remove(i));
+            }
 
             Map<String, String> attributes = rep2.getAttributes();
             assertTrue("Attributes expected to be present oauth2DeviceCodeLifespan, oauth2DevicePollingInterval, found: " + String.join(", ", attributes.keySet()),

@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -101,6 +102,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int accessCodeLifespanUserAction;
     protected int accessCodeLifespanLogin;
     protected LazyLoader<RealmModel, OAuth2DeviceConfig> deviceConfig;
+    protected LazyLoader<RealmModel, CibaConfig> cibaConfig;
     protected int actionTokenGeneratedByAdminLifespan;
     protected int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
@@ -217,6 +219,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
         deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
+        cibaConfig = new DefaultLazyLoader<>(CibaConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
         actionTokenGeneratedByAdminLifespan = model.getActionTokenGeneratedByAdminLifespan();
@@ -495,6 +498,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public OAuth2DeviceConfig getOAuth2DeviceConfig(Supplier<RealmModel> modelSupplier) {
         return deviceConfig.get(modelSupplier);
+    }
+
+    public CibaConfig getCibaConfig(Supplier<RealmModel> modelSupplier) {
+        return cibaConfig.get(modelSupplier);
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {

@@ -558,6 +558,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public CibaConfig getCibaPolicy() {
+        return new CibaConfig(this);
+    }
+
+    @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
 
         Map<String, Integer> userActionTokens = new HashMap<>();

@@ -452,6 +452,11 @@ module.controller('RealmWebAuthnPasswordlessPolicyCtrl', function ($scope, Curre
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/webauthn-policy-passwordless");
 });
 
+module.controller('RealmCibaPolicyCtrl', function ($scope, Current, Realm, realm, serverInfo, $http, $route, $location, Dialog, Notifications) {
+
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/ciba-policy");
+});
+
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
 
@@ -2492,7 +2497,6 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
         } else if (realm.dockerAuthenticationFlow == $scope.flow.alias) {
             Notifications.error("Cannot remove flow, it is currently being used as the docker authentication flow.");
-
         } else {
             AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {
                 $location.url("/realms/" + realm.realm + '/authentication/flows/' + flows[0].alias);

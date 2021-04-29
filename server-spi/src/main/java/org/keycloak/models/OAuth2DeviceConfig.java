@@ -43,6 +43,9 @@ public final class OAuth2DeviceConfig implements Serializable {
 
     private transient Supplier<RealmModel> realm;
 
+    // Make sure setters are not called when calling this from constructor to avoid DB updates
+    private transient Supplier<RealmModel> realmForWrite;
+
     private int lifespan = DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
     private int poolingInterval = DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
 
@@ -60,6 +63,8 @@ public final class OAuth2DeviceConfig implements Serializable {
         if (pooling != null && !pooling.trim().isEmpty()) {
             setOAuth2DevicePollingInterval(Integer.parseInt(pooling));
         }
+
+        this.realmForWrite = () -> realm;
     }
 
     public int getLifespan() {
@@ -71,7 +76,7 @@ public final class OAuth2DeviceConfig implements Serializable {
             seconds = DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
         }
         this.lifespan = seconds;
-        realm.get().setAttribute(OAUTH2_DEVICE_CODE_LIFESPAN, lifespan);
+        persistRealmAttribute(OAUTH2_DEVICE_CODE_LIFESPAN, lifespan);
     }
 
     public int getPoolingInterval() {
@@ -86,7 +91,7 @@ public final class OAuth2DeviceConfig implements Serializable {
 
         RealmModel model = getRealm();
 
-        model.setAttribute(OAUTH2_DEVICE_POLLING_INTERVAL, poolingInterval);
+        persistRealmAttribute(OAUTH2_DEVICE_POLLING_INTERVAL, poolingInterval);
     }
 
     public int getLifespan(ClientModel client) {
@@ -122,5 +127,12 @@ public final class OAuth2DeviceConfig implements Serializable {
         }
 
         return model;
+    }
+
+    private void persistRealmAttribute(String name, Integer value) {
+        RealmModel realm = realmForWrite == null ? null : this.realmForWrite.get();
+        if (realm != null) {
+            realm.setAttribute(name, value);
+        }
     }
 }

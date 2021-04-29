@@ -17,13 +17,20 @@
 
 package org.keycloak.testsuite.client.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
 import java.util.List;
 import java.util.Map;
 
@@ -79,5 +86,17 @@ public interface TestOIDCEndpointsApplicationResource {
     @Path("/get-sector-identifier-redirect-uris")
     @Produces(MediaType.APPLICATION_JSON)
     List<String> getSectorIdentifierRedirectUris();
+
+    @POST
+    @Path("/request-authentication-channel")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response requestAuthenticationChannel(final MultivaluedMap<String, String> request);
+
+    @GET
+    @Path("/get-authentication-channel")
+    @Produces(MediaType.APPLICATION_JSON)
+    TestAuthenticationChannelRequest getAuthenticationChannel(@QueryParam("bindingMessage") String bindingMessage);
 
 }

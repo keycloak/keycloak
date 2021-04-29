@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;

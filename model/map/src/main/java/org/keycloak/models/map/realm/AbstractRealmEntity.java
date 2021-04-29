@@ -97,9 +97,10 @@ public abstract class AbstractRealmEntity<K> implements AbstractEntity<K> {
     private String resetCredentialsFlow;
     private String clientAuthenticationFlow;
     private String dockerAuthenticationFlow;
-    private MapOTPPolicyEntity otpPolicy = MapOTPPolicyEntity.fromModel(OTPPolicy.DEFAULT_POLICY);;
-    private MapWebAuthnPolicyEntity webAuthnPolicy = MapWebAuthnPolicyEntity.defaultWebAuthnPolicy();;
-    private MapWebAuthnPolicyEntity webAuthnPolicyPasswordless = MapWebAuthnPolicyEntity.defaultWebAuthnPolicy();;
+    private MapOTPPolicyEntity otpPolicy = MapOTPPolicyEntity.fromModel(OTPPolicy.DEFAULT_POLICY);
+    private MapWebAuthnPolicyEntity webAuthnPolicy = MapWebAuthnPolicyEntity.defaultWebAuthnPolicy();
+    private MapWebAuthnPolicyEntity webAuthnPolicyPasswordless = MapWebAuthnPolicyEntity.defaultWebAuthnPolicy();
+
 
     private Set<String> eventsListeners = new HashSet<>();
     private Set<String> enabledEventTypes = new HashSet<>();

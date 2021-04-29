@@ -17,7 +17,11 @@
 
 package org.keycloak.representations;
 
+import static org.keycloak.OAuth2Constants.EXPIRES_IN;
+import static org.keycloak.OAuth2Constants.INTERVAL;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
 
 /**
@@ -36,7 +40,7 @@ public class OAuth2DeviceAuthorizationResponse {
     /**
      * REQUIRED
      */
-    @JsonProperty("user_code")
+    @JsonProperty(OAuth2Constants.USER_CODE)
     protected String userCode;
 
     /**
@@ -54,13 +58,13 @@ public class OAuth2DeviceAuthorizationResponse {
     /**
      * REQUIRED
      */
-    @JsonProperty("expires_in")
+    @JsonProperty(EXPIRES_IN)
     protected long expiresIn;
 
     /**
      * OPTIONAL
      */
-    @JsonProperty("interval")
+    @JsonProperty(INTERVAL)
     protected long interval;
 
     public String getDeviceCode() {

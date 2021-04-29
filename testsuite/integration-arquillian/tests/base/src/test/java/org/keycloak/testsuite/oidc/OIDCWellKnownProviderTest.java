@@ -110,6 +110,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertEquals(oidcConfig.getUserinfoEndpoint(), OIDCLoginProtocolService.userInfoUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
             assertEquals(oidcConfig.getJwksUri(), oauth.getCertsUrl("test"));
 
+
             String registrationUri = UriBuilder
                     .fromUri(OAuthClient.AUTH_SERVER_ROOT)
                     .path(RealmsResource.class)
@@ -167,6 +168,11 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // KEYCLOAK-6771 Certificate Bound Token
             // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
             Assert.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
+
+            // CIBA
+            assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getBackchannelAuthenticationUrl());
+            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.CIBA_GRANT_TYPE);
+            Assert.assertNames(oidcConfig.getBackchannelTokenDeliveryModesSupported(), "poll");
 
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSupported());
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
