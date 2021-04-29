@@ -195,7 +195,7 @@ Authentication Delegation Request/Response consists of the following messaging.
 Authentication Delegation Request:: The request is sent from keycloak to the authentication entity to ask it for user authentication by AD.
 
 ----
-POST {delegation_reception}
+POST [delegation_reception]
 ----
 
 * Headers
@@ -257,7 +257,7 @@ Authentication Result Notification/ACK consists of the following messaging.
 Authentication Result Notification:: The authentication entity sends the result of the authentication request to keycloak.
 
 ----
-POST /auth/realms/{realm}/protocol/openid-connect/ext/ciba/auth/callback
+POST /auth/realms/[realm]/protocol/openid-connect/ext/ciba/auth/callback
 ----
 
 * Headers
