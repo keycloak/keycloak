@@ -12,6 +12,11 @@ especially with larger number of clients, because it is no longer necessary to g
 Support for OAuth 2.0 Device Authorization Grant is now available. Thanks to https://github.com/wadahiro[Hiroyuki Wada], https://github.com/splatch[Łukasz Dywicki]
 and https://github.com/Michito-Okai[Michito Okai].
 
+== OpenID Connect Client Initiated Backchannel Authentication (CIBA)
+
+Support for OpenID Connect Client Initiated Backchannel Authentication (CIBA) is now available. Thanks to https://github.com/tnorimat[Takashi Norimatsu],
+https://github.com/andriimurashkin[Andrii Murashkin], https://github.com/c4r1570p4e[Christophe Lannoy] and members of the FAPI WG for the implementation and feedback.
+
 == SAML Artifact binding in server to client communication
 
 Keycloak now supports communication with clients using SAML _Artifact_ binding. A new `Force Artifact Binding` option
