@@ -16,16 +16,21 @@ The features that can be enabled and disabled are:
 
 |account2
 |New Account Management Console
-|No
-|Preview
+|Yes
+|Supported
 
 |account_api
 |Account Management REST API
-|No
-|Preview
+|Yes
+|Supported
 
 |admin_fine_grained_authz
 |Fine-Grained Admin Permissions
+|No
+|Preview
+
+|client_policies
+|Add client configuration policies
 |No
 |Preview
 
@@ -64,7 +69,7 @@ The features that can be enabled and disabled are:
 
 ifeval::[{project_community}==true]
 |Yes
-|Experimental
+|Preview
 endif::[]
 
 ifeval::[{project_product}==true]
