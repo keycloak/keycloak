@@ -98,11 +98,14 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             
             String value;
             
-            if (keyValue.length == 2) {
+            if (keyValue.length == 1) {
+                continue;
+            } else if (keyValue.length == 2) {
                 // the argument has a simple value. Eg.: key=pair
                 value = keyValue[1];
             } else {
-                continue;
+                // to support cases like --db-url=jdbc:mariadb://localhost/kc?a=1
+                value = arg.substring(key.length() + 1);
             }
             
             key = NS_KEYCLOAK_PREFIX + key.substring(2);

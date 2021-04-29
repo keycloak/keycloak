@@ -180,6 +180,14 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testDatabaseUrlProperties() {
+        System.setProperty("kc.config.args", "--db=mariadb,--db-url=jdbc:mariadb:aurora://foo/bar?a=1&b=2");
+        SmallRyeConfig config = createConfig();
+        assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:mariadb:aurora://foo/bar?a=1&b=2", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+    }
+
+    @Test
     public void testDatabaseDefaults() {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
