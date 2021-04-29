@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Control, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
@@ -11,12 +11,8 @@ import {
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import {
-  asyncStateFetch,
-  useAdminClient,
-} from "../../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { SaveReset } from "./SaveReset";
-import { useErrorHandler } from "react-error-boundary";
 
 type AuthenticationOverridesProps = {
   control: Control<Record<string, any>>;
@@ -34,32 +30,27 @@ export const AuthenticationOverrides = ({
   const adminClient = useAdminClient();
   const { t } = useTranslation("clients");
   const [flows, setFlows] = useState<JSX.Element[]>([]);
-  const handleError = useErrorHandler();
   const [browserFlowOpen, setBrowserFlowOpen] = useState(false);
   const [directGrantOpen, setDirectGrantOpen] = useState(false);
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        () => adminClient.authenticationManagement.getFlows(),
-        (flows) => {
-          let filteredFlows = [
-            ...flows.filter((flow) => flow.providerId !== "client-flow"),
-          ];
-          filteredFlows = _.sortBy(filteredFlows, [(f) => f.alias]);
-          setFlows([
-            <SelectOption key="empty" value="">
-              {t("common:choose")}
-            </SelectOption>,
-            ...filteredFlows.map((flow) => (
-              <SelectOption key={flow.id} value={flow.id}>
-                {flow.alias}
-              </SelectOption>
-            )),
-          ]);
-        },
-        handleError
-      ),
+  useFetch(
+    () => adminClient.authenticationManagement.getFlows(),
+    (flows) => {
+      let filteredFlows = [
+        ...flows.filter((flow) => flow.providerId !== "client-flow"),
+      ];
+      filteredFlows = _.sortBy(filteredFlows, [(f) => f.alias]);
+      setFlows([
+        <SelectOption key="empty" value="">
+          {t("common:choose")}
+        </SelectOption>,
+        ...filteredFlows.map((flow) => (
+          <SelectOption key={flow.id} value={flow.id}>
+            {flow.alias}
+          </SelectOption>
+        )),
+      ]);
+    },
     []
   );
 

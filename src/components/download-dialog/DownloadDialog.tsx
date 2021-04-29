@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useErrorHandler } from "react-error-boundary";
+import React, { useState, useContext } from "react";
 import {
   Alert,
   AlertVariant,
@@ -19,10 +18,7 @@ import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { HelpContext } from "../help-enabler/HelpHeader";
 
 type DownloadDialogProps = {
@@ -39,7 +35,6 @@ export const DownloadDialog = ({
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { t } = useTranslation("common");
   const { enabled } = useContext(HelpContext);
   const serverInfo = useServerInfo();
@@ -51,23 +46,21 @@ export const DownloadDialog = ({
   const [snippet, setSnippet] = useState("");
   const [openType, setOpenType] = useState(false);
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        const snippet = await adminClient.clients.getInstallationProviders({
-          id,
-          providerId: selected,
-        });
-        if (typeof snippet === "string") {
-          return snippet;
-        } else {
-          return JSON.stringify(snippet, undefined, 3);
-        }
-      },
-      (snippet) => setSnippet(snippet),
-      handleError
-    );
-  }, [id, selected]);
+  useFetch(
+    async () => {
+      const snippet = await adminClient.clients.getInstallationProviders({
+        id,
+        providerId: selected,
+      });
+      if (typeof snippet === "string") {
+        return snippet;
+      } else {
+        return JSON.stringify(snippet, undefined, 3);
+      }
+    },
+    (snippet) => setSnippet(snippet),
+    [id, selected]
+  );
   return (
     <ConfirmDialogModal
       titleKey={t("clients:downloadAdaptorTitle")}

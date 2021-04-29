@@ -1,4 +1,4 @@
-import React, { Children } from "react";
+import React, { Children, Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Grid,
@@ -38,22 +38,18 @@ export const ScrollForm = ({
     <Grid hasGutter {...rest}>
       <GridItem span={8}>
         {sections.map((cat, index) => (
-          <>
+          <Fragment key={cat}>
             {!borders && (
-              <ScrollPanel
-                scrollId={spacesToHyphens(cat)}
-                key={cat}
-                title={cat}
-              >
+              <ScrollPanel scrollId={spacesToHyphens(cat)} title={cat}>
                 {nodes[index]}
               </ScrollPanel>
             )}
             {borders && (
-              <FormPanel scrollId={spacesToHyphens(cat)} key={cat} title={cat}>
+              <FormPanel scrollId={spacesToHyphens(cat)} title={cat}>
                 {nodes[index]}
               </FormPanel>
             )}
-          </>
+          </Fragment>
         ))}
       </GridItem>
       <GridItem span={4}>

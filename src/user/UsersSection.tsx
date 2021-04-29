@@ -1,5 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useErrorHandler } from "react-error-boundary";
+import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -17,7 +16,7 @@ import {
 } from "@patternfly/react-icons";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
@@ -36,7 +35,6 @@ type BruteUser = UserRepresentation & {
 
 export const UsersSection = () => {
   const { t } = useTranslation("users");
-  const handleError = useErrorHandler();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { realm: realmName } = useContext(RealmContext);
@@ -50,27 +48,25 @@ export const UsersSection = () => {
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
 
-  useEffect(() => {
-    return asyncStateFetch(
-      () => {
-        const testParams = {
-          type: "org.keycloak.storage.UserStorageProvider",
-        };
+  useFetch(
+    () => {
+      const testParams = {
+        type: "org.keycloak.storage.UserStorageProvider",
+      };
 
-        return Promise.all([
-          adminClient.components.find(testParams),
-          adminClient.users.count(),
-        ]);
-      },
-      (response) => {
-        //should *only* list users when no user federation is configured and uses count > 100
-        setListUsers(
-          !((response[0] && response[0].length > 0) || response[1] > 100)
-        );
-      },
-      handleError
-    );
-  }, []);
+      return Promise.all([
+        adminClient.components.find(testParams),
+        adminClient.users.count(),
+      ]);
+    },
+    (response) => {
+      //should *only* list users when no user federation is configured and uses count > 100
+      setListUsers(
+        !((response[0] && response[0].length > 0) || response[1] > 100)
+      );
+    },
+    []
+  );
 
   const UserDetailLink = (user: UserRepresentation) => (
     <>

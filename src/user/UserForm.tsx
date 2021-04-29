@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActionGroup,
   AlertVariant,
@@ -19,8 +19,7 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
-import { useErrorHandler } from "react-error-boundary";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import moment from "moment";
 import { JoinGroupDialog } from "./JoinGroupDialog";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
@@ -51,7 +50,6 @@ export const UserForm = ({
   const history = useHistory();
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
-  const handleError = useErrorHandler();
 
   const watchUsernameInput = watch("username");
   const [timestamp, setTimestamp] = useState(null);
@@ -64,17 +62,15 @@ export const UserForm = ({
 
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (editMode) {
-      return asyncStateFetch(
-        () => adminClient.users.findOne({ id: id }),
-        (user) => {
-          setupForm(user);
-        },
-        handleError
-      );
-    }
-  }, [chips]);
+  useFetch(
+    async () => {
+      if (editMode) return await adminClient.users.findOne({ id: id });
+    },
+    (user) => {
+      if (user) setupForm(user);
+    },
+    [chips]
+  );
 
   const setupForm = (user: UserRepresentation) => {
     reset();

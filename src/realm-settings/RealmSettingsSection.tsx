@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
-import { useErrorHandler } from "react-error-boundary";
 import {
   AlertVariant,
   ButtonVariant,
@@ -17,7 +16,7 @@ import {
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { toUpperCase } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAlerts } from "../components/alert/Alerts";
@@ -124,7 +123,6 @@ const RealmSettingsHeader = ({
 export const RealmSettingsSection = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
   const form = useForm();
@@ -136,16 +134,14 @@ export const RealmSettingsSection = () => {
     ComponentRepresentation[]
   >([]);
 
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.realms.findOne({ realm: realmName }),
-      (realm) => {
-        setupForm(realm);
-        setRealm(realm);
-      },
-      handleError
-    );
-  }, []);
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      setupForm(realm);
+      setRealm(realm);
+    },
+    []
+  );
 
   useEffect(() => {
     const update = async () => {

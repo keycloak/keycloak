@@ -1,10 +1,9 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import _ from "lodash";
 
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
-import { useErrorHandler } from "react-error-boundary";
-import { asyncStateFetch, useAdminClient } from "../auth/AdminClient";
+import { useAdminClient, useFetch } from "../auth/AdminClient";
 import { WhoAmIContext } from "../whoami/WhoAmI";
 
 type RealmContextType = {
@@ -30,7 +29,6 @@ export const RealmContextProvider = ({
   const [realm, setRealm] = useState(whoAmI.getHomeRealm());
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const adminClient = useAdminClient();
-  const errorHandler = useErrorHandler();
   const recentUsed = new RecentUsed();
 
   const updateRealmsList = (realms: RealmRepresentation[]) => {
@@ -38,13 +36,9 @@ export const RealmContextProvider = ({
     recentUsed.clean(realms.map((r) => r.realm!));
   };
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        () => adminClient.realms.find(),
-        (realms) => updateRealmsList(realms),
-        errorHandler
-      ),
+  useFetch(
+    () => adminClient.realms.find(),
+    (realms) => updateRealmsList(realms),
     []
   );
 

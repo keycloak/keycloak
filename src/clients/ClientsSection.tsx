@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -49,8 +49,6 @@ export const ClientsSection = () => {
     return await adminClient.clients.find({ ...params });
   };
 
-  useEffect(refresh, [selectedClient]);
-
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
     messageKey: "clients:clientDeleteConfirm",
@@ -62,7 +60,7 @@ export const ClientsSection = () => {
           id: selectedClient!.id!,
         });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
-        setSelectedClient(undefined);
+        refresh();
       } catch (error) {
         addAlert(t("clientDeleteError", { error }), AlertVariant.danger);
       }

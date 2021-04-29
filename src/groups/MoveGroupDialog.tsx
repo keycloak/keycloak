@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,7 +22,7 @@ import {
 import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
 
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 
 type MoveGroupDialogProps = {
@@ -40,7 +39,6 @@ export const MoveGroupDialog = ({
   const { t } = useTranslation("groups");
 
   const adminClient = useAdminClient();
-  const errorHandler = useErrorHandler();
 
   const [navigation, setNavigation] = useState<GroupRepresentation[]>([]);
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
@@ -50,23 +48,19 @@ export const MoveGroupDialog = ({
   const [id, setId] = useState<string>();
   const currentGroup = () => navigation[navigation.length - 1];
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        async () => {
-          if (id) {
-            const group = await adminClient.groups.findOne({ id });
-            return { group, groups: group.subGroups! };
-          } else {
-            return { groups: await adminClient.groups.find() };
-          }
-        },
-        ({ group: selectedGroup, groups }) => {
-          if (selectedGroup) setNavigation([...navigation, selectedGroup]);
-          setGroups(groups.filter((g) => g.id !== group.id));
-        },
-        errorHandler
-      ),
+  useFetch(
+    async () => {
+      if (id) {
+        const group = await adminClient.groups.findOne({ id });
+        return { group, groups: group.subGroups! };
+      } else {
+        return { groups: await adminClient.groups.find() };
+      }
+    },
+    ({ group: selectedGroup, groups }) => {
+      if (selectedGroup) setNavigation([...navigation, selectedGroup]);
+      setGroups(groups.filter((g) => g.id !== group.id));
+    },
     [id]
   );
 

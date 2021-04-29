@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -11,10 +10,7 @@ import {
 } from "@patternfly/react-core";
 
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -30,7 +26,6 @@ export const ClientScopeForm = () => {
   const [hide, setHide] = useState(false);
 
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { id } = useParams<{ id: string }>();
 
   const { addAlert } = useAlerts();
@@ -38,19 +33,17 @@ export const ClientScopeForm = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        if (id) {
-          return await adminClient.clientScopes.findOne({ id });
-        }
-      },
-      (clientScope) => {
-        setClientScope(clientScope);
-      },
-      handleError
-    );
-  }, [key, id]);
+  useFetch(
+    async () => {
+      if (id) {
+        return await adminClient.clientScopes.findOne({ id });
+      }
+    },
+    (clientScope) => {
+      setClientScope(clientScope);
+    },
+    [key, id]
+  );
 
   const loader = async () => {
     const assignedRoles = hide
