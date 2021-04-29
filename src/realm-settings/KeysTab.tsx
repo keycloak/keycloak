@@ -32,6 +32,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
 
   const loader = async () => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     return keys;
   };
 
@@ -87,6 +88,32 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
 
   const toggleModal = () => setOpen(!open);
 >>>>>>> keys
+=======
+    return keys;
+  };
+
+  React.useEffect(() => {
+    refresh();
+  }, [keys]);
+
+  const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
+    titleKey: t("realm-settings:publicKeys").slice(0, -1),
+    messageKey: publicKey,
+    continueButtonLabel: "common:close",
+    continueButtonVariant: ButtonVariant.primary,
+    noCancelButton: true,
+    onConfirm: async () => {},
+  });
+
+  const [toggleCertificateDialog, CertificateDialog] = useConfirmDialog({
+    titleKey: t("realm-settings:certificate"),
+    messageKey: certificate,
+    continueButtonLabel: "common:close",
+    continueButtonVariant: ButtonVariant.primary,
+    noCancelButton: true,
+    onConfirm: async () => {},
+  });
+>>>>>>> adds keys table to realm settings
 
   const goToCreate = () => history.push(`${url}/add-role`);
 
@@ -94,6 +121,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     return <>{provider}</>;
   };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   const ButtonRenderer = ({ provider, publicKey, certificate }: KeyData) => {
     if (provider === "ecdsa-generated") {
@@ -103,6 +131,10 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
   const ButtonRenderer = ({ name }: ComponentRepresentation) => {
     if (name === "ecdsa-generated") {
 >>>>>>> keys
+=======
+  const ButtonRenderer = ({ provider, publicKey, certificate }: KeyData) => {
+    if (provider === "ecdsa-generated") {
+>>>>>>> adds keys table to realm settings
       return (
         <>
           <Button
@@ -117,8 +149,12 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
           </Button>
         </>
       );
+<<<<<<< HEAD
     }
     if (provider === "rsa-generated" || provider === "fallback-RS256") {
+=======
+    } else if (provider === "rsa-generated" || provider === "fallback-RS256") {
+>>>>>>> adds keys table to realm settings
       return (
         <>
           <Button

@@ -49,7 +49,6 @@ export const RealmSettingsGeneralTab = ({
     return asyncStateFetch(
       () => adminClient.realms.findOne({ realm: realmName }),
       (realm) => {
-        console.log(realm)
         setRealm(realm);
         setupForm(realm);
       },

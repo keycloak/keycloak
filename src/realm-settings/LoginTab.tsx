@@ -21,8 +21,6 @@ export const RealmSettingsLoginTab = () => {
   const { addAlert } = useAlerts();
 
   useEffect(() => {
-
-    console.log("kjsdlja")
     return asyncStateFetch(
       () => adminClient.realms.findOne({ realm: realmName }),
       (realm) => {
