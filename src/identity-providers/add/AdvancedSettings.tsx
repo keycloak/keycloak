@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useErrorHandler } from "react-error-boundary";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import {
@@ -12,10 +11,7 @@ import {
 } from "@patternfly/react-core";
 
 import AuthenticationFlowRepresentation from "keycloak-admin/lib/defs/authenticationFlowRepresentation";
-import {
-  asyncStateFetch,
-  useAdminClient,
-} from "../../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
@@ -30,19 +26,10 @@ const LoginFlow = ({
   const { control } = useFormContext();
 
   const adminClient = useAdminClient();
-  const errorHandler = useErrorHandler();
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
   const [open, setOpen] = useState(false);
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        () => adminClient.authenticationManagement.getFlows(),
-        setFlows,
-        errorHandler
-      ),
-    []
-  );
+  useFetch(() => adminClient.authenticationManagement.getFlows(), setFlows, []);
 
   return (
     <FormGroup

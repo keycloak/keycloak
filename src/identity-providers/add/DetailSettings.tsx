@@ -1,6 +1,5 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useHistory, useParams } from "react-router-dom";
-import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
@@ -18,10 +17,7 @@ import IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProv
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import {
-  asyncStateFetch,
-  useAdminClient,
-} from "../../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { toUpperCase } from "../../util";
 import { GeneralSettings } from "./GeneralSettings";
 import { AdvancedSettings } from "./AdvancedSettings";
@@ -91,17 +87,12 @@ export const DetailSettings = () => {
   const { addAlert } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
-  const errorHandler = useErrorHandler();
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        () => adminClient.identityProviders.findOne({ alias: id }),
-        (provider) => {
-          Object.entries(provider).map((entry) => setValue(entry[0], entry[1]));
-        },
-        errorHandler
-      ),
+  useFetch(
+    () => adminClient.identityProviders.findOne({ alias: id }),
+    (provider) => {
+      Object.entries(provider).map((entry) => setValue(entry[0], entry[1]));
+    },
     []
   );
 
