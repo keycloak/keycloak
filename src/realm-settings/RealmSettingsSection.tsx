@@ -24,6 +24,7 @@ import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { RealmSettingsLoginTab } from "./LoginTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
 import { PartialImportDialog } from "./PartialImport";
+import { RealmSettingsThemesTab } from "./ThemesTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -176,6 +177,13 @@ export const RealmSettingsSection = () => {
             data-testid="rs-login-tab"
           >
             <RealmSettingsLoginTab />
+          </Tab>
+          <Tab
+            eventKey="themes"
+            title={<TabTitleText>{t("realm-settings:themes")}</TabTitleText>}
+            data-testid="rs-themes-tab"
+          >
+            <RealmSettingsThemesTab />
           </Tab>
         </KeycloakTabs>
       </PageSection>

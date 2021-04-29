@@ -23,9 +23,9 @@ describe("Realm settings test", () => {
     it("Go to general tab", function () {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.toggleSwitch(managedAccessSwitch);
-      realmSettingsPage.save();
+      realmSettingsPage.saveGeneral();
       realmSettingsPage.toggleSwitch(managedAccessSwitch);
-      realmSettingsPage.save();
+      realmSettingsPage.saveGeneral();
     });
 
     it("Go to login tab", function () {
@@ -35,6 +35,17 @@ describe("Realm settings test", () => {
       realmSettingsPage.toggleSwitch(forgotPwdSwitch);
       realmSettingsPage.toggleSwitch(rememberMeSwitch);
       realmSettingsPage.toggleSwitch(verifyEmailSwitch);
+    });
+
+    it("Go to themes tab", function () {
+      sidebarPage.goToRealmSettings();
+      cy.getId("rs-themes-tab").click();
+      realmSettingsPage.selectLoginThemeType("keycloak");
+      realmSettingsPage.selectAccountThemeType("keycloak");
+      realmSettingsPage.selectAdminThemeType("keycloak.v2");
+      realmSettingsPage.selectEmailThemeType("base");
+
+      realmSettingsPage.saveThemes();
     });
   });
 });
