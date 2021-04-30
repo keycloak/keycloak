@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
-import { useErrorHandler } from "react-error-boundary";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,
-  AlertVariant,
   Button,
   FormGroup,
   PageSection,
@@ -15,21 +13,20 @@ import {
 } from "@patternfly/react-core";
 
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
-export const RealmSettingsThemesTab = () => {
+type RealmSettingsThemesTabProps = {
+  save: (realm: RealmRepresentation) => void;
+  reset: () => void;
+};
+
+export const RealmSettingsThemesTab = ({
+  save,
+  reset,
+}: RealmSettingsThemesTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
-  const { realm: realmName } = useRealm();
-  const { addAlert } = useAlerts();
-  const { control, setValue, handleSubmit } = useForm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const [accountThemeOpen, setAccountThemeOpen] = useState(false);
@@ -38,60 +35,22 @@ export const RealmSettingsThemesTab = () => {
 
   const [supportedLocalesOpen, setSupportedLocalesOpen] = useState(false);
   const [defaultLocaleOpen, setDefaultLocaleOpen] = useState(false);
-  const [selections, setSelections] = useState<string[]>([]);
 
-  const [
-    internationalizationEnabled,
-    setInternationalizationEnabled,
-  ] = useState(false);
-
-  const form = useForm();
+  const { control, handleSubmit } = useFormContext();
 
   const themeTypes = useServerInfo().themes!;
 
-  const watchSupportedLocales = form.watch(
-    "supportedLocales",
-    themeTypes?.account![0].locales
-  );
+  const watchSupportedLocales = useWatch({
+    control,
+    name: "supportedLocales",
+    defaultValue: themeTypes?.account![0].locales,
+  });
 
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.realms.findOne({ realm: realmName }),
-      (realm) => {
-        setRealm(realm);
-        setupForm(realm);
-        setInternationalizationEnabled(realm.internationalizationEnabled!);
-      },
-      handleError
-    );
-  }, []);
-
-  useEffect(() => {
-    setValue("supportedLocales", realm?.supportedLocales);
-    setValue("defaultLocale", realm?.defaultLocale);
-  }, [internationalizationEnabled]);
-
-  const setupForm = (realm: RealmRepresentation) => {
-    const { ...formValues } = realm;
-
-    form.reset(formValues);
-    Object.entries(realm).map((entry) => {
-      if (entry[0] === "internationalizationEnabled") {
-        setInternationalizationEnabled(realm!.internationalizationEnabled!);
-      }
-      setValue(entry[0], entry[1]);
-    });
-  };
-
-  const save = async (realm: RealmRepresentation) => {
-    try {
-      await adminClient.realms.update({ realm: realmName }, realm);
-      setRealm({ supportedLocales: selections, ...realm });
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addAlert(t("saveError", { error }), AlertVariant.danger);
-    }
-  };
+  const internationalizationEnabled = useWatch({
+    control,
+    name: "internationalizationEnabled",
+    defaultValue: false,
+  });
 
   return (
     <>
@@ -116,6 +75,7 @@ export const RealmSettingsThemesTab = () => {
             <Controller
               name="loginTheme"
               control={control}
+              defaultValue=""
               render={({ onChange, value }) => (
                 <Select
                   toggleId="kc-login-theme"
@@ -158,6 +118,7 @@ export const RealmSettingsThemesTab = () => {
             <Controller
               name="accountTheme"
               control={control}
+              defaultValue=""
               render={({ onChange, value }) => (
                 <Select
                   toggleId="kc-account-theme"
@@ -200,6 +161,7 @@ export const RealmSettingsThemesTab = () => {
             <Controller
               name="adminTheme"
               control={control}
+              defaultValue=""
               render={({ onChange, value }) => (
                 <Select
                   toggleId="kc-admin-console-theme"
@@ -244,6 +206,7 @@ export const RealmSettingsThemesTab = () => {
             <Controller
               name="emailTheme"
               control={control}
+              defaultValue=""
               render={({ onChange, value }) => (
                 <Select
                   toggleId="kc-email-theme"
@@ -279,6 +242,7 @@ export const RealmSettingsThemesTab = () => {
             <Controller
               name="internationalizationEnabled"
               control={control}
+              defaultValue={false}
               render={({ onChange, value }) => (
                 <Switch
                   id="kc-internationalization"
@@ -290,14 +254,7 @@ export const RealmSettingsThemesTab = () => {
                       ? "internationalization-enabled"
                       : "internationalization-disabled"
                   }
-                  onChange={(value) => {
-                    onChange(value);
-                    if (value) {
-                      setValue("internationalizationEnabled", true);
-                      setInternationalizationEnabled(value);
-                    }
-                    setInternationalizationEnabled(value);
-                  }}
+                  onChange={onChange}
                 />
               )}
             />
@@ -311,6 +268,7 @@ export const RealmSettingsThemesTab = () => {
                 <Controller
                   name="supportedLocales"
                   control={control}
+                  defaultValue={themeTypes?.account![0].locales}
                   render={({ value, onChange }) => (
                     <Select
                       toggleId="kc-supported-locales"
@@ -330,10 +288,9 @@ export const RealmSettingsThemesTab = () => {
                           onChange([...value, option]);
                           setSupportedLocalesOpen(false);
                         }
-                        setSelections([...value, v]);
                       }}
                       onClear={() => {
-                        onChange(setSelections([]));
+                        onChange([]);
                       }}
                       selections={value}
                       variant={SelectVariant.typeaheadMulti}
@@ -360,6 +317,7 @@ export const RealmSettingsThemesTab = () => {
                 <Controller
                   name="defaultLocale"
                   control={control}
+                  defaultValue=""
                   render={({ onChange, value }) => (
                     <Select
                       toggleId="kc-default-locale"
@@ -375,25 +333,16 @@ export const RealmSettingsThemesTab = () => {
                       placeholderText="Select one"
                       data-testid="select-default-locale"
                     >
-                      {selections.length !== 0
-                        ? selections.map((locale: string, idx: number) => (
-                            <SelectOption
-                              key={`default-locale-${idx}`}
-                              value={locale}
-                            >
-                              {t(`allSupportedLocales.${locale}`)}
-                            </SelectOption>
-                          ))
-                        : watchSupportedLocales.map(
-                            (locale: string, idx: number) => (
-                              <SelectOption
-                                key={`default-locale-${idx}`}
-                                value={locale}
-                              >
-                                {t(`allSupportedLocales.${locale}`)}
-                              </SelectOption>
-                            )
-                          )}
+                      {watchSupportedLocales.map(
+                        (locale: string, idx: number) => (
+                          <SelectOption
+                            key={`default-locale-${idx}`}
+                            value={locale}
+                          >
+                            {t(`allSupportedLocales.${locale}`)}
+                          </SelectOption>
+                        )
+                      )}
                     </Select>
                   )}
                 />
@@ -408,7 +357,7 @@ export const RealmSettingsThemesTab = () => {
             >
               {t("common:save")}
             </Button>
-            <Button variant="link" onClick={() => setupForm(realm!)}>
+            <Button variant="link" onClick={reset}>
               {t("common:revert")}
             </Button>
           </ActionGroup>

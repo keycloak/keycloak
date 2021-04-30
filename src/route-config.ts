@@ -29,7 +29,6 @@ import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 import { SearchGroups } from "./groups/SearchGroups";
 import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
-import { RealmSettingsTabs } from "./realm-settings/RealmSettingsTabs";
 import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
 import { AddIdentityProvider } from "./identity-providers/add/AddIdentityProvider";
 
@@ -176,12 +175,6 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/realm-settings/:tab?",
     component: RealmSettingsSection,
-    breadcrumb: t("realmSettings"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/general",
-    component: RealmSettingsTabs,
     breadcrumb: t("realmSettings"),
     access: "view-realm",
   },

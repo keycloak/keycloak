@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
-import { useErrorHandler } from "react-error-boundary";
+import { Controller, useFormContext } from "react-hook-form";
 import {
   ActionGroup,
-  AlertVariant,
   Button,
   ClipboardCopy,
   FormGroup,
@@ -20,51 +18,30 @@ import {
 
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { getBaseUrl } from "../util";
-import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 
-export const RealmSettingsGeneralTab = () => {
+type RealmSettingsGeneralTabProps = {
+  save: (realm: RealmRepresentation) => void;
+  reset: () => void;
+};
+
+export const RealmSettingsGeneralTab = ({
+  save,
+  reset,
+}: RealmSettingsGeneralTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { realm: realmName } = useRealm();
-  const { addAlert } = useAlerts();
-  const { register, control, setValue, handleSubmit } = useForm();
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { register, control, handleSubmit } = useFormContext();
   const [open, setOpen] = useState(false);
 
   const baseUrl = getBaseUrl(adminClient);
 
   const requireSslTypes = ["all", "external", "none"];
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.realms.findOne({ realm: realmName }),
-      (realm) => {
-        setRealm(realm);
-        setupForm(realm);
-      },
-      handleError
-    );
-  }, []);
-
-  const setupForm = (realm: RealmRepresentation) => {
-    Object.entries(realm).map((entry) => setValue(entry[0], entry[1]));
-  };
-
-  const save = async (realm: RealmRepresentation) => {
-    try {
-      await adminClient.realms.update({ realm: realmName }, realm);
-      setRealm(realm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addAlert(t("saveError", { error }), AlertVariant.danger);
-    }
-  };
 
   return (
     <>
@@ -219,7 +196,7 @@ export const RealmSettingsGeneralTab = () => {
             >
               {t("common:save")}
             </Button>
-            <Button variant="link" onClick={() => setupForm(realm!)}>
+            <Button variant="link" onClick={reset}>
               {t("common:revert")}
             </Button>
           </ActionGroup>

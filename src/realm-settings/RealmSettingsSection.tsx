@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useErrorHandler } from "react-error-boundary";
 import {
   AlertVariant,
@@ -122,13 +122,16 @@ export const RealmSettingsSection = () => {
   const handleError = useErrorHandler();
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
-  const { control, getValues, setValue } = useForm();
+  const form = useForm();
+  const { control, getValues, setValue } = form;
+  const [realm, setRealm] = useState<RealmRepresentation>();
 
   useEffect(() => {
     return asyncStateFetch(
       () => adminClient.realms.findOne({ realm: realmName }),
       (realm) => {
         setupForm(realm);
+        setRealm(realm);
       },
       handleError
     );
@@ -141,6 +144,7 @@ export const RealmSettingsSection = () => {
   const save = async (realm: RealmRepresentation) => {
     try {
       await adminClient.realms.update({ realm: realmName }, realm);
+      setRealm(realm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
       addAlert(t("saveError", { error }), AlertVariant.danger);
@@ -163,29 +167,37 @@ export const RealmSettingsSection = () => {
         )}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs isBox>
-          <Tab
-            eventKey="general"
-            title={<TabTitleText>{t("realm-settings:general")}</TabTitleText>}
-            data-testid="rs-general-tab"
-          >
-            <RealmSettingsGeneralTab />
-          </Tab>
-          <Tab
-            eventKey="login"
-            title={<TabTitleText>{t("realm-settings:login")}</TabTitleText>}
-            data-testid="rs-login-tab"
-          >
-            <RealmSettingsLoginTab />
-          </Tab>
-          <Tab
-            eventKey="themes"
-            title={<TabTitleText>{t("realm-settings:themes")}</TabTitleText>}
-            data-testid="rs-themes-tab"
-          >
-            <RealmSettingsThemesTab />
-          </Tab>
-        </KeycloakTabs>
+        <FormProvider {...form}>
+          <KeycloakTabs isBox>
+            <Tab
+              eventKey="general"
+              title={<TabTitleText>{t("realm-settings:general")}</TabTitleText>}
+              data-testid="rs-general-tab"
+            >
+              <RealmSettingsGeneralTab
+                save={save}
+                reset={() => setupForm(realm!)}
+              />
+            </Tab>
+            <Tab
+              eventKey="login"
+              title={<TabTitleText>{t("realm-settings:login")}</TabTitleText>}
+              data-testid="rs-login-tab"
+            >
+              <RealmSettingsLoginTab save={save} realm={realm!} />
+            </Tab>
+            <Tab
+              eventKey="themes"
+              title={<TabTitleText>{t("realm-settings:themes")}</TabTitleText>}
+              data-testid="rs-themes-tab"
+            >
+              <RealmSettingsThemesTab
+                save={save}
+                reset={() => setupForm(realm!)}
+              />
+            </Tab>
+          </KeycloakTabs>
+        </FormProvider>
       </PageSection>
     </>
   );

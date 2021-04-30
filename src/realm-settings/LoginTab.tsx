@@ -1,47 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AlertVariant,
-  FormGroup,
-  PageSection,
-  Switch,
-} from "@patternfly/react-core";
+import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import { useErrorHandler } from "react-error-boundary";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "../components/alert/Alerts";
 
-export const RealmSettingsLoginTab = () => {
+type RealmSettingsLoginTabProps = {
+  save: (realm: RealmRepresentation) => void;
+  realm: RealmRepresentation;
+};
+
+export const RealmSettingsLoginTab = ({
+  save,
+  realm,
+}: RealmSettingsLoginTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const [realm, setRealm] = useState<RealmRepresentation>();
-  const handleError = useErrorHandler();
-  const adminClient = useAdminClient();
-  const { realm: realmName } = useRealm();
-  const { addAlert } = useAlerts();
-
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.realms.findOne({ realm: realmName }),
-      (realm) => {
-        setRealm(realm);
-      },
-      handleError
-    );
-  }, []);
-
-  const save = async (realm: RealmRepresentation) => {
-    try {
-      await adminClient.realms.update({ realm: realmName }, realm);
-      setRealm(realm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addAlert(t("saveError", { error }), AlertVariant.danger);
-    }
-  };
 
   return (
     <>
