@@ -774,7 +774,7 @@ public class UserResource {
             lifespan = realm.getActionTokenGeneratedByAdminLifespan();
         }
         int expiration = Time.currentTime() + lifespan;
-        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), expiration, actions, redirectUri, clientId);
+        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, redirectUri, clientId);
 
         try {
             UriBuilder builder = LoginActionsService.actionTokenProcessor(session.getContext().getUri());
