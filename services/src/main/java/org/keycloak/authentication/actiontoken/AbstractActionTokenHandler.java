@@ -17,18 +17,21 @@
 package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.TokenVerifier;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  *
  * @author hmlnarik
  */
-public abstract class AbstractActionTokenHander<T extends JsonWebToken> implements ActionTokenHandler<T>, ActionTokenHandlerFactory<T> {
+public abstract class AbstractActionTokenHandler<T extends JsonWebToken> implements ActionTokenHandler<T>, ActionTokenHandlerFactory<T> {
 
     private final String id;
     private final Class<T> tokenClass;
@@ -36,7 +39,7 @@ public abstract class AbstractActionTokenHander<T extends JsonWebToken> implemen
     private final EventType defaultEventType;
     private final String defaultEventError;
 
-    public AbstractActionTokenHander(String id, Class<T> tokenClass, String defaultErrorMessage, EventType defaultEventType, String defaultEventError) {
+    public AbstractActionTokenHandler(String id, Class<T> tokenClass, String defaultErrorMessage, EventType defaultEventType, String defaultEventError) {
         this.id = id;
         this.tokenClass = tokenClass;
         this.defaultErrorMessage = defaultErrorMessage;
@@ -101,5 +104,12 @@ public abstract class AbstractActionTokenHander<T extends JsonWebToken> implemen
     @Override
     public boolean canUseTokenRepeatedly(T token, ActionTokenContext<T> tokenContext) {
         return true;
+    }
+
+    protected TokenVerifier.Predicate<DefaultActionToken> verifyEmail(ActionTokenContext<? extends DefaultActionToken> context) {
+        return TokenUtils.checkThat(
+            t -> t.getEmail() == null || t.getEmail().equals(context.getAuthenticationSession().getAuthenticatedUser().getEmail()),
+            Errors.INVALID_EMAIL, Messages.INVALID_EMAIL
+        );
     }
 }
