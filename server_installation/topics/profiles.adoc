@@ -29,6 +29,11 @@ The features that can be enabled and disabled are:
 |No
 |Preview
 
+|ciba
+|OpenID Connect Client Initiated Backchannel Authentication (CIBA)
+|No
+|Preview
+
 |client_policies
 |Add client configuration policies
 |No
@@ -76,11 +81,6 @@ ifeval::[{project_product}==true]
 |No
 |Preview
 endif::[]
-
-|ciba
-|OpenID Connect Client Initiated Backchannel Authentication (CIBA)
-|No
-|Preview
 
 |===
 
