@@ -24,7 +24,7 @@
     "@patternfly/patternfly": "^4.102.1",
     "@patternfly/react-core": "4.115.1",
     "@patternfly/react-icons": "4.10.1",
-    "@patternfly/react-table": "4.26.6",
+    "@patternfly/react-table": "4.26.7",
     "file-saver": "^2.0.5",
     "i18next": "^19.6.2",
     "keycloak-admin": "1.14.11",
