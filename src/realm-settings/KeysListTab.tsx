@@ -62,30 +62,36 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     return <>{provider}</>;
   };
 
-  const renderPublicKeyButton = (publicKey: string) => {
-    return (
-      <Button
-        onClick={() => {
-          togglePublicKeyDialog();
-          setPublicKey(publicKey!);
-        }}
-        variant="secondary"
-        id="kc-public-key"
-      >
-        {t("realm-settings:publicKeys").slice(0, -1)}
-      </Button>
-    );
-  };
-
   const ButtonRenderer = ({ provider, publicKey, certificate }: KeyData) => {
     if (provider === "ecdsa-generated") {
-      return <>{renderPublicKeyButton(publicKey!)}</>;
-    }
-    if (provider === "rsa-generated" || provider === "fallback-RS256") {
+      return (
+        <>
+          <Button
+            onClick={() => {
+              togglePublicKeyDialog();
+              setPublicKey(publicKey!);
+            }}
+            variant="secondary"
+            id="kc-public-key"
+          >
+            {t("realm-settings:publicKeys").slice(0, -1)}
+          </Button>
+        </>
+      );
+    } else if (provider === "rsa-generated" || provider === "fallback-RS256") {
       return (
         <>
           <div>
-            {renderPublicKeyButton(publicKey!)}
+            <Button
+              onClick={() => {
+                togglePublicKeyDialog();
+                setPublicKey(publicKey!);
+              }}
+              variant="secondary"
+              id="kc-rsa-public-key"
+            >
+              {t("realm-settings:publicKeys").slice(0, -1)}
+            </Button>
             <Button
               onClick={() => {
                 toggleCertificateDialog();
@@ -109,6 +115,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
         <CertificateDialog />
         <KeycloakDataTable
           key={key}
+          isNotCompact={true}
           loader={loader}
           ariaLabelKey="realm-settings:keysList"
           searchPlaceholderKey="realm-settings:searchKey"
@@ -165,6 +172,11 @@ type KeysProps = {
 };
 
 export const KeysListTab = ({ keys, realmComponents, ...props }: KeysProps) => {
+  console.log("components", realmComponents);
+  console.log(
+    realmComponents.forEach((component) => console.log(component.name))
+  );
+
   return (
     <KeysTabInner
       keys={keys?.map((key) => {
