@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "engines": {
+    "node": "16"
+  },
   "scripts": {
     "build": "snowpack build",
     "build-storybook": "build-storybook -s public",
