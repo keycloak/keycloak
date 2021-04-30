@@ -59,7 +59,7 @@
     "@types/dot": "^1.1.4",
     "@types/enzyme": "^3.10.5",
     "@types/enzyme-adapter-react-16": "^1.0.6",
-    "@types/file-saver": "^2.0.1",
+    "@types/file-saver": "^2.0.2",
     "@types/jest": "^26.0.4",
     "@types/lodash": "^4.14.168",
     "@types/react": "^16.9.23",
