@@ -1156,6 +1156,26 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    // KEYCLOAK-15170
+    @Test
+    public void changeEmailAddressAfterSendingEmail() throws IOException {
+        initiateResetPasswordFromResetPasswordPage(defaultUser.getUsername());
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        UserResource user = testRealm().users().get(defaultUser.getId());
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEmail("vmuzikar@redhat.com");
+        user.update(userRep);
+
+        driver.navigate().to(changePasswordUrl.trim());
+        errorPage.assertCurrent();
+        assertEquals("Invalid email address.", errorPage.getError());
+    }
+
     private void changePasswordOnUpdatePage(WebDriver driver) {
         assertThat(driver.getPageSource(), Matchers.containsString("You need to change your password."));
 
