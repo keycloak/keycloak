@@ -53,7 +53,7 @@
     "@storybook/node-logger": "^6.1.7",
     "@storybook/preset-create-react-app": "^3.1.5",
     "@storybook/preset-typescript": "^3.0.0",
-    "@storybook/react": "^6.1.7",
+    "@storybook/react": "^6.2.9",
     "@testing-library/jest-dom": "^5.11.0",
     "@testing-library/react": "^10.4.6",
     "@types/dot": "^1.1.4",
