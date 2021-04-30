@@ -41,6 +41,7 @@
   "devDependencies": {
     "@babel/core": "^7.10.5",
     "@babel/preset-typescript": "^7.10.4",
+    "@jest/types": "^26.6.2",
     "@snowpack/app-scripts-react": "^1.10.0",
     "@snowpack/plugin-postcss": "1.0.4",
     "@snowpack/plugin-webpack": "2.0.12",
@@ -57,6 +58,7 @@
     "@testing-library/react": "^10.4.6",
     "@types/dot": "^1.1.4",
     "@types/enzyme": "^3.10.5",
+    "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/file-saver": "^2.0.1",
     "@types/jest": "^26.0.4",
     "@types/lodash": "^4.14.165",
@@ -77,7 +79,7 @@
     "eslint-plugin-react": "^7.20.5",
     "grunt": "^1.2.1",
     "grunt-contrib-copy": "^1.0.0",
-    "jest": "^25.4.0",
+    "jest": "^26.6.3",
     "mutationobserver-shim": "^0.3.7",
     "postcss": "^7.0.32",
     "postcss-cli": "^7.1.1",
@@ -86,6 +88,7 @@
     "react-is": "^16.13.1",
     "react-scripts": "^3.4.1",
     "snowpack": "2.11.1",
+    "ts-node": "^9.1.1",
     "typescript": "^3.8.3"
   }
 }

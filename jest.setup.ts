@@ -26,4 +26,5 @@ import Adapter from 'enzyme-adapter-react-16';
 configure({ adapter: new Adapter() });
 
 // eslint-disable-next-line no-undef
+// @ts-ignore
 global.MutationObserver = window.MutationObserver;
