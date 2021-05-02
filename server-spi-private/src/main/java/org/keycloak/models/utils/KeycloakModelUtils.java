@@ -519,12 +519,8 @@ public final class KeycloakModelUtils {
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs, boolean skipGroups) {
         List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
-        Set<String> aggrValues = new HashSet<String>();
-        if (!values.isEmpty()) {
-            if (!aggregateAttrs) {
-                return values;
-            }
-            aggrValues.addAll(values);
+        if ((!values.isEmpty() && !aggregateAttrs) || skipGroups) {
+            return values;
         }
         Stream<List<String>> attributes = user.getGroupsStream()
                 .map(group -> resolveAttribute(group, name))
@@ -533,12 +529,12 @@ public final class KeycloakModelUtils {
 
         if (!aggregateAttrs) {
             Optional<List<String>> first = attributes.findFirst();
-            if (first.isPresent()) return first.get();
+            return first.orElse(Collections.EMPTY_LIST);
         } else {
+            Set<String> aggrValues = new HashSet<String>(values);
             aggrValues.addAll(attributes.flatMap(Collection::stream).collect(Collectors.toSet()));
+            return aggrValues;
         }
-
-        return aggrValues;
     }
 
 
