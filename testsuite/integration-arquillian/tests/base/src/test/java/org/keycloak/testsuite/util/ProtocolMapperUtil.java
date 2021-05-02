@@ -102,6 +102,16 @@ public class ProtocolMapperUtil {
     }
 
     public static ProtocolMapperRepresentation createClaimMapper(String name,
+            String userAttribute,
+            String tokenClaimName, String claimType,
+            boolean accessToken, boolean idToken,
+            boolean multivalued, boolean aggregateAttrs, boolean skipGroups) {
+        return ModelToRepresentation.toRepresentation(UserAttributeMapper.createClaimMapper(name, userAttribute, tokenClaimName,
+                claimType, accessToken, idToken, multivalued, aggregateAttrs, skipGroups));
+
+    }
+
+    public static ProtocolMapperRepresentation createClaimMapper(String name,
                                                                  String userSessionNote,
                                                                  String tokenClaimName, String jsonType,
                                                                  boolean accessToken, boolean idToken) {

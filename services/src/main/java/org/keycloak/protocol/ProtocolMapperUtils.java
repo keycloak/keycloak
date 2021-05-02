@@ -44,6 +44,7 @@ public class ProtocolMapperUtils {
     public static final String USER_SESSION_NOTE = "user.session.note";
     public static final String MULTIVALUED = "multivalued";
     public static final String AGGREGATE_ATTRS = "aggregate.attrs";
+    public static final String SKIP_GROUPS = "skip.groups";
     public static final String USER_MODEL_PROPERTY_LABEL = "usermodel.prop.label";
     public static final String USER_MODEL_PROPERTY_HELP_TEXT = "usermodel.prop.tooltip";
     public static final String USER_MODEL_ATTRIBUTE_LABEL = "usermodel.attr.label";
@@ -65,8 +66,10 @@ public class ProtocolMapperUtils {
     public static final String USER_SESSION_MODEL_NOTE_HELP_TEXT = "userSession.modelNote.tooltip";
     public static final String MULTIVALUED_LABEL = "multivalued.label";
     public static final String AGGREGATE_ATTRS_LABEL = "aggregate.attrs.label";
+    public static final String SKIP_GROUPS_LABEL = "skip.groups.label";
     public static final String MULTIVALUED_HELP_TEXT = "multivalued.tooltip";
     public static final String AGGREGATE_ATTRS_HELP_TEXT = "aggregate.attrs.tooltip";
+    public static final String SKIP_GROUPS_HELP_TEXT = "skip.groups.tooltip";
 
     // Role name mapper can move some roles to different positions
     public static final int PRIORITY_ROLE_NAMES_MAPPER = 10;

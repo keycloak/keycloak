@@ -1350,6 +1350,44 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
+    public void testUserAttributeStatementMapperGroupsSkipGroups() throws Exception {
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        config.put("skip.groups", "true");
+
+        try (
+                AutoCloseable g1 = Creator.create(testRealmResource(), group1);
+                AutoCloseable uau = UserAttributeUpdater.forUserByUsername(testRealmResource(), "bburke")
+                        .setGroups("/group1")
+                        .update();
+                AutoCloseable c = createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config)) {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
+            assertThat(values, emptyArray());
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        }
+    }
+
+    @Test
     public void idpMetadataValidation() throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet httpGet = new HttpGet(authServerPage.toString() + "/realms/" + SAMLSERVLETDEMO + "/protocol/saml/descriptor");

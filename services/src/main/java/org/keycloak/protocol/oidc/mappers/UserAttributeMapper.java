@@ -64,6 +64,13 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         property.setHelpText(ProtocolMapperUtils.AGGREGATE_ATTRS_HELP_TEXT);
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(ProtocolMapperUtils.SKIP_GROUPS);
+        property.setLabel(ProtocolMapperUtils.SKIP_GROUPS_LABEL);
+        property.setHelpText(ProtocolMapperUtils.SKIP_GROUPS_HELP_TEXT);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "oidc-usermodel-attribute-mapper";
@@ -90,7 +97,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a token claim.";
+        return "Map a custom user attribute to a token claim. If the user attribute is empty it will search for the attribute in the user groups as well.";
     }
 
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
@@ -98,7 +105,8 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         boolean aggregateAttrs = Boolean.valueOf(mappingModel.getConfig().get(ProtocolMapperUtils.AGGREGATE_ATTRS));
-        Collection<String> attributeValue = KeycloakModelUtils.resolveAttribute(user, attributeName, aggregateAttrs);
+        boolean skipGroups = Boolean.valueOf(mappingModel.getConfig().get(ProtocolMapperUtils.SKIP_GROUPS));
+        Collection<String> attributeValue = KeycloakModelUtils.resolveAttribute(user, attributeName, aggregateAttrs, skipGroups);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
     }
@@ -116,6 +124,15 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
                                                         String tokenClaimName, String claimType,
                                                         boolean accessToken, boolean idToken,
                                                         boolean multivalued, boolean aggregateAttrs) {
+        return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
+                accessToken, idToken, multivalued, aggregateAttrs, false);
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean accessToken, boolean idToken,
+                                                        boolean multivalued, boolean aggregateAttrs, boolean skipGroups) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
                 accessToken, idToken,
@@ -126,6 +143,9 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         }
         if (aggregateAttrs) {
             mapper.getConfig().put(ProtocolMapperUtils.AGGREGATE_ATTRS, "true");
+        }
+        if (skipGroups) {
+            mapper.getConfig().put(ProtocolMapperUtils.SKIP_GROUPS, "true");
         }
 
         return mapper;

@@ -1192,6 +1192,38 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testGroupAttributeOneGroupMultiValueSkipGroups() throws Exception {
+        // get the user
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        // create a group1 with two values
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        adminClient.realm("test").groups().add(group1);
+        group1 = adminClient.realm("test").getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+
+        // create the attribute mapper
+        ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false, true)).close();
+
+        try {
+            // test it
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNotNull(idToken.getOtherClaims());
+            assertNull(idToken.getOtherClaims().get("group-value"));
+        } finally {
+            // revert
+            userResource.leaveGroup(group1.getId());
+            adminClient.realm("test").groups().group(group1.getId()).remove();
+            deleteMappers(protocolMappers);
+        }
+    }
+
     private void assertRoles(List<String> actualRoleList, String ...expectedRoles){
         Assert.assertNames(actualRoleList, expectedRoles);
     }

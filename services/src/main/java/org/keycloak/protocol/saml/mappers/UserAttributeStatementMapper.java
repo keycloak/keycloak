@@ -55,6 +55,13 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
         property.setHelpText(ProtocolMapperUtils.AGGREGATE_ATTRS_HELP_TEXT);
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(ProtocolMapperUtils.SKIP_GROUPS);
+        property.setLabel(ProtocolMapperUtils.SKIP_GROUPS_LABEL);
+        property.setHelpText(ProtocolMapperUtils.SKIP_GROUPS_HELP_TEXT);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        configProperties.add(property);
     }
 
     public static final String PROVIDER_ID = "saml-user-attribute-mapper";
@@ -80,7 +87,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a to a SAML attribute.";
+        return "Map a custom user attribute to a to a SAML attribute. If the user attribute is empty it will search for the attribute in the user groups as well.";
     }
 
     @Override
@@ -88,7 +95,8 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         boolean aggregateAttrs = Boolean.valueOf(mappingModel.getConfig().get(ProtocolMapperUtils.AGGREGATE_ATTRS));
-        Collection<String> attributeValues = KeycloakModelUtils.resolveAttribute(user, attributeName, aggregateAttrs);
+        boolean skipGroups = Boolean.valueOf(mappingModel.getConfig().get(ProtocolMapperUtils.SKIP_GROUPS));
+        Collection<String> attributeValues = KeycloakModelUtils.resolveAttribute(user, attributeName, aggregateAttrs, skipGroups);
         if (attributeValues.isEmpty()) return;
         AttributeStatementHelper.addAttributes(attributeStatement, mappingModel, attributeValues);
     }
