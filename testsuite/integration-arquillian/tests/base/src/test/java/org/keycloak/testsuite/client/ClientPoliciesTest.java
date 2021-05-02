@@ -82,6 +82,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceGroupsCond
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
@@ -1552,6 +1553,56 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("invalid client access type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    @Test
+    public void testConsentRequiredExecutorExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Test Profile", Boolean.FALSE, null)
+                    .addExecutor(ConsentRequiredExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Test Policy", Boolean.FALSE, Boolean.TRUE, null, null)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName("aaa-app");
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            clientRep.setConsentRequired(Boolean.FALSE);
+        });
+        ClientRepresentation clientRep = getClientByAdmin(cid);
+        assertEquals(Boolean.TRUE, clientRep.isConsentRequired());
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+                cRep.setConsentRequired(Boolean.FALSE);
+            });
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals(Errors.INVALID_REGISTRATION, cpe.getError());
+        }
+        clientRep = getClientByAdmin(cid);
+        assertEquals(Boolean.TRUE, clientRep.isConsentRequired());
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+                cRep.setImplicitFlowEnabled(Boolean.TRUE);
+            });
+            clientRep = getClientByAdmin(cid);
+            assertEquals(Boolean.TRUE, clientRep.isImplicitFlowEnabled());
+        } catch (ClientPolicyException cpe) {
+            fail();
+        }
     }
 
     private void checkMtlsFlow() throws IOException {

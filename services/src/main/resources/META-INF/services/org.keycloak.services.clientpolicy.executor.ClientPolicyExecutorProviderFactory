@@ -8,3 +8,4 @@ org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutorFact
 org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory
 org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory
 org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory
+org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory
