@@ -20,3 +20,7 @@ div.pf-c-card__body.kc-form-panel__body {
 button#kc-certificate.pf-c-button.pf-m-secondary {
   margin-left: var(--pf-global--spacer--md);
 }
+
+.pf-c-data-list__item-row.test {
+  font-weight: bold;
+}

@@ -11,7 +11,15 @@ import {
   TableHeader,
   TableVariant,
 } from "@patternfly/react-table";
-import { Spinner } from "@patternfly/react-core";
+import {
+  DataList,
+  DataListAction,
+  DataListCell,
+  DataListItem,
+  DataListItemCells,
+  DataListItemRow,
+  Spinner,
+} from "@patternfly/react-core";
 import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
@@ -385,6 +393,45 @@ export function KeycloakDataTable<T>({
               columns={columns}
               ariaLabelKey={ariaLabelKey}
             />
+            //       <DataList
+            //   // onSelectDataListItem={(value) => {
+            //   //   setGroupId(value);
+            //   // }}
+            //   aria-label={t("groups")}
+            //   isCompact
+            //   itemOrder={itemOrder}
+            // >
+            //   {(rows!).map((component) => (
+            //     <DataListItem draggable
+            //       aria-labelledby={"aria"}
+            //       key={"key"}
+            //       id={"id"}
+            //       // onClick={(e) => {
+            //       //   if ((e.target as HTMLInputElement).type !== "checkbox") {
+            //       //     setGroupId(group.id);
+            //       //   }
+            //       // }}
+            //     >
+            //       <DataListItemRow data-testid={"group.name"}>
+
+            //         <DataListItemCells
+            //           dataListCells={[
+            //             <DataListCell key={`name}`}>
+            //               <>{Math.random()}</>
+            //             </DataListCell>,
+            //           ]}
+            //         />
+            //         <DataListAction
+            //           aria-labelledby={`select`}
+            //           id={`select`}
+            //           aria-label={t("groupName")}
+            //           isPlainButtonAction
+            //         >
+            //         </DataListAction>
+            //       </DataListItemRow>
+            //     </DataListItem>
+            //   ))}
+            // </DataList>
           )}
           {!loading &&
             rows.length === 0 &&
