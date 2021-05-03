@@ -32,7 +32,7 @@ exports[`Group BreadCrumbs tests couple of crumbs 1`] = `
                     href="//groups"
                     onClick={[Function]}
                   >
-                    groups
+                    Groups
                   </a>
                 </LinkAnchor>
               </Link>

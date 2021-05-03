@@ -18,6 +18,8 @@ import {
 } from "../../components/client-scope/ClientScopeTypes";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 
+import "./client-scopes.css";
+
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
   open: boolean;
@@ -26,8 +28,6 @@ export type AddScopeDialogProps = {
     scopes: { scope: ClientScopeRepresentation; type: ClientScopeType }[]
   ) => void;
 };
-
-import "./client-scopes.css";
 
 export const AddScopeDialog = ({
   clientScopes,

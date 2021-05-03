@@ -6,7 +6,7 @@ import {
   Switch,
   useParams,
 } from "react-router-dom";
-import { ErrorBoundary, useErrorHandler } from "react-error-boundary";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
@@ -21,9 +21,7 @@ import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/SubGroupsContext";
 import { useRealm } from "./context/realm-context/RealmContext";
-import { useAdminClient, asyncStateFetch } from "./context/auth/AdminClient";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
-import { RecentUsed } from "./components/realm-selector/recent-used";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
@@ -39,28 +37,11 @@ const AppContexts = ({ children }: { children: ReactNode }) => (
   </AccessContextProvider>
 );
 
-// set the realm form the path if it's one of the know realms
+// set the realm form the path
 const RealmPathSelector = ({ children }: { children: ReactNode }) => {
   const { setRealm } = useRealm();
   const { realm } = useParams<{ realm: string }>();
-  const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
-  const recentUsed = new RecentUsed();
-
-  useEffect(
-    () =>
-      asyncStateFetch(
-        () => adminClient.realms.find(),
-        (realms) => {
-          recentUsed.clean(realms.map((r) => r.realm!));
-          if (realms.findIndex((r) => r.realm == realm) !== -1) {
-            setRealm(realm);
-          }
-        },
-        handleError
-      ),
-    []
-  );
+  useEffect(() => setRealm(realm), []);
 
   return <>{children}</>;
 };
@@ -88,7 +69,7 @@ export const App = () => {
         >
           <ErrorBoundary
             FallbackComponent={ErrorRenderer}
-            onReset={() => (location.href = "/")}
+            onReset={window.location.reload}
           >
             <Switch>
               {routes(() => {}).map((route, i) => (

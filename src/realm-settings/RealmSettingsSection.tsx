@@ -43,7 +43,7 @@ const RealmSettingsHeader = ({
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const history = useHistory();
-  const { setRealm } = useRealm();
+  const { refresh } = useRealm();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -65,8 +65,8 @@ const RealmSettingsHeader = ({
       try {
         await adminClient.realms.del({ realm: realmName });
         addAlert(t("deletedSuccess"), AlertVariant.success);
-        setRealm("master");
         history.push("/master/");
+        refresh();
       } catch (error) {
         addAlert(t("deleteError", { error }), AlertVariant.danger);
       }

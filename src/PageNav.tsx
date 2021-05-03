@@ -1,7 +1,6 @@
 import React from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
 import {
   Nav,
   NavItem,
@@ -12,8 +11,6 @@ import {
 
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useRealm } from "./context/realm-context/RealmContext";
-import { DataLoader } from "./components/data-loader/DataLoader";
-import { useAdminClient } from "./context/auth/AdminClient";
 import { useAccess } from "./context/access/Access";
 import { routes } from "./route-config";
 
@@ -21,10 +18,6 @@ export const PageNav: React.FunctionComponent = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
   const { realm } = useRealm();
-  const adminClient = useAdminClient();
-  const realmLoader = async () => {
-    return _.sortBy(await adminClient.realms.find(), "realm");
-  };
 
   const history = useHistory();
 
@@ -83,13 +76,9 @@ export const PageNav: React.FunctionComponent = () => {
       nav={
         <Nav onSelect={onSelect}>
           <NavList>
-            <DataLoader loader={realmLoader} deps={[realm]}>
-              {(realmList) => (
-                <NavItem className="keycloak__page_nav__nav_item__realm-selector">
-                  <RealmSelector realmList={realmList || []} />
-                </NavItem>
-              )}
-            </DataLoader>
+            <NavItem className="keycloak__page_nav__nav_item__realm-selector">
+              <RealmSelector />
+            </NavItem>
           </NavList>
           {isOnAddRealm() && (
             <NavGroup title="">

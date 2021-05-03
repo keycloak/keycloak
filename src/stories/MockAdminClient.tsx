@@ -43,7 +43,12 @@ export const MockAdminClient = (props: {
         >
           <WhoAmIContextProvider>
             <RealmContext.Provider
-              value={{ realm: "master", setRealm: () => {} }}
+              value={{
+                realm: "master",
+                setRealm: () => {},
+                realms: [],
+                refresh: () => Promise.resolve(),
+              }}
             >
               <AccessContextProvider>{props.children}</AccessContextProvider>
             </RealmContext.Provider>

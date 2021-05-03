@@ -17,7 +17,14 @@ describe("<FormAccess />", () => {
       <WhoAmIContext.Provider
         value={{ refresh: () => {}, whoAmI: new WhoAmI("master", whoami) }}
       >
-        <RealmContext.Provider value={{ realm, setRealm: () => {} }}>
+        <RealmContext.Provider
+          value={{
+            realm,
+            setRealm: () => {},
+            realms: [],
+            refresh: () => Promise.resolve(),
+          }}
+        >
           <AccessContextProvider>
             <FormAccess role="manage-clients">
               <FormGroup label="test" fieldId="field">

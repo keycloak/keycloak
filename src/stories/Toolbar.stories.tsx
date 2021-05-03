@@ -9,7 +9,7 @@ import {
 import { Meta } from "@storybook/react";
 
 import { RealmSelector } from "../components/realm-selector/RealmSelector";
-import { RealmContextProvider } from "../context/realm-context/RealmContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
 import { HashRouter } from "react-router-dom";
 
 export default {
@@ -20,20 +20,24 @@ export default {
 export const Header = () => {
   return (
     <HashRouter>
-      <RealmContextProvider>
+      <RealmContext.Provider
+        value={{
+          realm: "master",
+          setRealm: () => {},
+          realms: [
+            { id: "master", realm: "Master" },
+            { id: "photoz", realm: "Photoz" },
+          ],
+          refresh: () => Promise.resolve(),
+        }}
+      >
         <Page
           sidebar={
             <PageSidebar
               nav={
                 <Nav>
                   <NavList>
-                    <RealmSelector
-                      realmList={[
-                        { id: "master", realm: "Master" },
-                        { id: "photoz", realm: "Photoz" },
-                      ]}
-                    />
-
+                    <RealmSelector />
                     <NavItem id="default-link1" to="#default-link1" itemId={0}>
                       Link 1
                     </NavItem>
@@ -57,7 +61,7 @@ export const Header = () => {
             />
           }
         />
-      </RealmContextProvider>
+      </RealmContext.Provider>
     </HashRouter>
   );
 };

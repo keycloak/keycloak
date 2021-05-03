@@ -16,24 +16,20 @@ import {
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 
-import { toUpperCase } from "../../util";
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import { toUpperCase } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 import { RecentUsed } from "./recent-used";
 
 import "./realm-selector.css";
 
-type RealmSelectorProps = {
-  realmList: RealmRepresentation[];
-};
-
-export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
-  const { realm, setRealm } = useRealm();
+export const RealmSelector = () => {
+  const { realm, setRealm, realms } = useRealm();
   const { whoAmI } = useContext(WhoAmIContext);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [filteredItems, setFilteredItems] = useState(realmList);
+  const [filteredItems, setFilteredItems] = useState<RealmRepresentation[]>();
   const history = useHistory();
   const { t } = useTranslation("common");
   const recentUsed = new RecentUsed();
@@ -47,6 +43,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
 
   const AddRealm = () => (
     <Button
+      data-testid="add-realm"
       component="div"
       isBlock
       onClick={() => {
@@ -59,30 +56,31 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
   );
 
   const onFilter = () => {
-    const filtered =
-      search === ""
-        ? realmList
-        : realmList.filter(
-            (r) => r.realm!.toLowerCase().indexOf(search.toLowerCase()) !== -1
-          );
-    setFilteredItems(filtered || []);
+    if (search === "") {
+      setFilteredItems(undefined);
+    } else {
+      const filtered = realms.filter(
+        (r) => r.realm!.toLowerCase().indexOf(search.toLowerCase()) !== -1
+      );
+      setFilteredItems(filtered);
+    }
   };
 
   const selectRealm = (realm: string) => {
     setRealm(realm);
     setOpen(!open);
+    history.push(`/${realm}/`);
   };
 
   useEffect(() => {
     onFilter();
   }, [search]);
 
-  const dropdownItems = realmList.map((r) => (
+  const dropdownItems = realms.map((r) => (
     <DropdownItem
       key={`realm-dropdown-item-${r.realm}`}
       onClick={() => {
         selectRealm(r.realm!);
-        history.push(`/${realm}/`);
       }}
     >
       <RealmText value={r.realm!} />
@@ -104,8 +102,9 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
 
   return (
     <>
-      {realmList.length > 5 && (
+      {realms.length > 5 && (
         <ContextSelector
+          data-testid="realmSelector"
           toggleText={toUpperCase(realm)}
           isOpen={open}
           screenReaderLabel={toUpperCase(realm)}
@@ -117,8 +116,10 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
             } else {
               element = r as ReactElement;
             }
-            const value = element.props.value || "master";
-            selectRealm(value);
+            const value = element.props.value;
+            if (value) {
+              selectRealm(value);
+            }
           }}
           searchInputValue={search}
           onSearchInputChange={(value) => setSearch(value)}
@@ -130,7 +131,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
               <RealmText value={realm} /> <Label>{t("recent")}</Label>
             </ContextSelectorItem>
           ))}
-          {filteredItems
+          {(filteredItems || realms)
             .filter((r) => !recentUsed.used.includes(r.realm!))
             .map((item) => (
               <ContextSelectorItem key={item.id}>
@@ -142,14 +143,15 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
           </ContextSelectorItem>
         </ContextSelector>
       )}
-      {realmList.length <= 5 && (
+      {realms.length <= 5 && (
         <Dropdown
           id="realm-select"
+          data-testid="realmSelector"
           className="keycloak__realm_selector__dropdown"
           isOpen={open}
           toggle={
             <DropdownToggle
-              id="realm-select-toggle"
+              data-testid="realmSelectorToggle"
               onToggle={() => setOpen(!open)}
               className="keycloak__realm_selector_dropdown__toggle"
             >

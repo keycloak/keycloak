@@ -290,7 +290,6 @@ export function KeycloakDataTable<T>({
         )
       )
     );
-    setSearch;
   };
 
   const convertAction = () =>

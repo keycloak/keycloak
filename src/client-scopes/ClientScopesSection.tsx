@@ -26,14 +26,14 @@ import {
   AllClientScopes,
   AllClientScopeType,
 } from "../components/client-scope/ClientScopeTypes";
+import KeycloakAdminClient from "keycloak-admin";
+import { ChangeTypeDialog } from "./ChangeTypeDialog";
+
+import "./client-scope.css";
 
 type ClientScopeDefaultOptionalType = ClientScopeRepresentation & {
   type: AllClientScopeType;
 };
-
-import "./client-scope.css";
-import KeycloakAdminClient from "keycloak-admin";
-import { ChangeTypeDialog } from "./ChangeTypeDialog";
 
 const castAdminClient = (adminClient: KeycloakAdminClient) =>
   (adminClient.clientScopes as unknown) as {

@@ -19,11 +19,13 @@ import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
   const history = useHistory();
   const { refresh } = useContext(WhoAmIContext);
+  const { refresh: realmRefresh } = useRealm();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
 
@@ -56,10 +58,12 @@ export const NewRealmForm = () => {
     try {
       await adminClient.realms.create(realm);
       addAlert(t("saveRealmSuccess"), AlertVariant.success);
-      refresh();
+
       //force token update
+      refresh();
       await adminClient.keycloak?.updateToken(Number.MAX_VALUE);
-      history.push(`/${realm.realm}/`);
+      await realmRefresh();
+      history.push(`/${realm.realm}`);
     } catch (error) {
       addAlert(
         t("saveRealmError", {
