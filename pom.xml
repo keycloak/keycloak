@@ -104,8 +104,8 @@
         <elytron.version>1.15.3.Final</elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
-        <jetty93.version>9.3.9.v20160517</jetty93.version>
-        <jetty94.version>9.4.29.v20200521</jetty94.version>
+        <jetty93.version>9.3.29.v20201019</jetty93.version>
+        <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.1.6</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
@@ -231,8 +231,7 @@
         </developer>
     </developers>
 
-    <contributors>
-    </contributors>
+    <contributors></contributors>
 
     <modules>
         <module>boms</module>
