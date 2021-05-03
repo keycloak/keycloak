@@ -38,8 +38,6 @@
     "type": "Type",
     "kid": "Kid",
     "provider": "Provider",
-    "providerDescription": "Provider description",
-    "name": "Name",
     "publicKeys": "Public keys",
     "certificate": "Certificate",
     "userRegistration": "User registration",
