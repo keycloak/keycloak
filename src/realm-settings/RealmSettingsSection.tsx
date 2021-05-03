@@ -25,6 +25,7 @@ import { RealmSettingsLoginTab } from "./LoginTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
 import { PartialImportDialog } from "./PartialImport";
 import { RealmSettingsThemesTab } from "./ThemesTab";
+import { RealmSettingsEmailTab } from "./EmailTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -185,6 +186,16 @@ export const RealmSettingsSection = () => {
               data-testid="rs-login-tab"
             >
               <RealmSettingsLoginTab save={save} realm={realm!} />
+            </Tab>
+            <Tab
+              eventKey="email"
+              title={<TabTitleText>{t("realm-settings:email")}</TabTitleText>}
+              data-testid="rs-email-tab"
+            >
+              <RealmSettingsEmailTab
+                save={save}
+                reset={() => setupForm(realm!)}
+              />
             </Tab>
             <Tab
               eventKey="themes"

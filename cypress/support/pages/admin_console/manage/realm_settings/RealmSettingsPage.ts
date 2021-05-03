@@ -1,33 +1,30 @@
 export default class RealmSettingsPage {
-  saveBtnGeneral: string;
-  saveBtnThemes: string;
-  loginTab: string;
-  selectLoginTheme: string;
-  loginThemeList: string;
-  selectAccountTheme: string;
-  accountThemeList: string;
-  selectAdminTheme: string;
-  adminThemeList: string;
-  selectEmailTheme: string;
-  emailThemeList: string;
-  selectDefaultLocale: string;
-  defaultLocaleList: string;
-
-  constructor() {
-    this.saveBtnGeneral = "general-tab-save";
-    this.saveBtnThemes = "themes-tab-save";
-    this.loginTab = "rs-login-tab";
-    this.selectLoginTheme = "#kc-login-theme";
-    this.loginThemeList = "#kc-login-theme + ul";
-    this.selectAccountTheme = "#kc-account-theme";
-    this.accountThemeList = "#kc-account-theme + ul";
-    this.selectAdminTheme = "#kc-admin-console-theme";
-    this.adminThemeList = "#kc-admin-console-theme + ul";
-    this.selectEmailTheme = "#kc-email-theme";
-    this.emailThemeList = "#kc-email-theme + ul";
-    this.selectDefaultLocale = "select-default-locale";
-    this.defaultLocaleList = "select-default-locale + ul";
-  }
+  generalSaveBtn = "general-tab-save";
+  themesSaveBtn = "themes-tab-save";
+  loginTab = "rs-login-tab";
+  selectLoginTheme = "#kc-login-theme";
+  loginThemeList = "#kc-login-theme + ul";
+  selectAccountTheme = "#kc-account-theme";
+  accountThemeList = "#kc-account-theme + ul";
+  selectAdminTheme = "#kc-admin-console-theme";
+  adminThemeList = "#kc-admin-console-theme + ul";
+  selectEmailTheme = "#kc-email-theme";
+  emailThemeList = "#kc-email-theme + ul";
+  selectDefaultLocale = "select-default-locale";
+  defaultLocaleList = "select-default-locale + ul";
+  emailSaveBtn = "email-tab-save";
+  managedAccessSwitch = "user-managed-access-switch";
+  userRegSwitch = "user-reg-switch";
+  forgotPwdSwitch = "forgot-pw-switch";
+  rememberMeSwitch = "remember-me-switch";
+  emailAsUsernameSwitch = "email-as-username-switch";
+  loginWithEmailSwitch = "login-with-email-switch";
+  duplicateEmailsSwitch = "duplicate-emails-switch";
+  verifyEmailSwitch = "verify-email-switch";
+  authSwitch = "email-authentication-switch";
+  fromInput = "sender-email-address";
+  enableSslCheck = "enable-ssl";
+  enableStartTlsCheck = "enable-start-tls";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -59,20 +56,42 @@ export default class RealmSettingsPage {
     return this;
   }
 
+  saveGeneral() {
+    cy.getId(this.generalSaveBtn).click();
+
+    return this;
+  }
+
+  saveThemes() {
+    cy.getId(this.themesSaveBtn).click();
+
+    return this;
+  }
+
+  addSenderEmail(senderEmail: string) {
+    cy.getId(this.fromInput).clear();
+
+    if (senderEmail) {
+      cy.getId(this.fromInput).type(senderEmail);
+    }
+
+    return this;
+  }
+
   toggleSwitch(switchName: string) {
     cy.getId(switchName).next().click();
 
     return this;
   }
 
-  saveGeneral() {
-    cy.getId(this.saveBtnGeneral).click();
+  toggleCheck(switchName: string) {
+    cy.getId(switchName).click();
 
     return this;
   }
 
-  saveThemes() {
-    cy.getId(this.saveBtnThemes).click();
+  save(saveBtn: string) {
+    cy.getId(saveBtn).click();
 
     return this;
   }

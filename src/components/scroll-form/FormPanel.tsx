@@ -13,12 +13,18 @@ type FormPanelProps = {
   title: string;
   scrollId?: string;
   children: ReactNode;
+  className?: string;
 };
 
-export const FormPanel = ({ title, children, scrollId }: FormPanelProps) => {
+export const FormPanel = ({
+  title,
+  children,
+  scrollId,
+  className,
+}: FormPanelProps) => {
   return (
-    <Card isFlat className="kc-form-panel__panel">
-      <CardHeader>
+    <Card className={className} isFlat>
+      <CardHeader className="kc-form-panel__header">
         <CardTitle tabIndex={0}>
           <Title
             headingLevel="h4"
@@ -31,7 +37,7 @@ export const FormPanel = ({ title, children, scrollId }: FormPanelProps) => {
           </Title>
         </CardTitle>
       </CardHeader>
-      <CardBody>{children}</CardBody>
+      <CardBody className="kc-form-panel__body">{children}</CardBody>
     </Card>
   );
 };

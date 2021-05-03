@@ -25,6 +25,7 @@ import moment from "moment";
 import { JoinGroupDialog } from "./JoinGroupDialog";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
+import { emailRegexPattern } from "../util";
 
 export type UserFormProps = {
   form: UseFormMethods<UserRepresentation>;
@@ -85,8 +86,6 @@ export const UserForm = ({
       }
     });
   };
-
-  const emailRegexPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
   const requiredUserActionsOptions = [
     <SelectOption key={0} value="CONFIGURE_TOTP">

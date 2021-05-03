@@ -1,0 +1,18 @@
+.pf-c-card.pf-m-flat.kc-email-template,
+.pf-c-card.pf-m-flat.kc-email-connection {
+  border: none;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-bottom: var(--pf-global--spacer--sm);
+}
+
+div.pf-c-card__header.kc-form-panel__header {
+  padding-bottom: 0px;
+  padding-left: 0px;
+  padding-top: 0px;
+}
+
+div.pf-c-card__body.kc-form-panel__body {
+  padding-left: 0px;
+  padding-bottom: var(--pf-global--spacer--2xl);
+}
