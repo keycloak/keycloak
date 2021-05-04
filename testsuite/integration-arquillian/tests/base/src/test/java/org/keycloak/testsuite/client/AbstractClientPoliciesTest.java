@@ -128,6 +128,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFa
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -863,6 +864,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected Object createSecureRequestObjectExecutorConfig(Integer availablePeriod) {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
+        return config;
+    }
+
+    protected Object createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean requireClientAssertion) {
+        SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration config = new SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration();
+        config.setRequireClientAssertion(requireClientAssertion);
         return config;
     }
 

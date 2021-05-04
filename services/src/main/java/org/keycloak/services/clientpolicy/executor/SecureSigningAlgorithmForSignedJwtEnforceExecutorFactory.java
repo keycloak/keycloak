@@ -22,12 +22,19 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "securesignalgjwt-enforce-executor";
+
+    public static final String REQUIRE_CLIENT_ASSERTION = "require-client-assertion";
+
+    private static final ProviderConfigProperty REQUIRE_CLIENT_ASSERTION_PROPERTY = new ProviderConfigProperty(
+            REQUIRE_CLIENT_ASSERTION, null, null, ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -58,7 +65,7 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory implements
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return new ArrayList<>(Arrays.asList(REQUIRE_CLIENT_ASSERTION_PROPERTY));
     }
 
 }
