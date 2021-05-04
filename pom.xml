@@ -131,7 +131,7 @@
         <mysql.version>8.0.23</mysql.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
-        <postgresql.version>42.2.8</postgresql.version>
+        <postgresql.version>42.2.18</postgresql.version>
         <mariadb.version>2.2.4</mariadb.version>
         <mssql.version>7.4.1.jre8</mssql.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
