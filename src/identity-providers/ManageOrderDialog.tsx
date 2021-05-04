@@ -17,7 +17,7 @@ import {
   TextContent,
   Text,
 } from "@patternfly/react-core";
-import IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
+import type IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 

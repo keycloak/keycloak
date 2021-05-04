@@ -10,7 +10,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 
-import ClientInitialAccessPresentation from "keycloak-admin/lib/defs/clientInitialAccessPresentation";
+import type ClientInitialAccessPresentation from "keycloak-admin/lib/defs/clientInitialAccessPresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";

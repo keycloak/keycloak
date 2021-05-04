@@ -1,6 +1,6 @@
 import React from "react";
-import { IFormatterValueType } from "@patternfly/react-table";
-import { Meta, Story } from "@storybook/react";
+import type { IFormatterValueType } from "@patternfly/react-table";
+import type { Meta, Story } from "@storybook/react";
 
 import clients from "../clients/__tests__/mock-clients.json";
 
@@ -39,7 +39,7 @@ SimpleList.args = {
     },
     { name: "baseUrl", displayKey: "clients:homeURL" },
   ],
-  loader: () => clients,
+  loader: async () => clients,
 };
 
 export const LoadingList = Template.bind({});

@@ -11,8 +11,8 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import KeycloakAdminClient from "keycloak-admin";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type KeycloakAdminClient from "keycloak-admin";
 
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { toUpperCase } from "../../util";

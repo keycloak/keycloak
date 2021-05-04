@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 
 import { useAdminClient } from "../context/auth/AdminClient";
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";

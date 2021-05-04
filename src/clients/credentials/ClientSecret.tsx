@@ -8,7 +8,7 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
-import { ClientForm } from "../ClientDetails";
+import type { ClientForm } from "../ClientDetails";
 
 export type ClientSecretProps = {
   secret: string;

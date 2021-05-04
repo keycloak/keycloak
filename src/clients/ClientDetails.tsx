@@ -14,7 +14,7 @@ import {
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import _ from "lodash";
 
 import { ClientSettings } from "./ClientSettings";

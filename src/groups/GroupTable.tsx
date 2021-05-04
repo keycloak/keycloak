@@ -12,7 +12,7 @@ import {
 } from "@patternfly/react-core";
 import { UsersIcon } from "@patternfly/react-icons";
 
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";

@@ -1,7 +1,7 @@
 import { FormGroup, TextInput } from "@patternfly/react-core";
 import React from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
-import { UseFormMethods } from "react-hook-form";
+import type { UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 export type LdapMapperHardcodedAttributeProps = {

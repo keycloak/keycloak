@@ -1,9 +1,9 @@
-import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 import FileSaver from "file-saver";
 import _ from "lodash";
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { ProviderRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
-import KeycloakAdminClient from "keycloak-admin";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type { ProviderRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type KeycloakAdminClient from "keycloak-admin";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;

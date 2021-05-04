@@ -1,6 +1,6 @@
-import { TFunction } from "i18next";
-import { BreadcrumbsRoute } from "use-react-router-breadcrumbs";
-import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type { TFunction } from "i18next";
+import type { BreadcrumbsRoute } from "use-react-router-breadcrumbs";
+import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 import { AuthenticationSection } from "./authentication/AuthenticationSection";
 import { ClientScopeForm } from "./client-scopes/form/ClientScopeForm";

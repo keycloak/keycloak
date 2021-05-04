@@ -1,5 +1,5 @@
 import React, { createContext, ReactNode, useContext, useState } from "react";
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 
 type SubGroupsProps = {
   subGroups: GroupRepresentation[];

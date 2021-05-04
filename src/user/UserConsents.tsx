@@ -8,7 +8,7 @@ import { emptyFormatter } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { cellWidth } from "@patternfly/react-table";
 import _ from "lodash";
-import UserConsentRepresentation from "keycloak-admin/lib/defs/userConsentRepresentation";
+import type UserConsentRepresentation from "keycloak-admin/lib/defs/userConsentRepresentation";
 import { CubesIcon } from "@patternfly/react-icons";
 import moment from "moment";
 

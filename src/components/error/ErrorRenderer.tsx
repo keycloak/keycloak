@@ -6,7 +6,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import React from "react";
-import { FallbackProps } from "react-error-boundary";
+import type { FallbackProps } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 
 export const ErrorRenderer = ({ error, resetErrorBoundary }: FallbackProps) => {

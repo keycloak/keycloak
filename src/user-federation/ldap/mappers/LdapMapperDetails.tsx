@@ -12,7 +12,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { useAdminClient } from "../../../context/auth/AdminClient";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useHistory, useParams } from "react-router-dom";

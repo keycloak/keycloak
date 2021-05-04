@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ArrayField, UseFormMethods } from "react-hook-form";
+import type { ArrayField, UseFormMethods } from "react-hook-form";
 import { ActionGroup, Button, TextInput } from "@patternfly/react-core";
 import {
   TableComposable,
@@ -13,7 +13,7 @@ import {
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
 import { FormAccess } from "../components/form-access/FormAccess";
-import { RoleFormType } from "./RealmRoleTabs";
+import type { RoleFormType } from "./RealmRoleTabs";
 
 import "./RealmRolesSection.css";
 

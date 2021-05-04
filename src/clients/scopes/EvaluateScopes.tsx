@@ -24,11 +24,11 @@ import {
   Title,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
-import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-import { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";

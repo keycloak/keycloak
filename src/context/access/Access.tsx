@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";

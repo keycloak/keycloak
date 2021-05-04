@@ -17,7 +17,7 @@ import _ from "lodash";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { useFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
+import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;

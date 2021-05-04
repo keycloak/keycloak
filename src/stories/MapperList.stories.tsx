@@ -1,5 +1,6 @@
 import React from "react";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
+import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import serverInfo from "../context/server-info/__tests__/mock.json";
 import clientScopeMock from "../client-scopes/__tests__/mock-client-scope.json";
@@ -13,7 +14,9 @@ export default {
 } as Meta;
 
 export const MapperListExample = () => (
-  <ServerInfoContext.Provider value={serverInfo}>
+  <ServerInfoContext.Provider
+    value={(serverInfo as unknown) as ServerInfoRepresentation}
+  >
     <MockAdminClient>
       <MapperList clientScope={clientScopeMock} refresh={() => {}} />
     </MockAdminClient>

@@ -1,5 +1,5 @@
 import React from "react";
-import KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "keycloak-admin";
 
 import { AdminClient } from "./context/auth/AdminClient";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";

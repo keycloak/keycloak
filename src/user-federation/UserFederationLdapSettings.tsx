@@ -22,7 +22,7 @@ import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertToFormValues } from "../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";

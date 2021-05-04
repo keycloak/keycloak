@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrayField, UseFormMethods } from "react-hook-form";
+import type { ArrayField, UseFormMethods } from "react-hook-form";
 import { ActionGroup, Button, TextInput } from "@patternfly/react-core";
 import {
   TableComposable,

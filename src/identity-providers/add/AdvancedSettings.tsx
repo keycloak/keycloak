@@ -10,12 +10,12 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 
-import AuthenticationFlowRepresentation from "keycloak-admin/lib/defs/authenticationFlowRepresentation";
+import type AuthenticationFlowRepresentation from "keycloak-admin/lib/defs/authenticationFlowRepresentation";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { FieldProps } from "../component/FormGroupField";
+import type { FieldProps } from "../component/FormGroupField";
 
 const LoginFlow = ({
   field,
