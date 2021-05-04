@@ -572,6 +572,20 @@
                 </div>
                 <kc-tooltip>{{:: 'request-object-required.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly && serverInfo.featureEnabled('CIBA') && oidcCibaGrantEnabled == true"">
+                <label class="col-md-2 control-label" for="cibaBackchannelAuthRequestSigningAlg">{{:: 'ciba-backchannel-auth-request-signing-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="cibaBackchannelAuthRequestSigningAlg"
+                                ng-change="changeCibaBackchannelAuthRequestSigningAlg()"
+                                ng-model="cibaBackchannelAuthRequestSigningAlg">
+                            <option value="none">none</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('clientSignature')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'ciba-backchannel-auth-request-signing-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="newRequestUri">{{:: 'request-uris' | translate}}</label>
                 <div class="col-sm-6">

@@ -151,6 +151,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("backchannel_authentication_endpoint")
     private String backchannelAuthenticationEndpoint;
 
+    @JsonProperty("backchannel_authentication_request_signing_alg_values_supported")
+    private List<String> backchannelAuthenticationRequestSigningAlgValuesSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -459,6 +462,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setBackchannelAuthenticationEndpoint(String backchannelAuthenticationEndpoint) {
         this.backchannelAuthenticationEndpoint = backchannelAuthenticationEndpoint;
+    }
+
+    public List<String> getBackchannelAuthenticationRequestSigningAlgValuesSupported() {
+        return backchannelAuthenticationRequestSigningAlgValuesSupported;
+    }
+
+    public void setBackchannelAuthenticationRequestSigningAlgValuesSupported(List<String> backchannelAuthenticationRequestSigningAlgValuesSupported) {
+        this.backchannelAuthenticationRequestSigningAlgValuesSupported = backchannelAuthenticationRequestSigningAlgValuesSupported;
     }
 
     @JsonAnyGetter
