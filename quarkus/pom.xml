@@ -32,7 +32,7 @@
 
     <properties>
         <quarkus.version>1.13.3.Final</quarkus.version>
-        <resteasy.version>4.5.9.Final</resteasy.version>
+        <resteasy.version>4.5.10.Final</resteasy.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.version>5.4.29.Final</hibernate.version>
