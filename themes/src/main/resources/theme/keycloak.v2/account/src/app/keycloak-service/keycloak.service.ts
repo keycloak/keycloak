@@ -30,6 +30,14 @@ export class KeycloakService {
         return this.keycloakAuth.authenticated ? this.keycloakAuth.authenticated : false;
     }
 
+    public audiencePresent(): boolean {
+        if (this.keycloakAuth.tokenParsed) {
+            const audience = this.keycloakAuth.tokenParsed['aud'];
+            return audience === 'account' || (Array.isArray(audience) && audience.indexOf('account') >= 0);
+        }
+        return false;
+    }
+
     public login(options?: KeycloakLoginOptions): void {
         this.keycloakAuth.login(options);
     }

@@ -91,12 +91,17 @@ export class AccountServiceClient {
 
     private handleError(response: HttpResponse): void {
         if (response !== null && response.status === 401) {
-            // session timed out?
-            this.kcSvc.login();
+            if (this.kcSvc.authenticated() && !this.kcSvc.audiencePresent()) {
+                // authenticated and the audience is not present => not allowed
+                window.location.href = baseUrl + '#/forbidden';
+            } else {
+                // session timed out?
+                this.kcSvc.login();
+            }
         }
 
         if (response !== null && response.status === 403) {
-            window.location.href = baseUrl + '/#/forbidden';
+            window.location.href = baseUrl + '#/forbidden';
         }
 
         if (response !== null && response.data != null) {
