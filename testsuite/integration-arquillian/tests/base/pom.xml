@@ -1185,6 +1185,8 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                                <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>

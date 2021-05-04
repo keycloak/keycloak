@@ -17,6 +17,7 @@
 package org.keycloak.models.map.userSession;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +32,7 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 
 import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
@@ -38,7 +40,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderFactory<UserSessionProvider>, UserSessionProviderFactory, ProviderEventListener {
+public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderFactory<UserSessionProvider>, UserSessionProviderFactory, ProviderEventListener, EnvironmentDependentProviderFactory {
 
     public static final String CONFIG_STORAGE_USER_SESSIONS = "storage-user-sessions";
     public static final String CONFIG_STORAGE_CLIENT_SESSIONS = "storage-client-sessions";
@@ -104,5 +106,10 @@ public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderF
             MapUserSessionProvider provider = MapUserSessionProviderFactory.this.create(userRemovedEvent.getKeycloakSession());
             provider.removeUserSessions(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
         }
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }
