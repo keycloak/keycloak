@@ -89,6 +89,6 @@
     "react-scripts": "^3.4.1",
     "snowpack": "2.11.1",
     "ts-node": "^9.1.1",
-    "typescript": "^3.8.3"
+    "typescript": "^4.2.4"
   }
 }
