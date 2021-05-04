@@ -21,6 +21,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.RandomString;
@@ -30,8 +31,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ServerInfoProvider;
 import org.keycloak.models.ServerInfoProviderFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class MapServerInfoProviderFactory implements ServerInfoProviderFactory {
+public class MapServerInfoProviderFactory implements ServerInfoProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "map";
 
@@ -70,6 +72,11 @@ public class MapServerInfoProviderFactory implements ServerInfoProviderFactory {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 
     private static final ServerInfoProvider INSTANCE =  new ServerInfoProvider() {

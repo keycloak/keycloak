@@ -17,6 +17,7 @@
 package org.keycloak.models.map.common;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
@@ -24,6 +25,7 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.jboss.logging.Logger;
 import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
@@ -32,7 +34,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
  *
  * @author hmlnarik
  */
-public abstract class AbstractMapProviderFactory<T extends Provider, K, V extends AbstractEntity<K>, M> implements AmphibianProviderFactory<T> {
+public abstract class AbstractMapProviderFactory<T extends Provider, K, V extends AbstractEntity<K>, M> implements AmphibianProviderFactory<T>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "map";
 
@@ -73,5 +75,10 @@ public abstract class AbstractMapProviderFactory<T extends Provider, K, V extend
     public void init(Scope config) {
         // Implementation of the map storage SPI
         this.storageConfigScope = config.scope(CONFIG_STORAGE);
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

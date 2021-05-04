@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModelScope;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -49,6 +50,7 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.storage.StringKeyConvertor;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.Collections;
@@ -59,7 +61,7 @@ import java.util.Map;
  *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorageProviderFactory implements AmphibianProviderFactory<MapStorageProvider>,MapStorageProviderFactory {
+public class ConcurrentHashMapStorageProviderFactory implements AmphibianProviderFactory<MapStorageProvider>, MapStorageProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "concurrenthashmap";
 
@@ -262,4 +264,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    }
 }
