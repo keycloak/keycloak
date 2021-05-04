@@ -11,15 +11,7 @@ import {
   TableHeader,
   TableVariant,
 } from "@patternfly/react-table";
-import {
-  DataList,
-  DataListAction,
-  DataListCell,
-  DataListItem,
-  DataListItemCells,
-  DataListItemRow,
-  Spinner,
-} from "@patternfly/react-core";
+import { Spinner } from "@patternfly/react-core";
 import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
@@ -55,6 +47,7 @@ type DataTableProps<T> = {
   onSelect?: (isSelected: boolean, rowIndex: number) => void;
   onCollapse?: (isOpen: boolean, rowIndex: number) => void;
   canSelectAll: boolean;
+  isNotCompact?: boolean;
 };
 
 function DataTable<T>({
@@ -66,13 +59,14 @@ function DataTable<T>({
   onSelect,
   onCollapse,
   canSelectAll,
+  isNotCompact,
   ...props
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   return (
     <Table
       {...props}
-      variant={TableVariant.compact}
+      variant={isNotCompact ? undefined : TableVariant.compact}
       onSelect={
         onSelect
           ? (_, isSelected, rowIndex) => onSelect(isSelected, rowIndex)
@@ -132,6 +126,7 @@ export type DataListProps<T> = {
   toolbarItem?: ReactNode;
   emptyState?: ReactNode;
   icon?: React.ComponentClass<SVGIconProps>;
+  isNotCompact?: boolean;
 };
 
 /**
@@ -163,6 +158,7 @@ export function KeycloakDataTable<T>({
   isPaginated = false,
   onSelect,
   canSelectAll = false,
+  isNotCompact,
   detailColumns,
   isRowDisabled,
   loader,
@@ -391,47 +387,9 @@ export function KeycloakDataTable<T>({
               actionResolver={actionResolver}
               rows={filteredData || rows}
               columns={columns}
+              isNotCompact={isNotCompact}
               ariaLabelKey={ariaLabelKey}
             />
-            //       <DataList
-            //   // onSelectDataListItem={(value) => {
-            //   //   setGroupId(value);
-            //   // }}
-            //   aria-label={t("groups")}
-            //   isCompact
-            //   itemOrder={itemOrder}
-            // >
-            //   {(rows!).map((component) => (
-            //     <DataListItem draggable
-            //       aria-labelledby={"aria"}
-            //       key={"key"}
-            //       id={"id"}
-            //       // onClick={(e) => {
-            //       //   if ((e.target as HTMLInputElement).type !== "checkbox") {
-            //       //     setGroupId(group.id);
-            //       //   }
-            //       // }}
-            //     >
-            //       <DataListItemRow data-testid={"group.name"}>
-
-            //         <DataListItemCells
-            //           dataListCells={[
-            //             <DataListCell key={`name}`}>
-            //               <>{Math.random()}</>
-            //             </DataListCell>,
-            //           ]}
-            //         />
-            //         <DataListAction
-            //           aria-labelledby={`select`}
-            //           id={`select`}
-            //           aria-label={t("groupName")}
-            //           isPlainButtonAction
-            //         >
-            //         </DataListAction>
-            //       </DataListItemRow>
-            //     </DataListItem>
-            //   ))}
-            // </DataList>
           )}
           {!loading &&
             rows.length === 0 &&
