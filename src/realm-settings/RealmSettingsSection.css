@@ -30,7 +30,6 @@ button#kc-certificate.pf-c-button.pf-m-secondary {
 }
 
 button.pf-c-data-list__item-draggable-button.pf-m-disabled.header-drag-button {
-  /* --pf-c-data-list__item-draggable-button-icon--Color: white; */
   display: none;
 }
 
