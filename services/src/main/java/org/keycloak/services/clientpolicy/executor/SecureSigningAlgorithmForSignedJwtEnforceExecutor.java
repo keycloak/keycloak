@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -27,20 +30,49 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutor.Configuration;
 
-public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmForSignedJwtEnforceExecutor.class);
 
     private final KeycloakSession session;
+    private Configuration configuration;
 
     public SecureSigningAlgorithmForSignedJwtEnforceExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
+    public void setupConfiguration(SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
+    }
+
+    @Override
     public String getProviderId() {
         return SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends ClientPolicyExecutorConfiguration {
+        @JsonProperty("require-client-assertion")
+        protected Boolean requireClientAssertion;
+
+        public Boolean isRequireClientAssertion() {
+            return requireClientAssertion;
+        }
+
+        public void setRequireClientAssertion(Boolean augment) {
+            this.requireClientAssertion = augment;
+        }
     }
 
     @Override
@@ -51,6 +83,8 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
             case LOGOUT_REQUEST:
+                boolean isRequireClientAssertion = Optional.ofNullable(configuration.isRequireClientAssertion()).orElse(Boolean.FALSE).booleanValue();
+                if (!isRequireClientAssertion) break;
                 HttpRequest req = session.getContext().getContextObject(HttpRequest.class);
                 String clientAssertion = req.getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ASSERTION);
                 JWSInput jws = null;
@@ -68,11 +102,6 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
     }
 
     private void verifySecureSigningAlgorithm(String signatureAlgorithm) throws ClientPolicyException {
-        if (signatureAlgorithm == null) {
-            logger.trace("Signing algorithm not specified explicitly.");
-            return;
-        }
-
         // Please change also SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.getHelpText() if you are changing any algorithms here.
         switch (signatureAlgorithm) {
             case Algorithm.PS256:
