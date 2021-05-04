@@ -22,6 +22,7 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -36,6 +37,8 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.SubjectType;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -44,6 +47,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.utils.StringUtil;
+
+import com.google.common.collect.Streams;
 
 import java.net.URI;
 import java.security.PublicKey;
@@ -56,6 +61,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
@@ -186,6 +192,16 @@ public class DescriptionConverter {
                 throw new ClientRegistrationException("Unsupported requested backchannel_token_delivery_mode");
             }
         }
+        String backchannelAuthenticationRequestSigningAlg = clientOIDC.getBackchannelAuthenticationRequestSigningAlg();
+        if (backchannelAuthenticationRequestSigningAlg != null) {
+            if(isSupportedBackchannelAuthenticationRequestSigningAlg(session, backchannelAuthenticationRequestSigningAlg)) {
+                Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+                attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, backchannelAuthenticationRequestSigningAlg);
+                client.setAttributes(attr);
+            } else {
+                throw new ClientRegistrationException("Unsupported requested backchannel_authentication_request_signing_alg");
+            }
+        }
 
         return client;
     }
@@ -200,6 +216,23 @@ public class DescriptionConverter {
     private static boolean isSupportedBackchannelTokenDeliveryMode(String mode) {
         if (mode.equals(CibaConfig.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE)) return true;
         return false;
+    }
+
+    private static boolean isSupportedBackchannelAuthenticationRequestSigningAlg(KeycloakSession session, String alg) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientSignatureVerifierProvider.class)
+                .map(ProviderFactory::getId);
+        supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
+        return supportedAlgorithms.collect(Collectors.toList()).contains(alg);
+    }
+
+    private static List<String> getSupportedAlgorithms(KeycloakSession session, Class<? extends Provider> clazz, boolean includeNone) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
+                .map(ProviderFactory::getId);
+
+        if (includeNone) {
+            supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
+        }
+        return supportedAlgorithms.collect(Collectors.toList());
     }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
@@ -311,6 +344,10 @@ public class DescriptionConverter {
             String mode = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
             if (StringUtil.isNotBlank(mode)) {
                 response.setBackchannelTokenDeliveryMode(mode);
+            }
+            String alg = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
+            if (StringUtil.isNotBlank(alg)) {
+                response.setBackchannelAuthenticationRequestSigningAlg(alg);
             }
         }
 

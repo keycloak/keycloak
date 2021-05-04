@@ -727,6 +727,12 @@ public class OAuthClient {
             } else {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID));
             }
+            if (requestUri != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri));
+            }
+            if (request != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {

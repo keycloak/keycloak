@@ -34,6 +34,8 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,10 +58,14 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
@@ -74,13 +80,16 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.services.Urls;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -88,6 +97,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1040,8 +1050,13 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
             attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
             attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, null);
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, Algorithm.RS256);
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
+            //clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            Assert.assertNull(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.RS256));
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "gilwekDe3", "acr2");
@@ -1054,8 +1069,12 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             clientRep = clientResource.toRepresentation();
             attributes = clientRep.getAttributes();
             attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, Algorithm.ES256);
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
+            clientRep = clientResource.toRepresentation();
+            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.TRUE.toString()));
+            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.ES256));
 
             // user Backchannel Authentication Request
             response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "Fkb4T3s");
@@ -1071,8 +1090,12 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             clientRep = clientResource.toRepresentation();
             attributes = clientRep.getAttributes();
             attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.FALSE.toString());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, "none");
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
+            clientRep = clientResource.toRepresentation();
+            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.FALSE.toString()));
+            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is("none"));
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, response.getAuthReqId());
@@ -1091,15 +1114,201 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
         OIDCClientRepresentation rep = getClientDynamically(clientId);
         Assert.assertTrue(!rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
+        Assert.assertNull(rep.getBackchannelAuthenticationRequestSigningAlg());
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
             List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
             grantTypes.add(OAuth2Constants.CIBA_GRANT_TYPE);
             clientRep.setGrantTypes(grantTypes);
+            clientRep.setBackchannelAuthenticationRequestSigningAlg(Algorithm.PS256);
         });
 
         rep = getClientDynamically(clientId);
         Assert.assertTrue(rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
+        Assert.assertThat(rep.getBackchannelAuthenticationRequestSigningAlg(), is(Algorithm.PS256));
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestParam() throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(false, Algorithm.PS256);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithSignedAuthenticationRequestUriParam() throws Exception {
+        testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(true, Algorithm.ES256);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequestParam() throws Exception {
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(false, Algorithm.HS256, "Signed algorithm is not allowed");
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequestUriParam() throws Exception {
+    	testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(true, "none", "None signed algorithm is not allowed");
+    }
+
+    private void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(boolean useRequestUri, String sigAlg, String errorDescription) throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "BASTION";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
+            sharedAuthenticationRequest.setLoginHint(username);
+            sharedAuthenticationRequest.setBindingMessage(bindingMessage);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, useRequestUri, TEST_CLIENT_PASSWORD);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, null, null, null);
+            Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
+            Assert.assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            Assert.assertThat(response.getErrorDescription(), is(errorDescription));
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
+    protected void registerSharedInvalidAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+        // Set required signature for request_uri
+        // use and set jwks_url
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        Map<String, String> attr = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+        attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, sigAlg);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+        String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+        clientResource.update(clientRep);
+
+        oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+        // register request object
+        byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+        String encodedRequestObject = Base64Url.encode(contentBytes);
+        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
+
+        if (isUseRequestUri) {
+            oauth.request(null);
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+        } else {
+            oauth.requestUri(null);
+            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+        }
+    }
+
+    private void testBackchannelAuthenticationFlowWithSignedAuthenticationRequest(boolean useRequestUri, String sigAlg) throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "BASTION";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
+            sharedAuthenticationRequest.setLoginHint(username);
+            sharedAuthenticationRequest.setBindingMessage(bindingMessage);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, null, null);
+
+            // user Authentication Channel Request
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
+            AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
+            Assert.assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
+            Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+
+            // user Authentication Channel completed
+            EventRepresentation loginEvent = doAuthenticationChannelCallback(testRequest);
+            String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            String userId = loginEvent.getUserId();
+
+            // user Token Request
+            OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+
+            // token introspection
+            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+
+            // token refresh
+            tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
+
+            // token introspection after token refresh
+            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+
+            // logout by refresh token
+            EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
+
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
+    private AuthorizationEndpointRequestObject createValidSharedAuthenticationRequest() throws URISyntaxException {
+        AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
+        requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        requestObject.iat(Long.valueOf(Time.currentTime()));
+        requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+        requestObject.nbf(requestObject.getIat());
+        requestObject.setScope("openid");
+        requestObject.setMax_age(Integer.valueOf(600));
+        requestObject.setOtherClaims("custom_claim_zwei", "gelb");
+        requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), TEST_REALM_NAME), "https://example.com");
+        return requestObject;
+    }
+
+    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
+        registerSharedAuthenticationRequest(requestObject, clientId, sigAlg, isUseRequestUri, null);
+    }
+
+    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+        // Set required signature for request_uri
+        // use and set jwks_url
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        Map<String, String> attr = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+        attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, sigAlg);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+        String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+        clientResource.update(clientRep);
+
+        oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+        // register request object
+        byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+        String encodedRequestObject = Base64Url.encode(contentBytes);
+        if (clientSecret != null) {
+            oidcClientEndpointsResource.registerOIDCRequestSymmetricSig(encodedRequestObject, sigAlg, clientSecret);
+        } else {
+            // generate and register client keypair
+            oidcClientEndpointsResource.generateKeys(sigAlg);
+
+            oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
+        }
+
+        if (isUseRequestUri) {
+            oauth.request(null);
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+        } else {
+            oauth.requestUri(null);
+            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+        }
     }
 
     private String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
@@ -1162,13 +1371,20 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
         attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
         clientRep.setAttributes(attributes);
+        List<String> requestUris = new ArrayList<>(OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).getRequestUris());
+        requestUris.add(TestApplicationResourceUrls.clientRequestUri());
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestUris(requestUris);
         clientResource.update(clientRep);
     }
 
     private void revertCIBASettings(ClientResource clientResource, ClientRepresentation clientRep) {
         Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
         attributes.remove(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
+        attributes.remove(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
         clientRep.setAttributes(attributes);
+        List<String> requestUris = new ArrayList<>(OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).getRequestUris());
+        requestUris.remove(TestApplicationResourceUrls.clientRequestUri());
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestUris(requestUris);
         clientResource.update(clientRep);
     }
 

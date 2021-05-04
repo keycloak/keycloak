@@ -128,6 +128,8 @@ public class OIDCClientRepresentation {
     // OIDC CIBA
     private String backchannel_token_delivery_mode;
 
+    private String backchannel_authentication_request_signing_alg;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -496,5 +498,13 @@ public class OIDCClientRepresentation {
 
     public void setBackchannelTokenDeliveryMode(String backchannel_token_delivery_mode) {
         this.backchannel_token_delivery_mode = backchannel_token_delivery_mode;
+    }
+
+    public String getBackchannelAuthenticationRequestSigningAlg() {
+        return backchannel_authentication_request_signing_alg;
+    }
+
+    public void setBackchannelAuthenticationRequestSigningAlg(String backchannel_authentication_request_signing_alg) {
+        this.backchannel_authentication_request_signing_alg = backchannel_authentication_request_signing_alg;
     }
 }

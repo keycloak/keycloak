@@ -19,13 +19,13 @@ package org.keycloak.models;
 import java.io.Serializable;
 import java.util.function.Supplier;
 
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.utils.StringUtil;
 
 public class CibaConfig implements Serializable {
 
     // realm attribute names
     public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE = "cibaBackchannelTokenDeliveryMode";
-	public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT = "ciba.backchannel.token.delivery.mode";
     public static final String CIBA_EXPIRES_IN = "cibaExpiresIn";
     public static final String CIBA_INTERVAL = "cibaInterval";
     public static final String CIBA_AUTH_REQUESTED_USER_HINT = "cibaAuthRequestedUserHint";
@@ -43,6 +43,8 @@ public class CibaConfig implements Serializable {
 
     // client attribute names
     public static final String OIDC_CIBA_GRANT_ENABLED = "oidc.ciba.grant.enabled";
+    public static final String CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT = "ciba.backchannel.token.delivery.mode";
+    public static final String CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG = "ciba.backchannel.auth.request.signing.alg";
 
     private transient Supplier<RealmModel> realm;
 
@@ -146,6 +148,11 @@ public class CibaConfig implements Serializable {
     public boolean isOIDCCIBAGrantEnabled(ClientModel client) {
         String enabled = client.getAttribute(OIDC_CIBA_GRANT_ENABLED);
         return Boolean.parseBoolean(enabled);
+    }
+
+    public Algorithm getBackchannelAuthRequestSigningAlg(ClientModel client) {
+        String alg = client.getAttribute(CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
+        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
     }
 
     private void persistRealmAttribute(String name, String value) {

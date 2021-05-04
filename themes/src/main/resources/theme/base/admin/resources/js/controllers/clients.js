@@ -1305,6 +1305,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         var attrVal4 = $scope.client.attributes['pkce.code.challenge.method'];
         $scope.pkceCodeChallengeMethod = attrVal4==null ? 'none' : attrVal4;
 
+        var attrVal5 = $scope.client.attributes['ciba.backchannel.auth.request.signing.alg'];
+        $scope.cibaBackchannelAuthRequestSigningAlg = attrVal5==null ? 'none' : attrVal5;
+
         if ($scope.client.attributes["exclude.session.state.from.auth.response"]) {
             if ($scope.client.attributes["exclude.session.state.from.auth.response"] == "true") {
                 $scope.excludeSessionStateFromAuthResponse = true;
@@ -1511,6 +1514,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
     $scope.changePkceCodeChallengeMethod = function() {
         $scope.clientEdit.attributes['pkce.code.challenge.method'] = $scope.pkceCodeChallengeMethod;
+    };
+
+    $scope.changeCibaBackchannelAuthRequestSigningAlg = function() {
+        if ($scope.cibaBackchannelAuthRequestSigningAlg === 'none') {
+            $scope.clientEdit.attributes['ciba.backchannel.auth.request.signing.alg'] = null;
+        } else {
+            $scope.clientEdit.attributes['ciba.backchannel.auth.request.signing.alg'] = $scope.cibaBackchannelAuthRequestSigningAlg;
+        }
     };
 
     $scope.$watch(function() {

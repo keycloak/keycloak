@@ -24,6 +24,9 @@ import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.HS256ClientSignatureVerifierProviderFactory;
+import org.keycloak.crypto.HS384ClientSignatureVerifierProviderFactory;
+import org.keycloak.crypto.HS512ClientSignatureVerifierProviderFactory;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
@@ -50,10 +53,13 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import java.net.URI;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -164,7 +170,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
         // is not exposed over "http" at all.
-        //if (isHttps(jwksUri)) {
         config.setRevocationEndpoint(revocationEndpoint.toString());
         config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
         config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
@@ -174,12 +179,20 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setBackchannelTokenDeliveryModesSupported(DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED);
         config.setBackchannelAuthenticationEndpoint(CibaGrantType.authorizationUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
+        config.setBackchannelAuthenticationRequestSigningAlgValuesSupported(getSupportedBackchannelAuthenticationRequestSigningAlgorithms());
 
         return config;
     }
 
     @Override
     public void close() {
+    }
+
+    public static boolean isAsymmetricAlgorithm(String alg) {
+        if (HS256ClientSignatureVerifierProviderFactory.ID.equals(alg)) return false;
+        if (HS384ClientSignatureVerifierProviderFactory.ID.equals(alg)) return false;
+        if (HS512ClientSignatureVerifierProviderFactory.ID.equals(alg)) return false;
+        return true;
     }
 
     private static List<String> list(String... values) {
@@ -204,12 +217,25 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         return supportedAlgorithms.collect(Collectors.toList());
     }
 
+    private List<String> getSupportedAsymmetricAlgorithms() {
+        return getSupportedAlgorithms(SignatureProvider.class, false).stream()
+                .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
+                .filter(entry -> entry.getValue() != null)
+                .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
     private List<String> getSupportedSigningAlgorithms(boolean includeNone) {
         return getSupportedAlgorithms(SignatureProvider.class, includeNone);
     }
 
     private List<String> getSupportedClientSigningAlgorithms(boolean includeNone) {
         return getSupportedAlgorithms(ClientSignatureVerifierProvider.class, includeNone);
+    }
+
+    private List<String> getSupportedBackchannelAuthenticationRequestSigningAlgorithms() {
+        return getSupportedAsymmetricAlgorithms();
     }
 
     private List<String> getSupportedIdTokenEncryptionAlg(boolean includeNone) {
