@@ -26,6 +26,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
@@ -38,12 +39,13 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  * @author mhajas
  */
-public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory {
+public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = AbstractMapProviderFactory.PROVIDER_ID;
 
@@ -97,5 +99,10 @@ public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory
     @Override
     public String getHelpText() {
         return "Authorization store provider";
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }
