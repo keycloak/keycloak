@@ -1,0 +1,35 @@
+{
+  "name": "keycloak-authz",
+  "version": "13.0.0-SNAPSHOT",
+  "description": "Keycloak Authz",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "sideEffects": false,
+  "files": [
+    "es",
+    "lib"
+  ],
+  "scripts": {
+    "build": "npm run build:lib && npm run build:es",
+    "build:lib": "rimraf lib && tsc && copyfiles --flat src/index.d.ts lib",
+    "build:es": "rimraf es && tsc --project tsconfig.es.json && copyfiles --flat src/index.d.ts es"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak",
+    "directory": "adapters/oidc/js/packages/keycloak-authz"
+  },
+  "author": "Keycloak",
+  "license": "Apache-2.0",
+  "homepage": "https://www.keycloak.org",
+  "keywords": [
+    "keycloak",
+    "sso",
+    "oauth",
+    "oauth2",
+    "authentication"
+  ],
+  "dependencies": {
+    "keycloak-js": "13.0.0-SNAPSHOT"
+  }
+}
