@@ -59,6 +59,14 @@
     "logoutServiceRedirectBindingURL": "SAML Redirect Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
     "authenticationOverrides": "Override realm authentication flow bindings.",
     "browserFlow": "Select the flow you want to use for browser authentication.",
-    "directGrant": "Select the flow you want to use for direct grant authentication."
+    "directGrant": "Select the flow you want to use for direct grant authentication.",
+    "useJwksUrl": "If the switch is on, client public keys will be downloaded from given JWKS URL. This allows great flexibility because new keys will be always re-downloaded again when client generates new keypair. If the switch is off, public key (or certificate) from the Keycloak DB is used, so when client keypair changes, you always need to import new key (or certificate) to the Keycloak DB as well.",
+    "certificate": "Client Certificate for validate JWT issued by client and signed by Client private key from your keystore.",
+    "jwksUrl": "URL where client keys in JWK format are stored. See JWK specification for more details. If you use Keycloak client adapter with \"jwt\" credential, you can use URL of your app with '/k_jwks' suffix. For example 'http://www.myhost.com/myapp/k_jwks' .",
+    "generateKeysDescription": "If you generate new keys, you can download the keystore with the private key automatically and save it on your client's side. Keycloak server will save just the certificate and public key, but not the private key.",
+    "archiveFormat": "Java keystore or PKCS12 archive format.",
+    "keyAlias": "Archive alias for your private key and certificate.",
+    "keyPassword": "Password to access the private key in the archive",
+    "storePassword": "Password to access the archive itself"
   }
 }

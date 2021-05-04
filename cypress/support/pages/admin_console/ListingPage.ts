@@ -9,13 +9,13 @@ export default class ListingPage {
   importBtn: string;
 
   constructor() {
-    this.searchInput = '.pf-c-toolbar__item [type="search"]';
+    this.searchInput = '.pf-c-toolbar__item [type="search"]:visible';
     this.itemsRows = "table";
     this.itemRowDrpDwn = ".pf-c-dropdown > button";
     this.exportBtn = '[role="menuitem"]:nth-child(1)';
     this.deleteBtn = '[role="menuitem"]:nth-child(2)';
     this.searchBtn =
-      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control";
+      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
     this.createBtn =
       ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-primary";
     this.importBtn =

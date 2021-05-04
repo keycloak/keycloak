@@ -13,6 +13,7 @@
     "encryptAssertions": "Encrypt assertions",
     "clientSignature": "Client signature required",
     "downloadAdaptorTitle": "Download adaptor configs",
+    "keys": "Keys",
     "credentials": "Credentials",
     "roles": "Roles",
     "createRole": "Create role",
@@ -188,7 +189,7 @@
     "openIdConnectCompatibilityModes": "Open ID Connect Compatibly Modes",
     "excludeSessionStateFromAuthenticationResponse": "Exclude Session State From Authentication Response",
     "assertionConsumerServicePostBindingURL": "Assertion Consumer Service POST Binding URL",
-    "assertionConsumerServiceRedirectBindingURL" :"Assertion Consumer Service Redirect Binding URL",
+    "assertionConsumerServiceRedirectBindingURL": "Assertion Consumer Service Redirect Binding URL",
     "logoutServicePostBindingURL": "Logout Service POST Binding URL",
     "logoutServiceRedirectBindingURL": "Logout Service Redirect Binding URL",
     "advancedSettings": "Advanced Settings",
@@ -198,7 +199,24 @@
     "keyForCodeExchange": "Proof Key for Code Exchange Code Challenge Method",
     "authenticationOverrides": "Authentication flow overrides",
     "browserFlow": "Browser Flow",
-    "directGrant": "Direct Grant Flow"
-
+    "directGrant": "Direct Grant Flow",
+    "jwksUrlConfig": "JWKS URL configs",
+    "keysIntro": "If \"Use JWKS URL switch\" is on, you need to fill a valid JWKS URL. After saving, admin can download keys from the JWKS URL or keys will be downloaded automatically by Keycloak server when see the stuff signed by the unknown KID",
+    "useJwksUrl": "Use JWKS URL",
+    "certificate": "Certificate",
+    "jwksUrl": "JWKS URL",
+    "generateNewKeys": "Generate new keys",
+    "generateKeys": "Generate keys?",
+    "generate": "Generate",
+    "archiveFormat": "Archive format",
+    "keyAlias": "Key alias",
+    "keyPassword": "Key password",
+    "storePassword": "Store password",
+    "generateSuccess": "New key pair and certificate generated successfully",
+    "generateError": "Could not generate new key pair and certificate {{error}}",
+    "import": "Import",
+    "importFile": "Import file",
+    "importSuccess": "New certificate imported",
+    "importError": "Could not import certificate {{error}}"
   }
 }

@@ -9,6 +9,7 @@ import AdminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
 import { keycloakBefore } from "../support/util/keycloak_before";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
+import KeysTab from "../support/pages/admin_console/manage/clients/KeysTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -196,6 +197,45 @@ describe("Clients test", function () {
       serviceAccountTab
         .goToServiceAccountTab()
         .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
+    });
+  });
+
+  describe("Keys tab test", () => {
+    const keysName = "keys-client";
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      listingPage.searchItem(keysName).goToItemDetails(keysName);
+    });
+
+    before(() => {
+      new AdminClient().createClient({
+        protocol: "openid-connect",
+        clientId: keysName,
+        publicClient: false,
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(keysName);
+    });
+
+    it("change use JWKS Url", () => {
+      const keysTab = new KeysTab();
+      keysTab.goToTab().checkSaveDisabled();
+      keysTab.toggleUseJwksUrl().checkSaveDisabled(false);
+    });
+
+    it("generate new keys", () => {
+      const keysTab = new KeysTab();
+      keysTab.goToTab().clickGenerate();
+
+      keysTab.fillGenerateModal("keyname", "123", "1234").clickConfirm();
+
+      masthead.checkNotificationMessage(
+        "New key pair and certificate generated successfully"
+      );
     });
   });
 });

@@ -1,7 +1,6 @@
 import {
   Button,
   FormGroup,
-  InputGroup,
   Select,
   SelectOption,
   SelectVariant,
@@ -12,9 +11,9 @@ import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { Controller, UseFormMethods } from "react-hook-form";
-import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { PasswordInput } from "../../components/password-input/PasswordInput";
 
 export type LdapSettingsConnectionProps = {
   form: UseFormMethods;
@@ -36,7 +35,6 @@ export const LdapSettingsConnection = ({
   ] = useState(false);
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
     <>
@@ -283,28 +281,18 @@ export const LdapSettingsConnection = ({
           fieldId="kc-console-bind-credentials"
           isRequired
         >
-          <InputGroup>
-            <TextInput
-              isRequired
-              type={isPasswordVisible ? "text" : "password"}
-              id="kc-console-bind-credentials"
-              data-testid="ldap-bind-credentials"
-              name="config.bindCredential[0]"
-              ref={form.register({
-                required: {
-                  value: true,
-                  message: `${t("validateBindCredentials")}`,
-                },
-              })}
-            />
-            <Button
-              variant="control"
-              aria-label="show password button for bind credentials"
-              onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-            >
-              {!isPasswordVisible ? <EyeIcon /> : <EyeSlashIcon />}
-            </Button>
-          </InputGroup>
+          <PasswordInput
+            isRequired
+            id="kc-console-bind-credentials"
+            data-testid="ldap-bind-credentials"
+            name="config.bindCredential[0]"
+            ref={form.register({
+              required: {
+                value: true,
+                message: `${t("validateBindCredentials")}`,
+              },
+            })}
+          />
           {form.errors.config &&
             form.errors.config.bindCredential &&
             form.errors.config.bindCredential[0] && (

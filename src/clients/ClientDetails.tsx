@@ -45,6 +45,7 @@ import { ServiceAccount } from "./service-account/ServiceAccount";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AdvancedTab } from "./AdvancedTab";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { Keys } from "./keys/Keys";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -290,6 +291,15 @@ export const ClientDetails = () => {
                 reset={() => setupForm(client)}
               />
             </Tab>
+            {!client.publicClient && (
+              <Tab
+                id="keys"
+                eventKey="keys"
+                title={<TabTitleText>{t("keys")}</TabTitleText>}
+              >
+                <Keys clientId={clientId} save={() => save()} />
+              </Tab>
+            )}
             {!client.publicClient && (
               <Tab
                 id="credentials"
