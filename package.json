@@ -44,7 +44,7 @@
     "@jest/types": "^26.6.2",
     "@snowpack/app-scripts-react": "^1.10.0",
     "@snowpack/plugin-postcss": "1.0.4",
-    "@snowpack/plugin-webpack": "2.0.12",
+    "@snowpack/plugin-webpack": "2.3.1",
     "@storybook/addon-actions": "^6.1.7",
     "@storybook/addon-essentials": "^6.1.7",
     "@storybook/addon-info": "^5.3.21",
