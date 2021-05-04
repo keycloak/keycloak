@@ -90,6 +90,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFa
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -1254,7 +1255,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili", Boolean.FALSE, null)
-                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.TRUE))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1349,6 +1350,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Az Elso Profil", Boolean.FALSE, null)
                     .addExecutor(HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, 
                         createHolderOfKeyEnforceExecutorConfig(Boolean.TRUE))
+                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID,
+                        createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.FALSE))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
