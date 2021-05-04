@@ -113,16 +113,6 @@ public class SAMLAttributeValueParser implements StaxParser {
             return StaxParserUtil.getElementText(xmlEventReader);
         } else if (typeValue.contains(":CurrentAddressType")) {
             return StaxParserUtil.getElementText(xmlEventReader);
-        } else if (typeValue.contains(":CurrentFamilyNameType")) {
-            return StaxParserUtil.getElementText(xmlEventReader);
-        } else if (typeValue.contains(":CurrentGivenNameType")) {
-            return StaxParserUtil.getElementText(xmlEventReader);
-        } else if (typeValue.contains(":DateOfBirthType")) {
-            return XMLTimeUtil.parse(StaxParserUtil.getElementText(xmlEventReader));
-        } else if (typeValue.contains(":PlaceOfBirthType")) {
-            return StaxParserUtil.getElementText(xmlEventReader);
-        } else if (typeValue.contains(":CurrentAddressType")) {
-            return StaxParserUtil.getAddressElement(xmlEventReader);
         }
 
         throw logger.parserUnknownXSI(typeValue);

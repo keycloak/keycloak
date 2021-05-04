@@ -53,17 +53,16 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
         setPostBindingLogout(true);
         setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
         setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
 
 //        this.setSignSpMetadata(true);
-        setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
-        // setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
-        setPostBindingAuthnRequest(true);
-        setPostBindingResponse(true);
+//        setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
+//        setPostBindingAuthnRequest(true);
+//        setPostBindingResponse(true);
 //        this.setPostBindingLogout(true);
-        setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-        setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+//        setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+//        setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
 //        this.setWantAuthnRequestsSigned(true);
-
     }
 
     public String getEntityId() {
