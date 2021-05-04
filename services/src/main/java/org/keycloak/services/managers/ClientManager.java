@@ -156,7 +156,8 @@ public class ClientManager {
             logger.debugf("Creating service account user '%s'", username);
 
             // Don't use federation for service account user
-            UserModel user = realmManager.getSession().userLocalStorage().addUser(client.getRealm(), username);
+            UserModel user = realmManager.getSession().userLocalStorage()
+                    .addUser(client.getRealm(), null, username, false, true);
             user.setEnabled(true);
             user.setServiceAccountClientLink(client.getId());
         }
