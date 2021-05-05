@@ -1,3 +1,13 @@
+echo
+echo *** WARNING ***
+echo
+echo ** If the following embed-server command fails, manual intervention is needed.
+echo ** In such case, remove any <extension> and <subsystem> declarations referring
+echo ** to the removed smallrye modules from the standalone-ha.xml file and rerun this script.
+echo ** For details, see Migration Changes section in the Upgrading guide.
+echo ** We apologize for this inconvenience.
+echo
+
 embed-server --server-config=standalone-ha.xml
 
 echo *** Begin Migration ***
