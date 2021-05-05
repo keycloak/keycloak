@@ -32,7 +32,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Map;
+import java.util.Optional;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -1310,23 +1311,160 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
         }
 
-        // update policies
-        json = (new ClientPoliciesBuilder()).addPolicy(
-                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Paivitetyn Ensimmaisen Politiikka", Boolean.FALSE, Boolean.TRUE, null, null)
-                    .addCondition(ClientUpdateContextConditionFactory.PROVIDER_ID, 
-                        createClientUpdateContextConditionConfig(Arrays.asList(
-                                ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER,
-                                ClientUpdateContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN)))
-                    .addProfile(PROFILE_NAME)
-                    .toRepresentation()
-                ).toString();
-        updatePolicies(json);
-
+        String cid = null;
+        String clientId = generateSuffixedName(CLIENT_NAME);
         try {
-            createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {});
+            cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+                clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+                clientRep.setRedirectUris(null);
+            });
         } catch (Exception e) {
             fail();
         }
+
+        updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+            clientRep.setRedirectUris(null);
+            clientRep.setServiceAccountsEnabled(Boolean.FALSE);
+        });
+        assertEquals(false, getClientByAdmin(cid).isServiceAccountsEnabled());
+
+        try {
+            updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRedirectUris(Collections.singletonList("https://newredirect/*"));
+                 });
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // rootUrl
+                clientRep.setRootUrl("https://client.example.com/");
+                // adminUrl
+                clientRep.setAdminUrl("https://client.example.com/admin/");
+                // baseUrl
+                clientRep.setBaseUrl("https://client.example.com/base/");
+                // web origins
+                clientRep.setWebOrigins(Arrays.asList("https://valid.other.client.example.com/", "https://valid.another.client.example.com/"));
+                // backchannel logout URL
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://client.example.com/logout/");
+                clientRep.setAttributes(attributes);
+                // OAuth2 : redirectUris
+                clientRep.setRedirectUris(Arrays.asList("https://client.example.com/redirect/", "https://client.example.com/callback/"));
+                // OAuth2 : jwks_uri
+                attributes.put(OIDCConfigAttributes.JWKS_URL, "https://client.example.com/jwks/");
+                clientRep.setAttributes(attributes);
+                // OIDD : requestUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS, Arrays.asList("https://client.example.com/request/", "https://client.example.com/reqobj/"));
+            });
+        } catch (Exception e) {
+            fail();
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // rootUrl
+                clientRep.setRootUrl("http://client.example.com/*/");
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid rootUrl", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // adminUrl
+                clientRep.setAdminUrl("http://client.example.com/admin/");
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid adminUrl", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // baseUrl
+                clientRep.setBaseUrl("https://client.example.com/base/*");
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid baseUrl", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // web origins
+                clientRep.setWebOrigins(Arrays.asList("http://valid.another.client.example.com/"));
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid webOrigins", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // backchannel logout URL
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "httpss://client.example.com/logout/");
+                clientRep.setAttributes(attributes);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid logoutUrl", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // OAuth2 : redirectUris
+                clientRep.setRedirectUris(Arrays.asList("https://client.example.com/redirect/", "ftp://client.example.com/callback/"));
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid redirectUris", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // OAuth2 : jwks_uri
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(OIDCConfigAttributes.JWKS_URL, "http s://client.example.com/jwks/");
+                clientRep.setAttributes(attributes);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid jwksUri", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // OIDD : requestUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS, Arrays.asList("https://client.example.com/request/*", "https://client.example.com/reqobj/"));
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid requestUris", e.getErrorDetail());
+        }
+    }
+
+    private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {
+        String attrValue = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(attrKey);
+        if (attrValue == null) return Collections.emptyList();
+        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+    }
+
+    private void setAttributeMultivalued(ClientRepresentation clientRep, String attrKey, List<String> attrValues) {
+        String attrValueFull = String.join(Constants.CFG_DELIMITER, attrValues);
+        clientRep.getAttributes().put(attrKey, attrValueFull);
     }
 
     @Test
