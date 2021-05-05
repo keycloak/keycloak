@@ -18,11 +18,16 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
@@ -55,37 +60,88 @@ public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorPro
         switch (context.getEvent()) {
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    confirmSecureRedirectUris(((ClientCRUDContext)context).getProposedClientRepresentation().getRedirectUris());
+                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    confirmSecureRedirectUris(((ClientCRUDContext)context).getProposedClientRepresentation().getRedirectUris());
+                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
                 return;
             case AUTHORIZATION_REQUEST:
-                confirmSecureRedirectUris(Arrays.asList(((AuthorizationRequestContext)context).getRedirectUri()));
+                confirmSecureRedirectUri(((AuthorizationRequestContext)context).getRedirectUri());
                 return;
             default:
                 return;
         }
     }
 
-    private void confirmSecureRedirectUris(List<String> redirectUris) throws ClientPolicyException {
-        if (redirectUris == null || redirectUris.isEmpty()) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: redirect_uris");
+    private void confirmSecureUris(ClientRepresentation clientRep) throws ClientPolicyException {
+        // rootUrl
+        String rootUrl = clientRep.getRootUrl();
+        if (rootUrl != null) confirmSecureUris(Arrays.asList(rootUrl), "rootUrl");
+
+        // adminUrl
+        String adminUrl = clientRep.getAdminUrl();
+        if (adminUrl != null) confirmSecureUris(Arrays.asList(adminUrl), "adminUrl");
+
+        // baseUrl
+        String baseUrl = clientRep.getBaseUrl();
+        if (baseUrl != null) confirmSecureUris(Arrays.asList(baseUrl), "baseUrl");
+
+        // web origins
+        List<String> webOrigins = clientRep.getWebOrigins();
+        if (webOrigins != null) confirmSecureUris(webOrigins, "webOrigins");
+
+        // backchannel logout URL
+        String logoutUrl = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
+        if (logoutUrl != null) confirmSecureUris(Arrays.asList(logoutUrl), "logoutUrl");
+
+        // OAuth2 : redirectUris
+        List<String> redirectUris = clientRep.getRedirectUris();
+        if (redirectUris != null) confirmSecureUris(redirectUris, "redirectUris");
+
+        // OAuth2 : jwks_uri
+        String jwksUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.JWKS_URL);
+        if (jwksUri != null) confirmSecureUris(Arrays.asList(jwksUri), "jwksUri");
+
+        // OIDD : requestUris
+        List<String> requestUris = getAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS);
+        if (requestUris != null) confirmSecureUris(requestUris, "requestUris");
+    }
+
+    private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {
+        String attrValue = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(attrKey);
+        if (attrValue == null) return Collections.emptyList();
+        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+    }
+
+    private void confirmSecureUris(List<String> uris, String uriType) throws ClientPolicyException {
+        if (uris == null || uris.isEmpty()) {
+            return;
         }
 
-        for(String redirectUri : redirectUris) {
-            logger.tracev("Redirect URI = {0}", redirectUri);
-            if (redirectUri.startsWith("http://") || redirectUri.contains("*")) {
-                throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: redirect_uris");
+        for (String uri : uris) {
+            logger.tracev("{0} = {1}", uriType, uri);
+            if (!uri.startsWith("https://")  || uri.contains("*")) {
+                throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid " + uriType);
             }
         }
     }
 
+    private void confirmSecureRedirectUri(String redirectUri) throws ClientPolicyException {
+        if (redirectUri == null || redirectUri.isEmpty()) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "no redirect_uri specified.");
+        }
+
+        logger.tracev("Redirect URI = {0}", redirectUri);
+        if (!redirectUri.startsWith("https://") || redirectUri.contains("*")) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
+        }
+
+    }
 }
