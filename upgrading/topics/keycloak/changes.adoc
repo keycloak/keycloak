@@ -2,6 +2,25 @@
 
 === Migrating to 13.0.0
 
+==== Manual migration step needed
+
+Manual change is required when the standalone.xml contains references to any of the SmallRye modules.
+SmallRye modules were removed from the underlying {appserver_name} distribution, and the server does not start
+if the configuration references them. Thus if the configuration in the `standalone.xml` refers to these modules,
+the server configuration migration via `migrate-standalone.cli` fails before any changes are made to the configuration.
+In such case, to perform server configuration migration, you have to manually remove all the lines that refer
+to SmallRye modules. In the default configuration, you need to remove specifically the following lines:
+
+[source,xml]
+<extension module="org.wildfly.extension.microprofile.config-smallrye"/>
+<extension module="org.wildfly.extension.microprofile.health-smallrye"/>
+<extension module="org.wildfly.extension.microprofile.metrics-smallrye"/>
+
+[source,xml]
+<subsystem xmlns="urn:wildfly:microprofile-config-smallrye:1.0"/>
+<subsystem xmlns="urn:wildfly:microprofile-health-smallrye:2.0" security-enabled="false" empty-liveness-checks-status="${env.MP_HEALTH_EMPTY_LIVENESS_CHECKS_STATUS:UP}" empty-readiness-checks-status="${env.MP_HEALTH_EMPTY_READINESS_CHECKS_STATUS:UP}"/>
+<subsystem xmlns="urn:wildfly:microprofile-metrics-smallrye:2.0" security-enabled="false" exposed-subsystems="*" prefix="${wildfly.metrics.prefix:wildfly}"/>
+
 ==== Upgrade to Wildfly 23
 
 The {project_name} server was upgraded to use Wildfly 23 as the underlying container. This does not directly involve any
