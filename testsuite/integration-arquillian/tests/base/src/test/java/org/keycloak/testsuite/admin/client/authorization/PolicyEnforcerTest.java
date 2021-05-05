@@ -18,6 +18,7 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
@@ -61,10 +62,13 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PermissionsResource;
+import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -633,6 +637,54 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/0", token));
 
         assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testSetMethodConfigs() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        ResourceRepresentation representation = new ResourceRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.setUris(Collections.singleton("/api-method/*"));
+
+        ResourcesResource resources = clientResource.authorization().resources();
+        javax.ws.rs.core.Response response = resources.create(representation);
+
+        representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+
+        response.close();
+
+        try {
+            KeycloakDeployment deployment = KeycloakDeploymentBuilder
+                    .build(getAdapterConfiguration("enforcer-paths-use-method-config.json"));
+            PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+            oauth.realm(REALM_NAME);
+            oauth.clientId("public-client-test");
+            oauth.doLogin("marta", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokeResponse = oauth.doAccessTokenRequest(code, null);
+            String token = tokeResponse.getAccessToken();
+
+            AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api-method/foo", token));
+
+            // GET is disabled in the config
+            assertTrue(context.isGranted());
+
+            PolicyEnforcerConfig.PathConfig pathConfig = policyEnforcer.getPaths().get("/api-method/*");
+
+            assertNotNull(pathConfig);
+            List<PolicyEnforcerConfig.MethodConfig> methods = pathConfig.getMethods();
+            assertEquals(1, methods.size());
+            assertTrue(PolicyEnforcerConfig.ScopeEnforcementMode.DISABLED.equals(methods.get(0).getScopesEnforcementMode()));
+
+            // other verbs should be protected
+            context = policyEnforcer.enforce(createHttpFacade("/api-method/foo", token, "POST"));
+
+            assertFalse(context.isGranted());
+        } finally {
+            resources.resource(representation.getId()).remove();
+        }
     }
 
     private void initAuthorizationSettings(ClientResource clientResource) {
