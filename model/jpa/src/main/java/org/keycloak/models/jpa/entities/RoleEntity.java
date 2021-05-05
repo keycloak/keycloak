@@ -115,6 +115,7 @@ public class RoleEntity {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+        this.clientRealmConstraint = realmId;
     }
 
     public List<RoleAttributeEntity> getAttributes() {

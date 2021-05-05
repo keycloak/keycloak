@@ -245,9 +245,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
         roleEntity.setName(name);
+        roleEntity.setRealmId(client.getRealm().getId());
         roleEntity.setClientId(client.getId());
         roleEntity.setClientRole(true);
-        roleEntity.setRealmId(client.getRealm().getId());
         em.persist(roleEntity);
         RoleAdapter adapter = new RoleAdapter(session, client.getRealm(), em, roleEntity);
         return adapter;
