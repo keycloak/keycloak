@@ -127,6 +127,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory;
@@ -685,6 +686,13 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Registration/Initial Access Token acquisition for Dynamic Client Registration
 
+    protected void restartAuthenticatedClientRegistrationSetting() throws ClientRegistrationException {
+        reg.close();
+        reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", REALM_NAME).build();
+        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        reg.auth(Auth.token(token));
+    }
+
     protected void authCreateClients() {
         reg.auth(Auth.token(getToken("create-clients", "password")));
     }
@@ -870,6 +878,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected Object createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean requireClientAssertion) {
         SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration config = new SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration();
         config.setRequireClientAssertion(requireClientAssertion);
+        return config;
+    }
+
+    protected Object createSecureSigningAlgorithmEnforceExecutorConfig(String defaultAlgorithm) {
+        SecureSigningAlgorithmEnforceExecutor.Configuration config = new SecureSigningAlgorithmEnforceExecutor.Configuration();
+        config.setDefaultAlgorithm(defaultAlgorithm);
         return config;
     }
 

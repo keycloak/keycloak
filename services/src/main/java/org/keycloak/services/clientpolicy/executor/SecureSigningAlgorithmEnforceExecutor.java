@@ -18,7 +18,10 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
 
@@ -34,14 +37,18 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmEnforceExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
 
     private final KeycloakSession session;
+    private Configuration configuration;
 
     private static final List<String> sigTargets = Arrays.asList(
             OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG,
@@ -51,6 +58,8 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
 
     private static final List<String> sigTargetsAdminRestApiOnly = Arrays.asList(
             OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
+
+    private static final String DEFAULT_ALGORITHM_VALUE = Algorithm.PS256;
 
     public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session) {
         this.session = session;
@@ -62,22 +71,52 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
     }
 
     @Override
+    public void setupConfiguration(SecureSigningAlgorithmEnforceExecutor.Configuration config) {
+        this.configuration = Optional.ofNullable(config).orElse(createDefaultConfiguration());
+        if (config.getDefaultAlgorithm() == null || !isSecureAlgorithm(config.getDefaultAlgorithm())) config.setDefaultAlgorithm(DEFAULT_ALGORITHM_VALUE);
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Configuration extends ClientPolicyExecutorConfiguration {
+        @JsonProperty("default-algorithm")
+        protected String defaultAlgorithm;
+
+        public String getDefaultAlgorithm() {
+            return defaultAlgorithm;
+        }
+
+        public void setDefaultAlgorithm(String defaultAlgorithm) {
+            if (isSecureAlgorithm(defaultAlgorithm)) {
+                this.defaultAlgorithm = defaultAlgorithm;
+            } else {
+                logger.tracev("defaultAlgorithm = {0}, fall back to {1}.", defaultAlgorithm, DEFAULT_ALGORITHM_VALUE);
+                this.defaultAlgorithm = DEFAULT_ALGORITHM_VALUE;
+            }
+        }
+    }
+
+    @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
         case REGISTER:
             if (context instanceof AdminClientRegisterContext) {
-                verifySecureSigningAlgorithm(((AdminClientRegisterContext)context).getProposedClientRepresentation(), true, false);
+                verifyAndEnforceSecureSigningAlgorithm(((AdminClientRegisterContext)context).getProposedClientRepresentation(), true, false);
             } else if (context instanceof DynamicClientRegisterContext) {
-                verifySecureSigningAlgorithm(((DynamicClientRegisterContext)context).getProposedClientRepresentation(), false, false);
+                verifyAndEnforceSecureSigningAlgorithm(((DynamicClientRegisterContext)context).getProposedClientRepresentation(), false, false);
             } else {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
             }
             break;
         case UPDATE:
             if (context instanceof AdminClientUpdateContext) {
-                verifySecureSigningAlgorithm(((AdminClientUpdateContext)context).getProposedClientRepresentation(), true, true);
+                verifyAndEnforceSecureSigningAlgorithm(((AdminClientUpdateContext)context).getProposedClientRepresentation(), true, true);
             } else if (context instanceof DynamicClientUpdateContext) {
-                verifySecureSigningAlgorithm(((DynamicClientUpdateContext)context).getProposedClientRepresentation(), false, true);
+                verifyAndEnforceSecureSigningAlgorithm(((DynamicClientUpdateContext)context).getProposedClientRepresentation(), false, true);
             } else {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
             }
@@ -87,28 +126,45 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
         }
     }
 
-    private void verifySecureSigningAlgorithm(ClientRepresentation clientRep, boolean byAdminRestApi, boolean isUpdate) throws ClientPolicyException {
-        if (clientRep.getAttributes() == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "no signature algorithm was specified.");
-        }
+    private Configuration createDefaultConfiguration() {
+        Configuration conf = new Configuration();
+        conf.setDefaultAlgorithm(DEFAULT_ALGORITHM_VALUE);
+        return conf;
+    }
 
+    private void verifyAndEnforceSecureSigningAlgorithm(ClientRepresentation clientRep, boolean byAdminRestApi, boolean isUpdate) throws ClientPolicyException {
         for (String sigTarget : sigTargets) {
-            verifySecureSigningAlgorithm(sigTarget, clientRep.getAttributes().get(sigTarget));
+            verifyAndEnforceSecureSigningAlgorithm(sigTarget, clientRep);
         }
 
         // no client metadata found in RFC 7591 OAuth Dynamic Client Registration Metadata
         if (byAdminRestApi) {
             for (String sigTarget : sigTargetsAdminRestApiOnly) {
-                verifySecureSigningAlgorithm(sigTarget, clientRep.getAttributes().get(sigTarget));
+                verifyAndEnforceSecureSigningAlgorithm(sigTarget, clientRep);
             }
         }
     }
 
-    private void verifySecureSigningAlgorithm(String sigTarget, String sigAlg) throws ClientPolicyException {
+    private void verifyAndEnforceSecureSigningAlgorithm(String sigTarget, ClientRepresentation clientRep) throws ClientPolicyException {
+        Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+        String sigAlg = attributes.get(sigTarget);
         if (sigAlg == null) {
-            logger.tracev("Signing algorithm not specified explicitly. signature target = {0}", sigTarget);
+            logger.tracev("Signing algorithm not specified explicitly, signature target = {0}. set default algorithm = {1}.", sigTarget, configuration.getDefaultAlgorithm());
+            attributes.put(sigTarget, configuration.getDefaultAlgorithm());
+            clientRep.setAttributes(attributes);
             return;
         }
+
+        if (isSecureAlgorithm(sigAlg)) {
+            logger.tracev("Passed. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
+            return;
+        }
+
+        logger.tracev("NOT allowed signatureAlgorithm. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
+        throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
+    }
+
+    private static boolean isSecureAlgorithm(String sigAlg) {
         switch (sigAlg) {
         case Algorithm.PS256:
         case Algorithm.PS384:
@@ -116,11 +172,9 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
         case Algorithm.ES256:
         case Algorithm.ES384:
         case Algorithm.ES512:
-            logger.tracev("Passed. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
-            return;
+            return true;
         }
-        logger.tracev("NOT allowed signatureAlgorithm. signature target = {0}, signature algorithm = {1}", sigTarget, sigAlg);
-        throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
+        return false;
     }
 
 }
