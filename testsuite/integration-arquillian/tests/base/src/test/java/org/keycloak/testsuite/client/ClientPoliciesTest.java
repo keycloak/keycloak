@@ -50,6 +50,8 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
+import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -65,6 +67,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
+import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -1118,7 +1122,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
-
         // create by Admin REST API - fail
         try {
             createClientByAdmin(generateSuffixedName("App-by-Admin"), (ClientRepresentation clientRep) -> {
@@ -1141,6 +1144,16 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, org.keycloak.crypto.Algorithm.ES256);
             });
 
+        // create by Admin REST API - success, PS256 enforced
+        String cAppAdmin2Id = createClientByAdmin(generateSuffixedName("App-by-Admin2"), (ClientRepresentation client2Rep) -> {
+            });
+        ClientRepresentation cRep2 = getClientByAdmin(cAppAdmin2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cRep2.getAttributes().get(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cRep2.getAttributes().get(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cRep2.getAttributes().get(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cRep2.getAttributes().get(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cRep2.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
+
         // update by Admin REST API - fail
         try {
             updateClientByAdmin(cAppAdminId, (ClientRepresentation clientRep) -> {
@@ -1160,6 +1173,39 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         });
         cRep = getClientByAdmin(cAppAdminId);
         assertEquals(org.keycloak.crypto.Algorithm.PS384, cRep.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
+
+        // update profiles, ES256 enforced
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen", Boolean.FALSE, null)
+                    .addExecutor(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, 
+                            createSecureSigningAlgorithmEnforceExecutorConfig(org.keycloak.crypto.Algorithm.ES256))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // update by Admin REST API - success
+        updateClientByAdmin(cAppAdmin2Id, (ClientRepresentation client2Rep) -> {
+                client2Rep.getAttributes().remove(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
+                client2Rep.getAttributes().remove(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
+                client2Rep.getAttributes().remove(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
+                client2Rep.getAttributes().remove(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+                client2Rep.getAttributes().remove(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
+        });
+        cRep2 = getClientByAdmin(cAppAdmin2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep2.getAttributes().get(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep2.getAttributes().get(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep2.getAttributes().get(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep2.getAttributes().get(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep2.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
+
+        // update profiles, fall back to PS256
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen", Boolean.FALSE, null)
+                    .addExecutor(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, 
+                            createSecureSigningAlgorithmEnforceExecutorConfig(org.keycloak.crypto.Algorithm.RS512))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
 
         // create dynamically - fail
         try {
@@ -1181,7 +1227,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 clientRep.setTokenEndpointAuthSigningAlg(org.keycloak.crypto.Algorithm.PS256);
             });
         events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicClientId).user(Matchers.isEmptyOrNullString()).assertEvent();
-        getClientDynamically(cAppDynamicClientId);
 
         // update dynamically - fail
         try {
@@ -1199,6 +1244,38 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 clientRep.setIdTokenSignedResponseAlg(org.keycloak.crypto.Algorithm.ES384);
             });
         assertEquals(org.keycloak.crypto.Algorithm.ES384, getClientDynamically(cAppDynamicClientId).getIdTokenSignedResponseAlg());
+
+        // create dynamically - success, PS256 enforced
+        restartAuthenticatedClientRegistrationSetting();
+        String cAppDynamicClient2Id = createClientDynamically(generateSuffixedName("App-in-Dynamic"), (OIDCClientRepresentation client2Rep) -> {
+            });
+        OIDCClientRepresentation cAppDynamicClient2Rep = getClientDynamically(cAppDynamicClient2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cAppDynamicClient2Rep.getUserinfoSignedResponseAlg());
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cAppDynamicClient2Rep.getRequestObjectSigningAlg());
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cAppDynamicClient2Rep.getIdTokenSignedResponseAlg());
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cAppDynamicClient2Rep.getTokenEndpointAuthSigningAlg());
+
+        // update profiles, enforce ES256
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen", Boolean.FALSE, null)
+                    .addExecutor(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, 
+                            createSecureSigningAlgorithmEnforceExecutorConfig(org.keycloak.crypto.Algorithm.ES256))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // update dynamically - success, ES256 enforced
+        updateClientDynamically(cAppDynamicClient2Id, (OIDCClientRepresentation client2Rep) -> {
+                client2Rep.setUserinfoSignedResponseAlg(null);
+                client2Rep.setRequestObjectSigningAlg(null);
+                client2Rep.setIdTokenSignedResponseAlg(null);
+                client2Rep.setTokenEndpointAuthSigningAlg(null);
+            });
+        cAppDynamicClient2Rep = getClientDynamically(cAppDynamicClient2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cAppDynamicClient2Rep.getUserinfoSignedResponseAlg());
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cAppDynamicClient2Rep.getRequestObjectSigningAlg());
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cAppDynamicClient2Rep.getIdTokenSignedResponseAlg());
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cAppDynamicClient2Rep.getTokenEndpointAuthSigningAlg());
     }
 
     @Test
