@@ -17,10 +17,12 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -31,6 +33,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 public class SecureSigningAlgorithmEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "securesignalg-enforce-executor";
+
+    public static final String DEFAULT_ALGORITHM = "default-algorithm";
+
+    private static final ProviderConfigProperty DEFAULT_ALGORITHM_PROPERTY = new ProviderConfigProperty(
+            DEFAULT_ALGORITHM, null, null, ProviderConfigProperty.STRING_TYPE, Algorithm.PS256);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -61,7 +68,7 @@ public class SecureSigningAlgorithmEnforceExecutorFactory implements ClientPolic
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return new ArrayList<>(Arrays.asList(DEFAULT_ALGORITHM_PROPERTY));
     }
 
 }
