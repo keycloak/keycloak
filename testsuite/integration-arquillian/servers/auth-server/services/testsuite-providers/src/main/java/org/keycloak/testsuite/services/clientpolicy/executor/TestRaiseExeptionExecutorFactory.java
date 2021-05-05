@@ -63,4 +63,8 @@ public class TestRaiseExeptionExecutorFactory implements ClientPolicyExecutorPro
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean isSupported() {
+        return true;
+    }
 }

@@ -22,6 +22,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -60,11 +61,12 @@ public class ClientProfilesResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientProfilesRepresentation getProfiles() {
+    public ClientProfilesRepresentation getProfiles(@QueryParam("include-global-profiles") String includeGlobalProfiles) {
         auth.realm().requireViewRealm();
 
         try {
-            return session.clientPolicy().getClientProfiles(realm);
+            boolean includeGlobalProfilesBool = Boolean.parseBoolean(includeGlobalProfiles);
+            return session.clientPolicy().getClientProfiles(realm, includeGlobalProfilesBool);
         } catch (ClientPolicyException e) {
             throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getError()).build());
         }

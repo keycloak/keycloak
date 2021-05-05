@@ -18,7 +18,6 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -32,7 +31,6 @@ public class ClientProfileRepresentation {
 
     protected String name;
     protected String description;
-    protected Boolean builtin;
     protected List<ClientPolicyExecutorRepresentation> executors;
 
     public String getName() {
@@ -49,14 +47,6 @@ public class ClientProfileRepresentation {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Boolean isBuiltin() {
-        return builtin;
-    }
-
-    public void setBuiltin(Boolean builtin) {
-        this.builtin = builtin;
     }
 
     public List<ClientPolicyExecutorRepresentation> getExecutors() {

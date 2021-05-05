@@ -52,17 +52,24 @@
                     <tr>
                         <th>{{:: 'name' | translate}}</th>
                         <th>{{:: 'description' | translate}}</th>
-                        <th>{{:: 'builtin' | translate}}</th>
+                        <th>{{:: 'global' | translate}}</th>
                         <th colspan="2">{{:: 'actions' | translate}}</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <tr ng-repeat="clientProfile in clientProfiles.globalProfiles">
+                        <td><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{clientProfile.name}}">{{clientProfile.name}}</a></td>
+                        <td>{{clientProfile.description}}</td>
+                        <td>{{:: 'true' | translate}}</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
                     <tr ng-repeat="clientProfile in clientProfiles.profiles">
                         <td><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{clientProfile.name}}">{{clientProfile.name}}</a></td>
                         <td>{{clientProfile.description}}</td>
-                        <td translate="{{clientProfile.builtin}}"></td>
-                        <td class="kc-action-cell" data-ng-hide="clientProfile.builtin" kc-open="/realms/{{realm.realm}}/client-policies/profiles-update/{{clientProfile.name}}">{{:: 'edit' | translate}}</td>
-                        <td class="kc-action-cell" data-ng-hide="clientProfile.builtin" data-ng-click="removeClientProfile(clientProfile)">{{:: 'delete' | translate}}</td>
+                        <td>{{:: 'false' | translate}}</td>
+                        <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-policies/profiles-update/{{clientProfile.name}}">{{:: 'edit' | translate}}</td>
+                        <td class="kc-action-cell" data-ng-click="removeClientProfile(clientProfile)">{{:: 'delete' | translate}}</td>
                     </tr>
                 </tbody>
             </table>

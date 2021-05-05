@@ -13,22 +13,37 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package org.keycloak.services.clientpolicy.condition;
+package org.keycloak.services.clientpolicy;
 
-import org.keycloak.common.Profile;
-import org.keycloak.provider.ConfiguredProvider;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
- * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface ClientPolicyConditionProviderFactory extends ProviderFactory<ClientPolicyConditionProvider>, ConfiguredProvider, EnvironmentDependentProviderFactory {
+public class ClientPolicyManagerSpi implements Spi {
 
     @Override
-    default boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "client-policy-manager";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ClientPolicyManager.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ClientPolicyManagerFactory.class;
     }
 }

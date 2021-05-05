@@ -18,28 +18,32 @@
 
 package org.keycloak.representations.idm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientPolicyExecutorRepresentation {
 
-    private String providerId;
+    @JsonProperty("executor")
+    private String executorProviderId;
+
     private ClientPolicyExecutorConfigurationRepresentation configuration;
 
     public ClientPolicyExecutorRepresentation() {
     }
 
-    public ClientPolicyExecutorRepresentation(String providerId, ClientPolicyExecutorConfigurationRepresentation configuration) {
-        this.providerId = providerId;
+    public ClientPolicyExecutorRepresentation(String executorProviderId, ClientPolicyExecutorConfigurationRepresentation configuration) {
+        this.executorProviderId = executorProviderId;
         this.configuration = configuration;
     }
 
-    public String getProviderId() {
-        return providerId;
+    public String getExecutorProviderId() {
+        return executorProviderId;
     }
 
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
+    public void setExecutorProviderId(String providerId) {
+        this.executorProviderId = providerId;
     }
 
     public ClientPolicyExecutorConfigurationRepresentation getConfiguration() {

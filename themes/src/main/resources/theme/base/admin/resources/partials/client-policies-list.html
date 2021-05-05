@@ -52,7 +52,6 @@
                 <tr>
                     <th>{{:: 'name' | translate}}</th>
                     <th>{{:: 'description' | translate}}</th>
-                    <th>{{:: 'builtin' | translate}}</th>
                     <th>{{:: 'enabled' | translate}}</th>
                     <th colspan="2">{{:: 'actions' | translate}}</th>
                 </tr>
@@ -61,8 +60,7 @@
                 <tr ng-repeat="clientPolicy in clientPolicies.policies">
                     <td><a href="#/realms/{{realm.realm}}/client-policies/policies-update/{{clientPolicy.name}}">{{clientPolicy.name}}</a></td>
                     <td>{{clientPolicy.description}}</td>
-                    <td translate="{{clientPolicy.builtin}}"></td>
-                    <td translate="{{clientPolicy.enable}}"></td>
+                    <td translate="{{clientPolicy.enabled}}"></td>
                     <td class="kc-action-cell" data-ng-hide="clientPolicy.builtin" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{clientPolicy.name}}">{{:: 'edit' | translate}}</td>
                     <td class="kc-action-cell" data-ng-hide="clientPolicy.builtin" data-ng-click="removeClientPolicy(clientPolicy)">{{:: 'delete' | translate}}</td>
                 </tr>

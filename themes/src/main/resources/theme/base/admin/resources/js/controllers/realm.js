@@ -3038,44 +3038,52 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
     }
 
     $scope.realm = realm;
-    $scope.clientProfiles = clientProfiles;
     $scope.editedProfile = null;
 
     function getExecutorNames(clientProfile) {
         var executorNames = [];
         for (var i=0 ; i<clientProfile.executors.length ; i++) {
             var currentExecutor = clientProfile.executors[i];
-            if (!executorNames.includes(currentExecutor.providerId)) {
-                executorNames.push(currentExecutor.providerId);
+            if (!executorNames.includes(currentExecutor.executor)) {
+                executorNames.push(currentExecutor.executor);
             }
         }
         return executorNames;
     }
 
+    function getProfileByName(profilesArray) {
+        if (!profilesArray) return null;
+        for (var i=0 ; i < profilesArray.length ; i++) {
+            var currentProfile = profilesArray[i];
+            if (targetProfileName === currentProfile.name) {
+                return currentProfile;
+            }
+        }
+    }
+
     if ($scope.createNew) {
         $scope.editedProfile = {
             name: "",
-            builtin: false,
             executors: []
         };
         $scope.editedProfileExecutorNames = [];
     } else {
-        for (var i=0 ; i < $scope.clientProfiles.profiles.length ; i++) {
-            var currentProfile = $scope.clientProfiles.profiles[i];
-            if (targetProfileName === currentProfile.name) {
-                $scope.editedProfile = currentProfile;
-                $scope.editedProfileExecutorNames = getExecutorNames(currentProfile);
-                break;
-            }
+        var globalProfile = false;
+        $scope.editedProfile = getProfileByName(clientProfiles.profiles);
+        if (!$scope.editedProfile) {
+            $scope.editedProfile = getProfileByName(clientProfiles.globalProfiles);
+            globalProfile = true;
         }
 
         if ($scope.editedProfile == null) {
             console.log("Profile of name " + targetProfileName + " not found");
             throw 'Profile not found';
         }
+
+        $scope.editedProfileExecutorNames = getExecutorNames($scope.editedProfile);
     }
 
-    $scope.readOnly = !$scope.access.manageRealm || $scope.editedProfile.builtin;
+    $scope.readOnly = !$scope.access.manageRealm || globalProfile;
 
     $scope.removeExecutor = function(executorName) {
         console.log("remove executor " + executorName);
@@ -3083,7 +3091,7 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
         // Delete executor
         for (var i=0 ; i<$scope.editedProfile.executors.length ; i++) {
             var currentExecutor = $scope.editedProfile.executors[i];
-            if (currentExecutor.providerId === executorName) {
+            if (currentExecutor.executor === executorName) {
                 $scope.editedProfile.executors.splice(i, 1);
                 break;
             }
@@ -3091,7 +3099,7 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
 
         ClientPoliciesProfiles.update({
             realm: realm.realm,
-        }, $scope.clientProfiles,  function () {
+        }, clientProfiles,  function () {
             $scope.editedProfileExecutorNames = getExecutorNames($scope.editedProfile);
             Notifications.success("The executor was deleted.");
         }, function(errorResponse) {
@@ -3106,12 +3114,12 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
         }
 
         if ($scope.createNew) {
-            $scope.clientProfiles.profiles.push($scope.editedProfile);
+            clientProfiles.profiles.push($scope.editedProfile);
         }
 
         ClientPoliciesProfiles.update({
             realm: realm.realm,
-        }, $scope.clientProfiles,  function () {
+        }, clientProfiles,  function () {
             if ($scope.createNew) {
                 Notifications.success("The client profile was created.");
                 $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + $scope.editedProfile.name);
@@ -3146,19 +3154,27 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
     }
     $scope.realm = realm;
 
-    var editedProfile = null;
-    for (var i=0 ; i < clientProfiles.profiles.length ; i++) {
-        var currentProfile = clientProfiles.profiles[i];
-        if (targetProfileName === currentProfile.name) {
-            editedProfile = currentProfile;
-            break;
+    function getProfileByName(profilesArray) {
+        if (!profilesArray) return null;
+        for (var i=0 ; i < profilesArray.length ; i++) {
+            var currentProfile = profilesArray[i];
+            if (targetProfileName === currentProfile.name) {
+                return currentProfile;
+            }
         }
+    }
+
+    var globalProfile = false;
+    var editedProfile = getProfileByName(clientProfiles.profiles);
+    if (!editedProfile) {
+        editedProfile = getProfileByName(clientProfiles.globalProfiles);
+        globalProfile = true;
     }
     if (editedProfile == null) {
         throw 'Client profile of specified name not found';
     }
 
-    $scope.readOnly = !$scope.access.manageRealm || editedProfile.builtin;
+    $scope.readOnly = !$scope.access.manageRealm || globalProfile;
 
     $scope.executorTypes = serverInfo.componentTypes['org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider'];
 
@@ -3173,7 +3189,7 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
     function getExecutorByName(clientProfile, executorName) {
         for (var i=0 ; i<clientProfile.executors.length ; i++) {
             var currentExecutor = clientProfile.executors[i];
-            if (currentExecutor.providerId === executorName) {
+            if (currentExecutor.executor === executorName) {
                 return currentExecutor;
             }
         }
@@ -3218,7 +3234,7 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
             }
         }
 
-        if (configProperty.defaultValue) {
+        if (configProperty.defaultValue !== undefined) {
             return configProperty.defaultValue;
         } else {
             return null;
@@ -3249,7 +3265,7 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
 
         if ($scope.createNew) {
             var selectedExecutor = {
-                providerId: $scope.executorType.id,
+                executor: $scope.executorType.id,
                 configuration: $scope.executor.config
             };
             editedProfile.executors.push(selectedExecutor);
@@ -3356,8 +3372,8 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
         var conditionNames = [];
         for (var i=0 ; i<clientPolicy.conditions.length ; i++) {
             var currentCondition = clientPolicy.conditions[i];
-            if (!conditionNames.includes(currentCondition.providerId)) {
-                conditionNames.push(currentCondition.providerId);
+            if (!conditionNames.includes(currentCondition.condition)) {
+                conditionNames.push(currentCondition.condition);
             }
         }
         return conditionNames;
@@ -3366,8 +3382,7 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
     if ($scope.createNew) {
         $scope.editedPolicy = {
             name: "",
-            builtin: false,
-            enable: true,
+            enabled: true,
             profiles: [],
             conditions: []
         };
@@ -3388,12 +3403,15 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
         }
     }
 
-    $scope.readOnlyFormFields = !$scope.access.manageRealm || $scope.editedPolicy.builtin;
-    $scope.readOnlyButtons = !$scope.access.manageRealm;
+    $scope.readOnly = !$scope.access.manageRealm;
 
     $scope.availableProfiles = [];
-    for (var k=0 ; k<clientProfiles.profiles.length ; k++) {
-        var profileName = clientProfiles.profiles[k].name;
+    var allClientProfiles = clientProfiles.profiles;
+    if (clientProfiles.globalProfiles) {
+        allClientProfiles = allClientProfiles.concat(clientProfiles.globalProfiles);
+    }
+    for (var k=0 ; k<allClientProfiles.length ; k++) {
+        var profileName = allClientProfiles[k].name;
         if (!$scope.editedPolicy.profiles || !$scope.editedPolicy.profiles.includes(profileName)) {
             $scope.availableProfiles.push(profileName);
         }
@@ -3405,7 +3423,7 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
         // Delete condition
         for (var i=0 ; i<$scope.editedPolicy.conditions.length ; i++) {
             var currentCondition = $scope.editedPolicy.conditions[i];
-            if (currentCondition.providerId === conditionName) {
+            if (currentCondition.condition === conditionName) {
                 $scope.editedPolicy.conditions.splice(i, 1);
                 break;
             }
@@ -3509,7 +3527,7 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
         throw 'Client policy of specified name not found';
     }
 
-    $scope.readOnly = !$scope.access.manageRealm || editedPolicy.builtin;
+    $scope.readOnly = !$scope.access.manageRealm;
 
     $scope.conditionTypes = serverInfo.componentTypes['org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider'];
 
@@ -3524,7 +3542,7 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
     function getConditionByName(clientPolicy, conditionName) {
         for (var i=0 ; i<clientPolicy.conditions.length ; i++) {
             var currentCondition = clientPolicy.conditions[i];
-            if (currentCondition.providerId === conditionName) {
+            if (currentCondition.condition === conditionName) {
                 return currentCondition;
             }
         }
@@ -3568,7 +3586,7 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
             }
         }
 
-        if (configProperty.defaultValue) {
+        if (configProperty.defaultValue !== undefined) {
             return configProperty.defaultValue;
         } else {
             return null;
@@ -3601,7 +3619,7 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
         var selectedCondition;
         if ($scope.createNew) {
             var selectedCondition = {
-                providerId: $scope.conditionType.id,
+                condition: $scope.conditionType.id,
                 configuration: $scope.condition.config
             };
             editedPolicy.conditions.push(selectedCondition);

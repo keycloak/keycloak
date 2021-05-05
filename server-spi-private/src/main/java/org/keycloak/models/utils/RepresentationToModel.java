@@ -1181,6 +1181,7 @@ public class RepresentationToModel {
         realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
         updateCibaSettings(rep, realm);
+        session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
             Map<String, String> config = new HashMap(rep.getSmtpServer());

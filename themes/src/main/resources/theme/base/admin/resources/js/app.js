@@ -337,8 +337,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
-                }
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
+                },
             },
             controller : 'ClientPoliciesProfilesListCtrl'
         })
@@ -349,7 +349,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
                 }
             },
             controller : 'ClientPoliciesProfilesJsonCtrl'
@@ -361,7 +361,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
                 }
             },
             controller : 'ClientPoliciesProfilesEditCtrl'
@@ -373,7 +373,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
                 }
             },
             controller : 'ClientPoliciesProfilesEditCtrl'
@@ -385,7 +385,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
                 },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
@@ -400,7 +400,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
                 },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
@@ -439,7 +439,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
                 },
                 clientPolicies : function(ClientPoliciesLoader) {
                     return ClientPoliciesLoader();
@@ -454,7 +454,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader();
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
                 },
                 clientPolicies : function(ClientPoliciesLoader) {
                     return ClientPoliciesLoader();

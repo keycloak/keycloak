@@ -18,7 +18,6 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Client Policy's external representation class
@@ -29,8 +28,7 @@ public class ClientPolicyRepresentation {
 
     protected String name;
     protected String description;
-    protected Boolean builtin;
-    protected Boolean enable;
+    protected Boolean enabled;
     protected List<ClientPolicyConditionRepresentation> conditions;
     protected List<String> profiles;
 
@@ -50,20 +48,12 @@ public class ClientPolicyRepresentation {
         this.description = description;
     }
 
-    public Boolean isBuiltin() {
-        return builtin;
+    public Boolean isEnabled() {
+        return enabled;
     }
 
-    public void setBuiltin(Boolean builtin) {
-        this.builtin = builtin;
-    }
-
-    public Boolean isEnable() {
-        return enable;
-    }
-
-    public void setEnable(Boolean enable) {
-        this.enable = enable;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public List<ClientPolicyConditionRepresentation> getConditions() {

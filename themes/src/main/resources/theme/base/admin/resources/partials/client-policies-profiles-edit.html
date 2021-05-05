@@ -71,10 +71,10 @@
                 <legend><span class="text">{{:: 'executors' | translate}}</span>  <kc-tooltip>{{:: 'client-profile-executors.tooltip' | translate}}</kc-tooltip></legend>
                 <table class="table table-striped table-bordered">
                     <thead>
-                        <tr>
+                        <tr data-ng-hide="readOnly">
                             <th class="kc-table-actions" colspan="3">
                                 <div class="form-inline">
-                                    <div class="pull-right" data-ng-hide="readOnly">
+                                    <div class="pull-right">
                                         <a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/create-executor" class="btn btn-default">{{:: 'create' | translate}}</a>
                                     </div>
                                 </div>

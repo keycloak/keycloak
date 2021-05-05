@@ -19,9 +19,12 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.jboss.logging.Logger;
 
@@ -44,11 +47,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-<<<<<<< HEAD
 public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmEnforceExecutor.Configuration> {
-=======
-public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
->>>>>>> KEYCLOAK-14209 Client policies admin console support. Small changing of format of JSON for client policies and profiles. Refactoring
 
     private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
 
@@ -65,6 +64,15 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
             OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
 
     private static final String DEFAULT_ALGORITHM_VALUE = Algorithm.PS256;
+
+    static final Set<String> ALLOWED_ALGORITHMS = new LinkedHashSet<>(Arrays.asList(
+            Algorithm.PS256,
+            Algorithm.PS384,
+            Algorithm.PS512,
+            Algorithm.ES256,
+            Algorithm.ES384,
+            Algorithm.ES512
+    ));
 
     public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session) {
         this.session = session;
@@ -87,7 +95,7 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyExecutorConfiguration {
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("default-algorithm")
         protected String defaultAlgorithm;
 
@@ -170,16 +178,7 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
     }
 
     private static boolean isSecureAlgorithm(String sigAlg) {
-        switch (sigAlg) {
-        case Algorithm.PS256:
-        case Algorithm.PS384:
-        case Algorithm.PS512:
-        case Algorithm.ES256:
-        case Algorithm.ES384:
-        case Algorithm.ES512:
-            return true;
-        }
-        return false;
+        return ALLOWED_ALGORITHMS.contains(sigAlg);
     }
 
 }

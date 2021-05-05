@@ -66,4 +66,8 @@ public class TestRaiseExeptionConditionFactory implements ClientPolicyConditionP
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean isSupported() {
+        return true;
+    }
 }

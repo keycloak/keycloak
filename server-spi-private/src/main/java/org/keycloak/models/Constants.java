@@ -120,4 +120,8 @@ public final class Constants {
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
 
+    // Client Polices Realm Attributes Keys
+    public static final String CLIENT_PROFILES = "client-policies.profiles";
+    public static final String CLIENT_POLICIES = "client-policies.policies";
+
 }

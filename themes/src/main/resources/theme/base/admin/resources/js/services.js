@@ -2199,8 +2199,9 @@ module.factory('ClientRegistrationPolicyProviders', function($resource) {
 });
 
 module.factory('ClientPoliciesProfiles', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/client-policies/profiles', {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/profiles?include-global-profiles=:includeGlobalProfiles', {
         realm : '@realm',
+        includeGlobalProfiles : '@includeGlobalProfiles'
     }, {
        update : {
            method : 'PUT'

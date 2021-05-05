@@ -172,8 +172,6 @@ public class KeycloakApplication extends Application {
                 }
                 // TODO up here ^^
 
-                session.clientPolicy().setupClientPoliciesOnKeycloakApp("/keycloak-default-client-profiles.json", "/keycloak-default-client-policies.json");
-
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
                 exportImportManager[0] = new ExportImportManager(session);
 

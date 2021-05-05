@@ -13,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package org.keycloak.services.clientpolicy;
@@ -20,19 +21,16 @@ package org.keycloak.services.clientpolicy;
 import java.io.Serializable;
 import java.util.List;
 
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientPolicyModel implements Serializable {
+public class ClientProfileModel implements Serializable {
 
     protected String name;
     protected String description;
-    protected boolean builtin;
-    protected boolean enable;
-    protected List<ClientPolicyConditionProvider> conditions;
-    protected List<String> profiles;
+    protected List<ClientPolicyExecutorProvider> executors;
 
     public String getName() {
         return name;
@@ -50,35 +48,11 @@ public class ClientPolicyModel implements Serializable {
         this.description = description;
     }
 
-    public boolean isBuiltin() {
-        return builtin;
+    public List<ClientPolicyExecutorProvider> getExecutors() {
+        return executors;
     }
 
-    public void setBuiltin(boolean builtin) {
-        this.builtin = builtin;
-    }
-
-    public boolean isEnable() {
-        return enable;
-    }
-
-    public void setEnable(boolean enable) {
-        this.enable = enable;
-    }
-
-    public List<ClientPolicyConditionProvider> getConditions() {
-        return conditions;
-    }
-
-    public void setConditions(List<ClientPolicyConditionProvider> conditions) {
-        this.conditions = conditions;
-    }
-
-    public List<String> getProfiles() {
-        return profiles;
-    }
-
-    public void setProfiles(List<String> profiles) {
-        this.profiles = profiles;
+    public void setExecutors(List<ClientPolicyExecutorProvider> executors) {
+        this.executors = executors;
     }
 }

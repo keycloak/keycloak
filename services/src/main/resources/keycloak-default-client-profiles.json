@@ -1,12 +1,11 @@
 {
   "profiles": [
     {
-      "name": "builtin-default-profile",
-      "description": "The built-in default profile for enforcing basic security level to clients.",
-      "builtin": true,
+      "name": "global-default-profile",
+      "description": "The global default profile for enforcing basic security level to clients.",
       "executors": [
         {
-          "providerId": "secure-session-enforce-executor",
+          "executor": "secure-session-enforce-executor",
           "configuration": {}
         }
       ]

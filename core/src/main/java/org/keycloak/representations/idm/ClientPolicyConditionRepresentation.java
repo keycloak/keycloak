@@ -18,28 +18,32 @@
 
 package org.keycloak.representations.idm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientPolicyConditionRepresentation {
 
-    private String providerId;
+    @JsonProperty("condition")
+    private String conditionProviderId;
+
     private ClientPolicyConditionConfigurationRepresentation configuration;
 
     public ClientPolicyConditionRepresentation() {
     }
 
-    public ClientPolicyConditionRepresentation(String providerId, ClientPolicyConditionConfigurationRepresentation configuration) {
-        this.providerId = providerId;
+    public ClientPolicyConditionRepresentation(String conditionProviderId, ClientPolicyConditionConfigurationRepresentation configuration) {
+        this.conditionProviderId = conditionProviderId;
         this.configuration = configuration;
     }
 
-    public String getProviderId() {
-        return providerId;
+    public String getConditionProviderId() {
+        return conditionProviderId;
     }
 
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
+    public void setConditionProviderId(String conditionProviderId) {
+        this.conditionProviderId = conditionProviderId;
     }
 
     public ClientPolicyConditionConfigurationRepresentation getConfiguration() {
