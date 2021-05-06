@@ -1,17 +1,10 @@
 export default class ModalUtils {
-  modalTitle: string;
-  modalMessage: string;
-  confirmModalBtn: string;
-  cancelModalBtn: string;
-  closeModalBtn: string;
-  constructor() {
-    this.modalTitle = ".pf-c-modal-box .pf-c-modal-box__title-text";
-    this.modalMessage = ".pf-c-modal-box .pf-c-modal-box__body";
+  private modalTitle = ".pf-c-modal-box .pf-c-modal-box__title-text";
+  private modalMessage = ".pf-c-modal-box .pf-c-modal-box__body";
 
-    this.confirmModalBtn = "#modal-confirm";
-    this.cancelModalBtn = "#modal-cancel";
-    this.closeModalBtn = ".pf-c-modal-box .pf-m-plain";
-  }
+  private confirmModalBtn = "#modal-confirm";
+  private cancelModalBtn = "#modal-cancel";
+  private closeModalBtn = ".pf-c-modal-box .pf-m-plain";
 
   confirmModal() {
     cy.get(this.confirmModalBtn).click();
