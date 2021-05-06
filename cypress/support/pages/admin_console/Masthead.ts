@@ -55,4 +55,11 @@ export default class Masthead {
 
     return this;
   }
+
+  checkKebabShown() {
+    cy.get(this.userDrpDwn).should("not.exist");
+    cy.get(this.userDrpDwnKebab).should("exist");
+
+    return this;
+  }
 }
