@@ -64,18 +64,10 @@ describe("Group test", () => {
       listingPage.deleteItem(newName);
     });
 
-    it("Group search", () => {
-      viewHeaderPage.clickAction("searchGroup");
-      searchGroupPage.searchGroup("group").clickSearchButton();
-      searchGroupPage.checkTerm("group");
-    });
-
     it("Should move group", () => {
       const targetGroupName = "target";
-      groupModal
-        .open("empty-primary-action")
-        .fillGroupForm(groupName)
-        .clickCreate();
+      groupModal.open("empty-primary-action");
+      groupModal.fillGroupForm(groupName).clickCreate();
 
       groupModal.open().fillGroupForm(targetGroupName).clickCreate();
 
@@ -86,28 +78,35 @@ describe("Group test", () => {
       moveGroupModal.clickMove();
 
       masthead.checkNotificationMessage("Group moved");
-      listingPage
-        .itemExist(groupName, false)
-        .goToItemDetails(targetGroupName)
-        .itemExist(targetGroupName);
-
+      listingPage.itemExist(groupName, false).goToItemDetails(targetGroupName);
+      cy.wait(2000);
+      listingPage.itemExist(groupName);
+      cy.wait(1000);
       sidebarPage.goToGroups();
       listingPage.deleteItem(targetGroupName);
     });
 
     it("Should move group to root", async () => {
       const groups = ["group1", "group2"];
-      await new AdminClient().createSubGroups(groups);
-      sidebarPage.goToGroups();
-      listingPage.goToItemDetails(groups[0]);
-      cy.wait(2000);
-      listingPage.clickRowDetails(groups[1]).clickDetailMenu("Move to");
+      groupModal
+        .open("empty-primary-action")
+        .fillGroupForm(groups[0])
+        .clickCreate();
+      groupModal.open().fillGroupForm(groups[1]).clickCreate();
+      listingPage.clickRowDetails(groups[0]).clickDetailMenu("Move to");
 
       moveGroupModal.clickRoot().clickMove();
       sidebarPage.goToGroups();
 
       new GroupDetailPage().checkListSubGroup(groups);
       listingPage.deleteItem(groups[0]);
+      listingPage.deleteItem(groups[1]);
+    });
+  
+    it("Group search", () => {
+      viewHeaderPage.clickAction("searchGroup");
+      searchGroupPage.searchGroup("group").clickSearchButton();
+      searchGroupPage.checkTerm("group");
     });
   });
 
@@ -126,13 +125,19 @@ describe("Group test", () => {
     });
 
     beforeEach(() => {
-      cy.visit("");
+      keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToGroups();
     });
 
-    after(() => {
-      new AdminClient().deleteGroups();
+    after(async () => {
+      const adminClient = new AdminClient();
+      await adminClient.deleteGroups();
+      for (let i = 0; i < 5; i++) {
+        const username = "user" + i;
+        await adminClient.deleteUser(username);
+      }
+      await adminClient.deleteUser("new");
     });
 
     it("Should display all the subgroups", () => {

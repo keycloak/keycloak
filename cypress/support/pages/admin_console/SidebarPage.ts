@@ -28,7 +28,8 @@ export default class SidebarPage {
   }
 
   goToCreateRealm() {
-    cy.getId(this.realmsDrpDwn).scrollIntoView().click();
+    cy.getId(this.realmsDrpDwn).scrollIntoView();
+    cy.getId(this.realmsDrpDwn).click();
     cy.getId(this.createRealmBtn).click();
 
     return this;

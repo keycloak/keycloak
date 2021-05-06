@@ -2,16 +2,28 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin_console/manage/realm_settings/RealmSettingsPage";
 import { keycloakBefore } from "../support/util/keycloak_before";
+import AdminClient from "../support/util/AdminClient";
 
 describe("Realm settings test", () => {
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
   const realmSettingsPage = new RealmSettingsPage();
 
-  describe("Realm settings", function () {
-    beforeEach(function () {
+  describe("Realm settings", () => {
+    const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
+      sidebarPage.goToRealm(realmName);
+    });
+
+    before(async () => {
+      await new AdminClient().createRealm(realmName);
+    });
+
+    after(async () => {
+      await new AdminClient().deleteRealm(realmName);
     });
 
     it("Go to general tab", function () {

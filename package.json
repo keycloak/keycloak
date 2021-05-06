@@ -69,7 +69,7 @@
     "@typescript-eslint/eslint-plugin": "^3.8.0",
     "@typescript-eslint/parser": "^3.8.0",
     "babel-loader": "^8.1.0",
-    "cypress": "^6.5.0",
+    "cypress": "7.2.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "enzyme": "^3.11.0",

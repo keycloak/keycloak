@@ -30,22 +30,12 @@ describe("Clients test", function () {
     it("should fail creating client", function () {
       listingPage.goToCreateItem();
 
-      createClientPage
-        .continue()
-        .checkClientTypeRequiredMessage()
-        .checkClientIdRequiredMessage();
-
-      createClientPage
-        .fillClientData(itemId)
-        .continue()
-        .checkClientTypeRequiredMessage()
-        .checkClientIdRequiredMessage(false);
+      createClientPage.continue().checkClientIdRequiredMessage();
 
       createClientPage
         .fillClientData("")
         .selectClientType("openid-connect")
         .continue()
-        .checkClientTypeRequiredMessage(false)
         .checkClientIdRequiredMessage();
 
       createClientPage.fillClientData("account").continue().continue();

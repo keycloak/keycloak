@@ -61,7 +61,6 @@ describe("Identity provider test", () => {
         .clickCard("facebook")
         .fill("facebook", "123")
         .clickAdd();
-      sidebarPage.goToIdentityProviders();
       listingPage.itemExist("facebook");
 
       createProviderPage
@@ -69,13 +68,11 @@ describe("Identity provider test", () => {
         .clickItem(identityProviderName)
         .fill(identityProviderName, "123")
         .clickAdd();
-      sidebarPage.goToIdentityProviders();
       createProviderPage
         .clickCreateDropdown()
         .clickItem("bitbucket")
         .fill("bitbucket", "123")
         .clickAdd();
-      sidebarPage.goToIdentityProviders();
 
       orderDialog.openDialog().checkOrder(providers);
       orderDialog.moveRowTo("facebook", identityProviderName);
@@ -86,6 +83,22 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(
         "Successfully changed display order of identity providers"
       );
+    });
+
+    it("clean up providers", () => {
+      const modalUtils = new ModalUtils();
+      listingPage.deleteItem("bitbucket");
+      modalUtils.checkModalTitle("Delete provider?").confirmModal();
+      masthead.checkNotificationMessage("Provider successfully deleted");
+
+      listingPage.deleteItem("facebook");
+      modalUtils.checkModalTitle("Delete provider?").confirmModal();
+      masthead.checkNotificationMessage("Provider successfully deleted");
+
+      cy.wait(100);
+      listingPage.deleteItem("github");
+      modalUtils.checkModalTitle("Delete provider?").confirmModal();
+      masthead.checkNotificationMessage("Provider successfully deleted");
     });
   });
 });

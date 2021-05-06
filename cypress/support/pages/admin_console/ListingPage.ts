@@ -17,7 +17,7 @@ export default class ListingPage {
     this.searchBtn =
       ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
     this.createBtn =
-      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-primary";
+      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-primary:visible";
     this.importBtn =
       ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-link";
   }

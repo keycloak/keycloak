@@ -8,6 +8,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_before";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
+import AdminClient from "../support/util/AdminClient";
 
 let groupName = "group";
 let groupsList: string[] = [];
@@ -18,7 +19,7 @@ describe("Group creation", () => {
   const sidebarPage = new SidebarPage();
   const groupModal = new GroupModal();
 
-  beforeEach(function () {
+  beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.goToGroups();
@@ -64,9 +65,11 @@ describe("Users test", () => {
       sidebarPage.goToUsers();
     });
 
-    it("Go to create User page", () => {
-      cy.wait(100);
+    after(async () => {
+      await new AdminClient().deleteGroups();
+    });
 
+    it("Go to create User page", () => {
       createUserPage.goToCreateUser();
       cy.url().should("include", "users/add-user");
 
@@ -75,12 +78,10 @@ describe("Users test", () => {
       cy.url().should("not.include", "/add-user");
     });
 
-    it("Create user test", function () {
+    it("Create user test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
-      cy.wait(100);
-
       createUserPage.goToCreateUser();
 
       createUserPage.createUser(itemId);
@@ -104,33 +105,26 @@ describe("Users test", () => {
       sidebarPage.goToUsers();
     });
 
-    it("User details test", function () {
-      cy.wait(1000);
+    it("User details test", () => {
       listingPage.searchItem(itemId).itemExist(itemId);
 
-      cy.wait(1000);
       listingPage.goToItemDetails(itemId);
 
       userDetailsPage.fillUserData().save();
 
       masthead.checkNotificationMessage("The user has been saved");
 
-      cy.wait(1000);
-
       sidebarPage.goToUsers();
       listingPage.searchItem(itemId).itemExist(itemId);
     });
 
-    it("Add user to groups test", function () {
+    it("Add user to groups test", () => {
       // Go to user groups
-
       listingPage.searchItem(itemId).itemExist(itemId);
       listingPage.goToItemDetails(itemId);
 
       userGroupsPage.goToGroupsTab();
       userGroupsPage.toggleAddGroupModal();
-
-      cy.wait(1000);
 
       const groupsListCopy = groupsList.slice(1, 2);
 
@@ -139,35 +133,28 @@ describe("Users test", () => {
       });
 
       userGroupsPage.joinGroups();
-
-      cy.wait(1000);
     });
 
-    it("Leave group test", function () {
+    it("Leave group test", () => {
       listingPage.searchItem(itemId).itemExist(itemId);
       listingPage.goToItemDetails(itemId);
       // Go to user groups
       userGroupsPage.goToGroupsTab();
-      cy.wait(1000);
       cy.contains("Leave").click();
       cy.getId("modalConfirm").click();
     });
 
-    it("Go to user consents test", function () {
-      cy.wait(1000);
+    it("Go to user consents test", () => {
       listingPage.searchItem(itemId).itemExist(itemId);
 
-      cy.wait(1000);
       listingPage.goToItemDetails(itemId);
 
       cy.getId("user-consents-tab").click();
-
       cy.getId("empty-state").contains("No consents");
     });
 
-    it("Delete user test", function () {
+    it("Delete user test", () => {
       // Delete
-      cy.wait(1000);
       listingPage.deleteItem(itemId);
 
       modalUtils.checkModalTitle("Delete user?").confirmModal();

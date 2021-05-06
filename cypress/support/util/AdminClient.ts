@@ -20,6 +20,11 @@ export default class AdminClient {
     });
   }
 
+  async createRealm(realm: string) {
+    await this.login();
+    await this.client.realms.create({ realm });
+  }
+
   async deleteRealm(realm: string) {
     await this.login();
     await this.client.realms.del({ realm });
@@ -29,6 +34,7 @@ export default class AdminClient {
     await this.login();
     await this.client.clients.create(client);
   }
+
   async deleteClient(clientName: string) {
     await this.login();
     const client = (
@@ -72,5 +78,11 @@ export default class AdminClient {
     await this.login();
     const user = await this.createUser({ username, enabled: true });
     await this.client.users.addToGroup({ id: user.id!, groupId });
+  }
+
+  async deleteUser(username: string) {
+    await this.login();
+    const user = await this.client.users.find({ username });
+    await this.client.users.del({ id: user[0].id! });
   }
 }

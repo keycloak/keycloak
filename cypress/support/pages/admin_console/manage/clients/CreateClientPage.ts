@@ -71,12 +71,6 @@ export default class CreateClientPage {
     return this;
   }
 
-  checkClientTypeRequiredMessage(exist = true) {
-    cy.get(this.clientTypeError).should((!exist ? "not." : "") + "exist");
-
-    return this;
-  }
-
   checkClientIdRequiredMessage(exist = true) {
     cy.get(this.clientIdError).should((!exist ? "not." : "") + "exist");
 
