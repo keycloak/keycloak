@@ -177,6 +177,7 @@ export const UserFederationSection = () => {
             <hr className="pf-u-mb-lg" />
             <Gallery hasGutter>
               <Card
+                className="keycloak-empty-state-card"
                 isHoverable
                 onClick={() => history.push(`${url}/kerberos/new`)}
                 data-testid="kerberos-card"
@@ -191,6 +192,7 @@ export const UserFederationSection = () => {
                 </CardTitle>
               </Card>
               <Card
+                className="keycloak-empty-state-card"
                 isHoverable
                 onClick={() => history.push(`${url}/ldap/new`)}
                 data-testid="ldap-card"

@@ -171,6 +171,7 @@ export const IdentityProvidersSection = () => {
                   {_.sortBy(identityProviders[group], "name").map(
                     (provider) => (
                       <Card
+                        className="keycloak-empty-state-card"
                         key={provider.id}
                         isHoverable
                         data-testid={`${provider.id}-card`}

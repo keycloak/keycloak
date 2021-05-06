@@ -19,10 +19,14 @@ label.pf-c-form__label {
 }
 
 .pf-c-select__toggle:before {
-  border-top: var(--pf-c-select__toggle--before--BorderTopWidth) solid var(--pf-c-select__toggle--before--BorderTopColor);
-  border-right: var(--pf-c-select__toggle--before--BorderRightWidth) solid var(--pf-c-select__toggle--before--BorderRightColor);
-  border-bottom: var(--pf-c-select__toggle--before--BorderBottomWidth) solid var(--pf-c-select__toggle--before--BorderBottomColor);
-  border-left: var(--pf-c-select__toggle--before--BorderLeftWidth) solid var(--pf-c-select__toggle--before--BorderLeftColor);
+  border-top: var(--pf-c-select__toggle--before--BorderTopWidth) solid
+    var(--pf-c-select__toggle--before--BorderTopColor);
+  border-right: var(--pf-c-select__toggle--before--BorderRightWidth) solid
+    var(--pf-c-select__toggle--before--BorderRightColor);
+  border-bottom: var(--pf-c-select__toggle--before--BorderBottomWidth) solid
+    var(--pf-c-select__toggle--before--BorderBottomColor);
+  border-left: var(--pf-c-select__toggle--before--BorderLeftWidth) solid
+    var(--pf-c-select__toggle--before--BorderLeftColor);
 }
 
 .keycloak__form_actions {
@@ -35,4 +39,8 @@ label.pf-c-form__label {
   width: 100%;
   border-top: 1px solid var(--pf-global--BorderColor--100);
   margin-left: calc(-1 * var(--pf-global--spacer--lg));
+}
+
+.keycloak-empty-state-card:hover {
+  cursor: pointer;
 }
