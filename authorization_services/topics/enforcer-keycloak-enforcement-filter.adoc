@@ -92,7 +92,7 @@ unnecessary requests to a {project_name} server by caching associations between 
 +
 *** *lifespan*
 +
-Defines the time in milliseconds when the entry should be expired. If not provided, default value is *3000*. A value equal to 0 can be set to completely disable the cache. A value equal to -1 can be set to disable the expiry of the cache.
+Defines the time in milliseconds when the entry should be expired. If not provided, default value is *30000*. A value equal to 0 can be set to completely disable the cache. A value equal to -1 can be set to disable the expiry of the cache.
 +
 *** *max-entries*
 +
