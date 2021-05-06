@@ -2,10 +2,10 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 11.0.0
-:project_versionMvn: 11.0.0
-:project_versionNpm: 11.0.0
-:project_versionDoc: 11.0
+:project_version: 14.0.0
+:project_versionMvn: 14.0.0
+:project_versionNpm: 14.0.0
+:project_versionDoc: 14.0
 
 ifeval::["{project_buildType}" == "latest"]
 :project_versionLinks: latest
