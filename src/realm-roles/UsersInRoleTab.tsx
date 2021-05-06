@@ -27,7 +27,7 @@ export const UsersInRoleTab = () => {
       first: first!,
       max: max!,
     });
-    return usersWithRole;
+    return usersWithRole || [];
   };
 
   const { enabled } = useContext(HelpContext);
