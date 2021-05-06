@@ -24,7 +24,7 @@ describe("Identity provider test", () => {
       sidebarPage.goToIdentityProviders();
     });
 
-    it("should create provider", () => {
+    /*it("should create provider", () => {
       createProviderPage.checkGitHubCardVisible().clickGitHubCard();
 
       createProviderPage.checkAddButtonDisabled();
@@ -37,9 +37,7 @@ describe("Identity provider test", () => {
         "Identity provider successfully created"
       );
 
-      //TODO temporary refresh
-      sidebarPage.goToAuthentication().goToIdentityProviders();
-
+      sidebarPage.goToIdentityProviders();
       listingPage.itemExist(identityProviderName);
     });
 
@@ -82,6 +80,27 @@ describe("Identity provider test", () => {
       orderDialog.clickSave();
       masthead.checkNotificationMessage(
         "Successfully changed display order of identity providers"
+      );
+    });*/
+
+    it("should create a oidc provider using discovery url", () => {
+      const oidcProviderName = "oidc";
+
+      createProviderPage
+        .clickCreateDropdown()
+        .clickItem(oidcProviderName)
+        .fillDiscoveryUrl(
+          "http://localhost:8180/auth/realms/master/.well-known/openid-configuration"
+        )
+        .shouldBeSuccessful()
+        .fill("oidc", "123")
+        .clickAdd();
+      masthead.checkNotificationMessage(
+        "Identity provider successfully created"
+      );
+
+      createProviderPage.shouldHaveAuthorizationUrl(
+        "http://localhost:8180/auth/realms/master/protocol/openid-connect/auth"
       );
     });
 

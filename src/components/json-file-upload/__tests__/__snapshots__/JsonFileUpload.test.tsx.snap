@@ -7,7 +7,7 @@ exports[`<JsonFileUpload /> render 1`] = `
 >
   <FormGroup
     fieldId="test"
-    helperText="Upload a JSON file"
+    helperText="helpFileUpload"
     label="resourceFile"
   >
     <div
@@ -31,56 +31,42 @@ exports[`<JsonFileUpload /> render 1`] = `
       <div
         className="pf-c-form__group-control"
       >
-        <FileUpload
-          dropzoneProps={
-            Object {
-              "accept": ".json",
+        <JsonFileUploadComp>
+          <FileUpload
+            dropzoneProps={
+              Object {
+                "accept": ".json",
+              }
             }
-          }
-          filename=""
-          id="test"
-          isLoading={false}
-          onChange={[Function]}
-          onReadFinished={[Function]}
-          onReadStarted={[Function]}
-          type="text"
-          value=""
-        >
-          <t
-            accept=".json"
-            disabled={false}
-            getDataTransferItems={[Function]}
-            maxSize={Infinity}
-            minSize={0}
-            multiple={false}
-            onDropAccepted={[Function]}
-            onDropRejected={[Function]}
-            preventDropOnDocument={true}
+            filename=""
+            id="test"
+            isLoading={false}
+            onChange={[Function]}
+            onReadFinished={[Function]}
+            onReadStarted={[Function]}
+            type="text"
+            value=""
           >
-            <FileUploadField
-              containerRef={[Function]}
-              filename=""
-              id="test"
-              isLoading={false}
-              onBlur={[Function]}
-              onBrowseButtonClick={[Function]}
-              onChange={[Function]}
-              onClearButtonClick={[Function]}
-              onClick={[Function]}
-              onDragEnter={[Function]}
-              onDragLeave={[Function]}
-              onDragOver={[Function]}
-              onDragStart={[Function]}
-              onDrop={[Function]}
-              onFocus={[Function]}
-              onKeyDown={[Function]}
-              tabIndex={null}
-              type="text"
-              value=""
+            <t
+              accept=".json"
+              disabled={false}
+              getDataTransferItems={[Function]}
+              maxSize={Infinity}
+              minSize={0}
+              multiple={false}
+              onDropAccepted={[Function]}
+              onDropRejected={[Function]}
+              preventDropOnDocument={true}
             >
-              <div
-                className="pf-c-file-upload"
+              <FileUploadField
+                containerRef={[Function]}
+                filename=""
+                id="test"
+                isLoading={false}
                 onBlur={[Function]}
+                onBrowseButtonClick={[Function]}
+                onChange={[Function]}
+                onClearButtonClick={[Function]}
                 onClick={[Function]}
                 onDragEnter={[Function]}
                 onDragLeave={[Function]}
@@ -90,131 +76,131 @@ exports[`<JsonFileUpload /> render 1`] = `
                 onFocus={[Function]}
                 onKeyDown={[Function]}
                 tabIndex={null}
+                type="text"
+                value=""
               >
                 <div
-                  className="pf-c-file-upload__file-select"
+                  className="pf-c-file-upload"
+                  onBlur={[Function]}
+                  onClick={[Function]}
+                  onDragEnter={[Function]}
+                  onDragLeave={[Function]}
+                  onDragOver={[Function]}
+                  onDragStart={[Function]}
+                  onDrop={[Function]}
+                  onFocus={[Function]}
+                  onKeyDown={[Function]}
+                  tabIndex={null}
                 >
-                  <InputGroup>
-                    <div
-                      className="pf-c-input-group"
-                    >
-                      <TextInput
-                        aria-describedby="test-browse-button"
-                        aria-label="Drag a file here or browse to upload"
-                        id="test-filename"
-                        isDisabled={false}
-                        isReadOnly={true}
-                        key=".0"
-                        name="test-filename"
-                        placeholder="Drag a file here or browse to upload"
-                        value=""
+                  <div
+                    className="pf-c-file-upload__file-select"
+                  >
+                    <InputGroup>
+                      <div
+                        className="pf-c-input-group"
                       >
-                        <TextInputBase
+                        <TextInput
                           aria-describedby="test-browse-button"
                           aria-label="Drag a file here or browse to upload"
-                          className=""
                           id="test-filename"
-                          innerRef={null}
                           isDisabled={false}
-                          isLeftTruncated={false}
                           isReadOnly={true}
-                          isRequired={false}
+                          key=".0"
                           name="test-filename"
-                          onChange={[Function]}
                           placeholder="Drag a file here or browse to upload"
-                          type="text"
-                          validated="default"
                           value=""
                         >
-                          <input
+                          <TextInputBase
                             aria-describedby="test-browse-button"
-                            aria-invalid={false}
                             aria-label="Drag a file here or browse to upload"
-                            className="pf-c-form-control"
-                            disabled={false}
+                            className=""
                             id="test-filename"
+                            innerRef={null}
+                            isDisabled={false}
+                            isLeftTruncated={false}
+                            isReadOnly={true}
+                            isRequired={false}
                             name="test-filename"
-                            onBlur={[Function]}
                             onChange={[Function]}
-                            onFocus={[Function]}
                             placeholder="Drag a file here or browse to upload"
-                            readOnly={true}
-                            required={false}
                             type="text"
+                            validated="default"
                             value=""
-                          />
-                        </TextInputBase>
-                      </TextInput>
-                      <Button
-                        id="test-browse-button"
-                        isDisabled={false}
-                        key=".1"
-                        onClick={[Function]}
-                        variant="control"
-                      >
-                        <button
-                          aria-disabled={false}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control"
-                          data-ouia-component-id="OUIA-Generated-Button-control-1"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={false}
+                          >
+                            <input
+                              aria-describedby="test-browse-button"
+                              aria-invalid={false}
+                              aria-label="Drag a file here or browse to upload"
+                              className="pf-c-form-control"
+                              disabled={false}
+                              id="test-filename"
+                              name="test-filename"
+                              onBlur={[Function]}
+                              onChange={[Function]}
+                              onFocus={[Function]}
+                              placeholder="Drag a file here or browse to upload"
+                              readOnly={true}
+                              required={false}
+                              type="text"
+                              value=""
+                            />
+                          </TextInputBase>
+                        </TextInput>
+                        <Button
                           id="test-browse-button"
+                          isDisabled={false}
+                          key=".1"
                           onClick={[Function]}
-                          role={null}
-                          type="button"
+                          variant="control"
                         >
-                          Browse...
-                        </button>
-                      </Button>
-                      <Button
-                        isDisabled={true}
-                        key=".2"
-                        onClick={[Function]}
-                        variant="control"
-                      >
-                        <button
-                          aria-disabled={true}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control pf-m-disabled"
-                          data-ouia-component-id="OUIA-Generated-Button-control-2"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={true}
+                          <button
+                            aria-disabled={false}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control"
+                            data-ouia-component-id="OUIA-Generated-Button-control-1"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={false}
+                            id="test-browse-button"
+                            onClick={[Function]}
+                            role={null}
+                            type="button"
+                          >
+                            Browse...
+                          </button>
+                        </Button>
+                        <Button
+                          isDisabled={true}
+                          key=".2"
                           onClick={[Function]}
-                          role={null}
-                          tabIndex={null}
-                          type="button"
+                          variant="control"
                         >
-                          Clear
-                        </button>
-                      </Button>
-                    </div>
-                  </InputGroup>
-                </div>
-                <div
-                  className="pf-c-file-upload__file-details"
-                >
-                  <TextArea
-                    aria-label="File upload"
-                    disabled={false}
-                    id="test"
-                    isRequired={false}
-                    name="test"
-                    onChange={[Function]}
-                    readOnly={false}
-                    resizeOrientation="vertical"
-                    validated="default"
-                    value=""
+                          <button
+                            aria-disabled={true}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control pf-m-disabled"
+                            data-ouia-component-id="OUIA-Generated-Button-control-2"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={true}
+                            onClick={[Function]}
+                            role={null}
+                            tabIndex={null}
+                            type="button"
+                          >
+                            Clear
+                          </button>
+                        </Button>
+                      </div>
+                    </InputGroup>
+                  </div>
+                  <div
+                    className="pf-c-file-upload__file-details"
                   >
                     <TextArea
                       aria-label="File upload"
-                      className=""
                       disabled={false}
                       id="test"
-                      innerRef={null}
-                      isDisabled={false}
                       isRequired={false}
                       name="test"
                       onChange={[Function]}
@@ -223,45 +209,61 @@ exports[`<JsonFileUpload /> render 1`] = `
                       validated="default"
                       value=""
                     >
-                      <textarea
-                        aria-invalid={false}
+                      <TextArea
                         aria-label="File upload"
-                        className="pf-c-form-control pf-m-resize-vertical"
+                        className=""
                         disabled={false}
                         id="test"
+                        innerRef={null}
+                        isDisabled={false}
+                        isRequired={false}
                         name="test"
                         onChange={[Function]}
                         readOnly={false}
-                        required={false}
+                        resizeOrientation="vertical"
+                        validated="default"
                         value=""
-                      />
+                      >
+                        <textarea
+                          aria-invalid={false}
+                          aria-label="File upload"
+                          className="pf-c-form-control pf-m-resize-vertical"
+                          disabled={false}
+                          id="test"
+                          name="test"
+                          onChange={[Function]}
+                          readOnly={false}
+                          required={false}
+                          value=""
+                        />
+                      </TextArea>
                     </TextArea>
-                  </TextArea>
-                </div>
-                <input
-                  accept=".json"
-                  autoComplete="off"
-                  multiple={false}
-                  onChange={[Function]}
-                  onClick={[Function]}
-                  style={
-                    Object {
-                      "display": "none",
+                  </div>
+                  <input
+                    accept=".json"
+                    autoComplete="off"
+                    multiple={false}
+                    onChange={[Function]}
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "display": "none",
+                      }
                     }
-                  }
-                  tabIndex={-1}
-                  type="file"
-                />
-              </div>
-            </FileUploadField>
-          </t>
-        </FileUpload>
+                    tabIndex={-1}
+                    type="file"
+                  />
+                </div>
+              </FileUploadField>
+            </t>
+          </FileUpload>
+        </JsonFileUploadComp>
         <div
           aria-live="polite"
           className="pf-c-form__helper-text"
           id="test-helper"
         >
-          Upload a JSON file
+          helpFileUpload
         </div>
       </div>
     </div>
@@ -276,7 +278,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
 >
   <FormGroup
     fieldId="upload"
-    helperText="Upload a JSON file"
+    helperText="helpFileUpload"
     label="resourceFile"
   >
     <div
@@ -300,57 +302,43 @@ exports[`<JsonFileUpload /> upload file 1`] = `
       <div
         className="pf-c-form__group-control"
       >
-        <FileUpload
-          dropzoneProps={
-            Object {
-              "accept": ".json",
+        <JsonFileUploadComp>
+          <FileUpload
+            dropzoneProps={
+              Object {
+                "accept": ".json",
+              }
             }
-          }
-          filename=""
-          id="upload"
-          isLoading={false}
-          onChange={[Function]}
-          onReadFinished={[Function]}
-          onReadStarted={[Function]}
-          type="text"
-          value=""
-        >
-          <t
-            accept=".json"
-            disabled={false}
-            getDataTransferItems={[Function]}
-            maxSize={Infinity}
-            minSize={0}
-            multiple={false}
-            onDropAccepted={[Function]}
-            onDropRejected={[Function]}
-            preventDropOnDocument={true}
+            filename=""
+            id="upload"
+            isLoading={false}
+            onChange={[Function]}
+            onReadFinished={[Function]}
+            onReadStarted={[Function]}
+            type="text"
+            value=""
           >
-            <FileUploadField
-              containerRef={[Function]}
-              filename=""
-              id="upload"
-              isDragActive={false}
-              isLoading={false}
-              onBlur={[Function]}
-              onBrowseButtonClick={[Function]}
-              onChange={[Function]}
-              onClearButtonClick={[Function]}
-              onClick={[Function]}
-              onDragEnter={[Function]}
-              onDragLeave={[Function]}
-              onDragOver={[Function]}
-              onDragStart={[Function]}
-              onDrop={[Function]}
-              onFocus={[Function]}
-              onKeyDown={[Function]}
-              tabIndex={null}
-              type="text"
-              value=""
+            <t
+              accept=".json"
+              disabled={false}
+              getDataTransferItems={[Function]}
+              maxSize={Infinity}
+              minSize={0}
+              multiple={false}
+              onDropAccepted={[Function]}
+              onDropRejected={[Function]}
+              preventDropOnDocument={true}
             >
-              <div
-                className="pf-c-file-upload"
+              <FileUploadField
+                containerRef={[Function]}
+                filename=""
+                id="upload"
+                isDragActive={false}
+                isLoading={false}
                 onBlur={[Function]}
+                onBrowseButtonClick={[Function]}
+                onChange={[Function]}
+                onClearButtonClick={[Function]}
                 onClick={[Function]}
                 onDragEnter={[Function]}
                 onDragLeave={[Function]}
@@ -360,131 +348,131 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                 onFocus={[Function]}
                 onKeyDown={[Function]}
                 tabIndex={null}
+                type="text"
+                value=""
               >
                 <div
-                  className="pf-c-file-upload__file-select"
+                  className="pf-c-file-upload"
+                  onBlur={[Function]}
+                  onClick={[Function]}
+                  onDragEnter={[Function]}
+                  onDragLeave={[Function]}
+                  onDragOver={[Function]}
+                  onDragStart={[Function]}
+                  onDrop={[Function]}
+                  onFocus={[Function]}
+                  onKeyDown={[Function]}
+                  tabIndex={null}
                 >
-                  <InputGroup>
-                    <div
-                      className="pf-c-input-group"
-                    >
-                      <TextInput
-                        aria-describedby="upload-browse-button"
-                        aria-label="Drag a file here or browse to upload"
-                        id="upload-filename"
-                        isDisabled={false}
-                        isReadOnly={true}
-                        key=".0"
-                        name="upload-filename"
-                        placeholder="Drag a file here or browse to upload"
-                        value=""
+                  <div
+                    className="pf-c-file-upload__file-select"
+                  >
+                    <InputGroup>
+                      <div
+                        className="pf-c-input-group"
                       >
-                        <TextInputBase
+                        <TextInput
                           aria-describedby="upload-browse-button"
                           aria-label="Drag a file here or browse to upload"
-                          className=""
                           id="upload-filename"
-                          innerRef={null}
                           isDisabled={false}
-                          isLeftTruncated={false}
                           isReadOnly={true}
-                          isRequired={false}
+                          key=".0"
                           name="upload-filename"
-                          onChange={[Function]}
                           placeholder="Drag a file here or browse to upload"
-                          type="text"
-                          validated="default"
                           value=""
                         >
-                          <input
+                          <TextInputBase
                             aria-describedby="upload-browse-button"
-                            aria-invalid={false}
                             aria-label="Drag a file here or browse to upload"
-                            className="pf-c-form-control"
-                            disabled={false}
+                            className=""
                             id="upload-filename"
+                            innerRef={null}
+                            isDisabled={false}
+                            isLeftTruncated={false}
+                            isReadOnly={true}
+                            isRequired={false}
                             name="upload-filename"
-                            onBlur={[Function]}
                             onChange={[Function]}
-                            onFocus={[Function]}
                             placeholder="Drag a file here or browse to upload"
-                            readOnly={true}
-                            required={false}
                             type="text"
+                            validated="default"
                             value=""
-                          />
-                        </TextInputBase>
-                      </TextInput>
-                      <Button
-                        id="upload-browse-button"
-                        isDisabled={false}
-                        key=".1"
-                        onClick={[Function]}
-                        variant="control"
-                      >
-                        <button
-                          aria-disabled={false}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control"
-                          data-ouia-component-id="OUIA-Generated-Button-control-3"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={false}
+                          >
+                            <input
+                              aria-describedby="upload-browse-button"
+                              aria-invalid={false}
+                              aria-label="Drag a file here or browse to upload"
+                              className="pf-c-form-control"
+                              disabled={false}
+                              id="upload-filename"
+                              name="upload-filename"
+                              onBlur={[Function]}
+                              onChange={[Function]}
+                              onFocus={[Function]}
+                              placeholder="Drag a file here or browse to upload"
+                              readOnly={true}
+                              required={false}
+                              type="text"
+                              value=""
+                            />
+                          </TextInputBase>
+                        </TextInput>
+                        <Button
                           id="upload-browse-button"
+                          isDisabled={false}
+                          key=".1"
                           onClick={[Function]}
-                          role={null}
-                          type="button"
+                          variant="control"
                         >
-                          Browse...
-                        </button>
-                      </Button>
-                      <Button
-                        isDisabled={true}
-                        key=".2"
-                        onClick={[Function]}
-                        variant="control"
-                      >
-                        <button
-                          aria-disabled={true}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control pf-m-disabled"
-                          data-ouia-component-id="OUIA-Generated-Button-control-4"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={true}
+                          <button
+                            aria-disabled={false}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control"
+                            data-ouia-component-id="OUIA-Generated-Button-control-3"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={false}
+                            id="upload-browse-button"
+                            onClick={[Function]}
+                            role={null}
+                            type="button"
+                          >
+                            Browse...
+                          </button>
+                        </Button>
+                        <Button
+                          isDisabled={true}
+                          key=".2"
                           onClick={[Function]}
-                          role={null}
-                          tabIndex={null}
-                          type="button"
+                          variant="control"
                         >
-                          Clear
-                        </button>
-                      </Button>
-                    </div>
-                  </InputGroup>
-                </div>
-                <div
-                  className="pf-c-file-upload__file-details"
-                >
-                  <TextArea
-                    aria-label="File upload"
-                    disabled={false}
-                    id="upload"
-                    isRequired={false}
-                    name="upload"
-                    onChange={[Function]}
-                    readOnly={false}
-                    resizeOrientation="vertical"
-                    validated="default"
-                    value=""
+                          <button
+                            aria-disabled={true}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control pf-m-disabled"
+                            data-ouia-component-id="OUIA-Generated-Button-control-4"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={true}
+                            onClick={[Function]}
+                            role={null}
+                            tabIndex={null}
+                            type="button"
+                          >
+                            Clear
+                          </button>
+                        </Button>
+                      </div>
+                    </InputGroup>
+                  </div>
+                  <div
+                    className="pf-c-file-upload__file-details"
                   >
                     <TextArea
                       aria-label="File upload"
-                      className=""
                       disabled={false}
                       id="upload"
-                      innerRef={null}
-                      isDisabled={false}
                       isRequired={false}
                       name="upload"
                       onChange={[Function]}
@@ -493,45 +481,61 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                       validated="default"
                       value=""
                     >
-                      <textarea
-                        aria-invalid={false}
+                      <TextArea
                         aria-label="File upload"
-                        className="pf-c-form-control pf-m-resize-vertical"
+                        className=""
                         disabled={false}
                         id="upload"
+                        innerRef={null}
+                        isDisabled={false}
+                        isRequired={false}
                         name="upload"
                         onChange={[Function]}
                         readOnly={false}
-                        required={false}
+                        resizeOrientation="vertical"
+                        validated="default"
                         value=""
-                      />
+                      >
+                        <textarea
+                          aria-invalid={false}
+                          aria-label="File upload"
+                          className="pf-c-form-control pf-m-resize-vertical"
+                          disabled={false}
+                          id="upload"
+                          name="upload"
+                          onChange={[Function]}
+                          readOnly={false}
+                          required={false}
+                          value=""
+                        />
+                      </TextArea>
                     </TextArea>
-                  </TextArea>
-                </div>
-                <input
-                  accept=".json"
-                  autoComplete="off"
-                  multiple={false}
-                  onChange={[Function]}
-                  onClick={[Function]}
-                  style={
-                    Object {
-                      "display": "none",
+                  </div>
+                  <input
+                    accept=".json"
+                    autoComplete="off"
+                    multiple={false}
+                    onChange={[Function]}
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "display": "none",
+                      }
                     }
-                  }
-                  tabIndex={-1}
-                  type="file"
-                />
-              </div>
-            </FileUploadField>
-          </t>
-        </FileUpload>
+                    tabIndex={-1}
+                    type="file"
+                  />
+                </div>
+              </FileUploadField>
+            </t>
+          </FileUpload>
+        </JsonFileUploadComp>
         <div
           aria-live="polite"
           className="pf-c-form__helper-text"
           id="upload-helper"
         >
-          Upload a JSON file
+          helpFileUpload
         </div>
       </div>
     </div>

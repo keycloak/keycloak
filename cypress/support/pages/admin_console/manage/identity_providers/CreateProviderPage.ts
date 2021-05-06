@@ -4,6 +4,8 @@ export default class CreateProviderPage {
   private clientIdField = "clientId";
   private clientIdError = "#kc-client-secret-helper";
   private clientSecretField = "clientSecret";
+  private discoveryEndpoint = "discoveryEndpoint";
+  private authorizationUrl = "authorizationUrl";
   private addButton = "createProvider";
 
   checkVisible(name: string) {
@@ -63,6 +65,21 @@ export default class CreateProviderPage {
       cy.getId(this.clientSecretField).type(secret);
     }
 
+    return this;
+  }
+
+  fillDiscoveryUrl(value: string) {
+    cy.getId(this.discoveryEndpoint).type(value).blur();
+    return this;
+  }
+
+  shouldBeSuccessful() {
+    cy.getId(this.discoveryEndpoint).should("have.class", "pf-m-success");
+    return this;
+  }
+
+  shouldHaveAuthorizationUrl(value: string) {
+    cy.getId(this.authorizationUrl).should("have.value", value);
     return this;
   }
 }

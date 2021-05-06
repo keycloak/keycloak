@@ -5,6 +5,7 @@ import {
   Modal,
   ModalVariant,
   Button,
+  FileUploadProps,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
@@ -20,18 +21,22 @@ export type JsonFileUploadEvent =
   | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
   | React.MouseEvent<HTMLButtonElement, MouseEvent>; // User clicked Clear button
 
-export type JsonFileUploadProps = {
+export type JsonFileUploadProps = FileUploadProps & {
   id: string;
   onChange: (
     value: string | File,
     filename: string,
     event: JsonFileUploadEvent
   ) => void;
+  helpText?: string;
+  unWrap?: boolean;
 };
 
 export const JsonFileUpload = ({
   id,
   onChange,
+  helpText = "common-help:helpFileUpload",
+  unWrap = false,
   ...rest
 }: JsonFileUploadProps) => {
   const { t } = useTranslation();
@@ -66,6 +71,23 @@ export const JsonFileUpload = ({
     }
   };
 
+  const JsonFileUploadComp = () => (
+    <FileUpload
+      id={id}
+      {...rest}
+      type="text"
+      value={fileUpload.value}
+      filename={fileUpload.filename}
+      onChange={handleChange}
+      onReadStarted={() => setFileUpload({ ...fileUpload, isLoading: true })}
+      onReadFinished={() => setFileUpload({ ...fileUpload, isLoading: false })}
+      isLoading={fileUpload.isLoading}
+      dropzoneProps={{
+        accept: ".json",
+      }}
+    />
+  );
+
   return (
     <>
       {fileUpload.modal && (
@@ -93,30 +115,16 @@ export const JsonFileUpload = ({
           {t("clearFileExplain")}
         </Modal>
       )}
-      <FormGroup
-        label={t("resourceFile")}
-        fieldId={id}
-        helperText="Upload a JSON file"
-      >
-        <FileUpload
-          id={id}
-          {...rest}
-          type="text"
-          value={fileUpload.value}
-          filename={fileUpload.filename}
-          onChange={handleChange}
-          onReadStarted={() =>
-            setFileUpload({ ...fileUpload, isLoading: true })
-          }
-          onReadFinished={() =>
-            setFileUpload({ ...fileUpload, isLoading: false })
-          }
-          isLoading={fileUpload.isLoading}
-          dropzoneProps={{
-            accept: ".json",
-          }}
-        />
-      </FormGroup>
+      {unWrap && <JsonFileUploadComp />}
+      {!unWrap && (
+        <FormGroup
+          label={t("resourceFile")}
+          fieldId={id}
+          helperText={t(helpText)}
+        >
+          <JsonFileUploadComp />
+        </FormGroup>
+      )}
     </>
   );
 };
