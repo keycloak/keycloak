@@ -88,8 +88,6 @@ public class DescriptionConverter {
             client.setStandardFlowEnabled(responseType.hasResponseType(OIDCResponseType.CODE));
             client.setImplicitFlowEnabled(responseType.isImplicitOrHybridFlow());
 
-            client.setPublicClient(responseType.isImplicitFlow());
-
             if (oidcGrantTypes != null) {
                 client.setDirectAccessGrantsEnabled(oidcGrantTypes.contains(OAuth2Constants.PASSWORD));
                 client.setServiceAccountsEnabled(oidcGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS));
@@ -100,17 +98,23 @@ public class DescriptionConverter {
         }
 
         String authMethod = clientOIDC.getTokenEndpointAuthMethod();
-        ClientAuthenticatorFactory clientAuthFactory;
-        if (authMethod == null) {
-            clientAuthFactory = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, KeycloakModelUtils.getDefaultClientAuthenticatorType());
+        client.setPublicClient(Boolean.FALSE);
+        if ("none".equals(authMethod)) {
+            client.setClientAuthenticatorType("none");
+            client.setPublicClient(Boolean.TRUE);
         } else {
-            clientAuthFactory = AuthorizeClientUtil.findClientAuthenticatorForOIDCAuthMethod(session, authMethod);
-        }
+            ClientAuthenticatorFactory clientAuthFactory;
+            if (authMethod == null) {
+                clientAuthFactory = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, KeycloakModelUtils.getDefaultClientAuthenticatorType());
+            } else {
+                clientAuthFactory = AuthorizeClientUtil.findClientAuthenticatorForOIDCAuthMethod(session, authMethod);
+            }
 
-        if (clientAuthFactory == null) {
-            throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
+            if (clientAuthFactory == null) {
+                throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
+            }
+            client.setClientAuthenticatorType(clientAuthFactory.getId());
         }
-        client.setClientAuthenticatorType(clientAuthFactory.getId());
 
         boolean publicKeySet = setPublicKey(clientOIDC, client);
         if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT) && !publicKeySet) {
@@ -238,10 +242,14 @@ public class DescriptionConverter {
         OIDCClientRepresentation response = new OIDCClientRepresentation();
         response.setClientId(client.getClientId());
 
-        ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-        Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-            response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+        if ("none".equals(client.getClientAuthenticatorType())) {
+            response.setTokenEndpointAuthMethod("none");
+        } else {
+            ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
+            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
+                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            }
         }
 
         if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {

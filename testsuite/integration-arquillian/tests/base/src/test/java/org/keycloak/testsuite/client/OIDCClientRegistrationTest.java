@@ -254,22 +254,27 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     public void createClientImplicitFlow() throws ClientRegistrationException {
         OIDCClientRepresentation clientRep = createRep();
 
-        // create implicitFlow client and assert it's public client
         clientRep.setResponseTypes(Arrays.asList("id_token token"));
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
 
         String clientId = response.getClientId();
         ClientRepresentation kcClientRep = getKeycloakClient(clientId);
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNull(kcClientRep.getSecret());
+    }
+
+    @Test
+    public void createPublicClient() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+
+        clientRep.setTokenEndpointAuthMethod("none");
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("none", response.getTokenEndpointAuthMethod());
+
+        String clientId = response.getClientId();
+        ClientRepresentation kcClientRep = getKeycloakClient(clientId);
         Assert.assertTrue(kcClientRep.isPublicClient());
         Assert.assertNull(kcClientRep.getSecret());
-
-        // Update client to hybrid and check it's not public client anymore
-        reg.auth(Auth.token(response));
-        response.setResponseTypes(Arrays.asList("id_token token", "code id_token", "code"));
-        reg.oidc().update(response);
-
-        kcClientRep = getKeycloakClient(clientId);
-        Assert.assertFalse(kcClientRep.isPublicClient());
     }
 
     // KEYCLOAK-6771 Certificate Bound Token
