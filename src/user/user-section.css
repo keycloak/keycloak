@@ -45,8 +45,3 @@ td.pf-c-table__check > input {
   width: 20px;
   vertical-align: text-top;
 }
-
-/* .pf-c-table tbody .pf-c-table__check>input {
-  margin-top: var(--pf-c-table__check--input--MarginTop);
-  vertical-align: center;
-} */
