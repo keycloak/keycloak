@@ -20,3 +20,33 @@ button#kc-join-groups-button {
   margin-right: var(--pf-global--spacer--md);
   padding: var(--pf-global--spacer--xs);
 }
+
+.join-group-dialog-row-m-disabled {
+  pointer-events: none;
+  color: var(--pf-global--disabled-color--200);
+}
+
+input#kc-direct-membership-checkbox {
+  width: 20px;
+}
+
+.join-group-modal-check > div > input {
+  height: 20px;
+  width: 20px;
+}
+
+.data-list-check > input {
+  height: 20px;
+  width: 20px;
+}
+
+td.pf-c-table__check > input {
+  height: 20px;
+  width: 20px;
+  vertical-align: text-top;
+}
+
+/* .pf-c-table tbody .pf-c-table__check>input {
+  margin-top: var(--pf-c-table__check--input--MarginTop);
+  vertical-align: center;
+} */

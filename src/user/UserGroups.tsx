@@ -83,11 +83,14 @@ export const UserGroups = () => {
       return [];
     }
 
-    const joinedGroups = await adminClient.users.listGroups({ ...params, id });
+    const joinedUserGroups = await adminClient.users.listGroups({
+      ...params,
+      id,
+    });
 
     const allCreatedGroups = await adminClient.groups.find();
 
-    const getAllPaths = joinedGroups.reduce(
+    const getAllPaths = joinedUserGroups.reduce(
       (acc: string[], cur) => (cur.path && acc.push(cur.path), acc),
       []
     );
@@ -157,7 +160,7 @@ export const UserGroups = () => {
 
     topLevelGroups.forEach((group) => subgroupArray.push(group.subGroups));
 
-    const directMembership = joinedGroups.filter(
+    const directMembership = joinedUserGroups!.filter(
       (value) => !topLevelGroups.includes(value)
     );
 
@@ -168,11 +171,11 @@ export const UserGroups = () => {
         index === self.findIndex((t) => t.name === thing.name)
     );
 
-    if (isDirectMembership) {
-      return alphabetize(directMembership);
+    if (!isDirectMembership) {
+      return alphabetize(filterDupesfromGroups);
     }
 
-    return alphabetize(filterDupesfromGroups);
+    return alphabetize(directMembership);
   };
 
   useFetch(
@@ -323,6 +326,7 @@ export const UserGroups = () => {
                 id="kc-direct-membership-checkbox"
                 onChange={() => setDirectMembership(!isDirectMembership)}
                 isChecked={isDirectMembership}
+                className="direct-membership-check"
               />
               {enabled && (
                 <Popover

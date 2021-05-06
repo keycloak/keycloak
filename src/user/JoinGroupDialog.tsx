@@ -23,7 +23,11 @@ import { useTranslation } from "react-i18next";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+<<<<<<< HEAD
 import _ from "lodash";
+=======
+import { useErrorHandler } from "react-error-boundary";
+>>>>>>> update checkbox styles and add disabled functionality to user grops modal
 import { useParams } from "react-router-dom";
 
 export type JoinGroupDialogProps = {
@@ -55,6 +59,7 @@ export const JoinGroupDialog = ({
   const [groups, setGroups] = useState<Group[]>([]);
   const [filtered, setFiltered] = useState<GroupRepresentation[]>();
   const [filter, setFilter] = useState("");
+  const [joinedGroups, setJoinedGroups] = useState<GroupRepresentation[]>([]);
 
   const [groupId, setGroupId] = useState<string>();
 
@@ -64,26 +69,26 @@ export const JoinGroupDialog = ({
     async () => {
       const allGroups = await adminClient.groups.find();
 
-      if (groupId) {
-        const group = await adminClient.groups.findOne({ id: groupId });
-        return { group, groups: group.subGroups! };
-      } else if (id) {
-        const existingUserGroups = await adminClient.users.listGroups({
-          id,
-        });
-
-        return {
-          groups: _.differenceBy(allGroups, existingUserGroups, "id"),
-        };
-      } else
-        return {
-          groups: allGroups,
-        };
-    },
-    async ({ group: selectedGroup, groups }) => {
-      if (selectedGroup) {
-        setNavigation([...navigation, selectedGroup]);
-      }
+          if (groupId) {
+            const group = await adminClient.groups.findOne({ id: groupId });
+            return { group, groups: group.subGroups! };
+          } else if (id) {
+            const existingUserGroups = await adminClient.users.listGroups({
+              id,
+            });
+            setJoinedGroups(existingUserGroups);
+            return {
+              groups: allGroups,
+            };
+          } else
+            return {
+              groups: allGroups,
+            };
+        },
+        async ({ group: selectedGroup, groups }) => {
+          if (selectedGroup) {
+            setNavigation([...navigation, selectedGroup]);
+          }
 
       groups.forEach((group: Group) => {
         group.checked = !!selectedRows.find((r) => r.id === group.id);
@@ -94,6 +99,14 @@ export const JoinGroupDialog = ({
     },
     [groupId]
   );
+
+  const isRowDisabled = (row?: GroupRepresentation) => {
+    return !!joinedGroups.find((group) => group.id === row?.id);
+  };
+
+  const hasSubgroups = (group: GroupRepresentation) => {
+    return group.subGroups!.length !== 0;
+  };
 
   return (
     <Modal
@@ -181,28 +194,34 @@ export const JoinGroupDialog = ({
           </ToolbarItem>
         </ToolbarContent>
       </Toolbar>
-      <DataList
-        onSelectDataListItem={(value) => {
-          setGroupId(value);
-        }}
-        aria-label={t("groups")}
-        isCompact
-      >
+      <DataList aria-label={t("groups")} isCompact>
         {(filtered || groups).map((group: Group) => (
           <DataListItem
             aria-labelledby={group.name}
             key={group.id}
             id={group.id}
-            onClick={(e) => {
-              if ((e.target as HTMLInputElement).type !== "checkbox") {
-                setGroupId(group.id);
-              }
-            }}
+            onClick={
+              hasSubgroups(group)
+                ? (e) => {
+                    if ((e.target as HTMLInputElement).type !== "checkbox") {
+                      setGroupId(group.id);
+                    }
+                  }
+                : undefined
+            }
+            // onClick={hasSubgroups(group) ? undefined}
           >
-            <DataListItemRow data-testid={group.name}>
+            <DataListItemRow
+              className={`join-group-dialog-row-${
+                isRowDisabled(group) ? "m-disabled" : ""
+              }`}
+              data-testid={group.name}
+            >
               <DataListCheck
+                className="join-group-modal-check"
                 data-testid={`${group.name}-check`}
                 isChecked={group.checked}
+                isDisabled={isRowDisabled(group)}
                 onChange={(checked, e) => {
                   group.checked = (e.target as HTMLInputElement).checked;
                   let newSelectedRows: Group[];
@@ -232,9 +251,13 @@ export const JoinGroupDialog = ({
                 aria-label={t("groupName")}
                 isPlainButtonAction
               >
-                <Button isDisabled variant="link">
-                  <AngleRightIcon />
-                </Button>
+                {hasSubgroups(group) ? (
+                  <Button isDisabled variant="link">
+                    <AngleRightIcon />
+                  </Button>
+                ) : (
+                  ""
+                )}
               </DataListAction>
             </DataListItemRow>
           </DataListItem>
