@@ -2,6 +2,10 @@ name: Keycloak CI
 
 on: [push, pull_request]
 
+env:
+  # workaround for Maven >= 3.8.1 (see KEYCLOAK-17812)
+  MVN_MIRRORS: '[{ "id": "jboss-public-repository-group-https", "mirrorOf": "jboss-public-repository-group", "url": "https://repository.jboss.org/nexus/content/groups/public/" }]'
+
 jobs:
   build:
     name: Build
@@ -11,6 +15,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
       - name: Cache Maven packages
         id: cache
         uses: actions/cache@v2
@@ -52,6 +59,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -91,6 +101,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -155,6 +168,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
 
       - name: Run base tests
         run: |
@@ -217,6 +233,10 @@ jobs:
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
 
       - name: Run cluster tests
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -253,6 +273,10 @@ jobs:
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -323,6 +347,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
       - name: Run Quarkus cluster tests
         run: |
           echo '::group::Compiling testsuite'
@@ -359,6 +386,9 @@ jobs:
       - uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - uses: whelk-io/maven-settings-xml-action@v15
+        with:
+          mirrors: ${{ env.MVN_MIRRORS }}
 
       - name: Cache Maven packages
         uses: actions/cache@v2
