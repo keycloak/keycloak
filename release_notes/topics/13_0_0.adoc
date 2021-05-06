@@ -35,7 +35,7 @@ Thanks to https://github.com/thomasdarimont[thomasdarimont].
 
 == Default roles processing improvement
 
-Default roles are now internally stored as composite roles of a new role usually named `default-roles-${realmName}`. Instead of assigning
+Default roles are now internally stored as composite roles of a new role usually named `default-roles-<realmName>`. Instead of assigning
 both realm and all client default roles directly to newly created users or users imported through Identity Brokering, just the role is
 assigned to them and the rest of default roles are assigned as effective roles. This change improves performance of default roles processing,
 especially with larger number of clients, because it is no longer necessary to go through all clients.
