@@ -11,7 +11,7 @@ endif::[]
 ifeval::[{project_product}==true]
 <<_jboss_adapter,JBoss EAP 7 Adapter>>
 endif::[]
-as {fuse7Version} is bundled with https://undertow.io/[Undertow HTTP engine] under the covers and Undertow is used for running various kinds of web applications.
+as {fuse7Version} is bundled with the Undertow HTTP engine under the covers and Undertow is used for running various kinds of web applications.
 
 WARNING: The only supported version of Fuse 7 is the latest release. If you use earlier versions of Fuse 7, it is possible that some functions will not work correctly. In particular, integration will not work at all for versions of Fuse 7 lower than 7.0.1.
 
