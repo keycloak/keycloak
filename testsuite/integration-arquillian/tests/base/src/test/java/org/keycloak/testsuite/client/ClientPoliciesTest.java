@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -1252,11 +1253,11 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testSecureSigningAlgorithmForSignedJwtEnforceExecutor() throws Exception {
+    public void testSecureSigningAlgorithmForSignedJwtEnforceExecutorWithSecureAlg() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili", Boolean.FALSE, null)
-                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.TRUE))
+                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.FALSE))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1340,6 +1341,65 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, org.keycloak.crypto.Algorithm.ES256);
         HttpResponse logoutResponse = doLogoutWithSignedJWT(refreshedResponse.getRefreshToken(), signedJwt);
         assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void testSecureSigningAlgorithmForSignedJwtEnforceExecutorWithNotSecureAlg() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili", Boolean.FALSE, null)
+                    .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.FALSE))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        String roleAlphaName = "sample-client-role-alpha";
+        String roleZetaName = "sample-client-role-zeta";
+        String roleCommonName = "sample-client-role-common";
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.FALSE, Boolean.TRUE, null, null)
+                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
+                        createClientRolesConditionConfig(Arrays.asList(roleAlphaName, roleZetaName)))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // create a client with client role
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+                clientRep.setSecret("secret");
+                clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, org.keycloak.crypto.Algorithm.RS256);
+            });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleAlphaName).build());
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
+
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        KeyPair keyPair = setupJwks(org.keycloak.crypto.Algorithm.RS256, clientRep, clientResource);
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        String signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, org.keycloak.crypto.Algorithm.RS256);
+
+        oauth.clientId(clientId);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        EventRepresentation loginEvent = events.expectLogin()
+                                                 .client(clientId)
+                                                 .assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        // obtain access token
+        OAuthClient.AccessTokenResponse response  = doAccessTokenRequestWithSignedJWT(code, signedJwt);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("not allowed signature algorithm.", response.getErrorDescription());
     }
 
     @Test

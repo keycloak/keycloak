@@ -17,20 +17,20 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutor.Configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -84,9 +84,12 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
             case TOKEN_INTROSPECT:
             case LOGOUT_REQUEST:
                 boolean isRequireClientAssertion = Optional.ofNullable(configuration.isRequireClientAssertion()).orElse(Boolean.FALSE).booleanValue();
-                if (!isRequireClientAssertion) break;
                 HttpRequest req = session.getContext().getContextObject(HttpRequest.class);
                 String clientAssertion = req.getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ASSERTION);
+                if (!isRequireClientAssertion && ObjectUtil.isBlank(clientAssertion)) {
+                    break;
+                }
+
                 JWSInput jws = null;
                 try {
                     jws = new JWSInput(clientAssertion);
