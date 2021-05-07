@@ -101,7 +101,7 @@ public interface AuthenticationManagementResource {
     @Path("/flows/{flowAlias}/executions/execution")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void addExecution(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
+    Response addExecution(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
 
     @Path("/flows/{flowAlias}/executions")
     @GET
