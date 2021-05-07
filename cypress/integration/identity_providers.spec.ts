@@ -60,6 +60,7 @@ describe("Identity provider test", () => {
         .fill("facebook", "123")
         .clickAdd();
 
+      cy.wait(2000);
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist("facebook");
 
@@ -69,6 +70,7 @@ describe("Identity provider test", () => {
         .fill(identityProviderName, "123")
         .clickAdd();
 
+      cy.wait(2000);
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(identityProviderName);
 
@@ -78,6 +80,7 @@ describe("Identity provider test", () => {
         .fill("bitbucket", "123")
         .clickAdd();
 
+      cy.wait(2000);
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(identityProviderName);
 
