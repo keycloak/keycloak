@@ -90,7 +90,7 @@ export default class SidebarPage {
   }
 
   goToIdentityProviders() {
-    cy.get(this.identityProvidersBtn).scrollIntoView().click();
+    cy.get(this.identityProvidersBtn).click();
 
     return this;
   }
