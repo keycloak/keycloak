@@ -26,7 +26,7 @@ import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresenta
 
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -35,6 +35,7 @@ import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
+import { useErrorHandler } from "react-error-boundary";
 
 type LdapSettingsHeaderProps = {
   onChange: (value: string) => void;
@@ -171,29 +172,31 @@ export const UserFederationLdapSettings = () => {
   const history = useHistory();
   const adminClient = useAdminClient();
   const { realm } = useRealm();
+  const errorHandler = useErrorHandler();
 
   const { id } = useParams<{ id: string }>();
   const { addAlert } = useAlerts();
 
   useEffect(() => {
-    (async () => {
-      if (id) {
-        const fetchedComponent = await adminClient.components.findOne({ id });
-        if (fetchedComponent) {
-          setupForm(fetchedComponent);
-        }
-      }
-    })();
+    if (id) {
+      return asyncStateFetch(
+        () => adminClient.components.findOne({ id }),
+        (fetchedComponent) => {
+          if (fetchedComponent) {
+            setupForm(fetchedComponent);
+          }
+        },
+        errorHandler
+      );
+    }
   }, []);
 
   const setupForm = (component: ComponentRepresentation) => {
-    form.reset();
     Object.entries(component).map((entry) => {
       if (entry[0] === "config") {
         convertToFormValues(entry[1], "config", form.setValue);
-      } else {
-        form.setValue(entry[0], entry[1]);
       }
+      form.setValue(entry[0], entry[1]);
     });
   };
 
@@ -216,11 +219,10 @@ export const UserFederationLdapSettings = () => {
       } else {
         await adminClient.components.update({ id }, component);
       }
-      setupForm(component as ComponentRepresentation);
       addAlert(t(id ? "saveSuccess" : "createSuccess"), AlertVariant.success);
     } catch (error) {
       addAlert(
-        `${t(id ? "saveError" : "createError")} '${error}'`,
+        t(id ? "saveError" : "createError", { error }),
         AlertVariant.danger
       );
     }

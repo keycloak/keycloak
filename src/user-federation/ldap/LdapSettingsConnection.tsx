@@ -7,6 +7,7 @@ import {
   SelectVariant,
   Switch,
   TextInput,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
@@ -282,7 +283,7 @@ export const LdapSettingsConnection = ({
           ></Controller>
         </FormGroup>
 
-        {_.isEqual(ldapBindType, ["simple"]) ? (
+        {_.isEqual(ldapBindType, ["simple"]) && (
           <>
             <FormGroup
               label={t("bindDn")}
@@ -294,6 +295,12 @@ export const LdapSettingsConnection = ({
                 />
               }
               fieldId="kc-console-bind-dn"
+              helperTextInvalid={t("validateBindDn")}
+              validated={
+                form.errors.config?.bindDn
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
               isRequired
             >
               <TextInput
@@ -301,20 +308,8 @@ export const LdapSettingsConnection = ({
                 id="kc-console-bind-dn"
                 data-testid="ldap-bind-dn"
                 name="config.bindDn[0]"
-                ref={form.register({
-                  required: {
-                    value: true,
-                    message: `${t("validateBindDn")}`,
-                  },
-                })}
+                ref={form.register({ required: true })}
               />
-              {form.errors.config &&
-                form.errors.config.bindDn &&
-                form.errors.config.bindDn[0] && (
-                  <div className="error">
-                    {form.errors.config.bindDn[0].message}
-                  </div>
-                )}
             </FormGroup>
             <FormGroup
               label={t("bindCredentials")}
@@ -326,6 +321,12 @@ export const LdapSettingsConnection = ({
                 />
               }
               fieldId="kc-console-bind-credentials"
+              helperTextInvalid={t("validateBindCredentials")}
+              validated={
+                form.errors.config?.bindCredential
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
               isRequired
             >
               <PasswordInput
@@ -334,19 +335,9 @@ export const LdapSettingsConnection = ({
                 data-testid="ldap-bind-credentials"
                 name="config.bindCredential[0]"
                 ref={form.register({
-                  required: {
-                    value: true,
-                    message: `${t("validateBindCredentials")}`,
-                  },
+                  required: true,
                 })}
               />
-              {form.errors.config &&
-                form.errors.config.bindCredential &&
-                form.errors.config.bindCredential[0] && (
-                  <div className="error">
-                    {form.errors.config.bindCredential[0].message}
-                  </div>
-                )}
             </FormGroup>
             <FormGroup fieldId="kc-test-button">
               <Button
@@ -359,8 +350,6 @@ export const LdapSettingsConnection = ({
               </Button>
             </FormGroup>
           </>
-        ) : (
-          <></>
         )}
       </FormAccess>
     </>
