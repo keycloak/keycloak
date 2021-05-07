@@ -24,7 +24,7 @@ describe("Identity provider test", () => {
       sidebarPage.goToIdentityProviders();
     });
 
-    /*it("should create provider", () => {
+    it("should create provider", () => {
       createProviderPage.checkGitHubCardVisible().clickGitHubCard();
 
       createProviderPage.checkAddButtonDisabled();
@@ -59,6 +59,8 @@ describe("Identity provider test", () => {
         .clickCard("facebook")
         .fill("facebook", "123")
         .clickAdd();
+
+      sidebarPage.goToIdentityProviders();
       listingPage.itemExist("facebook");
 
       createProviderPage
@@ -66,11 +68,18 @@ describe("Identity provider test", () => {
         .clickItem(identityProviderName)
         .fill(identityProviderName, "123")
         .clickAdd();
+
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist(identityProviderName);
+
       createProviderPage
         .clickCreateDropdown()
         .clickItem("bitbucket")
         .fill("bitbucket", "123")
         .clickAdd();
+
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist(identityProviderName);
 
       orderDialog.openDialog().checkOrder(providers);
       orderDialog.moveRowTo("facebook", identityProviderName);
@@ -81,7 +90,7 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(
         "Successfully changed display order of identity providers"
       );
-    });*/
+    });
 
     it("should create a oidc provider using discovery url", () => {
       const oidcProviderName = "oidc";
@@ -114,8 +123,11 @@ describe("Identity provider test", () => {
       modalUtils.checkModalTitle("Delete provider?").confirmModal();
       masthead.checkNotificationMessage("Provider successfully deleted");
 
-      cy.wait(100);
       listingPage.deleteItem("github");
+      modalUtils.checkModalTitle("Delete provider?").confirmModal();
+      masthead.checkNotificationMessage("Provider successfully deleted");
+
+      listingPage.deleteItem("oidc");
       modalUtils.checkModalTitle("Delete provider?").confirmModal();
       masthead.checkNotificationMessage("Provider successfully deleted");
     });
