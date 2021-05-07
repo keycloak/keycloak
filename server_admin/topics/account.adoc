@@ -1,46 +1,99 @@
 [[_account-service]]
 
-== User Account Service
+== Account Console
 
-{project_name} has a built-in User Account Service which every user has access to.  This service allows users to manage their account,
-change their credentials, update their profile, and view their login sessions.  The URL to this service is `<server-root>/auth/realms/{realm-name}/account`.
+{project_name} users can manage their accounts through the Account Console. Users can manage their profiles, add two-factor authentication, include identity provider acounts, and manage device activity.
 
-.Account Service
-image:{project_images}/account-service-profile.png[]
+[role="_additional-resources"]
+.Additional resources
 
-The initial page is the user's profile, which is the `Account` left menu item.  This is where they specify basic data about themselves.  This screen can be extended
-to allow the user to manage additional attributes.  See the link:{developerguide_link}[{developerguide_name}] for more details.
+* The Account Console is completely themeable and internationalizable as is the case with all {project_name} user interfaces. For example, you can add attributes to the *Personal Info* page. For more details, see the link:{developerguide_link}[{developerguide_name}].
 
-The `Password` left menu item allows the user to change their password.
+=== Accessing the Account Console
 
-.Password Update
-image:{project_images}/account-service-password.png[]
+Any user can access the Account Console.
 
-The `Authenticator` menu item allows the user to set up OTP if they desire.  This will only show up if OTP is a valid authentication mechanism for your realm.
-Users are given directions to install https://freeotp.github.io/[FreeOTP] or https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2[Google Authenticator] on their mobile device to be their OTP generator.
-The QR code you see in the screen shot can be scanned into the FreeOTP or Google Authenticator mobile application for nice and easy setup.
+.Procedure
 
-.OTP Authenticator
-image:{project_images}/account-service-authenticator.png[]
+. Make note of the realm name and IP address for the {project_name} server where your account exists.
 
-The `Federated Identity` menu item allows the user to link their account with an <<_identity_broker, identity broker>> (this is usually used to link social provider
-accounts together).  This will show the list of external identity providers you have configured for your realm.
+. In a web browser, enter a URL in this format: `<server-root>/auth/realms/{realm-name}/account`.
 
-.Federated Identity
-image:{project_images}/account-service-federated-identity.png[]
+. Enter your login name and password.
 
-The `Sessions` menu item allows the user to view and manage which devices are logged in and from where.  They can perform logout of these sessions from this screen too.
+.Account Console
+image:images/account-console-intro.png[Account Console]
 
-.Sessions
-image:{project_images}/account-service-sessions.png[]
+=== Configure ways to sign in
 
-The `Applications` menu item shows users which applications they have access to.
+You can sign in to this console using basic authentication (a login name and password) or two-factor authentication. For two-factor authentication, use this procedure.
+
+.Prerequisites
+
+* OTP is a valid authentication mechanism for your realm.
+
+.Procedure
+
+. Click *Account Security* in the menu.
+
+. Click *Signing In*.
+
+. Click *Set Up Authenticator Application*.
++
+.Signing In
+image:images/account-console-signing-in.png[Signing In]
+
+. Follow the directions that appear on the screen to use either
+ https://freeotp.github.io/[FreeOTP] or https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2[Google Authenticator] on your mobile device as your OTP generator.
+
+. Scan the QR code in the screen shot into the OTP generator on your mobile device.
+
+. Log out and log in again.
+
+. Respond to the prompt by entering and OTP that is provided on your mobile device.
+
+=== Viewing device activity
+
+You can view the devices that are logged in to your account.
+
+.Procedure
+
+. Click *Account Security* in the menu.
+. Click *Device Activity*. 
+. Log out a device if needed.
+
+.Devices
+image:images/account-console-device.png[Devices]
+
+=== Adding an identity provider acccount
+
+You can link your account with an <<_identity_broker, identity broker>>. This option is often used to link social provider accounts.
+
+.Procedure
+
+. Log into the Admin Console.
+
+. Click *Identity Providers* in the menu.
+
+. Click *Add provider*.
+
+. Select a provider and complete the fields.
+
+. Return to the Account Console.
+
+. Click *Account Security* in the menu.
+
+. Click *Linked Accounts*. 
+
+The identity provider you added appears in this page.
+
+.Linked Accounts
+image:images/account-console-linked.png[Linked Accounts]
+
+=== Accessing other applications
+
+The *Applications* menu item shows users which applications you can access. In this case, only the Account Console is available.
 
 .Applications
-image:{project_images}/account-service-apps.png[]
-
-=== Themeable
-
-Like all UIs in {project_name}, the User Account Service is completely themeable and internationalizable.
-See the link:{developerguide_link}[{developerguide_name}] for more details.
+image:images/account-console-applications.png[Applications]
 
