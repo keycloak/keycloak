@@ -28,13 +28,13 @@ import org.keycloak.provider.ProviderConfigProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureRedirectUriEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
+public class SecureClientRegisteringUriEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-redirecturi-enforce-executor";
+    public static final String PROVIDER_ID = "secure-clienturi-enforce-executor";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
-        return new SecureRedirectUriEnforceExecutor(session);
+        return new SecureClientRegisteringUriEnforceExecutor(session);
     }
 
     @Override
