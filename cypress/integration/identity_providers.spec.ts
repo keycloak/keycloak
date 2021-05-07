@@ -113,23 +113,23 @@ describe("Identity provider test", () => {
       );
     });
 
-    it("clean up providers", () => {
-      const modalUtils = new ModalUtils();
-      listingPage.deleteItem("bitbucket");
-      modalUtils.checkModalTitle("Delete provider?").confirmModal();
-      masthead.checkNotificationMessage("Provider successfully deleted");
+    // it("clean up providers", () => {
+    //   const modalUtils = new ModalUtils();
+    //   listingPage.deleteItem("bitbucket");
+    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
+    //   masthead.checkNotificationMessage("Provider successfully deleted");
 
-      listingPage.deleteItem("facebook");
-      modalUtils.checkModalTitle("Delete provider?").confirmModal();
-      masthead.checkNotificationMessage("Provider successfully deleted");
+    //   listingPage.deleteItem("facebook");
+    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
+    //   masthead.checkNotificationMessage("Provider successfully deleted");
 
-      listingPage.deleteItem("github");
-      modalUtils.checkModalTitle("Delete provider?").confirmModal();
-      masthead.checkNotificationMessage("Provider successfully deleted");
+    //   listingPage.deleteItem("github");
+    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
+    //   masthead.checkNotificationMessage("Provider successfully deleted");
 
-      listingPage.deleteItem("oidc");
-      modalUtils.checkModalTitle("Delete provider?").confirmModal();
-      masthead.checkNotificationMessage("Provider successfully deleted");
-    });
+    //   listingPage.deleteItem("oidc");
+    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
+    //   masthead.checkNotificationMessage("Provider successfully deleted");
+    // });
   });
 });
