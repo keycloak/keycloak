@@ -24,6 +24,7 @@ import {
     DataListItemCells,
     DataListCell,
     DataListItemRow,
+    Divider,
     Label,
     PageSection,
     PageSectionVariants,
@@ -33,6 +34,11 @@ import {
     StackItem,
     Title,
     DataListItem,
+    Flex,
+    FlexItem,
+    Pagination,
+    PaginationVariant,
+    TextInput
 } from '@patternfly/react-core';
 
 import {
@@ -50,7 +56,8 @@ import {
     TwitterIcon,
     StackOverflowIcon,
     LinkedinIcon,
-    GithubIcon
+    GithubIcon,
+    SearchIcon
 } from '@patternfly/react-icons';
 
 import {HttpResponse} from '../../account-service/account.service';
@@ -58,6 +65,12 @@ import {AccountServiceContext} from '../../account-service/AccountServiceContext
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
 import {createRedirect} from '../../util/RedirectUri';
+
+
+interface ResultsResponse {
+    results: LinkedAccount[],
+    totalHits: number
+}
 
 interface LinkedAccount {
     connected: boolean;
@@ -72,7 +85,17 @@ interface LinkedAccountsPageProps extends RouteComponentProps {
 }
 
 interface LinkedAccountsPageState {
+    linkedAccountsBarHidden: boolean,
+    linkedAccountsKeyword: string,
+    linkedAccountsPage: number,
+    linkedAccountsPerPage: number,
+    linkedAccountsHits: number,
     linkedAccounts: LinkedAccount[];
+    unLinkedAccountsBarHidden: boolean,
+    unLinkedAccountsKeyword: string,
+    unLinkedAccountsPage: number,
+    unLinkedAccountsPerPage: number,
+    unLinkedAccountsHits: number,
     unLinkedAccounts: LinkedAccount[];
 }
 
@@ -87,21 +110,66 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         super(props);
         this.context = context;
 
-        this.state = {
-            linkedAccounts: [],
-            unLinkedAccounts: []
+        if(this.state == null) {
+            this.state = {
+                linkedAccountsBarHidden: false,
+                linkedAccountsKeyword: "",
+                linkedAccountsPage: 1,
+                linkedAccountsPerPage: 10,
+                linkedAccountsHits: 0,
+                linkedAccounts: [],
+                unLinkedAccountsBarHidden: false,
+                unLinkedAccountsKeyword: "",
+                unLinkedAccountsPage: 1,
+                unLinkedAccountsPerPage: 10,
+                unLinkedAccountsHits: 0,
+                unLinkedAccounts: []
+            }
+            this.getLinkedAccounts(this.state.linkedAccountsKeyword, 0, 10);
+            this.getUnlinkedAccounts(this.state.unLinkedAccountsKeyword, 0, 10);
         }
 
-        this.getLinkedAccounts();
+
     }
 
-    private getLinkedAccounts(): void {
-        this.context!.doGet<LinkedAccount[]>("/linked-accounts")
-            .then((response: HttpResponse<LinkedAccount[]>) => {
-                console.log({response});
-                const linkedAccounts = response.data!.filter((account) => account.connected);
-                const unLinkedAccounts = response.data!.filter((account) => !account.connected);
-                this.setState({linkedAccounts: linkedAccounts, unLinkedAccounts: unLinkedAccounts});
+    private linkedAccountsBarVisibility(): void {
+        let res = (this.state.linkedAccountsKeyword === "" && this.state.linkedAccountsHits <= 10) ? true : false;
+        this.setState({
+            linkedAccountsBarHidden: res
+        });
+    }
+
+    private unLinkedAccountsBarVisibility(): void{
+        let res = (this.state.unLinkedAccountsKeyword === "" && this.state.unLinkedAccountsHits <= 10) ? true : false;
+        this.setState({
+            unLinkedAccountsBarHidden: res
+        });
+    }
+
+
+    private getLinkedAccounts(keyword: string, first: number, max: number): void {
+        this.context!.doGet<ResultsResponse>("/linked-accounts", { params: {linked: "true", keyword: keyword, first: first, max: max}} )
+            .then((response: HttpResponse<ResultsResponse>) => {
+                const linkedAccounts = response.data!.results;
+                const totalHits = response.data!.totalHits;
+                this.setState({
+                    linkedAccounts: linkedAccounts,
+                    linkedAccountsHits: totalHits
+                });
+                this.linkedAccountsBarVisibility();
+            });
+    }
+
+    private getUnlinkedAccounts(keyword: string, first: number, max: number): void {
+        this.context!.doGet<ResultsResponse>("/linked-accounts", { params: {linked: "false", keyword: keyword, first: first, max: max}} )
+            .then((response: HttpResponse<ResultsResponse>) => {
+                const unLinkedAccounts = response.data!.results;
+                const totalHits = response.data!.totalHits;
+                this.setState({
+                    unLinkedAccounts: unLinkedAccounts,
+                    unLinkedAccountsHits: totalHits
+                });
+                this.unLinkedAccountsBarVisibility();
             });
     }
 
@@ -111,7 +179,8 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         this.context!.doDelete<void>(url)
             .then((response: HttpResponse<void>) => {
                 console.log({response});
-                this.getLinkedAccounts();
+                this.getLinkedAccounts(this.state.linkedAccountsKeyword, (this.state.linkedAccountsPage-1) * this.state.linkedAccountsPerPage, this.state.linkedAccountsPerPage);
+                this.getUnlinkedAccounts(this.state.unLinkedAccountsKeyword, (this.state.unLinkedAccountsPage-1) * this.state.unLinkedAccountsPerPage, this.state.unLinkedAccountsPerPage);
             });
     }
 
@@ -127,6 +196,70 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
             });
     }
 
+    private onLinkedFilterChange = (value: string, event: any) => {
+        this.setState({linkedAccountsKeyword: value});
+    }
+
+    private filterLinkedButton = () => {
+        const pageNumber = 1;
+        this.setState({
+            linkedAccountsPage: pageNumber
+        });
+        this.getLinkedAccounts(this.state.linkedAccountsKeyword, (pageNumber-1) * this.state.linkedAccountsPerPage, this.state.linkedAccountsPerPage);
+    }
+
+    private filterLinkedKeyPress = (event: any) => {
+        if(event.key === 'Enter'){
+            this.filterLinkedButton();
+        }
+    }
+
+    private onLinkedSetPage = (_event : any, pageNumber : number): void => {
+        this.setState({
+            linkedAccountsPage: pageNumber
+        });
+        this.getLinkedAccounts(this.state.linkedAccountsKeyword, (pageNumber-1) * this.state.linkedAccountsPerPage, this.state.linkedAccountsPerPage);
+    }
+
+    private onLinkedPerPageSelect = (_event : any, perPage : number): void => {
+        this.setState({
+            linkedAccountsPerPage: perPage
+        });
+        this.getLinkedAccounts(this.state.linkedAccountsKeyword, 0, perPage);
+    }
+
+    private onUnlinkedFilterChange = (value: string, event: any) => {
+        this.setState({unLinkedAccountsKeyword: value});
+    }
+
+    private filterUnlinkedButton = () => {
+        const pageNumber = 1;
+        this.setState({
+            unLinkedAccountsPage: pageNumber
+        });
+        this.getUnlinkedAccounts(this.state.unLinkedAccountsKeyword, (pageNumber-1) * this.state.unLinkedAccountsPerPage, this.state.unLinkedAccountsPerPage);
+    }
+
+    private filterUnlinkedKeyPress = (event: any) => {
+        if(event.key === 'Enter'){
+            this.filterUnlinkedButton();
+        }
+    }
+
+    private onUnlinkedSetPage = (_event : any, pageNumber : number): void => {
+        this.setState({
+            unLinkedAccountsPage: pageNumber
+        });
+        this.getUnlinkedAccounts(this.state.unLinkedAccountsKeyword, (pageNumber-1) * this.state.unLinkedAccountsPerPage, this.state.unLinkedAccountsPerPage);
+    }
+
+    private onUnlinkedPerPageSelect = (_event : any, perPage : number): void => {
+        this.setState({
+            unLinkedAccountsPerPage: perPage
+        });
+        this.getUnlinkedAccounts(this.state.unLinkedAccountsKeyword, 0, perPage);
+    }
+
     public render(): React.ReactNode {
 
         return (
@@ -137,18 +270,83 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                             <Title headingLevel="h2" className="pf-u-mb-lg" size='xl'>
                                 <Msg msgKey='linkedLoginProviders'/>
                             </Title>
-                            <DataList id="linked-idps" aria-label={Msg.localize('linkedLoginProviders')}>
+                            <DataList id="linked-idps" aria-label={Msg.localize('linkedLoginProviders')} isCompact>
                                 {this.makeRows(this.state.linkedAccounts, true)}
                             </DataList>
                         </StackItem>
+                        { !this.state.linkedAccountsBarHidden &&
+                        <Flex>
+                            <FlexItem>
+                                <TextInput
+                                    type="search"
+                                    value={this.state.linkedAccountsKeyword}
+                                    id="linked-search"
+                                    name="linked-search"
+                                    onChange={this.onLinkedFilterChange}
+                                    aria-label="Search linked"
+                                    placeholder="Filter"
+                                    onKeyDown={this.filterLinkedKeyPress}
+                                />
+                            </FlexItem>
+                            <FlexItem>
+                                <Button variant="control" aria-label="filter-linked" onClick={this.filterLinkedButton}>
+                                    <SearchIcon />
+                                </Button>
+                            </FlexItem>
+                            <FlexItem>
+                                <Pagination
+                                    itemCount={this.state.linkedAccountsHits}
+                                    widgetId="pagination-linked"
+                                    perPage={this.state.linkedAccountsPerPage}
+                                    page={this.state.linkedAccountsPage}
+                                    variant={PaginationVariant.bottom}
+                                    onSetPage={this.onLinkedSetPage}
+                                    onPerPageSelect={this.onLinkedPerPageSelect}
+                                />
+                            </FlexItem>
+                        </Flex>
+                        }
+                        <StackItem/>
                         <StackItem>
                             <Title headingLevel="h2" className="pf-u-mt-xl pf-u-mb-lg" size='xl'>
                                 <Msg msgKey='unlinkedLoginProviders'/>
                             </Title>
-                            <DataList id="unlinked-idps" aria-label={Msg.localize('unlinkedLoginProviders')}>
+                            <DataList id="unlinked-idps" aria-label={Msg.localize('unlinkedLoginProviders')} isCompact>
                                 {this.makeRows(this.state.unLinkedAccounts, false)}
                             </DataList>
                         </StackItem>
+                        { !this.state.unLinkedAccountsBarHidden &&
+                        <Flex>
+                            <FlexItem>
+                                <TextInput
+                                    type="search"
+                                    value={this.state.unLinkedAccountsKeyword}
+                                    id="unlinked-search"
+                                    name="unlinked-search"
+                                    onChange={this.onUnlinkedFilterChange}
+                                    aria-label="Search unlinked"
+                                    placeholder="Filter"
+                                    onKeyDown={this.filterUnlinkedKeyPress}
+                                />
+                            </FlexItem>
+                            <FlexItem>
+                                <Button variant="control" aria-label="filter-unlinked" onClick={this.filterUnlinkedButton}>
+                                    <SearchIcon />
+                                </Button>
+                            </FlexItem>
+                            <FlexItem>
+                                <Pagination
+                                    itemCount={this.state.unLinkedAccountsHits}
+                                    widgetId="pagination-unlinked"
+                                    perPage={this.state.unLinkedAccountsPerPage}
+                                    page={this.state.unLinkedAccountsPage}
+                                    variant={PaginationVariant.bottom}
+                                    onSetPage={this.onUnlinkedSetPage}
+                                    onPerPageSelect={this.onUnlinkedPerPageSelect}
+                                />
+                            </FlexItem>
+                        </Flex>
+                        }
                     </Stack>
                 </PageSection>
             </ContentPage>
@@ -190,17 +388,17 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                                     <DataListCell key='idp'>
                                         <Split>
                                             <SplitItem className="pf-u-mr-sm">{this.findIcon(account)}</SplitItem>
-                                            <SplitItem className="pf-u-my-xs" isFilled><span id={`${account.providerAlias}-idp-name`}>{account.displayName}</span></SplitItem>
+                                            <SplitItem className="pf-u-my-xs"><span id={`${account.providerAlias}-idp-name`}>{account.displayName}</span></SplitItem>
                                         </Split>
                                     </DataListCell>,
                                     <DataListCell key='label'>
                                         <Split>
-                                            <SplitItem className="pf-u-my-xs" isFilled><span id={`${account.providerAlias}-idp-label`}>{this.label(account)}</span></SplitItem>
+                                            <SplitItem className="pf-u-my-xs"><span id={`${account.providerAlias}-idp-label`}>{this.label(account)}</span></SplitItem>
                                         </Split>
                                     </DataListCell>,
                                     <DataListCell key='username' width={5}>
                                         <Split>
-                                            <SplitItem className="pf-u-my-xs" isFilled><span id={`${account.providerAlias}-idp-username`}>{account.linkedUsername}</span></SplitItem>
+                                            <SplitItem className="pf-u-my-xs"><span id={`${account.providerAlias}-idp-username`}>{account.linkedUsername}</span></SplitItem>
                                         </Split>
                                     </DataListCell>,
                                 ]}/>

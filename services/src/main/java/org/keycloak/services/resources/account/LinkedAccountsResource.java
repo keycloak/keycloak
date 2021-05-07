@@ -19,15 +19,16 @@ package org.keycloak.services.resources.account;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -90,31 +91,63 @@ public class LinkedAccountsResource {
         this.user = user;
         realm = session.getContext().getRealm();
     }
-    
+
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response linkedAccounts() {
+    public Response linkedAccounts(
+            @QueryParam("linked") Boolean linked,
+            @QueryParam("keyword") @DefaultValue("") String keyword,
+            @QueryParam("first") @DefaultValue("0") Integer firstResult,
+            @QueryParam("max") @DefaultValue("2147483647") Integer maxResults
+    ) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-        SortedSet<LinkedAccountRepresentation> linkedAccounts = getLinkedAccounts(this.session, this.realm, this.user);
-        return Cors.add(request, Response.ok(linkedAccounts)).auth().allowedOrigins(auth.getToken()).build();
+
+        if (linked == null) {
+            //DEPRECATED code for backward compatibility with old endpoint -> return all enabled Identity Providers
+            //Not used in account console
+            SortedSet<LinkedAccountRepresentation> linkedAccounts = getLinkedAccounts(this.session, this.realm, this.user);
+            return Cors.add(request, Response.ok(linkedAccounts)).auth().allowedOrigins(auth.getToken()).build();
+        } else {
+
+            List<FederatedIdentityModel> federatedIdentities = session.users().getFederatedIdentitiesStream(realm, user).collect(Collectors.toList());
+
+            final String term = keyword.toLowerCase().trim();
+            List<LinkedAccountRepresentation> accounts = realm.getIdentityProvidersStream().filter(IdentityProviderModel::isEnabled)
+                    .filter(idp -> {
+                        if (term.isEmpty())
+                            return true;
+                        return idp.getAlias().toLowerCase().contains(term) || (idp.getDisplayName() != null && idp.getDisplayName().toLowerCase().contains(term));
+                    })
+                    .map(provider -> toLinkedAccountRepresentation(provider, findSocialIds(), federatedIdentities))
+                    .filter(rep -> {
+                        return linked ? rep.isConnected() : !rep.isConnected();
+                    })
+                    .collect(Collectors.toList());
+
+            ResultSet results = new ResultSet(accounts.stream().skip(firstResult).limit(maxResults).collect(Collectors.toList()), accounts.size());
+
+            return Cors.add(request, Response.ok(results)).auth().allowedOrigins(auth.getToken()).build();
+        }
     }
-    
+
     private Set<String> findSocialIds() {
        return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
                .map(ProviderFactory::getId)
                .collect(Collectors.toSet());
     }
 
-    public SortedSet<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
+    @Deprecated
+    private SortedSet<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
         Set<String> socialIds = findSocialIds();
         return realm.getIdentityProvidersStream().filter(IdentityProviderModel::isEnabled)
-                .map(provider -> toLinkedAccountRepresentation(provider, socialIds, session.users().getFederatedIdentitiesStream(realm, user)))
+                .map(provider -> toLinkedAccountRepresentation(provider, socialIds, session.users().getFederatedIdentitiesStream(realm, user).collect(Collectors.toList())))
                 .collect(Collectors.toCollection(TreeSet::new));
     }
 
+
     private LinkedAccountRepresentation toLinkedAccountRepresentation(IdentityProviderModel provider, Set<String> socialIds,
-                                                                      Stream<FederatedIdentityModel> identities) {
+                                                                      List<FederatedIdentityModel> identities) {
         String providerId = provider.getAlias();
 
         FederatedIdentityModel identity = getIdentity(identities, providerId);
@@ -135,8 +168,8 @@ public class LinkedAccountsResource {
         return rep;
     }
 
-    private FederatedIdentityModel getIdentity(Stream<FederatedIdentityModel> identities, String providerId) {
-        return identities.filter(model -> Objects.equals(model.getIdentityProvider(), providerId))
+    private FederatedIdentityModel getIdentity(List<FederatedIdentityModel> identities, String providerId) {
+        return identities.stream().filter(model -> Objects.equals(model.getIdentityProvider(), providerId))
                 .findFirst().orElse(null);
     }
     
@@ -247,4 +280,28 @@ public class LinkedAccountsResource {
     private boolean isValidProvider(String providerId) {
         return realm.getIdentityProvidersStream().anyMatch(model -> Objects.equals(model.getAlias(), providerId));
     }
+
+
+    public static class ResultSet {
+
+        private Integer totalHits;
+        private List<LinkedAccountRepresentation> results;
+
+        public ResultSet() {}
+
+        public ResultSet(List<LinkedAccountRepresentation> results, Integer totalHits){
+            this.results = results;
+            this.totalHits = totalHits;
+        }
+
+        public Integer getTotalHits() {
+            return totalHits;
+        }
+
+        public List<LinkedAccountRepresentation> getResults() {
+            return results;
+        }
+
+    }
+
 }
