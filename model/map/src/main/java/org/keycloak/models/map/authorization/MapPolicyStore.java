@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -144,10 +145,11 @@ public class MapPolicyStore<K> implements PolicyStore {
         ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
                         .map(this::filterEntryToModelCriteriaBuilder)
+                        .filter(Objects::nonNull)
                         .toArray(ModelCriteriaBuilder[]::new)
         );
 
-        if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.OWNER_IS_NOT_NULL)) {
+        if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.ANY_OWNER)) {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.NOT_EXISTS);
         }
 
@@ -180,9 +182,8 @@ public class MapPolicyStore<K> implements PolicyStore {
                 
                 return mcb;
             }
-            case OWNER_IS_NOT_NULL:
-                return policyStore.createCriteriaBuilder()
-                        .compare(SearchableFields.OWNER, Operator.EXISTS);
+            case ANY_OWNER:
+                return null;
             case CONFIG:
                 if (value.length != 2) {
                     throw new IllegalArgumentException("Config filter option requires value with two items: [config_name, expected_config_value]");
