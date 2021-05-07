@@ -1,119 +1,64 @@
 export default class ProviderPage {
-  kerberosNameInput: string;
-  kerberosRealmInput: string;
-  kerberosPrincipalInput: string;
-  kerberosKeytabInput: string;
+  // KerberosSettingsRequired required input values
+  private kerberosNameInput = "data-testid=kerberos-name";
+  private kerberosRealmInput = "data-testid=kerberos-realm";
+  private kerberosPrincipalInput = "data-testid=kerberos-principal";
+  private kerberosKeytabInput = "data-testid=kerberos-keytab";
 
-  ldapNameInput: string;
-  ldapVendorInput: string;
-  ldapVendorList: string;
+  // LdapSettingsGeneral required input values
+  private ldapNameInput = "data-testid=ldap-name";
+  private ldapVendorInput = "#kc-vendor";
+  private ldapVendorList = "#kc-vendor + ul";
 
-  ldapConnectionUrlInput: string;
-  ldapBindTypeInput: string;
-  ldapBindTypeList: string;
-  ldapBindDnInput: string;
-  ldapBindCredsInput: string;
+  // LdapSettingsConnection required input values
+  private ldapConnectionUrlInput = "data-testid=ldap-connection-url";
+  private ldapBindTypeInput = "#kc-bind-type";
+  private ldapBindTypeList = "#kc-bind-type + ul";
+  private ldapBindDnInput = "data-testid=ldap-bind-dn";
+  private ldapBindCredsInput = "data-testid=ldap-bind-credentials";
 
-  ldapUsersDnInput: string;
-  ldapUserLdapAttInput: string;
-  ldapRdnLdapAttInput: string;
-  ldapUuidLdapAttInput: string;
-  ldapUserObjClassesInput: string;
+  // LdapSettingsSearching required input values
+  private ldapUsersDnInput = "data-testid=ldap-users-dn";
+  private ldapUserLdapAttInput = "data-testid=ldap-username-attribute";
+  private ldapRdnLdapAttInput = "data-testid=ldap-rdn-attribute";
+  private ldapUuidLdapAttInput = "data-testid=ldap-uuid-attribute";
+  private ldapUserObjClassesInput = "data-testid=ldap-user-object-classes";
 
-  cacheDayInput: string;
-  cacheDayList: string;
-  cacheHourInput: string;
-  cacheHourList: string;
-  cacheMinuteInput: string;
-  cacheMinuteList: string;
-  cachePolicyInput: string;
-  cachePolicyList: string;
+  // SettingsCache input values
+  private cacheDayInput = "#kc-eviction-day";
+  private cacheDayList = "#kc-eviction-day + ul";
+  private cacheHourInput = "#kc-eviction-hour";
+  private cacheHourList = "#kc-eviction-hour + ul";
+  private cacheMinuteInput = "#kc-eviction-minute";
+  private cacheMinuteList = "#kc-eviction-minute + ul";
+  private cachePolicyInput = "#kc-cache-policy";
+  private cachePolicyList = "#kc-cache-policy + ul";
 
-  userModelAttInput: string;
-  ldapAttInput: string;
-  userModelAttNameInput: string;
-  attValueInput: string;
-  ldapFullNameAttInput: string;
-  ldapAttNameInput: string;
-  ldapAttValueInput: string;
-  groupInput: string;
+  // Mapper required input values
+  private userModelAttInput = "data-testid=mapper-userModelAttribute-fld";
+  private ldapAttInput = "data-testid=mapper-ldapAttribute-fld";
+  private userModelAttNameInput =
+    "data-testid=mapper-userModelAttributeName-fld";
+  private attValueInput = "data-testid=mapper-attributeValue-fld";
+  private ldapFullNameAttInput = "data-testid=mapper-fullNameAttribute-fld";
+  private ldapAttNameInput = "data-testid=mapper-ldapAttributeName-fld";
+  private ldapAttValueInput = "data-testid=mapper-ldapAttributeValue-fld";
+  private groupInput = "data-testid=mapper-group-fld";
 
-  msadUserAcctMapper: string;
-  msadLdsUserAcctMapper: string;
-  userAttLdapMapper: string;
-  hcAttMapper: string;
-  certLdapMapper: string;
-  fullNameLdapMapper: string;
-  hcLdapAttMapper: string;
-  hcLdapGroupMapper: string;
-  // roleMapper: string;
-  // groupLdapMapper: string;
-  // hcLdapRoleMapper string;
+  // mapper types
+  private msadUserAcctMapper = "msad-user-account-control-mapper";
+  private msadLdsUserAcctMapper = "msad-lds-user-account-control-mapper";
+  private userAttLdapMapper = "user-attribute-ldap-mapper";
+  private hcAttMapper = "hardcoded-attribute-mapper";
+  private certLdapMapper = "certificate-ldap-mapper";
+  private fullNameLdapMapper = "full-name-ldap-mapper";
+  private hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
+  private hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
+  // this.groupLdapMapper = "group-ldap-mapper";
+  // this.roleMapper = "role-ldap-mapper";
+  // this.hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-  groupName: string;
-
-  constructor() {
-    // KerberosSettingsRequired required input values
-    this.kerberosNameInput = "data-testid=kerberos-name";
-    this.kerberosRealmInput = "data-testid=kerberos-realm";
-    this.kerberosPrincipalInput = "data-testid=kerberos-principal";
-    this.kerberosKeytabInput = "data-testid=kerberos-keytab";
-
-    // LdapSettingsGeneral required input values
-    this.ldapNameInput = "data-testid=ldap-name";
-    this.ldapVendorInput = "#kc-vendor";
-    this.ldapVendorList = "#kc-vendor + ul";
-
-    // LdapSettingsConnection required input values
-    this.ldapConnectionUrlInput = "data-testid=ldap-connection-url";
-    this.ldapBindTypeInput = "#kc-bind-type";
-    this.ldapBindTypeList = "#kc-bind-type + ul";
-    this.ldapBindDnInput = "data-testid=ldap-bind-dn";
-    this.ldapBindCredsInput = "data-testid=ldap-bind-credentials";
-
-    // LdapSettingsSearching required input values
-    this.ldapUsersDnInput = "data-testid=ldap-users-dn";
-    this.ldapUserLdapAttInput = "data-testid=ldap-username-attribute";
-    this.ldapRdnLdapAttInput = "data-testid=ldap-rdn-attribute";
-    this.ldapUuidLdapAttInput = "data-testid=ldap-uuid-attribute";
-    this.ldapUserObjClassesInput = "data-testid=ldap-user-object-classes";
-
-    // SettingsCache input values
-    this.cacheDayInput = "#kc-eviction-day";
-    this.cacheDayList = "#kc-eviction-day + ul";
-    this.cacheHourInput = "#kc-eviction-hour";
-    this.cacheHourList = "#kc-eviction-hour + ul";
-    this.cacheMinuteInput = "#kc-eviction-minute";
-    this.cacheMinuteList = "#kc-eviction-minute + ul";
-    this.cachePolicyInput = "#kc-cache-policy";
-    this.cachePolicyList = "#kc-cache-policy + ul";
-
-    // Mapper required input values
-    this.userModelAttInput = "data-testid=mapper-userModelAttribute-fld";
-    this.ldapAttInput = "data-testid=mapper-ldapAttribute-fld";
-    this.userModelAttNameInput =
-      "data-testid=mapper-userModelAttributeName-fld";
-    this.attValueInput = "data-testid=mapper-attributeValue-fld";
-    this.ldapFullNameAttInput = "data-testid=mapper-fullNameAttribute-fld";
-    this.ldapAttNameInput = "data-testid=mapper-ldapAttributeName-fld";
-    this.ldapAttValueInput = "data-testid=mapper-ldapAttributeValue-fld";
-    this.groupInput = "data-testid=mapper-group-fld";
-
-    // mapper types
-    this.msadUserAcctMapper = "msad-user-account-control-mapper";
-    this.msadLdsUserAcctMapper = "msad-lds-user-account-control-mapper";
-    this.userAttLdapMapper = "user-attribute-ldap-mapper";
-    this.hcAttMapper = "hardcoded-attribute-mapper";
-    this.certLdapMapper = "certificate-ldap-mapper";
-    this.fullNameLdapMapper = "full-name-ldap-mapper";
-    this.hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
-    this.hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
-    // this.groupLdapMapper = "group-ldap-mapper";
-    // this.roleMapper = "role-ldap-mapper";
-    // this.hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
-
-    this.groupName = "my-mappers-group";
-  }
+  private groupName = "my-mappers-group";
 
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
@@ -172,7 +117,7 @@ export default class ProviderPage {
 
   fillLdapRequiredGeneralData(name: string, vendor: string) {
     if (name) {
-      cy.get(`[${this.ldapNameInput}]`).type(name);
+      cy.get(`[${this.ldapNameInput}]`).clear().type(name);
     }
     if (vendor) {
       cy.get(this.ldapVendorInput).click();

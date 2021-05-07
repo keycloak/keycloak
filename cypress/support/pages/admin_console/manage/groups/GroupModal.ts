@@ -10,8 +10,7 @@ export default class GroupModal {
   }
 
   fillGroupForm(name = "") {
-    cy.get('[data-testid=groupNameInput]').clear();
-    cy.get('[data-testid=groupNameInput]').type(name);
+    cy.getId(this.nameInput).clear().type(name);
     return this;
   }
 

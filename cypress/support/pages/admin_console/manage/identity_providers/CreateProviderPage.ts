@@ -45,7 +45,7 @@ export default class CreateProviderPage {
   }
 
   clickCreateDropdown() {
-    cy.getId(this.addProviderDropdown).click();
+    cy.getId(this.addProviderDropdown, { timeout: 10000 }).click();
     return this;
   }
 

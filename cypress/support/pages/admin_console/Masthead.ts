@@ -1,19 +1,11 @@
 export default class Masthead {
-  menuBtn: string;
-  logoBtn: string;
-  helpBtn: string;
-  userDrpDwn: string;
-  userDrpDwnKebab: string;
-  isMobile: boolean;
-  constructor() {
-    this.menuBtn = "#nav-toggle";
-    this.logoBtn = "#masthead-logo";
-    this.helpBtn = "#help";
+  private menuBtn = "#nav-toggle";
+  private logoBtn = "#masthead-logo";
+  private helpBtn = "#help";
 
-    this.userDrpDwn = "#user-dropdown";
-    this.userDrpDwnKebab = "#user-dropdown-kebab";
-    this.isMobile = false;
-  }
+  private userDrpDwn = "#user-dropdown";
+  private userDrpDwnKebab = "#user-dropdown-kebab";
+  private isMobile = false;
 
   isAdminConsole() {
     cy.get(this.logoBtn).should("exist");
@@ -60,6 +52,13 @@ export default class Masthead {
 
   checkNotificationMessage(message: string) {
     cy.contains(message).should("exist");
+
+    return this;
+  }
+
+  checkKebabShown() {
+    cy.get(this.userDrpDwn).should("not.exist");
+    cy.get(this.userDrpDwnKebab).should("exist");
 
     return this;
   }

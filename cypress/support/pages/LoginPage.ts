@@ -1,22 +1,12 @@
 export default class LoginPage {
-  userNameInput: string;
-  passwordInput: string;
-  submitBtn: string;
-  errorText: string;
-  userDrpDwn: string;
-  oldLoadContainer: string;
-  loadContainer: string;
+  private userNameInput = "#username";
+  private passwordInput = "#password";
+  private submitBtn = "#kc-login";
+  private userDrpDwn = "#user-dropdown";
 
-  constructor() {
-    this.userNameInput = "#username";
-    this.passwordInput = "#password";
-    this.submitBtn = "#kc-login";
-    this.userDrpDwn = "#user-dropdown";
-
-    this.errorText = ".kc-feedback-text";
-    this.oldLoadContainer = "#loading";
-    this.loadContainer = "div.keycloak__loading-container";
-  }
+  private errorText = ".kc-feedback-text";
+  private oldLoadContainer = "#loading";
+  private loadContainer = "div.keycloak__loading-container";
 
   isLogInPage() {
     cy.get(this.userNameInput).should("exist");
