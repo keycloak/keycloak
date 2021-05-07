@@ -48,13 +48,14 @@ public interface Policy {
         ID("id", SearchableFields.ID),
         PERMISSION("permission", SearchableFields.TYPE),
         OWNER("owner", SearchableFields.OWNER),
-        OWNER_IS_NOT_NULL("owner_is_not_null", SearchableFields.OWNER),
+        ANY_OWNER("owner.any", SearchableFields.OWNER),
         RESOURCE_ID("resources.id", SearchableFields.RESOURCE_ID),
         SCOPE_ID("scopes.id", SearchableFields.SCOPE_ID),
         CONFIG("config", SearchableFields.CONFIG),
         TYPE("type", SearchableFields.TYPE),
         NAME("name", SearchableFields.NAME);
 
+        public static final String[] EMPTY_FILTER = new String[0];
         private final String name;
         private final SearchableModelField<Policy> searchableModelField;
 

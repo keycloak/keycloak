@@ -89,6 +89,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
                         .subGroups(Arrays.asList(GroupBuilder.create().name("group_b").build()))
                         .build())
                 .group(GroupBuilder.create().name("group_c").build())
+                .group(GroupBuilder.create().name("group_remove").build())
                 .user(UserBuilder.create().username("marta").password("password")
                         .addRoles("uma_authorization", "uma_protection")
                         .role("resource-server-test", "uma_protection"))
@@ -932,6 +933,60 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters = new HashMap<>();
 
         filters.put(OWNER, new String[] {user.getId()});
+        policies = provider.getStoreFactory().getPolicyStore()
+                .findByResourceServer(filters, client.getId(), -1, -1);
+        assertTrue(policies.isEmpty());
+    }
+
+    @Test
+    public void testRemovePoliciesOnGroupDelete() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection().resource().create(resource);
+
+        UmaPermissionRepresentation newPermission = new UmaPermissionRepresentation();
+
+        newPermission.setName("Custom User-Managed Permission");
+        newPermission.addGroup("/group_remove");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        protection.policy(resource.getId()).create(newPermission);
+
+        getTestingClient().server().run((RunOnServer) UserManagedPermissionServiceTest::testRemovePoliciesOnGroupDelete);
+    }
+
+    private static void testRemovePoliciesOnGroupDelete(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        ClientModel client = realm.getClientByClientId("resource-server-test");
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        UserModel user = session.users().getUserByUsername(realm, "marta");
+        Map<Policy.FilterOption, String[]> filters = new HashMap<>();
+
+        filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
+        filters.put(OWNER, new String[] {user.getId()});
+
+        List<Policy> policies = provider.getStoreFactory().getPolicyStore()
+                .findByResourceServer(filters, client.getId(), -1, -1);
+        assertEquals(1, policies.size());
+
+        Policy policy = policies.get(0);
+        assertFalse(policy.getResources().isEmpty());
+
+        Resource resource = policy.getResources().iterator().next();
+        assertEquals("Resource A", resource.getName());
+
+        realm.removeGroup(realm.searchForGroupByNameStream("group_remove", -1, -1).findAny().get());
+
+        filters = new HashMap<>();
+
+        filters.put(OWNER, new String[] {user.getId()});
+
         policies = provider.getStoreFactory().getPolicyStore()
                 .findByResourceServer(filters, client.getId(), -1, -1);
         assertTrue(policies.isEmpty());
