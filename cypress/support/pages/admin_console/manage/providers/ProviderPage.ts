@@ -117,7 +117,7 @@ export default class ProviderPage {
 
   fillLdapRequiredGeneralData(name: string, vendor: string) {
     if (name) {
-      cy.get(`[${this.ldapNameInput}]`).type(name);
+      cy.get(`[${this.ldapNameInput}]`).clear().type(name);
     }
     if (vendor) {
       cy.get(this.ldapVendorInput).click();

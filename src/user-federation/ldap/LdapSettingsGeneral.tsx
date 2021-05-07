@@ -83,7 +83,7 @@ export const LdapSettingsGeneral = ({
             type="text"
             id="kc-console-display-name"
             name="name"
-            defaultValue=""
+            defaultValue="ldap"
             ref={form.register({
               required: {
                 value: true,
