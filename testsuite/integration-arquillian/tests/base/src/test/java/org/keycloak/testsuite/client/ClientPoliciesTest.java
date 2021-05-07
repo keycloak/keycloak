@@ -92,7 +92,7 @@ import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactor
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientRegisteringUriEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
@@ -1280,11 +1280,11 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testSecureRedirectUriEnforceExecutor() throws Exception {
+    public void testSecureClientRegisteringUriEnforceExecutor() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili", Boolean.FALSE, null)
-                    .addExecutor(SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID, null)
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);

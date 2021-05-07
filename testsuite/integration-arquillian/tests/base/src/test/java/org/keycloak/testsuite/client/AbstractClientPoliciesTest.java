@@ -122,7 +122,7 @@ import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientRegisteringUriEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
@@ -207,7 +207,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                         JWTClientAuthenticator.PROVIDER_ID))
                 .addExecutor(HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, 
                     createHolderOfKeyEnforceExecutorConfig(Boolean.TRUE))
-                .addExecutor(SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID, null)
+                .addExecutor(SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID, null)
                 .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, null)
                 .addExecutor(SecureResponseTypeExecutorFactory.PROVIDER_ID, null)
                 .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
@@ -297,7 +297,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedExecutors(Arrays.asList(
                 SecureClientAuthEnforceExecutorFactory.PROVIDER_ID,
                 HolderOfKeyEnforceExecutorFactory.PROVIDER_ID,
-                SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID,
+                SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID,
                 SecureRequestObjectExecutorFactory.PROVIDER_ID,
                 SecureResponseTypeExecutorFactory.PROVIDER_ID,
                 SecureSessionEnforceExecutorFactory.PROVIDER_ID,
@@ -1368,7 +1368,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedSecureRedirectUriEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedNoConfigElement(SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
+        assertExpectedNoConfigElement(SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID, profileRep, (ClientProfileRepresentation i)->i.getExecutors());
     }
 
     protected void assertExpectedSecureRequestObjectExecutor(ClientProfileRepresentation profileRep) {

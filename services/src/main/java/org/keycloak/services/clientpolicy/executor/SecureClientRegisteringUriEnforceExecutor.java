@@ -40,19 +40,19 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureRedirectUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class SecureClientRegisteringUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
 
-    private static final Logger logger = Logger.getLogger(SecureRedirectUriEnforceExecutor.class);
+    private static final Logger logger = Logger.getLogger(SecureClientRegisteringUriEnforceExecutor.class);
 
     private final KeycloakSession session;
 
-    public SecureRedirectUriEnforceExecutor(KeycloakSession session) {
+    public SecureClientRegisteringUriEnforceExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
     public String getProviderId() {
-        return SecureRedirectUriEnforceExecutorFactory.PROVIDER_ID;
+        return SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID;
     }
 
     @Override
