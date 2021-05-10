@@ -869,9 +869,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return config;
     }
 
-    protected Object createSecureRequestObjectExecutorConfig(Integer availablePeriod) {
+    protected Object createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf) {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
+        if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
         return config;
     }
 

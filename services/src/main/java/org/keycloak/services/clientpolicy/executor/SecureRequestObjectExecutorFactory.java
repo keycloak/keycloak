@@ -17,6 +17,8 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,6 +33,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "secure-reqobj-executor";
+
+    public static final String VERIFY_NBF = "verify-nbf";
+
+    private static final ProviderConfigProperty VERIFY_NBF_PROPERTY = new ProviderConfigProperty(
+            VERIFY_NBF, null, null, ProviderConfigProperty.BOOLEAN_TYPE, true);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -61,7 +68,7 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return new ArrayList<>(Arrays.asList(VERIFY_NBF_PROPERTY));
     }
 
 }
