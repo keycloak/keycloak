@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
@@ -45,6 +46,11 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
             if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
                 configureTransportStack(config, builder);
             }
+
+            // For Infinispan 10, we go with the JBoss marshalling.
+            // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
+            // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
+            builder.getGlobalConfigurationBuilder().serialization().marshaller(new JBossUserMarshaller());
 
             return (C) new DefaultCacheManager(builder, false);
         } catch (Exception e) {
