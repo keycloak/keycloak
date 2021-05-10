@@ -17,16 +17,17 @@
 
 package org.keycloak.jose.jwk;
 
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.util.JsonSerialization;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -72,7 +73,6 @@ public class JWKParser {
             return createRSAPublicKey();
         } else if (keyType.equals(KeyType.EC)) {
             return createECPublicKey();
-
         } else {
             throw new RuntimeException("Unsupported keyType " + keyType);
         }
@@ -99,11 +99,12 @@ public class JWKParser {
         }
 
         try {
-            ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(name);
-            ECNamedCurveSpec params = new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ECDSA");
+            ECGenParameterSpec genParamSpec = new ECGenParameterSpec(name);
+            kpGen.initialize(genParamSpec);
+            ECParameterSpec params = ((ECPublicKey)kpGen.generateKeyPair().getPublic()).getParams();
             ECPoint point = new ECPoint(x, y);
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
-
             KeyFactory kf = KeyFactory.getInstance("ECDSA");
             return kf.generatePublic(pubKeySpec);
         } catch (Exception e) {
