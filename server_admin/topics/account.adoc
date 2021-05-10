@@ -50,7 +50,7 @@ image:images/account-console-signing-in.png[Signing In]
 
 . Log out and log in again.
 
-. Respond to the prompt by entering and OTP that is provided on your mobile device.
+. Respond to the prompt by entering an OTP that is provided on your mobile device.
 
 === Viewing device activity
 
@@ -60,7 +60,7 @@ You can view the devices that are logged in to your account.
 
 . Click *Account Security* in the menu.
 . Click *Device Activity*. 
-. Log out a device if needed.
+. Log out a device if it looks suspicious.
 
 .Devices
 image:images/account-console-device.png[Devices]
