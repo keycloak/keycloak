@@ -49,6 +49,8 @@ public interface UserRoleMappingsFederatedStorage {
         return value != null ? value.stream() : Stream.empty();
     }
 
+    Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max);
+
     void deleteRoleMapping(RealmModel realm, String userId, RoleModel role);
 
     /**
@@ -67,5 +69,7 @@ public interface UserRoleMappingsFederatedStorage {
 
         @Override
         Stream<RoleModel> getRoleMappingsStream(RealmModel realm, String userId);
+        
+        Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max);
     }
 }
