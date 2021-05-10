@@ -87,11 +87,6 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public int removeUserSessions(RealmModel realm, Boolean offline) {
-        return 0;
-    }
-
-    @Override
     public void onRealmRemoved(RealmModel realm) {
 
     }
@@ -137,7 +132,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public int getUserSessionsCount(RealmModel realm, boolean offline) {
+    public int getUserSessionsCount(boolean offline) {
         return 0;
     }
 

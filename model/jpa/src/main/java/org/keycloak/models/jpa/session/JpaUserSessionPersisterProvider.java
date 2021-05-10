@@ -128,17 +128,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public int removeUserSessions(RealmModel realm, Boolean offline) {
-
-        String offlineStr = offline == null ? null : offlineToString(offline);
-
-        return em.createNamedQuery("deleteUserSessionsByRealm")
-                .setParameter("realmId", realm.getId())
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
-    }
-
-    @Override
     public void removeClientSession(String userSessionId, String clientUUID, boolean offline) {
         String offlineStr = offlineToString(offline);
         StorageId clientStorageId = new StorageId(clientUUID);
@@ -185,12 +174,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public void onRealmRemoved(RealmModel realm) {
         int deletedClientSessions = em.createNamedQuery("deleteClientSessionsByRealm")
                 .setParameter("realmId", realm.getId())
-                .setParameter("offline", null)
                 .executeUpdate();
 
         int deletedUserSessions = em.createNamedQuery("deleteUserSessionsByRealm")
                 .setParameter("realmId", realm.getId())
-                .setParameter("offline", null)
                 .executeUpdate();
     }
 
@@ -270,7 +257,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         query.setParameter("offline", offlineStr);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("clientId", null);
 
         Map<String, Long> offlineSessionsByClient = new HashMap<>();
 
@@ -453,12 +439,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public int getUserSessionsCount(RealmModel realm, boolean offline) {
+    public int getUserSessionsCount(boolean offline) {
         String offlineStr = offlineToString(offline);
-        String realmId = realm != null ? realm.getId() : null;
 
         Query query = em.createNamedQuery("findUserSessionsCount");
-        query.setParameter("realmId", realmId);
         query.setParameter("offline", offlineStr);
         Number n = (Number) query.getSingleResult();
         return n.intValue();

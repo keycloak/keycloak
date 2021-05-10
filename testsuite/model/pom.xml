@@ -26,6 +26,7 @@
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
         <jacoco.skip>true</jacoco.skip>
         <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
+        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
     
     <dependencies>
@@ -137,6 +138,7 @@
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
                         <keycloak.profile.feature.map_storage>${keycloak.profile.feature.map_storage}</keycloak.profile.feature.map_storage>
+                        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -175,6 +177,14 @@
             <id>jpa+infinispan</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+infinispan-sessions-preloading-disabled</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
             </properties>
         </profile>
 
