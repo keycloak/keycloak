@@ -923,7 +923,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Prvy Profil", Boolean.FALSE, null)
                     .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, 
-                        createSecureRequestObjectExecutorConfig(availablePeriod))
+                        createSecureRequestObjectExecutorConfig(availablePeriod, null))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1043,6 +1043,66 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
 
         successfulLoginAndLogout(clientId, clientSecret);
+
+        // update profile : no configuration - "nbf" check and available period is 3600 sec
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Prvy Profil", Boolean.FALSE, null)
+                    .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // check whether "nbf" claim exists
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Missing parameter : nbf", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // check whether request object not yet being processed
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(requestObject.getNbf() + 600);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Request not yet being processed", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // check whether request object's available period is short
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.exp(requestObject.getNbf() + SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 1);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Request's available period is long", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // update profile : not check "nbf"
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Prvy Profil", Boolean.FALSE, null)
+                    .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, 
+                        createSecureRequestObjectExecutorConfig(null, Boolean.FALSE))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // not check whether "nbf" claim exists
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(null);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        successfulLoginAndLogout(clientId, clientSecret);
+
+        // not check whether request object not yet being processed
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(requestObject.getNbf() + 600);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        successfulLoginAndLogout(clientId, clientSecret);
+
+        // not check whether request object's available period is short
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.exp(requestObject.getNbf() + SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 1);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        successfulLoginAndLogout(clientId, clientSecret);
+
     }
 
     @Test
