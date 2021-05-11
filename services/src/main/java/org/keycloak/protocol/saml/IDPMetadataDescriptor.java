@@ -18,7 +18,6 @@
 package org.keycloak.protocol.saml;
 
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
-import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -64,9 +63,6 @@ public class IDPMetadataDescriptor {
         XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
         SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
-        EntitiesDescriptorType entitiesDescriptor = new EntitiesDescriptorType();
-        entitiesDescriptor.setName("urn:keycloak");
-
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
 
         IDPSSODescriptorType spIDPDescriptor = new IDPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
@@ -98,9 +94,7 @@ public class IDPMetadataDescriptor {
 
         entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spIDPDescriptor))));
       
-        entitiesDescriptor.addEntityDescriptor(entityDescriptor);
-
-        metadataWriter.writeEntitiesDescriptor(entitiesDescriptor);
+        metadataWriter.writeEntityDescriptor(entityDescriptor);
 
         return sw.toString();
     }
