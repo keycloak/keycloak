@@ -40,7 +40,9 @@ import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -237,6 +239,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("creating username with non-ASCII username");
         UserRepresentation utf8TestUser = createUserRepresentation("täst", "test-utf8@email.test", "utf8", "test", true);
         setPasswordFor(utf8TestUser, PASSWORD);
+
+        String id = createUserWithAdminClient(testRealmResource(), utf8TestUser);
+        assertNotNull(id);
 
         log.info("enabling remember me");
         loginSettingsPage.form().setRememberMeAllowed(true);
