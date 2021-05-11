@@ -78,11 +78,21 @@
         </createIndex>
     </changeSet>
 
-    <changeSet author="keycloak" id="json-string-accomodation">
+    <changeSet author="keycloak" id="json-string-accomodation-fixed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="json-string-accomodation" author="keycloak" changeLogFile="META-INF/jpa-changelog-13.0.0.xml"/>
+            </not>
+        </preConditions>
+
         <addColumn tableName="REALM_ATTRIBUTE">
             <column name="VALUE_NEW" type="NCLOB" />
         </addColumn>
-        <sql>UPDATE REALM_ATTRIBUTE SET VALUE_NEW = VALUE, VALUE = NULL</sql>
+
+        <update tableName="REALM_ATTRIBUTE">
+            <column name="VALUE_NEW" valueComputed="VALUE"/>
+        </update>
+
         <dropColumn tableName="REALM_ATTRIBUTE" columnName="VALUE"/>
         <renameColumn tableName="REALM_ATTRIBUTE" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
     </changeSet>
