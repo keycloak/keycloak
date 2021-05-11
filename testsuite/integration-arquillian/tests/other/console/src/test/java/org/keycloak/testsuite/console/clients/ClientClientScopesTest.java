@@ -98,7 +98,7 @@ public class ClientClientScopesTest extends AbstractClientTest {
 
         // Retrieve client through adminClient
         found = findClientByClientId(TEST_CLIENT_ID);
-        Assert.assertNames(found.getDefaultClientScopes(), "email", "role_list"); // SAML client scope 'role_list' is included too in the rep
+        Assert.assertNames(found.getDefaultClientScopes(), "email");
         Assert.assertNames(found.getOptionalClientScopes(), "profile", "address", "phone", "offline_access", "microprofile-jwt");
 
 
