@@ -24,6 +24,7 @@
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
+        <jacoco.skip>true</jacoco.skip>
         <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
     </properties>
     
@@ -96,9 +97,35 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.7</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                            <includes>
+                                <include>org/keycloak/**/*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <!-- keycloak.model.parameters lists parameter classes from 
                              org.keycloak.model.parameters package and determine enabled providers -->
