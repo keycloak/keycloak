@@ -26,13 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.validate.ValidationContext;
+import org.keycloak.validate.ValidationError;
 
 /**
  * <p>The default implementation for {@link Attributes}. Should be reused as much as possible by the different implementations
@@ -84,7 +86,7 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
     }
 
     @Override
-    public boolean validate(String name, BiConsumer<Entry<String, List<String>>, String>... listeners) {
+    public boolean validate(String name, Consumer<ValidationError>... listeners) {
         Entry<String, List<String>> attribute = createAttribute(name);
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
@@ -93,23 +95,26 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY))
                 .map(Collections::singletonList).orElse(Collections.emptyList()));
 
-        List<AttributeValidatorMetadata> failingValidators = Collections.emptyList();
+        List<ValidationContext> failingValidators = Collections.emptyList();
 
         for (AttributeMetadata metadata : metadatas) {
             for (AttributeValidatorMetadata validator : metadata.getValidators()) {
-                if (!validator.validate(createAttributeContext(attribute, metadata))) {
+            	ValidationContext vc = validator.validate(createAttributeContext(attribute, metadata)); 
+                if (!vc.isValid()) {
                     if (failingValidators.equals(Collections.emptyList())) {
                         failingValidators = new ArrayList<>();
                     }
-                    failingValidators.add(validator);
+                    failingValidators.add(vc);
                 }
             }
         }
 
         if (listeners != null) {
-            for (AttributeValidatorMetadata failingValidator : failingValidators) {
-                for (BiConsumer<Entry<String, List<String>>, String> consumer : listeners) {
-                    consumer.accept(attribute, failingValidator.getMessage());
+            for (ValidationContext failingValidator : failingValidators) {
+                for (Consumer<ValidationError> consumer : listeners) {
+                    for(ValidationError err: failingValidator.getErrors()) {
+                        consumer.accept(err);
+                    }
                 }
             }
         }
@@ -296,7 +301,8 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         SimpleImmutableEntry<String, List<String>> attribute = createAttribute(attributeName);
 
         for (AttributeValidatorMetadata validator : readonlyMetadata.getValidators()) {
-            if (!validator.validate(createAttributeContext(attribute, readonlyMetadata))) {
+        	ValidationContext vc = validator.validate(createAttributeContext(attribute, readonlyMetadata));
+            if (!vc.isValid()) {
                 return true;
             }
         }

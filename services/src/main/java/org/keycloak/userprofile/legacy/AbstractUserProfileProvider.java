@@ -20,12 +20,13 @@
 package org.keycloak.userprofile.legacy;
 
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
-import static org.keycloak.userprofile.UserProfileContext.*;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT_OLD;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
 import static org.keycloak.userprofile.UserProfileContext.REGISTRATION_PROFILE;
+import static org.keycloak.userprofile.UserProfileContext.REGISTRATION_USER_CREATION;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
+import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,15 +37,12 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.DefaultUserProfile;
@@ -53,8 +51,19 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.UserProfileProviderFactory;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
-import org.keycloak.userprofile.validation.Validator;
+import org.keycloak.userprofile.validator.BlankAttributeValidator;
+import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
+import org.keycloak.userprofile.validator.DuplicateEmailValidator;
+import org.keycloak.userprofile.validator.DuplicateUsernameValidator;
+import org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator;
+import org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator;
+import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator;
+import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
+import org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator;
+import org.keycloak.userprofile.validator.UsernameHasValueValidator;
+import org.keycloak.userprofile.validator.UsernameMutationValidator;
+import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * <p>A base class for {@link UserProfileProvider} implementations providing the main hooks for customizations.
@@ -62,8 +71,6 @@ import org.keycloak.userprofile.validation.Validator;
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
 public abstract class AbstractUserProfileProvider<U extends UserProfileProvider> implements UserProfileProvider, UserProfileProviderFactory<U> {
-
-    private static final Logger logger = Logger.getLogger(DefaultAttributes.class);
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
         if (builtinReadOnlyAttributes != null) {
@@ -82,55 +89,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         return null;
     }
 
-    public static Validator isReadOnlyAttributeUnchanged(Pattern pattern) {
-        return (context) -> {
-            Map.Entry<String, List<String>> attribute = context.getAttribute();
-            String key = attribute.getKey();
-
-            if (!pattern.matcher(key).find()) {
-                return true;
-            }
-
-            List<String> values = attribute.getValue();
-
-            if (values == null) {
-                return true;
-            }
-
-            UserModel user = context.getUser();
-
-            List<String> existingAttrValues = user == null ? null : user.getAttribute(key);
-            String existingValue = null;
-
-            if (existingAttrValues != null && !existingAttrValues.isEmpty()) {
-                existingValue = existingAttrValues.get(0);
-            }
-
-            if (values.isEmpty() && existingValue != null) {
-                return false;
-            }
-
-            String value = null;
-
-            if (!values.isEmpty()) {
-                value = values.get(0);
-            }
-
-            boolean result = ObjectUtil.isEqualOrBothNull(value, existingValue);
-
-            if (!result) {
-                logger.warnf("Attempt to edit denied attribute '%s' of user '%s'", pattern, user == null ? "new user" : user.getFirstAttribute(UserModel.USERNAME));
-            }
-
-            return result;
-        };
-    }
-
     /**
      * There are the declarations for creating the built-in validations for read-only attributes. Regardless of the context where
      * user profiles are used. They are related to internal attributes with hard conditions on them in terms of management.
      */
-    private static String UPDATE_READ_ONLY_ATTRIBUTES_REJECTED = "updateReadOnlyAttributesRejectedMessage";
     private static String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
     private static String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
     private static Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
@@ -175,7 +137,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         AttributeValidatorMetadata readOnlyValidator = null;
 
         if (pattern != null) {
-            readOnlyValidator = Validators.create(Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, isReadOnlyAttributeUnchanged(pattern));
+            readOnlyValidator = createReadOnlyAttributeUnchangedValidator(pattern);
         }
 
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
@@ -185,6 +147,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile()));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
+    }
+    
+    private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
+        return new AttributeValidatorMetadata(ReadOnlyAttributeUnchangedValidator.ID,
+                ValidatorConfig.builder().config(ReadOnlyAttributeUnchangedValidator.CFG_PATTERN, pattern)
+                        .build());
     }
 
     @Override
@@ -279,56 +247,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createRegistrationUserCreationProfile() {
         UserProfileMetadata metadata = new UserProfileMetadata(REGISTRATION_USER_CREATION);
 
-        metadata.addAttribute(UserModel.USERNAME, Validators.create(Messages.MISSING_USERNAME, (context) -> {
-            RealmModel realm = context.getSession().getContext().getRealm();
+        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID));
 
-            if (!realm.isRegistrationEmailAsUsername()) {
-                return true;
-            }
+        metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID));
 
-            return Validators.isBlank().validate(context);
-        }), Validators.create(Messages.USERNAME_EXISTS,
-                (context) -> {
-                    KeycloakSession session = context.getSession();
-                    RealmModel realm = session.getContext().getRealm();
-
-                    if (realm.isRegistrationEmailAsUsername()) {
-                        return true;
-                    }
-
-                    Map.Entry<String, List<String>> attribute = context.getAttribute();
-                    List<String> values = attribute.getValue();
-
-                    if (values.isEmpty()) {
-                        return true;
-                    }
-
-                    String value = values.get(0);
-
-                    UserModel existing = session.users().getUserByUsername(realm, value);
-                    return existing == null;
-                }));
-
-        metadata.addAttribute(UserModel.EMAIL, Validators.create(Messages.INVALID_EMAIL, (context) -> {
-            RealmModel realm = context.getSession().getContext().getRealm();
-
-            if (!realm.isRegistrationEmailAsUsername()) {
-                return true;
-            }
-
-            Map.Entry<String, List<String>> attribute = context.getAttribute();
-            List<String> values = attribute.getValue();
-
-            if (values.isEmpty()) {
-                return true;
-            }
-
-            String value = values.get(0);
-
-            return Validation.isBlank(value) || Validation.isEmailValid(value);
-        }));
-
-        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, new AttributeValidatorMetadata(UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, isReadOnlyAttributeUnchanged(readOnlyAttributesPattern)));
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
 
         return metadata;
     }
@@ -336,23 +259,23 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createDefaultProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(context);
 
-        metadata.addAttribute(UserModel.USERNAME, Validators.create(Messages.MISSING_USERNAME, Validators.checkUsernameExists()),
-                Validators.create(Messages.USERNAME_EXISTS, Validators.userNameExists()),
-                Validators.create(Messages.READ_ONLY_USERNAME, Validators.isUserMutable()));
+        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
+        		new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
+        		new AttributeValidatorMetadata(UsernameMutationValidator.ID));
 
-        metadata.addAttribute(UserModel.FIRST_NAME, Validators.create(Messages.MISSING_FIRST_NAME, Validators.isBlank()));
+        metadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID,
+                BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));
 
-        metadata.addAttribute(UserModel.LAST_NAME, Validators.create(Messages.MISSING_LAST_NAME, Validators.isBlank()));
+        metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME)));
 
-        metadata.addAttribute(UserModel.EMAIL, Validators.create(Messages.MISSING_EMAIL, Validators.isBlank()),
-                Validators.create(Messages.INVALID_EMAIL, Validators.isEmailValid()),
-                Validators.create(Messages.EMAIL_EXISTS, Validators.isEmailDuplicated()),
-                Validators.create(Messages.USERNAME_EXISTS, Validators.doesEmailExistAsUsername()));
+        metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
+        		new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()),
+        		new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
+        		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID));
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
-        readonlyValidators.add(new AttributeValidatorMetadata(UPDATE_READ_ONLY_ATTRIBUTES_REJECTED,
-                isReadOnlyAttributeUnchanged(readOnlyAttributesPattern)));
+        readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
 
         if (readOnlyValidator != null) {
             readonlyValidators.add(readOnlyValidator);
@@ -366,22 +289,18 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createBrokeringProfile(AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
-        metadata.addAttribute(UserModel.USERNAME, Validators
-                        .create(Messages.MISSING_USERNAME, Validators.checkFederatedUsernameExists()));
+        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID));
 
-        metadata.addAttribute(UserModel.FIRST_NAME,
-                Validators.create(Messages.MISSING_FIRST_NAME, Validators.isBlank()));
+        metadata.addAttribute(UserModel.FIRST_NAME,	new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));
 
-        metadata.addAttribute(UserModel.LAST_NAME,
-                Validators.create(Messages.MISSING_LAST_NAME, Validators.isBlank()));
+        metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME)));
 
-        metadata.addAttribute(UserModel.EMAIL, Validators.create(Messages.MISSING_EMAIL, Validators.isBlank()),
-                Validators.create(Messages.INVALID_EMAIL, Validators.isEmailValid()));
+        metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
+        		new AttributeValidatorMetadata(EmailValidator.ID));
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
-        readonlyValidators.add(new AttributeValidatorMetadata(UPDATE_READ_ONLY_ATTRIBUTES_REJECTED,
-                isReadOnlyAttributeUnchanged(readOnlyAttributesPattern)));
+        readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
 
         if (readOnlyValidator != null) {
             readonlyValidators.add(readOnlyValidator);
@@ -398,11 +317,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
         if (p != null) {
-            readonlyValidators.add(Validators.create(Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, isReadOnlyAttributeUnchanged(p)));
+            readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(p));
         }
 
-        readonlyValidators.add(new AttributeValidatorMetadata(UPDATE_READ_ONLY_ATTRIBUTES_REJECTED,
-                isReadOnlyAttributeUnchanged(adminReadOnlyAttributesPattern)));
+        readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(adminReadOnlyAttributesPattern));
 
         metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, readonlyValidators);
 

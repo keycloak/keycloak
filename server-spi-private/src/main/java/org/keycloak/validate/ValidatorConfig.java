@@ -59,7 +59,7 @@ public class ValidatorConfig {
         }
         return new ValidatorConfig(map);
     }
-
+    
     public boolean containsKey(String key) {
         return config.containsKey(key);
     }
@@ -224,6 +224,26 @@ public class ValidatorConfig {
 
         public ValidatorConfigBuilder config(String name, Object value) {
             config.put(name, value);
+            return this;
+        }
+
+        /**
+         * Add all configurations from map
+         */
+        public ValidatorConfigBuilder config(Map<String, Object> values) {
+            if(values!=null) {
+                config.putAll(values);
+            }
+            return this;
+        }
+        
+        /**
+         * Add all configurations from other config
+         */
+        public ValidatorConfigBuilder config(ValidatorConfig values) {
+            if(values != null && values.config != null) {
+                config.putAll(values.config);
+            }
             return this;
         }
     }

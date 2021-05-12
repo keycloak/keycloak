@@ -27,8 +27,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.ValidationResult;
+import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.Validators;
 
 /**
  * Utility methods to work with User Profile Configurations
@@ -71,15 +75,16 @@ public class UPConfigUtils {
      * <li>validator (from Validator SPI) exists for validation and it's config is correct
      * </ul>
      *
+     * @param session to be used for Validator SPI integration
      * @param config to validate
      * @return list of errors, empty if no error found
      */
-    public static List<String> validate(UPConfig config) {
+    public static List<String> validate(KeycloakSession session, UPConfig config) {
         List<String> errors = new ArrayList<>();
 
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
-            config.getAttributes().forEach((attribute) -> validate(attribute, errors, attNamesCache));
+            config.getAttributes().forEach((attribute) -> validate(session, attribute, errors, attNamesCache));
         } else {
             errors.add("UserProfile configuration without 'attributes' section is not allowed");
         }
@@ -90,10 +95,12 @@ public class UPConfigUtils {
     /**
      * Validate attribute configuration
      *
+     * @param session to be used for Validator SPI integration
      * @param attributeConfig config to be validated
      * @param errors to add error message in if something is invalid
+     * @param attNamesCache cache of already existing attribute names so we can check uniqueness
      */
-    private static void validate(UPAttribute attributeConfig, List<String> errors, Set<String> attNamesCache) {
+    private static void validate(KeycloakSession session, UPAttribute attributeConfig, List<String> errors, Set<String> attNamesCache) {
         String attributeName = attributeConfig.getName();
         if (isBlank(attributeName)) {
             errors.add("Attribute configuration without 'name' is not allowed");
@@ -108,7 +115,7 @@ public class UPConfigUtils {
             }
         }
         if (attributeConfig.getValidations() != null) {
-            attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(validator, validatorConfig, attributeName, errors));
+            attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(session, validator, validatorConfig, attributeName, errors));
         }
         if (attributeConfig.getPermissions() != null) {
             if (attributeConfig.getPermissions().getView() != null) {
@@ -150,23 +157,34 @@ public class UPConfigUtils {
     }
 
     /**
-     * Validate that validation configuration is correct
+     * Validate that validation configuration is correct.
      *
+     * @param session to be used for Validator SPI integration
      * @param validatorConfig config to be checked
      * @param errors to add error message in if something is invalid
      */
-    private static void validateValidationConfig(String validator, Map<String, Object> validatorConfig, String attributeName, List<String> errors) {
+    private static void validateValidationConfig(KeycloakSession session, String validator, Map<String, Object> validatorConfig, String attributeName, List<String> errors) {
 
         if (isBlank(validator)) {
-            errors.add("Validation without 'validator' is defined for attribute '" + attributeName + "'");
+            errors.add("Validation without validator id is defined for attribute '" + attributeName + "'");
         } else {
-            // TODO UserProfile - Validation SPI integration - check that the validator exists using Validation SPI
-            // TODO UserProfile - Validation SPI integration - check that the validation configuration is correct for given validator using Validation SPI
+        	if(session!=null) {
+            	if(Validators.validator(session, validator) == null) {
+            		errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
+            	} else {
+            		ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
+            		if(!result.isValid()) {
+            			final StringBuilder sb = new StringBuilder();
+            			result.forEachError(err -> sb.append(err.toString()+", "));
+            			errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
+            		}
+            	}
+        	}
         }
     }
 
     /**
-     * Break string to substrings of given length
+     * Break string to substrings of given length.
      * 
      * @param src to break
      * @param partLength

@@ -16,16 +16,14 @@
  */
 package org.keycloak.validate;
 
-import org.keycloak.validate.validators.NotBlankValidator;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Base class for String value format validators. Functionality covered in this base class:
  * <ul>
  * <li>accepts plain string and collections of strings as input
- * <li>each item is validated for collections of strings, see
- * {@link #validateFormat(String, String, ValidationContext, ValidatorConfig)}
- * <li>null values are always treated as valid to support optional fields! Use other validators (like
- * {@link NotBlankValidator} to force field as required.
+ * <li>each item is validated for collections of strings by {@link #doValidate(String, String, ValidationContext, ValidatorConfig)}
+ * <li>null and empty values behavior should follow config, see {@link AbstractSimpleValidator} javadoc.
  * </ul>
  * 
  * @author Vlastimil Elias <velias@redhat.com>
@@ -43,4 +41,12 @@ public abstract class AbstractStringValidator extends AbstractSimpleValidator {
     }
 
     protected abstract void doValidate(String value, String inputHint, ValidationContext context, ValidatorConfig config);
+
+    @Override
+    protected boolean skipValidation(Object value, ValidatorConfig config) {
+        if (isIgnoreEmptyValuesConfigured(config) && (value == null || value instanceof String)) {
+            return  value == null || StringUtil.isBlank(value.toString());
+        }
+        return false;
+    }
 }

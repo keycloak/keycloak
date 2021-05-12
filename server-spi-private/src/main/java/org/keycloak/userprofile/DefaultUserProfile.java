@@ -58,7 +58,7 @@ public final class DefaultUserProfile implements UserProfile {
 
         for (String attributeName : attributes.nameSet()) {
             this.attributes.validate(attributeName,
-                    (attribute, message) -> validationException.addError(new ValidationException.Error(attribute, message)));
+                    (error) -> validationException.addError(error));
         }
 
         if (validationException.hasError()) {

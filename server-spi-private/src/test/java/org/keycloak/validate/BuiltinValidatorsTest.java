@@ -21,16 +21,23 @@ import com.google.common.collect.ImmutableMap;
 
 public class BuiltinValidatorsTest {
 
+    private static final ValidatorConfig valConfigIgnoreEmptyValues = ValidatorConfig.builder().config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build();
+
     @Test
     public void validateLength() {
 
         Validator validator = Validators.lengthValidator();
 
         // null and empty values handling
-        Assert.assertTrue(validator.validate(null, "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
+        Assert.assertFalse(validator.validate(null, "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
         Assert.assertFalse(validator.validate("", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
         Assert.assertFalse(validator.validate(" ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
         Assert.assertTrue(validator.validate(" ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 10))).isValid());
+        
+        // empty value ignoration configured
+        Assert.assertTrue(validator.validate(null, "name", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate("", "name", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate(" ", "name", valConfigIgnoreEmptyValues).isValid());
 
         // min validation only
         Assert.assertTrue(validator.validate("tester", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
@@ -97,8 +104,15 @@ public class BuiltinValidatorsTest {
 
         Validator validator = Validators.emailValidator();
 
-        Assert.assertTrue(validator.validate(null, "email").isValid());
+        Assert.assertFalse(validator.validate(null, "email").isValid());
         Assert.assertFalse(validator.validate("", "email").isValid());
+        
+        // empty value ignoration configured
+        Assert.assertTrue(validator.validate(null, "emptyString", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate("", "emptyString", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate(" ", "blankString", valConfigIgnoreEmptyValues).isValid());
+
+        
         Assert.assertTrue(validator.validate("admin@example.org", "email").isValid());
         Assert.assertTrue(validator.validate("admin+sds@example.org", "email").isValid());
 
@@ -177,8 +191,14 @@ public class BuiltinValidatorsTest {
         Validator validator = Validators.doubleValidator();
 
         // null value and empty String
-        Assert.assertTrue(validator.validate(null, "null").isValid());
+        Assert.assertFalse(validator.validate(null, "null").isValid());
         Assert.assertFalse(validator.validate("", "emptyString").isValid());
+        Assert.assertFalse(validator.validate(" ", "blankString").isValid());
+        
+        // empty value ignoration configured
+        Assert.assertTrue(validator.validate(null, "emptyString", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate("", "emptyString", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate(" ", "blankString", valConfigIgnoreEmptyValues).isValid());
 
         // simple values
         Assert.assertTrue(validator.validate(10, "age").isValid());
@@ -190,8 +210,9 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate(true, "true").isValid());
 
         // collections
-        Assert.assertTrue(validator.validate(new ArrayList<>(), "age").isValid());
         Assert.assertFalse(validator.validate(Arrays.asList(""), "age").isValid());
+        Assert.assertTrue(validator.validate(Arrays.asList(""), "age",valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate(new ArrayList<>(), "age").isValid());
         Assert.assertTrue(validator.validate(Arrays.asList(10), "age").isValid());
         Assert.assertTrue(validator.validate(Arrays.asList(" 10 "), "age").isValid());
         Assert.assertTrue(validator.validate(Arrays.asList("3.14"), "pi").isValid());
@@ -200,6 +221,28 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate(Arrays.asList("a"), "notAnumber").isValid());
         Assert.assertFalse(validator.validate(Arrays.asList("3.14", "a"), "notANumberPresent").isValid());
         Assert.assertFalse(validator.validate(Arrays.asList("3.14", new Object()), "notANumberPresent").isValid());
+        
+        // min only
+        Assert.assertTrue(validator.validate("10.1", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.4).build()).isValid());
+        Assert.assertFalse(validator.validate("10.1", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 100.5).build()).isValid());
+        // min behavior around empty values
+        Assert.assertFalse(validator.validate(null, "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.1).build()).isValid());
+        Assert.assertFalse(validator.validate("", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.1).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.1).build()).isValid());
+        Assert.assertTrue(validator.validate(null, "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate(" ", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1.1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        
+        // max only
+        Assert.assertFalse(validator.validate("10.5", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 1.1).build()).isValid());
+        Assert.assertTrue(validator.validate("10.5", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 100.1).build()).isValid());
+
+        // min and max
+        Assert.assertFalse(validator.validate("10.09", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertTrue(validator.validate("10.1", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertTrue(validator.validate("100.1", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100.1).build()).isValid());
+        Assert.assertFalse(validator.validate("100.2", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100.1).build()).isValid());
+
 
     }
 
@@ -244,8 +287,13 @@ public class BuiltinValidatorsTest {
         Validator validator = Validators.integerValidator();
 
         // null value and empty String
-        Assert.assertTrue(validator.validate(null, "null").isValid());
+        Assert.assertFalse(validator.validate(null, "null").isValid());
         Assert.assertFalse(validator.validate("", "emptyString").isValid());
+
+        // empty value ignoration configured
+        Assert.assertTrue(validator.validate(null, "emptyString", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate("", "emptyString", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate(" ", "blankString", valConfigIgnoreEmptyValues).isValid());
 
         // simple values
         Assert.assertTrue(validator.validate(10, "age").isValid());
@@ -259,6 +307,7 @@ public class BuiltinValidatorsTest {
         // collections
         Assert.assertTrue(validator.validate(new ArrayList<>(), "age").isValid());
         Assert.assertFalse(validator.validate(Arrays.asList(""), "age").isValid());
+        Assert.assertTrue(validator.validate(Arrays.asList(""), "age",valConfigIgnoreEmptyValues).isValid());
         Assert.assertTrue(validator.validate(Arrays.asList(10), "age").isValid());
         Assert.assertFalse(validator.validate(Arrays.asList(" 10 "), "age").isValid());
 
@@ -271,7 +320,14 @@ public class BuiltinValidatorsTest {
         // min only
         Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
         Assert.assertFalse(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 100).build()).isValid());
-
+        // min behavior around empty values
+        Assert.assertFalse(validator.validate(null, "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertFalse(validator.validate("", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertTrue(validator.validate(null, "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate(" ", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        
         // max only
         Assert.assertFalse(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 1).build()).isValid());
         Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 100).build()).isValid());
@@ -283,6 +339,7 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate("101", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
 
         Assert.assertTrue(validator.validate(Long.MIN_VALUE, "name").isValid());
+        Assert.assertTrue(validator.validate(Long.MAX_VALUE, "name").isValid());
     }
 
     @Test
@@ -337,11 +394,15 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate("start___end", "value", config).isValid());
 
         // null and empty values handling
-        // pattern not applied to null or empty string
-        Assert.assertTrue(validator.validate(null, "value", config).isValid());
+        Assert.assertFalse(validator.validate(null, "value", config).isValid());
         Assert.assertFalse(validator.validate("", "value", config).isValid());
-        // pattern is applied to blank string
         Assert.assertFalse(validator.validate(" ", "value", config).isValid());
+        
+        // empty value ignoration configured
+        Assert.assertTrue(validator.validate(null, "value", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate("", "value", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertTrue(validator.validate(" ", "value", valConfigIgnoreEmptyValues).isValid());
+
     }
 
     @Test

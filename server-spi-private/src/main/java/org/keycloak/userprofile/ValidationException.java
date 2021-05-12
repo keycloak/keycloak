@@ -19,6 +19,7 @@
 
 package org.keycloak.userprofile;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,73 +27,90 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.validate.ValidationError;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public final class ValidationException extends RuntimeException {
 
-    private final Map<String, List<Error>> errors = new HashMap<>();
+	private final Map<String, List<Error>> errors = new HashMap<>();
 
-    public List<Error> getErrors() {
-        return errors.values().stream().reduce(new ArrayList<>(),
-                (l, r) -> {
-                    l.addAll(r);
-                    return l;
-                }, (l, r) -> l);
-    }
-
-    public boolean hasError(String... types) {
-        if (types.length == 0) {
-            return !errors.isEmpty();
-        }
-
-        for (String type : types) {
-            if (errors.containsKey(type)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if there are validation errors related to the attribute with the given {@code name}.
-     *
-     * @param name
-     * @return
-     */
-    public boolean isAttributeOnError(String... name) {
-        if (name.length == 0) {
-            return !errors.isEmpty();
-        }
-
-        List<String> names = Arrays.asList(name);
-
-        return errors.values().stream().flatMap(Collection::stream)
-                .anyMatch(error -> names.contains(error.attribute.getKey()));
-    }
-
-	void addError(Error error) {
-		List<Error> errors = this.errors.computeIfAbsent(error.getMessage(), (k) -> new ArrayList<>());
-		errors.add(error);
+	public List<Error> getErrors() {
+		return errors.values().stream().reduce(new ArrayList<>(), (l, r) -> {
+			l.addAll(r);
+			return l;
+		}, (l, r) -> l);
 	}
 
-    public static class Error {
+	public boolean hasError(String... types) {
+		if (types.length == 0) {
+			return !errors.isEmpty();
+		}
 
-        private final Map.Entry<String, List<String>> attribute;
-        private final String message;
+		for (String type : types) {
+			if (errors.containsKey(type)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-        public Error(Map.Entry<String, List<String>> attribute, String message) {
-            this.attribute = attribute;
-            this.message = message;
-        }
+	/**
+	 * Checks if there are validation errors related to the attribute with the given {@code name}.
+	 *
+	 * @param name
+	 * @return
+	 */
+	public boolean isAttributeOnError(String... name) {
+		if (name.length == 0) {
+			return !errors.isEmpty();
+		}
 
-        public  String getAttribute() {
-            return attribute.getKey();
-        }
+		List<String> names = Arrays.asList(name);
 
-        //TODO: support parameters to messsages for formatting purposes. Message key and parameters.
-        public String getMessage() {
-            return message;
-        }
-    }
+		return errors.values().stream().flatMap(Collection::stream).anyMatch(error -> names.contains(error.getAttribute()));
+	}
+
+	void addError(ValidationError error) {
+		List<Error> errors = this.errors.computeIfAbsent(error.getMessage(), (k) -> new ArrayList<>());
+		errors.add(new Error(error));
+	}
+	
+	@Override
+	public String toString() {
+		return "ValidationException [errors=" + errors + "]";
+	}
+
+	@Override
+	public String getMessage() {
+		return toString();
+	}
+
+	public static class Error implements Serializable {
+
+		private final ValidationError error;
+
+		public Error(ValidationError error) {
+			this.error = error;
+		}
+
+		public String getAttribute() {
+			return error.getInputHint();
+		}
+
+		public String getMessage() {
+			return error.getMessage();
+		}
+		
+		public Object[] getMessageParameters() {
+			return error.getMessageParameters();
+		}
+
+		@Override
+		public String toString() {
+			return "Error [error=" + error + "]";
+		}
+		
+	}
 }
