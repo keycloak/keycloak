@@ -80,18 +80,18 @@
                                 </div>
                             </th>
                         </tr>
-                        <tr data-ng-hide="editedProfileExecutorNames.length == 0">
+                        <tr data-ng-show="editedProfile.executors && editedProfile.executors.length > 0">
                             <th>{{:: 'type' | translate}}</th>
                             <th colspan="2">{{:: 'actions' | translate}}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="executorName in editedProfileExecutorNames">
-                            <td><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{executorName}}">{{executorName}}</a></td>
-                            <td class="kc-action-cell" data-ng-hide="readOnly" kc-open="/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{executorName}}">{{:: 'edit' | translate}}</td>
-                            <td class="kc-action-cell" data-ng-hide="readOnly" data-ng-click="removeExecutor(executorName)">{{:: 'delete' | translate}}</td>
+                        <tr ng-repeat="executor in editedProfile.executors">
+                            <td><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{$index}}">{{executor.executor}}</a></td>
+                            <td class="kc-action-cell" data-ng-hide="readOnly" kc-open="/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{$index}}">{{:: 'edit' | translate}}</td>
+                            <td class="kc-action-cell" data-ng-hide="readOnly" data-ng-click="removeExecutor($index)">{{:: 'delete' | translate}}</td>
                         </tr>
-                        <tr data-ng-show="editedProfileExecutorNames.length == 0">
+                        <tr data-ng-show="!editedProfile.executors || editedProfile.executors.length == 0">
                             <td>{{:: 'no-executors-available' | translate}}</td>
                         </tr>
                     </tbody>

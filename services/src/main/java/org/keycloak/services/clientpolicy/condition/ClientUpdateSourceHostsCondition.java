@@ -30,7 +30,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -50,7 +49,6 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientPolicyCondit
     }
 
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         @JsonProperty("trusted-hosts")

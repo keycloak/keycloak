@@ -19,7 +19,6 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -94,7 +92,6 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("default-algorithm")
         protected String defaultAlgorithm;

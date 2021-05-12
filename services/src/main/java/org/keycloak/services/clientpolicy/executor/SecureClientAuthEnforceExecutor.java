@@ -27,7 +27,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -52,7 +51,6 @@ public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProv
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("client-authns")
         protected List<String> clientAuthns;

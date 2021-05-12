@@ -29,8 +29,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -47,7 +45,6 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         protected List<String> type;

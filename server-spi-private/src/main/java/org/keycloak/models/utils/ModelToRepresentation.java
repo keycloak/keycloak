@@ -49,8 +49,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.Constants.CLIENT_PROFILES;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -98,7 +96,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
-        REALM_EXCLUDED_ATTRIBUTES.add(CLIENT_PROFILES);
+        REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
     }
 
 

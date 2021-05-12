@@ -45,8 +45,8 @@ public class ClientScopesConditionFactory implements ClientPolicyConditionProvid
         ProviderConfigProperty property = new ProviderConfigProperty(SCOPES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, OAuth2Constants.OFFLINE_ACCESS);
         configProperties.add(property);
         property = new ProviderConfigProperty(TYPE, "Scope Type",
-                "If set to 'Default, condition will evaluate to true if client has some default scopes of the values specified by the 'Expected Scopes' property. " +
-                        "If set to 'Optional', condition will evaluate to true if client has some optional scopes of the values specified by the 'Expected Scopes' property and at the same time, the scope were used as a value of 'scope' parameter in the request",
+                "If set to 'Default', condition evaluates to true if client has some default scopes of the values specified by the 'Expected Scopes' property. " +
+                        "If set to 'Optional', condition evaluates to true if client has some optional scopes of the values specified by the 'Expected Scopes' property and at the same time, the scope were used as a value of 'scope' parameter in the request",
                 ProviderConfigProperty.LIST_TYPE, OPTIONAL);
         property.setOptions(Arrays.asList(DEFAULT, OPTIONAL));
         configProperties.add(property);

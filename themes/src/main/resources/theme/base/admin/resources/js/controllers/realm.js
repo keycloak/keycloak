@@ -3040,17 +3040,6 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
     $scope.realm = realm;
     $scope.editedProfile = null;
 
-    function getExecutorNames(clientProfile) {
-        var executorNames = [];
-        for (var i=0 ; i<clientProfile.executors.length ; i++) {
-            var currentExecutor = clientProfile.executors[i];
-            if (!executorNames.includes(currentExecutor.executor)) {
-                executorNames.push(currentExecutor.executor);
-            }
-        }
-        return executorNames;
-    }
-
     function getProfileByName(profilesArray) {
         if (!profilesArray) return null;
         for (var i=0 ; i < profilesArray.length ; i++) {
@@ -3066,7 +3055,6 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
             name: "",
             executors: []
         };
-        $scope.editedProfileExecutorNames = [];
     } else {
         var globalProfile = false;
         $scope.editedProfile = getProfileByName(clientProfiles.profiles);
@@ -3079,28 +3067,19 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
             console.log("Profile of name " + targetProfileName + " not found");
             throw 'Profile not found';
         }
-
-        $scope.editedProfileExecutorNames = getExecutorNames($scope.editedProfile);
     }
 
     $scope.readOnly = !$scope.access.manageRealm || globalProfile;
 
-    $scope.removeExecutor = function(executorName) {
-        console.log("remove executor " + executorName);
+    $scope.removeExecutor = function(executorIndex) {
+        console.log("remove executor of index " + executorIndex);
 
         // Delete executor
-        for (var i=0 ; i<$scope.editedProfile.executors.length ; i++) {
-            var currentExecutor = $scope.editedProfile.executors[i];
-            if (currentExecutor.executor === executorName) {
-                $scope.editedProfile.executors.splice(i, 1);
-                break;
-            }
-        }
+        $scope.editedProfile.executors.splice(executorIndex, 1);
 
         ClientPoliciesProfiles.update({
             realm: realm.realm,
         }, clientProfiles,  function () {
-            $scope.editedProfileExecutorNames = getExecutorNames($scope.editedProfile);
             Notifications.success("The executor was deleted.");
         }, function(errorResponse) {
             Notifications.error('Failed to delete executor. Check server log for the details');
@@ -3144,13 +3123,13 @@ module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clie
 });
 
 module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, realm, serverInfo, clientProfiles, ClientPoliciesProfiles, ComponentUtils, Dialog, Notifications, $route, $location) {
-    var updatedExecutorName = $route.current.params.executorName;
+    var updatedExecutorIndex = $route.current.params.executorIndex;
     var targetProfileName = $route.current.params.profileName;
-    $scope.createNew = updatedExecutorName == null;
+    $scope.createNew = updatedExecutorIndex == null;
     if ($scope.createNew) {
-        console.log('ClientPoliciesProfilesCreateExecutorCtrl: adding executor to profile ' + targetProfileName);
+        console.log('ClientPoliciesProfilesEditExecutorCtrl: adding executor to profile ' + targetProfileName);
     } else {
-        console.log('ClientPoliciesProfilesCreateExecutorCtrl: updating executor ' + updatedExecutorName + ' of profile ' + targetProfileName);
+        console.log('ClientPoliciesProfilesEditExecutorCtrl: updating executor with index ' + updatedExecutorIndex + ' of profile ' + targetProfileName);
     }
     $scope.realm = realm;
 
@@ -3186,14 +3165,14 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
         }
     }
 
-    function getExecutorByName(clientProfile, executorName) {
-        for (var i=0 ; i<clientProfile.executors.length ; i++) {
-            var currentExecutor = clientProfile.executors[i];
-            if (currentExecutor.executor === executorName) {
-                return currentExecutor;
-            }
+    function getExecutorByIndex(clientProfile, executorIndex) {
+        if (clientProfile.executors.length <= executorIndex) {
+            console.error('Client profile does not have executor of specified index');
+            $location.path('/notfound');
+            return null;
+        } else {
+            return clientProfile.executors[executorIndex];
         }
-        return null;
     }
 
     if ($scope.createNew) {
@@ -3209,17 +3188,19 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
             }
         }, true);
     } else {
-        $scope.executor = {
-            config: getExecutorByName(editedProfile, updatedExecutorName).configuration
-        };
+        var exec = getExecutorByIndex(editedProfile, updatedExecutorIndex);
+        if (exec) {
+            $scope.executor = {
+                config: exec.configuration
+            };
 
-        //$scope.executorType = $scope.executorTypes[updatedExecutorName];
-        $scope.executorType = null;
-        for (var j=0 ; j < $scope.executorTypes.length ; j++) {
-            var currentExType = $scope.executorTypes[j];
-            if (updatedExecutorName === currentExType.id) {
-                $scope.executorType = currentExType;
-                break;
+            $scope.executorType = null;
+            for (var j=0 ; j < $scope.executorTypes.length ; j++) {
+                var currentExType = $scope.executorTypes[j];
+                if (exec.executor === currentExType.id) {
+                    $scope.executorType = currentExType;
+                    break;
+                }
             }
         }
 
@@ -3270,8 +3251,10 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
             };
             editedProfile.executors.push(selectedExecutor);
         } else {
-            var currentExecutor = getExecutorByName(editedProfile, updatedExecutorName);
-            currentExecutor.configuration = $scope.executor.config;
+            var currentExecutor = getExecutorByIndex(editedProfile, updatedExecutorIndex);
+            if (currentExecutor) {
+                currentExecutor.configuration = $scope.executor.config;
+            }
          }
 
         ClientPoliciesProfiles.update({
@@ -3368,17 +3351,6 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
     $scope.clientProfiles = clientProfiles;
     $scope.editedPolicy = null;
 
-    function getConditionNames(clientPolicy) {
-        var conditionNames = [];
-        for (var i=0 ; i<clientPolicy.conditions.length ; i++) {
-            var currentCondition = clientPolicy.conditions[i];
-            if (!conditionNames.includes(currentCondition.condition)) {
-                conditionNames.push(currentCondition.condition);
-            }
-        }
-        return conditionNames;
-    }
-
     if ($scope.createNew) {
         $scope.editedPolicy = {
             name: "",
@@ -3386,13 +3358,11 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
             profiles: [],
             conditions: []
         };
-        $scope.editedPolicyConditionNames = [];
     } else {
         for (var i=0 ; i < $scope.clientPolicies.policies.length ; i++) {
             var currentPolicy = $scope.clientPolicies.policies[i];
             if (targetPolicyName === currentPolicy.name) {
                 $scope.editedPolicy = currentPolicy;
-                $scope.editedPolicyConditionNames = getConditionNames(currentPolicy);
                 break;
             }
         }
@@ -3417,22 +3387,15 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
         }
     }
 
-    $scope.removeCondition = function(conditionName) {
-        console.log("remove condition " + conditionName);
+    $scope.removeCondition = function(conditionIndex) {
+        console.log("remove condition of index " + conditionIndex);
 
         // Delete condition
-        for (var i=0 ; i<$scope.editedPolicy.conditions.length ; i++) {
-            var currentCondition = $scope.editedPolicy.conditions[i];
-            if (currentCondition.condition === conditionName) {
-                $scope.editedPolicy.conditions.splice(i, 1);
-                break;
-            }
-        }
+        $scope.editedPolicy.conditions.splice(conditionIndex, 1);
 
         ClientPolicies.update({
             realm: realm.realm,
         }, $scope.clientPolicies,  function () {
-            $scope.editedPolicyConditionNames = getConditionNames($scope.editedPolicy);
             Notifications.success("The condition was deleted.");
         }, function(errorResponse) {
             Notifications.error('Failed to delete condition. Check server log for the details');
@@ -3505,13 +3468,13 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
 });
 
 module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, serverInfo, clientPolicies, ClientPolicies, Components, ComponentUtils, Dialog, Notifications, $route, $location) {
-    var updatedConditionName = $route.current.params.conditionName;
+    var updatedConditionIndex = $route.current.params.conditionIndex;
     var targetPolicyName = $route.current.params.policyName;
-    $scope.createNew = updatedConditionName == null;
+    $scope.createNew = updatedConditionIndex == null;
     if ($scope.createNew) {
         console.log('ClientPoliciesEditConditionCtrl: adding condition to policy ' + targetPolicyName);
     } else {
-        console.log('ClientPoliciesEditConditionCtrl: updating condition ' + updatedConditionName + ' of policy ' + targetPolicyName);
+        console.log('ClientPoliciesEditConditionCtrl: updating condition with index ' + updatedConditionIndex + ' of policy ' + targetPolicyName);
     }
     $scope.realm = realm;
 
@@ -3539,14 +3502,14 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
         }
     }
 
-    function getConditionByName(clientPolicy, conditionName) {
-        for (var i=0 ; i<clientPolicy.conditions.length ; i++) {
-            var currentCondition = clientPolicy.conditions[i];
-            if (currentCondition.condition === conditionName) {
-                return currentCondition;
-            }
+    function getConditionByIndex(clientPolicy, conditionIndex) {
+        if (clientPolicy.conditions.length <= conditionIndex) {
+            console.error('Client policy does not have condition of specified index');
+            $location.path('/notfound');
+            return null;
+        } else {
+            return clientPolicy.conditions[conditionIndex];
         }
-        return null;
     }
 
     if ($scope.createNew) {
@@ -3562,16 +3525,19 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
             }
         }, true);
     } else {
-        $scope.condition = {
-            config: getConditionByName(editedPolicy, updatedConditionName).configuration
-        };
+        var cond = getConditionByIndex(editedPolicy, updatedConditionIndex);
+        if (cond) {
+            $scope.condition = {
+                config: cond.configuration
+            };
 
-        $scope.conditionType = null;
-        for (var j=0 ; j < $scope.conditionTypes.length ; j++) {
-            var currentCndType = $scope.conditionTypes[j];
-            if (updatedConditionName === currentCndType.id) {
-                $scope.conditionType = currentCndType;
-                break;
+            $scope.conditionType = null;
+            for (var j=0 ; j < $scope.conditionTypes.length ; j++) {
+                var currentCndType = $scope.conditionTypes[j];
+                if (cond.condition === currentCndType.id) {
+                    $scope.conditionType = currentCndType;
+                    break;
+                }
             }
         }
 
@@ -3624,8 +3590,10 @@ module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, ser
             };
             editedPolicy.conditions.push(selectedCondition);
         } else {
-            var currentCondition = getConditionByName(editedPolicy, updatedConditionName);
-            currentCondition.configuration = $scope.condition.config;
+            var currentCondition = getConditionByIndex(editedPolicy, updatedConditionIndex);
+            if (currentCondition) {
+                currentCondition.configuration = $scope.condition.config;
+            }
         }
 
         ClientPolicies.update({

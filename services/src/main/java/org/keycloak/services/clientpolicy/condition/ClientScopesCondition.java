@@ -36,8 +36,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -54,7 +52,6 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         protected String type;

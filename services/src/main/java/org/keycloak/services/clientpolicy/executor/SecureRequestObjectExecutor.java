@@ -37,7 +37,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -80,7 +79,6 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("available-period")
         protected Integer availablePeriod;

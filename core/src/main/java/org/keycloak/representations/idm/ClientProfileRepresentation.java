@@ -19,14 +19,11 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * Client Profile's external representation class
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = false)
 public class ClientProfileRepresentation {
 
     protected String name;

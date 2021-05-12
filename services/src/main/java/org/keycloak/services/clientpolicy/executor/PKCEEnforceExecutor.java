@@ -43,7 +43,6 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -71,7 +70,6 @@ public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider<PKCEEnf
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("is-augment")
         protected Boolean augment;

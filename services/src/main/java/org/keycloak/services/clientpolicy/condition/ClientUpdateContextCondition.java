@@ -31,7 +31,6 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -50,7 +49,6 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         @JsonProperty("update-client-source")

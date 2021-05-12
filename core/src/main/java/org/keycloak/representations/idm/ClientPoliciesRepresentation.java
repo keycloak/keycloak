@@ -20,7 +20,6 @@ package org.keycloak.representations.idm;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.util.JsonSerialization;
 

@@ -20,7 +20,6 @@ package org.keycloak.representations.idm;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.util.JsonSerialization;
@@ -30,7 +29,6 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = false)
 public class ClientProfilesRepresentation {
 
     private List<ClientProfileRepresentation> profiles = new ArrayList<>();

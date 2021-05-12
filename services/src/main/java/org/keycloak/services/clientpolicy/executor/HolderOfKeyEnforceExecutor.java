@@ -37,7 +37,6 @@ import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -62,7 +61,6 @@ public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider<
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("is-augment")
         protected Boolean augment;

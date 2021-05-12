@@ -89,18 +89,18 @@
                         </div>
                     </th>
                 </tr>
-                <tr data-ng-hide="editedPolicyConditionNames.length == 0">
+                <tr data-ng-show="editedPolicy.conditions && editedPolicy.conditions.length > 0">
                     <th>{{:: 'type' | translate}}</th>
                     <th colspan="2">{{:: 'actions' | translate}}</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="conditionName in editedPolicyConditionNames">
-                    <td><a href="#/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{conditionName}}">{{conditionName}}</a></td>
-                    <td class="kc-action-cell" data-ng-hide="readOnly" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{conditionName}}">{{:: 'edit' | translate}}</td>
-                    <td class="kc-action-cell" data-ng-hide="readOnly" data-ng-click="removeCondition(conditionName)">{{:: 'delete' | translate}}</td>
+                <tr ng-repeat="condition in editedPolicy.conditions">
+                    <td><a href="#/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{condition.condition}}</a></td>
+                    <td class="kc-action-cell" data-ng-hide="readOnly" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{:: 'edit' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-hide="readOnly" data-ng-click="removeCondition($index)">{{:: 'delete' | translate}}</td>
                 </tr>
-                <tr data-ng-show="editedPolicyConditionNames.length == 0">
+                <tr data-ng-show="!editedPolicy.conditions || editedPolicy.conditions.length == 0">
                     <td>{{:: 'no-conditions-available' | translate}}</td>
                 </tr>
                 </tbody>

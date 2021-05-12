@@ -55,7 +55,7 @@ public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecu
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         ProviderConfigProperty isAugmentProperty = new ProviderConfigProperty(
-                IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce usage of PKCE",
+                IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce the authentication method to new clients",
                 ProviderConfigProperty.BOOLEAN_TYPE, false);
 
         List<String> clientAuthProviders = factory.getProviderFactoriesStream(ClientAuthenticator.class)

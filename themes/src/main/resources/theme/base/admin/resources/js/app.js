@@ -393,7 +393,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientPoliciesProfilesEditExecutorCtrl'
         })
-        .when('/realms/:realm/client-policies/profiles-update/:profileName/update-executor/:executorName', {
+        .when('/realms/:realm/client-policies/profiles-update/:profileName/update-executor/:executorIndex', {
             templateUrl : resourceUrl + '/partials/client-policies-profiles-edit-executor.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -477,7 +477,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientPoliciesEditConditionCtrl'
         })
-        .when('/realms/:realm/client-policies/policies-update/:policyName/update-condition/:conditionName', {
+        .when('/realms/:realm/client-policies/policies-update/:policyName/update-condition/:conditionIndex', {
             templateUrl : resourceUrl + '/partials/client-policies-policy-edit-condition.html',
             resolve : {
                 realm : function(RealmLoader) {

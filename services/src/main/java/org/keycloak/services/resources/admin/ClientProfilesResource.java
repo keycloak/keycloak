@@ -61,12 +61,11 @@ public class ClientProfilesResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientProfilesRepresentation getProfiles(@QueryParam("include-global-profiles") String includeGlobalProfiles) {
+    public ClientProfilesRepresentation getProfiles(@QueryParam("include-global-profiles") boolean includeGlobalProfiles) {
         auth.realm().requireViewRealm();
 
         try {
-            boolean includeGlobalProfilesBool = Boolean.parseBoolean(includeGlobalProfiles);
-            return session.clientPolicy().getClientProfiles(realm, includeGlobalProfilesBool);
+            return session.clientPolicy().getClientProfiles(realm, includeGlobalProfiles);
         } catch (ClientPolicyException e) {
             throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getError()).build());
         }
