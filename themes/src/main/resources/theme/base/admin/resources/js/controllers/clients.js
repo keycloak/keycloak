@@ -1577,6 +1577,17 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         }
     }
 
+    $scope.confirmChangeAuthzSettings = function($event) {
+        if ($scope.client.authorizationServicesEnabled && $scope.clientEdit.authorizationServicesEnabled) {
+            $event.preventDefault();
+            Dialog.confirm("Disable Authorization Settings", "Are you sure you want to disable authorization ? Once you save your changes, all authorization settings associated with this client will be removed. This operation can not be reverted.", function () {
+                $scope.clientEdit.authorizationServicesEnabled = false;
+            }, function () {
+                $scope.clientEdit.authorizationServicesEnabled = true;
+            });
+        }
+    }
+
     function configureAuthorizationServices() {
         if ($scope.clientEdit.authorizationServicesEnabled) {
             if ($scope.accessType == 'public') {
@@ -1586,12 +1597,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.serviceAccountsEnabled = true;
         } else if ($scope.clientEdit.bearerOnly) {
             $scope.clientEdit.serviceAccountsEnabled = false;
-        }
-        if ($scope.client.authorizationServicesEnabled && !$scope.clientEdit.authorizationServicesEnabled) {
-            Dialog.confirm("Disable Authorization Settings", "Are you sure you want to disable authorization ? Once you save your changes, all authorization settings associated with this client will be removed. This operation can not be reverted.", function () {
-            }, function () {
-                $scope.clientEdit.authorizationServicesEnabled = true;
-            });
         }
     }
 
