@@ -90,7 +90,7 @@ public class MapFieldPredicates {
 
     static {
         put(REALM_PREDICATES, RealmModel.SearchableFields.NAME,                   MapRealmEntity::getName);
-        put(REALM_PREDICATES, RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS,  MapFieldPredicates::checkRealmsWithClientInitialAccess);
+        put(REALM_PREDICATES, RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS,  MapRealmEntity::getClientInitialAccesses);
         put(REALM_PREDICATES, RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, MapFieldPredicates::checkRealmsWithComponentType);
 
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.REALM_ID,             MapClientEntity::getRealmId);
@@ -459,14 +459,6 @@ public class MapFieldPredicates {
               .anyMatch(aue -> Objects.equals(idpAlias, aue.getIdentityProvider()) && Objects.equals(idpUserId, aue.getUserId()));
         }
 
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, MapRealmEntity<Object>, RealmModel> checkRealmsWithClientInitialAccess(MapModelCriteriaBuilder<Object, MapRealmEntity<Object>, RealmModel> mcb, Operator op, Object[] values) {
-        if (op != Operator.EXISTS) {
-            throw new CriterionNotSupportedException(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, op);
-        }
-        Function<MapRealmEntity<Object>, ?> getter = MapRealmEntity::hasClientInitialAccess;
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 

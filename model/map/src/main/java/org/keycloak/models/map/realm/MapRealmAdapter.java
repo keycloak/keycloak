@@ -1534,7 +1534,7 @@ public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEnti
 
     @Override
     public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
-        return entity.getClientInitialAccesses().map(MapClientInitialAccessEntity::toModel);
+        return entity.getClientInitialAccesses().stream().map(MapClientInitialAccessEntity::toModel);
     }
 
     @Override
