@@ -99,9 +99,9 @@ public interface ModelCriteriaBuilder<M> {
          * can be an array (via an implicit conversion of the vararg), a {@link Collection} or a {@link Stream}.
          */
         IN,
-        /** Is not null */
+        /** Is not null and, in addition, in case of collection not empty */
         EXISTS,
-        /** Is null */
+        /** Is null or, in addition, in case of collection empty */
         NOT_EXISTS,
     }
 

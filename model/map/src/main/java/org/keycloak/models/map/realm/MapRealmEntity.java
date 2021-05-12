@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.realm;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1024,7 +1025,7 @@ public class MapRealmEntity<K> implements AbstractEntity<K> {
         return removed;
     }
 
-    public Stream<MapClientInitialAccessEntity> getClientInitialAccesses() {
-        return clientInitialAccesses.values().stream();
+    public Collection<MapClientInitialAccessEntity> getClientInitialAccesses() {
+        return clientInitialAccesses.values();
     }
 }
