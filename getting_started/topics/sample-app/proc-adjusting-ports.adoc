@@ -47,6 +47,13 @@ $ ./standalone.sh -Djboss.socket.binding.port-offset=100
 > ...\bin\standalone.bat -Djboss.socket.binding.port-offset=100
 ----
 
++
+.Windows Powershell
+[source,bash,subs=+attributes]
+----
+> ...\bin\standalone.bat -D"jboss.socket.binding.port-offset=100"
+----
+
 . Confirm that the {project_name} server is running. Go to http://localhost:8180/auth/admin/ .
 +
 If the admin console opens, you are ready to install a client adapter that enables {appserver_name} to work with {project_name}.
