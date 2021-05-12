@@ -15,6 +15,9 @@
         <li ng-class="{active: path[2] == 'cache-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/cache-settings">{{:: 'realm-tab-cache' | translate}}</a></li>
         <li ng-class="{active: path[2] == 'token-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/token-settings">{{:: 'realm-tab-tokens' | translate}}</a></li>
         <li ng-class="{active: path[2] == 'client-registration'}" data-ng-show="access.viewClients"><a href="#/realms/{{realm.realm}}/client-registration/client-initial-access">{{:: 'realm-tab-client-registration' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'client-policies'}" data-ng-show="access.viewRealm && serverInfo.featureEnabled('CLIENT_POLICIES')">
+            <a href="#/realms/{{realm.realm}}/client-policies/profiles">{{:: 'realm-tab-client-policies' | translate}}</a>
+        </li>
         <li ng-class="{active: path[2] == 'defense'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/defense/headers">{{:: 'realm-tab-security-defenses' | translate}}</a></li>
     </ul>
 </div>

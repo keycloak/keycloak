@@ -36,7 +36,7 @@ public class PKCEEnforceExecutorFactory implements ClientPolicyExecutorProviderF
     public static final String IS_AUGMENT = "is-augment";
 
     private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
-            IS_AUGMENT, null, null, ProviderConfigProperty.BOOLEAN_TYPE, false);
+            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce usage of PKCE", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

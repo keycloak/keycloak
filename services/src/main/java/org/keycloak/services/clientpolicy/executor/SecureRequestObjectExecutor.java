@@ -31,13 +31,12 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
-import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor.Configuration;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -80,8 +79,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyExecutorConfiguration {
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("available-period")
         protected Integer availablePeriod;
         @JsonProperty("verify-nbf")

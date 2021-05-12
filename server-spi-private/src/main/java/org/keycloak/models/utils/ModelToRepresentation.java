@@ -95,8 +95,8 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
 
-        REALM_EXCLUDED_ATTRIBUTES.add("client-policies.profiles");
-        REALM_EXCLUDED_ATTRIBUTES.add("client-policies.policies");
+        REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
+        REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
     }
 
 
@@ -295,7 +295,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static RealmRepresentation toRepresentation(RealmModel realm, boolean internal) {
+    public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
@@ -446,6 +446,8 @@ public class ModelToRepresentation {
             exportRequiredActions(realm, rep);
             exportGroups(realm, rep);
         }
+
+        session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
 
         rep.setAttributes(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 

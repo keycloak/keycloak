@@ -37,7 +37,14 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
     public static final String VERIFY_NBF = "verify-nbf";
 
     private static final ProviderConfigProperty VERIFY_NBF_PROPERTY = new ProviderConfigProperty(
-            VERIFY_NBF, null, null, ProviderConfigProperty.BOOLEAN_TYPE, true);
+            VERIFY_NBF, "Verify Not-Before", "If ON, then it will be verified if 'request' object used in OIDC authorization request contains not-before " +
+            "claim and this claim will be validated", ProviderConfigProperty.BOOLEAN_TYPE, true);
+
+    public static final String AVAILABLE_PERIOD = "available-period";
+
+    private static final ProviderConfigProperty AVAILABLE_PERIOD_PROPERTY = new ProviderConfigProperty(
+            AVAILABLE_PERIOD, "Available Period", "The maximum period in seconds for which the 'request' object used in OIDC authorization request is considered valid. " +
+            "It is used if 'Verify Not-Before' is ON.", ProviderConfigProperty.STRING_TYPE, "3600");
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -68,7 +75,7 @@ public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorP
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(VERIFY_NBF_PROPERTY));
+        return new ArrayList<>(Arrays.asList(VERIFY_NBF_PROPERTY, AVAILABLE_PERIOD_PROPERTY));
     }
 
 }

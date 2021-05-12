@@ -21,12 +21,12 @@ import java.util.List;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -51,8 +51,7 @@ public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProv
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyExecutorConfiguration {
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("client-authns")
         protected List<String> clientAuthns;
         @JsonProperty("client-authns-augment")

@@ -87,7 +87,7 @@ public class ExportUtils {
     }
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options, boolean internal) {
-        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, internal);
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, internal);
         ModelToRepresentation.exportAuthenticationFlows(realm, rep);
         ModelToRepresentation.exportRequiredActions(realm, rep);
 
@@ -259,9 +259,6 @@ public class ExportUtils {
         // components
         MultivaluedHashMap<String, ComponentExportRepresentation> components = exportComponents(realm, realm.getId());
         rep.setComponents(components);
-
-        // client policies
-        session.clientPolicy().setupClientPoliciesOnExportingRealm(realm, rep);
 
         return rep;
     }

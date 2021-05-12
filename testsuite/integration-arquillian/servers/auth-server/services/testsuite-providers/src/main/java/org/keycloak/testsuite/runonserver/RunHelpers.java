@@ -21,7 +21,7 @@ public class RunHelpers {
 
             @Override
             public FetchOnServer getRunOnServer() {
-                return (FetchOnServer) session -> ModelToRepresentation.toRepresentation(session.getContext().getRealm(), true);
+                return (FetchOnServer) session -> ModelToRepresentation.toRepresentation(session, session.getContext().getRealm(), true);
             }
 
             @Override

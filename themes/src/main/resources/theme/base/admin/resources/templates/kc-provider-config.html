@@ -16,6 +16,9 @@
                 <option value="" selected> {{:: 'selectOne' | translate}} </option>
             </select>
         </div>
+        <div class="col-md-6" data-ng-if="option.type == 'MultivaluedList'">
+            <input ui-select2="option.mvOptions" ng-model="config[ option.name ]" data-placeholder="{{:: 'selectMultiple' | translate}}..."/>
+        </div>
         <div class="col-md-6" data-ng-if="option.type == 'Role'">
             <div class="row">
                 <div class="col-md-8">

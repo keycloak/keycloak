@@ -17,10 +17,12 @@
 
 package org.keycloak.services.resources.admin;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -32,6 +34,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -58,19 +61,23 @@ public class ClientProfilesResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public String getProfiles() {
+    public ClientProfilesRepresentation getProfiles(@QueryParam("include-global-profiles") boolean includeGlobalProfiles) {
         auth.realm().requireViewRealm();
 
-        return session.clientPolicy().getClientProfiles(realm);
+        try {
+            return session.clientPolicy().getClientProfiles(realm, includeGlobalProfiles);
+        } catch (ClientPolicyException e) {
+            throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getError()).build());
+        }
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateProfiles(final String json) {
+    public Response updateProfiles(final ClientProfilesRepresentation clientProfiles) {
         auth.realm().requireManageRealm();
 
         try {
-            session.clientPolicy().updateClientProfiles(realm, json);
+            session.clientPolicy().updateClientProfiles(realm, clientProfiles);
         } catch (ClientPolicyException e) {
             return Response.status(Status.BAD_REQUEST).entity(e.getError()).build();
         }

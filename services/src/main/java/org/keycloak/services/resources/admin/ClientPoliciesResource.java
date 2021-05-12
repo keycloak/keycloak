@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources.admin;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -32,6 +33,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -58,19 +60,23 @@ public class ClientPoliciesResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public String getPolicies() {
+    public ClientPoliciesRepresentation getPolicies() {
         auth.realm().requireViewRealm();
 
-        return session.clientPolicy().getClientPolicies(realm);
+        try {
+            return session.clientPolicy().getClientPolicies(realm);
+        } catch (ClientPolicyException e) {
+            throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getError()).build());
+        }
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updatePolicies(final String json) {
+    public Response updatePolicies(final ClientPoliciesRepresentation clientPolicies) {
         auth.realm().requireManageRealm();
 
         try {
-            session.clientPolicy().updateClientPolicies(realm, json);
+            session.clientPolicy().updateClientPolicies(realm, clientPolicies);
         } catch (ClientPolicyException e) {
             return Response.status(Status.BAD_REQUEST).entity(e.getError()).build();
         }

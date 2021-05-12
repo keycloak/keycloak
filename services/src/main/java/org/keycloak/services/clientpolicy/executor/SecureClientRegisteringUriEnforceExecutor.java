@@ -28,6 +28,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
@@ -40,7 +41,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureClientRegisteringUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class SecureClientRegisteringUriEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     private static final Logger logger = Logger.getLogger(SecureClientRegisteringUriEnforceExecutor.class);
 

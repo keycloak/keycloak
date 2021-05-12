@@ -499,7 +499,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public ClientPolicyManager clientPolicy() {
         if (clientPolicyManager == null) {
-            clientPolicyManager = new DefaultClientPolicyManager(this);
+            clientPolicyManager = getProvider(ClientPolicyManager.class);
         }
         return clientPolicyManager;
     }

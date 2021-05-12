@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -37,7 +38,8 @@ public class SecureSigningAlgorithmEnforceExecutorFactory implements ClientPolic
     public static final String DEFAULT_ALGORITHM = "default-algorithm";
 
     private static final ProviderConfigProperty DEFAULT_ALGORITHM_PROPERTY = new ProviderConfigProperty(
-            DEFAULT_ALGORITHM, null, null, ProviderConfigProperty.STRING_TYPE, Algorithm.PS256);
+            DEFAULT_ALGORITHM, "Default Algorithm", "Default signature algorithm, which will be set to clients during client registration/update in case that client does not specify any algorithm",
+            ProviderConfigProperty.LIST_TYPE, Algorithm.PS256, new LinkedList<>(SecureSigningAlgorithmEnforceExecutor.ALLOWED_ALGORITHMS).toArray(new String[] {}));
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -63,7 +65,7 @@ public class SecureSigningAlgorithmEnforceExecutorFactory implements ClientPolic
 
     @Override
     public String getHelpText() {
-        return "It refuses the client whose signature algorithms are considered not to be secure. It accepts ES256, ES384, ES512, PS256, PS384 and PS512.";
+        return "It refuses the client whose signature algorithms are considered not to be secure. This is applied by server for signing ID Token, UserInfo and Access Token. Also it is used by client for Token Endpoint Authentication signature algorithm (for JWT client authenticators) and OIDC Request object. It accepts ES256, ES384, ES512, PS256, PS384 and PS512.";
     }
 
     @Override

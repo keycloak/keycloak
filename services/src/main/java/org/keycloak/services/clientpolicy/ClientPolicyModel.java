@@ -20,15 +20,18 @@ package org.keycloak.services.clientpolicy;
 import java.io.Serializable;
 import java.util.List;
 
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientProfileModel implements Serializable {
+public class ClientPolicyModel implements Serializable {
 
     protected String name;
     protected String description;
-    protected boolean builtin;
-    protected List<Object> executors; // ClientPolicyExecutorProvider is not visible so that use Object.
+    protected boolean enable;
+    protected List<ClientPolicyConditionProvider> conditions;
+    protected List<String> profiles;
 
     public String getName() {
         return name;
@@ -46,19 +49,27 @@ public class ClientProfileModel implements Serializable {
         this.description = description;
     }
 
-    public boolean isBuiltin() {
-        return builtin;
+    public boolean isEnable() {
+        return enable;
     }
 
-    public void setBuiltin(boolean builtin) {
-        this.builtin = builtin;
+    public void setEnable(boolean enable) {
+        this.enable = enable;
     }
 
-    public List<Object> getExecutors() {
-        return executors;
+    public List<ClientPolicyConditionProvider> getConditions() {
+        return conditions;
     }
 
-    public void setExecutors(List<Object> executors) {
-        this.executors = executors;
+    public void setConditions(List<ClientPolicyConditionProvider> conditions) {
+        this.conditions = conditions;
+    }
+
+    public List<String> getProfiles() {
+        return profiles;
+    }
+
+    public void setProfiles(List<String> profiles) {
+        this.profiles = profiles;
     }
 }

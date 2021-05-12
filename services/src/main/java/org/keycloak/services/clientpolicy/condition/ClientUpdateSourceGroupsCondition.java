@@ -19,7 +19,6 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
@@ -38,27 +38,15 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionProvider<ClientUpdateSourceGroupsCondition.Configuration> {
+public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyConditionProvider<ClientUpdateSourceGroupsCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceGroupsCondition.class);
 
-    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-    private Configuration configuration = new Configuration();
-    private final KeycloakSession session;
-
     public ClientUpdateSourceGroupsCondition(KeycloakSession session) {
-        this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
+        super(session);
     }
 
     @Override
@@ -66,18 +54,7 @@ public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionP
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyConditionConfiguration {
-        @JsonProperty("is-negative-logic")
-        protected Boolean negativeLogic;
-
-        public Boolean isNegativeLogic() {
-            return negativeLogic;
-        }
-
-        public void setNegativeLogic(Boolean negativeLogic) {
-            this.negativeLogic = negativeLogic;
-        }
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         protected List<String> groups;
 
@@ -88,11 +65,6 @@ public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionP
         public void setGroups(List<String> groups) {
             this.groups = groups;
         }
-    }
-
-    @Override
-    public boolean isNegativeLogic() {
-        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override
