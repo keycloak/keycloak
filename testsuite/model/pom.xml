@@ -207,6 +207,20 @@
         </profile>
 
         <profile>
+            <id>jpa-federation-file-storage</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa-federation-file-storage+infinispan</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage,Infinispan</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa-federation+ldap</id>
             <properties>
                 <keycloak.model.parameters>JpaFederation,LdapUserStorage</keycloak.model.parameters>
