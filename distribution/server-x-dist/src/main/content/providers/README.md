@@ -1,9 +1,10 @@
-# Installing Custom Providers
+Installing Custom Providers
+===========================
 
 You should add to this directory your custom provider JAR files.
 
 Once you have your providers in this directory you should run the following command to complete the installation:
 
 ```
-${keycloak.home.dir}/bin/kc.sh config
+${kc.home.dir}/bin/kc.sh config
 ```
