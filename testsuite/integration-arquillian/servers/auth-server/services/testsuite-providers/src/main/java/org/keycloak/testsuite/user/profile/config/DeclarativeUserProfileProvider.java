@@ -54,17 +54,18 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.legacy.AbstractUserProfileProvider;
-import org.keycloak.userprofile.legacy.Validators;
+import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
+import org.keycloak.validate.AbstractSimpleValidator;
+import org.keycloak.validate.ValidatorConfig;
 
 /**
- * {@link UserProfileProvider} loading configuration from the changeable JSON
- * file stored in component config. Parsed configuration is cached.
+ * {@link UserProfileProvider} loading configuration from the changeable JSON file stored in component config. Parsed
+ * configuration is cached.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<DeclarativeUserProfileProvider>
-        implements AmphibianProviderFactory<DeclarativeUserProfileProvider> {
+public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<DeclarativeUserProfileProvider> implements AmphibianProviderFactory<DeclarativeUserProfileProvider> {
 
     public static final String ID = "declarative-userprofile-provider";
     public static final String UP_PIECES_COUNT_COMPONENT_CONFIG_KEY = "config-pieces-count";
@@ -78,8 +79,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         // for reflection
     }
 
-    public DeclarativeUserProfileProvider(KeycloakSession session,
-            Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
+    public DeclarativeUserProfileProvider(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
         super(session, metadataRegistry);
     }
 
@@ -89,8 +89,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     @Override
-    protected DeclarativeUserProfileProvider create(KeycloakSession session,
-            Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
+    protected DeclarativeUserProfileProvider create(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
         return new DeclarativeUserProfileProvider(session, metadataRegistry);
     }
 
@@ -105,8 +104,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             model.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
-        return metadataMap.computeIfAbsent(metadata.getContext(),
-                (context) -> decorateUserProfileForCache(metadata, model));
+        return metadataMap.computeIfAbsent(metadata.getContext(), (context) -> decorateUserProfileForCache(metadata, model));
     }
 
     @Override
@@ -115,22 +113,19 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model)
-            throws ComponentValidationException {
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         String upConfigJson = getConfigJsonFromComponentModel(model);
 
         if (!isBlank(upConfigJson)) {
             try {
                 UPConfig upc = readConfig(new ByteArrayInputStream(upConfigJson.getBytes("UTF-8")));
-                List<String> errors = UPConfigUtils.validate(upc);
+                List<String> errors = UPConfigUtils.validate(session, upc);
 
                 if (!errors.isEmpty()) {
-                    throw new ComponentValidationException(
-                            "UserProfile configuration is invalid: " + errors.toString());
+                    throw new ComponentValidationException("UserProfile configuration is invalid: " + errors.toString());
                 }
             } catch (IOException e) {
-                throw new ComponentValidationException(
-                        "UserProfile configuration is invalid due to JSON parsing error: " + e.getMessage(), e);
+                throw new ComponentValidationException("UserProfile configuration is invalid due to JSON parsing error: " + e.getMessage(), e);
             }
         }
 
@@ -177,7 +172,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        //TODO: We should avoid blocking operations during startup. Need to review this.
+        // TODO: We should avoid blocking operations during startup. Need to review this.
         try (InputStream is = getClass().getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
             defaultRawConfig = StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
@@ -195,17 +190,15 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Decorate basic metadata provided from {@link AbstractUserProfileProvider}
-     * based on 'per realm' configuration. This method is called for each
-     * {@link UserProfileContext} in each realm, and metadata are cached then and
-     * this method is called again only if configuration changes.
+     * Decorate basic metadata provided from {@link AbstractUserProfileProvider} based on 'per realm' configuration.
+     * This method is called for each {@link UserProfileContext} in each realm, and metadata are cached then and this
+     * method is called again only if configuration changes.
      *
-     * @param metadata base to be decorated based on configuration loaded from
-     *                 component model
-     * @param model    component model to get "per realm" configuration from
+     * @param metadata base to be decorated based on configuration loaded from component model
+     * @param model component model to get "per realm" configuration from
      * @return decorated metadata
      */
-    private UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata metadata, ComponentModel model) {
+    protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata metadata, ComponentModel model) {
         UserProfileContext context = metadata.getContext();
         UPConfig parsedConfig = getParsedConfig(model);
 
@@ -224,7 +217,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
             if (validationsConfig != null) {
                 for (Map.Entry<String, Map<String, Object>> vc : validationsConfig.entrySet()) {
-                    validators.add(createConfiguredValidator(attrConfig, vc.getKey(), vc.getValue()));
+                    validators.add(createConfiguredValidator(vc.getKey(), vc.getValue()));
                 }
             }
 
@@ -238,8 +231,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
                     validators.add(createRequiredValidator(attrConfig));
                     required = AttributeMetadata.ALWAYS_TRUE;
-                } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null
-                        && !rc.getScopes().isEmpty()) {
+                } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
                     required = (c) -> attributePredicateAuthFlowRequestedScope(rc.getScopes());
@@ -265,7 +257,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 if (!validators.isEmpty()) {
                     List<AttributeMetadata> atts = decoratedMetadata.getAttribute(attributeName);
                     if (atts.isEmpty()) {
-                        // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base doesn't require it.
+                        // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
+                        // doesn't require it.
                         decoratedMetadata.addAttribute(attributeName, validators, readOnly).addAnnotations(annotations);
                     } else {
                         // only add configured validators and annotations if attribute metadata exist
@@ -282,21 +275,27 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Get parsed config file configured in model. Default one used if not
-     * configured.
+     * Get parsed config file configured in model. Default one used if not configured.
      *
      * @param model to take config from
      * @return parsed configuration
      */
-    private UPConfig getParsedConfig(ComponentModel model) {
+    protected UPConfig getParsedConfig(ComponentModel model) {
         String rawConfig = getConfigJsonFromComponentModel(model);
 
         if (!isBlank(rawConfig)) {
             try {
-                return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
+                UPConfig upc = readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
+
+                //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
+                List<String> errors = UPConfigUtils.validate(session, upc);
+                if (!errors.isEmpty()) {
+                    throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid: " + errors.toString());
+                }
+                return upc;
+
             } catch (IOException e) {
-                throw new RuntimeException("UserProfile config for realm " + session.getContext().getRealm().getName()
-                        + " is invalid:" + e.getMessage(), e);
+                throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
             }
         }
 
@@ -304,16 +303,14 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Predicate to select attributes for Authentication flow cases where requested
-     * scopes (including configured Default client scopes) are compared to set of
-     * scopes from user profile configuration.
+     * Predicate to select attributes for Authentication flow cases where requested scopes (including configured Default
+     * client scopes) are compared to set of scopes from user profile configuration.
      * <p>
-     * This patches problem with some auth flows (eg. register) where
-     * authSession.getClientScopes() doesn't work correctly!
+     * This patches problem with some auth flows (eg. register) where authSession.getClientScopes() doesn't work
+     * correctly!
      *
      * @param scopesConfigured to match
-     * @return true if at least one requested scope matches at least one configured
-     * scope
+     * @return true if at least one requested scope matches at least one configured scope
      */
     private boolean attributePredicateAuthFlowRequestedScope(List<String> scopesConfigured) {
         // never match out of auth flow
@@ -325,12 +322,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     private Set<String> getAuthFlowRequestedScopeNames() {
-        String requestedScopesString = session.getContext().getAuthenticationSession()
-                .getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
-        return TokenManager
-                .getRequestedClientScopes(requestedScopesString, session.getContext().getAuthenticationSession().getClient())
-                .map((csm) -> csm.getName())
-                .collect(Collectors.toSet());
+        String requestedScopesString = session.getContext().getAuthenticationSession().getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
+        return TokenManager.getRequestedClientScopes(requestedScopesString, session.getContext().getAuthenticationSession().getClient()).map((csm) -> csm.getName()).collect(Collectors.toSet());
     }
 
     /**
@@ -341,36 +334,27 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
      */
     private ComponentModel getComponentModelOrCreate(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny()
-                .orElseGet(() -> realm.addComponentModel(new DeclarativeUserProfileModel()));
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(new DeclarativeUserProfileModel()));
     }
 
     /**
      * Create validator for 'required' validation.
      *
-     * @return validator
+     * @return validator metadata to run given validation
      */
-    private AttributeValidatorMetadata createRequiredValidator(UPAttribute attrConfig) {
-        String msg = "missing" + UPConfigUtils.capitalizeFirstLetter(attrConfig.getName()) + "Message";
-        return Validators.create(msg, Validators.requiredByAttributeMetadata());
+    protected AttributeValidatorMetadata createRequiredValidator(UPAttribute attrConfig) {
+        return new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID);
     }
 
     /**
      * Create validator for validation configured in the user profile config.
      *
-     * @param attrConfig to create validator for
-     * @return validator
+     * @param validator id to create validator for
+     * @param validatorConfig of the validator
+     * @return validator metadata to run given validation
      */
-    private AttributeValidatorMetadata createConfiguredValidator(UPAttribute attrConfig,
-            String validator, Map<String, Object> validatorConfig) {
-        // TODO UserProfile - integrate Validation SPI
-        if ("length".equals(validator))
-            return Validators.create("badLenght" + UPConfigUtils.capitalizeFirstLetter(attrConfig.getName()) + "Message",
-                    Validators.length(validatorConfig));
-        else if ("emailFormat".equals(validator))
-            return Validators.create("invalidEmailMessage", Validators.isEmailValid());
-        else
-            throw new RuntimeException("Unsupported UserProfile validator " + validator);
+    protected AttributeValidatorMetadata createConfiguredValidator(String validator, Map<String, Object> validatorConfig) {
+        return new AttributeValidatorMetadata(validator, ValidatorConfig.builder().config(validatorConfig).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build());
     }
 
     private String getConfigJsonFromComponentModel(ComponentModel model) {

@@ -23,8 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import org.keycloak.validate.ValidationError;
 
 /**
  * <p>This interface wraps the attributes associated with a user profile. Different operations are provided to access and
@@ -75,31 +76,15 @@ public interface Attributes {
     boolean isReadOnly(String key);
 
     /**
-     * <Validates the attribute with the given {@code name}.
+     * Validates the attribute with the given {@code name}.
      *
      * @param name the name of the attribute
-     * @param listeners the listeners for listening for errors
+     * @param listeners the listeners for listening for errors. <code>ValidationError.inputHint</code> contains name of the attribute in error. 
      *
      * @return {@code true} if validation is successful. Otherwise, {@code false}. In case there is no attribute with the given {@code name},
      * {@code false} is also returned but without triggering listeners
      */
-    boolean validate(String name, BiConsumer<Map.Entry<String, List<String>>, String>... listeners);
-
-    /**
-     * A simpler variant of {@link #validate(String, BiConsumer[])} for those only interested on error messages.
-     *
-     * @param name the name of the attribute
-     * @param listeners the listeners for listening for errors
-     * @return {@code true} if validation is successful. Otherwise, {@code false}. In case there is no attribute with the given {@code name},
-     * {@code false} is also returned but without triggering listeners
-     */
-    default boolean validate(String name, Consumer<String>... listeners) {
-        return validate(name, (attribute, error) -> {
-            for (Consumer<String> consumer : listeners) {
-                consumer.accept(error);
-            }
-        });
-    }
+    boolean validate(String name, Consumer<ValidationError>... listeners);
 
     /**
      * Checks whether an attribute with the given {@code name} is defined.

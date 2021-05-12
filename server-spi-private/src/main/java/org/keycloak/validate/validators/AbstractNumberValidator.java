@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -52,16 +53,30 @@ public abstract class AbstractNumberValidator extends AbstractSimpleValidator {
     }
 
     @Override
+    protected boolean skipValidation(Object value, ValidatorConfig config) {
+        if (isIgnoreEmptyValuesConfigured(config) && (value == null || value instanceof String)) {
+            return value == null || StringUtil.isBlank(value.toString());
+        }
+        return false;
+    }
+
+    @Override
     protected void doValidate(Object value, String inputHint, ValidationContext context, ValidatorConfig config) {
         if (config == null || config.isEmpty()) {
             config = defaultConfig;
         }
 
-        Number number;
+        Number number = null;
 
-        try {
-            number = convert(value, config);
-        } catch (NumberFormatException ignore) {
+        if (value != null) {
+            try {
+                number = convert(value, config);
+            } catch (NumberFormatException ignore) {
+                // N/A
+            }
+        }
+
+        if (number == null) {
             context.addError(new ValidationError(getId(), inputHint, MESSAGE_INVALID_NUMBER, value));
             return;
         }

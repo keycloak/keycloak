@@ -41,16 +41,12 @@ import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.user.profile.config.UPAttribute;
 import org.keycloak.testsuite.user.profile.config.UPAttributeRequired;
@@ -63,6 +59,8 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -229,18 +227,28 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
 
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
-        List<String> errors = new ArrayList<>();
+        List<ValidationError> errors = new ArrayList<>();
 
-        assertFalse(profile.getAttributes().validate(UserModel.USERNAME, (Consumer<String>) errors::add));
-        assertTrue(errors.contains(Messages.MISSING_USERNAME));
+        assertFalse(profile.getAttributes().validate(UserModel.USERNAME, (Consumer<ValidationError>) errors::add));
+        assertTrue(containsErrorMessage(errors, Messages.MISSING_USERNAME));
 
         errors.clear();
         attributes.clear();
         attributes.put(UserModel.EMAIL, "invalid");
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
-        assertFalse(profile.getAttributes().validate(UserModel.EMAIL, (Consumer<String>) errors::add));
-        assertTrue(errors.contains(Messages.INVALID_EMAIL));
+        assertFalse(profile.getAttributes().validate(UserModel.EMAIL, (Consumer<ValidationError>) errors::add));
+        assertTrue(containsErrorMessage(errors, EmailValidator.MESSAGE_INVALID_EMAIL));
     }
+    
+    private static boolean containsErrorMessage(List<ValidationError> errors, String message){
+    	for(ValidationError err : errors) {
+    		if(err.getMessage().equals(message)) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    
 
     @Test
     public void testValidateComplianceWithUserProfile() {

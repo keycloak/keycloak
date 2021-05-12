@@ -49,6 +49,7 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.validators.LengthValidator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -204,7 +205,7 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 
 		validatorConfig.put("min", 4);
 
-		attribute.addValidation("length", validatorConfig);
+		attribute.addValidation(LengthValidator.ID, validatorConfig);
 
 		config.addAttribute(attribute);
 
@@ -221,7 +222,7 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 			fail("Should fail validation");
 		} catch (ValidationException ve) {
 			assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
-			assertTrue(ve.hasError("badLenghtUsernameMessage"));
+			assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
 		}
 
 		attributes.put(UserModel.USERNAME, "user");
@@ -256,13 +257,13 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 		UPAttribute attribute = new UPAttribute();
 		attribute.setName(UserModel.FIRST_NAME);
 		Map<String, Object> validatorConfig = new HashMap<>();
-		validatorConfig.put("max", 4);
-		attribute.addValidation("length", validatorConfig);
+		validatorConfig.put(LengthValidator.KEY_MAX, 4);
+		attribute.addValidation(LengthValidator.ID, validatorConfig);
 		config.addAttribute(attribute);
 		
 		attribute = new UPAttribute();
 		attribute.setName(UserModel.LAST_NAME);
-		attribute.addValidation("length", validatorConfig);
+		attribute.addValidation(LengthValidator.ID, validatorConfig);
 		config.addAttribute(attribute);
 		
 		provider.setConfiguration(JsonSerialization.writeValueAsString(config));
@@ -301,11 +302,11 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 	}
 
 	@Test
-	public void testCustomAttribute() {
-		getTestingClient().server().run((RunOnServer) UserProfileConfigTest::testCustomAttribute);
+	public void testCustomAttribute_Required() {
+		getTestingClient().server().run((RunOnServer) UserProfileConfigTest::testCustomAttribute_Required);
 	}
 
-	private static void testCustomAttribute(KeycloakSession session) throws IOException {
+	private static void testCustomAttribute_Required(KeycloakSession session) throws IOException {
 		configureSessionRealm(session);
 		DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
 		ComponentModel component = provider.getComponentModel();
@@ -319,9 +320,9 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 
 		Map<String, Object> validatorConfig = new HashMap<>();
 
-		validatorConfig.put("min", 4);
+		validatorConfig.put(LengthValidator.KEY_MIN, 4);
 
-		attribute.addValidation("length", validatorConfig);
+		attribute.addValidation(LengthValidator.ID, validatorConfig);
 
 		// make it ALWAYS required
 		UPAttributeRequired requirements = new UPAttributeRequired();
@@ -359,8 +360,61 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 		attributes.put(ATT_ADDRESS, "adress ok");
 		profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
 		profile.validate();
-
 	}
+	
+	@Test
+    public void testCustomAttribute_Optional() {
+        getTestingClient().server().run((RunOnServer) UserProfileConfigTest::testCustomAttribute_Optional);
+    }
+
+    private static void testCustomAttribute_Optional(KeycloakSession session) throws IOException {
+        configureSessionRealm(session);
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        ComponentModel component = provider.getComponentModel();
+
+        assertNotNull(component);
+
+        UPConfig config = new UPConfig();
+        UPAttribute attribute = new UPAttribute();
+
+        attribute.setName(ATT_ADDRESS);
+
+        Map<String, Object> validatorConfig = new HashMap<>();
+        validatorConfig.put(LengthValidator.KEY_MIN, 4);
+        attribute.addValidation(LengthValidator.ID, validatorConfig);
+
+        config.addAttribute(attribute);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, "user");
+
+        // null is OK as attribute is optional
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        profile.validate();
+
+        //blank String have to be OK as it is what UI forms send for not filled in optional attributes
+        attributes.put(ATT_ADDRESS, "");
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        profile.validate();
+        
+        // fails on length validation
+        attributes.put(ATT_ADDRESS, "adr");
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        try {
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
+        // all OK
+        attributes.put(ATT_ADDRESS, "adress ok");
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        profile.validate();
+
+    }
 
 	@Test
 	public void testRequiredByUserRole_USER() {

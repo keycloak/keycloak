@@ -19,28 +19,53 @@
 
 package org.keycloak.userprofile;
 
-import org.keycloak.userprofile.AttributeContext;
-import org.keycloak.userprofile.validation.Validator;
+import org.keycloak.validate.ValidationContext;
+import org.keycloak.validate.Validator;
+import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.Validators;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @author Vlastimil Elias <velias@redhat.com>
  */
-public final class AttributeValidatorMetadata implements Validator {
+public final class AttributeValidatorMetadata {
 
-    private final String message;
-    private final Validator validator;
+    private final String validatorId;
+    private final ValidatorConfig validatorConfig;
 
-    public AttributeValidatorMetadata(String message, Validator validator) {
-        this.message = message;
-        this.validator = validator;
+    public AttributeValidatorMetadata(String validatorId) {
+        this.validatorId = validatorId;
+        this.validatorConfig = ValidatorConfig.configFromMap(null);
     }
 
-    public String getMessage() {
-        return message;
+    public AttributeValidatorMetadata(String validatorId, ValidatorConfig validatorConfig) {
+        this.validatorId = validatorId;
+        this.validatorConfig = validatorConfig;
     }
 
-    @Override
-    public boolean validate(AttributeContext context) {
-        return validator.validate(context);
+    /**
+     * Getters so we can collect validation configurations and provide them to GUI for dynamic client side validations.
+     * 
+     * @return the validatorId
+     */
+    public String getValidatorId() {
+        return validatorId;
     }
+    
+    /**
+     * Run validation for given AttributeContext.
+     * 
+     * @param context to validate
+     * @return context containing errors if any found
+     */
+    public ValidationContext validate(AttributeContext context) {
+
+        Validator validator = Validators.validator(context.getSession(), validatorId);
+        if (validator == null) {
+            throw new RuntimeException("No validator with id " + validatorId + " found to validate UserProfile attribute " + context.getMetadata().getName() + " in realm " + context.getSession().getContext().getRealm().getName());
+        }
+
+        return validator.validate(context.getAttribute().getValue(), context.getMetadata().getName(), new UserProfileAttributeValidationContext(context), validatorConfig);
+    }
+
 }

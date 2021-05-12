@@ -18,17 +18,10 @@
 package org.keycloak.services.validation;
 
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.policy.PasswordPolicyManagerProvider;
-import org.keycloak.policy.PolicyError;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.ValidationException;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -45,8 +38,8 @@ public class Validation {
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
-    private static void addError(List<FormMessage> errors, String field, String message){
-        errors.add(new FormMessage(field, message));
+    private static void addError(List<FormMessage> errors, String field, String message, Object... parameters){
+        errors.add(new FormMessage(field, message, parameters));
     }
 
     /**
@@ -88,7 +81,7 @@ public class Validation {
     public static List<FormMessage> getFormErrorsFromValidation(List<ValidationException.Error> errors) {
         List<FormMessage> messages = new ArrayList<>();
         for (ValidationException.Error error : errors) {
-            addError(messages, error.getAttribute(), error.getMessage());
+            addError(messages, error.getAttribute(), error.getMessage(), error.getMessageParameters());
         }
         return messages;
 
