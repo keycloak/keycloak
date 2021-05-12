@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,12 @@
  *
  */
 
-package org.keycloak.services.clientpolicy.executor;
+package org.keycloak.services.clientpolicy;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * Just adds some type-safety to the ClientPolicyExecutorConfiguration
- *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class ClientPolicyExecutorConfiguration {
+public interface ClientPolicyManagerFactory extends ProviderFactory<ClientPolicyManager> {
 }

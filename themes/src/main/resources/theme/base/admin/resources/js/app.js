@@ -330,6 +330,168 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientRegPolicyDetailCtrl'
         })
+        .when('/realms/:realm/client-policies/profiles', {
+            templateUrl : resourceUrl + '/partials/client-policies-profiles-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
+                },
+            },
+            controller : 'ClientPoliciesProfilesListCtrl'
+        })
+        .when('/realms/:realm/client-policies/profiles-json', {
+            templateUrl : resourceUrl + '/partials/client-policies-profiles-json.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
+                }
+            },
+            controller : 'ClientPoliciesProfilesJsonCtrl'
+        })
+        .when('/realms/:realm/client-policies/profiles-create', {
+            templateUrl : resourceUrl + '/partials/client-policies-profiles-edit.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
+                }
+            },
+            controller : 'ClientPoliciesProfilesEditCtrl'
+        })
+        .when('/realms/:realm/client-policies/profiles-update/:profileName', {
+            templateUrl : resourceUrl + '/partials/client-policies-profiles-edit.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
+                }
+            },
+            controller : 'ClientPoliciesProfilesEditCtrl'
+        })
+        .when('/realms/:realm/client-policies/profiles-update/:profileName/create-executor', {
+            templateUrl : resourceUrl + '/partials/client-policies-profiles-edit-executor.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientPoliciesProfilesEditExecutorCtrl'
+        })
+        .when('/realms/:realm/client-policies/profiles-update/:profileName/update-executor/:executorIndex', {
+            templateUrl : resourceUrl + '/partials/client-policies-profiles-edit-executor.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientPoliciesProfilesEditExecutorCtrl'
+        })
+        .when('/realms/:realm/client-policies/policies', {
+            templateUrl : resourceUrl + '/partials/client-policies-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientPolicies : function(ClientPoliciesLoader) {
+                    return ClientPoliciesLoader();
+                }
+            },
+            controller : 'ClientPoliciesListCtrl'
+        })
+        .when('/realms/:realm/client-policies/policies-json', {
+            templateUrl : resourceUrl + '/partials/client-policies-json.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientPolicies : function(ClientPoliciesLoader) {
+                    return ClientPoliciesLoader();
+                }
+            },
+            controller : 'ClientPoliciesJsonCtrl'
+        })
+        .when('/realms/:realm/client-policies/policy-create', {
+            templateUrl : resourceUrl + '/partials/client-policies-policy-edit.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
+                },
+                clientPolicies : function(ClientPoliciesLoader) {
+                    return ClientPoliciesLoader();
+                }
+            },
+            controller : 'ClientPoliciesEditCtrl'
+        })
+        .when('/realms/:realm/client-policies/policies-update/:policyName', {
+            templateUrl : resourceUrl + '/partials/client-policies-policy-edit.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientProfiles : function(ClientPoliciesProfilesLoader) {
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
+                },
+                clientPolicies : function(ClientPoliciesLoader) {
+                    return ClientPoliciesLoader();
+                }
+            },
+            controller : 'ClientPoliciesEditCtrl'
+        })
+        .when('/realms/:realm/client-policies/policies-update/:policyName/create-condition', {
+            templateUrl : resourceUrl + '/partials/client-policies-policy-edit-condition.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientPolicies : function(ClientPoliciesLoader) {
+                    return ClientPoliciesLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientPoliciesEditConditionCtrl'
+        })
+        .when('/realms/:realm/client-policies/policies-update/:policyName/update-condition/:conditionIndex', {
+            templateUrl : resourceUrl + '/partials/client-policies-policy-edit-condition.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientPolicies : function(ClientPoliciesLoader) {
+                    return ClientPoliciesLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientPoliciesEditConditionCtrl'
+        })
         .when('/realms/:realm/keys', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {

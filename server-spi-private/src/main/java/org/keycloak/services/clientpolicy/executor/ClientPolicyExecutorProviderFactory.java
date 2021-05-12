@@ -17,11 +17,18 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import org.keycloak.common.Profile;
 import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /** 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public interface ClientPolicyExecutorProviderFactory extends ProviderFactory<ClientPolicyExecutorProvider>, ConfiguredProvider {
+public interface ClientPolicyExecutorProviderFactory extends ProviderFactory<ClientPolicyExecutorProvider>, ConfiguredProvider, EnvironmentDependentProviderFactory {
+
+    @Override
+    default boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+    }
 }

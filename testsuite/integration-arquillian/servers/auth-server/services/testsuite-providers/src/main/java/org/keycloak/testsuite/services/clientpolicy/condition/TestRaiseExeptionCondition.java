@@ -22,23 +22,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionConfiguration;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProvider;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TestRaiseExeptionCondition implements ClientPolicyConditionProvider<TestRaiseExeptionCondition.Configuration> {
-
-    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-    private Configuration configuration = new Configuration();
+public class TestRaiseExeptionCondition extends AbstractClientPolicyConditionProvider<TestRaiseExeptionCondition.Configuration> {
 
     public TestRaiseExeptionCondition(KeycloakSession session) {
-    }
-
-    @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
+        super(session);
     }
 
     @Override
@@ -46,7 +39,7 @@ public class TestRaiseExeptionCondition implements ClientPolicyConditionProvider
         return Configuration.class;
     }
 
-    public static class Configuration extends ClientPolicyConditionConfiguration {
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
     }
 
     @Override

@@ -19,7 +19,6 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,7 +28,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
@@ -39,27 +40,16 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionProvider<ClientUpdateSourceRolesCondition.Configuration> {
+public class ClientUpdateSourceRolesCondition extends AbstractClientPolicyConditionProvider<ClientUpdateSourceRolesCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientUpdateSourceRolesCondition.class);
 
-    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-    private Configuration configuration = new Configuration();
-    private final KeycloakSession session;
-
     public ClientUpdateSourceRolesCondition(KeycloakSession session) {
-        this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
+        super(session);
     }
 
     @Override
@@ -67,18 +57,7 @@ public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionPr
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyConditionConfiguration {
-        @JsonProperty("is-negative-logic")
-        protected Boolean negativeLogic;
-
-        public Boolean isNegativeLogic() {
-            return negativeLogic;
-        }
-
-        public void setNegativeLogic(Boolean negativeLogic) {
-            this.negativeLogic = negativeLogic;
-        }
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         protected List<String> roles;
 
@@ -89,11 +68,6 @@ public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionPr
         public void setRoles(List<String> roles) {
             this.roles = roles;
         }
-    }
-
-    @Override
-    public boolean isNegativeLogic() {
-        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
     }
 
     @Override
@@ -147,28 +121,21 @@ public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionPr
         Set<String> expectedRoles = instantiateRolesForMatching();
         if (expectedRoles == null) return false;
 
-        // user.getRoleMappingsStream() never returns null according to {@link UserModel.getRoleMappingsStream}
-        Set<String> roles = user.getRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet());
-
         if (logger.isTraceEnabled()) {
+            // user.getRoleMappingsStream() never returns null according to {@link UserModel.getRoleMappingsStream}
+            Set<String> roles = user.getRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet());
+
             roles.forEach(i -> logger.tracev("user role = {0}", i));
             expectedRoles.forEach(i -> logger.tracev("roles expected = {0}", i));
         }
 
         RealmModel realm = session.getContext().getRealm();
-        boolean isMatched = expectedRoles.stream().anyMatch(i->{
-            if (realm.getRole(i) != null && user.hasRole(realm.getRole(i))) {
-                return true;
-            }
-            return realm.getClientsStream().anyMatch(j->{
-                if (j.getRole(i) != null && user.hasRole(j.getRole(i))) {
-                    return true;
-                }
-                return false;
-            });
-        });
-
-        return isMatched;
+        for (String roleName : expectedRoles) {
+            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+            if (role == null) continue;
+            if (user.hasRole(role)) return true;
+        }
+        return false;
     }
 
     private Set<String> instantiateRolesForMatching() {

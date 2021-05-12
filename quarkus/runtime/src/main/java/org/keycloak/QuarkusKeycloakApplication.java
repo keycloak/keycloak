@@ -50,7 +50,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
         sessionFactory = instance;
         instance.init();
-        instance.create().clientPolicy().setupClientPoliciesOnKeycloakApp("/keycloak-default-client-profiles.json", "/keycloak-default-client-policies.json");
         sessionFactory.publish(new PostMigrationEvent());
     }
 

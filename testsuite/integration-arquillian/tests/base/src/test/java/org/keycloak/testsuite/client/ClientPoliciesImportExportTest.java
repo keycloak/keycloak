@@ -67,7 +67,7 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
         String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "client-policies-exported-realm.json";
         testingClient.testing().exportImport().setFile(targetFilePath);
 
-        loadValidProfilesAndPolicies();
+        setupValidProfilesAndPolicies();
 
         testRealmExportImport();
     }
@@ -92,13 +92,13 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
         Assert.assertNames(adminClient.realms().findAll(), "master", "test");
 
         assertExpectedLoadedProfiles((ClientProfilesRepresentation reps)->{
-            ClientProfileRepresentation rep =  getProfileRepresentation(reps, "ordinal-test-profile");
-            assertExpectedProfile(rep, "ordinal-test-profile", "The profile that can be loaded.", false);
+            ClientProfileRepresentation rep =  getProfileRepresentation(reps, "ordinal-test-profile", false);
+            assertExpectedProfile(rep, "ordinal-test-profile", "The profile that can be loaded.");
         });
 
         assertExpectedLoadedPolicies((ClientPoliciesRepresentation reps)->{
             ClientPolicyRepresentation rep =  getPolicyRepresentation(reps, "new-policy");
-            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", false, true, Arrays.asList("builtin-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
+            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", true, Arrays.asList("global-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
                     rep);
         });
     }

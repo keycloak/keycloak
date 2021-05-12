@@ -124,7 +124,7 @@ public class RealmManager {
         createDefaultClientScopes(realm);
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
-        setupClientPolicies(realm);
+        session.clientPolicy().setupClientPoliciesOnCreatedRealm(realm);
 
         fireRealmPostCreate(realm);
 
@@ -599,7 +599,7 @@ public class RealmManager {
             MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
         }
 
-        setupClientPolicies(realm, rep);
+        session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         fireRealmPostCreate(realm);
 
@@ -712,14 +712,6 @@ public class RealmManager {
 
     private void setupClientRegistrations(RealmModel realm) {
         DefaultClientRegistrationPolicies.addDefaultPolicies(realm);
-    }
-
-    private void setupClientPolicies(RealmModel realm, RealmRepresentation rep) {
-        session.clientPolicy().setupClientPoliciesOnImportedRealm(realm, rep);
-    }
-
-    private void setupClientPolicies(RealmModel realm) {
-        session.clientPolicy().setupClientPoliciesOnCreatedRealm(realm);
     }
 
     private void fireRealmPostCreate(RealmModel realm) {
