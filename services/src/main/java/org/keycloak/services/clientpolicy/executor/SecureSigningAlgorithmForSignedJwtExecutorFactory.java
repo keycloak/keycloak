@@ -33,7 +33,9 @@ public class SecureSigningAlgorithmForSignedJwtExecutorFactory implements Client
     public static final String REQUIRE_CLIENT_ASSERTION = "require-client-assertion";
 
     private static final ProviderConfigProperty REQUIRE_CLIENT_ASSERTION_PROPERTY = new ProviderConfigProperty(
-            REQUIRE_CLIENT_ASSERTION, "Require Client Assertion", "If this is ON, then parameter 'client_assertion' will be required and request will fail if it is not present. If false, then parameter 'client_assertion' is not required. When 'client_assertion' parameter is present, then the algorithm on the JWT from specified client assertion is always checked regardless of the value of this switch", ProviderConfigProperty.BOOLEAN_TYPE, false);
+            REQUIRE_CLIENT_ASSERTION, "Require Client Assertion", "If this is ON, then parameter 'client_assertion' will be required in the requests and request will fail if it is not present. " +
+            "If false, then parameter 'client_assertion' is not required in the requests, which is convenient for example for clients authenticating with MTLS. When 'client_assertion' parameter is present in the request, " +
+            "then the algorithm on the JWT from specified client assertion is always checked regardless of the value of this switch", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

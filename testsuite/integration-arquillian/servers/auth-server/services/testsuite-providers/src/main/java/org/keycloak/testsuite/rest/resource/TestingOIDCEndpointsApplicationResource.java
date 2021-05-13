@@ -446,7 +446,7 @@ public class TestingOIDCEndpointsApplicationResource {
             return nonce;
         }
 
-        public void getNonce(String nonce) {
+        public void setNonce(String nonce) {
             this.nonce = nonce;
         }
 

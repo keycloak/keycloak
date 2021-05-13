@@ -349,7 +349,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 },
                 clientProfiles : function(ClientPoliciesProfilesLoader) {
-                    return ClientPoliciesProfilesLoader.loadClientProfiles('false');
+                    return ClientPoliciesProfilesLoader.loadClientProfiles('true');
                 }
             },
             controller : 'ClientPoliciesProfilesJsonCtrl'

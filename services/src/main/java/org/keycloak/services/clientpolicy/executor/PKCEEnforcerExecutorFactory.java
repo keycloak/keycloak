@@ -35,7 +35,7 @@ public class PKCEEnforcerExecutorFactory implements ClientPolicyExecutorProvider
     public static final String AUTO_CONFIGURE = "auto-configure";
 
     private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
-            AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to enforce usage of PKCE", ProviderConfigProperty.BOOLEAN_TYPE, false);
+            AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to enforce usage of PKCE with secure algorithm S256", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -61,7 +61,7 @@ public class PKCEEnforcerExecutorFactory implements ClientPolicyExecutorProvider
 
     @Override
     public String getHelpText() {
-        return "It makes the client enforce Proof Key for Code Exchange operation.";
+        return "It makes the client enforce Proof Key for Code Exchange operation with secure algorithm like S256.";
     }
 
     @Override
