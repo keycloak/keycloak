@@ -287,7 +287,7 @@ public class PolicyEnforcer {
                                 enforcementMode = pathConfig.getEnforcementMode();
                             } else {
                                 for (PathConfig existingPath : paths.values()) {
-                                    if (existingPath.getId().equals(targetResource.getId()) 
+                                    if (targetResource.getId().equals(existingPath.getId())
                                             && existingPath.isStatic()
                                             && !PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(existingPath.getEnforcementMode())) {
                                         return null;
