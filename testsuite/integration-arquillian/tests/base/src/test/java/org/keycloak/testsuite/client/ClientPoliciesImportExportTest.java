@@ -98,7 +98,7 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
         assertExpectedLoadedPolicies((ClientPoliciesRepresentation reps)->{
             ClientPolicyRepresentation rep =  getPolicyRepresentation(reps, "new-policy");
-            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", true, Arrays.asList("global-default-profile", "ordinal-test-profile", "lack-of-builtin-field-test-profile"),
+            assertExpectedPolicy("new-policy", "duplicated profiles are ignored.", true, Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"),
                     rep);
         });
     }

@@ -124,6 +124,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCond
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
@@ -172,6 +173,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected static final String PROFILE_NAME = "MyProfile";
     protected static final String SAMPLE_CLIENT_ROLE = "sample-client-role";
 
+    protected static final String FAPI1_BASELINE_PROFILE_NAME = "fapi-1-baseline";
+    protected static final String FAPI1_ADVANCED_PROFILE_NAME = "fapi-1-advanced";
+
     protected static final String ERR_MSG_MISSING_NONCE = "Missing parameter: nonce";
     protected static final String ERR_MSG_MISSING_STATE = "Missing parameter: state";
     protected static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
@@ -190,11 +194,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     @Before
     public void before() throws Exception {
+        setInitialAccessTokenForDynamicClientRegistration();
+    }
+
+    protected void setInitialAccessTokenForDynamicClientRegistration() {
         // get initial access token for Dynamic Client Registration with authentication
         reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", REALM_NAME).build();
         ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
-
     }
 
     @After
@@ -246,7 +253,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                             createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
                             createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList(SAMPLE_CLIENT_ROLE)))
-                        .addProfile("global-default-profile")
                         .addProfile("ordinal-test-profile")
                         .addProfile("lack-of-builtin-field-test-profile")
                         .addProfile("ordinal-test-profile")
@@ -284,14 +290,15 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList("global-default-profile"), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
 
-        // each profile - global-default-profile
-        ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, "global-default-profile", true);
-        assertExpectedProfile(actualProfileRep, "global-default-profile", "The global default profile for enforcing basic security level to clients.");
+        // each profile - fapi-1-baseline
+        ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
+        assertExpectedProfile(actualProfileRep, FAPI1_BASELINE_PROFILE_NAME, "Client profile, which enforce clients to conform \"Financial-grade API Security Profile 1.0 - Part 1: Baseline\" specification.");
 
         // each executor
-        assertExpectedExecutors(Arrays.asList(SecureSessionEnforceExecutorFactory.PROVIDER_ID), actualProfileRep);
+        assertExpectedExecutors(Arrays.asList(SecureSessionEnforceExecutorFactory.PROVIDER_ID, PKCEEnforcerExecutorFactory.PROVIDER_ID, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                SecureClientUrisExecutorFactory.PROVIDER_ID, ConsentRequiredExecutorFactory.PROVIDER_ID), actualProfileRep);
         assertExpectedSecureSessionEnforceExecutor(actualProfileRep);
 
         // each profile - ordinal-test-profile - updated
@@ -382,7 +389,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return keyPair;
     }
 
-    private KeyPair getKeyPairFromGeneratedBase64(Map<String, String> generatedKeys, String algorithm) throws Exception {
+    protected KeyPair getKeyPairFromGeneratedBase64(Map<String, String> generatedKeys, String algorithm) throws Exception {
         // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
         String privateKeyBase64 = generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY);
         String publicKeyBase64 =  generatedKeys.get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
@@ -429,7 +436,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
    // Signed JWT for client authentication utility
 
-    protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+    protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
         JsonWebToken jwt = createRequestToken(clientId, getRealmInfoUrl());
         String kid = KeyUtils.createKeyId(publicKey);
         SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm);
