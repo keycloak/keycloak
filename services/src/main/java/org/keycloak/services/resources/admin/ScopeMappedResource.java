@@ -85,10 +85,12 @@ public class ScopeMappedResource {
      * Get all scope mappings for the client
      *
      * @return
+     * @deprecated the method is not used neither from admin console or from admin client. It may be removed in future releases.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Deprecated
     public MappingsRepresentation getScopeMappings() {
         viewPermission.require();
 
