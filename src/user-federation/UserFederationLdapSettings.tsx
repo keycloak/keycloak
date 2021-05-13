@@ -194,6 +194,16 @@ export const UserFederationLdapSettings = () => {
   const setupForm = (component: ComponentRepresentation) => {
     Object.entries(component).map((entry) => {
       if (entry[0] === "config") {
+        form.setValue(
+          "config.periodicChangedUsersSync",
+          entry[1].changedSyncPeriod[0] !== "-1"
+        );
+
+        form.setValue(
+          "config.periodicFullSync",
+          entry[1].fullSyncPeriod[0] !== "-1"
+        );
+
         convertToFormValues(entry[1], "config", form.setValue);
       }
       form.setValue(entry[0], entry[1]);
@@ -212,6 +222,18 @@ export const UserFederationLdapSettings = () => {
   };
 
   const save = async (component: ComponentRepresentation) => {
+    if (component?.config?.periodicChangedUsersSync !== null) {
+      if (component?.config?.periodicChangedUsersSync === false) {
+        component.config.changedSyncPeriod = ["-1"];
+      }
+      delete component?.config?.periodicChangedUsersSync;
+    }
+    if (component?.config?.periodicFullSync !== null) {
+      if (component?.config?.periodicFullSync === false) {
+        component.config.fullSyncPeriod = ["-1"];
+      }
+      delete component?.config?.periodicFullSync;
+    }
     try {
       if (!id) {
         await adminClient.components.create(component);
