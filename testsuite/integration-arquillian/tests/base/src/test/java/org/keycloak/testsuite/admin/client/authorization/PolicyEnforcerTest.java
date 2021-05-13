@@ -621,6 +621,18 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         assertEquals(200, policyEnforcer.getPathMatcher().getPathCache().size());
         assertEquals(0, policyEnforcer.getPaths().size());
+
+        ResourceRepresentation resource = clientResource.authorization().resources()
+                .findByName("Root").get(0);
+
+        clientResource.authorization().resources().resource(resource.getId()).remove();
+
+        deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-lazyload-with-paths.json"));
+        policyEnforcer = deployment.getPolicyEnforcer();
+
+        AuthorizationContext context = policyEnforcer.enforce(createHttpFacade("/api/0", token));
+
+        assertTrue(context.isGranted());
     }
 
     private void initAuthorizationSettings(ClientResource clientResource) {
