@@ -22,6 +22,10 @@ import org.junit.Test;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -30,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -183,6 +188,27 @@ public class JsonParserTest {
         ResourceRepresentation rep = JsonSerialization.readValue(resourceJson, ResourceRepresentation.class);
         String repp = JsonSerialization.writeValueAsString(rep);
         return JsonSerialization.readValue(repp, Map.class);
+    }
+
+    @Test
+    public void testReadClientPolicy() throws Exception {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("sample-client-policy.json");
+        ClientPoliciesRepresentation clientPolicies = JsonSerialization.readValue(is, ClientPoliciesRepresentation.class);
+
+        Assert.assertEquals(clientPolicies.getPolicies().size(), 1);
+        ClientPolicyRepresentation clientPolicy = clientPolicies.getPolicies().get(0);
+        Assert.assertEquals("some-policy", clientPolicy.getName());
+        List<ClientPolicyConditionRepresentation> conditions = clientPolicy.getConditions();
+        Assert.assertEquals(conditions.size(), 1);
+        ClientPolicyConditionRepresentation condition = conditions.get(0);
+        Assert.assertEquals("some-condition", condition.getConditionProviderId());
+
+        ClientPolicyConditionConfigurationRepresentation configRep = JsonSerialization.mapper.convertValue(condition.getConfiguration(), ClientPolicyConditionConfigurationRepresentation.class);
+        Assert.assertEquals(true, configRep.isNegativeLogic());
+        Assert.assertEquals("val1", configRep.getConfigAsMap().get("string-option"));
+        Assert.assertEquals(14, configRep.getConfigAsMap().get("int-option"));
+        Assert.assertEquals(true, configRep.getConfigAsMap().get("bool-option"));
+        Assert.assertNull(configRep.getConfigAsMap().get("not-existing-option"));
     }
 
 

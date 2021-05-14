@@ -279,7 +279,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
 
-    protected void assertExpectedLoadedProfiles(Consumer<ClientProfilesRepresentation> modifiedAssertion) {
+    protected void assertExpectedLoadedProfiles(Consumer<ClientProfilesRepresentation> modifiedAssertion) throws Exception {
 
         // retrieve loaded builtin profiles
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
@@ -768,6 +768,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             profilesRep.setProfiles(new ArrayList<>());
         }
 
+        // Create client profile from existing representation
+        public ClientProfilesBuilder(ClientProfilesRepresentation existingRep) {
+            this.profilesRep = existingRep;
+        }
+
         public ClientProfilesBuilder addProfile(ClientProfileRepresentation rep) {
             profilesRep.getProfiles().add(rep);
             return this;
@@ -809,11 +814,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             return this;
         }
 
-        public ClientProfileBuilder addExecutor(String providerId, ClientPolicyExecutorConfigurationRepresentation config) {
+        public ClientProfileBuilder addExecutor(String providerId, ClientPolicyExecutorConfigurationRepresentation config) throws Exception {
             if (config == null) {
                 config = new ClientPolicyExecutorConfigurationRepresentation();
             }
-            profileRep.getExecutors().add(new ClientPolicyExecutorRepresentation(providerId, config));
+            ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
+            executor.setExecutorProviderId(providerId);
+            executor.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
+            profileRep.getExecutors().add(executor);
             return this;
         }
 
@@ -930,8 +938,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             return this;
         }
 
-        public ClientPolicyBuilder addCondition(String providerId, ClientPolicyConditionConfigurationRepresentation config) {
-            policyRep.getConditions().add(new ClientPolicyConditionRepresentation(providerId, config));
+        public ClientPolicyBuilder addCondition(String providerId, ClientPolicyConditionConfigurationRepresentation config) throws Exception {
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId(providerId);
+            condition.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
+            policyRep.getConditions().add(condition);
             return this;
         }
 
@@ -1278,16 +1289,15 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedAugmenedExecutor(isAugment, PKCEEnforcerExecutorFactory.PROVIDER_ID, profileRep);
     }
 
-    protected void assertExpectedSecureClientAuthEnforceExecutor(List<String> clientAuthns, boolean isAugment, String clientAuthnsAugment, ClientProfileRepresentation profileRep) {
+    protected void assertExpectedSecureClientAuthEnforceExecutor(List<String> clientAuthns, boolean isAugment, String clientAuthnsAugment, ClientProfileRepresentation profileRep) throws Exception {
         assertExpectedAugmenedExecutor(isAugment, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
         assertNotNull(profileRep);
-        Map<String, Object> actualExecutorConfig = getConfigOfExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
+        JsonNode actualExecutorConfig = getConfigOfExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
         assertNotNull(actualExecutorConfig);
-
-        Set<String> actualClientAuthns = new HashSet<>((Collection<String>) actualExecutorConfig.get("client-authns"));
+        Set<String> actualClientAuthns = new HashSet<>((Collection<String>) JsonSerialization.readValue(actualExecutorConfig.get("client-authns").toString(), List.class));
         assertEquals(new HashSet<>(clientAuthns), actualClientAuthns);
 
-        String actualClientAuthnAugment = actualExecutorConfig.get("client-authns-augment").toString();
+        String actualClientAuthnAugment = actualExecutorConfig.get("client-authns-augment").textValue();
         assertEquals(clientAuthnsAugment, actualClientAuthnAugment);
     }
 
@@ -1317,17 +1327,17 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void assertExpectedAugmenedExecutor(boolean isAugment, String providerId, ClientProfileRepresentation profileRep) {
         assertNotNull(profileRep);
-        Map<String, Object> actualExecutorConfig = getConfigOfExecutor(providerId, profileRep);
+        JsonNode actualExecutorConfig = getConfigOfExecutor(providerId, profileRep);
         assertNotNull(actualExecutorConfig);
-        boolean actualIsAugment = actualExecutorConfig.get("is-augment") == null ? false : (Boolean) actualExecutorConfig.get("is-augment");
+        boolean actualIsAugment = actualExecutorConfig.get("is-augment") == null ? false : actualExecutorConfig.get("is-augment").asBoolean();
         assertEquals(isAugment, actualIsAugment);
     }
 
-    private Map<String, Object> getConfigOfExecutor(String providerId, ClientProfileRepresentation profileRep) {
+    private JsonNode getConfigOfExecutor(String providerId, ClientProfileRepresentation profileRep) {
         ClientPolicyExecutorRepresentation executorRep = profileRep.getExecutors().stream()
                 .filter(profileRepp -> providerId.equals(profileRepp.getExecutorProviderId()))
                 .findFirst().orElse(null);
-        return executorRep == null ? null : executorRep.getConfiguration().getConfigAsMap();
+        return executorRep == null ? null : executorRep.getConfiguration();
     }
 
     // Assertions about policies
@@ -1455,7 +1465,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     private void assertExpectedEmptyConfig(String executorProviderId, ClientProfileRepresentation profileRep) {
-        Map<String, Object> config = getConfigOfExecutor(executorProviderId, profileRep);
+        JsonNode config = getConfigOfExecutor(executorProviderId, profileRep);
         Assert.assertTrue("Expected empty configuration for provider " + executorProviderId, config.isEmpty());
     }
 
