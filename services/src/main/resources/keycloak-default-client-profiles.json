@@ -5,7 +5,7 @@
       "description": "The global default profile for enforcing basic security level to clients.",
       "executors": [
         {
-          "executor": "secure-session-enforce-executor",
+          "executor": "secure-session",
           "configuration": {}
         }
       ]

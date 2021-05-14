@@ -36,11 +36,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateContextCondition extends AbstractClientPolicyConditionProvider<ClientUpdateContextCondition.Configuration> {
+public class ClientUpdaterContextCondition extends AbstractClientPolicyConditionProvider<ClientUpdaterContextCondition.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);
+    private static final Logger logger = Logger.getLogger(ClientUpdaterContextCondition.class);
 
-    public ClientUpdateContextCondition(KeycloakSession session) {
+    public ClientUpdaterContextCondition(KeycloakSession session) {
         super(session);
     }
 
@@ -65,7 +65,7 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
 
     @Override
     public String getProviderId() {
-        return ClientUpdateContextConditionFactory.PROVIDER_ID;
+        return ClientUpdaterContextConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -98,16 +98,16 @@ public class ClientUpdateContextCondition extends AbstractClientPolicyConditionP
         String authMethod = null;
 
         if (context.getToken() == null) {
-            authMethod = ClientUpdateContextConditionFactory.BY_ANONYMOUS;
+            authMethod = ClientUpdaterContextConditionFactory.BY_ANONYMOUS;
         } else if (isInitialAccessToken(context.getToken())) {
-            authMethod = ClientUpdateContextConditionFactory.BY_INITIAL_ACCESS_TOKEN;
+            authMethod = ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN;
         } else if (isRegistrationAccessToken(context.getToken())) {
-            authMethod = ClientUpdateContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
+            authMethod = ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
         } else if (isBearerToken(context.getToken())) {
             if (context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null) {
-                authMethod = ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER;
+                authMethod = ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER;
             } else {
-                authMethod = ClientUpdateContextConditionFactory.BY_ANONYMOUS;
+                authMethod = ClientUpdaterContextConditionFactory.BY_ANONYMOUS;
             }
         }
 

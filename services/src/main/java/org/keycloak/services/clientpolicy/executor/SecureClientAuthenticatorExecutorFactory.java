@@ -33,9 +33,9 @@ import org.keycloak.provider.ProviderFactory;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
+public class SecureClientAuthenticatorExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-client-authn-executor";
+    public static final String PROVIDER_ID = "secure-client-authenticator";
 
     public static final String IS_AUGMENT = "is-augment";
     public static final String CLIENT_AUTHNS = "client-authns";
@@ -45,7 +45,7 @@ public class SecureClientAuthEnforceExecutorFactory implements ClientPolicyExecu
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
-        return new SecureClientAuthEnforceExecutor(session);
+        return new SecureClientAuthenticatorExecutor(session);
     }
 
     @Override

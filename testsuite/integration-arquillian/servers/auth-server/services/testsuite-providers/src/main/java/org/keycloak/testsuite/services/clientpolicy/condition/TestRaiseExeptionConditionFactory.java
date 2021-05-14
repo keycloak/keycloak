@@ -32,7 +32,7 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
  */
 public class TestRaiseExeptionConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "test-raise-exception-condition";
+    public static final String PROVIDER_ID = "test-raise-exception";
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session) {

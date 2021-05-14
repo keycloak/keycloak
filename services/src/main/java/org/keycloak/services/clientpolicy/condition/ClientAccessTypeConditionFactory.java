@@ -31,7 +31,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ClientAccessTypeConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "client-accesstype-condition";
+    public static final String PROVIDER_ID = "client-access-type";
 
     public static final String TYPE = "type";
 
