@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.condition;
+package org.keycloak.services.clientpolicy.executor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -28,23 +31,19 @@ import org.keycloak.provider.ProviderConfigProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceGroupsConditionFactory implements ClientPolicyConditionProviderFactory {
+public class SecureSigningAlgorithmExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "clientupdatesourcegroups-condition";
+    public static final String PROVIDER_ID = "secure-signature-algorithm";
 
-    public static final String GROUPS = "groups";
+    public static final String DEFAULT_ALGORITHM = "default-algorithm";
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
-    static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty(GROUPS, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "topGroup");
-        configProperties.add(property);
-    }
+    private static final ProviderConfigProperty DEFAULT_ALGORITHM_PROPERTY = new ProviderConfigProperty(
+            DEFAULT_ALGORITHM, "Default Algorithm", "Default signature algorithm, which will be set to clients during client registration/update in case that client does not specify any algorithm",
+            ProviderConfigProperty.LIST_TYPE, Algorithm.PS256, new LinkedList<>(SecureSigningAlgorithmExecutor.ALLOWED_ALGORITHMS).toArray(new String[] {}));
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session) {
-        return new ClientUpdateSourceGroupsCondition(session);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureSigningAlgorithmExecutor(session);
     }
 
     @Override
@@ -66,12 +65,12 @@ public class ClientUpdateSourceGroupsConditionFactory implements ClientPolicyCon
 
     @Override
     public String getHelpText() {
-        return "The condition checks the group of the entity who tries to create/update the client to determine whether the policy is applied.";
+        return "It refuses the client whose signature algorithms are considered not to be secure. This is applied by server for signing ID Token, UserInfo and Access Token. Also it is used by client for Token Endpoint Authentication signature algorithm (for JWT client authenticators) and OIDC Request object. It accepts ES256, ES384, ES512, PS256, PS384 and PS512.";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        return new ArrayList<>(Arrays.asList(DEFAULT_ALGORITHM_PROPERTY));
     }
 
 }

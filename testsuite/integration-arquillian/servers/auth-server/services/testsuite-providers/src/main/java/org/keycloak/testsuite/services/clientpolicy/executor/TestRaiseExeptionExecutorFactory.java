@@ -29,7 +29,7 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
 
 public class TestRaiseExeptionExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "test-raise-exception-executor";
+    public static final String PROVIDER_ID = "test-raise-exception";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

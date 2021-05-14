@@ -44,8 +44,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPoliciesUtil;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
-import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -160,19 +160,19 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
 
         // load profiles
         ClientProfileRepresentation duplicatedProfileRep = (new ClientProfileBuilder()).createProfile("builtin-basic-security", "Enforce basic security level")
-                    .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
+                    .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                         createSecureClientAuthEnforceExecutorConfig(
                             Boolean.FALSE, 
                             Arrays.asList(ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientAuthenticator.PROVIDER_ID),
                             null))
-                    .addExecutor(PKCEEnforceExecutorFactory.PROVIDER_ID, 
+                    .addExecutor(PKCEEnforcerExecutorFactory.PROVIDER_ID,
                         createPKCEEnforceExecutorConfig(Boolean.FALSE))
                     .addExecutor("no-such-executor", 
                             createPKCEEnforceExecutorConfig(Boolean.TRUE))
                     .toRepresentation();
 
         ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.")
-                .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
+                .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                     createSecureClientAuthEnforceExecutorConfig(
                         Boolean.TRUE, 
                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
@@ -199,7 +199,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile("global-default-profile", "Pershyy Profil")
-                        .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID,
+                        .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                                 createSecureClientAuthEnforceExecutorConfig(Boolean.TRUE,
                                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID, X509ClientAuthenticator.PROVIDER_ID),
                                         X509ClientAuthenticator.PROVIDER_ID))
@@ -241,7 +241,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                 + "            \"builtin\" : false,\n"
                 + "            \"executors\": [\n"
                 + "                {\n"
-                + "                    \"new-secure-client-authn-executor\": {\n"
+                + "                    \"new-secure-client-authnenticator\": {\n"
                 + "                        \"client-authns\": [ \"private-key-jwt\" ],\n"
                 + "                        \"client-authns-augment\" : \"private-key-jwt\",\n"
                 + "                        \"is-augment\" : true\n"
@@ -273,7 +273,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                 + "            \"description\" : \"Not builtin profile that should be skipped.\",\n"
                 + "            \"builtin\" : \"no\",\n"
                 + "            \"executors\": {\n"
-                + "                    \"new-secure-client-authn-executor\": {\n"
+                + "                    \"new-secure-client-authnenticator\": {\n"
                 + "                        \"client-authns\": [ \"private-key-jwt\" ],\n"
                 + "                        \"client-authns-augment\" : \"private-key-jwt\",\n"
                 + "                        \"is-augment\" : true\n"
@@ -364,7 +364,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
                 + "            \"enable\": true,\n"
                 + "            \"conditions\": [\n"
                 + "                {\n"
-                + "                    \"new-clientupdatesourcehost-condition\": {\n"
+                + "                    \"new-client-updater-source-host\": {\n"
                 + "                        \"trusted-hosts\": [\"myuniversity\"],\n"
                 + "                        \"host-sending-request-must-match\" : [true]\n"
                 + "                    }\n"

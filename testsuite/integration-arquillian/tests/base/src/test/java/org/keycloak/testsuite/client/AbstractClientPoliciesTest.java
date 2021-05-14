@@ -116,29 +116,29 @@ import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateContextCondition;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceGroupsCondition;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceGroupsConditionFactory;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsCondition;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesCondition;
-import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesConditionFactory;
-import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutor;
-import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor;
-import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutor;
-import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureClientRegisteringUriEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
+import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutor;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutor;
-import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -206,7 +206,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void setupValidProfilesAndPolicies() throws Exception {
         // load profiles
         ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.")
-                .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
+                .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                     createSecureClientAuthEnforceExecutorConfig(
                         Boolean.TRUE, 
                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
@@ -214,19 +214,19 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                 .toRepresentation();
 
         ClientProfileRepresentation loadedProfileRepWithoutBuiltinField = (new ClientProfileBuilder()).createProfile("lack-of-builtin-field-test-profile", "Without builtin field that is treated as builtin=false.")
-                .addExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, 
+                .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
                     createSecureClientAuthEnforceExecutorConfig(
                         Boolean.TRUE, 
                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
                         JWTClientAuthenticator.PROVIDER_ID))
-                .addExecutor(HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, 
+                .addExecutor(HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID,
                     createHolderOfKeyEnforceExecutorConfig(Boolean.TRUE))
-                .addExecutor(SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID, null)
+                .addExecutor(SecureClientUrisExecutorFactory.PROVIDER_ID, null)
                 .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, null)
                 .addExecutor(SecureResponseTypeExecutorFactory.PROVIDER_ID, null)
                 .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
-                .addExecutor(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, null)
-                .addExecutor(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, null)
+                .addExecutor(SecureSigningAlgorithmExecutorFactory.PROVIDER_ID, null)
+                .addExecutor(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID, null)
                 .toRepresentation();
 
         String json = (new ClientProfilesBuilder())
@@ -259,13 +259,13 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                         "lack-of-builtin-field-test-policy",
                         "Without builtin field that is treated as builtin=false.",
                         null)
-                    .addCondition(ClientUpdateContextConditionFactory.PROVIDER_ID, 
-                            createClientUpdateContextConditionConfig(Arrays.asList(ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER)))
-                    .addCondition(ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientUpdaterContextConditionFactory.PROVIDER_ID,
+                            createClientUpdateContextConditionConfig(Arrays.asList(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER)))
+                    .addCondition(ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,
                             createClientUpdateSourceGroupsConditionConfig(Arrays.asList("topGroup")))
-                    .addCondition(ClientUpdateSourceHostsConditionFactory.PROVIDER_ID,
+                    .addCondition(ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,
                             createClientUpdateSourceHostsConditionConfig(Arrays.asList("localhost", "127.0.0.1")))
-                    .addCondition(ClientUpdateSourceRolesConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID,
                             createClientUpdateSourceRolesConditionConfig(Arrays.asList(AdminRoles.CREATE_CLIENT)))
                         .addProfile("lack-of-builtin-field-test-profile")
                     .toRepresentation();
@@ -300,7 +300,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         modifiedAssertion.accept(actualProfilesRep);
 
         // each executor
-        assertExpectedExecutors(Arrays.asList(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID), actualProfileRep);
+        assertExpectedExecutors(Arrays.asList(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID), actualProfileRep);
         assertExpectedSecureClientAuthEnforceExecutor(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID), true, JWTClientAuthenticator.PROVIDER_ID, actualProfileRep);
 
         // each profile - lack-of-builtin-field-test-profile
@@ -309,14 +309,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // each executor
         assertExpectedExecutors(Arrays.asList(
-                SecureClientAuthEnforceExecutorFactory.PROVIDER_ID,
-                HolderOfKeyEnforceExecutorFactory.PROVIDER_ID,
-                SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID,
+                SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID,
+                SecureClientUrisExecutorFactory.PROVIDER_ID,
                 SecureRequestObjectExecutorFactory.PROVIDER_ID,
                 SecureResponseTypeExecutorFactory.PROVIDER_ID,
                 SecureSessionEnforceExecutorFactory.PROVIDER_ID,
-                SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID,
-                SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID), actualProfileRep);
+                SecureSigningAlgorithmExecutorFactory.PROVIDER_ID,
+                SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID), actualProfileRep);
         assertExpectedSecureClientAuthEnforceExecutor(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID), true, JWTClientAuthenticator.PROVIDER_ID, actualProfileRep);
         assertExpectedHolderOfKeyEnforceExecutor(true, actualProfileRep);
         assertExpectedSecureRedirectUriEnforceExecutor(actualProfileRep);
@@ -350,8 +350,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedPolicy("lack-of-builtin-field-test-policy", "Without builtin field that is treated as builtin=false.", false, Arrays.asList("lack-of-builtin-field-test-profile"), actualPolicyRep);
 
         // each condition
-        assertExpectedConditions(Arrays.asList(ClientUpdateContextConditionFactory.PROVIDER_ID, ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, ClientUpdateSourceHostsConditionFactory.PROVIDER_ID, ClientUpdateSourceRolesConditionFactory.PROVIDER_ID), actualPolicyRep);
-        assertExpectedClientUpdateContextCondition(Arrays.asList(ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER), actualPolicyRep);
+        assertExpectedConditions(Arrays.asList(ClientUpdaterContextConditionFactory.PROVIDER_ID, ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID, ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID, ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID), actualPolicyRep);
+        assertExpectedClientUpdateContextCondition(Arrays.asList(ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER), actualPolicyRep);
         assertExpectedClientUpdateSourceGroupsCondition(Arrays.asList("topGroup"), actualPolicyRep);
         assertExpectedClientUpdateSourceHostsCondition(Arrays.asList("localhost", "127.0.0.1"), actualPolicyRep);
         assertExpectedClientUpdateSourceRolesCondition(Arrays.asList(AdminRoles.CREATE_CLIENT), actualPolicyRep);
@@ -835,20 +835,20 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Client Profiles - Executor CRUD Operations
 
-    protected HolderOfKeyEnforceExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean isAugment) {
-        HolderOfKeyEnforceExecutor.Configuration config = new HolderOfKeyEnforceExecutor.Configuration();
+    protected HolderOfKeyEnforcerExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean isAugment) {
+        HolderOfKeyEnforcerExecutor.Configuration config = new HolderOfKeyEnforcerExecutor.Configuration();
         config.setAugment(isAugment);
         return config;
     }
 
-    protected PKCEEnforceExecutor.Configuration createPKCEEnforceExecutorConfig(Boolean isAugment) {
-        PKCEEnforceExecutor.Configuration config = new PKCEEnforceExecutor.Configuration();
+    protected PKCEEnforcerExecutor.Configuration createPKCEEnforceExecutorConfig(Boolean isAugment) {
+        PKCEEnforcerExecutor.Configuration config = new PKCEEnforcerExecutor.Configuration();
         config.setAugment(isAugment);
         return config;
     }
 
-    protected SecureClientAuthEnforceExecutor.Configuration createSecureClientAuthEnforceExecutorConfig(Boolean isAugment, List<String> clientAuthns, String clientAuthnsAugment) {
-        SecureClientAuthEnforceExecutor.Configuration config = new SecureClientAuthEnforceExecutor.Configuration();
+    protected SecureClientAuthenticatorExecutor.Configuration createSecureClientAuthEnforceExecutorConfig(Boolean isAugment, List<String> clientAuthns, String clientAuthnsAugment) {
+        SecureClientAuthenticatorExecutor.Configuration config = new SecureClientAuthenticatorExecutor.Configuration();
         config.setAugment(isAugment);
         config.setClientAuthns(clientAuthns);
         config.setClientAuthnsAugment(clientAuthnsAugment);
@@ -862,14 +862,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return config;
     }
 
-    protected SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean requireClientAssertion) {
-        SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration config = new SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration();
+    protected SecureSigningAlgorithmForSignedJwtExecutor.Configuration createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean requireClientAssertion) {
+        SecureSigningAlgorithmForSignedJwtExecutor.Configuration config = new SecureSigningAlgorithmForSignedJwtExecutor.Configuration();
         config.setRequireClientAssertion(requireClientAssertion);
         return config;
     }
 
-    protected SecureSigningAlgorithmEnforceExecutor.Configuration createSecureSigningAlgorithmEnforceExecutorConfig(String defaultAlgorithm) {
-        SecureSigningAlgorithmEnforceExecutor.Configuration config = new SecureSigningAlgorithmEnforceExecutor.Configuration();
+    protected SecureSigningAlgorithmExecutor.Configuration createSecureSigningAlgorithmEnforceExecutorConfig(String defaultAlgorithm) {
+        SecureSigningAlgorithmExecutor.Configuration config = new SecureSigningAlgorithmExecutor.Configuration();
         config.setDefaultAlgorithm(defaultAlgorithm);
         return config;
     }
@@ -990,26 +990,26 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return config;
     }
 
-    protected ClientUpdateContextCondition.Configuration createClientUpdateContextConditionConfig(List<String> updateClientSource) {
-        ClientUpdateContextCondition.Configuration config = new ClientUpdateContextCondition.Configuration();
+    protected ClientUpdaterContextCondition.Configuration createClientUpdateContextConditionConfig(List<String> updateClientSource) {
+        ClientUpdaterContextCondition.Configuration config = new ClientUpdaterContextCondition.Configuration();
         config.setUpdateClientSource(updateClientSource);
         return config;
     }
 
-    protected ClientUpdateSourceGroupsCondition.Configuration createClientUpdateSourceGroupsConditionConfig(List<String> groups) {
-        ClientUpdateSourceGroupsCondition.Configuration config = new ClientUpdateSourceGroupsCondition.Configuration();
+    protected ClientUpdaterSourceGroupsCondition.Configuration createClientUpdateSourceGroupsConditionConfig(List<String> groups) {
+        ClientUpdaterSourceGroupsCondition.Configuration config = new ClientUpdaterSourceGroupsCondition.Configuration();
         config.setGroups(groups);
         return config;
     }
 
-    protected ClientUpdateSourceHostsCondition.Configuration createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts) {
-        ClientUpdateSourceHostsCondition.Configuration config = new ClientUpdateSourceHostsCondition.Configuration();
+    protected ClientUpdaterSourceHostsCondition.Configuration createClientUpdateSourceHostsConditionConfig(List<String> trustedHosts) {
+        ClientUpdaterSourceHostsCondition.Configuration config = new ClientUpdaterSourceHostsCondition.Configuration();
         config.setTrustedHosts(trustedHosts);
         return config;
     }
 
-    protected ClientUpdateSourceRolesCondition.Configuration createClientUpdateSourceRolesConditionConfig(List<String> roles) {
-        ClientUpdateSourceRolesCondition.Configuration config = new ClientUpdateSourceRolesCondition.Configuration();
+    protected ClientUpdaterSourceRolesCondition.Configuration createClientUpdateSourceRolesConditionConfig(List<String> roles) {
+        ClientUpdaterSourceRolesCondition.Configuration config = new ClientUpdaterSourceRolesCondition.Configuration();
         config.setRoles(roles);
         return config;
     }
@@ -1271,17 +1271,17 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedHolderOfKeyEnforceExecutor(boolean isAugment, ClientProfileRepresentation profileRep) {
-        assertExpectedAugmenedExecutor(isAugment, HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedAugmenedExecutor(isAugment, HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedPKCEEnforceExecutor(boolean isAugment, ClientProfileRepresentation profileRep) {
-        assertExpectedAugmenedExecutor(isAugment, PKCEEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedAugmenedExecutor(isAugment, PKCEEnforcerExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureClientAuthEnforceExecutor(List<String> clientAuthns, boolean isAugment, String clientAuthnsAugment, ClientProfileRepresentation profileRep) {
-        assertExpectedAugmenedExecutor(isAugment, SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedAugmenedExecutor(isAugment, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
         assertNotNull(profileRep);
-        Map<String, Object> actualExecutorConfig = getConfigOfExecutor(SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        Map<String, Object> actualExecutorConfig = getConfigOfExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
         assertNotNull(actualExecutorConfig);
 
         Set<String> actualClientAuthns = new HashSet<>((Collection<String>) actualExecutorConfig.get("client-authns"));
@@ -1292,7 +1292,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedSecureRedirectUriEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedEmptyConfig(SecureClientRegisteringUriEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedEmptyConfig(SecureClientUrisExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureRequestObjectExecutor(ClientProfileRepresentation profileRep) {
@@ -1308,11 +1308,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedSecureSigningAlgorithmEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedEmptyConfig(SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedEmptyConfig(SecureSigningAlgorithmExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedSecureSigningAlgorithmForSignedJwtEnforceExecutor(ClientProfileRepresentation profileRep) {
-        assertExpectedEmptyConfig(SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID, profileRep);
+        assertExpectedEmptyConfig(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID, profileRep);
     }
 
     protected void assertExpectedAugmenedExecutor(boolean isAugment, String providerId, ClientProfileRepresentation profileRep) {
@@ -1393,22 +1393,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {
-        ClientUpdateContextCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateContextConditionFactory.PROVIDER_ID,  ClientUpdateContextCondition.Configuration.class);
+        ClientUpdaterContextCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterContextConditionFactory.PROVIDER_ID,  ClientUpdaterContextCondition.Configuration.class);
         Assert.assertEquals(cfg.getUpdateClientSource(), updateClientSources);
     }
 
     protected void assertExpectedClientUpdateSourceGroupsCondition(List<String> groups, ClientPolicyRepresentation policyRep) {
-        ClientUpdateSourceGroupsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID,  ClientUpdateSourceGroupsCondition.Configuration.class);
+        ClientUpdaterSourceGroupsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,  ClientUpdaterSourceGroupsCondition.Configuration.class);
         Assert.assertEquals(cfg.getGroups(), groups);
     }
 
     protected void assertExpectedClientUpdateSourceHostsCondition(List<String> trustedHosts, ClientPolicyRepresentation policyRep) {
-        ClientUpdateSourceHostsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateSourceHostsConditionFactory.PROVIDER_ID,  ClientUpdateSourceHostsCondition.Configuration.class);
+        ClientUpdaterSourceHostsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,  ClientUpdaterSourceHostsCondition.Configuration.class);
         Assert.assertEquals(cfg.getTrustedHosts(), trustedHosts);
     }
 
     protected void assertExpectedClientUpdateSourceRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
-        ClientUpdateSourceRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdateSourceRolesConditionFactory.PROVIDER_ID,  ClientUpdateSourceRolesCondition.Configuration.class);
+        ClientUpdaterSourceRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID,  ClientUpdaterSourceRolesCondition.Configuration.class);
         Assert.assertEquals(cfg.getRoles(), roles);
     }
 

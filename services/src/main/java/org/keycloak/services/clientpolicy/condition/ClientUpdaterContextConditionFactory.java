@@ -29,9 +29,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateContextConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientUpdaterContextConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "clientupdatecontext-condition";
+    public static final String PROVIDER_ID = "client-updater-context";
 
     public static final String UPDATE_CLIENT_SOURCE = "update-client-source";
 
@@ -56,7 +56,7 @@ public class ClientUpdateContextConditionFactory implements ClientPolicyConditio
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session) {
-        return new ClientUpdateContextCondition(session);
+        return new ClientUpdaterContextCondition(session);
     }
 
     @Override

@@ -42,12 +42,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforceExecutor.Configuration> {
+public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforcerExecutor.Configuration> {
 
     private final KeycloakSession session;
     private Configuration configuration;
 
-    public HolderOfKeyEnforceExecutor(KeycloakSession session) {
+    public HolderOfKeyEnforcerExecutor(KeycloakSession session) {
         this.session = session;
     }
 
@@ -76,7 +76,7 @@ public class HolderOfKeyEnforceExecutor implements ClientPolicyExecutorProvider<
 
     @Override
     public String getProviderId() {
-        return HolderOfKeyEnforceExecutorFactory.PROVIDER_ID;
+        return HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID;
     }
 
     @Override

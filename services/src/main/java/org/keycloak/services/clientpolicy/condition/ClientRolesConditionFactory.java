@@ -30,7 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ClientRolesConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "clientroles-condition";
+    public static final String PROVIDER_ID = "client-roles";
 
     public static final String ROLES = "roles";
 
@@ -38,7 +38,7 @@ public class ClientRolesConditionFactory implements ClientPolicyConditionProvide
 
     static {
         ProviderConfigProperty property;
-        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
+        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + "-condition.tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
         configProperties.add(property);
     }
 

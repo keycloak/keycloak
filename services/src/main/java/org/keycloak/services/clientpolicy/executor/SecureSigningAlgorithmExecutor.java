@@ -45,9 +45,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmEnforceExecutor.Configuration> {
+public class SecureSigningAlgorithmExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmExecutor.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmEnforceExecutor.class);
+    private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmExecutor.class);
 
     private final KeycloakSession session;
     private Configuration configuration;
@@ -72,17 +72,17 @@ public class SecureSigningAlgorithmEnforceExecutor implements ClientPolicyExecut
             Algorithm.ES512
     ));
 
-    public SecureSigningAlgorithmEnforceExecutor(KeycloakSession session) {
+    public SecureSigningAlgorithmExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
     public String getProviderId() {
-        return SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID;
+        return SecureSigningAlgorithmExecutorFactory.PROVIDER_ID;
     }
 
     @Override
-    public void setupConfiguration(SecureSigningAlgorithmEnforceExecutor.Configuration config) {
+    public void setupConfiguration(SecureSigningAlgorithmExecutor.Configuration config) {
         this.configuration = Optional.ofNullable(config).orElse(createDefaultConfiguration());
         if (config.getDefaultAlgorithm() == null || !isSecureAlgorithm(config.getDefaultAlgorithm())) config.setDefaultAlgorithm(DEFAULT_ALGORITHM_VALUE);
     }

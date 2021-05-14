@@ -32,7 +32,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class SecureRequestObjectExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-reqobj-executor";
+    public static final String PROVIDER_ID = "secure-request-object";
 
     public static final String VERIFY_NBF = "verify-nbf";
 

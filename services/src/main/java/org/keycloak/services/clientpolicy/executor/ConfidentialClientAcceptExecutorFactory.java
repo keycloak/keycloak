@@ -29,7 +29,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ConfidentialClientAcceptExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "confidentialclient-accept-executor";
+    public static final String PROVIDER_ID = "confidential-client";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
