@@ -31,6 +31,58 @@ export const LdapSettingsGeneral = ({
 
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
+  const setVendorDefaultValues = () => {
+    switch (form.getValues("config.vendor[0]")) {
+      case "ad":
+        form.setValue("config.usernameLDAPAttribute[0]", "cn");
+        form.setValue("config.rdnLDAPAttribute[0]", "cn");
+        form.setValue("config.uuidLDAPAttribute[0]", "objectGUID");
+        form.setValue(
+          "config.userObjectClasses[0]",
+          "person, organizationalPerson, user"
+        );
+        break;
+      case "rhds":
+        form.setValue("config.usernameLDAPAttribute[0]", "uid");
+        form.setValue("config.rdnLDAPAttribute[0]", "uid");
+        form.setValue("config.uuidLDAPAttribute[0]", "nsuniqueid");
+        form.setValue(
+          "config.userObjectClasses[0]",
+          "inetOrgPerson, organizationalPerson"
+        );
+        break;
+      case "tivoli":
+        form.setValue("config.usernameLDAPAttribute[0]", "uid");
+        form.setValue("config.rdnLDAPAttribute[0]", "uid");
+        form.setValue("config.uuidLDAPAttribute[0]", "uniqueidentifier");
+        form.setValue(
+          "config.userObjectClasses[0]",
+          "inetOrgPerson, organizationalPerson"
+        );
+        break;
+      case "edirectory":
+        form.setValue("config.usernameLDAPAttribute[0]", "uid");
+        form.setValue("config.rdnLDAPAttribute[0]", "uid");
+        form.setValue("config.uuidLDAPAttribute[0]", "guid");
+        form.setValue(
+          "config.userObjectClasses[0]",
+          "inetOrgPerson, organizationalPerson"
+        );
+        break;
+      case "other":
+        form.setValue("config.usernameLDAPAttribute[0]", "uid");
+        form.setValue("config.rdnLDAPAttribute[0]", "uid");
+        form.setValue("config.uuidLDAPAttribute[0]", "entryUUID");
+        form.setValue(
+          "config.userObjectClasses[0]",
+          "inetOrgPerson, organizationalPerson"
+        );
+        break;
+      default:
+        return "";
+    }
+  };
+
   return (
     <>
       {showSectionHeading && (
@@ -110,7 +162,7 @@ export const LdapSettingsGeneral = ({
         >
           <Controller
             name="config.vendor[0]"
-            defaultValue=""
+            defaultValue="ad"
             control={form.control}
             render={({ onChange, value }) => (
               <Select
@@ -121,10 +173,10 @@ export const LdapSettingsGeneral = ({
                 onSelect={(_, value) => {
                   onChange(value as string);
                   setIsVendorDropdownOpen(false);
+                  setVendorDefaultValues();
                 }}
                 selections={value}
                 variant={SelectVariant.single}
-                // data-testid="ldap-vendor"
               >
                 <SelectOption key={0} value="ad" isPlaceholder>
                   Active Directory

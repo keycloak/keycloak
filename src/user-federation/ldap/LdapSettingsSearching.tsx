@@ -96,6 +96,7 @@ export const LdapSettingsSearching = ({
           <TextInput
             isRequired
             type="text"
+            defaultValue=""
             id="kc-console-users-dn"
             data-testid="ldap-users-dn"
             name="config.usersDn[0]"
@@ -129,6 +130,7 @@ export const LdapSettingsSearching = ({
           <TextInput
             isRequired
             type="text"
+            defaultValue="cn"
             id="kc-username-ldap-attribute"
             data-testid="ldap-username-attribute"
             name="config.usernameLDAPAttribute[0]"
@@ -162,6 +164,7 @@ export const LdapSettingsSearching = ({
           <TextInput
             isRequired
             type="text"
+            defaultValue="cn"
             id="kc-rdn-ldap-attribute"
             data-testid="ldap-rdn-attribute"
             name="config.rdnLDAPAttribute[0]"
@@ -195,6 +198,7 @@ export const LdapSettingsSearching = ({
           <TextInput
             isRequired
             type="text"
+            defaultValue="objectGUID"
             id="kc-uuid-ldap-attribute"
             data-testid="ldap-uuid-attribute"
             name="config.uuidLDAPAttribute[0]"
@@ -228,6 +232,7 @@ export const LdapSettingsSearching = ({
           <TextInput
             isRequired
             type="text"
+            defaultValue="person, organizationalPerson, user"
             id="kc-user-object-classes"
             data-testid="ldap-user-object-classes"
             name="config.userObjectClasses[0]"
