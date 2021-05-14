@@ -110,8 +110,10 @@ public enum MembershipType {
                 query.addWhereCondition(orCondition);
                 List<LDAPObject> ldapUsers = query.getResultList();
                 for (LDAPObject ldapUser : ldapUsers) {
-                    String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                    usernames.add(username);
+                    if (dns.contains(ldapUser.getDn())) {
+                        String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
+                        usernames.add(username);
+                    }
                 }
             }
 
