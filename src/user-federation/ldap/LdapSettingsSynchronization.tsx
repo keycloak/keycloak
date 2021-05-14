@@ -20,6 +20,9 @@ export const LdapSettingsSynchronization = ({
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
+  const watchPeriodicSync = form.watch("config.periodicFullSync", false);
+  const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
+
   return (
     <>
       {showSectionHeading && (
@@ -78,50 +81,110 @@ export const LdapSettingsSynchronization = ({
             ref={form.register}
           />
         </FormGroup>
-
-        {/* Enter -1 to switch off, otherwise enter value */}
         <FormGroup
-          hasNoPaddingTop
-          label={t("fullSyncPeriod")}
+          label={"Periodic full sync"}
           labelIcon={
             <HelpItem
-              helpText={helpText("fullSyncPeriodHelp")}
-              forLabel={t("fullSyncPeriod")}
-              forID="kc-full-sync-period"
+              helpText={helpText("periodicFullSyncHelp")}
+              forLabel={"periodicFullSync"}
+              forID="kc-periodic-full-sync"
             />
           }
-          fieldId="kc-full-sync-period"
-        >
-          <TextInput
-            type="number"
-            min={-1}
-            id="kc-full-sync-period"
-            name="config.fullSyncPeriod[0]"
-            ref={form.register}
-          />
-        </FormGroup>
-
-        {/* Enter -1 to switch off, otherwise enter value */}
-        <FormGroup
-          label={t("changedUsersSyncPeriod")}
-          labelIcon={
-            <HelpItem
-              helpText={helpText("changedUsersSyncHelp")}
-              forLabel={t("changedUsersSyncPeriod")}
-              forID="kc-changed-users-sync-period"
-            />
-          }
-          fieldId="kc-changed-users-sync-period"
+          fieldId="kc-periodic-full-sync"
           hasNoPaddingTop
         >
-          <TextInput
-            type="number"
-            min={-1}
-            id="kc-changed-users-sync-period"
-            name="config.changedSyncPeriod[0]"
-            ref={form.register}
-          />
+          <Controller
+            name="config.periodicFullSync"
+            defaultValue={false}
+            control={form.control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-periodic-full-sync"}
+                isDisabled={false}
+                onChange={(value) => onChange(value)}
+                isChecked={value === true}
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                ref={form.register}
+              />
+            )}
+          ></Controller>
         </FormGroup>
+        {watchPeriodicSync && (
+          <FormGroup
+            hasNoPaddingTop
+            label={t("fullSyncPeriod")}
+            labelIcon={
+              <HelpItem
+                helpText={helpText("fullSyncPeriodHelp")}
+                forLabel={t("fullSyncPeriod")}
+                forID="kc-full-sync-period"
+              />
+            }
+            fieldId="kc-full-sync-period"
+          >
+            <TextInput
+              type="number"
+              min={-1}
+              defaultValue={604800}
+              id="kc-full-sync-period"
+              name="config.fullSyncPeriod[0]"
+              ref={form.register}
+            />
+          </FormGroup>
+        )}
+        <FormGroup
+          label={"Periodic Changed Users Sync"}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("periodicChangedUsersSyncHelp")}
+              forLabel={"periodicChangedUsersSync"}
+              forID="kc-periodic-changed-users-sync"
+            />
+          }
+          fieldId="kc-periodic-changed-users-sync"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.periodicChangedUsersSync"
+            defaultValue={false}
+            control={form.control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-periodic-changed-users-sync"}
+                isDisabled={false}
+                onChange={(value) => onChange(value)}
+                isChecked={value === true}
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                ref={form.register}
+              />
+            )}
+          ></Controller>
+        </FormGroup>
+        {watchChangedSync && (
+          <FormGroup
+            label={t("changedUsersSyncPeriod")}
+            labelIcon={
+              <HelpItem
+                helpText={helpText("changedUsersSyncHelp")}
+                forLabel={t("changedUsersSyncPeriod")}
+                forID="kc-changed-users-sync-period"
+              />
+            }
+            fieldId="kc-changed-users-sync-period"
+            hasNoPaddingTop
+          >
+            <TextInput
+              type="number"
+              min={-1}
+              defaultValue={86400}
+              id="kc-changed-users-sync-period"
+              name="config.changedSyncPeriod[0]"
+              ref={form.register}
+            />
+          </FormGroup>
+        )}
       </FormAccess>
     </>
   );

@@ -1,4 +1,5 @@
 import {
+  AlertVariant,
   Button,
   FormGroup,
   Select,
@@ -6,14 +7,21 @@ import {
   SelectVariant,
   Switch,
   TextInput,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
+import _ from "lodash";
+
+import TestLdapConnectionRepresentation from "keycloak-admin/lib/defs/testLdapConnection";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { Controller, UseFormMethods } from "react-hook-form";
+import { Controller, UseFormMethods, useWatch } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { useAlerts } from "../../components/alert/Alerts";
 
 export type LdapSettingsConnectionProps = {
   form: UseFormMethods;
@@ -21,13 +29,45 @@ export type LdapSettingsConnectionProps = {
   showSectionDescription?: boolean;
 };
 
+const testLdapProperties: Array<keyof TestLdapConnectionRepresentation> = [
+  "connectionUrl",
+  "bindDn",
+  "bindCredential",
+  "useTruststoreSpi",
+  "connectionTimeout",
+  "startTls",
+  "authType",
+];
+
 export const LdapSettingsConnection = ({
   form,
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
+  const adminClient = useAdminClient();
+  const { realm } = useRealm();
+  const { addAlert } = useAlerts();
+
+  const testLdap = async () => {
+    try {
+      const settings: TestLdapConnectionRepresentation = {};
+
+      testLdapProperties.forEach((key) => {
+        const value = _.get(form.getValues(), `config.${key}`);
+        settings[key] = _.isArray(value) ? value[0] : "";
+      });
+      await adminClient.realms.testLDAPConnection(
+        { realm },
+        { ...settings, action: "testConnection" }
+      );
+      addAlert(t("testSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("testError"), AlertVariant.danger);
+      console.error(error.response?.data?.errorMessage);
+    }
+  };
 
   const [
     isTruststoreSpiDropdownOpen,
@@ -35,6 +75,11 @@ export const LdapSettingsConnection = ({
   ] = useState(false);
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
+
+  const ldapBindType = useWatch({
+    control: form.control,
+    name: "config.authType",
+  });
 
   return (
     <>
@@ -213,7 +258,7 @@ export const LdapSettingsConnection = ({
         >
           <Controller
             name="config.authType[0]"
-            defaultValue=""
+            defaultValue="none"
             control={form.control}
             render={({ onChange, value }) => (
               <Select
@@ -231,83 +276,81 @@ export const LdapSettingsConnection = ({
                 variant={SelectVariant.single}
                 data-testid="ldap-bind-type"
               >
-                <SelectOption key={3} value="simple" />
-                <SelectOption key={4} value="none" />
+                <SelectOption key={0} value="simple" />
+                <SelectOption key={1} value="none" isPlaceholder />
               </Select>
             )}
           ></Controller>
         </FormGroup>
-        <FormGroup
-          label={t("bindDn")}
-          labelIcon={
-            <HelpItem
-              helpText={helpText("bindDnHelp")}
-              forLabel={t("bindDn")}
-              forID="kc-console-bind-dn"
-            />
-          }
-          fieldId="kc-console-bind-dn"
-          isRequired
-        >
-          <TextInput
-            type="text"
-            id="kc-console-bind-dn"
-            data-testid="ldap-bind-dn"
-            name="config.bindDn[0]"
-            ref={form.register({
-              required: {
-                value: true,
-                message: `${t("validateBindDn")}`,
-              },
-            })}
-          />
-          {form.errors.config &&
-            form.errors.config.bindDn &&
-            form.errors.config.bindDn[0] && (
-              <div className="error">
-                {form.errors.config.bindDn[0].message}
-              </div>
-            )}
-        </FormGroup>
-        <FormGroup
-          label={t("bindCredentials")}
-          labelIcon={
-            <HelpItem
-              helpText={helpText("bindCredentialsHelp")}
-              forLabel={t("bindCredentials")}
-              forID="kc-console-bind-credentials"
-            />
-          }
-          fieldId="kc-console-bind-credentials"
-          isRequired
-        >
-          <PasswordInput
-            isRequired
-            id="kc-console-bind-credentials"
-            data-testid="ldap-bind-credentials"
-            name="config.bindCredential[0]"
-            ref={form.register({
-              required: {
-                value: true,
-                message: `${t("validateBindCredentials")}`,
-              },
-            })}
-          />
-          {form.errors.config &&
-            form.errors.config.bindCredential &&
-            form.errors.config.bindCredential[0] && (
-              <div className="error">
-                {form.errors.config.bindCredential[0].message}
-              </div>
-            )}
-        </FormGroup>
-        <FormGroup fieldId="kc-test-button">
-          {" "}
-          {/* TODO: whatever this button is supposed to do */}
-          <Button variant="secondary" id="kc-test-button">
-            {t("common:test")}
-          </Button>
-        </FormGroup>
+
+        {_.isEqual(ldapBindType, ["simple"]) && (
+          <>
+            <FormGroup
+              label={t("bindDn")}
+              labelIcon={
+                <HelpItem
+                  helpText={helpText("bindDnHelp")}
+                  forLabel={t("bindDn")}
+                  forID="kc-console-bind-dn"
+                />
+              }
+              fieldId="kc-console-bind-dn"
+              helperTextInvalid={t("validateBindDn")}
+              validated={
+                form.errors.config?.bindDn
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
+              isRequired
+            >
+              <TextInput
+                type="text"
+                id="kc-console-bind-dn"
+                data-testid="ldap-bind-dn"
+                name="config.bindDn[0]"
+                ref={form.register({ required: true })}
+              />
+            </FormGroup>
+            <FormGroup
+              label={t("bindCredentials")}
+              labelIcon={
+                <HelpItem
+                  helpText={helpText("bindCredentialsHelp")}
+                  forLabel={t("bindCredentials")}
+                  forID="kc-console-bind-credentials"
+                />
+              }
+              fieldId="kc-console-bind-credentials"
+              helperTextInvalid={t("validateBindCredentials")}
+              validated={
+                form.errors.config?.bindCredential
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
+              isRequired
+            >
+              <PasswordInput
+                isRequired
+                id="kc-console-bind-credentials"
+                data-testid="ldap-bind-credentials"
+                name="config.bindCredential[0]"
+                ref={form.register({
+                  required: true,
+                })}
+              />
+            </FormGroup>
+            <FormGroup fieldId="kc-test-button">
+              <Button
+                isDisabled={!form.formState.isValid}
+                variant="secondary"
+                id="kc-test-button"
+                onClick={() => testLdap()}
+              >
+                {t("common:test")}
+              </Button>
+            </FormGroup>
+          </>
+        )}
       </FormAccess>
     </>
   );

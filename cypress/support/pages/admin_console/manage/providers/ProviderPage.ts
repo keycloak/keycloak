@@ -129,8 +129,8 @@ export default class ProviderPage {
   fillLdapRequiredConnectionData(
     connectionUrl: string,
     bindType: string,
-    bindDn: string,
-    bindCreds: string
+    bindDn?: string,
+    bindCreds?: string
   ) {
     if (connectionUrl) {
       cy.get(`[${this.ldapConnectionUrlInput}]`).type(connectionUrl);
