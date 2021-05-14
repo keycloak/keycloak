@@ -35,4 +35,10 @@ import java.lang.annotation.Target;
 public @interface RequireProvider {
     Class<? extends Provider> value() default Provider.class;
 
+    /**
+     * Specifies provider IDs of mandatory provider. There must be at least one provider available
+     * from those in {@code only} array to fulfil this requirement.
+     */
+    String[] only() default {};
+
 }

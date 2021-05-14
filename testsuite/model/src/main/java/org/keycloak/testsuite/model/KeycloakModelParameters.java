@@ -56,6 +56,9 @@ public class KeycloakModelParameters {
         return Stream.empty();
     }
 
+    public void updateConfig(Config cf) {
+    }
+
     public Statement classRule(Statement base, Description description) {
         return base;
     }
