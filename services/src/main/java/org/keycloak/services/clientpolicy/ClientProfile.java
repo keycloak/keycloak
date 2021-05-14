@@ -26,7 +26,7 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientProfileModel implements Serializable {
+class ClientProfile implements Serializable {
 
     protected String name;
     protected String description;

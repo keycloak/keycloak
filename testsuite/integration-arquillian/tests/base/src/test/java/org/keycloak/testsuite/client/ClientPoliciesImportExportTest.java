@@ -72,7 +72,7 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
         testRealmExportImport();
     }
 
-    private void testRealmExportImport() throws LifecycleException {
+    private void testRealmExportImport() throws Exception {
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName("test");
 
