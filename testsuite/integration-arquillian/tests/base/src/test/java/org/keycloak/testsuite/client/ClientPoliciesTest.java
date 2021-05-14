@@ -207,6 +207,31 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, getClientByAdmin(cId).getClientAuthenticatorType());
     }
 
+    // KEYCLOAK-18108
+    @Test
+    public void testTwoProfilesWithDifferentConfigurationOfSameExecutorType() throws Exception {
+        setupPolicyClientIdAndSecretNotAcceptableAuthType(POLICY_NAME);
+
+        // register another profile with "SecureClientAuthEnforceExecutorFactory", but use different configuration of client authenticator.
+        // This profile won't allow JWTClientSecretAuthenticator.PROVIDER_ID
+        String profileName = "UnusedProfile";
+        String json = (new ClientProfilesBuilder(getProfilesWithoutGlobals())).addProfile(
+                (new ClientProfileBuilder()).createProfile(profileName, "Profile with SecureClientAuthEnforceExecutorFactory")
+                        .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                                createSecureClientAuthEnforceExecutorConfig(Boolean.FALSE,
+                                        Arrays.asList(JWTClientAuthenticator.PROVIDER_ID, X509ClientAuthenticator.PROVIDER_ID),
+                                        null))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // Make sure it is still possible to create client with JWTClientSecretAuthenticator. The "UnusedProfile" should not be used as it is not referenced from any client policy
+        String cId = createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> {
+            clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        });
+        assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, getClientByAdmin(cId).getClientAuthenticatorType());
+    }
+
     @Test
     public void testAdminClientUpdateAcceptableAuthType() throws Exception {
         setupPolicyClientIdAndSecretNotAcceptableAuthType(POLICY_NAME);
@@ -2051,7 +2076,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         }
     }
 
-    private void setupPolicyClientIdAndSecretNotAcceptableAuthType(String policyName) throws ClientPolicyException {
+    private void setupPolicyClientIdAndSecretNotAcceptableAuthType(String policyName) throws Exception {
         // register profiles
         String profileName = "MyProfile";
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -2075,7 +2100,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
     }
 
-    private void setupPolicyAuthzCodeFlowUnderMultiPhasePolicy(String policyName) throws ClientPolicyException {
+    private void setupPolicyAuthzCodeFlowUnderMultiPhasePolicy(String policyName) throws Exception {
         // register profiles
         String profileName = "MyProfile";
         String json = (new ClientProfilesBuilder()).addProfile(

@@ -20,9 +20,7 @@ package org.keycloak.services.clientpolicy;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
@@ -68,15 +66,14 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     private void doPolicyOperation(ClientConditionOperation condition, ClientExecutorOperation executor, RealmModel realm) throws ClientPolicyException {
-        Map<String, ClientProfileModel> map = ClientPoliciesUtil.getClientProfilesModel(session, realm, globalClientProfilesSupplier.get());
-        List<ClientPolicyModel> list = ClientPoliciesUtil.getEnabledClientPoliciesModel(session, realm).stream().collect(Collectors.toList());
+        List<ClientPolicy> list = ClientPoliciesUtil.getEnabledClientPolicies(session, realm);
 
         if (list == null || list.isEmpty()) {
             logger.trace("POLICY OPERATION :: No enabled policy.");
             return;
         }
 
-        for (ClientPolicyModel policy: list) {
+        for (ClientPolicy policy: list) {
             logger.tracev("POLICY OPERATION :: policy name = {0}", policy.getName());
             if (!isSatisfied(policy, condition)) {
                 logger.tracev("POLICY UNSATISFIED :: policy name = {0}", policy.getName());
@@ -84,12 +81,12 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
             }
 
             logger.tracev("POLICY APPLIED :: policy name = {0}", policy.getName());
-            execute(policy, executor, map);
+            execute(policy, executor, realm);
         }
     }
 
     private boolean isSatisfied(
-            ClientPolicyModel policy,
+            ClientPolicy policy,
             ClientConditionOperation op) throws ClientPolicyException {
 
         if (policy.getConditions() == null || policy.getConditions().isEmpty()) {
@@ -133,16 +130,20 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     private void execute(
-            ClientPolicyModel policy,
+            ClientPolicy policy,
             ClientExecutorOperation op,
-            Map<String, ClientProfileModel> map) throws ClientPolicyException {
+            RealmModel realm) throws ClientPolicyException {
 
         if (policy.getProfiles() == null || policy.getProfiles().isEmpty()) {
             logger.tracev("NO PROFILE :: policy name = {0}", policy.getName());
+            return;
         }
 
+        // Get profiles from realm
+        ClientProfilesRepresentation clientProfiles =  ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
+
         for (String profileName : policy.getProfiles()) {
-            ClientProfileModel profile = map.get(profileName);
+            ClientProfile profile = ClientPoliciesUtil.getClientProfileModel(session, realm, clientProfiles, globalClientProfilesSupplier.get(), profileName);
             if (profile == null) {
                 logger.tracev("PROFILE NOT FOUND :: policy name = {0}, profile name = {1}", policy.getName(), profileName);
                 continue;

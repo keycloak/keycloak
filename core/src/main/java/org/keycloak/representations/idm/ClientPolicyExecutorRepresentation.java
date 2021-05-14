@@ -19,6 +19,7 @@
 package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -28,15 +29,8 @@ public class ClientPolicyExecutorRepresentation {
     @JsonProperty("executor")
     private String executorProviderId;
 
-    private ClientPolicyExecutorConfigurationRepresentation configuration;
-
-    public ClientPolicyExecutorRepresentation() {
-    }
-
-    public ClientPolicyExecutorRepresentation(String executorProviderId, ClientPolicyExecutorConfigurationRepresentation configuration) {
-        this.executorProviderId = executorProviderId;
-        this.configuration = configuration;
-    }
+    @JsonProperty("configuration")
+    private JsonNode configuration;
 
     public String getExecutorProviderId() {
         return executorProviderId;
@@ -46,11 +40,11 @@ public class ClientPolicyExecutorRepresentation {
         this.executorProviderId = providerId;
     }
 
-    public ClientPolicyExecutorConfigurationRepresentation getConfiguration() {
+    public JsonNode getConfiguration() {
         return configuration;
     }
 
-    public void setConfiguration(ClientPolicyExecutorConfigurationRepresentation configuration) {
+    public void setConfiguration(JsonNode configuration) {
         this.configuration = configuration;
     }
 }

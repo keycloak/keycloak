@@ -19,6 +19,7 @@
 package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -28,15 +29,8 @@ public class ClientPolicyConditionRepresentation {
     @JsonProperty("condition")
     private String conditionProviderId;
 
-    private ClientPolicyConditionConfigurationRepresentation configuration;
-
-    public ClientPolicyConditionRepresentation() {
-    }
-
-    public ClientPolicyConditionRepresentation(String conditionProviderId, ClientPolicyConditionConfigurationRepresentation configuration) {
-        this.conditionProviderId = conditionProviderId;
-        this.configuration = configuration;
-    }
+    @JsonProperty("configuration")
+    private JsonNode configuration;
 
     public String getConditionProviderId() {
         return conditionProviderId;
@@ -46,11 +40,11 @@ public class ClientPolicyConditionRepresentation {
         this.conditionProviderId = conditionProviderId;
     }
 
-    public ClientPolicyConditionConfigurationRepresentation getConfiguration() {
+    public JsonNode getConfiguration() {
         return configuration;
     }
 
-    public void setConfiguration(ClientPolicyConditionConfigurationRepresentation configuration) {
+    public void setConfiguration(JsonNode configuration) {
         this.configuration = configuration;
     }
 }

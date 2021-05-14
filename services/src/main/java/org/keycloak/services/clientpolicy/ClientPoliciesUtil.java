@@ -22,16 +22,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 import org.keycloak.common.Profile;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.component.JsonConfigComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -71,75 +72,57 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * gets existing client profiles in a realm as model.
-     * not return null.
+     * Gets existing client profile of given name with resolved executor providers. It can be profile from realm or from global client profiles.
      */
-    static Map<String, ClientProfileModel> getClientProfilesModel(KeycloakSession session, RealmModel realm, List<ClientProfileRepresentation> globalClientProfiles) {
-        // get existing profiles as json
-        String profilesJson = getClientProfilesJsonString(realm);
-        if (profilesJson == null) {
-            return Collections.emptyMap();
-        }
-
-        // deserialize existing profiles (json -> representation)
-        ClientProfilesRepresentation profilesRep = null;
-        try {
-            profilesRep = convertClientProfilesJsonToRepresentation(profilesJson);
-        } catch (ClientPolicyException e) {
-            logger.warnv("Failed to serialize client profiles json string. err={0}, errDetail={1}", e.getError(), e.getErrorDetail());
-            return Collections.emptyMap();
-        }
-        if (profilesRep == null || profilesRep.getProfiles() == null) {
-            return Collections.emptyMap();
-        }
+    static ClientProfile getClientProfileModel(KeycloakSession session, RealmModel realm, ClientProfilesRepresentation profilesRep, List<ClientProfileRepresentation> globalClientProfiles, String profileName) throws ClientPolicyException {
+        // Obtain profiles from realm
         List<ClientProfileRepresentation> profiles = profilesRep.getProfiles();
+        if (profiles == null) {
+            profiles = new ArrayList<>();
+        }
 
         // Add global profiles as well
         profiles.addAll(globalClientProfiles);
 
-        // constructing existing profiles (representation -> model)
-        Map<String, ClientProfileModel> profileMap = new HashMap<>();
-        for (ClientProfileRepresentation profileRep : profilesRep.getProfiles()) {
-            // ignore profile without name
-            if (profileRep.getName() == null) {
-                continue;
-            }
-
-            ClientProfileModel profileModel = new ClientProfileModel();
-            profileModel.setName(profileRep.getName());
-            profileModel.setDescription(profileRep.getDescription());
-
-            if (profileRep.getExecutors() == null) {
-                profileModel.setExecutors(new ArrayList<>());
-                profileMap.put(profileRep.getName(), profileModel);
-                continue;
-            }
-
-            List<ClientPolicyExecutorProvider> executors = new ArrayList<>();
-            if (profileRep.getExecutors() != null) {
-                for (ClientPolicyExecutorRepresentation executorRep : profileRep.getExecutors()) {
-                    ClientPolicyExecutorProvider provider = session.getProvider(ClientPolicyExecutorProvider.class, executorRep.getExecutorProviderId());
-                    if (provider == null) {
-                        // executor's provider not found. just skip it.
-                        logger.warnf("Executor with provider ID %s not found", executorRep.getExecutorProviderId());
-                        continue;
-                    }
-
-                    try {
-                        ClientPolicyExecutorConfigurationRepresentation configuration = (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(executorRep.getConfiguration(), provider.getExecutorConfigurationClass());
-                        provider.setupConfiguration(configuration);
-                        executors.add(provider);
-                    } catch (IllegalArgumentException iae) {
-                        logger.warnv("failed for Configuration Setup during setup provider {0} :: error = {1}", executorRep.getExecutorProviderId(), iae.getMessage());
-                    }
-                }
-            }
-            profileModel.setExecutors(executors);
-
-            profileMap.put(profileRep.getName(), profileModel);
+        ClientProfileRepresentation profileRep = profiles.stream()
+                .filter(clientProfile -> profileName.equals(clientProfile.getName()))
+                .findFirst().orElse(null);
+        if (profileRep == null) {
+            return null;
         }
 
-        return profileMap;
+        ClientProfile profileModel = new ClientProfile();
+        profileModel.setName(profileRep.getName());
+        profileModel.setDescription(profileRep.getDescription());
+
+        if (profileRep.getExecutors() == null) {
+            profileModel.setExecutors(new ArrayList<>());
+            return profileModel;
+        }
+
+        List<ClientPolicyExecutorProvider> executors = new ArrayList<>();
+        if (profileRep.getExecutors() != null) {
+            for (ClientPolicyExecutorRepresentation executorRep : profileRep.getExecutors()) {
+                ClientPolicyExecutorProvider provider = getExecutorProvider(session, realm, executorRep.getExecutorProviderId(), executorRep.getConfiguration());
+                executors.add(provider);
+            }
+        }
+        profileModel.setExecutors(executors);
+
+        return profileModel;
+    }
+
+    private static ClientPolicyExecutorProvider getExecutorProvider(KeycloakSession session, RealmModel realm, String providerId, JsonNode config) {
+        ComponentModel componentModel = new JsonConfigComponentModel(ClientPolicyExecutorProvider.class, realm.getId(), providerId, config);
+        ClientPolicyExecutorProvider executorProvider = session.getComponentProvider(ClientPolicyExecutorProvider.class, componentModel.getId(), sessionFactory -> componentModel);
+        if (executorProvider == null) {
+            // condition's provider not found. just skip it.
+            throw new IllegalStateException("Executor with provider ID " + providerId + " not found");
+        }
+
+        ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(config, executorProvider.getExecutorConfigurationClass());
+        executorProvider.setupConfiguration(configuration);
+        return executorProvider;
     }
 
     /**
@@ -306,10 +289,10 @@ public class ClientPoliciesUtil {
     }
 
     /**
-     * get existing enabled client policies in a realm as model.
+     * Gets existing enabled client policies in a realm.
      * not return null.
      */
-    static List<ClientPolicyModel> getEnabledClientPoliciesModel(KeycloakSession session, RealmModel realm) {
+    static List<ClientPolicy> getEnabledClientPolicies(KeycloakSession session, RealmModel realm) {
         // get existing profiles as json
         String policiesJson = getClientPoliciesJsonString(realm);
         if (policiesJson == null) {
@@ -329,7 +312,7 @@ public class ClientPoliciesUtil {
         }
 
         // constructing existing policies (representation -> model)
-        List<ClientPolicyModel> policyList = new ArrayList<>();
+        List<ClientPolicy> policyList = new ArrayList<>();
         for (ClientPolicyRepresentation policyRep: policiesRep.getPolicies()) {
             // ignore policy without name
             if (policyRep.getName() == null) {
@@ -341,7 +324,7 @@ public class ClientPoliciesUtil {
                 continue;
             }
 
-            ClientPolicyModel policyModel = new ClientPolicyModel();
+            ClientPolicy policyModel = new ClientPolicy();
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
@@ -349,20 +332,8 @@ public class ClientPoliciesUtil {
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
                 for (ClientPolicyConditionRepresentation conditionRep : policyRep.getConditions()) {
-                    ClientPolicyConditionProvider provider = session.getProvider(ClientPolicyConditionProvider.class, conditionRep.getConditionProviderId());
-                    if (provider == null) {
-                        // condition's provider not found. just skip it.
-                        logger.warnf("Condition with provider ID %s not found", conditionRep.getConditionProviderId());
-                        continue;
-                    }
-
-                    try {
-                        ClientPolicyConditionConfigurationRepresentation configuration =  (ClientPolicyConditionConfigurationRepresentation) JsonSerialization.mapper.convertValue(conditionRep.getConfiguration(), provider.getConditionConfigurationClass());
-                        provider.setupConfiguration(configuration);
-                        conditions.add(provider);
-                    } catch (IllegalArgumentException iae) {
-                        logger.warnv("failed for Configuration Setup :: error = {0}", iae.getMessage());
-                    }
+                    ClientPolicyConditionProvider provider = getConditionProvider(session, realm, conditionRep.getConditionProviderId(), conditionRep.getConfiguration());
+                    conditions.add(provider);
                 }
             }
             policyModel.setConditions(conditions);
@@ -375,6 +346,19 @@ public class ClientPoliciesUtil {
         }
 
         return policyList;
+    }
+
+    private static ClientPolicyConditionProvider getConditionProvider(KeycloakSession session, RealmModel realm, String providerId, JsonNode config) {
+        ComponentModel componentModel = new JsonConfigComponentModel(ClientPolicyConditionProvider.class, realm.getId(), providerId, config);
+        ClientPolicyConditionProvider conditionProvider = session.getComponentProvider(ClientPolicyConditionProvider.class, componentModel.getId(), sessionFactory -> componentModel);
+        if (conditionProvider == null) {
+            // condition's provider not found. just skip it.
+            throw new IllegalStateException("Condition with provider ID " + providerId + " not found");
+        }
+
+        ClientPolicyConditionConfigurationRepresentation configuration =  (ClientPolicyConditionConfigurationRepresentation) JsonSerialization.mapper.convertValue(config, conditionProvider.getConditionConfigurationClass());
+        conditionProvider.setupConfiguration(configuration);
+        return conditionProvider;
     }
 
     /**
