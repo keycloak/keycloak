@@ -56,10 +56,21 @@ export const GroupTable = () => {
     return response ? response.length : 0;
   };
 
-  const loader = async () => {
+  const loader = async (first?: number, max?: number, search?: string) => {
+    const params: { [name: string]: string | number } = {
+      first: first!,
+      max: max!,
+    };
+
+    const searchParam = search || "";
+
+    if (searchParam) {
+      params.search = searchParam;
+    }
+
     const groupsData = id
-      ? (await adminClient.groups.findOne({ id })).subGroups
-      : await adminClient.groups.find();
+      ? (await adminClient.groups.findOne({ id, ...params })).subGroups
+      : await adminClient.groups.find(params);
 
     if (groupsData) {
       const memberPromises = groupsData.map((group) => getMembers(group.id!));
@@ -121,6 +132,7 @@ export const GroupTable = () => {
     <>
       <KeycloakDataTable
         key={key}
+        isPaginated
         onSelect={(rows) => setSelectedRows([...rows])}
         canSelectAll={false}
         loader={loader}

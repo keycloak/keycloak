@@ -10,6 +10,7 @@ import {
   DropdownSeparator,
   PageSection,
   Tab,
+  Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
 
@@ -26,6 +27,9 @@ import { RealmSettingsGeneralTab } from "./GeneralTab";
 import { PartialImportDialog } from "./PartialImport";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsEmailTab } from "./EmailTab";
+import { KeysListTab } from "./KeysListTab";
+import { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -126,6 +130,11 @@ export const RealmSettingsSection = () => {
   const form = useForm();
   const { control, getValues, setValue } = form;
   const [realm, setRealm] = useState<RealmRepresentation>();
+  const [activeTab2, setActiveTab2] = useState(0);
+  const [keys, setKeys] = useState<KeyMetadataRepresentation[]>([]);
+  const [realmComponents, setRealmComponents] = useState<
+    ComponentRepresentation[]
+  >([]);
 
   useEffect(() => {
     return asyncStateFetch(
@@ -136,6 +145,21 @@ export const RealmSettingsSection = () => {
       },
       handleError
     );
+  }, []);
+
+  useEffect(() => {
+    const update = async () => {
+      const keysMetaData = await adminClient.realms.getKeys({
+        realm: realmName,
+      });
+      setKeys(keysMetaData.keys!);
+      const realmComponents = await adminClient.components.find({
+        type: "org.keycloak.keys.KeyProvider",
+        realm: realmName,
+      });
+      setRealmComponents(realmComponents);
+    };
+    setTimeout(update, 100);
   }, []);
 
   const setupForm = (realm: RealmRepresentation) => {
@@ -206,6 +230,24 @@ export const RealmSettingsSection = () => {
                 save={save}
                 reset={() => setupForm(realm!)}
               />
+            </Tab>
+            <Tab
+              eventKey="keys"
+              title={<TabTitleText>{t("realm-settings:keys")}</TabTitleText>}
+              data-testid="rs-keys-tab"
+            >
+              <Tabs
+                activeKey={activeTab2}
+                onSelect={(_, key) => setActiveTab2(key as number)}
+              >
+                <Tab
+                  id="setup"
+                  eventKey={0}
+                  title={<TabTitleText>{t("keysList")}</TabTitleText>}
+                >
+                  <KeysListTab keys={keys} realmComponents={realmComponents} />
+                </Tab>
+              </Tabs>
             </Tab>
           </KeycloakTabs>
         </FormProvider>
