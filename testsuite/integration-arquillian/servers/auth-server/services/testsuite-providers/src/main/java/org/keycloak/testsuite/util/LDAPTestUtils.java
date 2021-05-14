@@ -30,6 +30,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
@@ -139,6 +140,18 @@ public class LDAPTestUtils {
             }
         };
         return LDAPUtils.addUserToLDAP(ldapProvider, realm, helperUser);
+    }
+
+    public static LDAPObject addLdapOU(LDAPStorageProvider ldapProvider, String name) {
+        LDAPObject ldapObject = new LDAPObject();
+        ldapObject.setRdnAttributeName("ou");
+        ldapObject.setObjectClasses(Collections.singletonList("organizationalUnit"));
+        ldapObject.setSingleAttribute("ou", name);
+        LDAPDn dn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
+        dn.addFirst("ou", name);
+        ldapObject.setDn(dn);
+        ldapProvider.getLdapIdentityStore().add(ldapObject);
+        return ldapObject;
     }
 
     public static void updateLDAPPassword(LDAPStorageProvider ldapProvider, LDAPObject ldapUser, String password) {
