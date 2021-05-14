@@ -22,7 +22,7 @@ export const LdapSettingsSynchronization = ({
 
   const watchPeriodicSync = form.watch("config.periodicFullSync", false);
   const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
-  
+
   return (
     <>
       {showSectionHeading && (
