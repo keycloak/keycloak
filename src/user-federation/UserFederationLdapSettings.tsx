@@ -37,6 +37,13 @@ import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
 import { useErrorHandler } from "react-error-boundary";
 
+type ldapComponentRepresentation = ComponentRepresentation & {
+  config?: {
+    periodicChangedUsersSync?: boolean;
+    periodicFullSync?: boolean;
+  };
+};
+
 type LdapSettingsHeaderProps = {
   onChange: (value: string) => void;
   value: string;
@@ -221,7 +228,7 @@ export const UserFederationLdapSettings = () => {
     }
   };
 
-  const save = async (component: ComponentRepresentation) => {
+  const save = async (component: ldapComponentRepresentation) => {
     if (component?.config?.periodicChangedUsersSync !== null) {
       if (component?.config?.periodicChangedUsersSync === false) {
         component.config.changedSyncPeriod = ["-1"];

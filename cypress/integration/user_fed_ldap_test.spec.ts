@@ -32,8 +32,6 @@ const secondLdapName = `${firstLdapName}-2`;
 const secondLdapVendor = "Other";
 
 const secondBindType = "none";
-const secondBindDn = "user-2";
-const secondBindCreds = "password2";
 
 const secondUsersDn = "user-dn-2";
 const secondUserLdapAtt = "cn";
@@ -165,8 +163,6 @@ describe("User Fed LDAP tests", () => {
     providersPage.fillLdapRequiredConnectionData(
       connectionUrl,
       secondBindType,
-      secondBindDn,
-      secondBindCreds
     );
     providersPage.fillLdapRequiredSearchingData(
       secondUsersDn,
