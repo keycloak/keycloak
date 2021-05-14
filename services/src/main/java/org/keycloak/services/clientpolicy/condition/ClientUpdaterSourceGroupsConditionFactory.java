@@ -15,29 +15,36 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.executor;
+package org.keycloak.services.clientpolicy.condition;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientUpdaterSourceGroupsConditionFactory implements ClientPolicyConditionProviderFactory {
 
-public class HolderOfKeyEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
+    public static final String PROVIDER_ID = "client-updater-source-groups";
 
-    public static final String PROVIDER_ID = "holder-of-key-enforce-executor";
+    public static final String GROUPS = "groups";
 
-    public static final String IS_AUGMENT = "is-augment";
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
-    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
-            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to use MTLS HoK token", ProviderConfigProperty.BOOLEAN_TYPE, false);
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty(GROUPS, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "topGroup");
+        configProperties.add(property);
+    }
 
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session) {
-        return new HolderOfKeyEnforceExecutor(session);
+    public ClientPolicyConditionProvider create(KeycloakSession session) {
+        return new ClientUpdaterSourceGroupsCondition(session);
     }
 
     @Override
@@ -59,12 +66,12 @@ public class HolderOfKeyEnforceExecutorFactory implements ClientPolicyExecutorPr
 
     @Override
     public String getHelpText() {
-        return "It prohibits the client whose MTLS certificate does not match with the certificate thumbprint from the tokens.";
+        return "The condition checks the group of the entity who tries to create/update the client to determine whether the policy is applied.";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY));
+        return configProperties;
     }
 
 }

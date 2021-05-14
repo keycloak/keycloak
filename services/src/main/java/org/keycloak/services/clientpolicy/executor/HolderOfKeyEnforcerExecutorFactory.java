@@ -15,26 +15,29 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.condition;
-
-import java.util.Collections;
-import java.util.List;
+package org.keycloak.services.clientpolicy.executor;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-/**
- * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
- */
-public class AnyClientConditionFactory implements ClientPolicyConditionProviderFactory {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-    public static final String PROVIDER_ID = "any-client";
+public class HolderOfKeyEnforcerExecutorFactory implements ClientPolicyExecutorProviderFactory {
+
+    public static final String PROVIDER_ID = "holder-of-key-enforcer";
+
+    public static final String IS_AUGMENT = "is-augment";
+
+    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
+            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to use MTLS HoK token", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session) {
-        return new AnyClientCondition(session);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new HolderOfKeyEnforcerExecutor(session);
     }
 
     @Override
@@ -56,12 +59,12 @@ public class AnyClientConditionFactory implements ClientPolicyConditionProviderF
 
     @Override
     public String getHelpText() {
-        return "The condition is satisfied by any client on any event.";
+        return "It prohibits the client whose MTLS certificate does not match with the certificate thumbprint from the tokens.";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY));
     }
 
 }

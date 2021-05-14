@@ -24,9 +24,11 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -38,14 +40,15 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyConditionProvider<ClientUpdateSourceGroupsCondition.Configuration> {
+public class ClientUpdaterSourceRolesCondition extends AbstractClientPolicyConditionProvider<ClientUpdaterSourceRolesCondition.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(ClientUpdateSourceGroupsCondition.class);
+    private static final Logger logger = Logger.getLogger(ClientUpdaterSourceRolesCondition.class);
 
-    public ClientUpdateSourceGroupsCondition(KeycloakSession session) {
+    public ClientUpdaterSourceRolesCondition(KeycloakSession session) {
         super(session);
     }
 
@@ -56,20 +59,20 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyCondi
 
     public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
-        protected List<String> groups;
+        protected List<String> roles;
 
-        public List<String> getGroups() {
-            return groups;
+        public List<String> getRoles() {
+            return roles;
         }
 
-        public void setGroups(List<String> groups) {
-            this.groups = groups;
+        public void setRoles(List<String> roles) {
+            this.roles = roles;
         }
     }
 
     @Override
     public String getProviderId() {
-        return ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID;
+        return ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -77,17 +80,17 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyCondi
         switch (context.getEvent()) {
         case REGISTER:
             if (context instanceof AdminClientRegisterContext) {
-                return getVoteForGroupsMatched(((ClientCRUDContext)context).getAuthenticatedUser());
+                return getVoteForRolesMatched(((ClientCRUDContext)context).getAuthenticatedUser());
             } else if (context instanceof DynamicClientRegisterContext) {
-                return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
+                return getVoteForRolesMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
         case UPDATE:
             if (context instanceof AdminClientUpdateContext) {
-                return getVoteForGroupsMatched(((ClientCRUDContext)context).getAuthenticatedUser());
+                return getVoteForRolesMatched(((ClientCRUDContext)context).getAuthenticatedUser());
             } else if (context instanceof DynamicClientUpdateContext) {
-                return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
+                return getVoteForRolesMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
@@ -96,43 +99,49 @@ public class ClientUpdateSourceGroupsCondition extends AbstractClientPolicyCondi
         }
     }
 
-    private ClientPolicyVote getVoteForGroupsMatched(UserModel user) {
-        if (isGroupsMatched(user)) return ClientPolicyVote.YES;
+    private ClientPolicyVote getVoteForRolesMatched(UserModel user) {
+        if (isRolesMatched(user)) return ClientPolicyVote.YES;
         return ClientPolicyVote.NO;
     }
 
-    private ClientPolicyVote getVoteForGroupsMatched(JsonWebToken token) {
+    private ClientPolicyVote getVoteForRolesMatched(JsonWebToken token) {
         if (token == null) return ClientPolicyVote.NO;
-        if(isGroupMatched(token.getSubject())) return ClientPolicyVote.YES;
+        if(isRoleMatched(token.getSubject())) return ClientPolicyVote.YES;
         return ClientPolicyVote.NO;
     }
 
-    private boolean isGroupMatched(String subjectId) {
+    private boolean isRoleMatched(String subjectId) {
         if (subjectId == null) return false;
-        return isGroupsMatched(session.users().getUserById(session.getContext().getRealm(), subjectId));
+        return isRolesMatched(session.users().getUserById(session.getContext().getRealm(), subjectId));
     }
 
-    private boolean isGroupsMatched(UserModel user) {
+    private boolean isRolesMatched(UserModel user) {
         if (user == null) return false;
 
-        Set<String> expectedGroups = instantiateGroupsForMatching();
-        if (expectedGroups == null) return false;
-
-        // user.getGroupsStream() never returns null according to {@link UserModel.getGroupsStream}
-        Set<String> groups = user.getGroupsStream().map(GroupModel::getName).collect(Collectors.toSet());
+        Set<String> expectedRoles = instantiateRolesForMatching();
+        if (expectedRoles == null) return false;
 
         if (logger.isTraceEnabled()) {
-            groups.forEach(i -> logger.tracev("user group = {0}", i));
-            expectedGroups.forEach(i -> logger.tracev("expected user group = {0}", i));
+            // user.getRoleMappingsStream() never returns null according to {@link UserModel.getRoleMappingsStream}
+            Set<String> roles = user.getRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet());
+
+            roles.forEach(i -> logger.tracev("user role = {0}", i));
+            expectedRoles.forEach(i -> logger.tracev("roles expected = {0}", i));
         }
 
-        return expectedGroups.removeAll(groups); // may change expectedGroups so that it has needed to be instantiated.
+        RealmModel realm = session.getContext().getRealm();
+        for (String roleName : expectedRoles) {
+            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+            if (role == null) continue;
+            if (user.hasRole(role)) return true;
+        }
+        return false;
     }
 
-    private Set<String> instantiateGroupsForMatching() {
-        List<String> groups = configuration.getGroups();
-        if (groups == null) return null;
-        return new HashSet<>(groups);
+    private Set<String> instantiateRolesForMatching() {
+        List<String> roles = configuration.getRoles();
+        if (roles == null) return null;
+        return new HashSet<>(roles);
     }
 
 }

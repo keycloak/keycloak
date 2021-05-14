@@ -17,28 +17,30 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class PKCEEnforcerExecutorFactory implements ClientPolicyExecutorProviderFactory  {
 
-public class SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
+    public static final String PROVIDER_ID = "pkce-enforcer";
 
-    public static final String PROVIDER_ID = "securesignalgjwt-enforce-executor";
+    public static final String IS_AUGMENT = "is-augment";
 
-    public static final String REQUIRE_CLIENT_ASSERTION = "require-client-assertion";
-
-    private static final ProviderConfigProperty REQUIRE_CLIENT_ASSERTION_PROPERTY = new ProviderConfigProperty(
-            REQUIRE_CLIENT_ASSERTION, "Require Client Assertion", "If this is ON, then parameter 'client_assertion' will be required and request will fail if it is not present. If false, then parameter 'client_assertion' is not required. When 'client_assertion' parameter is present, then the algorithm on the JWT from specified client assertion is always checked regardless of the value of this switch", ProviderConfigProperty.BOOLEAN_TYPE, false);
+    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
+            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce usage of PKCE", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
-        return new SecureSigningAlgorithmForSignedJwtEnforceExecutor(session);
+        return new PKCEEnforcerExecutor(session);
     }
 
     @Override
@@ -60,12 +62,12 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory implements
 
     @Override
     public String getHelpText() {
-        return "It refuses the client whose JWT token signature algorithms are considered not to be secure. It accepts ES256, ES384, ES512, PS256, PS384 and PS512.";
+        return "It makes the client enforce Proof Key for Code Exchange operation.";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(REQUIRE_CLIENT_ASSERTION_PROPERTY));
+        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY));
     }
 
 }

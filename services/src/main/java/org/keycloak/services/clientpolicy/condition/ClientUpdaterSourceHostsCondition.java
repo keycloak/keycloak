@@ -35,11 +35,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceHostsCondition extends AbstractClientPolicyConditionProvider<ClientUpdateSourceHostsCondition.Configuration> {
+public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyConditionProvider<ClientUpdaterSourceHostsCondition.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(ClientUpdateSourceHostsCondition.class);
+    private static final Logger logger = Logger.getLogger(ClientUpdaterSourceHostsCondition.class);
 
-    public ClientUpdateSourceHostsCondition(KeycloakSession session) {
+    public ClientUpdaterSourceHostsCondition(KeycloakSession session) {
         super(session);
     }
 
@@ -65,7 +65,7 @@ public class ClientUpdateSourceHostsCondition extends AbstractClientPolicyCondit
 
     @Override
     public String getProviderId() {
-        return ClientUpdateSourceHostsConditionFactory.PROVIDER_ID;
+        return ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID;
     }
 
     @Override

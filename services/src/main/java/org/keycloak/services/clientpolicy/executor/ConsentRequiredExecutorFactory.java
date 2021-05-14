@@ -30,7 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ConsentRequiredExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "consent-required-executor";
+    public static final String PROVIDER_ID = "consent-required";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

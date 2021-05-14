@@ -32,17 +32,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProvider<SecureClientAuthEnforceExecutor.Configuration> {
+public class SecureClientAuthenticatorExecutor implements ClientPolicyExecutorProvider<SecureClientAuthenticatorExecutor.Configuration> {
 
     private final KeycloakSession session;
     private Configuration configuration;
 
-    public SecureClientAuthEnforceExecutor(KeycloakSession session) {
+    public SecureClientAuthenticatorExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
-    public void setupConfiguration(SecureClientAuthEnforceExecutor.Configuration config) {
+    public void setupConfiguration(SecureClientAuthenticatorExecutor.Configuration config) {
         this.configuration = config;
     }
 
@@ -86,7 +86,7 @@ public class SecureClientAuthEnforceExecutor implements ClientPolicyExecutorProv
 
     @Override
     public String getProviderId() {
-        return SecureClientAuthEnforceExecutorFactory.PROVIDER_ID;
+        return SecureClientAuthenticatorExecutorFactory.PROVIDER_ID;
     }
 
     @Override

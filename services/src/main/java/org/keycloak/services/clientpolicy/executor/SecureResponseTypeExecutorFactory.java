@@ -30,7 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class SecureResponseTypeExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-responsetype-executor";
+    public static final String PROVIDER_ID = "secure-response-type";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {

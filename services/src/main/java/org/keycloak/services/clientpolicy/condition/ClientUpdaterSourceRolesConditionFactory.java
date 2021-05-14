@@ -17,7 +17,7 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -28,17 +28,23 @@ import org.keycloak.provider.ProviderConfigProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientUpdaterSourceRolesConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "clientupdatesourcehost-condition";
+    public static final String PROVIDER_ID = "client-updater-source-roles";
 
-    public static final String TRUSTED_HOSTS = "trusted-hosts";
+    public static final String ROLES = "roles";
 
-    private static final ProviderConfigProperty TRUSTED_HOSTS_PROPERTY = new ProviderConfigProperty(TRUSTED_HOSTS, "clientupdate-trusted-hosts.label", "clientupdate-trusted-hosts.tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "admin");
+        configProperties.add(property);
+    }
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session) {
-        return new ClientUpdateSourceHostsCondition(session);
+        return new ClientUpdaterSourceRolesCondition(session);
     }
 
     @Override
@@ -60,12 +66,13 @@ public class ClientUpdateSourceHostsConditionFactory implements ClientPolicyCond
 
     @Override
     public String getHelpText() {
-        return "The condition checks the host/domain of the entity who tries to create/update the client to determine whether the policy is applied.";
+        return "The condition checks the role of the entity who tries to create/update the client to determine whether the policy is applied.";
+
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Arrays.asList(TRUSTED_HOSTS_PROPERTY);
+        return configProperties;
     }
 
 }

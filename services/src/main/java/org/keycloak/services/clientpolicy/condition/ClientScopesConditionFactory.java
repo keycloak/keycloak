@@ -32,7 +32,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ClientScopesConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "clientscopes-condition";
+    public static final String PROVIDER_ID = "client-scopes";
 
     public static final String SCOPES = "scopes";
     public static final String TYPE = "type";
@@ -42,7 +42,7 @@ public class ClientScopesConditionFactory implements ClientPolicyConditionProvid
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty property = new ProviderConfigProperty(SCOPES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, OAuth2Constants.OFFLINE_ACCESS);
+        ProviderConfigProperty property = new ProviderConfigProperty(SCOPES, PROVIDER_ID + "-condition.label", PROVIDER_ID + "-condition.tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, OAuth2Constants.OFFLINE_ACCESS);
         configProperties.add(property);
         property = new ProviderConfigProperty(TYPE, "Scope Type",
                 "If set to 'Default', condition evaluates to true if client has some default scopes of the values specified by the 'Expected Scopes' property. " +

@@ -48,7 +48,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider<PKCEEnforceExecutor.Configuration> {
+public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEnforcerExecutor.Configuration> {
 
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
     private static final Pattern VALID_CODE_VERIFIER_PATTERN  = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
@@ -56,7 +56,7 @@ public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider<PKCEEnf
     private final KeycloakSession session;
     private Configuration configuration;
 
-    public PKCEEnforceExecutor(KeycloakSession session) {
+    public PKCEEnforcerExecutor(KeycloakSession session) {
         this.session = session;
     }
 
@@ -85,7 +85,7 @@ public class PKCEEnforceExecutor implements ClientPolicyExecutorProvider<PKCEEnf
 
     @Override
     public String getProviderId() {
-        return PKCEEnforceExecutorFactory.PROVIDER_ID;
+        return PKCEEnforcerExecutorFactory.PROVIDER_ID;
     }
 
     @Override

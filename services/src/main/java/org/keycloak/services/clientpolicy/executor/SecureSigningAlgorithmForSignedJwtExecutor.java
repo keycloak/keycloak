@@ -34,19 +34,19 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration> {
+public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmForSignedJwtExecutor.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmForSignedJwtEnforceExecutor.class);
+    private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmForSignedJwtExecutor.class);
 
     private final KeycloakSession session;
     private Configuration configuration;
 
-    public SecureSigningAlgorithmForSignedJwtEnforceExecutor(KeycloakSession session) {
+    public SecureSigningAlgorithmForSignedJwtExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
-    public void setupConfiguration(SecureSigningAlgorithmForSignedJwtEnforceExecutor.Configuration config) {
+    public void setupConfiguration(SecureSigningAlgorithmForSignedJwtExecutor.Configuration config) {
         this.configuration = config;
     }
 
@@ -57,7 +57,7 @@ public class SecureSigningAlgorithmForSignedJwtEnforceExecutor implements Client
 
     @Override
     public String getProviderId() {
-        return SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.PROVIDER_ID;
+        return SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID;
     }
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
