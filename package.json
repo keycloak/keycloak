@@ -76,7 +76,7 @@
     "enzyme-adapter-react-16": "^1.15.3",
     "enzyme-to-json": "^3.5.0",
     "eslint": "^7.6.0",
-    "eslint-plugin-react": "^7.20.5",
+    "eslint-plugin-react": "^7.23.2",
     "grunt": "^1.2.1",
     "grunt-contrib-copy": "^1.0.0",
     "jest": "^26.6.3",
