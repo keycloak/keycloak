@@ -1,5 +1,5 @@
     <#import "template.ftl" as layout>
-    <@layout.registrationLayout showAnotherWayIfPresent=false; section>
+    <@layout.registrationLayout; section>
     <#if section = "title">
      title
     <#elseif section = "header">
@@ -25,18 +25,26 @@
         </form>
     </#if>
 
+    <form class="${properties.kcFormClass!}">
+        <div class="${properties.kcFormGroupClass!}">
+            <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                <input type="button" onclick="webAuthnAuthenticate()" value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
+                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}">
+            </div>
+        </div>
+    </form>
+
     <script type="text/javascript" src="${url.resourcesCommonPath}/node_modules/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
     <script type="text/javascript">
-
-        window.onload = () => {
+        function webAuthnAuthenticate() {
             let isUserIdentified = ${isUserIdentified};
             if (!isUserIdentified) {
                 doAuthenticate([]);
                 return;
             }
             checkAllowCredentials();
-        };
+        }
 
         function checkAllowCredentials() {
             let allowCredentials = [];
