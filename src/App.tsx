@@ -69,7 +69,7 @@ export const App = () => {
         >
           <ErrorBoundary
             FallbackComponent={ErrorRenderer}
-            onReset={window.location.reload}
+            onReset={() => window.location.reload()}
           >
             <Switch>
               {routes(() => {}).map((route, i) => (

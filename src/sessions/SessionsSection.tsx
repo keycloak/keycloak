@@ -33,11 +33,12 @@ export const SessionsSection = () => {
       )
     ).flat();
 
+    const userIds = Array.from(
+      new Set(clientSessions.map((session) => session.userId))
+    );
     const userSessions = (
       await Promise.all(
-        clientSessions.map((session) =>
-          adminClient.users.listSessions({ id: session.userId! })
-        )
+        userIds.map((userId) => adminClient.users.listSessions({ id: userId! }))
       )
     ).flat();
 
