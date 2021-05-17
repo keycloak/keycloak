@@ -3137,10 +3137,10 @@
   resolved "https://registry.yarnpkg.com/@patternfly/patternfly/-/patternfly-4.103.6.tgz#a01b1dced931eb4971a6c7366901fdde81a52284"
   integrity sha512-veWpHv/Dlk0P7tu96QUjLzD2Aq4IysUSGOjGPXlbb/KOUfnIrErLRmQnljY01ykXLJ7kxQSnC3yaJqCU+4fDPQ==
 
-"@patternfly/react-core@4.121.0", "@patternfly/react-core@^4.121.0":
-  version "4.121.0"
-  resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-4.121.0.tgz#8f0a18ee2d4f782f0b0f35e1ef848d98598e933c"
-  integrity sha512-KwDBv24DQywH3GjFlROp2v8bFuAIpYAjqKPASCY3TuLp+Ig97Pdp3fhCYUIDk40MF/uCdRrDEmjdLfd2tp3oKw==
+"@patternfly/react-core@4.121.1", "@patternfly/react-core@^4.121.1":
+  version "4.121.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-4.121.1.tgz#25ce945c54366a202e1f581e48ff167df4d3f7fc"
+  integrity sha512-WIlh7Wd4o4r0PA2+9/fPcOxMAnc2H/InPx8rulJzD9a8KdUevl7+XDtKok6p6grKRUriV5wKPQyfZrxcb5VVHw==
   dependencies:
     "@patternfly/react-icons" "^4.10.7"
     "@patternfly/react-styles" "^4.10.7"
@@ -3160,12 +3160,12 @@
   resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-4.10.7.tgz#3b0ce38f3e12a69cdcbaf1ada163a5b114b919bd"
   integrity sha512-oA9R1dXAJaKhj0/1z/uf2Z1wzsQ4jGQw2F8alPBagbDLyZD+pvUmElBr7o2Ucz/fm+/pLcphekCkGEVtyV3jOA==
 
-"@patternfly/react-table@4.27.6":
-  version "4.27.6"
-  resolved "https://registry.yarnpkg.com/@patternfly/react-table/-/react-table-4.27.6.tgz#064bd897d120a887095db7262714ff1f23224a5b"
-  integrity sha512-qlwvTM/6wshilPysdN2TPDNvsi9nE6nXUQWrJzZXOgc6hb/l4evn2UCfkMyJvSna+CMR1YlFjZrMAHOCxZQcvQ==
+"@patternfly/react-table@4.27.7":
+  version "4.27.7"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-table/-/react-table-4.27.7.tgz#f3159c703b4e5119d3f45dff7f4e9853b0b646a5"
+  integrity sha512-5lQBkXeBC5qtvum7HWPyd6PxpfO2j/UaIdy8ZeN7X0AVI96p3Zb4hH5WSTla2EAOUEmN0g16Nmxg57ZZREp+kg==
   dependencies:
-    "@patternfly/react-core" "^4.121.0"
+    "@patternfly/react-core" "^4.121.1"
     "@patternfly/react-icons" "^4.10.7"
     "@patternfly/react-styles" "^4.10.7"
     "@patternfly/react-tokens" "^4.11.8"
