@@ -21,7 +21,7 @@
     <h1 data-ng-hide="createNew">{{executorType.id|capitalize}}</h1>
     <h1 data-ng-show="createNew">{{:: 'create-executor' | translate}}</h1>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="readOnly">
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="isReadOnly()">
         <fieldset>
             <div class="form-group" data-ng-show="createNew">
                 <label class="col-md-2 control-label" for="executorTypeCreate">{{:: 'executor-type' | translate}}</label>
@@ -45,7 +45,7 @@
             <kc-provider-config config="executor.config" properties="executorType.properties" realm="realm"></kc-provider-config>
         </fieldset>
 
-        <div class="form-group" data-ng-hide="readOnly">
+        <div class="form-group" data-ng-hide="isReadOnly()">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save>{{:: 'save' | translate}}</button>
                 <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
