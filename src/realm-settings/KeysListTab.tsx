@@ -82,7 +82,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     } else if (type === "RSA") {
       return (
         <>
-          <div>
+          <div className="button-wrapper">
             <Button
               onClick={() => {
                 togglePublicKeyDialog();

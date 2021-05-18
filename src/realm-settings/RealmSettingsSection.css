@@ -48,3 +48,7 @@ button.pf-c-button.pf-m-link.add-provider {
 .pf-c-toolbar__group.providers-toolbar {
   padding-left: var(--pf-c-toolbar__content--PaddingLeft);
 }
+
+.button-wrapper {
+  white-space: nowrap;
+}
