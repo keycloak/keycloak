@@ -161,8 +161,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         // load profiles
         ClientProfileRepresentation duplicatedProfileRep = (new ClientProfileBuilder()).createProfile("builtin-basic-security", "Enforce basic security level")
                     .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                        createSecureClientAuthEnforceExecutorConfig(
-                            Boolean.FALSE, 
+                        createSecureClientAuthenticatorExecutorConfig(
                             Arrays.asList(ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientAuthenticator.PROVIDER_ID),
                             null))
                     .addExecutor(PKCEEnforcerExecutorFactory.PROVIDER_ID,
@@ -173,9 +172,8 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
 
         ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.")
                 .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                    createSecureClientAuthEnforceExecutorConfig(
-                        Boolean.TRUE, 
-                        Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
+                    createSecureClientAuthenticatorExecutorConfig(
+                        Collections.singletonList(JWTClientAuthenticator.PROVIDER_ID),
                         JWTClientAuthenticator.PROVIDER_ID))
                 .toRepresentation();
 
@@ -200,7 +198,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile("global-default-profile", "Pershyy Profil")
                         .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                                createSecureClientAuthEnforceExecutorConfig(Boolean.TRUE,
+                                createSecureClientAuthenticatorExecutorConfig(
                                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID, X509ClientAuthenticator.PROVIDER_ID),
                                         X509ClientAuthenticator.PROVIDER_ID))
                         .toRepresentation()

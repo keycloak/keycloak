@@ -207,16 +207,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // load profiles
         ClientProfileRepresentation loadedProfileRep = (new ClientProfileBuilder()).createProfile("ordinal-test-profile", "The profile that can be loaded.")
                 .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                    createSecureClientAuthEnforceExecutorConfig(
-                        Boolean.TRUE, 
+                    createSecureClientAuthenticatorExecutorConfig(
                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
                         JWTClientAuthenticator.PROVIDER_ID))
                 .toRepresentation();
 
         ClientProfileRepresentation loadedProfileRepWithoutBuiltinField = (new ClientProfileBuilder()).createProfile("lack-of-builtin-field-test-profile", "Without builtin field that is treated as builtin=false.")
                 .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                    createSecureClientAuthEnforceExecutorConfig(
-                        Boolean.TRUE, 
+                    createSecureClientAuthenticatorExecutorConfig(
                         Arrays.asList(JWTClientAuthenticator.PROVIDER_ID),
                         JWTClientAuthenticator.PROVIDER_ID))
                 .addExecutor(HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID,
@@ -301,7 +299,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // each executor
         assertExpectedExecutors(Arrays.asList(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID), actualProfileRep);
-        assertExpectedSecureClientAuthEnforceExecutor(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID), true, JWTClientAuthenticator.PROVIDER_ID, actualProfileRep);
+        assertExpectedSecureClientAuthEnforceExecutor(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID), JWTClientAuthenticator.PROVIDER_ID, actualProfileRep);
 
         // each profile - lack-of-builtin-field-test-profile
         actualProfileRep =  getProfileRepresentation(actualProfilesRep, "lack-of-builtin-field-test-profile", false);
@@ -317,7 +315,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                 SecureSessionEnforceExecutorFactory.PROVIDER_ID,
                 SecureSigningAlgorithmExecutorFactory.PROVIDER_ID,
                 SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID), actualProfileRep);
-        assertExpectedSecureClientAuthEnforceExecutor(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID), true, JWTClientAuthenticator.PROVIDER_ID, actualProfileRep);
+        assertExpectedSecureClientAuthEnforceExecutor(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID), JWTClientAuthenticator.PROVIDER_ID, actualProfileRep);
         assertExpectedHolderOfKeyEnforceExecutor(true, actualProfileRep);
         assertExpectedSecureRedirectUriEnforceExecutor(actualProfileRep);
         assertExpectedSecureRequestObjectExecutor(actualProfileRep);
@@ -843,23 +841,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Client Profiles - Executor CRUD Operations
 
-    protected HolderOfKeyEnforcerExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean isAugment) {
+    protected HolderOfKeyEnforcerExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean autoConfigure) {
         HolderOfKeyEnforcerExecutor.Configuration config = new HolderOfKeyEnforcerExecutor.Configuration();
-        config.setAugment(isAugment);
+        config.setAutoConfigure(autoConfigure);
         return config;
     }
 
-    protected PKCEEnforcerExecutor.Configuration createPKCEEnforceExecutorConfig(Boolean isAugment) {
+    protected PKCEEnforcerExecutor.Configuration createPKCEEnforceExecutorConfig(Boolean autoConfigure) {
         PKCEEnforcerExecutor.Configuration config = new PKCEEnforcerExecutor.Configuration();
-        config.setAugment(isAugment);
+        config.setAutoConfigure(autoConfigure);
         return config;
     }
 
-    protected SecureClientAuthenticatorExecutor.Configuration createSecureClientAuthEnforceExecutorConfig(Boolean isAugment, List<String> clientAuthns, String clientAuthnsAugment) {
+    protected SecureClientAuthenticatorExecutor.Configuration createSecureClientAuthenticatorExecutorConfig(List<String> allowedClientAuthenticators, String defaultClientAuthenticator) {
         SecureClientAuthenticatorExecutor.Configuration config = new SecureClientAuthenticatorExecutor.Configuration();
-        config.setAugment(isAugment);
-        config.setClientAuthns(clientAuthns);
-        config.setClientAuthnsAugment(clientAuthnsAugment);
+        config.setAllowedClientAuthenticators(allowedClientAuthenticators);
+        config.setDefaultClientAuthenticator(defaultClientAuthenticator);
         return config;
     }
 
@@ -1281,24 +1278,23 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertThat(actualExecutorNames, Matchers.containsInAnyOrder(expectedExecutors.toArray()));
     }
 
-    protected void assertExpectedHolderOfKeyEnforceExecutor(boolean isAugment, ClientProfileRepresentation profileRep) {
-        assertExpectedAugmenedExecutor(isAugment, HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID, profileRep);
+    protected void assertExpectedHolderOfKeyEnforceExecutor(boolean autoConfigure, ClientProfileRepresentation profileRep) {
+        assertExpectedAutoConfiguredExecutor(autoConfigure, HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID, profileRep);
     }
 
-    protected void assertExpectedPKCEEnforceExecutor(boolean isAugment, ClientProfileRepresentation profileRep) {
-        assertExpectedAugmenedExecutor(isAugment, PKCEEnforcerExecutorFactory.PROVIDER_ID, profileRep);
+    protected void assertExpectedPKCEEnforceExecutor(boolean autoConfigure, ClientProfileRepresentation profileRep) {
+        assertExpectedAutoConfiguredExecutor(autoConfigure, PKCEEnforcerExecutorFactory.PROVIDER_ID, profileRep);
     }
 
-    protected void assertExpectedSecureClientAuthEnforceExecutor(List<String> clientAuthns, boolean isAugment, String clientAuthnsAugment, ClientProfileRepresentation profileRep) throws Exception {
-        assertExpectedAugmenedExecutor(isAugment, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
+    protected void assertExpectedSecureClientAuthEnforceExecutor(List<String> expectedAllowedClientAuthenticators, String expectedAutoConfiguredClientAuthenticator, ClientProfileRepresentation profileRep) throws Exception {
         assertNotNull(profileRep);
         JsonNode actualExecutorConfig = getConfigOfExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID, profileRep);
         assertNotNull(actualExecutorConfig);
-        Set<String> actualClientAuthns = new HashSet<>((Collection<String>) JsonSerialization.readValue(actualExecutorConfig.get("client-authns").toString(), List.class));
-        assertEquals(new HashSet<>(clientAuthns), actualClientAuthns);
+        Set<String> actualClientAuthns = new HashSet<>((Collection<String>) JsonSerialization.readValue(actualExecutorConfig.get(SecureClientAuthenticatorExecutorFactory.ALLOWED_CLIENT_AUTHENTICATORS).toString(), List.class));
+        assertEquals(new HashSet<>(expectedAllowedClientAuthenticators), actualClientAuthns);
 
-        String actualClientAuthnAugment = actualExecutorConfig.get("client-authns-augment").textValue();
-        assertEquals(clientAuthnsAugment, actualClientAuthnAugment);
+        String actualAutoConfiguredClientAuthenticator = actualExecutorConfig.get(SecureClientAuthenticatorExecutorFactory.DEFAULT_CLIENT_AUTHENTICATOR).textValue();
+        assertEquals(expectedAutoConfiguredClientAuthenticator, actualAutoConfiguredClientAuthenticator);
     }
 
     protected void assertExpectedSecureRedirectUriEnforceExecutor(ClientProfileRepresentation profileRep) {
@@ -1325,12 +1321,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedEmptyConfig(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID, profileRep);
     }
 
-    protected void assertExpectedAugmenedExecutor(boolean isAugment, String providerId, ClientProfileRepresentation profileRep) {
+    protected void assertExpectedAutoConfiguredExecutor(boolean expectedAutoConfigure, String providerId, ClientProfileRepresentation profileRep) {
         assertNotNull(profileRep);
         JsonNode actualExecutorConfig = getConfigOfExecutor(providerId, profileRep);
         assertNotNull(actualExecutorConfig);
-        boolean actualIsAugment = actualExecutorConfig.get("is-augment") == null ? false : actualExecutorConfig.get("is-augment").asBoolean();
-        assertEquals(isAugment, actualIsAugment);
+        boolean actualAutoConfigure = actualExecutorConfig.get("auto-configure") == null ? false : actualExecutorConfig.get("auto-configure").asBoolean();
+        assertEquals(expectedAutoConfigure, actualAutoConfigure);
     }
 
     private JsonNode getConfigOfExecutor(String providerId, ClientProfileRepresentation profileRep) {

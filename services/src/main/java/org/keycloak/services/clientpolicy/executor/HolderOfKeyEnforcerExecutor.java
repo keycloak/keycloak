@@ -62,15 +62,15 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
     }
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
-        @JsonProperty("is-augment")
-        protected Boolean augment;
+        @JsonProperty("auto-configure")
+        protected Boolean autoConfigure;
 
-        public Boolean isAugment() {
-            return augment;
+        public Boolean isAutoConfigure() {
+            return autoConfigure;
         }
 
-        public void setAugment(Boolean augment) {
-            this.augment = augment;
+        public void setAutoConfigure(Boolean autoConfigure) {
+            this.autoConfigure = autoConfigure;
         }
     }
 
@@ -86,7 +86,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             case REGISTER:
             case UPDATE:
                 ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
-                augment(clientUpdateContext.getProposedClientRepresentation());
+                autoConfigure(clientUpdateContext.getProposedClientRepresentation());
                 validate(clientUpdateContext.getProposedClientRepresentation());
                 break;
             case TOKEN_REQUEST:
@@ -112,8 +112,8 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
         }
     }
 
-    private void augment(ClientRepresentation rep) {
-        if (configuration.isAugment()) {
+    private void autoConfigure(ClientRepresentation rep) {
+        if (configuration.isAutoConfigure()) {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setUseMtlsHoKToken(true);
         }
     }
