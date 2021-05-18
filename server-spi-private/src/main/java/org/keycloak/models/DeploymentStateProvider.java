@@ -17,7 +17,11 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.migration.MigrationModel;
+import org.keycloak.provider.Provider;
 
-public interface ServerInfoProviderFactory extends ProviderFactory<ServerInfoProvider> {
+public interface DeploymentStateProvider extends Provider {
+
+    MigrationModel getMigrationModel();
+
 }

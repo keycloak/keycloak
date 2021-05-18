@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.serverinfo;
+package org.keycloak.models.map.deploymentState;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,18 +29,19 @@ import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ServerInfoProvider;
-import org.keycloak.models.ServerInfoProviderFactory;
+import org.keycloak.models.DeploymentStateProvider;
+import org.keycloak.models.DeploymentStateProviderFactory;
+import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class MapServerInfoProviderFactory implements ServerInfoProviderFactory, EnvironmentDependentProviderFactory {
+public class MapDeploymentStateProviderFactory implements DeploymentStateProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "map";
 
     private static final String RESOURCES_VERSION_SEED = "resourcesVersionSeed";
 
     @Override
-    public ServerInfoProvider create(KeycloakSession session) {
+    public DeploymentStateProvider create(KeycloakSession session) {
         return INSTANCE;
     }
 
@@ -48,7 +49,8 @@ public class MapServerInfoProviderFactory implements ServerInfoProviderFactory, 
     public void init(Config.Scope config) {
         String seed = config.get(RESOURCES_VERSION_SEED);
         if (seed == null) {
-            Logger.getLogger(ServerInfoProviderFactory.class).warnf("It is recommended to set '%s' property in the %s provider config of serverInfo SPI", RESOURCES_VERSION_SEED, PROVIDER_ID);
+            Logger.getLogger(DeploymentStateProviderFactory.class)
+                    .warnf("It is recommended to set '%s' property in the %s provider config of %s SPI", RESOURCES_VERSION_SEED, PROVIDER_ID, DeploymentStateSpi.NAME);
             //generate random string for this installation
             seed = RandomString.randomCode(10);
         }
@@ -79,7 +81,7 @@ public class MapServerInfoProviderFactory implements ServerInfoProviderFactory, 
         return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 
-    private static final ServerInfoProvider INSTANCE =  new ServerInfoProvider() {
+    private static final DeploymentStateProvider INSTANCE =  new DeploymentStateProvider() {
 
         private final MigrationModel INSTANCE = new MigrationModel() {
             @Override
