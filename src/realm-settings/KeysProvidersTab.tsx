@@ -50,8 +50,6 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
 
   const [itemOrder, setItemOrder] = useState<string[]>([]);
 
-  console.log("itemord", itemOrder);
-
   const [liveText, setLiveText] = useState("");
 
   useEffect(() => {
