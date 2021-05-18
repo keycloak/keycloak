@@ -35,8 +35,6 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     return keys;
   };
 
-  console.log("Keys", keys)
-
   React.useEffect(() => {
     refresh();
   }, [keys]);
