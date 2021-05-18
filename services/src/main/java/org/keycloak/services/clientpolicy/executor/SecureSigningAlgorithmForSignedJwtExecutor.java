@@ -68,8 +68,8 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
             return requireClientAssertion;
         }
 
-        public void setRequireClientAssertion(Boolean augment) {
-            this.requireClientAssertion = augment;
+        public void setRequireClientAssertion(Boolean requireClientAssertion) {
+            this.requireClientAssertion = requireClientAssertion;
         }
     }
 

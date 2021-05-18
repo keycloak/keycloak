@@ -22,18 +22,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class HolderOfKeyEnforcerExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "holder-of-key-enforcer";
 
-    public static final String IS_AUGMENT = "is-augment";
+    public static final String AUTO_CONFIGURE = "auto-configure";
 
-    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
-            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to use MTLS HoK token", ProviderConfigProperty.BOOLEAN_TYPE, false);
+    private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
+            AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to use MTLS HoK token", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -64,7 +63,7 @@ public class HolderOfKeyEnforcerExecutorFactory implements ClientPolicyExecutorP
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY));
+        return Collections.singletonList(AUTO_CONFIGURE_PROPERTY);
     }
 
 }
