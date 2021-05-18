@@ -37,9 +37,8 @@ public class SecureClientAuthenticatorExecutorFactory implements ClientPolicyExe
 
     public static final String PROVIDER_ID = "secure-client-authenticator";
 
-    public static final String IS_AUGMENT = "is-augment";
-    public static final String CLIENT_AUTHNS = "client-authns";
-    public static final String CLIENT_AUTHNS_AUGMENT = "client-authns-augment";
+    public static final String ALLOWED_CLIENT_AUTHENTICATORS = "allowed-client-authenticators";
+    public static final String DEFAULT_CLIENT_AUTHENTICATOR = "default-client-authenticator";
 
     private List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -54,25 +53,21 @@ public class SecureClientAuthenticatorExecutorFactory implements ClientPolicyExe
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        ProviderConfigProperty isAugmentProperty = new ProviderConfigProperty(
-                IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce the authentication method to new clients",
-                ProviderConfigProperty.BOOLEAN_TYPE, false);
-
         List<String> clientAuthProviders = factory.getProviderFactoriesStream(ClientAuthenticator.class)
                 .map(ProviderFactory::getId)
                 .collect(Collectors.toList());
 
-        ProviderConfigProperty clientAuthnsProperty = new ProviderConfigProperty(
-                CLIENT_AUTHNS, "Client Authentication Methods", "List of available client authentication methods, which are allowed for clients to use. Other client authentication methods will not be allowed.",
+        ProviderConfigProperty allowedClientAuthenticatorsProperty = new ProviderConfigProperty(
+                ALLOWED_CLIENT_AUTHENTICATORS, "Allowed Client Authenticators", "List of available client authentication methods, which are allowed for clients to use. Other client authentication methods will not be allowed.",
                 ProviderConfigProperty.MULTIVALUED_LIST_TYPE, null);
-        clientAuthnsProperty.setOptions(clientAuthProviders);
+        allowedClientAuthenticatorsProperty.setOptions(clientAuthProviders);
 
-        ProviderConfigProperty clientAuthnsAugment = new ProviderConfigProperty(
-                CLIENT_AUTHNS_AUGMENT, "Augment Client Authentication Method", "If 'Augment Configuration' is ON, then this client authentication method will be set as the authentication method to new clients",
+        ProviderConfigProperty autoConfiguredClientAuthenticator = new ProviderConfigProperty(
+                DEFAULT_CLIENT_AUTHENTICATOR, "Default Client Authenticator", "This client authentication method will be set as the authentication method to new clients during register/update request of the client in case that client does not have explicitly set other client authenticator method. If it is not set, then the client authenticator won't be set on new clients. Regardless the value of this option, client is still always validated to match with any of the allowed client authentication methods",
                 ProviderConfigProperty.LIST_TYPE, JWTClientAuthenticator.PROVIDER_ID);
-        clientAuthnsAugment.setOptions(clientAuthProviders);
+        autoConfiguredClientAuthenticator.setOptions(clientAuthProviders);
 
-        configProperties = Arrays.asList(isAugmentProperty, clientAuthnsProperty, clientAuthnsAugment);
+        configProperties = Arrays.asList(allowedClientAuthenticatorsProperty, autoConfiguredClientAuthenticator);
     }
 
     @Override

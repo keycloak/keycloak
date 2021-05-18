@@ -71,15 +71,15 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
     }
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
-        @JsonProperty("is-augment")
-        protected Boolean augment;
+        @JsonProperty("auto-configure")
+        protected Boolean autoConfigure;
 
-        public Boolean isAugment() {
-            return augment;
+        public Boolean isAutoConfigure() {
+            return autoConfigure;
         }
 
-        public void setAugment(Boolean augment) {
-            this.augment = augment;
+        public void setAutoConfigure(Boolean autoConfigure) {
+            this.autoConfigure = autoConfigure;
         }
     }
 
@@ -94,7 +94,7 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
             case REGISTER:
             case UPDATE:
                 ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
-                augment(clientUpdateContext.getProposedClientRepresentation());
+                autoConfigure(clientUpdateContext.getProposedClientRepresentation());
                 validate(clientUpdateContext.getProposedClientRepresentation());
                 break;
             case AUTHORIZATION_REQUEST:
@@ -112,8 +112,8 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
         }
     }
 
-    private void augment(ClientRepresentation rep) {
-        if (configuration.isAugment())
+    private void autoConfigure(ClientRepresentation rep) {
+        if (configuration.isAutoConfigure())
             OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
     }
 

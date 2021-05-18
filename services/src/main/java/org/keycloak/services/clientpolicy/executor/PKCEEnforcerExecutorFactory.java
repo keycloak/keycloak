@@ -17,8 +17,7 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -33,10 +32,10 @@ public class PKCEEnforcerExecutorFactory implements ClientPolicyExecutorProvider
 
     public static final String PROVIDER_ID = "pkce-enforcer";
 
-    public static final String IS_AUGMENT = "is-augment";
+    public static final String AUTO_CONFIGURE = "auto-configure";
 
-    private static final ProviderConfigProperty IS_AUGMENT_PROPERTY = new ProviderConfigProperty(
-            IS_AUGMENT, "Augment Configuration", "If On, then the during client creation or update, the configuration of the client will be augmented to enforce usage of PKCE", ProviderConfigProperty.BOOLEAN_TYPE, false);
+    private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
+            AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to enforce usage of PKCE", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -67,7 +66,7 @@ public class PKCEEnforcerExecutorFactory implements ClientPolicyExecutorProvider
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return new ArrayList<>(Arrays.asList(IS_AUGMENT_PROPERTY));
+        return Collections.singletonList(AUTO_CONFIGURE_PROPERTY);
     }
 
 }
