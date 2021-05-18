@@ -1,5 +1,5 @@
 import React from "react";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
 import { Page, PageSection } from "@patternfly/react-core";
 import { UserFederationKerberosWizard } from "../user-federation/UserFederationKerberosWizard";
 import { MockAdminClient } from "./MockAdminClient";

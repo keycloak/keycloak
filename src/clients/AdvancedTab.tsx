@@ -18,8 +18,8 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import GlobalRequestResult from "keycloak-admin/lib/defs/globalRequestResult";
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type GlobalRequestResult from "keycloak-admin/lib/defs/globalRequestResult";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { convertToFormValues, toUpperCase } from "../util";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
@@ -36,7 +36,7 @@ import { AddHostDialog } from "./advanced/AddHostDialog";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { SaveOptions } from "./ClientDetails";
+import type { SaveOptions } from "./ClientDetails";
 
 type AdvancedProps = {
   save: (options?: SaveOptions) => void;

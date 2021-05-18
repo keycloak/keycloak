@@ -18,9 +18,9 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";

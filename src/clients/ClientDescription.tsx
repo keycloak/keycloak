@@ -11,7 +11,7 @@ import {
 import { HelpItem } from "../components/help-enabler/HelpItem";
 
 import { FormAccess } from "../components/form-access/FormAccess";
-import { ClientForm } from "./ClientDetails";
+import type { ClientForm } from "./ClientDetails";
 
 export const ClientDescription = () => {
   const { t } = useTranslation("clients");

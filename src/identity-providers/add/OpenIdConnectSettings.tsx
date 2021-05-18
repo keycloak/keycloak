@@ -5,7 +5,7 @@ import { FormGroup, Switch, TextInput, Title } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { OIDCConfigurationRepresentation } from "../OIDCConfigurationRepresentation";
+import type { OIDCConfigurationRepresentation } from "../OIDCConfigurationRepresentation";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { DiscoverySettings } from "./DiscoverySettings";

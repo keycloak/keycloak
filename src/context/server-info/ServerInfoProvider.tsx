@@ -1,5 +1,5 @@
 import React, { createContext, ReactNode, useContext } from "react";
-import { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import { sortProviders } from "../../util";
 import { DataLoader } from "../../components/data-loader/DataLoader";

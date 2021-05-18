@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { PageSection } from "@patternfly/react-core";
 import moment from "moment";
-import UserSessionRepresentation from "keycloak-admin/lib/defs/userSessionRepresentation";
+import type UserSessionRepresentation from "keycloak-admin/lib/defs/userSessionRepresentation";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";

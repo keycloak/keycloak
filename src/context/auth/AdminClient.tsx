@@ -1,7 +1,7 @@
 import { createContext, DependencyList, useContext, useEffect } from "react";
 import axios from "axios";
 
-import KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "keycloak-admin";
 import { useErrorHandler } from "react-error-boundary";
 
 export const AdminClient = createContext<KeycloakAdminClient | undefined>(

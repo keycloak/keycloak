@@ -12,8 +12,8 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
-import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";

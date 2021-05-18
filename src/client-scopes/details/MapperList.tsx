@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import {
   AlertVariant,
   ButtonVariant,
@@ -10,9 +10,9 @@ import {
 } from "@patternfly/react-core";
 import { CaretDownIcon } from "@patternfly/react-icons";
 
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-import { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";

@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import i18n from "../../i18n";
 
-import WhoAmIRepresentation, {
-  AccessType,
-} from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 export class WhoAmI {

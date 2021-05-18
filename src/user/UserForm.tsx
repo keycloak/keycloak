@@ -16,13 +16,13 @@ import { useTranslation } from "react-i18next";
 import { Controller, UseFormMethods } from "react-hook-form";
 import { useHistory, useParams } from "react-router-dom";
 import { FormAccess } from "../components/form-access/FormAccess";
-import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import moment from "moment";
 import { JoinGroupDialog } from "./JoinGroupDialog";
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
 import { emailRegexPattern } from "../util";
 

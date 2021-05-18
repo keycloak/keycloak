@@ -8,7 +8,7 @@ import {
   ButtonVariant,
   EmptyStateSecondaryActions,
 } from "@patternfly/react-core";
-import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
+import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import { SearchIcon } from "@patternfly/react-icons";
 

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { wrappable } from "@patternfly/react-table";
 
-import ClientInitialAccessPresentation from "keycloak-admin/lib/defs/clientInitialAccessPresentation";
+import type ClientInitialAccessPresentation from "keycloak-admin/lib/defs/clientInitialAccessPresentation";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";

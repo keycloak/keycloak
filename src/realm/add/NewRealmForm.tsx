@@ -15,7 +15,7 @@ import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload
 import { useAlerts } from "../../components/alert/Alerts";
 import { useForm, Controller } from "react-hook-form";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 import { FormAccess } from "../../components/form-access/FormAccess";

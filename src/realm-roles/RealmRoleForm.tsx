@@ -8,8 +8,8 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { UseFormMethods } from "react-hook-form";
-import { RoleFormType } from "./RealmRoleTabs";
+import type { UseFormMethods } from "react-hook-form";
+import type { RoleFormType } from "./RealmRoleTabs";
 import { FormAccess } from "../components/form-access/FormAccess";
 
 export type RealmRoleFormProps = {

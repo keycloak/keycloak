@@ -18,12 +18,12 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 
-import CertificateRepresentation from "keycloak-admin/lib/defs/certificateRepresentation";
-import KeyStoreConfig from "keycloak-admin/lib/defs/keystoreConfig";
+import type CertificateRepresentation from "keycloak-admin/lib/defs/certificateRepresentation";
+import type KeyStoreConfig from "keycloak-admin/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { ClientForm } from "../ClientDetails";
+import type { ClientForm } from "../ClientDetails";
 import { GenerateKeyDialog } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";

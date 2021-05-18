@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Control } from "react-hook-form";
+import type { Control } from "react-hook-form";
 import {
   ActionGroup,
   Button,

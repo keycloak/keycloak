@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@patternfly/react-core";
-import { Meta, Story } from "@storybook/react";
+import type { Meta, Story } from "@storybook/react";
+import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import serverInfo from "../context/server-info/__tests__/mock.json";
 import { ServerInfoContext } from "../context/server-info/ServerInfoProvider";
@@ -17,7 +18,9 @@ export default {
 const Template: Story<AddMapperDialogProps> = (args) => {
   const [open, setOpen] = useState(false);
   return (
-    <ServerInfoContext.Provider value={serverInfo}>
+    <ServerInfoContext.Provider
+      value={(serverInfo as unknown) as ServerInfoRepresentation}
+    >
       <AddMapperDialog
         {...args}
         open={open}

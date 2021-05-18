@@ -2,9 +2,8 @@ import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertVariant } from "@patternfly/react-core";
 
-import RoleRepresentation, {
-  RoleMappingPayload,
-} from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
