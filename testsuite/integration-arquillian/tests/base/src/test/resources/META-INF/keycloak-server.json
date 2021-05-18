@@ -36,8 +36,8 @@
         "event-queue": {}
     },
 
-    "serverInfo": {
-        "provider": "${keycloak.serverInfo.provider:jpa}",
+    "deploymentState": {
+        "provider": "${keycloak.deploymentState.provider:jpa}",
         "map": {
             "resourcesVersionSeed": "1JZ379bzyOCFA"
         }

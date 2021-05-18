@@ -22,12 +22,12 @@ import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ServerInfoProvider;
-import org.keycloak.models.ServerInfoProviderFactory;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
+import org.keycloak.models.DeploymentStateProvider;
+import org.keycloak.models.DeploymentStateProviderFactory;
 
-public class JpaServerInfoProviderFactory implements ServerInfoProviderFactory {
+public class JpaDeploymentStateProviderFactory implements DeploymentStateProviderFactory {
 
     @Override
     public void init(Config.Scope config) {
@@ -43,7 +43,7 @@ public class JpaServerInfoProviderFactory implements ServerInfoProviderFactory {
     }
 
     @Override
-    public ServerInfoProvider create(KeycloakSession session) {
+    public DeploymentStateProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         return new JpaRealmProvider(session, em, null);
     }

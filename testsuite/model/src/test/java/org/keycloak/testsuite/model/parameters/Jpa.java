@@ -104,7 +104,7 @@ public class Jpa extends KeycloakModelParameters {
           .spi("role").defaultProvider("jpa")
           .spi("user").defaultProvider("jpa")
           .spi("realm").defaultProvider("jpa")
-          .spi("serverInfo").defaultProvider("jpa")
+          .spi("deploymentState").defaultProvider("jpa")
         ;
     }
 }
