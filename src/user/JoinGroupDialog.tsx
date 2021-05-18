@@ -64,26 +64,26 @@ export const JoinGroupDialog = ({
     async () => {
       const allGroups = await adminClient.groups.find();
 
-          if (groupId) {
-            const group = await adminClient.groups.findOne({ id: groupId });
-            return { group, groups: group.subGroups! };
-          } else if (id) {
-            const existingUserGroups = await adminClient.users.listGroups({
-              id,
-            });
-            setJoinedGroups(existingUserGroups);
-            return {
-              groups: allGroups,
-            };
-          } else
-            return {
-              groups: allGroups,
-            };
-        },
-        async ({ group: selectedGroup, groups }) => {
-          if (selectedGroup) {
-            setNavigation([...navigation, selectedGroup]);
-          }
+      if (groupId) {
+        const group = await adminClient.groups.findOne({ id: groupId });
+        return { group, groups: group.subGroups! };
+      } else if (id) {
+        const existingUserGroups = await adminClient.users.listGroups({
+          id,
+        });
+        setJoinedGroups(existingUserGroups);
+        return {
+          groups: allGroups,
+        };
+      } else
+        return {
+          groups: allGroups,
+        };
+    },
+    async ({ group: selectedGroup, groups }) => {
+      if (selectedGroup) {
+        setNavigation([...navigation, selectedGroup]);
+      }
 
       groups.forEach((group: Group) => {
         group.checked = !!selectedRows.find((r) => r.id === group.id);
