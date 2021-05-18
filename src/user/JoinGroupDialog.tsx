@@ -23,11 +23,6 @@ import { useTranslation } from "react-i18next";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
-<<<<<<< HEAD
-import _ from "lodash";
-=======
-import { useErrorHandler } from "react-error-boundary";
->>>>>>> update checkbox styles and add disabled functionality to user grops modal
 import { useParams } from "react-router-dom";
 
 export type JoinGroupDialogProps = {
@@ -209,7 +204,6 @@ export const JoinGroupDialog = ({
                   }
                 : undefined
             }
-            // onClick={hasSubgroups(group) ? undefined}
           >
             <DataListItemRow
               className={`join-group-dialog-row-${
