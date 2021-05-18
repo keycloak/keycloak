@@ -32,6 +32,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Update maven settings
+      run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
