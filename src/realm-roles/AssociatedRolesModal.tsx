@@ -10,13 +10,12 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
 import _ from "lodash";
-import { useErrorHandler } from "react-error-boundary";
 
 type Role = RoleRepresentation & {
   clientId?: string;
@@ -34,7 +33,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
-  const errorHandler = useErrorHandler();
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState("roles");
@@ -129,17 +127,19 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
     refresh();
   }, [filterType]);
 
-  useEffect(() => {
-    if (id) {
-      return asyncStateFetch(
-        () => adminClient.roles.findOneById({ id }),
-        (fetchedRole) => setName(fetchedRole.name!),
-        errorHandler
-      );
-    } else {
-      setName(t("createRole"));
-    }
-  }, []);
+  useFetch(
+    async () => {
+      if (id) return await adminClient.roles.findOneById({ id });
+    },
+    (fetchedRole) => {
+      if (fetchedRole) {
+        setName(fetchedRole.name!);
+      } else {
+        setName(t("createRole"));
+      }
+    },
+    []
+  );
 
   const onFilterDropdownToggle = () => {
     setIsFilterDropdownOpen(!isFilterDropdownOpen);

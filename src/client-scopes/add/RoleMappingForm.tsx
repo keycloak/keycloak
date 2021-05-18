@@ -1,8 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
-import { useErrorHandler } from "react-error-boundary";
 import {
   FormGroup,
   PageSection,
@@ -24,10 +23,7 @@ import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RealmContext } from "../../context/realm-context/RealmContext";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
@@ -36,7 +32,6 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 export const RoleMappingForm = () => {
   const { realm } = useContext(RealmContext);
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const history = useHistory();
   const { addAlert } = useAlerts();
 
@@ -51,53 +46,49 @@ export const RoleMappingForm = () => {
   const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        const clients = await adminClient.clients.find();
+  useFetch(
+    async () => {
+      const clients = await adminClient.clients.find();
 
-        const asyncFilter = async (
-          predicate: (client: ClientRepresentation) => Promise<boolean>
-        ) => {
-          const results = await Promise.all(clients.map(predicate));
-          return clients.filter((_, index) => results[index]);
-        };
+      const asyncFilter = async (
+        predicate: (client: ClientRepresentation) => Promise<boolean>
+      ) => {
+        const results = await Promise.all(clients.map(predicate));
+        return clients.filter((_, index) => results[index]);
+      };
 
-        const filteredClients = await asyncFilter(
-          async (client) =>
-            (await adminClient.clients.listRoles({ id: client.id! })).length > 0
-        );
+      const filteredClients = await asyncFilter(
+        async (client) =>
+          (await adminClient.clients.listRoles({ id: client.id! })).length > 0
+      );
 
-        filteredClients.map(
-          (client) =>
-            (client.toString = function () {
-              return this.clientId!;
-            })
-        );
-        return filteredClients;
-      },
-      (filteredClients) => setClients(filteredClients),
-      handleError
-    );
-  }, []);
+      filteredClients.map(
+        (client) =>
+          (client.toString = function () {
+            return this.clientId!;
+          })
+      );
+      return filteredClients;
+    },
+    (filteredClients) => setClients(filteredClients),
+    []
+  );
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        const client = selectedClient as ClientRepresentation;
-        if (client && client.name !== "realmRoles") {
-          const clientRoles = await adminClient.clients.listRoles({
-            id: client.id!,
-          });
-          return clientRoles;
-        } else {
-          return await adminClient.roles.find();
-        }
-      },
-      (clientRoles) => setClientRoles(clientRoles),
-      handleError
-    );
-  }, [selectedClient]);
+  useFetch(
+    async () => {
+      const client = selectedClient as ClientRepresentation;
+      if (client && client.name !== "realmRoles") {
+        const clientRoles = await adminClient.clients.listRoles({
+          id: client.id!,
+        });
+        return clientRoles;
+      } else {
+        return await adminClient.roles.find();
+      }
+    },
+    (clientRoles) => setClientRoles(clientRoles),
+    [selectedClient]
+  );
 
   const save = async (mapping: ProtocolMapperRepresentation) => {
     try {

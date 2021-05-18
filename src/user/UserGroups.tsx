@@ -14,10 +14,9 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../util";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { cellWidth } from "@patternfly/react-table";
-import { useErrorHandler } from "react-error-boundary";
 import _ from "lodash";
 import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { JoinGroupDialog } from "./JoinGroupDialog";
@@ -43,7 +42,6 @@ export const UserGroups = () => {
   const { addAlert } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
-  const handleError = useErrorHandler();
 
   const [selectedGroup, setSelectedGroup] = useState<GroupRepresentation>();
   const [list, setList] = useState(false);
@@ -177,17 +175,13 @@ export const UserGroups = () => {
     return alphabetize(filterDupesfromGroups);
   };
 
-  useEffect(() => {
-    return asyncStateFetch(
-      () => {
-        return Promise.resolve(adminClient.users.listGroups({ id }));
-      },
-      (response) => {
-        setListGroups(!!(response && response.length > 0));
-      },
-      handleError
-    );
-  }, []);
+  useFetch(
+    () => adminClient.users.listGroups({ id }),
+    (response) => {
+      setListGroups(!!(response && response.length > 0));
+    },
+    []
+  );
 
   useEffect(() => {
     refresh();

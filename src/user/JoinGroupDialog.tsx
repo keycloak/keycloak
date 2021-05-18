@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,10 +20,9 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
-import { useErrorHandler } from "react-error-boundary";
 import _ from "lodash";
 import { useParams } from "react-router-dom";
 
@@ -52,8 +51,6 @@ export const JoinGroupDialog = ({
   const adminClient = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<Group[]>([]);
 
-  const errorHandler = useErrorHandler();
-
   const [navigation, setNavigation] = useState<Group[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filtered, setFiltered] = useState<GroupRepresentation[]>();
@@ -63,42 +60,38 @@ export const JoinGroupDialog = ({
 
   const { id } = useParams<{ id: string }>();
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        async () => {
-          const allGroups = await adminClient.groups.find();
+  useFetch(
+    async () => {
+      const allGroups = await adminClient.groups.find();
 
-          if (groupId) {
-            const group = await adminClient.groups.findOne({ id: groupId });
-            return { group, groups: group.subGroups! };
-          } else if (id) {
-            const existingUserGroups = await adminClient.users.listGroups({
-              id,
-            });
+      if (groupId) {
+        const group = await adminClient.groups.findOne({ id: groupId });
+        return { group, groups: group.subGroups! };
+      } else if (id) {
+        const existingUserGroups = await adminClient.users.listGroups({
+          id,
+        });
 
-            return {
-              groups: _.differenceBy(allGroups, existingUserGroups, "id"),
-            };
-          } else
-            return {
-              groups: allGroups,
-            };
-        },
-        async ({ group: selectedGroup, groups }) => {
-          if (selectedGroup) {
-            setNavigation([...navigation, selectedGroup]);
-          }
+        return {
+          groups: _.differenceBy(allGroups, existingUserGroups, "id"),
+        };
+      } else
+        return {
+          groups: allGroups,
+        };
+    },
+    async ({ group: selectedGroup, groups }) => {
+      if (selectedGroup) {
+        setNavigation([...navigation, selectedGroup]);
+      }
 
-          groups.forEach((group: Group) => {
-            group.checked = !!selectedRows.find((r) => r.id === group.id);
-          });
-          id
-            ? setGroups(groups)
-            : setGroups([...groups.filter((row) => !chips.includes(row.name))]);
-        },
-        errorHandler
-      ),
+      groups.forEach((group: Group) => {
+        group.checked = !!selectedRows.find((r) => r.id === group.id);
+      });
+      id
+        ? setGroups(groups)
+        : setGroups([...groups.filter((row) => !chips.includes(row.name))]);
+    },
     [groupId]
   );
 

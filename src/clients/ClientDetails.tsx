@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   AlertVariant,
@@ -12,9 +12,8 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 import { useHistory, useParams } from "react-router-dom";
-import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import _ from "lodash";
 
@@ -26,7 +25,7 @@ import {
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, asyncStateFetch } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { Credentials } from "./credentials/Credentials";
 import {
   convertFormValuesToObject,
@@ -125,7 +124,6 @@ export const ClientDetails = () => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
-  const handleError = useErrorHandler();
   const { realm } = useRealm();
 
   const history = useHistory();
@@ -139,6 +137,12 @@ export const ClientDetails = () => {
 
   const form = useForm<ClientForm>();
   const { clientId } = useParams<{ clientId: string }>();
+
+  const clientAuthenticatorType = useWatch({
+    control: form.control,
+    name: "clientAuthenticatorType",
+    defaultValue: "client-secret",
+  });
 
   const [client, setClient] = useState<ClientRepresentation>();
 
@@ -178,16 +182,14 @@ export const ClientDetails = () => {
     });
   };
 
-  useEffect(() => {
-    return asyncStateFetch(
-      () => adminClient.clients.findOne({ id: clientId }),
-      (fetchedClient) => {
-        setClient(fetchedClient);
-        setupForm(fetchedClient);
-      },
-      handleError
-    );
-  }, [clientId]);
+  useFetch(
+    () => adminClient.clients.findOne({ id: clientId }),
+    (fetchedClient) => {
+      setClient(fetchedClient);
+      setupForm(fetchedClient);
+    },
+    [clientId]
+  );
 
   const save = async (
     { confirmed = false, messageKey = "clientSaveSuccess" }: SaveOptions = {
@@ -198,8 +200,7 @@ export const ClientDetails = () => {
     if (await form.trigger()) {
       if (
         !client?.publicClient &&
-        client?.clientAuthenticatorType !==
-          form.getValues("clientAuthenticatorType") &&
+        client?.clientAuthenticatorType !== clientAuthenticatorType &&
         !confirmed
       ) {
         toggleChangeAuthenticator();
@@ -241,7 +242,7 @@ export const ClientDetails = () => {
       <ConfirmDialogModal
         continueButtonLabel="common:yes"
         titleKey={t("changeAuthenticatorConfirmTitle", {
-          clientAuthenticatorType: form.getValues("clientAuthenticatorType"),
+          clientAuthenticatorType: clientAuthenticatorType,
         })}
         open={changeAuthenticatorOpen}
         toggleDialog={toggleChangeAuthenticator}
@@ -249,9 +250,9 @@ export const ClientDetails = () => {
       >
         <>
           {t("changeAuthenticatorConfirm", {
-            clientAuthenticatorType: form.getValues("clientAuthenticatorType"),
+            clientAuthenticatorType: clientAuthenticatorType,
           })}
-          {form.getValues("clientAuthenticatorType") === "client-jwt" && (
+          {clientAuthenticatorType === "client-jwt" && (
             <Alert variant="info" isInline title={t("signedJWTConfirm")} />
           )}
         </>

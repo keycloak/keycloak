@@ -24,10 +24,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
@@ -55,8 +52,12 @@ export type CredentialsProps = {
 export const Credentials = ({ clientId, save }: CredentialsProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
+
+  const [providers, setProviders] = useState<ClientAuthenticatorProviders[]>(
+    []
+  );
+
   const {
     control,
     formState: { isDirty },
@@ -64,37 +65,33 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
   const clientAuthenticatorType = useWatch({
     control: control,
     name: "clientAuthenticatorType",
+    defaultValue: "",
   });
 
-  const [providers, setProviders] = useState<ClientAuthenticatorProviders[]>(
-    []
-  );
   const [secret, setSecret] = useState("");
   const [accessToken, setAccessToken] = useState("");
   const [open, isOpen] = useState(false);
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
-          { id: clientId }
-        );
+  useFetch(
+    async () => {
+      const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
+        { id: clientId }
+      );
 
-        const secret = await adminClient.clients.getClientSecret({
-          id: clientId,
-        });
-        return {
-          providers,
-          secret: secret.value!,
-        };
-      },
-      ({ providers, secret }) => {
-        setProviders(providers);
-        setSecret(secret);
-      },
-      handleError
-    );
-  }, []);
+      const secret = await adminClient.clients.getClientSecret({
+        id: clientId,
+      });
+      return {
+        providers,
+        secret: secret.value!,
+      };
+    },
+    ({ providers, secret }) => {
+      setProviders(providers);
+      setSecret(secret);
+    },
+    []
+  );
 
   async function regenerate<T>(
     call: (clientId: string) => Promise<T>,
@@ -164,6 +161,7 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
               <Controller
                 name="clientAuthenticatorType"
                 control={control}
+                defaultValue=""
                 render={({ onChange, value }) => (
                   <Select
                     toggleId="kc-client-authenticator-type"

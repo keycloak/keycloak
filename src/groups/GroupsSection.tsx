@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import {
   DropdownItem,
   PageSection,
@@ -14,7 +13,7 @@ import {
 import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -35,7 +34,6 @@ export const GroupsSection = () => {
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
   const { addAlert } = useAlerts();
   const { realm } = useRealm();
-  const errorHandler = useErrorHandler();
 
   const [rename, setRename] = useState<string>();
 
@@ -55,28 +53,24 @@ export const GroupsSection = () => {
     return true;
   };
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        async () => {
-          const ids = getId(location.pathname);
-          const isNavigationStateInValid = ids && ids.length > subGroups.length;
+  useFetch(
+    async () => {
+      const ids = getId(location.pathname);
+      const isNavigationStateInValid = ids && ids.length > subGroups.length;
 
-          if (isNavigationStateInValid) {
-            const groups: GroupRepresentation[] = [];
-            for (const i of ids!) {
-              const group = await adminClient.groups.findOne({ id: i });
-              if (group) groups.push(group);
-            }
-            return groups;
-          }
-          return [];
-        },
-        (groups: GroupRepresentation[]) => {
-          if (groups.length) setSubGroups(groups);
-        },
-        errorHandler
-      ),
+      if (isNavigationStateInValid) {
+        const groups: GroupRepresentation[] = [];
+        for (const i of ids!) {
+          const group = await adminClient.groups.findOne({ id: i });
+          if (group) groups.push(group);
+        }
+        return groups;
+      }
+      return [];
+    },
+    (groups: GroupRepresentation[]) => {
+      if (groups.length) setSubGroups(groups);
+    },
     [id]
   );
 

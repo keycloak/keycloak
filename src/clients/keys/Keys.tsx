@@ -25,13 +25,9 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { ClientForm } from "../ClientDetails";
 import { GenerateKeyDialog } from "./GenerateKeyDialog";
-import {
-  asyncStateFetch,
-  useAdminClient,
-} from "../../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ImportKeyDialog, ImportFile } from "./ImportKeyDialog";
-import { useErrorHandler } from "react-error-boundary";
 
 type KeysProps = {
   save: () => void;
@@ -48,7 +44,6 @@ export const Keys = ({ clientId, save }: KeysProps) => {
     formState: { isDirty },
   } = useFormContext<ClientForm>();
   const adminClient = useAdminClient();
-  const errorHandler = useErrorHandler();
   const { addAlert } = useAlerts();
 
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation>();
@@ -60,13 +55,10 @@ export const Keys = ({ clientId, save }: KeysProps) => {
     name: "attributes.use-jwks-url",
     defaultValue: "false",
   });
-  useEffect(
-    () =>
-      asyncStateFetch(
-        () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
-        (info) => setKeyInfo(info),
-        errorHandler
-      ),
+
+  useFetch(
+    () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
+    (info) => setKeyInfo(info),
     []
   );
 

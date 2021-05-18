@@ -1,6 +1,5 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useState } from "react";
 import { Link, useHistory, useRouteMatch } from "react-router-dom";
-import { useErrorHandler } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
 import {
@@ -26,7 +25,7 @@ import {
 
 import IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
@@ -58,19 +57,14 @@ export const IdentityProvidersSection = () => {
   >();
 
   const adminClient = useAdminClient();
-  const errorHandler = useErrorHandler();
   const { addAlert } = useAlerts();
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        async () =>
-          (await adminClient.realms.findOne({ realm })).identityProviders!,
-        (providers) => {
-          setProviders(providers);
-        },
-        errorHandler
-      ),
+  useFetch(
+    async () =>
+      (await adminClient.realms.findOne({ realm })).identityProviders!,
+    (providers) => {
+      setProviders(providers);
+    },
     []
   );
 

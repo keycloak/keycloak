@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import _ from "lodash";
 import {
   Badge,
@@ -18,10 +17,7 @@ import {
 } from "@patternfly/react-core";
 
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import {
-  asyncStateFetch,
-  useAdminClient,
-} from "../../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { FilterIcon } from "@patternfly/react-icons";
 import { Row, ServiceRole } from "./RoleMapping";
@@ -54,7 +50,6 @@ export const AddRoleMappingModal = ({
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const errorHandler = useErrorHandler();
 
   const [clients, setClients] = useState<ClientRole[]>([]);
   const [searchToggle, setSearchToggle] = useState(false);
@@ -65,48 +60,42 @@ export const AddRoleMappingModal = ({
   const [selectedClients, setSelectedClients] = useState<ClientRole[]>([]);
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
 
-  useEffect(
-    () =>
-      asyncStateFetch(
-        async () => {
-          const clients = await adminClient.clients.find();
-          return (
-            await Promise.all(
-              clients.map(async (client) => {
-                let roles: RoleRepresentation[] = [];
-                if (type === "service-account") {
-                  roles = await adminClient.users.listAvailableClientRoleMappings(
-                    {
-                      id: id,
-                      clientUniqueId: client.id!,
-                    }
-                  );
-                } else if (type === "client-scope") {
-                  roles = await adminClient.clientScopes.listAvailableClientScopeMappings(
-                    {
-                      id,
-                      client: client.id!,
-                    }
-                  );
+  useFetch(
+    async () => {
+      const clients = await adminClient.clients.find();
+      return (
+        await Promise.all(
+          clients.map(async (client) => {
+            let roles: RoleRepresentation[] = [];
+            if (type === "service-account") {
+              roles = await adminClient.users.listAvailableClientRoleMappings({
+                id: id,
+                clientUniqueId: client.id!,
+              });
+            } else if (type === "client-scope") {
+              roles = await adminClient.clientScopes.listAvailableClientScopeMappings(
+                {
+                  id,
+                  client: client.id!,
                 }
-                return {
-                  roles,
-                  client,
-                };
-              })
-            )
-          )
-            .flat()
-            .filter((row) => row.roles.length !== 0)
-            .map((row) => {
-              return { ...row.client, numberOfRoles: row.roles.length };
-            });
-        },
-        (clients) => {
-          setClients(clients);
-        },
-        errorHandler
-      ),
+              );
+            }
+            return {
+              roles,
+              client,
+            };
+          })
+        )
+      )
+        .flat()
+        .filter((row) => row.roles.length !== 0)
+        .map((row) => {
+          return { ...row.client, numberOfRoles: row.roles.length };
+        });
+    },
+    (clients) => {
+      setClients(clients);
+    },
     []
   );
 

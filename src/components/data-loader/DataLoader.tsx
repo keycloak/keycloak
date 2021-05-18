@@ -1,8 +1,7 @@
-import React, { DependencyList, useEffect, useState } from "react";
+import React, { DependencyList, useState } from "react";
 import { Spinner } from "@patternfly/react-core";
-import { useErrorHandler } from "react-error-boundary";
 
-import { asyncStateFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 
 type DataLoaderProps<T> = {
   loader: () => Promise<T>;
@@ -12,15 +11,12 @@ type DataLoaderProps<T> = {
 
 export function DataLoader<T>(props: DataLoaderProps<T>) {
   const [data, setData] = useState<T | undefined>();
-  const handleError = useErrorHandler();
 
-  useEffect(() => {
-    return asyncStateFetch(
-      () => props.loader(),
-      (result) => setData(result),
-      handleError
-    );
-  }, props.deps || []);
+  useFetch(
+    () => props.loader(),
+    (result) => setData(result),
+    props.deps || []
+  );
 
   if (data) {
     if (props.children instanceof Function) {

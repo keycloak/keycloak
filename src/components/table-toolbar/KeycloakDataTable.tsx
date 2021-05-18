@@ -1,6 +1,5 @@
 import React, { isValidElement, ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import {
   IAction,
   IActions,
@@ -16,7 +15,7 @@ import { Spinner } from "@patternfly/react-core";
 import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
-import { asyncStateFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 
@@ -181,7 +180,6 @@ export function KeycloakDataTable<T>({
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
-  const handleError = useErrorHandler();
 
   useEffect(() => {
     if (canSelectAll) {
@@ -199,27 +197,24 @@ export function KeycloakDataTable<T>({
     }
   }, [selected]);
 
-  useEffect(() => {
-    setLoading(true);
-    return asyncStateFetch(
-      async () => {
-        let data = unPaginatedData || (await loader(first, max, search));
+  useFetch(
+    async () => {
+      setLoading(true);
+      return unPaginatedData || (await loader(first, max, search));
+    },
+    (data) => {
+      if (!isPaginated) {
+        setUnPaginatedData(data);
+        data = data.slice(first, first + max);
+      }
 
-        if (!isPaginated) {
-          setUnPaginatedData(data);
-          data = data.slice(first, first + max);
-        }
-
-        return convertToColumns(data);
-      },
-      (result) => {
-        setRows(result);
-        setFilteredData(result);
-        setLoading(false);
-      },
-      handleError
-    );
-  }, [key, first, max, search]);
+      const result = convertToColumns(data);
+      setRows(result);
+      setFilteredData(result);
+      setLoading(false);
+    },
+    [key, first, max, search]
+  );
 
   const getNodeText = (node: Cell<T>): string => {
     if (["string", "number"].includes(typeof node)) {
@@ -356,6 +351,7 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
+      {!rows && loading && <Loading />}
       {rows && (
         <PaginatingTableToolbar
           count={rows.length}

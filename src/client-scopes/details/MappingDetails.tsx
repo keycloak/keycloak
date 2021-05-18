@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import {
   ActionGroup,
   AlertVariant,
@@ -24,10 +23,7 @@ import { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configProp
 import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import {
-  useAdminClient,
-  asyncStateFetch,
-} from "../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -45,7 +41,6 @@ type Params = {
 export const MappingDetails = () => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
-  const handleError = useErrorHandler();
   const { addAlert } = useAlerts();
 
   const { id, mapperId } = useParams<Params>();
@@ -61,52 +56,50 @@ export const MappingDetails = () => {
   const serverInfo = useServerInfo();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
 
-  useEffect(() => {
-    return asyncStateFetch(
-      async () => {
-        if (mapperId.match(isGuid)) {
-          const data = await adminClient.clientScopes.findProtocolMapper({
-            id,
-            mapperId,
+  useFetch(
+    async () => {
+      if (mapperId.match(isGuid)) {
+        const data = await adminClient.clientScopes.findProtocolMapper({
+          id,
+          mapperId,
+        });
+        if (data) {
+          Object.entries(data).map((entry) => {
+            convertToFormValues(entry[1], "config", setValue);
           });
-          if (data) {
-            Object.entries(data).map((entry) => {
-              convertToFormValues(entry[1], "config", setValue);
-            });
-          }
-          const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
-          const properties = mapperTypes.find(
-            (type) => type.id === data!.protocolMapper
-          )?.properties!;
-
-          return {
-            configProperties: properties,
-            mapping: data,
-          };
-        } else {
-          const scope = await adminClient.clientScopes.findOne({ id });
-          const protocolMappers = serverInfo.protocolMapperTypes![
-            scope.protocol!
-          ];
-          const mapping = protocolMappers.find(
-            (mapper) => mapper.id === mapperId
-          )!;
-          return {
-            mapping: {
-              name: mapping.name,
-              protocol: scope.protocol,
-              protocolMapper: mapperId,
-            },
-          };
         }
-      },
-      (result) => {
-        setConfigProperties(result.configProperties);
-        setMapping(result.mapping);
-      },
-      handleError
-    );
-  }, []);
+        const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
+        const properties = mapperTypes.find(
+          (type) => type.id === data!.protocolMapper
+        )?.properties!;
+
+        return {
+          configProperties: properties,
+          mapping: data,
+        };
+      } else {
+        const scope = await adminClient.clientScopes.findOne({ id });
+        const protocolMappers = serverInfo.protocolMapperTypes![
+          scope.protocol!
+        ];
+        const mapping = protocolMappers.find(
+          (mapper) => mapper.id === mapperId
+        )!;
+        return {
+          mapping: {
+            name: mapping.name,
+            protocol: scope.protocol,
+            protocolMapper: mapperId,
+          },
+        };
+      }
+    },
+    (result) => {
+      setConfigProperties(result.configProperties);
+      setMapping(result.mapping);
+    },
+    []
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "common:deleteMappingTitle",
