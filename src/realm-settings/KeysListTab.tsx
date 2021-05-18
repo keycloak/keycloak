@@ -172,11 +172,6 @@ type KeysProps = {
 };
 
 export const KeysListTab = ({ keys, realmComponents, ...props }: KeysProps) => {
-  console.log("components", realmComponents);
-  console.log(
-    realmComponents.forEach((component) => console.log(component.name))
-  );
-
   return (
     <KeysTabInner
       keys={keys?.map((key) => {
