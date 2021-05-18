@@ -9,8 +9,8 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { AddRoleMappingModal, MappingType } from "./AddRoleMappingModal";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../../util";

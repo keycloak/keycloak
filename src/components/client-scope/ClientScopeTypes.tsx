@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 
-import { TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { DropdownItem, Select, SelectOption } from "@patternfly/react-core";
 
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 export enum ClientScope {
   default = "default",

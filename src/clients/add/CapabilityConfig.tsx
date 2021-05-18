@@ -11,7 +11,7 @@ import {
 } from "@patternfly/react-core";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { ClientForm } from "../ClientDetails";
+import type { ClientForm } from "../ClientDetails";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import "./capability-config.css";

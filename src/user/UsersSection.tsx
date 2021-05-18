@@ -14,7 +14,7 @@ import {
   InfoCircleIcon,
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
-import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";

@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { HashRouter } from "react-router-dom";
-import KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "keycloak-admin";
+import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import { AccessContextProvider } from "../context/access/Access";
 import { WhoAmIContextProvider } from "../context/whoami/WhoAmI";
@@ -30,7 +31,9 @@ export const MockAdminClient = (props: {
 }) => {
   return (
     <HashRouter>
-      <ServerInfoContext.Provider value={serverInfo}>
+      <ServerInfoContext.Provider
+        value={(serverInfo as unknown) as ServerInfoRepresentation}
+      >
         <AdminClient.Provider
           value={
             ({

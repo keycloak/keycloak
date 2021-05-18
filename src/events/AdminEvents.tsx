@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableVariant,
 } from "@patternfly/react-table";
-import AdminEventRepresentation from "keycloak-admin/lib/defs/adminEventRepresentation";
+import type AdminEventRepresentation from "keycloak-admin/lib/defs/adminEventRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 
 type DisplayDialogProps = {

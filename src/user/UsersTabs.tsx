@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { UserForm } from "./UserForm";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
@@ -17,7 +17,7 @@ import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { UserGroups } from "./UserGroups";
 import { UserConsents } from "./UserConsents";
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");

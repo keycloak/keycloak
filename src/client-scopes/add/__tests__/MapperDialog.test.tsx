@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { mount } from "enzyme";
 import { Button } from "@patternfly/react-core";
+import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import serverInfo from "../../../context/server-info/__tests__/mock.json";
 import { ServerInfoContext } from "../../../context/server-info/ServerInfoProvider";
@@ -10,7 +11,9 @@ describe("<MapperDialog/>", () => {
   const Test = (args: AddMapperDialogModalProps) => {
     const [open, setOpen] = useState(false);
     return (
-      <ServerInfoContext.Provider value={serverInfo}>
+      <ServerInfoContext.Provider
+        value={(serverInfo as unknown) as ServerInfoRepresentation}
+      >
         <AddMapperDialog
           {...args}
           open={open}

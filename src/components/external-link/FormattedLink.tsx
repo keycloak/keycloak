@@ -1,6 +1,6 @@
 import React, { AnchorHTMLAttributes } from "react";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
-import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 
 export type FormattedLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   isInline?: boolean;

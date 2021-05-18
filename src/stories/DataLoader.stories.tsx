@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
 
 import { DataLoader } from "../components/data-loader/DataLoader";
 

@@ -16,7 +16,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
 import { useAlerts } from "../components/alert/Alerts";
 import { ViewHeader } from "../components/view-header/ViewHeader";

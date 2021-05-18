@@ -15,7 +15,7 @@ import { GeneralSettings } from "./GeneralSettings";
 import { CapabilityConfig } from "./CapabilityConfig";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 

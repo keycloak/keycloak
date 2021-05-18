@@ -4,7 +4,7 @@ import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 
 type RealmSettingsLoginTabProps = {
   save: (realm: RealmRepresentation) => void;

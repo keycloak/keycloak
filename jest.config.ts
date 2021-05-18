@@ -1,7 +1,7 @@
 // See: https://github.com/snowpackjs/snowpack/issues/3242
 // @ts-ignore
 import snowpackConfig from "@snowpack/app-scripts-react/jest.config.js";
-import { Config } from "@jest/types";
+import type { Config } from "@jest/types";
 
 const config: Config.InitialOptions = {
   ...snowpackConfig(),

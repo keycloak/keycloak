@@ -5,7 +5,7 @@ import {
   TextVariants,
   ButtonVariant,
 } from "@patternfly/react-core";
-import { Meta, Story } from "@storybook/react";
+import type { Meta, Story } from "@storybook/react";
 import { action } from "@storybook/addon-actions";
 
 import {

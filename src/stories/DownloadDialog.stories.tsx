@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
 
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import { MockAdminClient } from "./MockAdminClient";

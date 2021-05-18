@@ -11,7 +11,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 
-import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";

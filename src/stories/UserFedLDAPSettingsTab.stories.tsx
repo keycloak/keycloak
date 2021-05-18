@@ -1,5 +1,5 @@
 import React from "react";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
 import { UserFederationLdapSettings } from "../user-federation/UserFederationLdapSettings";
 import { MockAdminClient } from "./MockAdminClient";

@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, ButtonVariant, PageSection } from "@patternfly/react-core";
-import { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
+import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../util";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 import "./RealmSettingsSection.css";
 import { cellWidth } from "@patternfly/react-table";

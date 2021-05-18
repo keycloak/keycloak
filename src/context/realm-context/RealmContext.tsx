@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import _ from "lodash";
 
-import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
 import { WhoAmIContext } from "../whoami/WhoAmI";

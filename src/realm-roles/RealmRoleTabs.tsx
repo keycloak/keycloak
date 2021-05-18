@@ -13,8 +13,8 @@ import { useFieldArray, useForm } from "react-hook-form";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
-import Composites from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type Composites from "keycloak-admin/lib/defs/roleRepresentation";
 import {
   KeyValueType,
   AttributesForm,

@@ -9,7 +9,7 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -18,7 +18,7 @@ import { convertFormValuesToObject } from "../../util";
 import { MapperList } from "../details/MapperList";
 import { ScopeForm } from "../details/ScopeForm";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
-import { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
+import type { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
 
 export const ClientScopeForm = () => {
   const { t } = useTranslation("client-scopes");

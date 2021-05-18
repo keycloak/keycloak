@@ -2,6 +2,7 @@ import React from "react";
 import { mount } from "enzyme";
 import { Controller, useForm } from "react-hook-form";
 import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
+import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 import { WhoAmI, WhoAmIContext } from "../../../context/whoami/WhoAmI";
 import whoami from "../../../context/whoami/__tests__/mock-whoami.json";
@@ -15,7 +16,10 @@ describe("<FormAccess />", () => {
     const { register, control } = useForm();
     return (
       <WhoAmIContext.Provider
-        value={{ refresh: () => {}, whoAmI: new WhoAmI("master", whoami) }}
+        value={{
+          refresh: () => {},
+          whoAmI: new WhoAmI("master", whoami as WhoAmIRepresentation),
+        }}
       >
         <RealmContext.Provider
           value={{

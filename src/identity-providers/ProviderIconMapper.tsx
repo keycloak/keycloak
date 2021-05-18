@@ -10,7 +10,7 @@ import {
   StackOverflowIcon,
   TwitterIcon,
 } from "@patternfly/react-icons";
-import { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
+import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 
 import { FontAwesomeIcon } from "./icons/FontAwesomeIcon";
 

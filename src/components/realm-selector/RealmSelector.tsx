@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 
-import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { toUpperCase } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";

@@ -12,7 +12,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -26,7 +26,7 @@ import {
   AllClientScopes,
   AllClientScopeType,
 } from "../components/client-scope/ClientScopeTypes";
-import KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "keycloak-admin";
 import { ChangeTypeDialog } from "./ChangeTypeDialog";
 
 import "./client-scope.css";

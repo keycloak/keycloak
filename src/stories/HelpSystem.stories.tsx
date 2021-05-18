@@ -9,7 +9,7 @@ import {
   Form,
   TextInput,
 } from "@patternfly/react-core";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
 
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import {

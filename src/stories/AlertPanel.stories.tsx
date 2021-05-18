@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertVariant, Button } from "@patternfly/react-core";
-import { Meta } from "@storybook/react";
+import type { Meta } from "@storybook/react";
 
 import { AlertPanel } from "../components/alert/AlertPanel";
 import { AlertProvider, useAlerts } from "../components/alert/Alerts";

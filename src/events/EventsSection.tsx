@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
-import EventRepresentation from "keycloak-admin/lib/defs/eventRepresentation";
+import type EventRepresentation from "keycloak-admin/lib/defs/eventRepresentation";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";

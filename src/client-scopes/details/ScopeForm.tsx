@@ -15,7 +15,7 @@ import {
   Button,
 } from "@patternfly/react-core";
 
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../../util";
