@@ -22,8 +22,17 @@ describe("Group test", () => {
 
   let groupName = "group";
 
+  const clickGroup = (itemName: string) => {
+    const membersUrl = `/auth/admin/realms/master/groups/*/members`;
+    cy.intercept(membersUrl).as("groupFetch");
+    cy.get("table").contains(itemName).click();
+    cy.wait(["@groupFetch"]);
+
+    return this;
+  };
+
   describe("Group creation", () => {
-    beforeEach(function () {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToGroups();
@@ -52,7 +61,7 @@ describe("Group test", () => {
         .open("empty-primary-action")
         .fillGroupForm(groupName)
         .clickCreate();
-      listingPage.goToItemDetails(groupName);
+      clickGroup(groupName);
       viewHeaderPage.clickAction("renameGroupAction");
 
       const newName = "Renamed group";
@@ -62,6 +71,7 @@ describe("Group test", () => {
       sidebarPage.goToGroups();
       listingPage.searchItem(newName, false).itemExist(newName);
       listingPage.deleteItem(newName);
+      masthead.checkNotificationMessage("Group deleted");
     });
 
     it("Should move group", () => {
@@ -78,12 +88,12 @@ describe("Group test", () => {
       moveGroupModal.clickMove();
 
       masthead.checkNotificationMessage("Group moved");
-      listingPage.itemExist(groupName, false).goToItemDetails(targetGroupName);
-      cy.wait(2000);
+      listingPage.itemExist(groupName, false);
+      clickGroup(targetGroupName);
       listingPage.itemExist(groupName);
-      cy.wait(1000);
       sidebarPage.goToGroups();
       listingPage.deleteItem(targetGroupName);
+      masthead.checkNotificationMessage("Group deleted");
     });
 
     it("Should move group to root", async () => {
@@ -102,7 +112,7 @@ describe("Group test", () => {
       listingPage.deleteItem(groups[0]);
       listingPage.deleteItem(groups[1]);
     });
-  
+
     it("Group search", () => {
       viewHeaderPage.clickAction("searchGroup");
       searchGroupPage.searchGroup("group").clickSearchButton();
@@ -141,7 +151,7 @@ describe("Group test", () => {
     });
 
     it("Should display all the subgroups", () => {
-      listingPage.goToItemDetails(groups[0]);
+      clickGroup(groups[0]);
       detailPage.checkListSubGroup([groups[1]]);
 
       const added = "addedGroup";
@@ -151,7 +161,7 @@ describe("Group test", () => {
     });
 
     it("Should display members", () => {
-      listingPage.goToItemDetails(groups[0]);
+      clickGroup(groups[0]);
       detailPage.clickMembersTab().checkListMembers(["user0", "user3"]);
       detailPage
         .clickIncludeSubGroups()
@@ -159,7 +169,7 @@ describe("Group test", () => {
     });
 
     it("Should add members", () => {
-      listingPage.goToItemDetails(groups[0]);
+      clickGroup(groups[0]);
       detailPage
         .clickMembersTab()
         .clickAddMembers()
@@ -171,7 +181,7 @@ describe("Group test", () => {
     });
 
     it("Attributes CRUD test", () => {
-      listingPage.goToItemDetails(groups[0]);
+      clickGroup(groups[0]);
       detailPage
         .clickAttributesTab()
         .fillAttribute("key", "value")

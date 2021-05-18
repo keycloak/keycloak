@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
@@ -35,17 +35,13 @@ export const Members = () => {
   const location = useLocation();
   const id = getLastId(location.pathname);
   const [includeSubGroup, setIncludeSubGroup] = useState(false);
-  const { currentGroup, subGroups } = useSubGroups();
+  const { currentGroup } = useSubGroups();
   const [addMembers, setAddMembers] = useState(false);
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
-
-  useEffect(() => {
-    refresh();
-  }, [id, subGroups, includeSubGroup]);
 
   const getMembership = async (id: string) =>
     await adminClient.users.listGroups({ id: id! });
@@ -107,7 +103,7 @@ export const Members = () => {
         />
       )}
       <KeycloakDataTable
-        key={key}
+        key={`${id}${key}${includeSubGroup}`}
         loader={loader}
         ariaLabelKey="groups:members"
         isPaginated

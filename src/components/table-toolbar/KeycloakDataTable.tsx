@@ -229,13 +229,11 @@ export function KeycloakDataTable<T>({
       return node.map(getNodeText).join("");
     }
     if (typeof node === "object" && node) {
-      if ((node as TitleCell).title) {
-        return getNodeText(
-          isValidElement((node as TitleCell).title)
-            ? (node as TitleCell).title.props.children
-            : (node as JSX.Element).props.children
-        );
-      }
+      return getNodeText(
+        isValidElement((node as TitleCell).title)
+          ? (node as TitleCell).title.props.children
+          : (node as JSX.Element).props.children
+      );
     }
     return "";
   };

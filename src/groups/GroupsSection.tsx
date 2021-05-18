@@ -60,8 +60,8 @@ export const GroupsSection = () => {
       asyncStateFetch(
         async () => {
           const ids = getId(location.pathname);
-          const isNavigationStateInValid =
-            ids && ids.length !== subGroups.length + 1;
+          const isNavigationStateInValid = ids && ids.length > subGroups.length;
+
           if (isNavigationStateInValid) {
             const groups: GroupRepresentation[] = [];
             for (const i of ids!) {
@@ -69,20 +69,12 @@ export const GroupsSection = () => {
               if (group) groups.push(group);
             }
             return groups;
-          } else {
-            if (id) {
-              const group = await adminClient.groups.findOne({ id: id });
-              if (group) {
-                return [...subGroups, group];
-              } else {
-                return subGroups;
-              }
-            } else {
-              return subGroups;
-            }
           }
+          return [];
         },
-        (groups: GroupRepresentation[]) => setSubGroups(groups),
+        (groups: GroupRepresentation[]) => {
+          if (groups.length) setSubGroups(groups);
+        },
         errorHandler
       ),
     [id]

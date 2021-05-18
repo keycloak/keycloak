@@ -25,10 +25,7 @@ export const SubGroups = ({ children }: { children: ReactNode }) => {
   const clear = () => setSubGroups([]);
   const remove = (group: GroupRepresentation) =>
     setSubGroups(
-      subGroups.slice(
-        0,
-        subGroups.findIndex((g) => g.id === group.id)
-      )
+      subGroups.slice(0, subGroups.findIndex((g) => g.id === group.id) + 1)
     );
   const currentGroup = () => subGroups[subGroups.length - 1];
   return (
