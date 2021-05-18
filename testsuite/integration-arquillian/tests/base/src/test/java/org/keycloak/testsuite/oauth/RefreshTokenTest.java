@@ -40,6 +40,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -273,6 +274,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         setTimeOffset(0);
     }
+
     @Test
     public void refreshTokenWithAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
@@ -286,6 +288,31 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(accessTokenString, "password");
 
         Assert.assertNotEquals(200, response.getStatusCode());
+
+        setTimeOffset(0);
+    }
+
+    /**
+     * KEYCLOAK-15437
+     */
+    @Test
+    public void tokenRefreshWithAccessTokenShouldReturnIdTokenWithAccessTokenHash() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        setTimeOffset(2);
+        try {
+            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            Assert.assertEquals(200, response.getStatusCode());
+            IDToken idToken = oauth.verifyToken(response.getIdToken());
+            Assert.assertNotNull("AccessTokenHash should not be null after token refresh", idToken.getAccessTokenHash());
+        } finally {
+            setTimeOffset(0);
+        }
     }
 
     @Test

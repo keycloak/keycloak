@@ -365,7 +365,7 @@ public class TokenManager {
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken();
+            responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
         AccessTokenResponse res = responseBuilder.build();
