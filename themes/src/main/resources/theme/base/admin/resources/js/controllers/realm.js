@@ -3002,9 +3002,9 @@ module.controller('ClientPoliciesProfilesJsonCtrl', function($scope, realm, clie
     $scope.save = function() {
         var clientProfilesObj = null;
         try {
-            var clientProfilesObj = angular.fromJson($scope.clientProfilesString);
+            clientProfilesObj = angular.fromJson($scope.clientProfilesString);
         } catch (e) {
-            Notifications.error("Provided JSON is incorrect. See browser javascript console for the details");
+            Notifications.error("Provided JSON is incorrect: " + e.message);
             console.log(e);
             return;
         }
@@ -3016,9 +3016,10 @@ module.controller('ClientPoliciesProfilesJsonCtrl', function($scope, realm, clie
             $route.reload();
             Notifications.success("The client profiles configuration was updated.");
         }, function(errorResponse) {
-            Notifications.error('Failed to update client profiles. Check browser javascript console and server log for the details');
+            var errDetails = (!errorResponse.data || !errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            Notifications.error("Failed to update client profiles: " + errDetails);
             console.log("Error response when updating client profiles JSON: Status: " + errorResponse.status +
-                    ", statusText: " + errorResponse.statusText + ", data: " + errorResponse.data);
+                    ", statusText: " + errorResponse.statusText + ", data: " + JSON.stringify(errorResponse.data));
         });
     };
 
@@ -3314,7 +3315,7 @@ module.controller('ClientPoliciesJsonCtrl', function($scope, realm, clientPolici
         try {
             var clientPoliciesObj = angular.fromJson($scope.clientPoliciesString);
         } catch (e) {
-            Notifications.error("Provided JSON is incorrect. See browser javascript console for the details");
+            Notifications.error("Provided JSON is incorrect: " + e.message);
             console.log(e);
             return;
         }
@@ -3326,9 +3327,10 @@ module.controller('ClientPoliciesJsonCtrl', function($scope, realm, clientPolici
             $route.reload();
             Notifications.success("The client policies configuration was updated.");
         }, function(errorResponse) {
-            Notifications.error('Failed to update client policies. Check browser javascript console and server log for the details');
+            var errDetails = (!errorResponse.data || !errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            Notifications.error("Failed to update client policies: " + errDetails);
             console.log("Error response when updating client policies JSON: Status: " + errorResponse.status +
-                    ", statusText: " + errorResponse.statusText + ", data: " + errorResponse.data);
+                    ", statusText: " + errorResponse.statusText + ", data: " + JSON.stringify(errorResponse.data));
         });
     };
 
