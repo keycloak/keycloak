@@ -51,7 +51,7 @@
     "@storybook/addon-links": "^6.1.7",
     "@storybook/addons": "^6.2.9",
     "@storybook/node-logger": "^6.1.7",
-    "@storybook/preset-create-react-app": "^3.1.5",
+    "@storybook/preset-create-react-app": "^3.1.7",
     "@storybook/preset-typescript": "^3.0.0",
     "@storybook/react": "^6.2.9",
     "@testing-library/jest-dom": "^5.11.0",
