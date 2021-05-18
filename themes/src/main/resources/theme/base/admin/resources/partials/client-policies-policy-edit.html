@@ -37,7 +37,7 @@
 
     <form class="form-horizontal" name="realmForm" novalidate>
 
-        <fieldset class="border-top" kc-read-only="readOnly">
+        <fieldset class="border-top" kc-read-only="isReadOnly()">
 
             <div class="form-group">
                 <label class="col-md-2 control-label" for="clientPolicyName">{{:: 'name' | translate}} <span class="required">*</span></label>
@@ -64,7 +64,7 @@
 
         </fieldset>
 
-        <fieldset data-ng-hide="readOnly">
+        <fieldset data-ng-hide="isReadOnly()">
 
             <div class="form-group">
                 <div class="col-md-10 col-md-offset-2">
@@ -80,7 +80,7 @@
             <legend><span class="text">{{:: 'conditions' | translate}}</span>  <kc-tooltip>{{:: 'client-policy-conditions.tooltip' | translate}}</kc-tooltip></legend>
             <table class="table table-striped table-bordered">
                 <thead>
-                <tr data-ng-hide="readOnly">
+                <tr data-ng-hide="isReadOnly()">
                     <th class="kc-table-actions" colspan="3">
                         <div class="form-inline">
                             <div class="pull-right">
@@ -97,8 +97,8 @@
                 <tbody>
                 <tr ng-repeat="condition in editedPolicy.conditions">
                     <td><a href="#/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{condition.condition}}</a></td>
-                    <td class="kc-action-cell" data-ng-hide="readOnly" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{:: 'edit' | translate}}</td>
-                    <td class="kc-action-cell" data-ng-hide="readOnly" data-ng-click="removeCondition($index)">{{:: 'delete' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-hide="isReadOnly()" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{:: 'edit' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-hide="isReadOnly()" data-ng-click="removeCondition($index)">{{:: 'delete' | translate}}</td>
                 </tr>
                 <tr data-ng-show="!editedPolicy.conditions || editedPolicy.conditions.length == 0">
                     <td>{{:: 'no-conditions-available' | translate}}</td>
@@ -112,7 +112,7 @@
             <legend><span class="text">{{:: 'client-profiles' | translate}}</span></legend><kc-tooltip>{{:: 'client-profiles.tooltip' | translate}}</kc-tooltip>
             <table class="table table-striped table-bordered">
                 <thead>
-                <tr data-ng-hide="readOnly || availableProfiles.length == 0">
+                <tr data-ng-hide="isReadOnly() || availableProfiles.length == 0">
                     <th colspan="5" class="kc-table-actions">
                         <div class="pull-right">
                             <div>
@@ -133,7 +133,7 @@
                 <tbody>
                 <tr ng-repeat="profileName in editedPolicy.profiles">
                     <td><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{profileName}}">{{profileName}}</a></td>
-                    <td class="kc-action-cell" data-ng-hide="readOnly" data-ng-click="removeProfile(profileName)">{{:: 'delete' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-hide="isReadOnly()" data-ng-click="removeProfile(profileName)">{{:: 'delete' | translate}}</td>
                 </tr>
                 <tr data-ng-show="!editedPolicy.profiles || editedPolicy.profiles.length == 0">
                     <td class="text-muted">{{:: 'no-client-profiles-configured' | translate}}</td>
