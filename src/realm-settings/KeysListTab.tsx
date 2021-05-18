@@ -14,6 +14,7 @@ import { cellWidth } from "@patternfly/react-table";
 
 type KeyData = KeyMetadataRepresentation & {
   provider?: string;
+  type?: string;
 };
 
 type KeysTabInnerProps = {
@@ -33,6 +34,8 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
   const loader = async () => {
     return keys;
   };
+
+  console.log("Keys", keys)
 
   React.useEffect(() => {
     refresh();
@@ -62,8 +65,8 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     return <>{provider}</>;
   };
 
-  const ButtonRenderer = ({ provider, publicKey, certificate }: KeyData) => {
-    if (provider === "ecdsa-generated") {
+  const ButtonRenderer = ({ type, publicKey, certificate }: KeyData) => {
+    if (type === "EC") {
       return (
         <>
           <Button
@@ -78,7 +81,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
           </Button>
         </>
       );
-    } else if (provider === "rsa-generated" || provider === "fallback-RS256") {
+    } else if (type === "RSA") {
       return (
         <>
           <div>
