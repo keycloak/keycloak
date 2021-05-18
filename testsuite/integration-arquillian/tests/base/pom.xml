@@ -1194,7 +1194,7 @@
                                 <keycloak.group.provider>map</keycloak.group.provider>
                                 <keycloak.role.provider>map</keycloak.role.provider>
                                 <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.serverInfo.provider>map</keycloak.serverInfo.provider>
+                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
                                 <keycloak.authSession.provider>map</keycloak.authSession.provider>
                                 <keycloak.userSession.provider>map</keycloak.userSession.provider>
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>

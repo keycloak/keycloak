@@ -21,9 +21,9 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
-public class ServerInfoSpi implements Spi {
+public class DeploymentStateSpi implements Spi {
 
-    public static final String NAME = "serverInfo";
+    public static final String NAME = "deploymentState";
 
     @Override
     public boolean isInternal() {
@@ -37,12 +37,12 @@ public class ServerInfoSpi implements Spi {
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return ServerInfoProvider.class;
+        return DeploymentStateProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return ServerInfoProviderFactory.class;
+        return DeploymentStateProviderFactory.class;
     }
 
 }

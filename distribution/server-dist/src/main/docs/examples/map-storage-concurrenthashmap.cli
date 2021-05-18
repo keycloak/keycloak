@@ -21,8 +21,8 @@ embed-server
 /subsystem=keycloak-server/spi=group:add(default-provider=map)
 /subsystem=keycloak-server/spi=realm:add(default-provider=map)
 /subsystem=keycloak-server/spi=role:add(default-provider=map)
-/subsystem=keycloak-server/spi=serverInfo:add(default-provider=map)
-/subsystem=keycloak-server/spi=serverInfo/provider=map:add(enabled=true,properties={resourcesVersionSeed=1JZ379bzyOCFA})
+/subsystem=keycloak-server/spi=deploymentState:add(default-provider=map)
+/subsystem=keycloak-server/spi=deploymentState/provider=map:add(enabled=true,properties={resourcesVersionSeed=1JZ379bzyOCFA})
 /subsystem=keycloak-server/spi=user:add(default-provider=map)
 
 ## For dev and single-node purposes, these are set to "map".

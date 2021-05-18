@@ -35,8 +35,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleSpi;
-import org.keycloak.models.ServerInfoProviderFactory;
-import org.keycloak.models.ServerInfoSpi;
+import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.UserSpi;
@@ -83,6 +82,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.keycloak.models.DeploymentStateProviderFactory;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -203,7 +203,7 @@ public abstract class KeycloakModelTest {
       .add(GroupSpi.class)
       .add(RealmSpi.class)
       .add(RoleSpi.class)
-      .add(ServerInfoSpi.class)
+      .add(DeploymentStateSpi.class)
       .add(StoreFactorySpi.class)
       .add(TimerSpi.class)
       .add(UserLoginFailureSpi.class)
@@ -215,7 +215,7 @@ public abstract class KeycloakModelTest {
       .add(ComponentFactoryProviderFactory.class)
       .add(DefaultAuthorizationProviderFactory.class)
       .add(DefaultExecutorsProviderFactory.class)
-      .add(ServerInfoProviderFactory.class)
+      .add(DeploymentStateProviderFactory.class)
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
