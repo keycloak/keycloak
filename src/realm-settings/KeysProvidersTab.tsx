@@ -19,11 +19,11 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
-import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 import "./RealmSettingsSection.css";
-import ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentTypeRepresentation";
+import type ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentTypeRepresentation";
 import { SearchIcon } from "@patternfly/react-icons";
 
 type ComponentData = KeyMetadataRepresentation & {
