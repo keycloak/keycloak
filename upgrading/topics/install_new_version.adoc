@@ -29,9 +29,16 @@ To upgrade {project_name} server RPM distribution, complete the following steps:
 
 . Prior to applying the upgrade, handle any open transactions and delete the /var/opt/rh/rh-sso7/lib/keycloak/standalone/data/tx-object-store/ transaction directory.
 . Make sure you have subscribed to proper repositories containing JBOSS EAP and {project_name}.
++
+For Red Hat Enterprise Linux 7:
++
+ subscription-manager repos --enable=jb-eap-7.3-for-rhel-7-server-rpms
+ subscription-manager repos --enable=rh-sso-7.4-for-rhel-7-server-rpms
++
+For Red Hat Enterprise Linux 8:
 
- subscription-manager repos --enable=jb-eap-7.1-for-rhel-7-server-rpms
- subscription-manager repos --enable=rh-sso-7.2-for-rhel-7-server-rpms
+ subscription-manager repos --enable=jb-eap-7.3-for-rhel-8-x86_64-rpms --enable=rhel-8-for-x86_64-baseos-rpms --enable=rhel-8-for-x86_64-appstream-rpms
+ subscription-manager repos --enable=rh-sso-7.4-for-rhel-8-x86_64-rpms
 +
 [NOTE]
 ====
