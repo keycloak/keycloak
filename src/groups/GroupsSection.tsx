@@ -66,10 +66,10 @@ export const GroupsSection = () => {
         }
         return groups;
       }
-          return [];
-        },
-        (groups: GroupRepresentation[]) => {
-          if (groups.length) setSubGroups(groups);
+      return [];
+    },
+    (groups: GroupRepresentation[]) => {
+      if (groups.length) setSubGroups(groups);
     },
     [id]
   );

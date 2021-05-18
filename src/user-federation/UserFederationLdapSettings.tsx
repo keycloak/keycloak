@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   ActionGroup,
   AlertVariant,
@@ -26,7 +26,7 @@ import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresenta
 
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { asyncStateFetch, useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -35,7 +35,6 @@ import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
-import { useErrorHandler } from "react-error-boundary";
 
 type ldapComponentRepresentation = ComponentRepresentation & {
   config?: {
@@ -179,24 +178,24 @@ export const UserFederationLdapSettings = () => {
   const history = useHistory();
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const errorHandler = useErrorHandler();
 
   const { id } = useParams<{ id: string }>();
   const { addAlert } = useAlerts();
 
-  useEffect(() => {
-    if (id) {
-      return asyncStateFetch(
-        () => adminClient.components.findOne({ id }),
-        (fetchedComponent) => {
-          if (fetchedComponent) {
-            setupForm(fetchedComponent);
-          }
-        },
-        errorHandler
-      );
-    }
-  }, []);
+  useFetch(
+    async () => {
+      if (id) {
+        return await adminClient.components.findOne({ id });
+      }
+      return undefined;
+    },
+    (fetchedComponent) => {
+      if (fetchedComponent) {
+        setupForm(fetchedComponent);
+      }
+    },
+    []
+  );
 
   const setupForm = (component: ComponentRepresentation) => {
     Object.entries(component).map((entry) => {
