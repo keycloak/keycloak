@@ -25,7 +25,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -34,6 +33,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -66,7 +66,7 @@ public class ClientPoliciesResource {
         try {
             return session.clientPolicy().getClientPolicies(realm);
         } catch (ClientPolicyException e) {
-            throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getError()).build());
+            throw new BadRequestException(ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST));
         }
     }
 
@@ -78,7 +78,7 @@ public class ClientPoliciesResource {
         try {
             session.clientPolicy().updateClientPolicies(realm, clientPolicies);
         } catch (ClientPolicyException e) {
-            return Response.status(Status.BAD_REQUEST).entity(e.getError()).build();
+            return ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
         }
         return Response.noContent().build();
     }
