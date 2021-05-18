@@ -22,7 +22,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { AngleRightIcon, SearchIcon } from "@patternfly/react-icons";
-import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useParams } from "react-router-dom";
 
 export type JoinGroupDialogProps = {
