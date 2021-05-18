@@ -30,11 +30,11 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ThemeManager;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
@@ -46,8 +46,8 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.ClientScopeStorageManager;
 import org.keycloak.storage.ClientStorageManager;
+import org.keycloak.storage.ClientScopeStorageManager;
 import org.keycloak.storage.GroupStorageManager;
 import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
@@ -402,8 +402,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public <T extends Provider> Set<T> getAllProviders(Class<T> clazz) {
         return listProviderIds(clazz).stream()
-                .map(id -> getProvider(clazz, id))
-                .collect(Collectors.toSet());
+            .map(id -> getProvider(clazz, id))
+            .collect(Collectors.toSet());
     }
 
     @Override

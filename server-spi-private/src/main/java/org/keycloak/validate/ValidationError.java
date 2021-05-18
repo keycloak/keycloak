@@ -16,6 +16,7 @@
  */
 package org.keycloak.validate;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -23,7 +24,9 @@ import java.util.function.BiFunction;
 /**
  * Denotes an error found during validation.
  */
-public class ValidationError {
+public class ValidationError implements Serializable {
+
+    private static final long serialVersionUID = 4950708316675951914L;
 
     /**
      * A generic invalid value message.
@@ -93,8 +96,8 @@ public class ValidationError {
     /**
      * Formats the current {@link ValidationError} with the given formatter {@link java.util.function.Function}.
      * <p>
-     * The formatter {@link java.util.function.Function} will be called with the {@link #message} and {@link #getInputHintWithMessageParameters()}
-     * to render the error message.
+     * The formatter {@link java.util.function.Function} will be called with the {@link #message} and
+     * {@link #getInputHintWithMessageParameters()} to render the error message.
      *
      * @param formatter
      * @return
@@ -128,10 +131,7 @@ public class ValidationError {
             return false;
         }
         ValidationError that = (ValidationError) o;
-        return Objects.equals(validatorId, that.validatorId)
-                && Objects.equals(inputHint, that.inputHint)
-                && Objects.equals(message, that.message)
-                && Arrays.equals(messageParameters, that.messageParameters);
+        return Objects.equals(validatorId, that.validatorId) && Objects.equals(inputHint, that.inputHint) && Objects.equals(message, that.message) && Arrays.equals(messageParameters, that.messageParameters);
     }
 
     @Override
@@ -143,11 +143,6 @@ public class ValidationError {
 
     @Override
     public String toString() {
-        return "ValidationError{" +
-                "validatorId='" + validatorId + '\'' +
-                ", inputHint='" + inputHint + '\'' +
-                ", message='" + message + '\'' +
-                ", messageParameters=" + Arrays.toString(messageParameters) +
-                '}';
+        return "ValidationError{" + "validatorId='" + validatorId + '\'' + ", inputHint='" + inputHint + '\'' + ", message='" + message + '\'' + ", messageParameters=" + Arrays.toString(messageParameters) + '}';
     }
 }

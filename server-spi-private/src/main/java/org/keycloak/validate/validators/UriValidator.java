@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.validate.builtin;
+package org.keycloak.validate.validators;
 
-import org.keycloak.validate.CompactValidator;
+import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
@@ -30,7 +30,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class UriValidator implements CompactValidator {
+/**
+ * URI validation - accepts {@link URI}, {@link URL} and single String. Null input is valid, use other validators (like
+ * {@link NotBlankValidator} or {@link NotEmptyValidator} to force field as required.
+ */
+public class UriValidator implements SimpleValidator {
 
     public static final UriValidator INSTANCE = new UriValidator();
 
@@ -43,8 +47,8 @@ public class UriValidator implements CompactValidator {
             "https"
     )));
     public static final String MESSAGE_INVALID_URI = "error-invalid-uri";
-    public static final String MESSAGE_INVALID_SCHEME = "error-invalid-scheme";
-    public static final String MESSAGE_INVALID_FRAGMENT = "error-invalid-fragment";
+    public static final String MESSAGE_INVALID_SCHEME = "error-invalid-uri-scheme";
+    public static final String MESSAGE_INVALID_FRAGMENT = "error-invalid-uri-fragment";
 
     public static boolean DEFAULT_ALLOW_FRAGMENT = true;
 
@@ -62,6 +66,10 @@ public class UriValidator implements CompactValidator {
 
     @Override
     public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
+    	
+    	if(input == null || (input instanceof String && ((String) input).isEmpty())) {
+    		return context;
+    	}
 
         try {
             URI uri = toUri(input);

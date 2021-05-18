@@ -16,13 +16,13 @@
  */
 package org.keycloak.validate;
 
-import org.keycloak.models.KeycloakSession;
-
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Holds information about the validation state.
@@ -37,7 +37,7 @@ public class ValidationContext {
     /**
      * Holds the {@link ValidationError} found during validation.
      */
-    private final Set<ValidationError> errors;
+    private Set<ValidationError> errors;
 
     /**
      * Holds optional attributes that should be available to {@link Validator} implementations.
@@ -48,7 +48,7 @@ public class ValidationContext {
      * Creates a new {@link ValidationContext} without a {@link KeycloakSession}.
      */
     public ValidationContext() {
-        this(null, new LinkedHashSet<>());
+        this(null, null);
     }
 
     /**
@@ -58,7 +58,7 @@ public class ValidationContext {
      */
     public ValidationContext(KeycloakSession session) {
         // we deliberately use a LinkedHashSet here to retain the order of errors.
-        this(session, new LinkedHashSet<>());
+        this(session, null);
     }
 
     /**
@@ -89,6 +89,8 @@ public class ValidationContext {
      * @param error
      */
     public void addError(ValidationError error) {
+        if (errors == null)
+            errors = new LinkedHashSet<>();
         errors.add(error);
     }
 
@@ -100,7 +102,7 @@ public class ValidationContext {
      * @return
      */
     public boolean isValid() {
-        return errors.isEmpty();
+        return errors == null || errors.isEmpty();
     }
 
     public Map<String, Object> getAttributes() {
@@ -112,7 +114,7 @@ public class ValidationContext {
     }
 
     public Set<ValidationError> getErrors() {
-        return errors;
+        return errors != null ? errors : Collections.emptySet();
     }
 
     /**
@@ -126,10 +128,6 @@ public class ValidationContext {
 
     @Override
     public String toString() {
-        return "ValidationContext{" +
-                "valid=" + isValid() +
-                ", errors=" + errors +
-                ", attributes=" + attributes +
-                '}';
+        return "ValidationContext{" + "valid=" + isValid() + ", errors=" + errors + ", attributes=" + attributes + '}';
     }
 }

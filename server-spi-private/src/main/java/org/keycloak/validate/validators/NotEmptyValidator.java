@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.validate.builtin;
+package org.keycloak.validate.validators;
 
-import org.keycloak.validate.CompactValidator;
+import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
@@ -24,7 +24,13 @@ import org.keycloak.validate.ValidatorConfig;
 import java.util.Collection;
 import java.util.Map;
 
-public class NotEmptyValidator implements CompactValidator {
+/**
+ * Check that input value is not empty. It means it is not null for all data types. For String it also have to be
+ * non-empty string (no trim() performed). For {@link Collection} and {@link Map} it also means it is not empty.
+ * 
+ * @see NotBlankValidator
+ */
+public class NotEmptyValidator implements SimpleValidator {
 
     public static final NotEmptyValidator INSTANCE = new NotEmptyValidator();
 

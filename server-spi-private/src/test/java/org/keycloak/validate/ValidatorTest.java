@@ -1,11 +1,6 @@
 package org.keycloak.validate;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.validate.builtin.LengthValidator;
-import org.keycloak.validate.builtin.NotBlankValidator;
-import org.keycloak.validate.builtin.NotEmptyValidator;
+import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -16,7 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.keycloak.validate.ValidatorConfig.configFromMap;
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.validate.validators.LengthValidator;
+import org.keycloak.validate.validators.NotBlankValidator;
+import org.keycloak.validate.validators.ValidatorConfigValidator;
 
 public class ValidatorTest {
 
@@ -120,7 +120,7 @@ public class ValidatorTest {
             errors.add(e.getMessage());
         });
 
-        Assert.assertEquals(Arrays.asList("error-invalid-blank", "error-invalid-value"), errors);
+        Assert.assertEquals(Arrays.asList(NotBlankValidator.MESSAGE_BLANK, NotBlankValidator.MESSAGE_BLANK), errors);
     }
 
     @Test
@@ -136,7 +136,7 @@ public class ValidatorTest {
             errors.add(e.formatMessage((message, args) -> MessageFormat.format(miniResourceBundle.getOrDefault(message, message), args)));
         });
 
-        Assert.assertEquals(Arrays.asList("address.street is blank: <>", "address.zip is invalid: <null>"), errors);
+        Assert.assertEquals(Arrays.asList("address.street is blank: <>", "address.zip is blank: <null>"), errors);
     }
 
     @Test
@@ -160,11 +160,11 @@ public class ValidatorTest {
 
         ValidationContext context = new ValidationContext(session);
 
-        String input = "";
+        String input = " ";
         String inputHint = "username";
 
-        Validators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap("min", 1)));
-        Validators.notEmptyValidator().validate(input, inputHint, context);
+        Validators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap(LengthValidator.KEY_MIN, 1)));
+        Validators.notBlankValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -176,28 +176,29 @@ public class ValidatorTest {
         ValidationError error1 = errors[1];
 
         Assert.assertNotNull(error1);
-        Assert.assertEquals(NotEmptyValidator.ID, error1.getValidatorId());
+        Assert.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
         Assert.assertEquals(inputHint, error1.getInputHint());
-        Assert.assertEquals(NotEmptyValidator.MESSAGE_ERROR_EMPTY, error1.getMessage());
+        Assert.assertEquals(NotBlankValidator.MESSAGE_BLANK, error1.getMessage());
         Assert.assertEquals(input, error1.getMessageParameters()[0]);
     }
 
     @Test
     public void validateValidatorConfigSimple() {
 
-        CompactValidator validator = LengthValidator.INSTANCE;
+        SimpleValidator validator = LengthValidator.INSTANCE;
 
-        Assert.assertTrue(validator.validateConfig(session, null).isValid());
+        Assert.assertFalse(validator.validateConfig(session, null).isValid());
         Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", 1))).isValid());
         Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("max", 100))).isValid());
         Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", null))).isValid());
-        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "123"))).isValid());
+        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "a"))).isValid());
+        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "123"))).isValid());
     }
 
     @Test
     public void validateValidatorConfigMultipleOptions() {
 
-        CompactValidator validator = LengthValidator.INSTANCE;
+        SimpleValidator validator = LengthValidator.INSTANCE;
 
         Map<String, Object> config = new HashMap<>();
         config.put("min", 1);
@@ -211,10 +212,10 @@ public class ValidatorTest {
     @Test
     public void validateValidatorConfigMultipleOptionsInvalidValues() {
 
-        CompactValidator validator = LengthValidator.INSTANCE;
+        SimpleValidator validator = LengthValidator.INSTANCE;
 
         Map<String, Object> config = new HashMap<>();
-        config.put("min", "1");
+        config.put("min", "a");
         config.put("max", new ArrayList<>());
 
         ValidationResult result = validator.validateConfig(session, configFromMap(config));
@@ -228,7 +229,7 @@ public class ValidatorTest {
         Assert.assertNotNull(error1);
         Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
         Assert.assertEquals("max", error1.getInputHint());
-        Assert.assertEquals(ValidationError.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, error1.getMessage());
         Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 
@@ -236,7 +237,7 @@ public class ValidatorTest {
     public void validateValidatorConfigViaValidatorFactory() {
 
         Map<String, Object> config = new HashMap<>();
-        config.put("min", "1");
+        config.put("min", "a");
         config.put("max", new ArrayList<>());
 
         ValidatorConfig validatorConfig = configFromMap(config);
@@ -250,7 +251,7 @@ public class ValidatorTest {
         Assert.assertNotNull(error1);
         Assert.assertEquals(LengthValidator.ID, error1.getValidatorId());
         Assert.assertEquals("max", error1.getInputHint());
-        Assert.assertEquals(ValidationError.MESSAGE_INVALID_VALUE, error1.getMessage());
+        Assert.assertEquals(ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE, error1.getMessage());
         Assert.assertEquals(new ArrayList<>(), error1.getMessageParameters()[0]);
     }
 
@@ -282,8 +283,7 @@ public class ValidatorTest {
         Assert.assertNotNull(error1);
         Assert.assertEquals(NotBlankValidator.ID, error1.getValidatorId());
         Assert.assertEquals("address.zip", error1.getInputHint());
-        Assert.assertEquals(ValidationError.MESSAGE_INVALID_VALUE, error1.getMessage());
-        Assert.assertEquals(null, error1.getMessageParameters()[0]);
+        Assert.assertEquals(NotBlankValidator.MESSAGE_BLANK, error1.getMessage());
 
     }
 
@@ -302,7 +302,7 @@ public class ValidatorTest {
         }
     }
 
-    static class MockAddressValidator implements CompactValidator {
+    static class MockAddressValidator implements SimpleValidator {
 
         public static MockAddressValidator INSTANCE = new MockAddressValidator();
 

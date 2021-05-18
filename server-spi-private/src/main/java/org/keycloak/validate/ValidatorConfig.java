@@ -17,6 +17,7 @@
 package org.keycloak.validate;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -91,7 +92,7 @@ public class ValidatorConfig {
         return defaultValue;
     }
 
-    public Integer getIntOrDefault(String key) {
+    public Integer getInt(String key) {
         return getIntOrDefault(key, null);
     }
 
@@ -102,12 +103,36 @@ public class ValidatorConfig {
         } else if (value instanceof Number) {
             return ((Number) value).intValue();
         } else if (value instanceof String) {
-            return Integer.parseInt((String) value);
+            try {
+                return new Integer((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
         return defaultValue;
     }
 
-    public Double getDoubleOrDefault(String key) {
+    public Long getLong(String key) {
+        return getLongOrDefault(key, null);
+    }
+
+    public Long getLongOrDefault(String key, Long defaultValue) {
+        Object value = config.get(key);
+        if (value instanceof Long) {
+            return (Long) value;
+        } else if (value instanceof Number) {
+            return ((Number) value).longValue();
+        } else if (value instanceof String) {
+            try {
+                return new Long((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return defaultValue;
+    }
+
+    public Double getDouble(String key) {
         return getDoubleOrDefault(key, null);
     }
 
@@ -118,12 +143,16 @@ public class ValidatorConfig {
         } else if (value instanceof Number) {
             return ((Number) value).doubleValue();
         } else if (value instanceof String) {
-            return Double.parseDouble((String) value);
+            try {
+                return Double.parseDouble((String) value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
         return defaultValue;
     }
 
-    public Boolean getBooleanOrDefault(String key) {
+    public Boolean getBoolean(String key) {
         return getBooleanOrDefault(key, null);
     }
 
@@ -137,7 +166,7 @@ public class ValidatorConfig {
         return defaultValue;
     }
 
-    public Set<String> getStringSetOrDefault(String key) {
+    public Set<String> getStringSet(String key) {
         return getStringSetOrDefault(key, null);
     }
 
@@ -161,6 +190,12 @@ public class ValidatorConfig {
         return defaultValue;
     }
 
+    /**
+     * Get regex Pattern from the configuration. String can be used and it is compiled into Pattern.
+     * 
+     * @param key to get
+     * @return Pattern or null
+     */
     public Pattern getPattern(String key) {
         return getPatternOrDefault(key, null);
     }
@@ -169,14 +204,32 @@ public class ValidatorConfig {
         Object value = config.get(key);
         if (value instanceof Pattern) {
             return (Pattern) value;
+        } else if (value instanceof String) {
+            return Pattern.compile((String) value);
         }
         return defaultValue;
     }
 
+    public static ValidatorConfigBuilder builder() {
+        return new ValidatorConfigBuilder();
+    }
+
+    public static class ValidatorConfigBuilder {
+
+        private Map<String, Object> config = new HashMap<>();
+
+        public ValidatorConfig build() {
+            return ValidatorConfig.configFromMap(this.config);
+        }
+
+        public ValidatorConfigBuilder config(String name, Object value) {
+            config.put(name, value);
+            return this;
+        }
+    }
+
     @Override
     public String toString() {
-        return "ValidatorConfig{" +
-                "config=" + config +
-                '}';
+        return "ValidatorConfig{" + "config=" + config + '}';
     }
 }

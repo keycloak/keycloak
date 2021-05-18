@@ -14,16 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.validate.builtin;
+package org.keycloak.validate.validators;
 
-import org.keycloak.validate.CompactValidator;
+import java.util.regex.Pattern;
+
+import org.keycloak.validate.AbstractStringValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
 
-import java.util.regex.Pattern;
-
-public class EmailValidator implements CompactValidator {
+/**
+ * Email format validation - accepts plain string and collection of strings, for basic behavior like null/blank values
+ * handling and collections support see {@link AbstractStringValidator}.
+ */
+public class EmailValidator extends AbstractStringValidator {
 
     public static final String ID = "email";
 
@@ -32,8 +36,7 @@ public class EmailValidator implements CompactValidator {
     public static final String MESSAGE_INVALID_EMAIL = "error-invalid-email";
 
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
     private EmailValidator() {
     }
@@ -44,17 +47,9 @@ public class EmailValidator implements CompactValidator {
     }
 
     @Override
-    public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
-
-        if (!(input instanceof String)) {
-            context.addError(new ValidationError(ID, inputHint, ValidationError.MESSAGE_INVALID_VALUE, input));
-            return context;
+    protected void doValidate(String value, String inputHint, ValidationContext context, ValidatorConfig config) {
+        if (!EMAIL_PATTERN.matcher(value).matches()) {
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_EMAIL, value));
         }
-
-        if (!EMAIL_PATTERN.matcher((String) input).matches()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_EMAIL, input));
-        }
-
-        return context;
     }
 }

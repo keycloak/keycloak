@@ -23,9 +23,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 /**
  * Convenience interface to ease implementation of small {@link Validator} implementations.
  *
- * {@link CompactValidator CompactValidator's} should be implemented as singletons.
+ * {@link SimpleValidator SimpleValidator's} should be implemented as singletons.
  */
-public interface CompactValidator extends Validator, ValidatorFactory {
+public interface SimpleValidator extends Validator, ValidatorFactory {
 
     @Override
     default Validator create(KeycloakSession session) {

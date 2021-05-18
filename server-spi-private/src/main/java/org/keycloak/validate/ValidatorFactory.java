@@ -20,7 +20,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
 /**
- * A factory for custom {@link Validator} implementations.
+ * A factory for custom {@link Validator} implementations plugged-in through this SPI.
  */
 public interface ValidatorFactory extends ProviderFactory<Validator> {
 
@@ -38,21 +38,9 @@ public interface ValidatorFactory extends ProviderFactory<Validator> {
     }
 
     /**
-     * Returns the default {@link ValidatorConfig} for this {@link Validator}.
-     * <p>
-     * This is intended to be used by the user interface to create valid default configurations.
-     * Implementations can use the {@link KeycloakSession} to adapt the default {@link ValidatorConfig}.
-     *
-     * @param session the {@link KeycloakSession}
-     * @return ValidatorConfig or {@link ValidatorConfig#EMPTY} if no default config is provided.
-     */
-    default ValidatorConfig getDefaultConfig(KeycloakSession session) {
-        return ValidatorConfig.EMPTY;
-    }
-
-    /**
      * This is called when the server shuts down.
      */
+    @Override
     default void close() {
         // NOOP
     }

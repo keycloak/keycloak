@@ -328,4 +328,5 @@ public interface KeycloakSession extends InvalidationHandler {
      * Client Policy Manager
      */
     ClientPolicyManager clientPolicy();
+
 }
