@@ -77,6 +77,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -145,7 +146,7 @@ public class AccountRestService {
         copiedAttributes.remove(UserModel.USERNAME);
         rep.setAttributes(copiedAttributes);
 
-        return rep;
+        return UserUpdateHelper.filterUserRepresentation(rep, UserUpdateEvent.Account, session);
     }
 
     @Path("/")

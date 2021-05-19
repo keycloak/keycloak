@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 public class UserProfileAttributes extends HashMap<String, List<String>> {
 
@@ -56,7 +57,11 @@ public class UserProfileAttributes extends HashMap<String, List<String>> {
         this.remove(attr);
     }
 
-    public boolean isReadOnlyAttribute(String key) {
-        return profileProvider != null && profileProvider.isReadOnlyAttribute(key);
+    public boolean isReadOnlyAttribute(UserUpdateEvent userUpdateEvent, String key) {
+        return profileProvider != null && profileProvider.isReadOnlyAttribute(userUpdateEvent, key);
+    }
+
+    public boolean removeMissingAttribute(UserUpdateEvent userUpdateEvent, String key, boolean defaultValue) {
+        return profileProvider != null && profileProvider.removeMissingAttribute(userUpdateEvent, key, defaultValue);
     }
 }

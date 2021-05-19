@@ -41,6 +41,17 @@ import java.util.stream.Collectors;
  */
 public class UserUpdateHelper {
 
+    private static UserProfileProvider getProfileProvider(KeycloakSession session) {
+        if (session == null) {
+            return null;
+        }
+        return session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
+    }
+
+    public static org.keycloak.representations.account.UserRepresentation filterUserRepresentation(org.keycloak.representations.account.UserRepresentation rep, UserUpdateEvent userUpdateEvent, KeycloakSession session) {
+        UserProfileProvider profileProvider = getProfileProvider(session);
+        return profileProvider.filterUserRepresentation(rep, userUpdateEvent);
+    }
 
     public static void updateRegistrationProfile(RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
         register(UserUpdateEvent.RegistrationProfile, realm, currentUser, updatedUser);
@@ -77,7 +88,7 @@ public class UserUpdateHelper {
     }
 
     public static void updateUserResource(KeycloakSession session, UserModel user, UserRepresentation rep, boolean removeExistingAttributes) {
-        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
+        UserProfileProvider profileProvider = getProfileProvider(session);
         RealmModel realm = session.getContext().getRealm();
         UserRepresentationUserProfile userProfile = new UserRepresentationUserProfile(rep, profileProvider);
         update(UserUpdateEvent.UserResource, realm, user, userProfile.getAttributes(), removeExistingAttributes);
@@ -112,7 +123,7 @@ public class UserUpdateHelper {
 
         filterAttributes(userUpdateEvent, realm, updatedUser);
 
-        updateAttributes(currentUser, updatedUser, removeMissingAttributes);
+        updateAttributes(userUpdateEvent, currentUser, updatedUser, removeMissingAttributes);
     }
 
     private static void filterAttributes(UserUpdateEvent userUpdateEvent, RealmModel realm, UserProfileAttributes updatedUser) {
@@ -136,8 +147,11 @@ public class UserUpdateHelper {
         }
     }
 
-    private static void updateAttributes(UserModel currentUser, UserProfileAttributes attributes, boolean removeMissingAttributes) {
+    private static void updateAttributes(UserUpdateEvent userUpdateEvent, UserModel currentUser, UserProfileAttributes attributes, boolean removeMissingAttributes) {
         for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
+            if (attributes.isReadOnlyAttribute(userUpdateEvent, attr.getKey())) {
+                continue;
+            }
             List<String> currentValue = currentUser.getAttributeStream(attr.getKey()).collect(Collectors.toList());
             //In case of username we need to provide lower case values
             List<String> updatedValue = attr.getKey().equals(UserModel.USERNAME) ? AttributeToLower(attr.getValue()) : attr.getValue();
@@ -145,17 +159,14 @@ public class UserUpdateHelper {
                 currentUser.setAttribute(attr.getKey(), updatedValue);
             }
         }
-        if (removeMissingAttributes) {
-            Set<String> attrsToRemove = new HashSet<>(currentUser.getAttributes().keySet());
-            attrsToRemove.removeAll(attributes.keySet());
+        Set<String> attrsToRemove = new HashSet<>(currentUser.getAttributes().keySet());
+        attrsToRemove.removeAll(attributes.keySet());
 
-            for (String attr : attrsToRemove) {
-                if (attributes.isReadOnlyAttribute(attr)) {
-                    continue;
-                }
-                currentUser.removeAttribute(attr);
+        for (String attr : attrsToRemove) {
+            if (attributes.isReadOnlyAttribute(userUpdateEvent, attr) || !attributes.removeMissingAttribute(userUpdateEvent, attr, removeMissingAttributes)) {
+                continue;
             }
-
+            currentUser.removeAttribute(attr);
         }
     }
 
