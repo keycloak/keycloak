@@ -52,6 +52,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(className = "alert-error")
     private WebElement loginAlertErrorMessage;
 
+    public void update(String firstName, String lastName) {
+        update(firstName, lastName, null);
+    }
+
     public void update(String firstName, String lastName, String email) {
         if (firstName != null) {
             firstNameInput.clear();

@@ -144,11 +144,16 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
             case UPDATE_PROFILE:
-                UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
-                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, new UserUpdateProfileContext(realm, user, false));
 
                 actionMessage = Messages.UPDATE_PROFILE;
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
+                break;
+            case UPDATE_EMAIL:
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, new UserUpdateProfileContext(realm, user, true));
+
+                actionMessage = Messages.UPDATE_EMAIL;
+                page = LoginFormsPages.UPDATE_EMAIL;
                 break;
             case UPDATE_PASSWORD:
                 boolean isRequestedByAdmin = user.getRequiredActionsStream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
@@ -201,6 +206,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
                 break;
             case LOGIN_UPDATE_PROFILE:
+            case UPDATE_EMAIL:
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("user", new ProfileBean(userCtx, formData));
                 break;

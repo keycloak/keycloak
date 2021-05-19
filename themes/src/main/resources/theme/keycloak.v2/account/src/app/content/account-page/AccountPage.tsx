@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import { ActionGroup, Button, Form, FormGroup, TextInput, Grid, GridItem, Expandable} from '@patternfly/react-core';
+import { ActionGroup, Button, Form, FormGroup, TextInput, InputGroup, Grid, GridItem, Expandable} from '@patternfly/react-core';
 
 import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
@@ -26,6 +26,7 @@ import { LocaleSelector } from '../../widgets/LocaleSelectors';
 import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
 import { KeycloakService } from '../../keycloak-service/keycloak.service';
 import { AIACommand } from '../../util/AIACommand';
+import {ExternalLinkSquareAltIcon} from "@patternfly/react-icons";
 
 declare const features: Features;
 declare const locale: string;
@@ -55,6 +56,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     private isDeleteAccountAllowed: boolean = features.deleteAccountAllowed;
+    private isEmailUpdateAllowed: boolean = features.emailUpdateAllowed;
     private readonly DEFAULT_STATE: AccountPageState = {
         errors: {
             username: '',
@@ -141,6 +143,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         new AIACommand(keycloak, "delete_account").execute();
     }
 
+    private handleEmailUpdate = (keycloak: KeycloakService): void => {
+        new AIACommand(keycloak, "UPDATE_EMAIL").execute();
+    }
+
     public render(): React.ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
@@ -161,22 +167,33 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                     }
                     <FormGroup
                         label={Msg.localize('email')}
-                        isRequired
                         fieldId="email-address"
                         helperTextInvalid={this.state.errors.email}
                         isValid={this.state.errors.email === ''}
                     >
-                        <TextInput
-                            isRequired
-                            type="email"
-                            id="email-address"
-                            name="email"
-                            maxLength={254}
-                            value={fields.email}
-                            onChange={this.handleChange}
-                            isValid={this.state.errors.email === ''}
-                        >
-                        </TextInput>
+                        <InputGroup>
+                            <TextInput
+                                isDisabled
+                                type="email"
+                                id="email-address"
+                                name="email"
+                                value={fields.email}
+                            >
+                            </TextInput>
+                            {this.isEmailUpdateAllowed &&
+                                <KeycloakContext.Consumer>
+                                    { (keycloak: KeycloakService) => (
+                                        <Button id="update-email-btn"
+                                                variant="link"
+                                                onClick={() => this.handleEmailUpdate(keycloak)}
+                                                icon={<ExternalLinkSquareAltIcon/>}
+                                                iconPosition="right">
+                                            <Msg msgKey="updateEmail" />
+                                        </Button>
+                                    )}
+                                </KeycloakContext.Consumer>
+                            }
+                        </InputGroup>
                     </FormGroup>
                     <FormGroup
                         label={Msg.localize('firstName')}

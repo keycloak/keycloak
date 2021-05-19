@@ -145,7 +145,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
 
         // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page
@@ -184,7 +184,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Login success now
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
     }
 
@@ -208,7 +208,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Login success now
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
     }
 
@@ -233,7 +233,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
     }
 
@@ -271,7 +271,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
     }
 
@@ -297,7 +297,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(tab1Url);
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
 
         // Assert I am redirected to the appPage in tab1
         appPage.assertCurrent();
@@ -332,7 +332,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(tab1Url);
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
 
         // Assert I am redirected to the appPage in tab1 and have state corresponding to tab1
         appPage.assertCurrent();
@@ -365,7 +365,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Continue in tab2 and finish login here
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
 
         // Assert I am redirected to the appPage in tab2 and have state corresponding to tab2
         appPage.assertCurrent();
@@ -407,7 +407,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
 
         // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page

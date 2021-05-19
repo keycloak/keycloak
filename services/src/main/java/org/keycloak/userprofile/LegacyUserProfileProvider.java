@@ -27,6 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.validation.StaticValidators;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.userprofile.validation.ValidationChainBuilder;
 
 /**
@@ -59,15 +60,16 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
                 addReadOnlyAttributeValidators(builder, adminReadOnlyAttributes, updateContext, updatedProfile);
                 break;
             case IdpReview:
-                addBasicValidators(builder, !realm.isRegistrationEmailAsUsername());
+                addBasicValidators(builder, updateContext, !realm.isRegistrationEmailAsUsername());
                 addReadOnlyAttributeValidators(builder, readOnlyAttributes, updateContext, updatedProfile);
                 break;
             case Account:
             case RegistrationProfile:
             case UpdateProfile:
-                addBasicValidators(builder, !realm.isRegistrationEmailAsUsername() && realm.isEditUsernameAllowed());
+            case UpdateEmail:
+                addBasicValidators(builder, updateContext, !realm.isRegistrationEmailAsUsername() && realm.isEditUsernameAllowed());
                 addReadOnlyAttributeValidators(builder, readOnlyAttributes, updateContext, updatedProfile);
-                addSessionValidators(builder);
+                addSessionValidators(builder, updateContext);
                 break;
             case RegistrationUserCreation:
                 addUserCreationValidators(builder);
@@ -102,33 +104,49 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
         }
     }
 
-    private void addBasicValidators(ValidationChainBuilder builder, boolean userNameExistsCondition) {
+    private void addBasicValidators(ValidationChainBuilder builder, UserProfileContext updateContext, boolean userNameExistsCondition) {
 
-        builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
-                .addSingleAttributeValueValidationFunction(Messages.MISSING_USERNAME, StaticValidators.checkUsernameExists(userNameExistsCondition)).build()
+        if (updateContext.getUpdateEvent() != UserUpdateEvent.UpdateEmail){
+            builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
+                    .addSingleAttributeValueValidationFunction(Messages.MISSING_USERNAME, StaticValidators.checkUsernameExists(userNameExistsCondition)).build()
 
-                .addAttributeValidator().forAttribute(UserModel.FIRST_NAME)
-                .addSingleAttributeValueValidationFunction(Messages.MISSING_FIRST_NAME, StaticValidators.isBlank()).build()
+                    .addAttributeValidator().forAttribute(UserModel.FIRST_NAME)
+                    .addSingleAttributeValueValidationFunction(Messages.MISSING_FIRST_NAME, StaticValidators.isBlank()).build()
 
-                .addAttributeValidator().forAttribute(UserModel.LAST_NAME)
-                .addSingleAttributeValueValidationFunction(Messages.MISSING_LAST_NAME, StaticValidators.isBlank()).build()
+                    .addAttributeValidator().forAttribute(UserModel.LAST_NAME)
+                    .addSingleAttributeValueValidationFunction(Messages.MISSING_LAST_NAME, StaticValidators.isBlank()).build()
+                    .build();
+        }
 
-                .addAttributeValidator().forAttribute(UserModel.EMAIL)
-                .addSingleAttributeValueValidationFunction(Messages.MISSING_EMAIL, StaticValidators.isBlank())
-                .addSingleAttributeValueValidationFunction(Messages.INVALID_EMAIL, StaticValidators.isEmailValid())
-                .build();
+        if (updateContext.getUpdateEvent() != UserUpdateEvent.UpdateProfile){
+            builder.addAttributeValidator().forAttribute(UserModel.EMAIL)
+                    .addSingleAttributeValueValidationFunction(Messages.MISSING_EMAIL, StaticValidators.isBlank())
+                    .addSingleAttributeValueValidationFunction(Messages.INVALID_EMAIL, StaticValidators.isEmailValid())
+                    .build();
+        } else {
+            builder.addAttributeValidator().forAttribute(UserModel.EMAIL)
+                    .addValidationFunction(Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, StaticValidators.isReadOnlyAttributeUnchanged(UserModel.EMAIL))
+                    .build();
+        }
+
     }
 
-    private void addSessionValidators(ValidationChainBuilder builder) {
-        RealmModel realm = this.session.getContext().getRealm();
-        builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
-                .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.userNameExists(session))
-                .addSingleAttributeValueValidationFunction(Messages.READ_ONLY_USERNAME, StaticValidators.isUserMutable(realm)).build()
+    private void addSessionValidators(ValidationChainBuilder builder, UserProfileContext updateContext) {
+        if (updateContext.getUpdateEvent() != UserUpdateEvent.UpdateEmail) {
+            RealmModel realm = this.session.getContext().getRealm();
+            builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
+                    .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.userNameExists(session))
+                    .addSingleAttributeValueValidationFunction(Messages.READ_ONLY_USERNAME, StaticValidators.isUserMutable(realm)).build()
+                    .build();
+        }
 
-                .addAttributeValidator().forAttribute(UserModel.EMAIL)
-                .addSingleAttributeValueValidationFunction(Messages.EMAIL_EXISTS, StaticValidators.isEmailDuplicated(session))
-                .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.doesEmailExistAsUsername(session)).build()
-                .build();
+        if (updateContext.getUpdateEvent() != UserUpdateEvent.UpdateProfile) {
+            builder
+                    .addAttributeValidator().forAttribute(UserModel.EMAIL)
+                    .addSingleAttributeValueValidationFunction(Messages.EMAIL_EXISTS, StaticValidators.isEmailDuplicated(session))
+                    .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.doesEmailExistAsUsername(session)).build()
+                    .build();
+        }
     }
 
     private void addReadOnlyAttributeValidators(ValidationChainBuilder builder, Pattern configuredReadOnlyAttrs, UserProfileContext updateContext, UserProfile updatedProfile) {

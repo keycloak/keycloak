@@ -167,7 +167,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
 
         // Successfully update profile and assert user logged
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
     }
 
@@ -214,7 +214,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         updateProfilePage.assertCurrent();
 
         // Successfully update profile and assert user logged
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
         appPage.assertCurrent();
     }
 
@@ -228,7 +228,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("login-test", "password");
         updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.update("John", "Doe3");
 
         // Assert on consent screen
         grantPage.assertCurrent();

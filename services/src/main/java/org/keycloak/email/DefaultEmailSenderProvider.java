@@ -61,9 +61,13 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+        send(config, retrieveEmailAddress(user), subject, textBody, htmlBody);
+    }
+
+    @Override
+    public void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException {
         Transport transport = null;
         try {
-            String address = retrieveEmailAddress(user);
 
             Properties props = new Properties();
 
