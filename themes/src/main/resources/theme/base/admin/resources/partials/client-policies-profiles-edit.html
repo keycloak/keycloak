@@ -17,23 +17,15 @@
   -->
 
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <kc-tabs-realm></kc-tabs-realm>
 
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li class="active">
-            <a href="#/realms/{{realm.realm}}/client-policies/profiles">{{:: 'client-policies-profiles' | translate}}</a>
-            <kc-tooltip>{{:: 'client-policies-profiles.tooltip' | translate}}</kc-tooltip>
-        </li>
-        <li>
-            <a href="#/realms/{{realm.realm}}/client-policies/policies">{{:: 'client-policies-policies' | translate}}</a>
-            <kc-tooltip>{{:: 'client-policies-policies.tooltip' | translate}}</kc-tooltip>
-        </li>
-    </ul>
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/client-policies/profiles">{{:: 'client-profiles' | translate}}</a></li>
+        <li data-ng-show="createNew">{{:: 'create-client-profile' | translate}}</li>
+        <li data-ng-hide="createNew">{{editedProfile.name}}</li>
+    </ol>
 
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li class="active"><a href="#/realms/{{realm.realm}}/client-policies/profiles">{{:: 'client-profiles-form-view' | translate}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/client-policies/profiles-json">{{:: 'client-profiles-json-editor' | translate}}</a></li>
-    </ul>
+    <h1 data-ng-show="createNew">{{:: 'create-client-policies-profile' | translate}}</h1>
+    <h1 data-ng-hide="createNew">{{editedProfile.name|capitalize}}</h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="isReadOnly()">
 

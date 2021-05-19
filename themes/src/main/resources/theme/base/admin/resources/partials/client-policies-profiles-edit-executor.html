@@ -18,6 +18,13 @@
 
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/client-policies/profiles">{{:: 'client-profiles' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}">{{editedProfile.name}}</a></li>
+        <li data-ng-show="createNew">{{:: 'create-executor' | translate}}</li>
+        <li data-ng-hide="createNew">{{executorType.id}}</li>
+    </ol>
+
     <h1 data-ng-hide="createNew">{{executorType.id|capitalize}}</h1>
     <h1 data-ng-show="createNew">{{:: 'create-executor' | translate}}</h1>
 
