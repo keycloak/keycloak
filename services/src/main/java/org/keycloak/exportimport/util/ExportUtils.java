@@ -105,12 +105,12 @@ public class ExportUtils {
         List<ClientModel> clients = Collections.emptyList();
 
         if (options.isClientsIncluded()) {
-            clients = realm.getClientsStream().collect(Collectors.toList());
-            List<ClientRepresentation> clientReps = new ArrayList<>();
-            for (ClientModel app : clients) {
-                ClientRepresentation clientRep = exportClient(session, app);
-                clientReps.add(clientRep);
-            }
+            clients = realm.getClientsStream()
+              .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
+              .collect(Collectors.toList());
+            List<ClientRepresentation> clientReps = clients.stream()
+              .map(app -> exportClient(session, app))
+              .collect(Collectors.toList());
             rep.setClients(clientReps);
         }
 
