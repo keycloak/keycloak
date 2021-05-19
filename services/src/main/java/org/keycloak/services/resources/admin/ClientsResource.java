@@ -131,6 +131,7 @@ public class ClientsResource {
         }
 
         Stream<ClientRepresentation> s = clientModels
+                .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
                 .map(c -> {
                     ClientRepresentation representation = null;
                     if (canView || auth.clients().canView(c)) {

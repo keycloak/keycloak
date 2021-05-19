@@ -60,6 +60,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
@@ -659,7 +660,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("realm", realm.getId());
         Stream<String> clients = paginateQuery(query, firstResult, maxResults).getResultStream();
 
-        return closing(clients.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull));
+        return closing(clients.map(id -> (ClientModel) new ClientModelLazyDelegate.WithId(session, realm, id)));
     }
 
     @Override
@@ -703,7 +704,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         query.setParameter("realm", realm.getId());
 
         Stream<String> results = paginateQuery(query, firstResult, maxResults).getResultStream();
-        return closing(results.map(c -> session.clients().getClientById(realm, c)));
+        return closing(results.map(id -> (ClientModel) new ClientModelLazyDelegate.WithId(session, realm, id)));
     }
 
     @Override
@@ -713,8 +714,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<ClientEntity> queryBuilder = builder.createQuery(ClientEntity.class);
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
         Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+        queryBuilder.select(root.get("id"));
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -734,9 +736,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
         queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
 
-        TypedQuery<ClientEntity> query = em.createQuery(queryBuilder);
+        TypedQuery<String> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(c -> session.clients().getClientById(realm, c.getId()));
+                .map(id -> session.clients().getClientById(realm, id));
     }
 
     @Override
