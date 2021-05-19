@@ -269,6 +269,18 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
     }
 
+    public void setLogoUri(String logoUri) {
+        setAttribute(OIDCConfigAttributes.LOGO_URI, logoUri);
+    }
+
+    public void setPolicyUri(String policyUri) {
+        setAttribute(OIDCConfigAttributes.POLICY_URI, policyUri);
+    }
+
+    public void setTosUri(String tosUri) {
+        setAttribute(OIDCConfigAttributes.TOS_URI, tosUri);
+    }
+
     private String getAttribute(String attrKey) {
         if (clientModel != null) {
             return clientModel.getAttribute(attrKey);
