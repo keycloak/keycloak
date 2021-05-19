@@ -231,6 +231,15 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
                 }
             }
         }
+
+        if (spDescriptorType.getExtensions() != null && spDescriptorType.getExtensions().getUIInfo() != null) {
+            if (!spDescriptorType.getExtensions().getUIInfo().getLogo().isEmpty()) {
+                attributes.put(SamlProtocol.LOGO_URI, spDescriptorType.getExtensions().getUIInfo().getLogo().get(0).getValue().toString());
+            }
+            if (!spDescriptorType.getExtensions().getUIInfo().getPrivacyStatementURL().isEmpty()) {
+                attributes.put(SamlProtocol.POLICY_URI, spDescriptorType.getExtensions().getUIInfo().getPrivacyStatementURL().stream().filter(dn -> "en".equals(dn.getLang())).findFirst().orElse(spDescriptorType.getExtensions().getUIInfo().getPrivacyStatementURL().get(0)).getValue().toString());
+            }
+        }
         
         app.setProtocolMappers(spDescriptorType.getAttributeConsumingService().stream().flatMap(att -> att.getRequestedAttribute().stream())
             .map(attr -> {

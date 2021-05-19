@@ -55,6 +55,15 @@ public enum SAMLMetadataQNames implements HasQName {
     SURNAME("SurName"),
     TELEPHONE_NUMBER("TelephoneNumber"),
 
+    //mdui elements
+    DESCRIPTION(JBossSAMLURIConstants.METADATA_UI, "Description"),
+    DISPLAY_NAME(JBossSAMLURIConstants.METADATA_UI, "DisplayName"),
+    INFORMATION_URL(JBossSAMLURIConstants.METADATA_UI, "InformationURL"),
+    KEYWORDS(JBossSAMLURIConstants.METADATA_UI, "Keywords"),
+    LOGO(JBossSAMLURIConstants.METADATA_UI, "Logo"),
+    PRIVACY_STATEMENT_URL(JBossSAMLURIConstants.METADATA_UI, "PrivacyStatementURL"),
+    UIINFO(JBossSAMLURIConstants.METADATA_UI, "UIInfo"),
+
     // Attribute names
     ATTR_ENTITY_ID(null, "entityID"),
     ATTR_ID(null, "ID"),
@@ -77,6 +86,8 @@ public enum SAMLMetadataQNames implements HasQName {
     ATTR_IS_REQUIRED(null, "isRequired"),
     ATTR_NAME(null, "Name"),
     ATTR_NAME_FORMAT(null, "NameFormat"),
+    ATTR_WIDTH(null, "width"),
+    ATTR_HEIGHT(null, "height"),
     // Elements from other namespaces that can be direct subelements of this namespace's elements
     SIGNATURE(XmlDSigQNames.SIGNATURE),
     KEY_INFO(XmlDSigQNames.KEY_INFO),

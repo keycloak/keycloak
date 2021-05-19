@@ -176,6 +176,18 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
+        if (clientOIDC.getLogoUri() != null) {
+            configWrapper.setLogoUri(clientOIDC.getLogoUri());
+        }
+
+        if (clientOIDC.getPolicyUri() != null) {
+            configWrapper.setPolicyUri(clientOIDC.getPolicyUri());
+        }
+
+        if (clientOIDC.getTosUri() != null) {
+            configWrapper.setTosUri(clientOIDC.getTosUri());
+        }
+
         String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
         if (backchannelTokenDeliveryMode != null) {
             if(isSupportedBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode)) {
