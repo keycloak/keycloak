@@ -88,7 +88,7 @@
                     <tbody>
                         <tr ng-repeat="executor in editedProfile.executors">
                             <td><a href="#/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{$index}}">{{executor.executor}}</a></td>
-                            <td class="kc-action-cell" data-ng-hide="isReadOnly()" kc-open="/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{$index}}">{{:: 'edit' | translate}}</td>
+                            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-policies/profiles-update/{{editedProfile.name}}/update-executor/{{$index}}">{{:: 'edit' | translate}}</td>
                             <td class="kc-action-cell" data-ng-hide="isReadOnly()" data-ng-click="removeExecutor($index)">{{:: 'delete' | translate}}</td>
                         </tr>
                         <tr data-ng-show="!editedProfile.executors || editedProfile.executors.length == 0">

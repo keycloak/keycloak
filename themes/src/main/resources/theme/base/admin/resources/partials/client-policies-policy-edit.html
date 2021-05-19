@@ -97,7 +97,7 @@
                 <tbody>
                 <tr ng-repeat="condition in editedPolicy.conditions">
                     <td><a href="#/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{condition.condition}}</a></td>
-                    <td class="kc-action-cell" data-ng-hide="isReadOnly()" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{:: 'edit' | translate}}</td>
+                    <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-policies/policies-update/{{editedPolicy.name}}/update-condition/{{$index}}">{{:: 'edit' | translate}}</td>
                     <td class="kc-action-cell" data-ng-hide="isReadOnly()" data-ng-click="removeCondition($index)">{{:: 'delete' | translate}}</td>
                 </tr>
                 <tr data-ng-show="!editedPolicy.conditions || editedPolicy.conditions.length == 0">
@@ -127,7 +127,7 @@
                 </tr>
                 <tr data-ng-show="editedPolicy.profiles && editedPolicy.profiles.length > 0">
                     <th>{{:: 'name' | translate}}</th>
-                    <th>{{:: 'actions' | translate}}</th>
+                    <th data-ng-hide="isReadOnly()">{{:: 'actions' | translate}}</th>
                 </tr>
                 </thead>
                 <tbody>
