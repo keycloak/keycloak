@@ -1,6 +1,6 @@
 [[_vault-administration]]
 
-== Using Vault to Obtain Secrets
+== Using a Vault to Obtain Secrets
 
 Several fields in the administration support obtaining the value of a secret from an external vault.
 
@@ -216,3 +216,166 @@ To install and use the above custom provider the configuration would look someth
 The configuration above tells {project_name} to setup the custom Elytron provider and use the key resolver that is created by
 the custom factory.
 endif::[]
+
+=== Sample Configuration
+
+The following is an example of configuring a vault and credential store.  The procedure involves two parts:
+
+* Creating the credential store and a vault, where the credential store and vault passwords are in plain text.
+* Updating the credential store and vault to have the password use a mask provided by `elytron-tool.sh`.
+
+In this example, the test target used is an LDAP instance with `BIND DN credential: secret12`. The target is mapped using user federation in the realm `ldaptest`.
+
+==== Configuring the credential store and vault without a mask
+
+You create the credential store and a vault where the credential store and vault passwords are in plain text.
+
+.Prerequisites
+
+* A running LDAP instance has `BIND DN credential: secret12`.  
+
+* The alias uses the format <realm-name>_< key-value> when using the default key resolver. In this case, the instance is running in the realm `ldaptest` and `ldaptest_ldap_secret` is the alias that corresponds to the value `ldap_secret` in that realm.
+
+NOTE: The resolver replaces underscore characters with double underscore characters in the realm and key names. For example, for the key `ldaptest_ldap_secret`, the final key will be `ldaptest_ldap__secret`.
+
+.Procedure
+
+. Create the Elytron credential store.
++
+[source,bash,subs=+attributes]
+----
+[standalone@localhost:9990 /] /subsystem=elytron/credential-store=test-store:add(create=true, location=/home/test/test-store.p12, credential-reference={clear-text=testpwd1!},implementation-properties={keyStoreType=PKCS12})
+----
+
+. Add an alias to the credential store. 
+
++
+[source,bash,subs=+attributes]
+----
+/subsystem=elytron/credential-store=test-store:add-alias(alias=ldaptest_ldap__secret,secret-value=secret12)
+----
++
+Notice how the resolver causes the key `ldaptest_ldap__secret` to use double underscores.
+
+. List the aliases from the credential store to inspect the contents of the keystore that is produced by Elytron.
++
+[source,bash,subs=+attributes]
+----
+keytool -list -keystore /home/test/test-store.p12 -storetype PKCS12 -storepass testpwd1!
+Keystore type: PKCS12
+Keystore provider: SUN
+
+Your keystore contains 1 entries
+
+ldaptest_ldap__secret/passwordcredential/clear/, Oct 12, 2020, SecretKeyEntry, 
+----
+
+. Configure the vault SPI in {project_name}.
++
+[source,bash,subs=+attributes]
+----
+/subsystem=keycloak-server/spi=vault:add(default-provider=elytron-cs-keystore)
+
+/subsystem=keycloak-server/spi=vault/provider=elytron-cs-keystore:add(enabled=true, properties={location=>/home/test/test-store.p12, secret=>testpwd1!, keyStoreType=>PKCS12})
+----
++
+At this point, the vault and credentials store passwords are not masked.
++
+[source,bash,subs=+attributes]
+----
+        <spi name="vault">
+                <default-provider>elytron-cs-keystore</default-provider>
+                <provider name="elytron-cs-keystore" enabled="true">
+                    <properties>
+                        <property name="location" value="/home/test/test-store.p12"/>
+                        <property name="secret" value="testpwd1!"/>
+                        <property name="keyStoreType" value="PKCS12"/>
+                    </properties>
+                </provider>
+            </spi>
+
+         <credential-stores>
+                <credential-store name="test-store" location="/home/test/test-store.p12" create="true">
+                    <implementation-properties>
+                        <property name="keyStoreType" value="PKCS12"/>
+                    </implementation-properties>
+                    <credential-reference clear-text="testpwd1!"/>
+                </credential-store>
+         </credential-stores>
+----
+
+. In the LDAP provider, replace `binDN credential` with `${vault.ldap_secret}`.
+
+. Test your LDAP connection.
++
+.LDAP Vault
+image:images/ldap-vault.png[LDAP Vault]
+
+
+==== Masking the password in the credential store and vault
+
+You can now update the credential store and vault to have passwords that use a mask provided by `elytron-tool.sh`.
+
+. Create a masked password using values for the `salt` and the `iteration` parameters:
++
+[source,bash,subs=+attributes]
+----
+$ EAP_HOME/bin/elytron-tool.sh mask --salt SALT --iteration ITERATION_COUNT --secret PASSWORD
+----
++
+For example:
++
+[source,bash,subs=+attributes]
+----
+elytron-tool.sh mask --salt 12345678 --iteration 123 --secret testpwd1!
+MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123
+----
+
+. Update the Elytron credential store configuration to use the masked password.
++
+[source,bash,subs=+attributes]
+----
+/subsystem=elytron/credential-store=cs-store:write-attribute(name=credential-reference.clear-text,value="MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123")
+----
+
+. Update the {project_name} vault configuration to use the masked password. 
++
+[source,bash,subs=+attributes]
+----
+/subsystem=keycloak-server/spi=vault/provider=elytron-cs-keystore:remove()
+/subsystem=keycloak-server/spi=vault/provider=elytron-cs-keystore:add(enabled=true, properties={location=>/home/test/test-store.p12, secret=>”MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123”, keyStoreType=>PKCS12})
+----
++
+The vault and credential store are now masked:
++
+[source,bash,subs=+attributes]
+----
+        <spi name="vault">
+                <default-provider>elytron-cs-keystore</default-provider>
+                <provider name="elytron-cs-keystore" enabled="true">
+                    <properties>
+                        <property name="location" value="/home/test/test-store.p12"/>
+                        <property name="secret" value="MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123"/>
+                        <property name="keyStoreType" value="PKCS12"/>
+                    </properties>
+                </provider>
+            </spi>
+         ....
+         .....
+         <credential-stores>
+                <credential-store name="test-store" location="/home/test/test-store.p12" create="true">
+                    <implementation-properties>
+                        <property name="keyStoreType" value="PKCS12"/>
+                    </implementation-properties>
+                    <credential-reference clear-text="MASK-3BUbFEyWu0lRAu8.fCqyUk;12345678;123"/>
+                </credential-store>
+         </credential-stores>
+----
+
+. You can now test the connection to the LDAP using `${vault.ldap_secret}`.
+
+
+[role="_additional-resources"]
+.Additional resources
+
+For more information about the Elytron tool, see link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.3/html/how_to_configure_server_security/securely_storing_credentials#cred_store_elytron_client[Using Credential Stores with Elytron Client].
