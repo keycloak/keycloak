@@ -27,7 +27,7 @@
     "@patternfly/react-table": "4.26.7",
     "axios": "^0.21.1",
     "file-saver": "^2.0.5",
-    "i18next": "^19.6.2",
+    "i18next": "^20.2.4",
     "keycloak-admin": "1.14.16",
     "lodash": "^4.17.20",
     "moment": "^2.29.1",
