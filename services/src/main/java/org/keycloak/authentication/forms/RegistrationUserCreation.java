@@ -92,14 +92,10 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
             if (pve.hasError(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);
-                formData.remove(RegistrationPage.FIELD_EMAIL);
             } else if (pve.hasError(Messages.MISSING_EMAIL, Messages.MISSING_USERNAME, Messages.INVALID_EMAIL)) {
-                if (pve.hasError(Messages.INVALID_EMAIL))
-                    formData.remove(Validation.FIELD_EMAIL);
                 context.error(Errors.INVALID_REGISTRATION);
             } else if (pve.hasError(Messages.USERNAME_EXISTS)) {
                 context.error(Errors.USERNAME_IN_USE);
-                formData.remove(Validation.FIELD_USERNAME);
             }
 
             context.validationError(formData, errors);
