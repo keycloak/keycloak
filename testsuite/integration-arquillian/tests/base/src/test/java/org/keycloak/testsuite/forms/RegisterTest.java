@@ -89,7 +89,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("firstName", registerPage.getFirstName());
         assertEquals("lastName", registerPage.getLastName());
         assertEquals("registerExistingUser@email", registerPage.getEmail());
-        assertEquals("", registerPage.getUsername());
+        assertEquals("roleRichUser", registerPage.getUsername());
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
@@ -112,7 +112,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         // assert form keeps form fields on error
         assertEquals("firstName", registerPage.getFirstName());
         assertEquals("lastName", registerPage.getLastName());
-        assertEquals("", registerPage.getEmail());
+        assertEquals("test-user@localhost", registerPage.getEmail());
         assertEquals("registerExistingUser", registerPage.getUsername());
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
