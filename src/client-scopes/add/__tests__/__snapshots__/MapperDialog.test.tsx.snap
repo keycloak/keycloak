@@ -1861,6 +1861,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                     "extraParams": Object {
                                       "actionResolver": undefined,
                                       "actions": undefined,
+                                      "actionsToggle": undefined,
                                       "allRowsSelected": false,
                                       "areActionsDisabled": undefined,
                                       "canSelectAll": false,
@@ -1907,6 +1908,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                     "extraParams": Object {
                                       "actionResolver": undefined,
                                       "actions": undefined,
+                                      "actionsToggle": undefined,
                                       "allRowsSelected": false,
                                       "areActionsDisabled": undefined,
                                       "canSelectAll": false,
@@ -1953,6 +1955,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                     "extraParams": Object {
                                       "actionResolver": undefined,
                                       "actions": undefined,
+                                      "actionsToggle": undefined,
                                       "allRowsSelected": false,
                                       "areActionsDisabled": undefined,
                                       "canSelectAll": false,
@@ -2064,6 +2067,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                   "extraParams": Object {
                                                     "actionResolver": undefined,
                                                     "actions": undefined,
+                                                    "actionsToggle": undefined,
                                                     "allRowsSelected": false,
                                                     "areActionsDisabled": undefined,
                                                     "canSelectAll": false,
@@ -2110,6 +2114,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                   "extraParams": Object {
                                                     "actionResolver": undefined,
                                                     "actions": undefined,
+                                                    "actionsToggle": undefined,
                                                     "allRowsSelected": false,
                                                     "areActionsDisabled": undefined,
                                                     "canSelectAll": false,
@@ -2156,6 +2161,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                   "extraParams": Object {
                                                     "actionResolver": undefined,
                                                     "actions": undefined,
+                                                    "actionsToggle": undefined,
                                                     "allRowsSelected": false,
                                                     "areActionsDisabled": undefined,
                                                     "canSelectAll": false,
@@ -2263,6 +2269,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                           "extraParams": Object {
                                                             "actionResolver": undefined,
                                                             "actions": undefined,
+                                                            "actionsToggle": undefined,
                                                             "allRowsSelected": false,
                                                             "areActionsDisabled": undefined,
                                                             "canSelectAll": false,
@@ -2309,6 +2316,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                           "extraParams": Object {
                                                             "actionResolver": undefined,
                                                             "actions": undefined,
+                                                            "actionsToggle": undefined,
                                                             "allRowsSelected": false,
                                                             "areActionsDisabled": undefined,
                                                             "canSelectAll": false,
@@ -2355,6 +2363,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                           "extraParams": Object {
                                                             "actionResolver": undefined,
                                                             "actions": undefined,
+                                                            "actionsToggle": undefined,
                                                             "allRowsSelected": false,
                                                             "areActionsDisabled": undefined,
                                                             "canSelectAll": false,
@@ -2548,6 +2557,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                               "extraParams": Object {
                                                 "actionResolver": undefined,
                                                 "actions": undefined,
+                                                "actionsToggle": undefined,
                                                 "allRowsSelected": false,
                                                 "areActionsDisabled": undefined,
                                                 "canSelectAll": false,
@@ -2594,6 +2604,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                               "extraParams": Object {
                                                 "actionResolver": undefined,
                                                 "actions": undefined,
+                                                "actionsToggle": undefined,
                                                 "allRowsSelected": false,
                                                 "areActionsDisabled": undefined,
                                                 "canSelectAll": false,
@@ -2640,6 +2651,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                               "extraParams": Object {
                                                 "actionResolver": undefined,
                                                 "actions": undefined,
+                                                "actionsToggle": undefined,
                                                 "allRowsSelected": false,
                                                 "areActionsDisabled": undefined,
                                                 "canSelectAll": false,
@@ -5601,6 +5613,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                   "extraParams": Object {
                                                     "actionResolver": undefined,
                                                     "actions": undefined,
+                                                    "actionsToggle": undefined,
                                                     "allRowsSelected": false,
                                                     "areActionsDisabled": undefined,
                                                     "canSelectAll": false,
@@ -5647,6 +5660,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                   "extraParams": Object {
                                                     "actionResolver": undefined,
                                                     "actions": undefined,
+                                                    "actionsToggle": undefined,
                                                     "allRowsSelected": false,
                                                     "areActionsDisabled": undefined,
                                                     "canSelectAll": false,
@@ -5693,6 +5707,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                   "extraParams": Object {
                                                     "actionResolver": undefined,
                                                     "actions": undefined,
+                                                    "actionsToggle": undefined,
                                                     "allRowsSelected": false,
                                                     "areActionsDisabled": undefined,
                                                     "canSelectAll": false,
@@ -9277,6 +9292,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -9323,6 +9339,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -9369,6 +9386,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -9671,6 +9689,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -9717,6 +9736,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -9763,6 +9783,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10065,6 +10086,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10111,6 +10133,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10157,6 +10180,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10459,6 +10483,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10505,6 +10530,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10551,6 +10577,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10853,6 +10880,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10899,6 +10927,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -10945,6 +10974,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -11245,6 +11275,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -11291,6 +11322,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -11337,6 +11369,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -11639,6 +11672,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -11685,6 +11719,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -11731,6 +11766,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12033,6 +12069,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12079,6 +12116,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12125,6 +12163,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12423,6 +12462,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12469,6 +12509,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12515,6 +12556,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12803,6 +12845,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12849,6 +12892,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -12895,6 +12939,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13197,6 +13242,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13243,6 +13289,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13289,6 +13336,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13591,6 +13639,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13637,6 +13686,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13683,6 +13733,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -13985,6 +14036,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14031,6 +14083,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14077,6 +14130,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14379,6 +14433,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14425,6 +14480,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14471,6 +14527,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14773,6 +14830,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14819,6 +14877,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -14865,6 +14924,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15165,6 +15225,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15211,6 +15272,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15257,6 +15319,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15557,6 +15620,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15603,6 +15667,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15649,6 +15714,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15951,6 +16017,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -15997,6 +16064,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16043,6 +16111,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16351,6 +16420,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16397,6 +16467,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16443,6 +16514,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16745,6 +16817,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16791,6 +16864,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -16837,6 +16911,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17139,6 +17214,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17185,6 +17261,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17231,6 +17308,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17533,6 +17611,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17579,6 +17658,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17625,6 +17705,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17927,6 +18008,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -17973,6 +18055,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18019,6 +18102,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18315,6 +18399,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18361,6 +18446,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18407,6 +18493,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18700,6 +18787,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18746,6 +18834,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -18792,6 +18881,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19094,6 +19184,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19140,6 +19231,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19186,6 +19278,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19488,6 +19581,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19534,6 +19628,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19580,6 +19675,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19880,6 +19976,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19926,6 +20023,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
@@ -19972,6 +20070,7 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                                                             "extraParams": Object {
                                                               "actionResolver": undefined,
                                                               "actions": undefined,
+                                                              "actionsToggle": undefined,
                                                               "allRowsSelected": false,
                                                               "areActionsDisabled": undefined,
                                                               "canSelectAll": false,
