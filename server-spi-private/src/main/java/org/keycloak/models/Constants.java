@@ -96,6 +96,9 @@ public final class Constants {
     // Prefix for user attributes used in various "context"data maps
     public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
 
+    // Roles already granted by a mapper when updating brokered users.
+    public static final String MAPPER_GRANTED_ROLES = "MAPPER_GRANTED_ROLES";
+
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
 

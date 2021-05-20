@@ -21,14 +21,8 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -41,7 +35,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClaimToRoleMapper extends AbstractClaimMapper {
+public class ClaimToRoleMapper extends AbstractClaimToRoleMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
 
@@ -104,38 +98,8 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     }
 
     @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        if (hasClaimValue(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-            user.grantRole(role);
-        }
-    }
-
-    @Override
-    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        if (!hasClaimValue(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-            user.deleteRoleMapping(role);
-        }
-
-    }
-
-    @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-        if (role == null) {
-            throw new IdentityBrokerException("Unable to find role: " + roleName);
-        }
-        if (!hasClaimValue(mapperModel, context)) {
-            user.deleteRoleMapping(role);
-        } else {
-            user.grantRole(role);
-        }
+    protected boolean applies(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        return super.hasClaimValue(mapperModel, context);
     }
 
     @Override
