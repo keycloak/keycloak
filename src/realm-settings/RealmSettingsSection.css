@@ -16,6 +16,39 @@ div.pf-c-card__body.kc-form-panel__body {
   padding-left: 0px;
   padding-bottom: var(--pf-global--spacer--2xl);
 }
+
 button#kc-certificate.pf-c-button.pf-m-secondary {
   margin-left: var(--pf-global--spacer--md);
+}
+
+.pf-c-data-list__item-row.test {
+  font-weight: bold;
+}
+
+.pf-c-data-list__item-content.test2 {
+  margin-left: var(--pf-global--spacer--xl);
+}
+
+button.pf-c-data-list__item-draggable-button.pf-m-disabled.header-drag-button {
+  display: none;
+}
+
+button.pf-c-data-list__item-draggable-button.row-drag-button {
+  padding-top: var(--pf-global--spacer--md);
+}
+
+.pf-c-data-list__item-control {
+  margin-right: 0px;
+}
+
+button.pf-c-button.pf-m-link.add-provider {
+  padding: 0px;
+}
+
+.pf-c-toolbar__group.providers-toolbar {
+  padding-left: var(--pf-c-toolbar__content--PaddingLeft);
+}
+
+.button-wrapper {
+  white-space: nowrap;
 }

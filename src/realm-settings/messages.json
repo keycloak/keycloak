@@ -36,8 +36,11 @@
     "providers": "Providers",
     "algorithm": "Algorithm",
     "type": "Type",
+    "name": "Name",
     "kid": "Kid",
     "provider": "Provider",
+    "providerDescription": "Provider description",
+    "addProvider": "Add provider",
     "publicKeys": "Public keys",
     "certificate": "Certificate",
     "userRegistration": "User registration",
@@ -102,5 +105,9 @@
   "partial-import": {
     "partialImportHeaderText": "Partial import allows you to import users, clients, and resources from a previously exported json file.",
     "import": "Import"
-  }
+  },
+  "onDragStart": "Dragging started for item {{id}}",
+  "onDragMove": "Dragging item {{id}}",
+  "onDragCancel": "Dragging cancelled. List is unchanged.",
+  "onDragFinish": "Dragging finished {{list}}"
 }

@@ -14,6 +14,7 @@ import { cellWidth } from "@patternfly/react-table";
 
 type KeyData = KeyMetadataRepresentation & {
   provider?: string;
+  type?: string;
 };
 
 type KeysTabInnerProps = {
@@ -62,30 +63,36 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
     return <>{provider}</>;
   };
 
-  const renderPublicKeyButton = (publicKey: string) => {
-    return (
-      <Button
-        onClick={() => {
-          togglePublicKeyDialog();
-          setPublicKey(publicKey!);
-        }}
-        variant="secondary"
-        id="kc-public-key"
-      >
-        {t("realm-settings:publicKeys").slice(0, -1)}
-      </Button>
-    );
-  };
-
-  const ButtonRenderer = ({ provider, publicKey, certificate }: KeyData) => {
-    if (provider === "ecdsa-generated") {
-      return <>{renderPublicKeyButton(publicKey!)}</>;
-    }
-    if (provider === "rsa-generated" || provider === "fallback-RS256") {
+  const ButtonRenderer = ({ type, publicKey, certificate }: KeyData) => {
+    if (type === "EC") {
       return (
         <>
-          <div>
-            {renderPublicKeyButton(publicKey!)}
+          <Button
+            onClick={() => {
+              togglePublicKeyDialog();
+              setPublicKey(publicKey!);
+            }}
+            variant="secondary"
+            id="kc-public-key"
+          >
+            {t("realm-settings:publicKeys").slice(0, -1)}
+          </Button>
+        </>
+      );
+    } else if (type === "RSA") {
+      return (
+        <>
+          <div className="button-wrapper">
+            <Button
+              onClick={() => {
+                togglePublicKeyDialog();
+                setPublicKey(publicKey!);
+              }}
+              variant="secondary"
+              id="kc-rsa-public-key"
+            >
+              {t("realm-settings:publicKeys").slice(0, -1)}
+            </Button>
             <Button
               onClick={() => {
                 toggleCertificateDialog();
@@ -109,6 +116,7 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
         <CertificateDialog />
         <KeycloakDataTable
           key={key}
+          isNotCompact={true}
           loader={loader}
           ariaLabelKey="realm-settings:keysList"
           searchPlaceholderKey="realm-settings:searchKey"

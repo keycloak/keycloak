@@ -29,6 +29,8 @@ import { RealmSettingsEmailTab } from "./EmailTab";
 import { KeysListTab } from "./KeysListTab";
 import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { KeysProviderTab } from "./KeysProvidersTab";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -133,6 +135,10 @@ export const RealmSettingsSection = () => {
   const [realmComponents, setRealmComponents] = useState<
     ComponentRepresentation[]
   >([]);
+
+  const kpComponentTypes = useServerInfo().componentTypes![
+    "org.keycloak.keys.KeyProvider"
+  ];
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
@@ -242,6 +248,17 @@ export const RealmSettingsSection = () => {
                   title={<TabTitleText>{t("keysList")}</TabTitleText>}
                 >
                   <KeysListTab keys={keys} realmComponents={realmComponents} />
+                </Tab>
+                <Tab
+                  id="evaluate"
+                  eventKey={1}
+                  title={<TabTitleText>{t("providers")}</TabTitleText>}
+                >
+                  <KeysProviderTab
+                    components={realmComponents}
+                    realmComponents={realmComponents}
+                    keyProviderComponentTypes={kpComponentTypes}
+                  />
                 </Tab>
               </Tabs>
             </Tab>

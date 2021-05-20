@@ -47,6 +47,7 @@ type DataTableProps<T> = {
   onSelect?: (isSelected: boolean, rowIndex: number) => void;
   onCollapse?: (isOpen: boolean, rowIndex: number) => void;
   canSelectAll: boolean;
+  isNotCompact?: boolean;
 };
 
 function DataTable<T>({
@@ -58,13 +59,14 @@ function DataTable<T>({
   onSelect,
   onCollapse,
   canSelectAll,
+  isNotCompact,
   ...props
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   return (
     <Table
       {...props}
-      variant={TableVariant.compact}
+      variant={isNotCompact ? undefined : TableVariant.compact}
       onSelect={
         onSelect
           ? (_, isSelected, rowIndex) => onSelect(isSelected, rowIndex)
@@ -124,6 +126,7 @@ export type DataListProps<T> = {
   toolbarItem?: ReactNode;
   emptyState?: ReactNode;
   icon?: React.ComponentClass<SVGIconProps>;
+  isNotCompact?: boolean;
 };
 
 /**
@@ -155,6 +158,7 @@ export function KeycloakDataTable<T>({
   isPaginated = false,
   onSelect,
   canSelectAll = false,
+  isNotCompact,
   detailColumns,
   isRowDisabled,
   loader,
@@ -383,6 +387,7 @@ export function KeycloakDataTable<T>({
               actionResolver={actionResolver}
               rows={filteredData || rows}
               columns={columns}
+              isNotCompact={isNotCompact}
               ariaLabelKey={ariaLabelKey}
             />
           )}
