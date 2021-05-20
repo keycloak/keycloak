@@ -1,18 +1,25 @@
-import { AlertVariant, Button, FormGroup, TextInput } from "@patternfly/react-core";
+import { Button, FormGroup, TextInput } from "@patternfly/react-core";
 import React, { useState } from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { useAdminClient } from "../../../context/auth/AdminClient";
-import { useAlerts } from "../../../components/alert/Alerts";
-import { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
-
-
-import { AddRoleMappingModal, MappingType } from "../../../components/role-mapping/AddRoleMappingModal";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
+import "../../user-federation.css";
 
 export type LdapMapperHardcodedLdapRoleProps = {
   form: UseFormMethods;
+};
+
+export type CompositeRole = RoleRepresentation & {
+  parent: RoleRepresentation;
+};
+
+export type Row = {
+  client?: ClientRepresentation;
+  role: CompositeRole | RoleRepresentation;
 };
 
 export const LdapMapperHardcodedLdapRole = ({
@@ -20,64 +27,34 @@ export const LdapMapperHardcodedLdapRole = ({
 }: LdapMapperHardcodedLdapRoleProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-
-  const adminClient = useAdminClient();
-
   const [showAssign, setShowAssign] = useState(false);
 
-  const { addAlert } = useAlerts();
-
-
-  const assignRoles = async (rows: Row[]) => {
-    try {
-      const realmRoles = rows
-        .filter((row) => row.client === undefined)
-        .map((row) => row.role as RoleMappingPayload)
-        .flat();
-      await adminClient.clientScopes.addRealmScopeMappings(
-        {
-          id,
-        },
-        realmRoles
+  const selectRoles = async (rows: Row[]) => {
+    if (rows[0].client) {
+      form.setValue(
+        "config.role[0]",
+        `${rows[0].client.clientId}.${rows[0].role.name}`
       );
-      await Promise.all(
-        rows
-          .filter((row) => row.client !== undefined)
-          .map((row) =>
-            adminClient.clientScopes.addClientScopeMappings(
-              {
-                id,
-                client: row.client!.id!,
-              },
-              [row.role as RoleMappingPayload]
-            )
-          )
-      );
-      addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
-    } catch (error) {
-      addAlert(
-        t("roleMappingUpdatedError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+    } else {
+      form.setValue("config.role[0]", `${rows[0].role.name}`);
     }
   };
 
   return (
     <>
-          {showAssign && (
+      {showAssign && (
         // MF 042921 hardcoded for now, to see modal displayed
         <AddRoleMappingModal
-        id="e2d7fe7c-f7bc-4903-9562-3d079ae8667c"
-        type="client-scope"
-        name="name"
+          id="1a85c63a-99bd-4d16-9924-b38b8f7cceaf"  // this is the ID for client-scopes > marks-client-scope
+          type="client-scope"
+          name="name"
           // id={id}
           // type={type}
           // name={name}
-        onAssign={assignRoles}
-        onClose={() => setShowAssign(false)}
-        />)}
+          onAssign={selectRoles}
+          onClose={() => setShowAssign(false)}
+        />
+      )}
 
       <FormGroup
         label={t("common:role")}
@@ -91,20 +68,23 @@ export const LdapMapperHardcodedLdapRole = ({
         fieldId="kc-role"
         isRequired
       >
-        <TextInput
-          isRequired
-          type="text"
-          id="kc-role"
-          data-testid="role"
-          name="config.role[0]"
-          ref={form.register}
-        />
-              <Button
-                data-testid="assignRole"
-                onClick={() => setShowAssign(true)}
-              >
-                {t("assignRole")}
-              </Button>
+        <div className="keycloak__user-federation__assign-role">
+          <TextInput
+            isRequired
+            type="text"
+            id="kc-role"
+            data-testid="role"
+            name="config.role[0]"
+            ref={form.register}
+          />
+          <Button
+            className="keycloak__user-federation__assign-role-btn"
+            data-testid="selectRole"
+            onClick={() => setShowAssign(true)}
+          >
+            {t("selectRole")}
+          </Button>
+        </div>
       </FormGroup>
     </>
   );

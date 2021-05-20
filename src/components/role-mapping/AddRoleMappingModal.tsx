@@ -79,7 +79,20 @@ export const AddRoleMappingModal = ({
                   client: client.id!,
                 }
               );
-            }
+            } 
+            // MF 052021 TODOs: 
+            // change if/elses to switches
+            // add a type for user-federation that pulls in all roles
+            // make id optional
+            
+            // adminClient.roles.find
+
+            // roles = await adminClient.clients.listRoles(
+            //   {
+            //     
+            //     id: client.id!
+            //   }
+
             return {
               roles,
               client,

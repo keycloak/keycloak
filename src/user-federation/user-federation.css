@@ -9,3 +9,13 @@
 .error {
   color: red;
 }
+
+.keycloak__user-federation__assign-role {
+  display: flex;
+  flex-direction: row;
+  align-items: right;
+}
+
+.keycloak__user-federation__assign-role-btn {
+  margin-left: 10px;
+}
