@@ -44,3 +44,12 @@ label.pf-c-form__label {
 .keycloak-empty-state-card:hover {
   cursor: pointer;
 }
+
+td.pf-c-table__check > input {
+  vertical-align: baseline;
+}
+
+.pf-c-table.tbody.pf-c-table__check > input {
+  margin-top: var(--pf-c-table__check--input--MarginTop);
+  vertical-align: baseline;
+}
