@@ -23,8 +23,8 @@ describe("Group test", () => {
   let groupName = "group";
 
   const clickGroup = (itemName: string) => {
-    const membersUrl = `/auth/admin/realms/master/groups/*/members`;
-    cy.intercept(membersUrl).as("groupFetch");
+    const groupUrl = "/auth/admin/realms/master/groups/*/members*";
+    cy.intercept(groupUrl).as("groupFetch");
     cy.get("table").contains(itemName).click();
     cy.wait(["@groupFetch"]);
 
@@ -88,8 +88,10 @@ describe("Group test", () => {
       moveGroupModal.clickMove();
 
       masthead.checkNotificationMessage("Group moved");
+      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
       listingPage.itemExist(groupName, false);
       clickGroup(targetGroupName);
+      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
       listingPage.itemExist(groupName);
       sidebarPage.goToGroups();
       listingPage.deleteItem(targetGroupName);
