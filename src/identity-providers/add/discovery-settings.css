@@ -1,0 +1,4 @@
+
+.keycloak__discovery-settings__metadata .pf-c-expandable-section__toggle {
+  margin-left: var(--pf-c-form--m-horizontal__group-label--md--GridColumnWidth);
+}

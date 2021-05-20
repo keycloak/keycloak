@@ -36,7 +36,7 @@ export const SwitchField = ({
             onChange={(value) =>
               onChange(fieldType === "string" ? "" + value : value)
             }
-            readOnly={isReadOnly}
+            isDisabled={isReadOnly}
           />
         )}
       />

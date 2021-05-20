@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
+  Divider,
   ExpandableSection,
   FormGroup,
   TextInput,
@@ -10,6 +11,8 @@ import {
 
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
+
+import "./discovery-settings.css";
 
 type DiscoverySettingsProps = {
   readOnly: boolean;
@@ -124,6 +127,7 @@ export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
     <>
       {readOnly && (
         <ExpandableSection
+          className="keycloak__discovery-settings__metadata"
           toggleText={isExpanded ? t("hideMetaData") : t("showMetaData")}
           onToggle={() => setIsExpanded(!isExpanded)}
           isExpanded={isExpanded}
@@ -132,6 +136,7 @@ export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
         </ExpandableSection>
       )}
       {!readOnly && <Fields readOnly={readOnly} />}
+      <Divider />
     </>
   );
 };
