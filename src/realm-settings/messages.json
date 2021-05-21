@@ -92,7 +92,7 @@
     },
     "userManagedAccess": "User-managed access",
     "endpoints": "Endpoints",
-    "openEndpointConfiguration": "Open Endpoint Configuration",
+    "openIDEndpointConfiguration": "OpenID Endpoint Configuration",
     "samlIdentityProviderMetadata": "SAML 2.0 Identity Provider Metadata",
     "loginTheme": "Login theme",
     "accountTheme": "Account theme",

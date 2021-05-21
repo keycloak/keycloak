@@ -176,7 +176,7 @@ export const RealmSettingsGeneralTab = ({
               <StackItem>
                 <FormattedLink
                   href={`${baseUrl}realms/${realmName}/.well-known/openid-configuration`}
-                  title={t("openEndpointConfiguration")}
+                  title={t("openIDEndpointConfiguration")}
                 />
               </StackItem>
               <StackItem>
