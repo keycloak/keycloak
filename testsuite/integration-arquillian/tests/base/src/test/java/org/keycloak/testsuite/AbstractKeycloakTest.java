@@ -688,4 +688,14 @@ public abstract class AbstractKeycloakTest {
         }
         return in;
     }
+
+    /**
+     * Get product/project name
+     *
+     * @return f.e. 'RH-SSO' or 'Keycloak'
+     */
+    protected String getProjectName() {
+        final boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
+        return isProduct ? Profile.PRODUCT_NAME : Profile.PROJECT_NAME;
+    }
 }
