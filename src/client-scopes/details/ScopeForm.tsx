@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   Form,
   FormGroup,
@@ -16,22 +16,36 @@ import {
 } from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import {
+  clientScopeTypesSelectOptions,
+  allClientScopeTypes,
+  ClientScopeDefaultOptionalType,
+} from "../../components/client-scope/ClientScopeTypes";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../../util";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type ScopeFormProps = {
   clientScope: ClientScopeRepresentation;
-  save: (clientScope: ClientScopeRepresentation) => void;
+  save: (clientScope: ClientScopeDefaultOptionalType) => void;
 };
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation("client-scopes");
   const { register, control, handleSubmit, errors, setValue } = useForm();
   const history = useHistory();
+  const { realm } = useRealm();
+
   const providers = useLoginProviders();
   const [open, isOpen] = useState(false);
+  const [openType, setOpenType] = useState(false);
   const { id } = useParams<{ id: string }>();
+
+  const displayOnConsentScreen = useWatch({
+    control,
+    name: "attributes.display-on-consent-screen",
+  });
 
   useEffect(() => {
     Object.entries(clientScope).map((entry) => {
@@ -97,6 +111,38 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           type="text"
           id="kc-description"
           name="description"
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("type")}
+        labelIcon={
+          <HelpItem
+            helpText="client-scopes-help:type"
+            forLabel={t("type")}
+            forID="type"
+          />
+        }
+        fieldId="type"
+      >
+        <Controller
+          name="type"
+          defaultValue=""
+          control={control}
+          render={({ onChange, value }) => (
+            <Select
+              id="type"
+              variant={SelectVariant.single}
+              isOpen={openType}
+              selections={value}
+              onToggle={() => setOpenType(!openType)}
+              onSelect={(_, value) => {
+                onChange(value);
+                setOpenType(false);
+              }}
+            >
+              {clientScopeTypesSelectOptions(t, allClientScopeTypes)}
+            </Select>
+          )}
         />
       </FormGroup>
       {!id && (
@@ -168,24 +214,26 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           )}
         />
       </FormGroup>
-      <FormGroup
-        label={t("consentScreenText")}
-        labelIcon={
-          <HelpItem
-            helpText="client-scopes-help:consentScreenText"
-            forLabel={t("consentScreenText")}
-            forID="kc-consent-screen-text"
+      {displayOnConsentScreen === "true" && (
+        <FormGroup
+          label={t("consentScreenText")}
+          labelIcon={
+            <HelpItem
+              helpText="client-scopes-help:consentScreenText"
+              forLabel={t("consentScreenText")}
+              forID="kc-consent-screen-text"
+            />
+          }
+          fieldId="kc-consent-screen-text"
+        >
+          <TextInput
+            ref={register}
+            type="text"
+            id="kc-consent-screen-text"
+            name="attributes.consent-screen-text"
           />
-        }
-        fieldId="kc-consent-screen-text"
-      >
-        <TextInput
-          ref={register}
-          type="text"
-          id="kc-consent-screen-text"
-          name="attributes.consent-screen-text"
-        />
-      </FormGroup>
+        </FormGroup>
+      )}
       <FormGroup
         hasNoPaddingTop
         label={t("includeInTokenScope")}
@@ -246,7 +294,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         <Button variant="primary" type="submit">
           {t("common:save")}
         </Button>
-        <Button variant="link" onClick={() => history.push("/client-scopes/")}>
+        <Button
+          variant="link"
+          onClick={() => history.push(`/${realm}/client-scopes`)}
+        >
           {t("common:cancel")}
         </Button>
       </ActionGroup>

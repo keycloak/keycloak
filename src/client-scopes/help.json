@@ -3,6 +3,7 @@
     "name": "Name of the client scope. Must be unique in the realm. Name should not contain space characters as it is used as value of scope parameter",
     "description": "Description of the client scope",
     "protocol": "Which SSO protocol configuration is being supplied by this client scope",
+    "type": "Client scopes, which will be added as default scopes to each created client",
     "displayOnConsentScreen": "If on, and this client scope is added to some client with consent required, the text specified by 'Consent Screen Text' will be displayed on consent screen. If off, this client scope will not be displayed on the consent screen",
     "consentScreenText": "Text that will be shown on the consent screen when this client scope is added to some client with consent required. Defaults to name of client scope if it is not filled",
     "includeInTokenScope": "If on, the name of this client scope will be added to the access token property 'scope' as well as to the Token Introspection Endpoint response. If off, this client scope will be omitted from the token and from the Token Introspection Endpoint response.",

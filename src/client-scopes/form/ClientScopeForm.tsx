@@ -3,13 +3,14 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
+  ButtonVariant,
+  DropdownItem,
   PageSection,
   Spinner,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
 
-import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -17,16 +18,24 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { convertFormValuesToObject } from "../../util";
 import { MapperList } from "../details/MapperList";
 import { ScopeForm } from "../details/ScopeForm";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import type { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
+import {
+  AllClientScopes,
+  changeScope,
+  ClientScopeDefaultOptionalType,
+} from "../../components/client-scope/ClientScopeTypes";
 
 export const ClientScopeForm = () => {
   const { t } = useTranslation("client-scopes");
-  const [clientScope, setClientScope] = useState<ClientScopeRepresentation>();
+  const [clientScope, setClientScope] = useState<
+    ClientScopeDefaultOptionalType
+  >();
   const [hide, setHide] = useState(false);
 
   const adminClient = useAdminClient();
-  const { id } = useParams<{ id: string }>();
+  const { id, type } = useParams<{ id: string; type: AllClientScopes }>();
 
   const { addAlert } = useAlerts();
 
@@ -36,7 +45,10 @@ export const ClientScopeForm = () => {
   useFetch(
     async () => {
       if (id) {
-        return await adminClient.clientScopes.findOne({ id });
+        return {
+          ...(await adminClient.clientScopes.findOne({ id })),
+          type,
+        } as ClientScopeDefaultOptionalType;
       }
     },
     (clientScope) => {
@@ -83,7 +95,7 @@ export const ClientScopeForm = () => {
     ];
   };
 
-  const save = async (clientScopes: ClientScopeRepresentation) => {
+  const save = async (clientScopes: ClientScopeDefaultOptionalType) => {
     try {
       clientScopes.attributes = convertFormValuesToObject(
         clientScopes.attributes!
@@ -91,8 +103,21 @@ export const ClientScopeForm = () => {
 
       if (id) {
         await adminClient.clientScopes.update({ id }, clientScopes);
+        changeScope(
+          adminClient,
+          { ...clientScopes, id, type },
+          clientScopes.type
+        );
       } else {
         await adminClient.clientScopes.create(clientScopes);
+        const scope = await adminClient.clientScopes.findOneByName({
+          name: clientScopes.name!,
+        });
+        changeScope(
+          adminClient,
+          { ...clientScopes, id: scope.id },
+          clientScopes.type
+        );
       }
       addAlert(t((id ? "update" : "create") + "Success"), AlertVariant.success);
     } catch (error) {
@@ -102,6 +127,24 @@ export const ClientScopeForm = () => {
       );
     }
   };
+
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: t("deleteClientScope", {
+      count: 1,
+      name: clientScope?.name,
+    }),
+    messageKey: "client-scopes:deleteConfirm",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.clientScopes.del({ id });
+        addAlert(t("deletedSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(t("deleteError", { error }), AlertVariant.danger);
+      }
+    },
+  });
 
   const assignRoles = async (rows: Row[]) => {
     try {
@@ -149,11 +192,16 @@ export const ClientScopeForm = () => {
 
   return (
     <>
+      <DeleteConfirm />
       <ViewHeader
         titleKey={
           clientScope ? clientScope.name! : "client-scopes:createClientScope"
         }
-        subKey="client-scopes:clientScopeExplain"
+        dropdownItems={[
+          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+            {t("common:delete")}
+          </DropdownItem>,
+        ]}
         badge={clientScope ? clientScope.protocol : undefined}
         divider={!id}
       />

@@ -12,7 +12,6 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
-import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -24,57 +23,13 @@ import {
   CellDropdown,
   ClientScope,
   AllClientScopes,
-  AllClientScopeType,
+  ClientScopeDefaultOptionalType,
+  changeScope,
+  removeScope,
 } from "../components/client-scope/ClientScopeTypes";
-import type KeycloakAdminClient from "keycloak-admin";
 import { ChangeTypeDialog } from "./ChangeTypeDialog";
 
 import "./client-scope.css";
-
-type ClientScopeDefaultOptionalType = ClientScopeRepresentation & {
-  type: AllClientScopeType;
-};
-
-const castAdminClient = (adminClient: KeycloakAdminClient) =>
-  (adminClient.clientScopes as unknown) as {
-    [index: string]: Function;
-  };
-
-const changeScope = async (
-  adminClient: KeycloakAdminClient,
-  clientScope: ClientScopeDefaultOptionalType,
-  changeTo: AllClientScopeType
-) => {
-  await removeScope(adminClient, clientScope);
-  await addScope(adminClient, clientScope, changeTo);
-};
-
-const removeScope = async (
-  adminClient: KeycloakAdminClient,
-  clientScope: ClientScopeDefaultOptionalType
-) => {
-  if (clientScope.type !== AllClientScopes.none)
-    await castAdminClient(adminClient)[
-      `delDefault${
-        clientScope.type === ClientScope.optional ? "Optional" : ""
-      }ClientScope`
-    ]({
-      id: clientScope.id!,
-    });
-};
-
-const addScope = async (
-  adminClient: KeycloakAdminClient,
-  clientScope: ClientScopeDefaultOptionalType,
-  type: AllClientScopeType
-) => {
-  if (type !== AllClientScopes.none)
-    await castAdminClient(adminClient)[
-      `addDefault${type === ClientScope.optional ? "Optional" : ""}ClientScope`
-    ]({
-      id: clientScope.id!,
-    });
-};
 
 export const ClientScopesSection = () => {
   const { t } = useTranslation("client-scopes");
@@ -128,6 +83,7 @@ export const ClientScopesSection = () => {
     onConfirm: async () => {
       try {
         for (const scope of selectedScopes) {
+          await removeScope(adminClient, scope);
           await adminClient.clientScopes.del({ id: scope.id! });
         }
         addAlert(t("deletedSuccess"), AlertVariant.success);
@@ -162,9 +118,14 @@ export const ClientScopesSection = () => {
     </>
   );
 
-  const ClientScopeDetailLink = (clientScope: ClientScopeRepresentation) => (
+  const ClientScopeDetailLink = (
+    clientScope: ClientScopeDefaultOptionalType
+  ) => (
     <>
-      <Link key={clientScope.id} to={`${url}/${clientScope.id}/settings`}>
+      <Link
+        key={clientScope.id}
+        to={`${url}/${clientScope.id}/${clientScope.type}/settings`}
+      >
         {clientScope.name}
       </Link>
     </>

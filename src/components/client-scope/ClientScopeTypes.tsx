@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DropdownItem, Select, SelectOption } from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type KeycloakAdminClient from "keycloak-admin";
 
 export enum ClientScope {
   default = "default",
@@ -80,4 +81,49 @@ export const CellDropdown = ({
       )}
     </Select>
   );
+};
+
+export type ClientScopeDefaultOptionalType = ClientScopeRepresentation & {
+  type: AllClientScopeType;
+};
+
+export const changeScope = async (
+  adminClient: KeycloakAdminClient,
+  clientScope: ClientScopeDefaultOptionalType,
+  changeTo: AllClientScopeType
+) => {
+  await removeScope(adminClient, clientScope);
+  await addScope(adminClient, clientScope, changeTo);
+};
+
+const castAdminClient = (adminClient: KeycloakAdminClient) =>
+  (adminClient.clientScopes as unknown) as {
+    [index: string]: Function;
+  };
+
+export const removeScope = async (
+  adminClient: KeycloakAdminClient,
+  clientScope: ClientScopeDefaultOptionalType
+) => {
+  if (clientScope.type !== AllClientScopes.none)
+    await castAdminClient(adminClient)[
+      `delDefault${
+        clientScope.type === ClientScope.optional ? "Optional" : ""
+      }ClientScope`
+    ]({
+      id: clientScope.id!,
+    });
+};
+
+const addScope = async (
+  adminClient: KeycloakAdminClient,
+  clientScope: ClientScopeDefaultOptionalType,
+  type: AllClientScopeType
+) => {
+  if (type !== AllClientScopes.none)
+    await castAdminClient(adminClient)[
+      `addDefault${type === ClientScope.optional ? "Optional" : ""}ClientScope`
+    ]({
+      id: clientScope.id!,
+    });
 };
