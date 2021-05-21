@@ -57,6 +57,7 @@ import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -243,7 +244,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
 
-                responseBuilder.generateIDToken();
+                responseBuilder.generateIDToken(isIdTokenAsDetachedSignature(clientSession.getClient()));
 
                 if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                     responseBuilder.generateAccessTokenHash();
@@ -273,6 +274,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         return redirectUri.build();
+    }
+
+    // For FAPI 1.0 Advanced
+    private boolean isIdTokenAsDetachedSignature(ClientModel client) {
+        if (client == null) return false;
+        return Boolean.valueOf(Optional.ofNullable(client.getAttribute(OIDCConfigAttributes.ID_TOKEN_AS_DETACHED_SIGNATURE)).orElse(Boolean.FALSE.toString())).booleanValue();
     }
 
     @Override
