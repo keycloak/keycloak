@@ -330,11 +330,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void waitForAccountManagementTitle() {
-        boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
-        String title = isProduct ? "rh-sso account management" : "keycloak account management";
+        final String title = getProjectName().toLowerCase() + " account management";
         waitForPage(driver, title, true);
     }
-
 
     protected void assertErrorPage(String expectedError) {
         errorPage.assertCurrent();

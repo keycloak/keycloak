@@ -33,7 +33,7 @@ public class ProfileTest {
     public void checkDefaultsRH_SSO() {
         System.setProperty("keycloak.profile", "product");
         String backUpName = Version.NAME;
-        Version.NAME = "rh-sso";
+        Version.NAME = Profile.PRODUCT_NAME.toLowerCase();
         Profile.init();
 
         Assert.assertEquals("product", Profile.getName());
