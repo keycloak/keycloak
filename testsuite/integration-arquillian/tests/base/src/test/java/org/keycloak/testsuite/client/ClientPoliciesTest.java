@@ -17,24 +17,6 @@
 
 package org.keycloak.testsuite.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -90,12 +72,12 @@ import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFa
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -109,6 +91,45 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceHostsConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRequestObjectExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureResponseTypeExecutor;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
