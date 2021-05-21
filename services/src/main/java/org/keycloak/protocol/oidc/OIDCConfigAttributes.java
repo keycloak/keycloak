@@ -64,6 +64,8 @@ public final class OIDCConfigAttributes {
 
     public static final String USE_REFRESH_TOKEN = "use.refresh.tokens";
 
+    public static final String ID_TOKEN_AS_DETACHED_SIGNATURE  = "id.token.as.detached.signature";
+
     private OIDCConfigAttributes() {
     }
 

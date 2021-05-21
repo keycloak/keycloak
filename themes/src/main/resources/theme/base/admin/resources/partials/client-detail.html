@@ -762,6 +762,14 @@
                 <kc-tooltip>{{:: 'tls-client-certificate-bound-access-tokens.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && clientEdit.standardFlowEnabled && clientEdit.implicitFlowEnabled">
+                <label class="col-md-2 control-label" for="useIdTokenAsDetachedSignature">{{:: 'use-idtoken-as-detached-signature' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="useIdTokenAsDetachedSignature" ng-click="switchChange()" name="useIdTokenAsDetachedSignature" id="useIdTokenAsDetachedSignature" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'use-idtoken-as-detached-signature.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="changePkceCodeChallengeMethod">{{:: 'pkce-code-challenge-method' | translate}}</label>
                 <div class="col-sm-6">

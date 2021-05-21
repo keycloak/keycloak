@@ -1115,6 +1115,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
     $scope.useRefreshTokens = true;
+    $scope.useIdTokenAsDetachedSignature = false;
 
     $scope.accessTokenLifespan = TimeUnit2.asUnit(client.attributes['access.token.lifespan']);
     $scope.samlAssertionLifespan = TimeUnit2.asUnit(client.attributes['saml.assertion.lifespan']);
@@ -1316,6 +1317,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                $scope.useRefreshTokens = true;
            } else {
                $scope.useRefreshTokens = false;
+           }
+       }
+
+       if ($scope.client.attributes["id.token.as.detached.signature"]) {
+           if ($scope.client.attributes["id.token.as.detached.signature"] == "true") {
+               $scope.useIdTokenAsDetachedSignature = true;
+           } else {
+               $scope.useIdTokenAsDetachedSignature = false;
            }
        }
 
@@ -1746,6 +1755,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["use.refresh.tokens"] = "true";
         } else {
             $scope.clientEdit.attributes["use.refresh.tokens"] = "false";
+        }
+
+        if ($scope.useIdTokenAsDetachedSignature == true) {
+            $scope.clientEdit.attributes["id.token.as.detached.signature"] = "true";
+        } else {
+            $scope.clientEdit.attributes["id.token.as.detached.signature"] = "false";
         }
 
         // KEYCLOAK-6771 Certificate Bound Token

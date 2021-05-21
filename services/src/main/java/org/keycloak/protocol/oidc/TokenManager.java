@@ -967,6 +967,10 @@ public class TokenManager {
         }
 
         public AccessTokenResponseBuilder generateIDToken() {
+            return generateIDToken(false);
+        }
+
+        public AccessTokenResponseBuilder generateIDToken(boolean isIdTokenAsDetachedSignature) {
             if (accessToken == null) {
                 throw new IllegalStateException("accessToken not set");
             }
@@ -983,7 +987,9 @@ public class TokenManager {
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
             idToken.setAcr(accessToken.getAcr());
-            transformIDToken(session, idToken, userSession, clientSessionCtx);
+            if (isIdTokenAsDetachedSignature == false) {
+                transformIDToken(session, idToken, userSession, clientSessionCtx);
+            }
             return this;
         }
 
