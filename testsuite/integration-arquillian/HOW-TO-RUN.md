@@ -462,6 +462,13 @@ The tests also use some constants placed in [test-constants.properties](tests/ba
 
 In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
 
+#### Execution example
+```
+mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
+    clean test \
+    -Dbrowser=firefox \
+    -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
+```
 
 ## Spring Boot adapter tests
 
@@ -477,14 +484,6 @@ mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
 ```
 
 Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
-
-#### Execution example
-```
-mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
-    clean test \
-    -Dbrowser=firefox \
-    -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
-```
 
 ## Base UI tests
 Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).
