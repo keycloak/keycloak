@@ -348,7 +348,7 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private PathConfig getPathConfig(Request request) {
-        return isDefaultAccessDeniedUri(request) ? null : policyEnforcer.getPathMatcher().matches(getPath(request));
+        return isDefaultAccessDeniedUri(request) ? null : policyEnforcer.getPathMatcher().matches(request.getMethod(), getPath(request));
     }
 
     protected Map<String, List<String>> resolveClaims(PathConfig pathConfig, OIDCHttpFacade httpFacade) {
