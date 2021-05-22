@@ -260,21 +260,26 @@ public class PolicyEnforcer {
             this.authzClient = authzClient;
         }
 
-        @Override
-        public PathConfig matches(String targetUri) {
-            PathConfig pathConfig = pathCache.get(targetUri);
+        public PathConfig matches(String httpMethod, String targetUri) {
 
-            if (pathCache.containsKey(targetUri) || pathConfig != null) {
+            String cacheKey = enforcerConfig.getHttpMethodAsScope() ? httpMethod+"-"+targetUri : targetUri;
+
+            PathConfig pathConfig = pathCache.get(cacheKey);
+
+            if (pathCache.containsKey(cacheKey) || pathConfig != null) {
                 return pathConfig;
             }
 
             pathConfig = super.matches(targetUri);
-
             if (enforcerConfig.getLazyLoadPaths() || enforcerConfig.getPathCacheConfig() != null) {
                 if ((pathConfig == null || pathConfig.isInvalidated() || pathConfig.getPath().contains("*"))) {
                     try {
-                        List<ResourceRepresentation> matchingResources = authzClient.protection().resource().findByMatchingUri(targetUri);
-
+                        List<ResourceRepresentation> matchingResources;
+                        if(enforcerConfig.getHttpMethodAsScope()){
+                            matchingResources = authzClient.protection().resource().findByMatchingUriAndScope(targetUri, httpMethod);
+                        } else {
+                            matchingResources = authzClient.protection().resource().findByMatchingUri(targetUri);
+                        }
                         if (matchingResources.isEmpty()) {
                             // if this config is invalidated (e.g.: due to cache expiration) we remove and return null
                             if (pathConfig != null && pathConfig.isInvalidated()) {
@@ -323,7 +328,7 @@ public class PolicyEnforcer {
                 }
             }
 
-            pathCache.put(targetUri, pathConfig);
+            pathCache.put(cacheKey, pathConfig);
 
             return pathConfig;
         }

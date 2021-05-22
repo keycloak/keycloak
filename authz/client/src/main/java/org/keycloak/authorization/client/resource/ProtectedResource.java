@@ -291,6 +291,10 @@ public class ProtectedResource {
         return find(null, null, uri, null, null, null, true, false, true,null, null);
     }
 
+    public List<ResourceRepresentation> findByMatchingUriAndScope(String uri, String scope) {
+        return find(null, null, uri, null, null, scope, true, false, true,null, null);
+    }
+
     private HttpMethod createFindRequest(String id, String name, String uri, String owner, String type, String scope, boolean matchingUri, boolean exactName, boolean deep, Integer firstResult, Integer maxResult) {
         return http.get(serverConfiguration.getResourceRegistrationEndpoint())
                 .authorizationBearer(pat.call())
