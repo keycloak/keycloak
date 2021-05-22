@@ -173,13 +173,6 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
                     role = client.getRole(roleName);
                 }
 
-                // fallback to find any client role with the given name
-                if (role == null) {
-                    String finalRoleName = roleName;
-                    role = realm.getClientsStream().map(clientModel -> clientModel.getRole(finalRoleName)).filter(roleModel -> roleModel != null)
-                            .findFirst().orElse(null);
-                }
-
                 if (role == null) {
                     throw new RuntimeException("Error while updating policy [" + policy.getName()  + "]. Role [" + roleName + "] could not be found.");
                 }
