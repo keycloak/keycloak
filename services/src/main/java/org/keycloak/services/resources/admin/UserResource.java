@@ -440,33 +440,49 @@ public class UserResource {
 
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
-        return realm.getClientsStream()
-                .map(client -> toConsent(client, offlineClients))
-                .filter(Objects::nonNull);
+        return Stream.concat(
+                session.users().getConsentsStream(realm, user.getId())
+                    .map(consent -> toConsent(consent, offlineClients)),
+
+                offlineClients.stream().map(this::toConsent)
+        );
     }
 
-    private Map<String, Object> toConsent(ClientModel client, Set<ClientModel> offlineClients) {
-        UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
-        boolean hasOfflineToken = offlineClients.contains(client);
-
-        if (consent == null && !hasOfflineToken) {
-            return null;
-        }
-
-        UserConsentRepresentation rep = (consent == null) ? null : ModelToRepresentation.toRepresentation(consent);
-
+    private Map<String, Object> toConsent(ClientModel client) {
         Map<String, Object> currentRep = new HashMap<>();
         currentRep.put("clientId", client.getClientId());
-        currentRep.put("grantedClientScopes", (rep == null ? Collections.emptyList() : rep.getGrantedClientScopes()));
-        currentRep.put("createdDate", (rep == null ? null : rep.getCreatedDate()));
-        currentRep.put("lastUpdatedDate", (rep == null ? null : rep.getLastUpdatedDate()));
+        currentRep.put("grantedClientScopes", Collections.emptyList());
+        currentRep.put("createdDate", null);
+        currentRep.put("lastUpdatedDate", null);
 
         List<Map<String, String>> additionalGrants = new LinkedList<>();
-        if (hasOfflineToken) {
+
+        Map<String, String> offlineTokens = new HashMap<>();
+        offlineTokens.put("client", client.getId());
+        offlineTokens.put("key", "Offline Token");
+        additionalGrants.add(offlineTokens);
+
+        currentRep.put("additionalGrants", additionalGrants);
+        return currentRep;
+    }
+
+    private Map<String, Object> toConsent(UserConsentModel consent, Set<ClientModel> offlineClients) {
+
+        UserConsentRepresentation rep = ModelToRepresentation.toRepresentation(consent);
+
+        Map<String, Object> currentRep = new HashMap<>();
+        currentRep.put("clientId", consent.getClient().getClientId());
+        currentRep.put("grantedClientScopes", rep.getGrantedClientScopes());
+        currentRep.put("createdDate", rep.getCreatedDate());
+        currentRep.put("lastUpdatedDate", rep.getLastUpdatedDate());
+
+        List<Map<String, String>> additionalGrants = new LinkedList<>();
+        if (offlineClients.contains(consent.getClient())) {
             Map<String, String> offlineTokens = new HashMap<>();
-            offlineTokens.put("client", client.getId());
+            offlineTokens.put("client", consent.getClient().getId());
             offlineTokens.put("key", "Offline Token");
             additionalGrants.add(offlineTokens);
+            offlineClients.remove(consent.getClient());
         }
         currentRep.put("additionalGrants", additionalGrants);
         return currentRep;
