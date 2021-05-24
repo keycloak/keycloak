@@ -302,6 +302,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         }
     }
 
+    protected void testMigrationTo14_0_0() {
+        testViewGroups(masterRealm);
+        testViewGroups(migrationRealm);
+    }
+
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         ClientResource accountResource = realm.clients().get(accountClient.getId());
@@ -472,6 +477,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             }
             assertNotNull(flow);
         }
+    }
+
+    private void testViewGroups(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        RoleRepresentation viewAppRole = accountResource.roles().get(AccountRoles.VIEW_GROUPS).toRepresentation();
+        assertNotNull(viewAppRole);
     }
 
     protected void testRoleManageAccountLinks(RealmResource... realms) {
@@ -920,6 +933,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo12_x(boolean testRealmAttributesMigration) {
         testMigrationTo12_0_0();
         testMigrationTo13_0_0(testRealmAttributesMigration);
+    }
+
+    protected void testMigrationTo14_x() {
+        testMigrationTo14_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

@@ -48,6 +48,16 @@
     "componentName": "ApplicationsPage"
   },
   {
+    "id": "groups",
+    "path": "groups",
+    "icon": "pf-icon-server-group",
+    "label": "groupLabel",
+    "descriptionLabel": "groupDescriptionLabel",
+    "modulePath": "/content/group-page/GroupsPage.js",
+    "componentName": "GroupsPage",
+    "hidden": "!features.isViewGroupsEnabled"
+  },
+  {
     "id": "resources",
     "icon": "pf-icon-repository",
     "path": "resources",
