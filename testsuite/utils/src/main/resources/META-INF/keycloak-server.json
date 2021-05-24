@@ -21,6 +21,10 @@
         }
     },
 
+    "dblock": {
+        "provider": "${keycloak.dblock.provider:jpa}"
+    },
+
     "realm": {
         "provider": "${keycloak.realm.provider:jpa}"
     },

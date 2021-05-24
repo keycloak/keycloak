@@ -20,6 +20,7 @@ import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.dblock.NoLockingDBLockProviderFactory;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
@@ -64,6 +65,7 @@ public class Map extends KeycloakModelParameters {
       .add(MapUserProviderFactory.class)
       .add(MapUserSessionProviderFactory.class)
       .add(MapUserLoginFailureProviderFactory.class)
+      .add(NoLockingDBLockProviderFactory.class)
 
       .add(MapStorageProviderFactory.class)
       .build();
@@ -85,6 +87,7 @@ public class Map extends KeycloakModelParameters {
           .spi("user").defaultProvider(MapUserProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).defaultProvider(MapUserSessionProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).defaultProvider(MapUserLoginFailureProviderFactory.PROVIDER_ID)
+          .spi("dblock").defaultProvider(NoLockingDBLockProviderFactory.PROVIDER_ID)
         ;
     }
 }
