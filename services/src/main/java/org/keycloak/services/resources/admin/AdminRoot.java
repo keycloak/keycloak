@@ -23,6 +23,7 @@ import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -63,6 +64,10 @@ import java.util.Properties;
 public class AdminRoot {
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
+    private static final boolean ADMIN_CONSOLE_ENABLED = Profile.isFeatureEnabled(Profile.Feature.ADMIN_CONSOLE);
+
+    private static final boolean ADMIN_ENABLED = Profile.isFeatureEnabled(Profile.Feature.ADMIN);
+
     @Context
     protected ClientConnection clientConnection;
 
@@ -97,6 +102,11 @@ public class AdminRoot {
      */
     @GET
     public Response masterRealmAdminConsoleRedirect() {
+
+        if (!ADMIN_CONSOLE_ENABLED) {
+            return Response.noContent().build();
+        }
+
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
         return Response.status(302).location(
                 session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
@@ -112,6 +122,11 @@ public class AdminRoot {
     @Path("index.{html:html}") // expression is actually "index.html" but this is a hack to get around jax-doclet bug
     @GET
     public Response masterRealmAdminConsoleRedirectHtml() {
+
+        if (!ADMIN_CONSOLE_ENABLED) {
+            return Response.noContent().build();
+        }
+
         return masterRealmAdminConsoleRedirect();
     }
 
@@ -142,6 +157,11 @@ public class AdminRoot {
      */
     @Path("{realm}/console")
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
+
+        if (!ADMIN_CONSOLE_ENABLED) {
+            return null;
+        }
+
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         AdminConsole service = new AdminConsole(realm);
@@ -204,6 +224,11 @@ public class AdminRoot {
      */
     @Path("realms")
     public Object getRealmsAdmin(@Context final HttpHeaders headers) {
+
+        if (!ADMIN_ENABLED) {
+            return null;
+        }
+
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new AdminCorsPreflightService(request);
         }
@@ -228,6 +253,11 @@ public class AdminRoot {
      */
     @Path("serverinfo")
     public Object getServerInfo(@Context final HttpHeaders headers) {
+
+        if (!ADMIN_ENABLED) {
+            return null;
+        }
+
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new AdminCorsPreflightService(request);
         }

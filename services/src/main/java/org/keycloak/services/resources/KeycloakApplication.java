@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
@@ -99,7 +100,9 @@ public class KeycloakApplication extends Application {
 
             singletons.add(new RobotsResource());
             singletons.add(new RealmsResource());
-            singletons.add(new AdminRoot());
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN)) {
+                singletons.add(new AdminRoot());
+            }
             classes.add(ThemeResource.class);
             classes.add(JsResource.class);
 
