@@ -570,11 +570,15 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel appRealm = ctx.getRealm();
 
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             SynchronizationResult syncResult = new UserStorageSyncManager().syncAllUsers(sessionFactory, "test", ctx.getLdapModel());
             Assert.assertEquals(2, syncResult.getAdded());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
 
             GroupModel user8Group = KeycloakModelUtils.findGroupByPath(appRealm, "/user8group");
             Assert.assertNotNull(user8Group);
