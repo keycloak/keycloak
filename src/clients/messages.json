@@ -128,6 +128,7 @@
     "changeAuthenticatorConfirmTitle": "Change to {{clientAuthenticatorType}}",
     "changeAuthenticatorConfirm": "If you change authenticator to {{clientAuthenticatorType}}, the keycloak database will be updated and you may need to download a new adapter configuration for this client",
     "signedJWTConfirm": "You should configure JWKS URL or keys in the \"Keys\" tab to change the parameters of Signed JWT authenticator.",
+    "anyAlgorithm": "Any algorithm",
     "clientSecret": "Client secret",
     "regenerate": "Regenerate",
     "confirmClientSecretTitle": "Regenerate secret for this client?",

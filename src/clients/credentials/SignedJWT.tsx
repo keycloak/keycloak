@@ -35,7 +35,7 @@ export const SignedJWT = () => {
       >
         <Controller
           name="attributes.token-endpoint-auth-signing-alg"
-          defaultValue={providers[0]}
+          defaultValue=""
           control={control}
           render={({ onChange, value }) => (
             <Select
@@ -46,18 +46,23 @@ export const SignedJWT = () => {
                 onChange(value as string);
                 isOpen(false);
               }}
-              selections={value}
+              selections={value || t("anyAlgorithm")}
               variant={SelectVariant.single}
               aria-label={t("signatureAlgorithm")}
               isOpen={open}
             >
-              {providers.map((option) => (
-                <SelectOption
-                  selected={option === value}
-                  key={option}
-                  value={option}
-                />
-              ))}
+              <SelectOption selected={value === ""} key="any" value="">
+                {t("anyAlgorithm")}
+              </SelectOption>
+              <>
+                {providers.map((option) => (
+                  <SelectOption
+                    selected={option === value}
+                    key={option}
+                    value={option}
+                  />
+                ))}
+              </>
             </Select>
           )}
         />

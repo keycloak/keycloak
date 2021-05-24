@@ -1,6 +1,8 @@
-import React, { Children, isValidElement } from "react";
+import React, { Children, isValidElement, useState } from "react";
 import { useHistory, useRouteMatch } from "react-router-dom";
 import { TabProps, Tabs, TabsProps } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
 type KeycloakTabsProps = Omit<TabsProps, "ref" | "activeKey" | "onSelect"> & {
   paramName?: string;
@@ -28,6 +30,8 @@ export const KeycloakTabs = ({
   const match = useRouteMatch();
   const params = match.params as { [index: string]: string };
   const history = useHistory();
+  const form = useFormContext();
+  const [key, setKey] = useState("");
 
   const firstTab = Children.toArray(children)[0];
   const tab =
@@ -37,21 +41,42 @@ export const KeycloakTabs = ({
 
   const pathIndex = match.path.indexOf(paramName) + paramName.length;
   const path = match.path.substr(0, pathIndex);
+
+  const [toggleChangeTabDialog, ChangeTabConfirm] = useConfirmDialog({
+    titleKey: "common:leaveDirtyTitle",
+    messageKey: "common:leaveDirtyConfirm",
+    continueButtonLabel: "common:leave",
+    onConfirm: () => {
+      form.reset();
+      history.push(createUrl(path, { ...params, [paramName]: key as string }));
+    },
+  });
+
   return (
-    <Tabs
-      inset={{
-        default: "insetNone",
-        md: "insetSm",
-        xl: "inset2xl",
-        "2xl": "insetLg",
-      }}
-      activeKey={tab}
-      onSelect={(_, key) =>
-        history.push(createUrl(path, { ...params, [paramName]: key as string }))
-      }
-      {...rest}
-    >
-      {children}
-    </Tabs>
+    <>
+      <ChangeTabConfirm />
+      <Tabs
+        inset={{
+          default: "insetNone",
+          md: "insetSm",
+          xl: "inset2xl",
+          "2xl": "insetLg",
+        }}
+        activeKey={tab}
+        onSelect={(_, key) => {
+          if (form?.formState.isDirty) {
+            setKey(key as string);
+            toggleChangeTabDialog();
+          } else {
+            history.push(
+              createUrl(path, { ...params, [paramName]: key as string })
+            );
+          }
+        }}
+        {...rest}
+      >
+        {children}
+      </Tabs>
+    </>
   );
 };

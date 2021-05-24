@@ -45,7 +45,11 @@ export const ScrollForm = ({
               </ScrollPanel>
             )}
             {borders && (
-              <FormPanel scrollId={spacesToHyphens(cat)} title={cat}>
+              <FormPanel
+                scrollId={spacesToHyphens(cat)}
+                title={cat}
+                className="kc-form-panel__panel"
+              >
                 {nodes[index]}
               </FormPanel>
             )}

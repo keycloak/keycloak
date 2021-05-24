@@ -21,7 +21,7 @@ export function convertToMultiline(fields: string[]): MultiLine[] {
 }
 
 export function toValue(formValue: MultiLine[]): string[] {
-  return formValue.map((field) => field.value);
+  return formValue?.map((field) => field.value);
 }
 
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
