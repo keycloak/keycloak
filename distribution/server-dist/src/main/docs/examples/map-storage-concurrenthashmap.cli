@@ -24,6 +24,7 @@ embed-server
 /subsystem=keycloak-server/spi=deploymentState:add(default-provider=map)
 /subsystem=keycloak-server/spi=deploymentState/provider=map:add(enabled=true,properties={resourcesVersionSeed=1JZ379bzyOCFA})
 /subsystem=keycloak-server/spi=user:add(default-provider=map)
+/subsystem=keycloak-server/spi=dblock:add(default-provider=none)
 
 ## For dev and single-node purposes, these are set to "map".
 ## For clustered deployments, these should be "infinispan" as map storage does not support distributed storage yet
