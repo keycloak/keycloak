@@ -98,6 +98,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createSamlPostForm();
 
+    Response createFrontchannelLogoutPage();
+
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     LoginFormsProvider setClientSessionCode(String accessCode);

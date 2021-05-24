@@ -47,6 +47,11 @@ public interface TestApplicationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-frontchannel-logout")
+    LogoutToken getFrontChannelLogoutToken();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/poll-admin-not-before")
     PushNotBeforeAction getAdminPushNotBefore();
 
