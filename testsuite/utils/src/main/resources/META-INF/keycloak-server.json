@@ -46,7 +46,10 @@
     },
 
     "authenticationSessions": {
-        "provider": "${keycloak.authSession.provider:infinispan}"
+        "provider": "${keycloak.authSession.provider:infinispan}",
+        "infinispan": {
+            "authSessionsLimit": "${keycloak.authSessions.limit:300}"
+        }
     },
 
     "userSessions": {
