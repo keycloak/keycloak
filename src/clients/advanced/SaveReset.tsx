@@ -9,14 +9,14 @@ type SaveResetProps = ActionGroupProps & {
 };
 
 export const SaveReset = ({ name, save, reset, ...rest }: SaveResetProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   return (
     <ActionGroup {...rest}>
-      <Button data-testid={name + "Save"} variant="tertiary" onClick={save}>
-        {t("common:save")}
+      <Button data-testid={name + "Save"} onClick={save}>
+        {t("save")}
       </Button>
       <Button data-testid={name + "Revert"} variant="link" onClick={reset}>
-        {t("common:revert")}
+        {t("revert")}
       </Button>
     </ActionGroup>
   );
