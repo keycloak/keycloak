@@ -209,14 +209,12 @@ public class UserResource {
         try {
             profile.validate();
         } catch (ValidationException pve) {
+            StringBuilder s = new StringBuilder("Failed to update user due to validation errors. ");
             for (ValidationException.Error error : pve.getErrors()) {
-                StringBuilder s = new StringBuilder("Failed to update attribute " + error.getAttribute() + ": ");
-
-                s.append(error.getMessage()).append(", ");
-
-                logger.warn(s);
+                s.append(error.getAttribute()).append(": ").append(error.getMessage()).append(", ");
             }
-            return ErrorResponse.error("Could not update user! See server log for more details", Response.Status.BAD_REQUEST);
+            logger.warn(s);
+            return ErrorResponse.error(s.toString(), Response.Status.BAD_REQUEST);
         }
 
         return null;
