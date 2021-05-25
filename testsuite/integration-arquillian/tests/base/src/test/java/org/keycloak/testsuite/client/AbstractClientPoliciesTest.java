@@ -133,6 +133,7 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
@@ -864,6 +865,13 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
         if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
+        return config;
+    }
+
+    protected SecureResponseTypeExecutor.Configuration createSecureResponseTypeExecutor(Boolean autoConfigure, Boolean allowTokenResponseType) {
+        SecureResponseTypeExecutor.Configuration config = new SecureResponseTypeExecutor.Configuration();
+        if (autoConfigure != null) config.setAutoConfigure(autoConfigure);
+        if (allowTokenResponseType != null) config.setAllowTokenResponseType(allowTokenResponseType);
         return config;
     }
 
