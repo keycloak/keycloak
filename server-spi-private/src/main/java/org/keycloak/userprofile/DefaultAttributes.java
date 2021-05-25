@@ -98,13 +98,16 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         List<ValidationContext> failingValidators = Collections.emptyList();
 
         for (AttributeMetadata metadata : metadatas) {
-            for (AttributeValidatorMetadata validator : metadata.getValidators()) {
-            	ValidationContext vc = validator.validate(createAttributeContext(attribute, metadata)); 
-                if (!vc.isValid()) {
-                    if (failingValidators.equals(Collections.emptyList())) {
-                        failingValidators = new ArrayList<>();
+            AttributeContext attributeContext = createAttributeContext(attribute, metadata);
+            if(!metadata.isReadOnly(attributeContext)) {
+                for (AttributeValidatorMetadata validator : metadata.getValidators()) {
+                	ValidationContext vc = validator.validate(attributeContext); 
+                    if (!vc.isValid()) {
+                        if (failingValidators.equals(Collections.emptyList())) {
+                            failingValidators = new ArrayList<>();
+                        }
+                        failingValidators.add(vc);
                     }
-                    failingValidators.add(vc);
                 }
             }
         }

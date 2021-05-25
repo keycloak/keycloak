@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.user.profile.config.DeclarativeUserProfileProvider;
 import org.keycloak.testsuite.user.profile.config.UPAttribute;
+import org.keycloak.testsuite.user.profile.config.UPAttributePermissions;
 import org.keycloak.testsuite.user.profile.config.UPAttributeRequired;
 import org.keycloak.testsuite.user.profile.config.UPConfig;
 import org.keycloak.testsuite.user.profile.config.UPConfigUtils;
@@ -532,6 +533,103 @@ public class UserProfileConfigTest extends AbstractUserProfileTest {
 		}
 
 	}
+	
+	@Test
+    public void testNoAttributeValidationsIfNoEditPermission_USER() {
+        getTestingClient().server().run((RunOnServer) UserProfileConfigTest::testNoAttributeValidationsIfNoEditPermission_USER);
+    }
+
+    private static void testNoAttributeValidationsIfNoEditPermission_USER(KeycloakSession session) throws IOException {
+        configureSessionRealm(session);
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        ComponentModel component = provider.getComponentModel();
+
+        assertNotNull(component);
+
+        UPConfig config = new UPConfig();
+        UPAttribute attribute = new UPAttribute();
+
+        attribute.setName(ATT_ADDRESS);
+
+        UPAttributeRequired requirements = new UPAttributeRequired();
+        attribute.setRequired(requirements);
+
+        UPAttributePermissions permissions = new UPAttributePermissions();
+        List<String> roles = new ArrayList<>();
+        roles.add(UPConfigUtils.ROLE_ADMIN);
+        permissions.setEdit(roles);
+        attribute.setPermissions(permissions);
+
+        config.addAttribute(attribute);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, "user");
+
+        // NO fail on USER contexts
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        profile.validate();
+
+        // Fails on ADMIN context - User REST API
+        try {
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
+    }
+	
+	@Test
+    public void testNoAttributeValidationsIfNoEditPermission_ADMIN() {
+        getTestingClient().server().run((RunOnServer) UserProfileConfigTest::testNoAttributeValidationsIfNoEditPermission_ADMIN);
+    }
+
+    private static void testNoAttributeValidationsIfNoEditPermission_ADMIN(KeycloakSession session) throws IOException {
+        configureSessionRealm(session);
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        ComponentModel component = provider.getComponentModel();
+
+        assertNotNull(component);
+
+        UPConfig config = new UPConfig();
+        UPAttribute attribute = new UPAttribute();
+
+        attribute.setName(ATT_ADDRESS);
+
+        UPAttributeRequired requirements = new UPAttributeRequired();
+        attribute.setRequired(requirements);
+
+        UPAttributePermissions permissions = new UPAttributePermissions();
+        List<String> roles = new ArrayList<>();
+        roles.add(UPConfigUtils.ROLE_USER);
+        permissions.setEdit(roles);
+        attribute.setPermissions(permissions);
+
+        config.addAttribute(attribute);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, "user");
+
+        // Fails on USER context
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        try {
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
+        // NO fail on ADMIN context - User REST API 
+        profile = provider.create(UserProfileContext.USER_API, attributes);
+        profile.validate();
+    }
 
 	@Test
 	public void testRequiredByScope_clientDefaultScope() {
