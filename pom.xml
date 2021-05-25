@@ -49,12 +49,12 @@
         the script continues to work
         -->
 
-        <product.rhsso.version>7.4.0.GA</product.rhsso.version>
+        <product.rhsso.version>7.5.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
         <wildfly.version>23.0.2.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <eap.version>7.4.0.CD20-redhat-00001</eap.version>
+        <eap.version>7.4.0.GA-redhat-00005</eap.version>
         <wildfly.core.version>15.0.1.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
