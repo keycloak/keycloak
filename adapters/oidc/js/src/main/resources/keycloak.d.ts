@@ -26,7 +26,7 @@ export = Keycloak;
  * Creates a new Keycloak client instance.
  * @param config A configuration object or path to a JSON config file.
  */
-declare function Keycloak(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
+declare function Keycloak(config?: Keycloak.KeycloakConfig | Keycloak.OidcConfig | string): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
 	type KeycloakOnLoad = 'login-required'|'check-sso';
@@ -44,6 +44,43 @@ declare namespace Keycloak {
 		 * Name of the realm, for example: 'myrealm'
 		 */
 		realm: string;
+		/**
+		 * Client identifier, example: 'myapp'
+		 */
+		clientId: string;
+	}
+
+	/**
+	 * OpenID Provider Configuration
+	 */
+	interface OidcProviderConfig {
+		/**
+		 * URL of the OP's OAuth 2.0 Authorization Endpoint
+		 */
+		authorization_endpoint: string;
+		/**
+		 * URL of the OP's OAuth 2.0 Token Endpoint. This is REQUIRED unless only the Implicit Flow is used.
+		 */
+		token_endpoint: string;
+		/**
+		 * URL at the OP to which an RP can perform a redirect to request that the End-User be logged out at the OP
+		 */
+		end_session_endpoint?: string;
+		/**
+		 * URL of an OP iframe that supports cross-origin communications for session state information with the RP Client, using the HTML5 postMessage API.
+		 */
+		check_session_iframe?: string;
+		/**
+		 * URL of the OP's UserInfo Endpoint
+		 */
+		userinfo_endpoint?: string;
+	}
+
+	interface OidcConfig {
+		/**
+		 * OpenID Provider Configuration or URL of JSON containg configuration (well known URI)
+		 */
+		oidcProvider: OidcProviderConfig | string;
 		/**
 		 * Client identifier, example: 'myapp'
 		 */
