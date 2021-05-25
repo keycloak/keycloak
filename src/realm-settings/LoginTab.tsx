@@ -20,7 +20,10 @@ export const RealmSettingsLoginTab = ({
   return (
     <>
       <PageSection variant="light">
-        <FormPanel title="Login screen customization">
+        <FormPanel
+          className="kc-login-screen"
+          title="Login screen customization"
+        >
           <FormAccess isHorizontal role="manage-realm">
             <FormGroup
               label={t("userRegistration")}
@@ -96,7 +99,7 @@ export const RealmSettingsLoginTab = ({
             </FormGroup>
           </FormAccess>
         </FormPanel>
-        <FormPanel title="Email settings">
+        <FormPanel className="kc-email-settings" title="Email settings">
           <FormAccess isHorizontal role="manage-realm">
             <FormGroup
               label={t("emailAsUsername")}

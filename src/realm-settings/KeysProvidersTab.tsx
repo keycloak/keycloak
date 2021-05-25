@@ -158,7 +158,7 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
                 isDisabled
               />
               <DataListItemCells
-                className="test2"
+                className="data-list-cells"
                 dataListCells={[
                   <DataListCell className="name" key={"1"}>
                     <>{t("realm-settings:name")}</>
