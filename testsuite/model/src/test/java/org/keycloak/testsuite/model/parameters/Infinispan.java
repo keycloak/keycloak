@@ -20,8 +20,10 @@ import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.models.session.UserSessionPersisterSpi;
+import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.sessions.StickySessionEncoderSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
@@ -47,6 +49,7 @@ public class Infinispan extends KeycloakModelParameters {
     private static final AtomicInteger NODE_COUNTER = new AtomicInteger();
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
+      .add(AuthenticationSessionSpi.class)
       .add(CacheRealmProviderSpi.class)
       .add(CacheUserProviderSpi.class)
       .add(InfinispanConnectionSpi.class)
@@ -56,6 +59,7 @@ public class Infinispan extends KeycloakModelParameters {
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
+      .add(InfinispanAuthenticationSessionProviderFactory.class)
       .add(InfinispanCacheRealmProviderFactory.class)
       .add(InfinispanClusterProviderFactory.class)
       .add(InfinispanConnectionProviderFactory.class)

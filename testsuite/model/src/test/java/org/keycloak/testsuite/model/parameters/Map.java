@@ -25,6 +25,7 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderF
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
@@ -37,7 +38,6 @@ import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.user.MapUserProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
@@ -49,6 +49,7 @@ import java.util.Set;
 public class Map extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
+      .add(AuthenticationSessionSpi.class)
       .add(MapStorageSpi.class)
 
       .build();
@@ -76,7 +77,7 @@ public class Map extends KeycloakModelParameters {
 
     @Override
     public void updateConfig(Config cf) {
-        cf.spi(AuthenticationSessionSpi.PROVIDER_ID).defaultProvider(MapClientProviderFactory.PROVIDER_ID)
+        cf.spi(AuthenticationSessionSpi.PROVIDER_ID).defaultProvider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID)
           .spi("client").defaultProvider(MapClientProviderFactory.PROVIDER_ID)
           .spi("clientScope").defaultProvider(MapClientScopeProviderFactory.PROVIDER_ID)
           .spi("group").defaultProvider(MapGroupProviderFactory.PROVIDER_ID)

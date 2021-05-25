@@ -82,11 +82,14 @@ public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRoo
         MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
 
+        int timestamp = Time.currentTime();
+        authSessionEntity.setTimestamp(timestamp);
+
         String tabId =  generateTabId();
         entity.getAuthenticationSessions().put(tabId, authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(Time.currentTime());
+        entity.setTimestamp(timestamp);
 
         MapAuthenticationSessionAdapter authSession = new MapAuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
         session.getContext().setAuthenticationSession(authSession);
