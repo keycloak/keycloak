@@ -48,7 +48,7 @@
     "@storybook/addon-actions": "^6.2.9",
     "@storybook/addon-essentials": "^6.1.7",
     "@storybook/addon-info": "^5.3.21",
-    "@storybook/addon-links": "^6.1.7",
+    "@storybook/addon-links": "^6.2.9",
     "@storybook/addons": "^6.2.9",
     "@storybook/node-logger": "^6.1.7",
     "@storybook/preset-create-react-app": "^3.1.7",
