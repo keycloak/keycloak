@@ -105,17 +105,17 @@ public class ClientsResource {
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults) {
+        auth.clients().requireList();
+
         boolean canView = auth.clients().canView();
         Stream<ClientModel> clientModels = Stream.empty();
 
         if (searchQuery != null) {
-            auth.clients().requireList();
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
             clientModels = canView
                     ? realm.searchClientByAttributes(attributes, firstResult, maxResults)
                     : realm.searchClientByAttributes(attributes, -1, -1);
         } else if (clientId == null || clientId.trim().equals("")) {
-            auth.clients().requireList();
             clientModels = canView
                     ? realm.getClientsStream(firstResult, maxResults)
                     : realm.getClientsStream();
