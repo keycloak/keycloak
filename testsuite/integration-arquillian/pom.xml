@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>13.0.0</version>
+        <version>13.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
