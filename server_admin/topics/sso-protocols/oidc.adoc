@@ -248,7 +248,7 @@ Authentication Delegation Response:: The response is returned from the authentic
 |===
 |HTTP Status Code|Description
 
-|204|It notifies {project_name} of receiving the authentication delegation request.
+|201|It notifies {project_name} of receiving the authentication delegation request.
 
 |===
 
