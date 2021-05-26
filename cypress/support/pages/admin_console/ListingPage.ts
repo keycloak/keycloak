@@ -50,7 +50,7 @@ export default class ListingPage {
   clickRowDetails(itemName: string) {
     cy.get(this.itemsRows)
       .contains(itemName)
-      .parentsUntil("tbody")
+      .parentsUntil("tr")
       .find(this.itemRowDrpDwn)
       .click();
     return this;
