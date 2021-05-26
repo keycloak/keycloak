@@ -78,8 +78,10 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                 // Fallback to secret just in case (for backwards compatibility). Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
                 // default, which set the client just based on "client_id" parameter
                 if (expectedClientAuthType == null || client.isPublicClient()) {
+                    if (expectedClientAuthType == null) {
+                        ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
+                    }
                     expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
-                    ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
                 }
 
                 // Check if client authentication matches
