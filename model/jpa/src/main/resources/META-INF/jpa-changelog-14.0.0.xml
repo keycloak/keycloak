@@ -36,6 +36,34 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                </or>
+            </not>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+    </changeSet>
+
     <changeSet author="keycloak" id="KEYCLOAK-17267-add-index-to-user-attributes">
         <createIndex indexName="IDX_USER_ATTRIBUTE_NAME" tableName="USER_ATTRIBUTE">
             <column name="NAME" type="VARCHAR(255)"/>
