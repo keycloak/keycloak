@@ -95,8 +95,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
 
+        boolean loadOfflineSessionsStatsFromDatabase = !isPreloadingOfflineSessionsFromDatabaseEnabled();
+
         return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore,
-                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache);
+                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, loadOfflineSessionsStatsFromDatabase);
     }
 
     @Override
@@ -145,6 +147,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         });
     }
 
+    private boolean isPreloadingOfflineSessionsFromDatabaseEnabled() {
+        return config.getBoolean("preloadOfflineSessionsFromDatabase", true);
+    }
+
     // Max count of worker errors. Initialization will end with exception when this number is reached
     private int getMaxErrors() {
         return config.getInt("maxErrors", 20);
@@ -163,23 +169,32 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void loadPersistentSessions(final KeycloakSessionFactory sessionFactory, final int maxErrors, final int sessionsPerSegment) {
-        log.debug("Start pre-loading userSessions from persistent storage");
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
             public void run(KeycloakSession session) {
-                InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache,
-                        new OfflinePersistentUserSessionLoader(sessionsPerSegment), "offlineUserSessions", sessionsPerSegment, maxErrors);
+                if (isPreloadingOfflineSessionsFromDatabaseEnabled()) {
+                    // only preload offline-sessions if necessary
+                    log.debug("Start pre-loading userSessions from persistent storage");
 
-                // DB-lock to ensure that persistent sessions are loaded from DB just on one DC. The other DCs will load them from remote cache.
-                CacheInitializer initializer = new DBLockBasedCacheInitializer(session, ispnInitializer);
+                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+                    Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                initializer.initCache();
-                initializer.loadSessions();
+                    InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache,
+                            new OfflinePersistentUserSessionLoader(sessionsPerSegment), "offlineUserSessions", sessionsPerSegment, maxErrors);
+
+                    // DB-lock to ensure that persistent sessions are loaded from DB just on one DC. The other DCs will load them from remote cache.
+                    CacheInitializer initializer = new DBLockBasedCacheInitializer(session, ispnInitializer);
+
+                    initializer.initCache();
+                    initializer.loadSessions();
+
+                    log.debug("Pre-loading userSessions from persistent storage finished");
+                } else {
+                    log.debug("Skipping pre-loading of userSessions from persistent storage");
+                }
 
                 // Initialize persister for periodically doing bulk DB updates of lastSessionRefresh timestamps of refreshed sessions
                 persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, true);
@@ -187,7 +202,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         });
 
-        log.debug("Pre-loading userSessions from persistent storage finished");
+
     }
 
 
