@@ -90,6 +90,30 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!--
+          ~ KEYCLOAK-18267: org.jboss.marshalling.jboss-marshalling and org.jboss.marshalling.jboss-marshalling-river
+          ~ are needed for proper work of org.infinispan.infinispan-jboss-marshalling with JDK 11
+          -->
+        <dependency>
+            <groupId>org.jboss.marshalling</groupId>
+            <artifactId>jboss-marshalling</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.marshalling</groupId>
+            <artifactId>jboss-marshalling-river</artifactId>
+            <exclusions>
+                <exclusion>
+                <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-common</artifactId>

@@ -700,6 +700,7 @@ _keycloakToWildflyProperties = {
     "jackson.version"                                             : "version.com.fasterxml.jackson",
     # Skip "jackson.databind.version" and "jackson.annotations.version" since they are derived from ${jackson.version}" above
     "jakarta.mail.version"                                        : "version.jakarta.mail",
+    "jboss.marshalling.version"                                   : "version.org.jboss.marshalling.jboss-marshalling",
     "jboss.logging.version"                                       : "version.org.jboss.logging.jboss-logging",
     "jboss.logging.tools.version"                                 : "version.org.jboss.logging.jboss-logging-tools",
     "jboss-jaxrs-api_2.1_spec"                                    : "version.org.jboss.spec.javax.ws.jboss-jaxrs-api_2.1_spec",
