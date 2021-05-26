@@ -37,6 +37,9 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String PRIVATE_KEY = "privateKey";
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
+    String LOGO_URI ="logoUri";
+    String POLICY_URI ="policyUri";
+    String TOS_URI ="tosUri";
 
     public static class SearchableFields {
         public static final SearchableModelField<ClientModel> ID                 = new SearchableModelField<>("id", String.class);
