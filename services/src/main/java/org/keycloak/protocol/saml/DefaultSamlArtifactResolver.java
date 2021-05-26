@@ -1,22 +1,22 @@
 package org.keycloak.protocol.saml;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.stream.Stream;
+import java.util.Collections;
 
 import static org.keycloak.protocol.saml.DefaultSamlArtifactResolverFactory.TYPE_CODE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER;
 
 /**
  * ArtifactResolver for artifact-04 format.
@@ -43,18 +43,13 @@ public class DefaultSamlArtifactResolver implements ArtifactResolver {
     }
 
     @Override
-    public ClientModel selectSourceClient(String artifact, Stream<ClientModel> clients) throws ArtifactResolverProcessingException {
-        try {
-            byte[] source = extractSourceFromArtifact(artifact);
+    public ClientModel selectSourceClient(KeycloakSession session, String artifact) throws ArtifactResolverProcessingException {
+        byte[] source = extractSourceFromArtifact(artifact);
+        String identifier = ArtifactBindingUtils.getArtifactBindingIdentifierString(source);
 
-            MessageDigest sha1Digester = MessageDigest.getInstance("SHA-1");
-            return clients.filter(clientModel -> Arrays.equals(source,
-                    sha1Digester.digest(clientModel.getClientId().getBytes(Charsets.UTF_8))))
-                    .findFirst()
-                    .orElseThrow(() -> new ArtifactResolverProcessingException("No client matching the artifact source found"));
-        } catch (NoSuchAlgorithmException e) {
-            throw new ArtifactResolverProcessingException(e);
-        }
+        return session.clients().searchClientsByAttributes(session.getContext().getRealm(),
+                Collections.singletonMap(SAML_ARTIFACT_BINDING_IDENTIFIER, identifier), 0, 1)
+                .findFirst().orElseThrow(() -> new ArtifactResolverProcessingException("No client matching the artifact source found"));
     }
 
     @Override
@@ -109,8 +104,7 @@ public class DefaultSamlArtifactResolver implements ArtifactResolver {
             SecureRandom handleGenerator = SecureRandom.getInstance("SHA1PRNG");
             byte[] trimmedIndex = new byte[2];
 
-            MessageDigest sha1Digester = MessageDigest.getInstance("SHA-1");
-            byte[] source = sha1Digester.digest(entityId.getBytes(Charsets.UTF_8));
+            byte[] source = ArtifactBindingUtils.computeArtifactBindingIdentifier(entityId);
 
             byte[] assertionHandle = new byte[20];
             handleGenerator.nextBytes(assertionHandle);

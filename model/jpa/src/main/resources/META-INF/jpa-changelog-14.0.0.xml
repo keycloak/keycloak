@@ -71,4 +71,8 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="KEYCLOAK-18146-add-saml-art-binding-identifier">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate14_0_0_MigrateSamlArtifactAttribute"/>
+    </changeSet>
+
 </databaseChangeLog>
