@@ -71,7 +71,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.protocol.saml.profile.util.Soap;
-import org.keycloak.protocol.util.ArtifactBindingUtils;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -341,7 +341,7 @@ public class SamlService extends AuthorizationEndpointBase {
             //Find client
             ClientModel client;
             try {
-                client = getArtifactResolver(artifact).selectSourceClient(artifact, realm.getClientsStream());
+                client = getArtifactResolver(artifact).selectSourceClient(session, artifact);
 
                 Response error = checkClientValidity(client);
                 if (error != null) {

@@ -5,7 +5,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.saml.ArtifactResolver;
 import org.keycloak.protocol.saml.ArtifactResolverFactory;
-import org.keycloak.protocol.util.ArtifactBindingUtils;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 
 /**
  * This ArtifactResolver should be used only for testing purposes.

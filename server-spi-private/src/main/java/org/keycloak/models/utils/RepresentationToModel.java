@@ -140,6 +140,8 @@ import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
+import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
+
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
@@ -1406,6 +1408,11 @@ public class RepresentationToModel {
             }
         }
 
+        if ("saml".equals(resourceRep.getProtocol())
+                && (resourceRep.getAttributes() == null
+                    || !resourceRep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
+            client.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(resourceRep.getClientId()));
+        }
 
         if (resourceRep.getAuthenticationFlowBindingOverrides() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAuthenticationFlowBindingOverrides().entrySet()) {
@@ -1556,6 +1563,12 @@ public class RepresentationToModel {
             for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
                 resource.setAttribute(entry.getKey(), entry.getValue());
             }
+        }
+
+        if ("saml".equals(rep.getProtocol())
+                && (rep.getAttributes() == null
+                || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
+            resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(rep.getClientId()));
         }
 
         if (rep.getAuthenticationFlowBindingOverrides() != null) {

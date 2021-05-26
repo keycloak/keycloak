@@ -663,7 +663,7 @@ public class ClientResource {
         }
 
         if (rep.getClientId() != null && !rep.getClientId().equals(client.getClientId())) {
-            new ClientManager(new RealmManager(session)).clientIdChanged(client, rep.getClientId());
+            new ClientManager(new RealmManager(session)).clientIdChanged(client, rep);
         }
 
         if (rep.isFullScopeAllowed() != null && rep.isFullScopeAllowed() != client.isFullScopeAllowed()) {
