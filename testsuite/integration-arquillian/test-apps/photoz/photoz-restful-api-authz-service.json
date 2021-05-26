@@ -81,7 +81,7 @@
       "decisionStrategy": "UNANIMOUS",
       "config": {
         "applyPolicies": "[]",
-        "roles": "[{\"id\":\"user\"},{\"id\":\"manage-albums\",\"required\":true}]"
+        "roles": "[{\"id\":\"user\"},{\"id\":\"photoz-restful-api/manage-albums\",\"required\":true}]"
       }
     },
     {
