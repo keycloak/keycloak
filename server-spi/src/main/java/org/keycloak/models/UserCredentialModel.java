@@ -118,9 +118,7 @@ public class UserCredentialModel implements CredentialInput {
         return new UserCredentialModel("", SECRET, password);
     }
 
-    public static UserCredentialModel kerberos(String token) {
-        return new UserCredentialModel("", KERBEROS, token);
-    }
+    public static UserCredentialModel kerberos(String token) { return new KerberosCredentialModel("", KERBEROS, token); }
 
     public static UserCredentialModel generateSecret() {
         return new UserCredentialModel("", SECRET, UUID.randomUUID().toString());

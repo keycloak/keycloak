@@ -102,3 +102,24 @@ uid: gsstestserver
 userPassword: gsstestpwd
 krb5PrincipalName: gsstestserver/xxx@KC2.COM
 krb5KeyVersionNumber: 0
+
+# ADDING entry for multiple ldap userstorage with kerberos configured
+
+dn: ou=groupC, ou=People,dc=kc2,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: groupC
+
+dn: uid=user1C,ou=groupC,ou=People,dc=kc2,dc=com
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: user1C
+sn: groupC
+mail: user1C@kc2.com
+uid: user1C
+userPassword: secret
+krb5PrincipalName: user1C@KC2.COM
+krb5KeyVersionNumber: 0

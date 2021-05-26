@@ -55,7 +55,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
-public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
+public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosSingleUserStorageTest {
 
     @Test
     public void spnegoNotAvailableTest() throws Exception {
