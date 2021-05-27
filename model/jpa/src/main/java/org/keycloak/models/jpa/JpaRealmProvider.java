@@ -832,14 +832,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         ClientScopeModel clientScope = getClientScopeById(realm, id);
         if (clientScope == null) return false;
 
-        if (KeycloakModelUtils.isClientScopeUsed(realm, clientScope)) {
-            throw new ModelException("Cannot remove client scope, it is currently in use");
-        }
-
         session.users().preRemove(clientScope);
         realm.removeDefaultClientScope(clientScope);
         ClientScopeEntity clientScopeEntity = em.find(ClientScopeEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
+        em.createNamedQuery("deleteClientScopeClientMappingByClientScope").setParameter("clientScopeId", clientScope.getId()).executeUpdate();
         em.createNamedQuery("deleteClientScopeRoleMappingByClientScope").setParameter("clientScope", clientScopeEntity).executeUpdate();
         em.remove(clientScopeEntity);
 
