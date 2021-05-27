@@ -18,6 +18,7 @@ package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -52,6 +53,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionManagement;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -82,6 +84,11 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

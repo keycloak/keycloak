@@ -16,12 +16,15 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.io.IOException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.BeforeClass;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ServerURLs;
@@ -41,6 +44,11 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class ServletPolicyEnforcerTest extends AbstractServletPolicyEnforcerTest {
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() {
