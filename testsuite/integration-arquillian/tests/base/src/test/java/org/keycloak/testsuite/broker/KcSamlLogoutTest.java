@@ -118,7 +118,7 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                     .build()
 
                     // Login using a different client to the provider realm, should be already logged in
-                    .authnRequest(getConsumerSamlEndpoint(bc.providerRealmName()), PROVIDER_SAML_CLIENT_ID, PROVIDER_SAML_CLIENT_ID + "saml", POST).build()
+                    .authnRequest(getProviderSamlEndpoint(bc.providerRealmName()), PROVIDER_SAML_CLIENT_ID, PROVIDER_SAML_CLIENT_ID + "saml", POST).build()
                     .followOneRedirect()
 
                     // Process saml response and store reference to nameId and sessionIndex so that we can initiate logout for the session
@@ -141,7 +141,7 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                     .build()
 
                     // Send logout request to provider realm
-                    .logoutRequest(getConsumerSamlEndpoint(bc.providerRealmName()), PROVIDER_SAML_CLIENT_ID, POST)
+                    .logoutRequest(getProviderSamlEndpoint(bc.providerRealmName()), PROVIDER_SAML_CLIENT_ID, POST)
                         .nameId(nameIdRef::get)
                         .sessionIndex(sessionIndexRef::get)
                     .build()
