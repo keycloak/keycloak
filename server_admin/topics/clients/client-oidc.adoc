@@ -58,7 +58,7 @@ This defines the type of the OIDC client.
 
 _confidential_::
   Confidential access type is for server-side clients that need to perform a browser login and require a client secret when they turn an access code into an access token,
-  (see https://tools.ietf.org/html/rfc6749#section-4.1.3[Access Token Request] in the OAuth 2.0 spec for more details). This type should be used for server-side applications.
+  (see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3[Access Token Request] in the OAuth 2.0 spec for more details). This type should be used for server-side applications.
 
 _public_::
   Public access type is for client-side clients that need to perform a browser login. With a client-side application there is no way to keep a secret safe. Instead it is very important to restrict  access by configuring correct redirect URIs for the client.
@@ -151,7 +151,7 @@ In the following cases, {project_name} will verify the client sending the access
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token
 * A logout request is sent to Logout endpoint with a holder-of-key refresh token
 
-Please see https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+Please see https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
 
 WARNING: None of the keycloak client adapters currently support holder-of-key token verification.
 Instead, keycloak adapters currently treat access and refresh tokens as bearer tokens.
@@ -169,12 +169,12 @@ The administrator can select the following three options:
 * S256 : {project_name} applies to the client PKCE whose code challenge method is S256.
 * plain : {project_name} applies to the client PKCE whose code challenge method is plain.
 
-Please see https://tools.ietf.org/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
+Please see https://datatracker.ietf.org/doc/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
 
 [[_jwe-id-token-encryption]]
 *Signed and Encrypted ID Token Support*
 
-{project_name} can encrypt ID token according to the https://tools.ietf.org/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator can determine whether encrypting ID token or not per client. This feature is disabled as default.
+{project_name} can encrypt ID token according to the https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator can determine whether encrypting ID token or not per client. This feature is disabled as default.
 
 The key for encrypting ID token is called Content Encryption Key (CEK). {project_name} and a client need to negotiate which CEK is used and how to deliver it. The way to do so is called Key Management Mode.
 
@@ -182,19 +182,19 @@ JWE specification determines 5 types of Key Management Mode. {project_name} supp
 
 In Key Encryption, the client generates a key pair of asymmetric cryptography. The public key is used to encrypt CEK. {project_name} generates CEK per ID token, encrypts the ID token by this generated CEK and encrypts this CEK by this client's public key. The client decrypts this encrypted CEK by their private key, and decrypt the ID token by decrypted CEK. Therefore, any party other than the client is not able to decrypt ID token.
 
-The client needs to pass their public key for encrypting CEK onto {project_name}. {project_name} supports downloading public keys from the URL the client provides. The client needs to provide their public keys according to https://tools.ietf.org/html/rfc7517[Json Web Keys (JWK)] specification. The way to do so is defined in `Signed JWT` of <<_client-credentials, Confidential Client Credentials>>. The detailed procedure is as follows:
+The client needs to pass their public key for encrypting CEK onto {project_name}. {project_name} supports downloading public keys from the URL the client provides. The client needs to provide their public keys according to https://datatracker.ietf.org/doc/html/rfc7517[Json Web Keys (JWK)] specification. The way to do so is defined in `Signed JWT` of <<_client-credentials, Confidential Client Credentials>>. The detailed procedure is as follows:
 
 * open the client's `Keys` tab
 * toggle `JWKS URL` to ON
 * input the client's public key providing URL on `JWKS URL` textbox
 
-Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5), RSAES OAEP using default parameters (RSA-OAEP), and RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256). The detailed procedure to select this algorithm is as follows:
+Key Encryption's algorithms are defined in the https://datatracker.ietf.org/doc/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5), RSAES OAEP using default parameters (RSA-OAEP), and RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256). The detailed procedure to select this algorithm is as follows:
 
 * open the client's `Settings` tab
 * open `Fine Grain OpenID Connect Configuration`
 * select `RSA1_5`,  `RSA-OAEP`, or `RSA-OAEP-256` from `ID Token Encryption Key Management Algorithm` pulldown menu
 
-ID token encryption algorithms by CEK are also defined in the https://tools.ietf.org/html/rfc7518#section-5.1[JWA] specification. {project_name} supports AES_CBC_HMAC_SHA2 algorithms and AES GCM algorithms. The detailed procedure to select this algorithm is as follows:
+ID token encryption algorithms by CEK are also defined in the https://datatracker.ietf.org/doc/html/rfc7518#section-5.1[JWA] specification. {project_name} supports AES_CBC_HMAC_SHA2 algorithms and AES GCM algorithms. The detailed procedure to select this algorithm is as follows:
 
 * open the client's `Settings` tab
 * open `Fine Grain OpenID Connect Configuration`

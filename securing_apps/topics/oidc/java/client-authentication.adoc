@@ -18,7 +18,7 @@ You can generate the secret for a particular client in the {project_name} admini
 
 ===== Client Authentication with Signed JWT
 
-This is based on the https://tools.ietf.org/html/rfc7523[RFC7523] specification. It works this way:
+This is based on the https://datatracker.ietf.org/doc/html/rfc7523[RFC7523] specification. It works this way:
 
 * The client must have the private key and certificate. For  {project_name} this is available through the traditional `keystore` file, which is either available on the client application's classpath or somewhere on the file system.
 
@@ -72,7 +72,7 @@ The client has a secret, which needs to be known to both the adapter (applicatio
 }
 ----
 
-The "algorithm" field specifies the algorithm for Signed JWT using Client Secret. It needs to be one of the following values : HS256, HS384, and HS512. For details, please refer to https://tools.ietf.org/html/rfc7518#section-3.2[JSON Web Algorithms (JWA)].
+The "algorithm" field specifies the algorithm for Signed JWT using Client Secret. It needs to be one of the following values : HS256, HS384, and HS512. For details, please refer to https://datatracker.ietf.org/doc/html/rfc7518#section-3.2[JSON Web Algorithms (JWA)].
 
 This "algorithm" field is optional so that HS256 is applied automatically if the "algorithm" field does not exist on the `keycloak.json` file.
 

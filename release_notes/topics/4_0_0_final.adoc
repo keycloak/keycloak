@@ -11,7 +11,7 @@ See the documentation and migration guide for more details.
 = OAuth 2 Certificate Bound Access Tokens
 
 We now have a partial implementation of the specification
-https://tools.ietf.org/html/draft-ietf-oauth-mtls-08[OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens] .
+https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08[OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens] .
 More accurately we have support for the Certificate Bound Access Tokens. If your confidential client is able to use 2-way SSL,
 {project_name} will be able to add the hash of the client certificate into the tokens issued for the client. At this moment,
 it's just  the {project_name} itself, which verifies the token hashes (for example during `refresh token` requests).

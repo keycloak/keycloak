@@ -10,7 +10,7 @@ There are two main use cases where token introspection can help you:
 
 = Obtaining Information about an RPT
 
-The token introspection is essentially a https://tools.ietf.org/html/rfc7662[OAuth2 token introspection]-compliant endpoint from which you can obtain information about an RPT.
+The token introspection is essentially a https://datatracker.ietf.org/doc/html/rfc7662[OAuth2 token introspection]-compliant endpoint from which you can obtain information about an RPT.
 
 ```
 http://${host}:${port}/auth/realms/${realm_name}/protocol/openid-connect/token/introspect
@@ -68,7 +68,7 @@ If the RPT is not active, this response is returned instead:
 = Do I Need to Invoke the Server Every Time I Want to Introspect an RPT?
 
 No. Just like a regular access token issued by a {project_name} server, RPTs also use the
- https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] specification as the default format.
+ https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)] specification as the default format.
 
 If you want to validate these tokens without a call to the remote introspection endpoint, you can decode the RPT and query for its validity locally. Once you decode the token,
 you can also use the permissions within the token to enforce authorization decisions.

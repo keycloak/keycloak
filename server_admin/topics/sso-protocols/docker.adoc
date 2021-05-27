@@ -12,7 +12,7 @@ The link:https://docs.docker.com/registry/spec/auth/token/[Docker API documentat
 NOTE: This flow assumes that a `docker login` command has already been performed
 
  * The flow begins when the Docker client requests a resource from the Docker registry.  If the resource is protected and no auth token is present in the request, the Docker registry server will respond to the client with a 401 + some information on required permissions and where to find the authorization server.
- * The Docker client will construct an authentication request based on the 401 response from the Docker registry.  The client will then use the locally cached credentials (from a previously run `docker login` command) as part of a link:https://tools.ietf.org/html/rfc2617[HTTP Basic Authentication] request to the {project_name} authentication server.
+ * The Docker client will construct an authentication request based on the 401 response from the Docker registry.  The client will then use the locally cached credentials (from a previously run `docker login` command) as part of a link:https://datatracker.ietf.org/doc/html/rfc2617[HTTP Basic Authentication] request to the {project_name} authentication server.
  * The {project_name} authentication server will attempt to authenticate the user and return a JSON body containing an OAuth-style Bearer token.
  * The Docker client will get the bearer token from the JSON response and use it in the Authorization header to request the protected resource.
  * When the Docker registry receives the new request for the protected resource with the token from the {project_name} server, the registry validates the token and grants access to the requested resource (if appropriate).

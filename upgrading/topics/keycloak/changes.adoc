@@ -184,7 +184,7 @@ logs in.
 ==== Non-standard token introspection endpoint removed
 
 In previous versions, Keycloak advertized two introspection endpoints: `token_introspection_endpoint` and `introspection_endpoint`.
-The latter is the one defined by https://tools.ietf.org/html/rfc8414#section-2[RFC-8414]. The former, previously deprecated,
+The latter is the one defined by https://datatracker.ietf.org/doc/html/rfc8414#section-2[RFC-8414]. The former, previously deprecated,
 has now been removed.
 
 === Migrating to 9.0.1

@@ -1183,12 +1183,12 @@ For more details about {project_name} adapter and OAuth2 flows see link:{adapter
 Actually {project_name} has 2 default implementations of client authentication:
 
 Traditional authentication with client_id and client_secret::
-  This is default mechanism mentioned in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://tools.ietf.org/html/rfc6749[OAuth2] specification and {project_name} supports it since it's early days.
+  This is default mechanism mentioned in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://datatracker.ietf.org/doc/html/rfc6749[OAuth2] specification and {project_name} supports it since it's early days.
   The public client needs to include `client_id` parameter with its ID in the POST request (so it's defacto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password.
 
 Authentication with signed JWT::
-  This is based on the https://tools.ietf.org/html/rfc7523[JWT Bearer Token Profiles for OAuth 2.0] specification.
-  The client/adapter generates the https://tools.ietf.org/html/rfc7519[JWT] and signs it with his private key.
+  This is based on the https://datatracker.ietf.org/doc/html/rfc7523[JWT Bearer Token Profiles for OAuth 2.0] specification.
+  The client/adapter generates the https://datatracker.ietf.org/doc/html/rfc7519[JWT] and signs it with his private key.
   The {project_name} then verifies the signed JWT with the client's public key and authenticates client based on it.
 
 See the demo example and especially the `examples/preconfigured-demo/product-app` for the example application showing

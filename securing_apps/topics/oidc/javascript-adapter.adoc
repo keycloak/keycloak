@@ -437,7 +437,7 @@ Options is an Object, where:
 * responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are `query` or `fragment`. Default value is `fragment`, which means that after successful authentication will {project_name} redirect to JavaScript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over `query`.
 * flow - Set the OpenID Connect flow. Valid values are `standard`, `implicit` or `hybrid`.
 * enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
-* pkceMethod - The method for Proof Key Code Exchange (https://tools.ietf.org/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
+* pkceMethod - The method for Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
 
 Returns a promise that resolves when initialization completes.

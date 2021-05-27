@@ -74,6 +74,6 @@ The validator checks also the certificate's Subject DN field with configured reg
 use cases, it is sufficient to accept all certificates. In that case, you can use `(.*?)(?:$)` expression.
 
 There are two ways for {project_name} to obtain the Client ID from the request. The first option is the `client_id`
-parameter in the query (described in Section 2.2 of the https://tools.ietf.org/html/rfc6749[OAuth 2.0 Specification]).
+parameter in the query (described in Section 2.2 of the https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0 Specification]).
 The second option is to supply `client_id` as a form parameter.
 

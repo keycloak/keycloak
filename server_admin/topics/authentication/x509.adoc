@@ -181,7 +181,7 @@ This option only affects the two User Identity Sources _Match SubjectDN using re
 If you setup a new {project_name} instance it is recommended to enable this option. Leave this option disabled to remain beckward compatible with existing {project_name} instances.
 
 `Enable Serial Number hexadecimal representation` (optional)::
-An option to use hexadecimal representation of the Serial Number. See link:https://tools.ietf.org/html/rfc5280#section-4.1.2.2[RFC5280, Section-4.1.2.2]. Serial Number with sign bit set to 1 should be left padded with 00 octet. E.g. Serial number with decimal value _161_, or _a1_ in hexadecimal representation according to RFC5280 must be encoded as _00a1_. More details can be found: link:https://tools.ietf.org/html/rfc5280#appendix-B[RFC5280, appendix-B].
+An option to use hexadecimal representation of the Serial Number. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[RFC5280, Section-4.1.2.2]. Serial Number with sign bit set to 1 should be left padded with 00 octet. E.g. Serial number with decimal value _161_, or _a1_ in hexadecimal representation according to RFC5280 must be encoded as _00a1_. More details can be found: link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC5280, appendix-B].
 
 `A regular expression` (optional)::
 Defines a regular expression to use as a filter to extract the certificate identity. The regular expression must contain a single group.
@@ -211,10 +211,10 @@ Defines whether to check the certificate revocation status using Online Certific
 Allows to override a value of the OCSP responder URI in the certificate.
 
 `Validate Key Usage` (optional)::
-Verifies whether the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" will verify if  bits 0 and 2 in the KeyUsage extension are asserted. Leave the parameter empty to disable the Key Usage validation. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3]. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch. 
+Verifies whether the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" will verify if  bits 0 and 2 in the KeyUsage extension are asserted. Leave the parameter empty to disable the Key Usage validation. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3]. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch. 
 
 `Validate Extended Key Usage` (optional)::
-Verifies one or more purposes as defined in the Extended Key Usage extension. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12]. Leave the parameter empty to disable the Extended Key Usage validation. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch.
+Verifies one or more purposes as defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12]. Leave the parameter empty to disable the Extended Key Usage validation. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch.
 
 `Bypass identity confirmation`::
 If set, X.509 client certificate authentication will not prompt the user to confirm the certificate identity and will automatically sign in the user upon successful authentication.

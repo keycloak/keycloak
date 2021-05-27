@@ -102,7 +102,7 @@ When you go to Manage Account, you will see the new Account Console.  Here is a 
 
 image:{project_images}/device-activity.png[]
 
-This new console is based on link:https://reactjs.org/[React] and link:https://www.patternfly.org/v4/[PatternFly 4].  It allows you to use link:https://www.patternfly.org/v4/get-started/global-css-variables/#global-css-variables[PatternFly CSS variables] for easy styling.  It also allows you to remove pages and add your own pages.  Full documentation will be provided at a future release.
+This new console is based on link:https://reactjs.org/[React] and link:https://www.patternfly.org/v4/[PatternFly 4].  It allows you to use link:https://www.patternfly.org/v4/developer-resources/global-css-variables/#global-variables[PatternFly CSS variables] for easy styling.  It also allows you to remove pages and add your own pages.  Full documentation will be provided at a future release.
 
 == New default hostname provider
 

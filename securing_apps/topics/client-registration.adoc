@@ -108,7 +108,7 @@ This means that for the JavaScript adapter you can load the client configuration
 
 === OpenID Connect Dynamic Client Registration
 
-{project_name} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://tools.ietf.org/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://tools.ietf.org/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
+{project_name} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://datatracker.ietf.org/doc/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://datatracker.ietf.org/doc/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
 
 The endpoint to use these specifications to register clients in {project_name} is `/auth/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
 

@@ -746,7 +746,7 @@ The potential issue is, that in some cases, there may be just some a short netwo
 
 How bad are these inconsistencies? Usually only means that a user will need to re-authenticate.
 
-When using the `WARN` policy, it may happen that the single-use cache, which is provided by the `actionTokens` cache and which handles that particular key is really single use, but may "successfully" write the same key twice. But, for example, the OAuth2 specification link:https://tools.ietf.org/html/rfc6749#section-10.5[mentions] that code must be single-use. With the `WARN` policy, this may not be strictly guaranteed and the same code could be written twice if there is an attempt to write it concurrently in both sites.
+When using the `WARN` policy, it may happen that the single-use cache, which is provided by the `actionTokens` cache and which handles that particular key is really single use, but may "successfully" write the same key twice. But, for example, the OAuth2 specification link:https://datatracker.ietf.org/doc/html/rfc6749#section-10.5[mentions] that code must be single-use. With the `WARN` policy, this may not be strictly guaranteed and the same code could be written twice if there is an attempt to write it concurrently in both sites.
 
 If there is a longer network outage or split-brain, then with both `FAIL` and `WARN`, the other site will be taken offline after some time and failures as described in <<onoffline>>. With the default 1 minute timeout, it is usually 1-3 minutes until all the involved caches are taken offline. After that, all the operations will work fine from an end user perspective.
 You only need to manually restore the site when it is back online as mentioned in <<onoffline>>.

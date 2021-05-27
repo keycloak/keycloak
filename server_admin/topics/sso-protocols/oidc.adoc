@@ -2,7 +2,7 @@
 
 === OpenID Connect
 
-link:https://openid.net/connect/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://tools.ietf.org/html/rfc6749[OAuth 2.0].
+link:https://openid.net/connect/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0].
 While OAuth 2.0 is only a framework for building authorization protocols and is mainly incomplete, OIDC is a full-fledged authentication and authorization
 protocol.  OIDC also makes heavy use of the link:https://jwt.io[Json Web Token] (JWT) set of standards.  These standards define an
 identity token JSON format and ways to digitally sign and encrypt that data in a compact and web-friendly way.
@@ -57,7 +57,7 @@ client.  HTML5/JavaScript clients always have to be _public_ clients because the
 manner.  Again, this is ok so long as you use HTTPS and strictly enforce redirect URI registration.  This guide goes more detail
 into this in the <<_clients, Managing Clients>> chapter.
 
-{project_name} also supports the optional https://tools.ietf.org/html/rfc7636[Proof Key for Code Exchange] specification.
+{project_name} also supports the optional https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange] specification.
 
 ===== Implicit Flow
 
@@ -336,7 +336,7 @@ You can also find these endpoints under "OpenID Endpoint Configuration" in your 
 /realms/{realm-name}/protocol/openid-connect/userinfo::
   This is the URL endpoint for the User Info service described in the OIDC specification.
 /realms/{realm-name}/protocol/openid-connect/revoke::
-  This is the URL endpoint for OAuth 2.0 Token Revocation described in https://tools.ietf.org/html/rfc7009[RFC7009].
+  This is the URL endpoint for OAuth 2.0 Token Revocation described in https://datatracker.ietf.org/doc/html/rfc7009[RFC7009].
 /realms/{realm-name}/protocol/openid-connect/certs::
   This is the URL endpoint for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)
 /realms/{realm-name}/protocol/openid-connect/auth/device::
