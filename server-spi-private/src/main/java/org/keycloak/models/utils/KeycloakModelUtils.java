@@ -696,13 +696,6 @@ public final class KeycloakModelUtils {
                 Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
     }
 
-    public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
-        return realm.getClientsStream()
-                .filter(c -> (c.getClientScopes(true).containsKey(clientScope.getName())) ||
-                (c.getClientScopes(false).containsKey(clientScope.getName())))
-                .findFirst().isPresent();
-    }
-
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
         return realm.getClientScopesStream()
                 .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
