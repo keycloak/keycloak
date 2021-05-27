@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext, UseFormMethods } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActionGroup,
+  AlertVariant,
   Button,
   Checkbox,
   FormGroup,
@@ -15,26 +16,60 @@ import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentatio
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
+import { emailRegexPattern } from "../util";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useAlerts } from "../components/alert/Alerts";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 import "./RealmSettingsSection.css";
-import { emailRegexPattern } from "../util";
-
-export type UserFormProps = {
-  form: UseFormMethods<RealmRepresentation>;
-};
 
 type RealmSettingsEmailTabProps = {
-  save: (realm: RealmRepresentation) => void;
-  reset: () => void;
+  realm: RealmRepresentation;
 };
 
 export const RealmSettingsEmailTab = ({
-  save,
-  reset,
+  realm: initialRealm,
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const [isAuthenticationEnabled, setAuthenticationEnabled] = useState("");
-  const { register, control, handleSubmit, errors } = useFormContext();
+  const adminClient = useAdminClient();
+  const { realm: realmName } = useRealm();
+  const { addAlert } = useAlerts();
+
+  const [isAuthenticationEnabled, setAuthenticationEnabled] = useState("true");
+  const [realm, setRealm] = useState(initialRealm);
+  const {
+    register,
+    control,
+    handleSubmit,
+    errors,
+    setValue,
+    reset: resetForm,
+  } = useForm<RealmRepresentation>();
+
+  useEffect(() => {
+    reset();
+  }, [realm]);
+
+  const save = async (form: RealmRepresentation) => {
+    try {
+      const savedRealm = { ...realm, ...form };
+      await adminClient.realms.update({ realm: realmName }, savedRealm);
+      setRealm(savedRealm);
+      addAlert(t("saveSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(
+        t("saveError", { error: error.response?.data?.errorMessage || error }),
+        AlertVariant.danger
+      );
+    }
+  };
+
+  const reset = () => {
+    if (realm) {
+      resetForm(realm);
+      Object.entries(realm).map((entry) => setValue(entry[0], entry[1]));
+    }
+  };
 
   return (
     <>
@@ -50,23 +85,20 @@ export const RealmSettingsEmailTab = ({
               label={t("from")}
               fieldId="kc-display-name"
               isRequired
-              validated={
-                errors.attributes?.from?.type === "pattern"
-                  ? "error"
-                  : "default"
-              }
+              validated={errors.smtpServer?.from ? "error" : "default"}
               helperTextInvalid={t("users:emailInvalid")}
             >
               <TextInput
                 type="email"
                 id="kc-sender-email-address"
                 data-testid="sender-email-address"
-                name="attributes.from"
+                name="smtpServer.from"
                 ref={register({
                   pattern: emailRegexPattern,
                   required: true,
                 })}
                 placeholder="Sender email address"
+                validated={errors.smtpServer?.from ? "error" : "default"}
               />
             </FormGroup>
             <FormGroup
@@ -84,7 +116,7 @@ export const RealmSettingsEmailTab = ({
                 type="text"
                 id="kc-from-display-name"
                 data-testid="from-display-name"
-                name="attributes.fromDisplayName"
+                name="smtpServer.fromDisplayName"
                 ref={register}
                 placeholder="Display name for Sender email address"
               />
@@ -92,21 +124,18 @@ export const RealmSettingsEmailTab = ({
             <FormGroup
               label={t("replyTo")}
               fieldId="kc-reply-to"
-              validated={
-                errors.attributes?.replyTo?.type === "pattern"
-                  ? "error"
-                  : "default"
-              }
+              validated={errors.smtpServer?.replyTo ? "error" : "default"}
               helperTextInvalid={t("users:emailInvalid")}
             >
               <TextInput
                 type="email"
                 id="kc-reply-to"
-                name="attributes.replyTo"
+                name="smtpServer.replyTo"
                 ref={register({
                   pattern: emailRegexPattern,
                 })}
                 placeholder="Reply to email address"
+                validated={errors.smtpServer?.replyTo ? "error" : "default"}
               />
             </FormGroup>
             <FormGroup
@@ -123,7 +152,7 @@ export const RealmSettingsEmailTab = ({
               <TextInput
                 type="text"
                 id="kc-reply-to-display-name"
-                name="attributes.replyToDisplayName"
+                name="smtpServer.replyToDisplayName"
                 ref={register}
                 placeholder='Display name for "reply to" email address'
               />
@@ -142,7 +171,7 @@ export const RealmSettingsEmailTab = ({
               <TextInput
                 type="text"
                 id="kc-envelope-from"
-                name="attributes.envelopeFrom"
+                name="smtpServer.envelopeFrom"
                 ref={register}
                 placeholder="Sender envelope email address"
               />
@@ -159,34 +188,40 @@ export const RealmSettingsEmailTab = ({
             className="pf-u-mt-lg"
             onSubmit={handleSubmit(save)}
           >
-            <FormGroup label={t("host")} fieldId="kc-host" isRequired>
+            <FormGroup
+              label={t("host")}
+              fieldId="kc-host"
+              isRequired
+              validated={errors.smtpServer?.host ? "error" : "default"}
+              helperTextInvalid={t("common:required")}
+            >
               <TextInput
                 type="text"
                 id="kc-host"
-                name="attributes.host"
+                name="smtpServer.host"
                 ref={register({ required: true })}
                 placeholder="SMTP host"
+                validated={errors.smtpServer?.host ? "error" : "default"}
               />
             </FormGroup>
             <FormGroup label={t("port")} fieldId="kc-port">
               <TextInput
                 type="text"
                 id="kc-port"
-                name="attributes.port"
+                name="smtpServer.port"
                 ref={register}
                 placeholder="SMTP port (defaults to 25)"
               />
             </FormGroup>
             <FormGroup label={t("encryption")} fieldId="kc-html-display-name">
               <Controller
-                name="attributes.enableSsl"
+                name="smtpServer.ssl"
                 control={control}
                 defaultValue="false"
                 render={({ onChange, value }) => (
                   <Checkbox
                     id="kc-enable-ssl"
                     data-testid="enable-ssl"
-                    name="attributes.enableSsl"
                     label={t("enableSSL")}
                     ref={register}
                     isChecked={value === "true"}
@@ -195,14 +230,13 @@ export const RealmSettingsEmailTab = ({
                 )}
               />
               <Controller
-                name="attributes.enableStartTls"
+                name="smtpServer.starttls"
                 control={control}
                 defaultValue="false"
                 render={({ onChange, value }) => (
                   <Checkbox
                     id="kc-enable-start-tls"
                     data-testid="enable-start-tls"
-                    name="attributes.startTls"
                     label={t("enableStartTLS")}
                     ref={register}
                     isChecked={value === "true"}
@@ -217,7 +251,7 @@ export const RealmSettingsEmailTab = ({
               fieldId="kc-authentication"
             >
               <Controller
-                name="attributes.authentication"
+                name="smtpServer.authentication"
                 control={control}
                 defaultValue="true"
                 render={({ onChange, value }) => (
@@ -240,24 +274,29 @@ export const RealmSettingsEmailTab = ({
                 <FormGroup
                   label={t("username")}
                   fieldId="kc-username"
-                  isRequired={isAuthenticationEnabled === "true"}
+                  isRequired
+                  validated={errors.smtpServer?.user ? "error" : "default"}
+                  helperTextInvalid={t("common:required")}
                 >
                   <TextInput
                     type="text"
                     id="kc-username"
                     data-testid="username-input"
-                    name="attributes.loginUsername"
+                    name="smtpServer.user"
                     ref={register({ required: true })}
                     placeholder="Login username"
+                    validated={errors.smtpServer?.user ? "error" : "default"}
                   />
                 </FormGroup>
                 <FormGroup
                   label={t("password")}
                   fieldId="kc-username"
-                  isRequired={isAuthenticationEnabled === "true"}
+                  isRequired
+                  validated={errors.smtpServer?.password ? "error" : "default"}
+                  helperTextInvalid={t("common:required")}
                   labelIcon={
                     <HelpItem
-                      helpText="realm-settings-help:frontendUrl"
+                      helpText="realm-settings-help:password"
                       forLabel={t("password")}
                       forID="kc-password"
                     />
@@ -267,9 +306,12 @@ export const RealmSettingsEmailTab = ({
                     type="password"
                     id="kc-password"
                     data-testid="password-input"
-                    name="attributes.loginPassword"
-                    ref={register}
+                    name="smtpServer.password"
+                    ref={register({ required: true })}
                     placeholder="Login password"
+                    validated={
+                      errors.smtpServer?.password ? "error" : "default"
+                    }
                   />
                 </FormGroup>
               </>

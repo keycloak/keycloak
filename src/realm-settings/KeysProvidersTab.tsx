@@ -19,12 +19,13 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { SearchIcon } from "@patternfly/react-icons";
+
 import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentTypeRepresentation";
 
 import "./RealmSettingsSection.css";
-import type ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentTypeRepresentation";
-import { SearchIcon } from "@patternfly/react-icons";
 
 type ComponentData = KeyMetadataRepresentation & {
   providerDescription?: string;
@@ -33,8 +34,6 @@ type ComponentData = KeyMetadataRepresentation & {
 
 type KeysTabInnerProps = {
   components: ComponentData[];
-  realmComponents: ComponentRepresentation[];
-  keyProviderComponentTypes: ComponentTypeRepresentation[];
 };
 
 export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
@@ -46,7 +45,7 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
     []
   );
 
-  const itemIds = components.map((item, idx) => "data" + idx);
+  const itemIds = components.map((_, idx) => "data" + idx);
 
   const [itemOrder, setItemOrder] = useState<string[]>([]);
 
@@ -222,7 +221,6 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
 
 type KeysProps = {
   components: ComponentRepresentation[];
-  realmComponents: ComponentRepresentation[];
   keyProviderComponentTypes: ComponentTypeRepresentation[];
 };
 
@@ -240,7 +238,6 @@ export const KeysProviderTab = ({
         );
         return { ...component, providerDescription: provider?.helpText };
       })}
-      keyProviderComponentTypes={keyProviderComponentTypes}
       {...props}
     />
   );

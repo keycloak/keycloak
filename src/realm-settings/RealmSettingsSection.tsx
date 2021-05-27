@@ -27,7 +27,6 @@ import { PartialImportDialog } from "./PartialImport";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { KeysListTab } from "./KeysListTab";
-import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { KeysProviderTab } from "./KeysProvidersTab";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -128,43 +127,40 @@ export const RealmSettingsSection = () => {
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
   const form = useForm();
-  const { control, getValues, setValue } = form;
+  const { control, getValues, setValue, reset: resetForm } = form;
   const [realm, setRealm] = useState<RealmRepresentation>();
-  const [activeTab2, setActiveTab2] = useState(0);
-  const [keys, setKeys] = useState<KeyMetadataRepresentation[]>([]);
+  const [activeTab, setActiveTab] = useState(0);
   const [realmComponents, setRealmComponents] = useState<
     ComponentRepresentation[]
-  >([]);
+  >();
 
   const kpComponentTypes = useServerInfo().componentTypes![
     "org.keycloak.keys.KeyProvider"
   ];
 
   useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      setupForm(realm);
-      setRealm(realm);
+    async () => {
+      const realm = await adminClient.realms.findOne({ realm: realmName });
+      const realmComponents = await adminClient.components.find({
+        type: "org.keycloak.keys.KeyProvider",
+        realm: realmName,
+      });
+
+      return { realm, realmComponents };
+    },
+    (result) => {
+      setRealm(result.realm);
+      setRealmComponents(result.realmComponents);
     },
     []
   );
 
   useEffect(() => {
-    const update = async () => {
-      const keysMetaData = await adminClient.realms.getKeys({
-        realm: realmName,
-      });
-      setKeys(keysMetaData.keys!);
-      const realmComponents = await adminClient.components.find({
-        type: "org.keycloak.keys.KeyProvider",
-        realm: realmName,
-      });
-      setRealmComponents(realmComponents);
-    };
-    setTimeout(update, 100);
-  }, []);
+    if (realm) setupForm(realm);
+  }, [realm]);
 
   const setupForm = (realm: RealmRepresentation) => {
+    resetForm(realm);
     Object.entries(realm).map((entry) => setValue(entry[0], entry[1]));
   };
 
@@ -174,7 +170,10 @@ export const RealmSettingsSection = () => {
       setRealm(realm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("saveError", { error }), AlertVariant.danger);
+      addAlert(
+        t("saveError", { error: error.response?.data?.errorMessage || error }),
+        AlertVariant.danger
+      );
     }
   };
 
@@ -218,10 +217,7 @@ export const RealmSettingsSection = () => {
               title={<TabTitleText>{t("realm-settings:email")}</TabTitleText>}
               data-testid="rs-email-tab"
             >
-              <RealmSettingsEmailTab
-                save={save}
-                reset={() => setupForm(realm!)}
-              />
+              {realm && <RealmSettingsEmailTab realm={realm} />}
             </Tab>
             <Tab
               eventKey="themes"
@@ -238,29 +234,30 @@ export const RealmSettingsSection = () => {
               title={<TabTitleText>{t("realm-settings:keys")}</TabTitleText>}
               data-testid="rs-keys-tab"
             >
-              <Tabs
-                activeKey={activeTab2}
-                onSelect={(_, key) => setActiveTab2(key as number)}
-              >
-                <Tab
-                  id="setup"
-                  eventKey={0}
-                  title={<TabTitleText>{t("keysList")}</TabTitleText>}
+              {realmComponents && (
+                <Tabs
+                  activeKey={activeTab}
+                  onSelect={(_, key) => setActiveTab(key as number)}
                 >
-                  <KeysListTab keys={keys} realmComponents={realmComponents} />
-                </Tab>
-                <Tab
-                  id="evaluate"
-                  eventKey={1}
-                  title={<TabTitleText>{t("providers")}</TabTitleText>}
-                >
-                  <KeysProviderTab
-                    components={realmComponents}
-                    realmComponents={realmComponents}
-                    keyProviderComponentTypes={kpComponentTypes}
-                  />
-                </Tab>
-              </Tabs>
+                  <Tab
+                    id="setup"
+                    eventKey={0}
+                    title={<TabTitleText>{t("keysList")}</TabTitleText>}
+                  >
+                    <KeysListTab realmComponents={realmComponents} />
+                  </Tab>
+                  <Tab
+                    id="evaluate"
+                    eventKey={1}
+                    title={<TabTitleText>{t("providers")}</TabTitleText>}
+                  >
+                    <KeysProviderTab
+                      components={realmComponents}
+                      keyProviderComponentTypes={kpComponentTypes}
+                    />
+                  </Tab>
+                </Tabs>
+              )}
             </Tab>
           </KeycloakTabs>
         </FormProvider>

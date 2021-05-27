@@ -2,42 +2,51 @@ import React, { useState } from "react";
 import { useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, ButtonVariant, PageSection } from "@patternfly/react-core";
+import { cellWidth } from "@patternfly/react-table";
+
 import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../util";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 import "./RealmSettingsSection.css";
-import { cellWidth } from "@patternfly/react-table";
 
 type KeyData = KeyMetadataRepresentation & {
   provider?: string;
-  type?: string;
 };
 
-type KeysTabInnerProps = {
-  keys: KeyData[];
+type KeysListTabProps = {
+  realmComponents: ComponentRepresentation[];
 };
 
-export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
+export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const { t } = useTranslation("roles");
   const history = useHistory();
   const { url } = useRouteMatch();
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
 
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
 
-  const loader = async () => {
-    return keys;
-  };
+  const adminClient = useAdminClient();
+  const { realm: realmName } = useRealm();
 
-  React.useEffect(() => {
-    refresh();
-  }, [keys]);
+  const loader = async () => {
+    const keysMetaData = await adminClient.realms.getKeys({
+      realm: realmName,
+    });
+    const keys = keysMetaData.keys;
+
+    return keys?.map((key) => {
+      const provider = realmComponents.find(
+        (component: ComponentRepresentation) => component.id === key.providerId
+      );
+      return { ...key, provider: provider?.name } as KeyData;
+    })!;
+  };
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
     titleKey: t("realm-settings:publicKeys").slice(0, -1),
@@ -115,7 +124,6 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
         <PublicKeyDialog />
         <CertificateDialog />
         <KeycloakDataTable
-          key={key}
           isNotCompact={true}
           loader={loader}
           ariaLabelKey="realm-settings:keysList"
@@ -164,25 +172,5 @@ export const KeysTabInner = ({ keys }: KeysTabInnerProps) => {
         />
       </PageSection>
     </>
-  );
-};
-
-type KeysProps = {
-  keys: KeyMetadataRepresentation[];
-  realmComponents: ComponentRepresentation[];
-};
-
-export const KeysListTab = ({ keys, realmComponents, ...props }: KeysProps) => {
-  return (
-    <KeysTabInner
-      keys={keys?.map((key) => {
-        const provider = realmComponents.find(
-          (component: ComponentRepresentation) =>
-            component.id === key.providerId
-        );
-        return { ...key, provider: provider?.name };
-      })}
-      {...props}
-    />
   );
 };
