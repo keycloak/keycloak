@@ -2226,8 +2226,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        assertEquals(401, accessTokenResponseRefreshed.getStatusCode());
-        assertEquals(Errors.NOT_ALLOWED, accessTokenResponseRefreshed.getError());
+        assertEquals(400, accessTokenResponseRefreshed.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponseRefreshed.getError());
 
         // Check token revoke with other certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
