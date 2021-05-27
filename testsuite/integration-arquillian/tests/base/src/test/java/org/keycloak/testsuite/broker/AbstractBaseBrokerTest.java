@@ -71,8 +71,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * No test methods there. Just some useful common functionality
@@ -343,10 +343,16 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
 
     protected URI getConsumerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
-        return RealmsResource
-                .protocolUrl(UriBuilder.fromUri(getConsumerRoot()).path("auth"))
-                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
+        return getSamlEndpoint(getConsumerRoot(), realm);
     }
 
+    protected URI getProviderSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
+        return getSamlEndpoint(getProviderRoot(), realm);
+    }
 
+    protected URI getSamlEndpoint(String fromUri, String realm) {
+        return RealmsResource
+                .protocolUrl(UriBuilder.fromUri(fromUri).path("auth"))
+                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
+    }
 }
