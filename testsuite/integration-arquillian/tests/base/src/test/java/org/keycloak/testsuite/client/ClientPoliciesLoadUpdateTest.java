@@ -49,12 +49,10 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
 @AuthServerContainerExclude({REMOTE})
 public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
 
