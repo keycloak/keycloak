@@ -50,6 +50,7 @@ describe("Client Scopes test", function () {
       masthead.checkNotificationMessage("Client scope created");
 
       sidebarPage.goToClientScopes();
+      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
 
       // Delete
       listingPage.itemExist(itemId).deleteItem(itemId);
@@ -59,8 +60,7 @@ describe("Client Scopes test", function () {
 
       masthead.checkNotificationMessage("The client scope has been deleted");
 
-      listingPage // It is not refreshing after delete
-        .itemExist(itemId, false);
+      listingPage.itemExist(itemId, false);
     });
   });
 

@@ -83,7 +83,14 @@ export const ClientScopesSection = () => {
     onConfirm: async () => {
       try {
         for (const scope of selectedScopes) {
-          await removeScope(adminClient, scope);
+          try {
+            await removeScope(adminClient, scope);
+          } catch (error) {
+            console.warn(
+              "could not remove scope",
+              error.response?.data?.errorMessage || error
+            );
+          }
           await adminClient.clientScopes.del({ id: scope.id! });
         }
         addAlert(t("deletedSuccess"), AlertVariant.success);

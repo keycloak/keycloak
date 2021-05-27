@@ -1,26 +1,15 @@
 export default class ListingPage {
-  searchInput: string;
-  itemsRows: string;
-  itemRowDrpDwn: string;
-  exportBtn: string;
-  deleteBtn: string;
-  searchBtn: string;
-  createBtn: string;
-  importBtn: string;
-
-  constructor() {
-    this.searchInput = '.pf-c-toolbar__item [type="search"]:visible';
-    this.itemsRows = "table";
-    this.itemRowDrpDwn = ".pf-c-dropdown > button";
-    this.exportBtn = '[role="menuitem"]:nth-child(1)';
-    this.deleteBtn = '[role="menuitem"]:nth-child(2)';
-    this.searchBtn =
-      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
-    this.createBtn =
-      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-primary:visible";
-    this.importBtn =
-      ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-link";
-  }
+  private searchInput = '.pf-c-toolbar__item [type="search"]:visible';
+  private itemsRows = "table";
+  private itemRowDrpDwn = ".pf-c-dropdown__toggle";
+  public exportBtn = '[role="menuitem"]:nth-child(1)';
+  public deleteBtn = '[role="menuitem"]:nth-child(2)';
+  private searchBtn =
+    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
+  private createBtn =
+    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-primary:visible";
+  private importBtn =
+    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-link";
 
   goToCreateItem() {
     cy.get(this.createBtn).click();
