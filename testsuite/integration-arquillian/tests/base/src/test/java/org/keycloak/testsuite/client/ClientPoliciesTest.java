@@ -52,7 +52,6 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -98,7 +97,6 @@ import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSign
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
@@ -114,7 +112,6 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
 public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     private static final Logger logger = Logger.getLogger(ClientPoliciesTest.class);
