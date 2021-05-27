@@ -26,6 +26,8 @@ import org.keycloak.provider.Spi;
  */
 public class ClientPolicyConditionSpi implements Spi {
 
+    public static final String SPI_NAME = "client-policy-condition";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +35,7 @@ public class ClientPolicyConditionSpi implements Spi {
 
     @Override
     public String getName() {
-        return "client-policy-condition";
+        return SPI_NAME;
     }
 
     @Override
