@@ -46,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.lessThan;
@@ -83,7 +85,7 @@ public class CrossDCTestEnricher {
 
         //if annotation is present on method
         InitialDcState annotation = event.getTestMethod().getAnnotation(InitialDcState.class);
-        
+
         //annotation not present on method, taking it from class
         if (annotation == null) {
             Class<?> annotatedClass = getNearestSuperclassWithAnnotation(event.getTestClass().getJavaClass(), InitialDcState.class);
@@ -156,7 +158,7 @@ public class CrossDCTestEnricher {
                 forAllBackendNodesInDc(DC.FIRST, CrossDCTestEnricher::startAuthServerBackendNode);
                 break;
         }
-        
+
         suspendPeriodicTasks();
     }
 
@@ -266,12 +268,59 @@ public class CrossDCTestEnricher {
         }
     }
 
+    /* Code to detect if underlying JVM is modular (AKA JDK 9+) taken over from Wildfly Core code base:
+     * https://github.com/wildfly/wildfly-core/blob/master/launcher/src/main/java/org/wildfly/core/launcher/Jvm.java#L59
+     * and turned into a function for easier reuse.
+     */
+    public static boolean isModularJvm() {
+        boolean modularJvm = false;
+        final String javaSpecVersion = System.getProperty("java.specification.version");
+        if (javaSpecVersion != null) {
+            final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
+            if (matcher.find()) modularJvm = Integer.parseInt(matcher.group(1)) >= 9;
+        }
+        return modularJvm;
+    }
+
     public static void startCacheServer(DC dc) {
         if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
 
         if (!containerController.get().isStarted(getCacheServer(dc).getQualifier())) {
             log.infof("--DC: Starting %s", getCacheServer(dc).getQualifier());
-            containerController.get().start(getCacheServer(dc).getQualifier());
+            // Original config of the cache server container as a map
+            Map<String, String> containerConfig = getCacheServer(dc).getProperties();
+
+            // Start cache server with default modular JVM options set if JDK is modular (JDK 9+)
+            final String defaultModularJvmOptions = System.getProperty("default.modular.jvm.options");
+            final String originalJvmArguments = getCacheServer(dc).getProperties().get("javaVmArguments");
+            /* When JVM used to launch the cache server container is modular, add the default
+             * modular JVM options to the configuration of the cache server container if
+             * these aren't present there yet.
+             *
+             * See the definition of the 'default.modular.jvm.options' property for details.
+             */
+            if (!originalJvmArguments.contains(defaultModularJvmOptions)) {
+                if(isModularJvm() && defaultModularJvmOptions != null) {
+                    log.infof("Modular JVM detected. Adding default modular JVM '%s' options to the cache server container's configuration.", defaultModularJvmOptions);
+                    final String lineSeparator = System.getProperty("line.separator");
+                    final String adjustedJvmArguments = originalJvmArguments.replace(lineSeparator, " ") + defaultModularJvmOptions + lineSeparator;
+
+                    /* Since next time the cache server container might get started using a non-modular
+                    * JVM again, don't store the default modular JVM options into the cache server container's
+                    * configuration permanently (not to need to remove them again later).
+                    *
+                    * Rather, instead of that, retrieve the original cache server container's configuration
+                    * as a map, add the default modular JVM options there, and one-time way start the cache server
+                    * using this custom temporary configuration.
+                    */
+                    containerConfig.put("javaVmArguments", adjustedJvmArguments);
+                }
+            }
+            /* Finally start the cache server container:
+             * - Either using the original container config (case of a non-modular JVM),
+             * - Or using the updated container config (case of a modular JVM)
+             */
+            containerController.get().start(getCacheServer(dc).getQualifier(), containerConfig);
             log.infof("--DC: Started %s", getCacheServer(dc).getQualifier());
         }
     }

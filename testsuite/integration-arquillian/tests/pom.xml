@@ -134,6 +134,25 @@
         <cache.server.2.management.port>12000</cache.server.2.management.port>
         <cache.server.console.output>true</cache.server.console.output>
 
+        <!--
+        ~ Definition of default JVM parameters for all modular JDKs. See:
+        ~
+        ~   https://github.com/wildfly/wildfly-core/blob/master/core-feature-pack/common/src/main/resources/content/bin/common.sh#L19 and
+        ~   https://github.com/wildfly/wildfly-core/blob/master/launcher/src/main/java/org/wildfly/core/launcher/AbstractCommandBuilder.java#L58
+        ~
+        ~ for details. The explanation / purpose of adding a particular modular option is as follows:
+        ~ * add-exports=java.desktop/sun.awt=ALL-UNNAMED                Needed by the iiop-openjdk subsystem
+        ~ * add-opens=java.base/java.lang=ALL-UNNAMED                   Needed if Hibernate applications use Javassist
+        ~ * add-opens=java.base/java.lang.invoke=ALL-UNNAMED            Needed by the MicroProfile REST Client subsystem
+        ~ * add-opens=java.base/java.io=ALL-UNNAMED                     Needed by JBoss Marshalling
+        ~ * add-opens=java.base/java.security=ALL-UNNAMED               Needed by WildFly Security Manager
+        ~ * add-opens=java.base/java.util=ALL-UNNAMED                   Needed for marshalling of enum maps
+        ~ * add-opens=java.management/javax.management=ALL-UNNAMED      EE integration with sar mbeans requires deep reflection in javax.management
+        ~ * add-opens=java.naming/javax.naming=ALL-UNNAMED              InitialContext proxy generation requires deep reflection in javax.naming
+        ~ * add-modules=java.se                                         Needed for backward compatibility with jboss-modules older than jboss-modules 1.9.1.Final
+        -->
+        <default.modular.jvm.options>--add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED --add-modules=java.se</default.modular.jvm.options>
+
         <dependency.keystore.root>${project.build.directory}/dependency/keystore</dependency.keystore.root>
         <dependency.truststore>${dependency.keystore.root}/keycloak.truststore</dependency.truststore>
         <dependency.truststore.password>secret</dependency.truststore.password>
@@ -560,6 +579,8 @@
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
+
+                            <default.modular.jvm.options>${default.modular.jvm.options}</default.modular.jvm.options>
 
                             <dependency.keystore.root>${dependency.keystore.root}</dependency.keystore.root>
                             <dependency.truststore>${dependency.truststore}</dependency.truststore>
@@ -1341,7 +1362,7 @@
                                 <systemPropertyVariables>
                                     <run.h2>true</run.h2>
                                     <docker.database.skip>${docker.database.skip}</docker.database.skip>
-                                    
+
                                     <auth.server.jboss>false</auth.server.jboss>
 
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
@@ -1615,10 +1636,10 @@
                     <version>${appium.client.version}</version>
                 </dependency>
 
-                <!-- 
+                <!--
                     httpclient and httpcore are here to ensure we use the same version
-                    as in keycloak/pom.xml and to prevent the other versions beeing present 
-                    on classpath during tests (as a transitive dependencies e.g.). 
+                    as in keycloak/pom.xml and to prevent the other versions beeing present
+                    on classpath during tests (as a transitive dependencies e.g.).
                     There has beeen issues due to this.
                 -->
                 <dependency>
@@ -1876,16 +1897,16 @@
         </profile>
 
         <profile>
-            <id>java11-auth-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <id>java11-auth-server</id>
             <properties>
-                <auth.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</auth.server.jvm.args.extra>
+                <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
             </properties>
         </profile>
 
         <profile>
-            <id>java11-app-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <id>java11-app-server</id>
             <properties>
-                <app.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</app.server.jvm.args.extra>
+                <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
             </properties>
         </profile>
 
