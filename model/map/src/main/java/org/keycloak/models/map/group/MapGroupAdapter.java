@@ -151,7 +151,9 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return RoleUtils.hasRole(getRoleMappingsStream(), role);
+        if (RoleUtils.hasRole(getRoleMappingsStream(), role)) return true;
+        GroupModel parent = getParent();
+        return parent != null && parent.hasRole(role);
     }
 
     @Override
