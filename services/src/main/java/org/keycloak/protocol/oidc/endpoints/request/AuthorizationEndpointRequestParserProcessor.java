@@ -30,7 +30,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
-
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
@@ -77,9 +77,12 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (requestParam != null) {
                 new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             } else if (requestUriParam != null) {
+              boolean allowRegexRedirectUri = AdminPermissions
+                  .management(session, session.getContext().getRealm())
+                  .clients().allowRegexRedirectUri(client);          
                 // Validate "requestUriParam" with allowed requestUris
                 List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();
-                String requestUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), requestUriParam, new HashSet<>(requestUris), false);
+                String requestUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), requestUriParam, new HashSet<>(requestUris), false, allowRegexRedirectUri);
                 if (requestUri == null) {
                     throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
                 }

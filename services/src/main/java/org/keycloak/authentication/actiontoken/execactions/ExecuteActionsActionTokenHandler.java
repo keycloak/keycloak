@@ -29,6 +29,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
@@ -53,13 +54,18 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
     }
 
     @Override
-    public Predicate<? super ExecuteActionsActionToken>[] getVerifiers(ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
-        return TokenUtils.predicates(
+    public Predicate<? super ExecuteActionsActionToken>[] getVerifiers(ActionTokenContext<ExecuteActionsActionToken> tokenContext) {     
+        
+      boolean allowRegexRedirectUri = AdminPermissions
+          .management(tokenContext.getSession(), tokenContext.getAuthenticationSession().getRealm())
+          .clients().allowRegexRedirectUri(tokenContext.getAuthenticationSession().getClient());
+      
+      return TokenUtils.predicates(
           TokenUtils.checkThat(
             // either redirect URI is not specified or must be valid for the client
             t -> t.getRedirectUri() == null
                  || RedirectUtils.verifyRedirectUri(tokenContext.getSession(), t.getRedirectUri(),
-                      tokenContext.getAuthenticationSession().getClient()) != null,
+                      tokenContext.getAuthenticationSession().getClient(), allowRegexRedirectUri) != null,
             Errors.INVALID_REDIRECT_URI,
             Messages.INVALID_REDIRECT_URI
           ),
@@ -89,8 +95,11 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
                     .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
                     .createInfoPage();
         }
-
-        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+        boolean allowRegexRedirectUri = AdminPermissions
+            .management(tokenContext.getSession(), tokenContext.getAuthenticationSession().getRealm())
+            .clients().allowRegexRedirectUri(tokenContext.getAuthenticationSession().getClient());
+        
+        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient(), allowRegexRedirectUri);
 
         if (redirectUri != null) {
             authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");

@@ -32,6 +32,9 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 /**
@@ -41,18 +44,18 @@ public class RedirectUtils {
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
-    public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
+    public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri, boolean allowRegexRedirectUri) {
         Set<String> validRedirects = getValidateRedirectUris(session);
-        return verifyRedirectUri(session, null, redirectUri, validRedirects, true);
+        return verifyRedirectUri(session, null, redirectUri, validRedirects, true, allowRegexRedirectUri);
     }
 
-    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client) {
-        return verifyRedirectUri(session, redirectUri, client, true);
+    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean allowRegexRedirectUri) {
+        return verifyRedirectUri(session, redirectUri, client, true, allowRegexRedirectUri);
     }
 
-    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri) {
+    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri, boolean allowRegexRedirectUri) {
         if (client != null)
-            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri);
+            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri, allowRegexRedirectUri);
         return null;
     }
 
@@ -80,8 +83,9 @@ public class RedirectUtils {
           .collect(Collectors.toSet());
     }
 
-    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
-        KeycloakUriInfo uriInfo = session.getContext().getUri();
+  public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri,
+      boolean allowRegexRedirectUri) {
+     KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
         if (redirectUri != null) {
@@ -99,7 +103,7 @@ public class RedirectUtils {
 
         if (redirectUri == null) {
             if (!requireRedirectUri) {
-                redirectUri = getSingleValidRedirectUri(validRedirects);
+                redirectUri = getSingleValidRedirectUri(validRedirects, allowRegexRedirectUri);
             }
 
             if (redirectUri == null) {
@@ -115,7 +119,7 @@ public class RedirectUtils {
             String r = redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
 
-            boolean valid = matchesRedirects(resolveValidRedirects, r);
+            boolean valid = matchesRedirects(resolveValidRedirects, r, allowRegexRedirectUri);
 
             if (!valid && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
@@ -130,7 +134,7 @@ public class RedirectUtils {
 
                 r = sb.toString();
 
-                valid = matchesRedirects(resolveValidRedirects, r);
+                valid = matchesRedirects(resolveValidRedirects, r, allowRegexRedirectUri);
             }
             if (valid && redirectUri.startsWith("/")) {
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
@@ -185,15 +189,33 @@ public class RedirectUtils {
         }
         return false;
     }
+    
+    private static boolean matchesRedirects(Set<String> validRedirects, String redirect, boolean allowRegexRedirectUri) {
+      if (allowRegexRedirectUri) {
+        for (String validRedirect : validRedirects) {
+          try {
+            Pattern regexPattern = Pattern.compile(validRedirect);
+            Matcher matcher = regexPattern.matcher(redirect);
+            if (matcher.matches()) {
+              return true;
+            }
+          } catch (PatternSyntaxException e) {
+            // Ignore non-regex-patterns (e.g. "*")
+          }
+        }
+        return false;
+    } else
+      return matchesRedirects(validRedirects, redirect);
+  }
 
-    private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
+    private static String getSingleValidRedirectUri(Collection<String> validRedirects, boolean allowRegexRedirectUri) {
         if (validRedirects.size() != 1) return null;
         String validRedirect = validRedirects.iterator().next();
-        return validateRedirectUriWildcard(validRedirect);
+        return validateRedirectUriWildcard(validRedirect, allowRegexRedirectUri);
     }
 
-    public static String validateRedirectUriWildcard(String redirectUri) {
-        if (redirectUri == null)
+    public static String validateRedirectUriWildcard(String redirectUri, boolean allowRegexRedirectUri) {
+        if (redirectUri == null || allowRegexRedirectUri)
             return null;
 
         int idx = redirectUri.indexOf("/*");
@@ -202,13 +224,14 @@ public class RedirectUtils {
         }
         return redirectUri;
     }
+    
 
-    private static String getFirstValidRedirectUri(Collection<String> validRedirects) {
+    private static String getFirstValidRedirectUri(Collection<String> validRedirects, boolean allowRegexRedirectUri) {
         final String redirectUri = validRedirects.stream().findFirst().orElse(null);
-        return (redirectUri != null) ? validateRedirectUriWildcard(redirectUri) : null;
+        return (redirectUri != null) ? validateRedirectUriWildcard(redirectUri, allowRegexRedirectUri) : null;
     }
 
-    public static String getFirstValidRedirectUri(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
-        return getFirstValidRedirectUri(resolveValidRedirects(session, rootUrl, validRedirects));
+    public static String getFirstValidRedirectUri(KeycloakSession session, String rootUrl, Set<String> validRedirects, boolean allowRegexRedirectUri) {
+        return getFirstValidRedirectUri(resolveValidRedirects(session, rootUrl, validRedirects), allowRegexRedirectUri);
     }
 }

@@ -1277,7 +1277,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         return redirectUris.stream()
                 .map(uri -> isRootUrlValid && uri.startsWith("/") ? rootUrl + uri : uri)
                 .map(uri -> uri.startsWith("/") ? OAuthClient.AUTH_SERVER_ROOT + uri : uri)
-                .map(RedirectUtils::validateRedirectUriWildcard)
+                .map(uri -> RedirectUtils.validateRedirectUriWildcard(uri, false))
                 .findFirst()
                 .orElse(null);
     }

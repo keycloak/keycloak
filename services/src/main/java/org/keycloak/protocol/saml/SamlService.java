@@ -103,6 +103,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
@@ -421,7 +422,11 @@ public class SamlService extends AuthorizationEndpointBase {
             String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
-                redirect = RedirectUtils.verifyRedirectUri(session, redirectUri.toString(), client);
+              boolean allowRegexRedirectUri = AdminPermissions
+                  .management(session, session.getContext().getRealm())
+                  .clients().allowRegexRedirectUri(client);
+              
+                redirect = RedirectUtils.verifyRedirectUri(session, redirectUri.toString(), client, allowRegexRedirectUri);
             } else {
                 if ((requestAbstractType.getProtocolBinding() != null
                         && JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri()

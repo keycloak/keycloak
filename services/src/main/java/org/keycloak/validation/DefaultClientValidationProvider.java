@@ -16,6 +16,7 @@
  */
 package org.keycloak.validation;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -25,6 +26,7 @@ import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.util.ResolveRelative;
 
 import java.net.MalformedURLException;
@@ -33,6 +35,8 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
@@ -140,17 +144,36 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         String resolvedBackchannelLogoutUrl =
                 ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, authServerUrl, backchannelLogoutUrl);
 
-        checkUri(FieldMessages.ROOT_URL, rootUrl, context, true, true);
-        checkUri(FieldMessages.BASE_URL, baseUrl, context, true, false);
-        checkUri(FieldMessages.BACKCHANNEL_LOGOUT_URL, resolvedBackchannelLogoutUrl, context, true, false);
+        // Check if the client allows regex in the redirect uri fields  
+        boolean allowRegexRedirectUri;
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            allowRegexRedirectUri = AdminPermissions.management(context.getSession(), context.getSession().getContext().getRealm())
+                .clients().allowRegexRedirectUri(client);
+        } else {
+            allowRegexRedirectUri = false;
+        }
+      
+
+        checkUri(FieldMessages.ROOT_URL, rootUrl, context, true, true, false);
+        checkUri(FieldMessages.BASE_URL, baseUrl, context, true, false, false);
+        checkUri(FieldMessages.BACKCHANNEL_LOGOUT_URL, resolvedBackchannelLogoutUrl, context, true, false, false);
         client.getRedirectUris().stream()
                 .map(u -> ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, u))
-                .forEach(u -> checkUri(FieldMessages.REDIRECT_URIS, u, context, false, true));
+                .forEach(u -> checkUri(FieldMessages.REDIRECT_URIS, u, context, false, true, allowRegexRedirectUri));
     }
 
-    private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
+    private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment, boolean allowRegexRedirectUri) {
         if (url == null || url.isEmpty()) {
             return;
+        }
+
+        if (allowRegexRedirectUri) {
+          try {
+            Pattern.compile(url);
+          } catch (PatternSyntaxException e) {
+            context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
+          }
+          return;
         }
 
         try {

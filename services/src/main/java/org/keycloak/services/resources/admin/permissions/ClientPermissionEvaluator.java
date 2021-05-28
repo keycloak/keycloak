@@ -79,6 +79,8 @@ public interface ClientPermissionEvaluator {
     boolean canMapCompositeRoles(ClientModel client);
 
     boolean canMapClientScopeRoles(ClientModel client);
+    
+    boolean allowRegexRedirectUri(ClientModel client);
 
     Map<String, Boolean> getAccess(ClientModel client);
 }

@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 /**
  * Created by st on 29/03/17.
@@ -208,7 +209,11 @@ public class AccountConsole {
         ClientModel referrerClient = realm.getClientByClientId(referrer);
         if (referrerClient != null) {
             if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
+              boolean allowRegexRedirectUri = AdminPermissions
+                  .management(session, session.getContext().getRealm())
+                  .clients().allowRegexRedirectUri(client);
+              
+                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient, allowRegexRedirectUri);
             } else {
                 referrerUri = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), referrerClient.getBaseUrl());
             }
@@ -223,7 +228,11 @@ public class AccountConsole {
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
+                boolean allowRegexRedirectUri = AdminPermissions
+                    .management(session, session.getContext().getRealm())
+                    .clients().allowRegexRedirectUri(client);
+                
+                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient, allowRegexRedirectUri);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrer, referrerUri};

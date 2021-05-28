@@ -86,6 +86,9 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     private String getMapRolesCompositePermissionName(ClientModel client) {
         return MAP_ROLES_COMPOSITE_SCOPE + ".permission.client." + client.getId();
     }
+    private String getAllowRegexRedirectUriPermissionName(ClientModel client) {
+      return ALLOW_REGEX_REDIRECT_URI_SCOPE + ".permission.client." + client.getId();
+  }
 
     private String getExchangeToPermissionName(ClientModel client) {
         return TOKEN_EXCHANGE + ".permission.client." + client.getId();
@@ -109,6 +112,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Scope mapRoleCompositeScope = root.initializeScope(MAP_ROLES_COMPOSITE_SCOPE, server);
         Scope configureScope = root.initializeScope(CONFIGURE_SCOPE, server);
         Scope exchangeToScope = root.initializeScope(TOKEN_EXCHANGE, server);
+        Scope allowRegexRedirectUriScope = root.initializeScope(ALLOW_REGEX_REDIRECT_URI_SCOPE, server);
 
         String resourceName = getResourceName(client);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
@@ -123,6 +127,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             scopeset.add(mapRoleClientScope);
             scopeset.add(mapRoleCompositeScope);
             scopeset.add(exchangeToScope);
+            scopeset.add(allowRegexRedirectUriScope);
             resource.updateScopes(scopeset);
         }
         String managePermissionName = getManagePermissionName(client);
@@ -160,6 +165,11 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         if (exchangeToPermission == null) {
             Helper.addEmptyScopePermission(authz, server, exchangeToPermissionName, resource, exchangeToScope);
         }
+        String allowRegexRedirectUriPermissionName = getAllowRegexRedirectUriPermissionName(client);
+        Policy allowRegexRedirectUriPermission = authz.getStoreFactory().getPolicyStore().findByName(allowRegexRedirectUriPermissionName, server.getId());
+        if (allowRegexRedirectUriPermission == null) {
+            Helper.addEmptyScopePermission(authz, server, allowRegexRedirectUriPermissionName, resource, allowRegexRedirectUriScope);
+        }
     }
 
     private void deletePolicy(String name, ResourceServer server) {
@@ -180,6 +190,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         deletePolicy(getMapRolesCompositePermissionName(client), server);
         deletePolicy(getConfigurePermissionName(client), server);
         deletePolicy(getExchangeToPermissionName(client), server);
+        deletePolicy(getAllowRegexRedirectUriPermissionName(client),server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());;
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
@@ -221,6 +232,10 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     private Scope mapRolesScope(ResourceServer server) {
         return authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_SCOPE, server.getId());
     }
+    
+    private Scope allowRegexRedirectUriScope(ResourceServer server) {
+      return authz.getStoreFactory().getScopeStore().findByName(ALLOW_REGEX_REDIRECT_URI_SCOPE, server.getId());
+  }
 
     @Override
     public boolean canList() {
@@ -299,6 +314,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         scopes.put(MAP_ROLES_SCOPE,  mapRolesPermission(client).getId());
         scopes.put(MAP_ROLES_CLIENT_SCOPE, mapRolesClientScopePermission(client).getId());
         scopes.put(MAP_ROLES_COMPOSITE_SCOPE, mapRolesCompositePermission(client).getId());
+        scopes.put(ALLOW_REGEX_REDIRECT_URI_SCOPE, allowRegexRedirectUriPermission(client).getId());
         scopes.put(TOKEN_EXCHANGE, exchangeToPermission(client).getId());
         return scopes;
     }
@@ -351,10 +367,41 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         }
         return true;
     }
+    
+    @Override
+    public boolean allowRegexRedirectUri(ClientModel client) {
+      
+      ResourceServer server = resourceServer(client);
+      if (server == null) return false;
 
+      Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
+      if (resource == null) return false;
 
+      Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getAllowRegexRedirectUriPermissionName(client), server.getId());
+      if (policy == null) {
+          return false;
+      }
 
+      Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+      // if no policies attached to permission then just do default behavior
+      if (associatedPolicies == null || associatedPolicies.isEmpty()) {
+          return false;
+      }
 
+      Scope scope = allowRegexRedirectUriScope(server);
+      
+      ClientModelIdentity identity = new ClientModelIdentity(session, client);
+      EvaluationContext context = new DefaultEvaluationContext(identity, session){
+        @Override
+        public Map<String, Collection<String>> getBaseAttributes() {
+          Map<String, Collection<String>> attributes = super.getBaseAttributes();
+          attributes.put("kc.client.id", Arrays.asList(client.getClientId()));
+          return attributes;
+        }
+      };
+      
+      return root.evaluatePermission(resource, server, context, scope);
+    }
 
     @Override
     public boolean canManage(ClientModel client) {
@@ -563,6 +610,13 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
         return authz.getStoreFactory().getPolicyStore().findByName(getMapRolesCompositePermissionName(client), server.getId());
+    }
+    
+    @Override
+    public Policy allowRegexRedirectUriPermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getAllowRegexRedirectUriPermissionName(client), server.getId());
     }
 
     @Override

@@ -32,6 +32,7 @@ public interface ClientPermissionManagement {
     public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
     public static final String MAP_ROLES_COMPOSITE_SCOPE = "map-roles-composite";
     public static final String CONFIGURE_SCOPE = "configure";
+    public static final String ALLOW_REGEX_REDIRECT_URI_SCOPE = "allow-regex-redirect-uri";
 
     boolean isPermissionsEnabled(ClientModel client);
 
@@ -42,6 +43,8 @@ public interface ClientPermissionManagement {
     Map<String, String> getPermissions(ClientModel client);
 
     boolean canExchangeTo(ClientModel authorizedClient, ClientModel to);
+    
+    boolean allowRegexRedirectUri(ClientModel client);
 
     Policy exchangeToPermission(ClientModel client);
 
@@ -50,6 +53,8 @@ public interface ClientPermissionManagement {
     Policy mapRolesClientScopePermission(ClientModel client);
 
     Policy mapRolesCompositePermission(ClientModel client);
+    
+    Policy allowRegexRedirectUriPermission(ClientModel client);
 
     Policy managePermission(ClientModel client);
 

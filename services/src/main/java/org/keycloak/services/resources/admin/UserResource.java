@@ -71,6 +71,7 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.ValidationException;
@@ -800,7 +801,11 @@ public class UserResource {
 
         String redirect;
         if (redirectUri != null) {
-            redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
+          boolean allowRegexRedirectUri = AdminPermissions
+              .management(session, session.getContext().getRealm())
+              .clients().allowRegexRedirectUri(client);
+          
+            redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client, allowRegexRedirectUri);
             if (redirect == null) {
                 throw new WebApplicationException(
                     ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));

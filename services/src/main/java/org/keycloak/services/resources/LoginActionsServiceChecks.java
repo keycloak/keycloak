@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
@@ -226,8 +227,11 @@ public class LoginActionsServiceChecks {
             }
 
             ClientModel client = context.getAuthenticationSession().getClient();
-
-            if (RedirectUtils.verifyRedirectUri(context.getSession(), redirectUri, client) == null) {
+            boolean allowRegexRedirectUri = AdminPermissions
+                .management(context.getSession(), context.getRealm())
+                .clients().allowRegexRedirectUri(client);
+            
+            if (RedirectUtils.verifyRedirectUri(context.getSession(), redirectUri, client, allowRegexRedirectUri) == null) {
                 throw new ExplainedTokenVerificationException(t, Errors.INVALID_REDIRECT_URI, Messages.INVALID_REDIRECT_URI);
             }
 

@@ -52,6 +52,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -143,10 +144,17 @@ public class LogoutEndpoint {
         if (redirect != null) {
             String validatedUri;
             ClientModel client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientById(idToken.getIssuedFor());
+
             if (client != null) {
-                validatedUri = RedirectUtils.verifyRedirectUri(session, redirect, client);
+                boolean allowRegexRedirectUri = AdminPermissions
+                    .management(session, session.getContext().getRealm())
+                    .clients().allowRegexRedirectUri(client);
+                validatedUri = RedirectUtils.verifyRedirectUri(session, redirect, client, allowRegexRedirectUri);
             } else {
-                validatedUri = RedirectUtils.verifyRealmRedirectUri(session, redirect);
+                boolean allowRegexRedirectUri = AdminPermissions
+                    .management(session, session.getContext().getRealm())
+                    .clients().allowRegexRedirectUri(session.getContext().getClient());
+                validatedUri = RedirectUtils.verifyRealmRedirectUri(session, redirect, allowRegexRedirectUri);
             }
             if (validatedUri == null) {
                 event.event(EventType.LOGOUT);
