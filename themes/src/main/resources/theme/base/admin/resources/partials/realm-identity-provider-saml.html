@@ -302,6 +302,13 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="attributeConsumingServiceIndex">{{:: 'identity-provider.saml.attribute-consuming-service-index' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" string-to-number type="number" min="0" max="65535" step="1" ng-model="identityProvider.config.attributeConsumingServiceIndex" id="attributeConsumingServiceIndex"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.saml.attribute-consuming-service-index.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset>
             <legend collapsed><span class="text">{{:: 'identity-provider.saml.requested-authncontext' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml.requested-authncontext.tooltip' | translate}}</kc-tooltip></legend>
