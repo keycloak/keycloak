@@ -130,6 +130,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             for (String authnContextDeclRef : getAuthnContextDeclRefUris())
                 requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
 
+            Integer attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex();
+
             String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
             Boolean allowCreate = null;
             if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
@@ -143,6 +145,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .nameIdPolicy(SAML2NameIDPolicyBuilder
                         .format(nameIDPolicyFormat)
                         .setAllowCreate(allowCreate))
+                    .attributeConsumingServiceIndex(attributeConsumingServiceIndex)
                     .requestedAuthnContext(requestedAuthnContext)
                     .subject(loginHint);
 
