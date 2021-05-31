@@ -19,7 +19,7 @@
     "enforcement-mode": "PERMISSIVE",
     "user-managed-access": {},
     "path-cache": {
-      "lifespan": 10000
+      "lifespan": 25000
     },
     "paths": [
       {
