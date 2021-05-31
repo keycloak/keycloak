@@ -31,7 +31,8 @@ public class InfinispanServerConfiguration implements ContainerConfiguration {
     private String serverConfig;
     private Integer portOffset;
     private Integer managementPort;
-    private String additionalParameters;
+    private String javaVmArguments;
+    private String javaHome;
 
     @Override
     public void validate() throws ConfigurationException {
@@ -82,12 +83,12 @@ public class InfinispanServerConfiguration implements ContainerConfiguration {
         this.portOffset = portOffset;
     }
 
-    public String getAdditionalParameters() {
-        return additionalParameters;
+    public String getJavaVmArguments() {
+        return javaVmArguments;
     }
 
-    public void setAdditionalParameters(String additionalParameters) {
-        this.additionalParameters = additionalParameters;
+    public void setJavaVmArguments(String javaVmArguments) {
+        this.javaVmArguments = javaVmArguments;
     }
 
     public Integer getManagementPort() {
@@ -96,6 +97,14 @@ public class InfinispanServerConfiguration implements ContainerConfiguration {
 
     public void setManagementPort(Integer managementPort) {
         this.managementPort = managementPort;
+    }
+
+    public String getJavaHome() {
+        return javaHome;
+    }
+
+    public void setJavaHome(String javaHome) {
+        this.javaHome = javaHome;
     }
 
 }

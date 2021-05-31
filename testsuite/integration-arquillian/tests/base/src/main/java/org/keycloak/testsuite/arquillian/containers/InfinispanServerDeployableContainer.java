@@ -90,16 +90,16 @@ public class InfinispanServerDeployableContainer implements DeployableContainer<
         commands.add("-Dcom.sun.management.jmxremote.authenticate=false");
         commands.add("-Dcom.sun.management.jmxremote.ssl=false");
 
-        if (configuration.getAdditionalParameters() != null) {
-            commands.addAll(Arrays.asList(configuration.getAdditionalParameters().split("\\s+")));
+        if (configuration.getJavaVmArguments() != null) {
+            commands.addAll(Arrays.asList(configuration.getJavaVmArguments().split("\\s+")));
         }
 
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb = pb.directory(new File(configuration.getInfinispanHome(), "/bin")).inheritIO().redirectErrorStream(true);
         pb.environment().put("LAUNCH_ISPN_IN_BACKGROUND", "false");
         pb.environment().put("ISPN_PIDFILE", pidFile.getAbsolutePath());
-        String javaHome = System.getProperty("cache.server.java.home");
-        if (javaHome != null) {
+        String javaHome = configuration.getJavaHome();
+        if (javaHome != null && !javaHome.isEmpty()) {
             pb.environment().put("JAVA_HOME", javaHome);
         }
         try {
