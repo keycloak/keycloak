@@ -96,6 +96,11 @@ include::topics/sessions/administering.adoc[]
 include::topics/sessions/revocation.adoc[]
 include::topics/sessions/timeouts.adoc[]
 include::topics/sessions/offline.adoc[]
+
+ifeval::[{project_community}==true]
+include::topics/sessions/preloading.adoc[]
+endif::[]
+
 include::topics/sessions/transient.adoc[]
 include::topics/user-federation.adoc[]
 include::topics/user-federation/ldap.adoc[]
