@@ -128,6 +128,7 @@ include::topics/threat/open-redirect.adoc[]
 include::topics/threat/password-db-compromised.adoc[]
 include::topics/threat/scope.adoc[]
 include::topics/threat/audience-limit.adoc[]
+include::topics/threat/auth-sessions-limit.adoc[]
 include::topics/threat/sql.adoc[]
 include::topics/admin-cli.adoc[]
 

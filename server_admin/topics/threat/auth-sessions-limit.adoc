@@ -1,0 +1,37 @@
+=== Limit Authentication Sessions
+
+{project_name} creates an authentication session for each authentication request within a realm. This session is internally represented by `RootAuthenticationSession`. Each `RootAuthenticationSession` can have multiple authentication sessions for a given client. In a browser authentication flow, the browser session translates to `RootAuthenticationSession` while browser tabs translate to a collection of authentication sessions within the `RootAuthenticationSession`.  
+
+NOTE: This section describes deployments that use the {jdgserver_name} provider for authentication sessions.
+ 
+Higher memory usage and a network overload in a cluster may occur for deployments where there are many active `RootAuthenticationSession` with a lot of authentication sessions.
+  
+There is a possibility to mitigate the aforementioned threats. The maximum allowed number of `RootAuthenticationSession` should be addressed by limiting the request rate per time on the proxy or load balancer in front of {project_name}. The maximum number of authentication sessions per `RootAuthenticationSession` can be configured in `authenticationSessions` SPI by setting property `authSessionsLimit`. The default value is set to 300 authentication sessions per a `RootAuthenticationSession`. When this limit is reached, the oldest authentication session will be removed after a new authentication session request.
+
+The following example shows how to limit the number of active authentication sessions per a `RootAuthenticationSession` to 100.
+
+
+[source,xml]
+----     
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    ...
+    <spi name="authenticationSessions">
+        <default-provider>infinispan</default-provider>
+        <provider name="infinispan" enabled="true">
+            <properties>
+                <property name="authSessionsLimit" value="100"/>
+            </properties>
+        </provider>
+    </spi>
+    ...
+</subsystem>
+----
+
+Equivalent configuration using CLI commands:
+
+[source,bash]
+----
+/subsystem=keycloak-server/spi=authenticationSessions:add(default-provider=infinispan)
+/subsystem=keycloak-server/spi=authenticationSessions/provider=infinispan:add(properties={authSessionsLimit => "100"},enabled=true)
+----
+                 
