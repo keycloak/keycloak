@@ -428,15 +428,15 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         // Get the realm and assert that expected policies and profiles are present
         RealmResource testRealm = realmsResouce().realm("test");
         RealmRepresentation realmRep = testRealm.toRepresentation();
-        assertExpectedProfiles(realmRep.getClientProfiles(), null, Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
-        assertExpectedPolicies(Arrays.asList("new-policy", "lack-of-builtin-field-test-policy"), realmRep.getClientPolicies());
+        assertExpectedProfiles(realmRep.getParsedClientProfiles(), null, Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedPolicies(Arrays.asList("new-policy", "lack-of-builtin-field-test-policy"), realmRep.getParsedClientPolicies());
 
         // Update the realm
         testRealm.update(realmRep);
 
         // Test the realm again
         realmRep = testRealm.toRepresentation();
-        assertExpectedProfiles(realmRep.getClientProfiles(), null, Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
-        assertExpectedPolicies(Arrays.asList("new-policy", "lack-of-builtin-field-test-policy"), realmRep.getClientPolicies());
+        assertExpectedProfiles(realmRep.getParsedClientProfiles(), null, Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedPolicies(Arrays.asList("new-policy", "lack-of-builtin-field-test-policy"), realmRep.getParsedClientPolicies());
     }
 }

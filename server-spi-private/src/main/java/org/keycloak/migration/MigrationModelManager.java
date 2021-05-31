@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.migration.migrators.MigrateTo12_0_0;
+import org.keycloak.migration.migrators.MigrateTo14_0_0;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
@@ -94,7 +95,8 @@ public class MigrationModelManager {
             new MigrateTo8_0_2(),
             new MigrateTo9_0_0(),
             new MigrateTo9_0_4(),
-            new MigrateTo12_0_0()
+            new MigrateTo12_0_0(),
+            new MigrateTo14_0_0()
     };
 
     public static void migrate(KeycloakSession session) {

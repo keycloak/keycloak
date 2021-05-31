@@ -202,6 +202,7 @@ public class ClientPoliciesUtil {
         try {
             return JsonSerialization.readValue(json, ClientProfilesRepresentation.class);
         } catch (IOException ioe) {
+
             throw new ClientPolicyException(ioe.getMessage());
         }
     }
