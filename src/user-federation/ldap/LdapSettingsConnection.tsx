@@ -339,18 +339,17 @@ export const LdapSettingsConnection = ({
                 })}
               />
             </FormGroup>
-            <FormGroup fieldId="kc-test-button">
-              <Button
-                isDisabled={!form.formState.isValid}
-                variant="secondary"
-                id="kc-test-button"
-                onClick={() => testLdap()}
-              >
-                {t("common:test")}
-              </Button>
-            </FormGroup>
           </>
         )}
+        <FormGroup fieldId="kc-test-button">
+          <Button
+            variant="secondary"
+            id="kc-test-button"
+            onClick={() => testLdap()}
+          >
+            {t("common:test")}
+          </Button>
+        </FormGroup>
       </FormAccess>
     </>
   );
