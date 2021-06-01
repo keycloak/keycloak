@@ -93,8 +93,6 @@ export const RealmRoleTabs = () => {
     name: "attributes",
   });
 
-  //useEffect(() => append({ key: "", value: "" }), [append, role]);
-
   const save = async () => {
     try {
       const role = form.getValues();
@@ -156,9 +154,7 @@ export const RealmRoleTabs = () => {
           });
         }
         setRole(convert(createdRole));
-        history.push(
-          url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id + "/details"
-        );
+        history.push(`/${realm}/roles/${createdRole.id}`);
       }
       addAlert(t(id ? "roleSaveSuccess" : "roleCreated"), AlertVariant.success);
     } catch (error) {
@@ -206,8 +202,7 @@ export const RealmRoleTabs = () => {
           });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        const loc = url.replace(/\/attributes/g, "");
-        history.replace(`${loc.substr(0, loc.lastIndexOf("/"))}`);
+        history.replace(`/${realm}/roles`);
       } catch (error) {
         addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
       }
@@ -259,6 +254,7 @@ export const RealmRoleTabs = () => {
         badgeIsRead={true}
         subKey={id ? "" : "roles:roleCreateExplain"}
         actionsDropdownId="roles-actions-dropdown"
+        divider={!id}
         dropdownItems={
           url.includes("AssociatedRoles")
             ? [
@@ -298,43 +294,49 @@ export const RealmRoleTabs = () => {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection variant="light" className="pf-u-p-0">
         {id && (
           <KeycloakTabs isBox>
             <Tab
               eventKey="details"
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
-              <RealmRoleForm
-                reset={() => form.reset(role)}
-                form={form}
-                save={save}
-                editMode={true}
-              />
+              <PageSection variant="light">
+                <RealmRoleForm
+                  reset={() => form.reset(role)}
+                  form={form}
+                  save={save}
+                  editMode={true}
+                />
+              </PageSection>
             </Tab>
-            {additionalRoles.length > 0 ? (
+            {additionalRoles.length > 0 && (
               <Tab
                 eventKey="AssociatedRoles"
                 title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
               >
-                <AssociatedRolesTab
-                  additionalRoles={additionalRoles}
-                  addComposites={addComposites}
-                  parentRole={role!}
-                  onRemove={() => refresh()}
-                />
+                <PageSection variant="light">
+                  <AssociatedRolesTab
+                    additionalRoles={additionalRoles}
+                    addComposites={addComposites}
+                    parentRole={role!}
+                    onRemove={() => refresh()}
+                  />
+                </PageSection>
               </Tab>
-            ) : null}
+            )}
             <Tab
               eventKey="attributes"
               title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
             >
-              <AttributesForm
-                form={form}
-                save={save}
-                array={{ fields, append, remove }}
-                reset={() => form.reset(role)}
-              />
+              <PageSection variant="light">
+                <AttributesForm
+                  form={form}
+                  save={save}
+                  array={{ fields, append, remove }}
+                  reset={() => form.reset(role)}
+                />
+              </PageSection>
             </Tab>
             <Tab
               eventKey="users-in-role"
@@ -345,12 +347,14 @@ export const RealmRoleTabs = () => {
           </KeycloakTabs>
         )}
         {!id && (
-          <RealmRoleForm
-            reset={() => form.reset()}
-            form={form}
-            save={save}
-            editMode={false}
-          />
+          <PageSection variant="light">
+            <RealmRoleForm
+              reset={() => form.reset()}
+              form={form}
+              save={save}
+              editMode={false}
+            />
+          </PageSection>
         )}
       </PageSection>
     </>

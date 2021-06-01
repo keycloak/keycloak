@@ -156,7 +156,7 @@ export const AssociatedRolesTab = ({
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleRemoveAssociatedRoleConfirm",
     messageKey: t("roles:roleRemoveAssociatedText"),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "common:remove",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -179,7 +179,7 @@ export const AssociatedRolesTab = ({
     messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
       name: parentRole?.name || t("createRole"),
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "common:remove",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
