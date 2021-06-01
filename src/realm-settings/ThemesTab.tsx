@@ -272,9 +272,9 @@ export const RealmSettingsThemesTab = ({
                   render={({ value, onChange }) => (
                     <Select
                       toggleId="kc-supported-locales"
-                      onToggle={() =>
-                        setSupportedLocalesOpen(!supportedLocalesOpen)
-                      }
+                      onToggle={() => {
+                        setSupportedLocalesOpen(!supportedLocalesOpen);
+                      }}
                       onSelect={(_, v) => {
                         const option = v as string;
                         if (!value) {
@@ -283,10 +283,8 @@ export const RealmSettingsThemesTab = ({
                           onChange(
                             value.filter((item: string) => item !== option)
                           );
-                          setSupportedLocalesOpen(false);
                         } else {
                           onChange([...value, option]);
-                          setSupportedLocalesOpen(false);
                         }
                       }}
                       onClear={() => {
