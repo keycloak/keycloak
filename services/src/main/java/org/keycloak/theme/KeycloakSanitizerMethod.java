@@ -21,6 +21,9 @@ import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.owasp.html.PolicyFactory;
 
 /**
@@ -41,7 +44,22 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         String html = list.get(0).toString();
         String sanitized = KEYCLOAK_POLICY.sanitize(html);
         
-        return sanitized;
+        return fixURLs(sanitized);
+    }
+
+    private String fixURLs(String msg) {
+        Pattern hrefs = Pattern.compile("href=\"([^\"]*)\"");
+        Matcher matcher = hrefs.matcher(msg);
+        int count = 0;
+        while(matcher.find()) {
+            count++;
+            String original = matcher.group(count);
+            String href = original.replaceAll("&#61;", "=")
+                    .replaceAll("\\.\\.", ".")
+                    .replaceAll("&amp;", "&");
+            msg = msg.replace(original, href);
+        }
+        return msg;
     }
     
 }
