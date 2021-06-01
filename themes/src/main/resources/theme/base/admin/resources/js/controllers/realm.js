@@ -1570,6 +1570,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm, server
     	$scope.query.type = '';
     	$scope.query.client = '';
     	$scope.query.user = '';
+        $scope.query.ipAddress = '';
     	$scope.query.dateFrom = '';
     	$scope.query.dateTo = '';
     	
