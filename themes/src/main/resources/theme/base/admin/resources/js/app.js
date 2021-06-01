@@ -260,6 +260,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
+        .when('/realms/:realm/user-profile', {
+            templateUrl : resourceUrl + '/partials/realm-user-profile.html',
+            resolve : {
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmUserProfileCtrl'
+        })
         .when('/realms/:realm/client-registration/client-initial-access', {
             templateUrl : resourceUrl + '/partials/client-initial-access.html',
             resolve : {
@@ -2433,6 +2445,14 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             } else if (response.status) {
                 if (response.data && response.data.errorMessage) {
                     Notifications.error(response.data.errorMessage);
+                } else if (response.data && response.data.errors) {
+                    var messages = "Multiple errors found: ";
+
+                    for (var i = 0; i < response.data.errors.length; i++) {
+                        messages+=response.data.errors[i].errorMessage + " ";
+                    }
+
+                    Notifications.error(messages);
                 } else if (response.data && response.data.error_description) {
                     Notifications.error(response.data.error_description);
                 } else {

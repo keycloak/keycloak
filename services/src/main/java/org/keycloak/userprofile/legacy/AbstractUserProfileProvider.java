@@ -38,10 +38,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.userprofile.AttributeContext;
+import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.DefaultAttributes;
@@ -71,6 +75,13 @@ import org.keycloak.validate.validators.EmailValidator;
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
 public abstract class AbstractUserProfileProvider<U extends UserProfileProvider> implements UserProfileProvider, UserProfileProviderFactory<U> {
+
+    private static boolean editUsernameCondition(AttributeContext c) {
+        KeycloakSession session = c.getSession();
+        KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+        return realm.isEditUsernameAllowed();
+    }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
         if (builtinReadOnlyAttributes != null) {
@@ -133,6 +144,8 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
     @Override
     public void init(Config.Scope config) {
+        // make sure registry is clear in case of re-deploy
+        contextualMetadataRegistry.clear();
         Pattern pattern = getRegexPatternString(config.getArray("read-only-attributes"));
         AttributeValidatorMetadata readOnlyValidator = null;
 
@@ -234,8 +247,13 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
     private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
         UserProfileMetadata metadata = configureUserProfile(contextualMetadataRegistry.get(context), session);
-        Attributes profileAttributes = new DefaultAttributes(context, attributes, user, metadata, session);
-        return new DefaultUserProfile(profileAttributes, createUserFactory(), user);
+        Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
+        return new DefaultUserProfile(profileAttributes, createUserFactory(), user, session);
+    }
+
+    protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
+            UserProfileMetadata metadata) {
+        return new DefaultAttributes(context, attributes, user, metadata, session);
     }
 
     private void addContextualProfileMetadata(UserProfileMetadata metadata) {
@@ -259,9 +277,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createDefaultProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(context);
 
-        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-        		new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
-        		new AttributeValidatorMetadata(UsernameMutationValidator.ID));
+        metadata.addAttribute(UserModel.USERNAME, AbstractUserProfileProvider::editUsernameCondition,
+                AbstractUserProfileProvider::editUsernameCondition,
+                new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
+                new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
+                new AttributeValidatorMetadata(UsernameMutationValidator.ID));
 
         metadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID,
                 BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));

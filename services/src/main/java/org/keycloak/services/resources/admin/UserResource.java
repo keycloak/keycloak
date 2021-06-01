@@ -54,6 +54,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
@@ -98,6 +99,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -171,7 +173,7 @@ public class UserResource {
 
             UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, rep.toAttributes(), user);
 
-            Response response = validateUserProfile(profile);
+            Response response = validateUserProfile(profile, user, session);
             if (response != null) {
                 return response;
             }
@@ -205,18 +207,17 @@ public class UserResource {
         }
     }
 
-    public static Response validateUserProfile(UserProfile profile) {
+    public static Response validateUserProfile(UserProfile profile, UserModel user, KeycloakSession session) {
         try {
             profile.validate();
         } catch (ValidationException pve) {
+            List<ErrorRepresentation> errors = new ArrayList<>();
+
             for (ValidationException.Error error : pve.getErrors()) {
-                StringBuilder s = new StringBuilder("Failed to update attribute " + error.getAttribute() + ": ");
-
-                s.append(error.getMessage()).append(", ");
-
-                logger.warn(s);
+                errors.add(new ErrorRepresentation(error.getFormattedMessage()));
             }
-            return ErrorResponse.error("Could not update user! See server log for more details", Response.Status.BAD_REQUEST);
+
+            return ErrorResponse.errors(errors, Response.Status.BAD_REQUEST);
         }
 
         return null;
@@ -280,6 +281,15 @@ public class UserResource {
             rep.setEnabled(false);
         }
         rep.setAccess(auth.users().getAccess(user));
+
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(USER_API, user);
+
+        Map<String, List<String>> attributes = profile.getAttributes().getReadable(false);
+
+        if (!attributes.isEmpty()) {
+            rep.setAttributes(attributes);
+        }
 
         return rep;
     }

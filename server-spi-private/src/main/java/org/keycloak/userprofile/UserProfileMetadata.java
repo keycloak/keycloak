@@ -19,6 +19,9 @@
 
 package org.keycloak.userprofile;
 
+import static org.keycloak.userprofile.AttributeMetadata.ALWAYS_FALSE;
+import static org.keycloak.userprofile.AttributeMetadata.ALWAYS_TRUE;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,10 +45,6 @@ public final class UserProfileMetadata implements Cloneable {
         return attributes;
     }
 
-    public void addAttributes(AttributeMetadata... metadata) {
-        addAttributes(Arrays.asList(metadata));
-    }
-    
     public void addAttributes(List<AttributeMetadata> metadata) {
         if (attributes == null) {
             attributes = new ArrayList<>();
@@ -62,16 +61,20 @@ public final class UserProfileMetadata implements Cloneable {
         return addAttribute(name, Arrays.asList(validator));
     }
 
+    public AttributeMetadata addAttribute(String name, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> readAllowed, AttributeValidatorMetadata... validator) {
+        return addAttribute(new AttributeMetadata(name, ALWAYS_TRUE, writeAllowed, ALWAYS_TRUE, readAllowed).addValidator(Arrays.asList(validator)));
+    }
+
+    public AttributeMetadata addAttribute(String name, Predicate<AttributeContext> writeAllowed, List<AttributeValidatorMetadata> validators) {
+        return addAttribute(new AttributeMetadata(name, ALWAYS_TRUE, writeAllowed, ALWAYS_TRUE, ALWAYS_TRUE).addValidator(validators));
+    }
+
     public AttributeMetadata addAttribute(String name, List<AttributeValidatorMetadata> validators) {
         return addAttribute(new AttributeMetadata(name).addValidator(validators));
     }
 
-    public AttributeMetadata addAttribute(String name, List<AttributeValidatorMetadata> validator, Predicate<AttributeContext> required) {
-        return addAttribute(new AttributeMetadata(name, AttributeMetadata.ALWAYS_FALSE, required).addValidator(validator));
-    }
-
-    public AttributeMetadata addAttribute(String name, List<AttributeValidatorMetadata> validator, Predicate<AttributeContext> readOnly, Predicate<AttributeContext> required) {
-        return addAttribute(new AttributeMetadata(name, readOnly, required).addValidator(validator));
+    public AttributeMetadata addAttribute(String name, List<AttributeValidatorMetadata> validator, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required, Predicate<AttributeContext> readAllowed) {
+        return addAttribute(new AttributeMetadata(name, ALWAYS_TRUE, writeAllowed, required, readAllowed).addValidator(validator));
     }
 
     /**
@@ -97,7 +100,7 @@ public final class UserProfileMetadata implements Cloneable {
 
         //deeply clone AttributeMetadata so we can modify them (add validators etc) 
         if (attributes != null) {
-            metadata.addAttributes(attributes.stream().map((c)-> c.clone()).collect(Collectors.toList()));
+            metadata.addAttributes(attributes.stream().map(AttributeMetadata::clone).collect(Collectors.toList()));
         }
 
         return metadata;

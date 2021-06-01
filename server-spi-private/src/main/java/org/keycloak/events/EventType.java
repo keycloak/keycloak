@@ -63,6 +63,8 @@ public enum EventType {
     UPDATE_TOTP_ERROR(true),
     VERIFY_EMAIL(true),
     VERIFY_EMAIL_ERROR(true),
+    VERIFY_PROFILE(true),
+    VERIFY_PROFILE_ERROR(true),
 
     REMOVE_TOTP(true),
     REMOVE_TOTP_ERROR(true),

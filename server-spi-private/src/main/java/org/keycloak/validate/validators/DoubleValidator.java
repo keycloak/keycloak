@@ -16,6 +16,7 @@
  */
 package org.keycloak.validate.validators;
 
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.validate.ValidatorConfig;
 
 /**
@@ -24,7 +25,7 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class DoubleValidator extends AbstractNumberValidator {
+public class DoubleValidator extends AbstractNumberValidator implements ConfiguredProvider {
 
     public static final String ID = "double";
 
@@ -60,4 +61,10 @@ public class DoubleValidator extends AbstractNumberValidator {
     protected boolean isFirstGreaterThanToSecond(Number n1, Number n2) {
         return n1.doubleValue() > n2.doubleValue();
     }
+    
+    @Override
+    public String getHelpText() {
+        return "Validator to check Double number format and optionally min and max values";
+    }
+
 }

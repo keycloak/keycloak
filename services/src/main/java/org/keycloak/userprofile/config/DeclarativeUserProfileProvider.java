@@ -17,10 +17,11 @@
  *
  */
 
-package org.keycloak.testsuite.user.profile.config;
+package org.keycloak.userprofile.config;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
-import static org.keycloak.testsuite.user.profile.config.UPConfigUtils.readConfig;
+import static org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes;
+import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,30 +32,33 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.legacy.AbstractUserProfileProvider;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
+import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
 
@@ -65,13 +69,28 @@ import org.keycloak.validate.ValidatorConfig;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<DeclarativeUserProfileProvider> implements AmphibianProviderFactory<DeclarativeUserProfileProvider> {
+public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<DeclarativeUserProfileProvider>
+        implements AmphibianProviderFactory<DeclarativeUserProfileProvider>, EnvironmentDependentProviderFactory {
 
-    public static final String ID = "declarative-userprofile-provider";
+    public static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
+    public static final String ID = "declarative-user-profile";
     public static final String UP_PIECES_COUNT_COMPONENT_CONFIG_KEY = "config-pieces-count";
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
     private static final String UP_PIECE_COMPONENT_CONFIG_KEY_BASE = "config-piece-";
-    private static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
+
+    private static boolean createRequiredForScopePredicate(AttributeContext context, List<String> requiredScopes) {
+        KeycloakSession session = context.getSession();
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+
+        if (authenticationSession == null) {
+            return false;
+        }
+
+        String requestedScopesString = authenticationSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
+        ClientModel client = authenticationSession.getClient();
+
+        return getRequestedClientScopes(requestedScopesString, client).map((csm) -> csm.getName()).anyMatch(requiredScopes::contains);
+    }
 
     private String defaultRawConfig;
 
@@ -79,8 +98,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         // for reflection
     }
 
-    public DeclarativeUserProfileProvider(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
+    public DeclarativeUserProfileProvider(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry, String defaultRawConfig) {
         super(session, metadataRegistry);
+        this.defaultRawConfig = defaultRawConfig;
     }
 
     @Override
@@ -90,7 +110,13 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     @Override
     protected DeclarativeUserProfileProvider create(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
-        return new DeclarativeUserProfileProvider(session, metadataRegistry);
+        return new DeclarativeUserProfileProvider(session, metadataRegistry, defaultRawConfig);
+    }
+
+    @Override
+    protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
+            UserModel user, UserProfileMetadata metadata) {
+        return new DeclarativeAttributes(context, attributes, user, metadata, session);
     }
 
     @Override
@@ -122,10 +148,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 List<String> errors = UPConfigUtils.validate(session, upc);
 
                 if (!errors.isEmpty()) {
-                    throw new ComponentValidationException("UserProfile configuration is invalid: " + errors.toString());
+                    throw new ComponentValidationException(errors.toString());
                 }
             } catch (IOException e) {
-                throw new ComponentValidationException("UserProfile configuration is invalid due to JSON parsing error: " + e.getMessage(), e);
+                throw new ComponentValidationException(e.getMessage(), e);
             }
         }
 
@@ -202,7 +228,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         UserProfileContext context = metadata.getContext();
         UPConfig parsedConfig = getParsedConfig(model);
 
-        if (parsedConfig == null) {
+        // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
+        if (parsedConfig == null || context == UserProfileContext.REGISTRATION_USER_CREATION) {
             return metadata;
         }
 
@@ -227,51 +254,68 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             if (rc != null && !(UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName))) {
                 // do not take requirements from config for username and email as they are
                 // driven by business logic from parent!
-
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
-                    validators.add(createRequiredValidator(attrConfig));
                     required = AttributeMetadata.ALWAYS_TRUE;
                 } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
-                    required = (c) -> attributePredicateAuthFlowRequestedScope(rc.getScopes());
-                    validators.add(createRequiredValidator(attrConfig));
+                    required = (c) -> createRequiredForScopePredicate(c, rc.getScopes());
                 }
+
+                validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
             }
 
-            Predicate<AttributeContext> readOnly = AttributeMetadata.ALWAYS_FALSE;
+            Predicate<AttributeContext> writeAllowed = AttributeMetadata.ALWAYS_FALSE;
+            Predicate<AttributeContext> readAllowed = AttributeMetadata.ALWAYS_FALSE;
             UPAttributePermissions permissions = attrConfig.getPermissions();
 
             if (permissions != null) {
                 List<String> editRoles = permissions.getEdit();
 
-                if (editRoles != null && !editRoles.isEmpty()) {
-                    readOnly = ac -> !UPConfigUtils.isRoleForContext(ac.getContext(), editRoles);
+                if (!editRoles.isEmpty()) {
+                    writeAllowed = ac -> UPConfigUtils.isRoleForContext(ac.getContext(), editRoles);
+                }
+
+                List<String> viewRoles = permissions.getView();
+
+                if (viewRoles.isEmpty()) {
+                    readAllowed = writeAllowed;
+                } else {
+                    readAllowed = createViewAllowedPredicate(writeAllowed, viewRoles);
                 }
             }
 
             Map<String, Object> annotations = attrConfig.getAnnotations();
 
             if (UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName)) {
-                // add format validators for special attributes which may exist from parent
-                if (!validators.isEmpty()) {
-                    List<AttributeMetadata> atts = decoratedMetadata.getAttribute(attributeName);
-                    if (atts.isEmpty()) {
-                        // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
-                        // doesn't require it.
-                        decoratedMetadata.addAttribute(attributeName, validators, readOnly).addAnnotations(annotations);
-                    } else {
-                        // only add configured validators and annotations if attribute metadata exist
-                        atts.stream().forEach(c -> c.addValidator(validators).addAnnotations(annotations));
-                    }
+                if (permissions == null) {
+                    writeAllowed = AttributeMetadata.ALWAYS_TRUE;
+                }
+
+                List<AttributeMetadata> atts = decoratedMetadata.getAttribute(attributeName);
+
+                if (atts.isEmpty()) {
+                    // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
+                    // doesn't require it.
+                    decoratedMetadata.addAttribute(attributeName, writeAllowed, validators).addAnnotations(annotations);
+                } else {
+                    // only add configured validators and annotations if attribute metadata exist
+                    atts.stream().forEach(c -> c.addValidator(validators).addAnnotations(annotations));
                 }
             } else {
-                decoratedMetadata.addAttribute(attributeName, validators, readOnly, required).addAnnotations(annotations);
+                // always add validation for imuttable/read-only attributes
+                validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
+                decoratedMetadata.addAttribute(attributeName, validators, writeAllowed, required, readAllowed).addAnnotations(annotations);
             }
         }
 
         return decoratedMetadata;
 
+    }
+
+    private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
+            List<String> viewRoles) {
+        return ac -> UPConfigUtils.isRoleForContext(ac.getContext(), viewRoles) || canEdit.test(ac);
     }
 
     /**
@@ -303,30 +347,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Predicate to select attributes for Authentication flow cases where requested scopes (including configured Default
-     * client scopes) are compared to set of scopes from user profile configuration.
-     * <p>
-     * This patches problem with some auth flows (eg. register) where authSession.getClientScopes() doesn't work
-     * correctly!
-     *
-     * @param scopesConfigured to match
-     * @return true if at least one requested scope matches at least one configured scope
-     */
-    private boolean attributePredicateAuthFlowRequestedScope(List<String> scopesConfigured) {
-        // never match out of auth flow
-        if (session.getContext().getAuthenticationSession() == null) {
-            return false;
-        }
-
-        return getAuthFlowRequestedScopeNames().stream().anyMatch(scopesConfigured::contains);
-    }
-
-    private Set<String> getAuthFlowRequestedScopeNames() {
-        String requestedScopesString = session.getContext().getAuthenticationSession().getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
-        return TokenManager.getRequestedClientScopes(requestedScopesString, session.getContext().getAuthenticationSession().getClient()).map((csm) -> csm.getName()).collect(Collectors.toSet());
-    }
-
-    /**
      * Get componenet to store our "per realm" configuration into.
      *
      * @param session to be used, and take realm from
@@ -335,15 +355,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     private ComponentModel getComponentModelOrCreate(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(new DeclarativeUserProfileModel()));
-    }
-
-    /**
-     * Create validator for 'required' validation.
-     *
-     * @return validator metadata to run given validation
-     */
-    protected AttributeValidatorMetadata createRequiredValidator(UPAttribute attrConfig) {
-        return new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID);
     }
 
     /**
@@ -363,7 +374,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         int count = model.get(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, 0);
         if (count < 1) {
-            return null;
+            return defaultRawConfig;
         }
 
         StringBuilder sb = new StringBuilder();
@@ -389,5 +400,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             model.getConfig().remove(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + i);
         }
         model.getConfig().remove(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY);
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
     }
 }

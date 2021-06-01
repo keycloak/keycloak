@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -48,7 +47,7 @@ import org.keycloak.validate.ValidationError;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class DefaultAttributes extends HashMap<String, List<String>> implements Attributes {
+public class DefaultAttributes extends HashMap<String, List<String>> implements Attributes {
 
     /**
      * To reference dynamic attributes that can be configured as read-only when setting up the provider.
@@ -59,7 +58,7 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
     private final UserProfileContext context;
     private final KeycloakSession session;
     private final Map<String, AttributeMetadata> metadataByAttribute;
-    private final UserModel user;
+    protected final UserModel user;
 
     public DefaultAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
             UserProfileMetadata profileMetadata,
@@ -79,10 +78,22 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
     private boolean isReadOnlyFromMetadata(String attributeName) {
         AttributeMetadata attributeMetadata = metadataByAttribute.get(attributeName);
 
-        if (attributeMetadata != null && attributeMetadata.isReadOnly(createAttributeContext(attributeName, attributeMetadata))) {
-            return true;
+        if (attributeMetadata == null) {
+            return false;
         }
-        return false;
+
+        return attributeMetadata.isReadOnly(createAttributeContext(attributeMetadata));
+    }
+
+    @Override
+    public boolean isRequired(String name) {
+        AttributeMetadata attributeMetadata = metadataByAttribute.get(name);
+
+        if (attributeMetadata == null) {
+            return false;
+        }
+
+        return attributeMetadata.isRequired(createAttributeContext(attributeMetadata));
     }
 
     @Override
@@ -95,31 +106,33 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY))
                 .map(Collections::singletonList).orElse(Collections.emptyList()));
 
-        List<ValidationContext> failingValidators = Collections.emptyList();
+        Boolean result = null;
 
         for (AttributeMetadata metadata : metadatas) {
+            AttributeContext attributeContext = createAttributeContext(attribute, metadata);
+
             for (AttributeValidatorMetadata validator : metadata.getValidators()) {
-            	ValidationContext vc = validator.validate(createAttributeContext(attribute, metadata)); 
-                if (!vc.isValid()) {
-                    if (failingValidators.equals(Collections.emptyList())) {
-                        failingValidators = new ArrayList<>();
+                ValidationContext vc = validator.validate(attributeContext);
+
+                if (vc.isValid()) {
+                    continue;
+                }
+
+                if (result == null) {
+                    result = false;
+                }
+
+                if (listeners != null) {
+                    for (ValidationError error : vc.getErrors()) {
+                        for (Consumer<ValidationError> consumer : listeners) {
+                            consumer.accept(error);
+                        }
                     }
-                    failingValidators.add(vc);
                 }
             }
         }
 
-        if (listeners != null) {
-            for (ValidationContext failingValidator : failingValidators) {
-                for (Consumer<ValidationError> consumer : listeners) {
-                    for(ValidationError err: failingValidator.getErrors()) {
-                        consumer.accept(err);
-                    }
-                }
-            }
-        }
-
-        return failingValidators.isEmpty();
+        return result == null;
     }
 
     @Override
@@ -142,12 +155,43 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         return entrySet();
     }
 
+    @Override
+    public AttributeMetadata getMetadata(String name) {
+        AttributeMetadata metadata = metadataByAttribute.get(name);
+
+        if (metadata == null) {
+            return null;
+        }
+
+        return metadata.clone();
+    }
+
+    @Override
+    public Map<String, List<String>> getReadable() {
+        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+
+        if (attributes.isEmpty()) {
+            return null;
+        }
+
+        return attributes;
+    }
+
+    @Override
+    public Map<String, List<String>> toMap() {
+        return this;
+    }
+
     private AttributeContext createAttributeContext(Entry<String, List<String>> attribute, AttributeMetadata metadata) {
         return new AttributeContext(context, session, attribute, user, metadata);
     }
 
     private AttributeContext createAttributeContext(String attributeName, AttributeMetadata metadata) {
-        return createAttributeContext(createAttribute(attributeName), metadata);
+        return new AttributeContext(context, session, createAttribute(attributeName), user, metadata);
+    }
+
+    protected AttributeContext createAttributeContext(AttributeMetadata metadata) {
+        return createAttributeContext(createAttribute(metadata.getName()), metadata);
     }
 
     private Map<String, AttributeMetadata> configureMetadata(List<AttributeMetadata> attributes) {
@@ -155,7 +199,7 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
 
         for (AttributeMetadata metadata : attributes) {
             // checks whether the attribute is selected for the current profile
-            if (metadata.isSelected(createAttributeContext(metadata.getName(), metadata))) {
+            if (metadata.isSelected(createAttributeContext(metadata))) {
                 metadatas.put(metadata.getName(), metadata);
             }
         }
@@ -190,9 +234,8 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         Map<String, List<String>> newAttributes = new HashMap<>();
         RealmModel realm = session.getContext().getRealm();
 
-        if (attributes != null && !attributes.isEmpty()) {
+        if (attributes != null) {
             for (Map.Entry<String, ?> entry : attributes.entrySet()) {
-                Object value = entry.getValue();
                 String key = entry.getKey();
 
                 if (!isSupportedAttribute(key)) {
@@ -204,6 +247,7 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
                 }
 
                 List<String> values;
+                Object value = entry.getValue();
 
                 if (value instanceof String) {
                     values = Collections.singletonList((String) value);
@@ -215,26 +259,27 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
                     values = Collections.singletonList(values.get(0).toLowerCase());
                 }
 
-                if (isReadOnlyFromMetadata(key)) {
-                    // only revert attribute values if not an internal read-only attribute
-                    // for backward compatibility changing these attributes should cause validation errors
-                    // ideally, we should just ignore and remove this check
-                    if (user == null) {
-                        values = EMPTY_VALUE;
-                    } else {
-                        values = user.getAttributeStream(key).collect(Collectors.toList());
-                    }
-                }
-
                 newAttributes.put(key, Collections.unmodifiableList(values));
             }
         }
 
         // the profile should always hold all attributes defined in the config
         for (String attributeName : metadataByAttribute.keySet()) {
-            if (isSupportedAttribute(attributeName)) {
-                newAttributes.computeIfAbsent(attributeName, s -> EMPTY_VALUE);
+            if (!isSupportedAttribute(attributeName) || newAttributes.containsKey(attributeName)) {
+                continue;
             }
+
+            List<String> values = EMPTY_VALUE;
+            AttributeMetadata metadata = metadataByAttribute.get(attributeName);
+
+            // if the attribute is not provided and does not have view permission, use the current values
+            // this check makes possible to decide whether or not validation should happen for read-only attributes
+            // when the context does not have access to such attributes
+            if (user != null && !metadata.canView(createAttributeContext(metadata))) {
+                values = user.getAttributes().get(attributeName);
+            }
+
+            newAttributes.put(attributeName, values);
         }
 
         if (user != null) {
@@ -287,7 +332,7 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
         }
 
         // checks whether the attribute is a core attribute
-        return UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name) || UserModel.LAST_NAME.equals(name) || UserModel.FIRST_NAME.equals(name);
+        return isRootAttribute(name);
     }
 
     private boolean isReadOnlyInternalAttribute(String attributeName) {
@@ -298,10 +343,10 @@ public final class DefaultAttributes extends HashMap<String, List<String>> imple
             return false;
         }
 
-        SimpleImmutableEntry<String, List<String>> attribute = createAttribute(attributeName);
+        AttributeContext attributeContext = createAttributeContext(attributeName, readonlyMetadata);
 
         for (AttributeValidatorMetadata validator : readonlyMetadata.getValidators()) {
-        	ValidationContext vc = validator.validate(createAttributeContext(attribute, readonlyMetadata));
+            ValidationContext vc = validator.validate(attributeContext);
             if (!vc.isValid()) {
                 return true;
             }

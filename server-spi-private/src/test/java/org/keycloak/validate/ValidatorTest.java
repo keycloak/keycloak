@@ -87,7 +87,7 @@ public class ValidatorTest {
         Assert.assertEquals(LengthValidator.ID, error.getValidatorId());
         Assert.assertEquals(inputHint, error.getInputHint());
         Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH, error.getMessage());
-        Assert.assertEquals(input, error.getMessageParameters()[0]);
+        Assert.assertEquals(new Integer(2), error.getMessageParameters()[0]);
 
         Assert.assertTrue(result.hasErrorsForValidatorId(LengthValidator.ID));
         Assert.assertFalse(result.hasErrorsForValidatorId("unknown"));

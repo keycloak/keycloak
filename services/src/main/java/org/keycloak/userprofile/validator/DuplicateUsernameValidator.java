@@ -16,6 +16,7 @@
  */
 package org.keycloak.userprofile.validator;
 
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 import org.keycloak.models.KeycloakSession;
@@ -63,7 +64,8 @@ public class DuplicateUsernameValidator implements SimpleValidator {
         UserModel user = UserProfileAttributeValidationContext.from(context).getAttributeContext().getUser();
 
         if (user != null && !value.equals(user.getFirstAttribute(UserModel.USERNAME)) && (existing != null && !existing.getId().equals(user.getId()))) {
-            context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS));
+            context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS)
+                .setStatusCode(Response.Status.CONFLICT));
         }
 
         return context;

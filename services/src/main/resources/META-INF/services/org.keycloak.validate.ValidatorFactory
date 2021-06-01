@@ -10,3 +10,4 @@ org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValid
 org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator
 org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator
 org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator
+org.keycloak.userprofile.validator.ImmutableAttributeValidator

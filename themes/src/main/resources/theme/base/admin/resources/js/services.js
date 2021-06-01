@@ -2112,6 +2112,16 @@ module.factory('UserGroupMapping', function($resource) {
     });
 });
 
+module.factory('UserProfile', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/profile', {
+        realm : '@realm'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 module.factory('DefaultGroups', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/default-groups/:groupId', {
         realm : '@realm',

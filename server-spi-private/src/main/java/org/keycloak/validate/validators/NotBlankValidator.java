@@ -33,14 +33,11 @@ import org.keycloak.validate.ValidatorConfig;
  */
 public class NotBlankValidator implements SimpleValidator {
 
-    public static final String ID = "blank";
+    public static final String ID = "not-blank";
 
     public static final String MESSAGE_BLANK = "error-invalid-blank";
 
     public static final NotBlankValidator INSTANCE = new NotBlankValidator();
-
-    private NotBlankValidator() {
-    }
 
     @Override
     public String getId() {

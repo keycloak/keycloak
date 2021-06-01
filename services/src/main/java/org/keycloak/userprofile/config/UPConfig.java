@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.user.profile.config;
+package org.keycloak.userprofile.config;
 
 import java.util.ArrayList;
 import java.util.List;

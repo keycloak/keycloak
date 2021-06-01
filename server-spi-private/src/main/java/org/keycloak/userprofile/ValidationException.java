@@ -19,22 +19,39 @@
 
 package org.keycloak.userprofile;
 
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.theme.Theme;
 import org.keycloak.validate.ValidationError;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class ValidationException extends RuntimeException {
+public final class ValidationException extends RuntimeException implements Consumer<ValidationError> {
 
 	private final Map<String, List<Error>> errors = new HashMap<>();
+	private final BiFunction<String, Object[], String> messageFormatter;
+
+	public ValidationException(KeycloakSession session, UserModel user) {
+		this.messageFormatter = new MessageFormatter(session, user);
+	}
 
 	public List<Error> getErrors() {
 		return errors.values().stream().reduce(new ArrayList<>(), (l, r) -> {
@@ -72,11 +89,16 @@ public final class ValidationException extends RuntimeException {
 		return errors.values().stream().flatMap(Collection::stream).anyMatch(error -> names.contains(error.getAttribute()));
 	}
 
+	@Override
+	public void accept(ValidationError error) {
+		addError(error);
+	}
+
 	void addError(ValidationError error) {
 		List<Error> errors = this.errors.computeIfAbsent(error.getMessage(), (k) -> new ArrayList<>());
-		errors.add(new Error(error));
+		errors.add(new Error(error, messageFormatter));
 	}
-	
+
 	@Override
 	public String toString() {
 		return "ValidationException [errors=" + errors + "]";
@@ -87,12 +109,25 @@ public final class ValidationException extends RuntimeException {
 		return toString();
 	}
 
+	public Response.Status getStatusCode() {
+		for (Map.Entry<String, List<Error>> entry : errors.entrySet()) {
+			for (Error error : entry.getValue()) {
+				if (!Response.Status.BAD_REQUEST.equals(error.getStatusCode())) {
+					return error.getStatusCode();
+				}
+			}
+		}
+		return Response.Status.BAD_REQUEST;
+	}
+
 	public static class Error implements Serializable {
 
 		private final ValidationError error;
+		private final BiFunction<String, Object[], String> messageFormatter;
 
-		public Error(ValidationError error) {
+		public Error(ValidationError error, BiFunction<String, Object[], String> messageFormatter) {
 			this.error = error;
+			this.messageFormatter = messageFormatter;
 		}
 
 		public String getAttribute() {
@@ -104,13 +139,48 @@ public final class ValidationException extends RuntimeException {
 		}
 		
 		public Object[] getMessageParameters() {
-			return error.getMessageParameters();
+			return error.getInputHintWithMessageParameters();
 		}
 
 		@Override
 		public String toString() {
 			return "Error [error=" + error + "]";
 		}
-		
+
+		public String getFormattedMessage() {
+			return messageFormatter.apply(getMessage(), getMessageParameters());
+		}
+
+		public Response.Status getStatusCode() {
+			return error.getStatusCode();
+		}
+	}
+
+    private final class MessageFormatter implements BiFunction<String, Object[], String> {
+
+		private final Locale locale;
+		private final Properties messages;
+
+		public MessageFormatter(KeycloakSession session, UserModel user) {
+			try {
+				KeycloakContext context = session.getContext();
+				locale = context.resolveLocale(user);
+				messages = getTheme(session).getMessages(locale);
+				RealmModel realm = context.getRealm();
+				Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
+				messages.putAll(localizationTexts);
+			} catch (IOException cause) {
+				throw new RuntimeException("Failed to configure error messages", cause);
+			}
+		}
+
+		private Theme getTheme(KeycloakSession session) throws IOException {
+			return session.theme().getTheme(Theme.Type.ADMIN);
+		}
+
+		@Override
+		public String apply(String s, Object[] objects) {
+			return new MessageFormat(messages.getProperty(s, s), locale).format(objects);
+		}
 	}
 }

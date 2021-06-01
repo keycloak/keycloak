@@ -40,6 +40,7 @@ import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -159,6 +160,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
+            case VERIFY_PROFILE:
+                UpdateProfileContext verifyProfile = new UserUpdateProfileContext(realm, user);
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, verifyProfile);
+
+                actionMessage = Messages.UPDATE_PROFILE;
+                page = LoginFormsPages.VERIFY_PROFILE;
+                break;
             default:
                 return Response.serverError().build();
         }
@@ -237,6 +245,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case SAML_POST_FORM:
                 attributes.put("samlPost", new SAMLPostFormBean(formData));
+                break;
+            case VERIFY_PROFILE:
+                attributes.put("profile", new VerifyProfileBean(user, formData, session));
                 break;
         }
 

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.validate.validators.LocalDateValidator;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.IntegerValidator;
 import org.keycloak.validate.validators.LengthValidator;
@@ -152,6 +153,10 @@ public class Validators {
 
     public static IntegerValidator integerValidator() {
         return IntegerValidator.INSTANCE;
+    }
+
+    public static LocalDateValidator dateValidator() {
+        return LocalDateValidator.INSTANCE;
     }
 
     public static ValidatorConfigValidator validatorConfigValidator() {

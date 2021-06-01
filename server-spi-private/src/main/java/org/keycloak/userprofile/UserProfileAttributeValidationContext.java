@@ -16,6 +16,10 @@
  */
 package org.keycloak.userprofile;
 
+import java.util.Map;
+import java.util.function.Function;
+
+import org.keycloak.models.UserModel;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.Validator;
 
@@ -46,4 +50,12 @@ public class UserProfileAttributeValidationContext extends ValidationContext {
         return attributeContext;
     }
 
+    @Override
+    public Map<String, Object> getAttributes() {
+        Map<String, Object> attributes = super.getAttributes();
+
+        attributes.put(UserModel.class.getName(), getAttributeContext().getUser());
+
+        return attributes;
+    }
 }

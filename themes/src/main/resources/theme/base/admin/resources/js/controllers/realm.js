@@ -1401,6 +1401,232 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     };
 });
 
+module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, $http, $location, $route, UserProfile, Dialog, Notifications, serverInfo) {
+    $scope.realm = realm;
+    $scope.validatorProviders = serverInfo.componentTypes['org.keycloak.validate.Validator'];
+
+    $scope.isShowAttributes = true;
+
+    UserProfile.get({realm: realm.realm}, function(config) {
+        $scope.config = config;
+        $scope.rawConfig = angular.toJson(config, true);
+    });
+
+    $scope.isShowAttributes = true;
+
+    $scope.showAttributes = function() {
+        $route.reload();
+    }
+
+    $scope.showJsonEditor = function() {
+        $scope.isShowAttributes = false;
+    }
+
+    $scope.canViewPermission = {
+        minimumInputLength: 0,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            query.callback({results: ['user', 'admin']});
+        },
+        formatResult: function(object, container, query) {
+            return object;
+        },
+        formatSelection: function(object, container, query) {
+            return object;
+        }
+    };
+
+    $scope.canEditPermission = {
+        minimumInputLength: 0,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            query.callback({results: ['user', 'admin']});
+        },
+        formatResult: function(object, container, query) {
+            return object;
+        },
+        formatSelection: function(object, container, query) {
+            return object;
+        }
+    };
+
+    $scope.attributeSelected = false;
+
+    $scope.showListing = function() {
+        return !$scope.attributeSelected && $scope.currentAttribute == null && $scope.isShowAttributes;
+    }
+
+    $scope.create = function() {
+        $scope.isCreate = true;
+        $scope.currentAttribute = {
+            permissions: {
+                view: [],
+                edit: []
+            }
+        };
+    };
+
+    $scope.removeAttribute = function(attribute) {
+        Dialog.confirmDelete(attribute.name, 'attribute', function() {
+            let newAttributes = [];
+
+            for (var v of $scope.config.attributes) {
+                if (v != attribute) {
+                    newAttributes.push(v);
+                }
+            }
+
+            $scope.config.attributes = newAttributes;
+            $scope.save();
+        });
+    };
+
+    $scope.addAnnotation = function() {
+        if (!$scope.currentAttribute.annotations) {
+            $scope.currentAttribute.annotations = {};
+        }
+        $scope.currentAttribute.annotations[$scope.newAnnotation.key] = $scope.newAnnotation.value;
+        delete $scope.newAnnotation;
+    }
+
+    $scope.removeAnnotation = function(key) {
+        delete $scope.currentAttribute.annotations[key];
+    }
+
+    $scope.edit = function(attribute) {
+        if (attribute.permissions == null) {
+            attribute.permissions = {
+                view: [],
+                edit: []
+            };
+        }
+
+        $scope.isRequired = attribute.required != null;
+        $scope.canUserView = attribute.permissions.view.includes('user');
+        $scope.canAdminView = attribute.permissions.view.includes('admin');
+        $scope.canUserEdit = attribute.permissions.edit.includes('user');
+        $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+        $scope.currentAttribute = attribute;
+        $scope.attributeSelected = true;
+    };
+
+    $scope.$watch('isRequired', function() {
+        if ($scope.isRequired) {
+            $scope.currentAttribute.required = {};
+        } else {
+            delete $scope.currentAttribute.required;
+        }
+    }, true);
+
+    handlePermission = function(permission, role, allowed) {
+        let attribute = $scope.currentAttribute;
+        let roles = [];
+
+        for (let r of attribute.permissions[permission]) {
+            if (r != role) {
+                roles.push(r);
+            }
+        }
+
+        if (allowed) {
+            roles.push(role);
+        }
+
+        attribute.permissions[permission] = roles;
+    }
+
+    $scope.$watch('canUserView', function() {
+        handlePermission('view', 'user', $scope.canUserView);
+    }, true);
+
+    $scope.$watch('canAdminView', function() {
+        handlePermission('view', 'admin', $scope.canAdminView);
+    }, true);
+
+    $scope.$watch('canUserEdit', function() {
+        handlePermission('edit', 'user', $scope.canUserEdit);
+    }, true);
+
+    $scope.$watch('canAdminEdit', function() {
+        handlePermission('edit', 'admin', $scope.canAdminEdit);
+    }, true);
+
+    $scope.addValidator = function(validator) {
+        if ($scope.currentAttribute.validations == null) {
+            $scope.currentAttribute.validations = {};
+        }
+
+        let config = {};
+
+        for (let key in validator.config) {
+            let values = validator.config[key];
+
+            for (let k in values) {
+                config[key] = values[k];
+            }
+        }
+
+        $scope.currentAttribute.validations[validator.id] = config;
+
+        delete $scope.newValidator;
+    };
+
+    $scope.selectValidator = function(validator) {
+        validator.config = {};
+    };
+
+    $scope.cancelAddValidator = function() {
+        delete $scope.newValidator;
+    };
+
+    $scope.removeValidator = function(id) {
+        let newValidators = {};
+
+        for (let v in $scope.currentAttribute.validations) {
+            if (v != id) {
+                newValidators[v] = $scope.currentAttribute.validations[v];
+            }
+        }
+
+        if (newValidators.length == 0) {
+            delete $scope.currentAttribute.validations;
+            return;
+        }
+
+        $scope.currentAttribute.validations = newValidators;
+    };
+
+    $scope.save = function() {
+        if (!$scope.isShowAttributes) {
+            $scope.config = JSON.parse($scope.rawConfig);
+        }
+
+        if ($scope.isCreate && $scope.currentAttribute) {
+            $scope.config['attributes'].push($scope.currentAttribute);
+        }
+
+        UserProfile.update({realm: realm.realm},
+            $scope.config,  function () {
+                $scope.attributeSelected = false;
+                delete $scope.currentAttribute;
+                delete $scope.isCreate;
+                delete $scope.isRequired;
+                delete $scope.canUserView;
+                delete $scope.canAdminView;
+                delete $scope.canUserEdit;
+                delete $scope.canAdminEdit;
+                $route.reload();
+                Notifications.success("The attribute has been added.");
+            });
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+});
+
 module.controller('ViewKeyCtrl', function($scope, key) {
     $scope.key = key;
 });

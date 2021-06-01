@@ -564,8 +564,12 @@ public class AuthServerTestEnricher {
                 wasUpdated = true;
             }
             if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
-                SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
-                wasUpdated = true;
+                SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
+
+                if (defaultProvider.beforeEnableFeature()) {
+                    SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
+                    wasUpdated = true;
+                }
             }
 
             if (wasUpdated) {

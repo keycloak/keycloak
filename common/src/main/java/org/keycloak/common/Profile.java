@@ -61,7 +61,8 @@ public class Profile {
         WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
         CLIENT_POLICIES(Type.DEFAULT),
         CIBA(Type.PREVIEW),
-        MAP_STORAGE(Type.EXPERIMENTAL);
+        MAP_STORAGE(Type.EXPERIMENTAL),
+        DECLARATIVE_USER_PROFILE(Type.PREVIEW);
 
         private final Type typeProject;
         private final Type typeProduct;

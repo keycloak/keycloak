@@ -16,6 +16,8 @@
  */
 package org.keycloak.validate.validators;
 
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -28,13 +30,14 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * URI validation - accepts {@link URI}, {@link URL} and single String. Null input is valid, use other validators (like
  * {@link NotBlankValidator} or {@link NotEmptyValidator} to force field as required.
  */
-public class UriValidator implements SimpleValidator {
+public class UriValidator implements SimpleValidator, ConfiguredProvider {
 
     public static final UriValidator INSTANCE = new UriValidator();
 
@@ -55,9 +58,6 @@ public class UriValidator implements SimpleValidator {
     public static boolean DEFAULT_REQUIRE_VALID_URL = true;
 
     public static final String ID = "uri";
-
-    private UriValidator() {
-    }
 
     @Override
     public String getId() {
@@ -135,5 +135,15 @@ public class UriValidator implements SimpleValidator {
         }
 
         return valid;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Uri Validator";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.emptyList();
     }
 }
