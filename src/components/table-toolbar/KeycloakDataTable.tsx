@@ -85,7 +85,7 @@ function DataTable<T>({
           ? (_, rowIndex, isOpen) => onCollapse(isOpen, rowIndex)
           : undefined
       }
-      selectVariant={isRadio ? 'radio' : 'checkbox'}
+      selectVariant={isRadio ? "radio" : "checkbox"}
       canSelectAll={canSelectAll}
       cells={columns.map((column) => {
         return { ...column, title: t(column.displayKey || column.name) };
