@@ -74,11 +74,6 @@ public class InstallationTest extends AbstractClientTest {
     private ClientResource samlClient;
     private String samlClientId;
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
-    }
-
     @Before
     public void createClients() {
         oidcClientId = createOidcClient(OIDC_NAME);
@@ -155,6 +150,8 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testOidcBearerOnlyWithAuthzJson() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+
         oidcBearerOnlyClientWithAuthzId = createOidcConfidentialClientWithAuthz(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
         oidcBearerOnlyClientWithAuthz = findClientResource(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
 

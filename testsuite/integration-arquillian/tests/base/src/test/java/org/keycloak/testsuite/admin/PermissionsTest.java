@@ -102,11 +102,6 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Rule public GreenMailRule greenMailRule = new GreenMailRule();
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
-
     // Remove all realms before first run
     @Override
     public void beforeAbstractKeycloakTestRealmImport() {
@@ -912,6 +907,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAuthorization() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         ClientRepresentation newClient = new ClientRepresentation();
         newClient.setClientId("foo-authz");
         adminClient.realms().realm(REALM_NAME).clients().create(newClient);

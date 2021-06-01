@@ -25,7 +25,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
@@ -472,8 +471,6 @@ public class PartialImportTest extends AbstractAuthTest {
     @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testAddClientsWithServiceAccountsAndAuthorization() throws IOException {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.AUTHORIZATION);
-
         setFail();
         addClients(true);
 
