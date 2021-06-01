@@ -52,6 +52,7 @@ export const LdapMapperHardcodedLdapRole = ({
           // type={type}
           // name={name}
           onAssign={selectRoles}
+          isRadio={true}
           onClose={() => setShowAssign(false)}
         />
       )}

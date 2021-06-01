@@ -54,6 +54,7 @@ type DataTableProps<T> = {
   onCollapse?: (isOpen: boolean, rowIndex: number) => void;
   canSelectAll: boolean;
   isNotCompact?: boolean;
+  isRadio?: boolean;
 };
 
 function DataTable<T>({
@@ -66,6 +67,7 @@ function DataTable<T>({
   onCollapse,
   canSelectAll,
   isNotCompact,
+  isRadio,
   ...props
 }: DataTableProps<T>) {
   const { t } = useTranslation();
@@ -83,6 +85,7 @@ function DataTable<T>({
           ? (_, rowIndex, isOpen) => onCollapse(isOpen, rowIndex)
           : undefined
       }
+      selectVariant={isRadio ? 'radio' : 'checkbox'}
       canSelectAll={canSelectAll}
       cells={columns.map((column) => {
         return { ...column, title: t(column.displayKey || column.name) };
@@ -133,6 +136,7 @@ export type DataListProps<T> = {
   emptyState?: ReactNode;
   icon?: React.ComponentClass<SVGIconProps>;
   isNotCompact?: boolean;
+  isRadio?: boolean;
 };
 
 /**
@@ -165,6 +169,7 @@ export function KeycloakDataTable<T>({
   onSelect,
   canSelectAll = false,
   isNotCompact,
+  isRadio,
   detailColumns,
   isRowDisabled,
   loader,
@@ -394,6 +399,7 @@ export function KeycloakDataTable<T>({
               rows={filteredData || rows}
               columns={columns}
               isNotCompact={isNotCompact}
+              isRadio={isRadio}
               ariaLabelKey={ariaLabelKey}
             />
           )}

@@ -29,6 +29,7 @@ type AddRoleMappingModalProps = {
   id: string;
   type: MappingType;
   name: string;
+  isRadio?: boolean;
   onAssign: (rows: Row[]) => void;
   onClose: () => void;
 };
@@ -45,6 +46,7 @@ export const AddRoleMappingModal = ({
   id,
   name,
   type,
+  isRadio = false,
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
@@ -233,7 +235,7 @@ export const AddRoleMappingModal = ({
         toggleId="role"
         onToggle={() => setSearchToggle(!searchToggle)}
         isOpen={searchToggle}
-        variant={SelectVariant.checkbox}
+        variant={isRadio ? SelectVariant.single : SelectVariant.checkbox}
         hasInlineFilter
         menuAppendTo="parent"
         placeholderText={
@@ -283,6 +285,7 @@ export const AddRoleMappingModal = ({
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="clients:searchByRoleName"
         canSelectAll={false}
+        isRadio={isRadio}
         loader={loader}
         ariaLabelKey="clients:roles"
         columns={[
