@@ -99,15 +99,3 @@ To run the upgrade script for domain mode, complete the following steps:
 
  bin/jboss-cli.sh --file=bin/migrate-domain.cli
 
-=== Running the Domain-clustered Mode Upgrade Script
-For domain-clustered mode, all instances must be upgraded at the same time.
-
-To run the upgrade script for domain-clustered mode, complete the following steps:
-
-. If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script.
-. Edit the domain-clustered script to include the location of the keycloak-server.json file.
-. Stop the server.
-. Run the upgrade script on the domain controller only:
-
- bin/jboss-cli.sh --file=bin/migrate-domain-clustered.cli
-
