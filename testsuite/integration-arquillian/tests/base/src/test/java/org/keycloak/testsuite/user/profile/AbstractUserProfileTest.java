@@ -30,7 +30,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.user.profile.config.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
@@ -39,7 +39,6 @@ import org.keycloak.userprofile.UserProfileProvider;
 public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     protected static void configureAuthenticationSession(KeycloakSession session) {
-        configureSessionRealm(session);
         Set<String> scopes = new HashSet<>();
 
         scopes.add("customer");
@@ -53,16 +52,12 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
         session.getContext().setAuthenticationSession(createAuthenticationSession(realm.getClientByClientId(clientId), requestedScopes));
     }
 
-    protected static RealmModel configureSessionRealm(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-
-        session.getContext().setRealm(realm);
-
-        return realm;
-    }
-
     protected static DeclarativeUserProfileProvider getDynamicUserProfileProvider(KeycloakSession session) {
-        return (DeclarativeUserProfileProvider) session.getProvider(UserProfileProvider.class, DeclarativeUserProfileProvider.ID);
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
+        provider.setConfiguration(null);
+
+        return (DeclarativeUserProfileProvider) provider;
     }
 
     protected static AuthenticationSessionModel createAuthenticationSession(ClientModel client, Set<String> scopes) {

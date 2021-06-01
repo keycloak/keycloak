@@ -246,6 +246,8 @@ public interface UsersResource {
     @Path("{id}")
     @DELETE
     Response delete(@PathParam("id") String id);
-
+    
+    @Path("profile")
+    UserProfileResource userProfile();
 
 }

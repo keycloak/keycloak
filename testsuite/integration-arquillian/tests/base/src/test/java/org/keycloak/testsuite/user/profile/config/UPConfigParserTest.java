@@ -16,8 +16,8 @@
  */
 package org.keycloak.testsuite.user.profile.config;
 
-import static org.keycloak.testsuite.user.profile.config.UPConfigUtils.readConfig;
-import static org.keycloak.testsuite.user.profile.config.UPConfigUtils.validate;
+import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
+import static org.keycloak.userprofile.config.UPConfigUtils.validate;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +35,11 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import org.keycloak.userprofile.config.UPAttribute;
+import org.keycloak.userprofile.config.UPAttributePermissions;
+import org.keycloak.userprofile.config.UPAttributeRequired;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 /**
  * Unit test for {@link UPConfigParser} functionality

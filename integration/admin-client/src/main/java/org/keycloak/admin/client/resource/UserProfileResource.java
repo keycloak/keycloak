@@ -14,40 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.user.profile.config;
+package org.keycloak.admin.client.resource;
 
-import java.util.List;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
- * Configuration of permissions for the attribute
- * 
  * @author Vlastimil Elias <velias@redhat.com>
- *
  */
-public class UPAttributePermissions {
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public interface UserProfileResource {
 
-    private List<String> view;
-    private List<String> edit;
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    String getConfiguration();
 
-    public List<String> getView() {
-        return view;
-    }
-
-    public void setView(List<String> view) {
-        this.view = view;
-    }
-
-    public List<String> getEdit() {
-        return edit;
-    }
-
-    public void setEdit(List<String> edit) {
-        this.edit = edit;
-    }
-
-    @Override
-    public String toString() {
-        return "UPAttributePermissions [view=" + view + ", edit=" + edit + "]";
-    }
-
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    Response update(String text);
 }

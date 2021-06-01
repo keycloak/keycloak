@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.AttributeContext;
+import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
@@ -46,10 +47,14 @@ public class AttributeRequiredByMetadataValidator implements SimpleValidator {
 
     @Override
     public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
-
         AttributeContext attContext = UserProfileAttributeValidationContext.from(context).getAttributeContext();
+        AttributeMetadata metadata = attContext.getMetadata();
 
-        if (!attContext.getMetadata().isRequired(attContext)) {
+        if (!metadata.isRequired(attContext)) {
+            return context;
+        }
+
+        if (metadata.isReadOnly(attContext)) {
             return context;
         }
 
@@ -60,7 +65,7 @@ public class AttributeRequiredByMetadataValidator implements SimpleValidator {
             context.addError(new ValidationError(ID, inputHint, ERROR_USER_ATTRIBUTE_REQUIRED));
         } else {
             for (String value : values) {
-                if (value == null || Validation.isBlank(value)) {
+                if (Validation.isBlank(value)) {
                     context.addError(new ValidationError(ID, inputHint, ERROR_USER_ATTRIBUTE_REQUIRED));
                     return context;
                 }
@@ -68,5 +73,4 @@ public class AttributeRequiredByMetadataValidator implements SimpleValidator {
         }
         return context;
     }
-
 }

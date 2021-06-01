@@ -16,10 +16,14 @@
  */
 package org.keycloak.validate.validators;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.validate.AbstractStringValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -34,7 +38,7 @@ import org.keycloak.validate.ValidatorConfig;
  * <p>
  * Configuration have to be always provided, with at least one of {@link #KEY_MIN} and {@link #KEY_MAX}.
  */
-public class LengthValidator extends AbstractStringValidator {
+public class LengthValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final LengthValidator INSTANCE = new LengthValidator();
 
@@ -46,7 +50,22 @@ public class LengthValidator extends AbstractStringValidator {
     public static final String KEY_MAX = "max";
     public static final String KEY_TRIM_DISABLED = "trim-disabled";
 
-    private LengthValidator() {
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName(KEY_MIN);
+        property.setLabel("Minimum length");
+        property.setHelpText("The minimum length");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(KEY_MAX);
+        property.setLabel("Maximum length");
+        property.setHelpText("The maximum length");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
     }
 
     @Override
@@ -66,12 +85,12 @@ public class LengthValidator extends AbstractStringValidator {
         int length = value.length();
 
         if (config.containsKey(KEY_MIN) && length < min.intValue()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, value, min, max));
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, min, max));
             return;
         }
 
         if (config.containsKey(KEY_MAX) && length > max.intValue()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, value, min, max));
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, min, max));
             return;
         }
 
@@ -112,5 +131,15 @@ public class LengthValidator extends AbstractStringValidator {
             }
         }
         return new ValidationResult(errors);
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Length validator";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
     }
 }

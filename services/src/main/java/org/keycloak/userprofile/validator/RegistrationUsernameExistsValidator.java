@@ -16,6 +16,7 @@
  */
 package org.keycloak.userprofile.validator;
 
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 import org.keycloak.models.KeycloakSession;
@@ -64,7 +65,8 @@ public class RegistrationUsernameExistsValidator implements SimpleValidator {
 
         UserModel existing = session.users().getUserByUsername(realm, value);
         if (existing != null) {
-            context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS));
+            context.addError(new ValidationError(ID, inputHint, Messages.USERNAME_EXISTS)
+                .setStatusCode(Response.Status.CONFLICT));
         }
 
         return context;

@@ -16,10 +16,12 @@
  */
 package org.keycloak.validate;
 
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Denotes an error found during validation.
@@ -59,6 +61,14 @@ public class ValidationError implements Serializable {
      * Optional parameters for the message translation.
      */
     private final Object[] messageParameters;
+
+    /**
+     * The status code associated with this error. This information serves as a hint so that
+     * callers can choose whether they want to respect the status defined for the error.
+     *
+     * TODO: Should be better to refactor {@code Messages} to bing messages to status code as well as any other metadata that might be associated with the message.
+     */
+    private Response.Status statusCode = Response.Status.BAD_REQUEST;
 
     public ValidationError(String validatorId, String inputHint, String message) {
         this(validatorId, inputHint, message, EMPTY_PARAMETERS);
@@ -144,5 +154,14 @@ public class ValidationError implements Serializable {
     @Override
     public String toString() {
         return "ValidationError{" + "validatorId='" + validatorId + '\'' + ", inputHint='" + inputHint + '\'' + ", message='" + message + '\'' + ", messageParameters=" + Arrays.toString(messageParameters) + '}';
+    }
+
+    public ValidationError setStatusCode(Response.Status statusCode) {
+        this.statusCode = statusCode;
+        return this;
+    }
+
+    public Response.Status getStatusCode() {
+        return statusCode;
     }
 }

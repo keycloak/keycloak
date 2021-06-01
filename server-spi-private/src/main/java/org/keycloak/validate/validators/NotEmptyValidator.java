@@ -38,9 +38,6 @@ public class NotEmptyValidator implements SimpleValidator {
 
     public static final String MESSAGE_ERROR_EMPTY = "error-empty";
 
-    private NotEmptyValidator() {
-    }
-
     @Override
     public String getId() {
         return ID;

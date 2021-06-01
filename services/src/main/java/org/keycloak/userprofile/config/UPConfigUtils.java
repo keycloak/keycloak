@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.user.profile.config;
+package org.keycloak.userprofile.config;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 
@@ -106,7 +106,7 @@ public class UPConfigUtils {
             errors.add("Attribute configuration without 'name' is not allowed");
         } else {
             if (attNamesCache.contains(attributeName)) {
-                errors.add("Duplicit attribute configuration with 'name':'" + attributeName + "'");
+                errors.add("Attribute configuration already exists with 'name':'" + attributeName + "'");
             } else {
                 attNamesCache.add(attributeName);
                 if(!isValidAttributeName(attributeName)) {
@@ -134,7 +134,7 @@ public class UPConfigUtils {
      * @param attributeName to validate
      * @return
      */
-    static boolean isValidAttributeName(String attributeName) {
+    public static boolean isValidAttributeName(String attributeName) {
         return Pattern.matches("[a-zA-Z0-9\\._\\-]+", attributeName);
     }
 

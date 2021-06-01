@@ -16,8 +16,12 @@
  */
 package org.keycloak.validate.validators;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.validate.AbstractStringValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -27,7 +31,7 @@ import org.keycloak.validate.ValidatorConfig;
  * Email format validation - accepts plain string and collection of strings, for basic behavior like null/blank values
  * handling and collections support see {@link AbstractStringValidator}.
  */
-public class EmailValidator extends AbstractStringValidator {
+public class EmailValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final String ID = "email";
 
@@ -37,9 +41,6 @@ public class EmailValidator extends AbstractStringValidator {
 
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
-
-    private EmailValidator() {
-    }
 
     @Override
     public String getId() {
@@ -51,5 +52,15 @@ public class EmailValidator extends AbstractStringValidator {
         if (!EMAIL_PATTERN.matcher(value).matches()) {
             context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_EMAIL, value));
         }
+    }
+    
+    @Override
+    public String getHelpText() {
+        return "Email format validator";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.emptyList();
     }
 }

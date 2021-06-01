@@ -43,25 +43,26 @@ public final class AttributeMetadata {
 
     private final String attributeName;
     private final Predicate<AttributeContext> selector;
-    private final Predicate<AttributeContext> readOnly;
+    private final Predicate<AttributeContext> writeAllowed;
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
     private final Predicate<AttributeContext> required;
+    private final Predicate<AttributeContext> readAllowed;
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
 
     AttributeMetadata(String attributeName) {
-        this(attributeName, ALWAYS_TRUE, ALWAYS_FALSE, ALWAYS_TRUE);
+        this(attributeName, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> readOnly, Predicate<AttributeContext> required) {
-        this(attributeName, ALWAYS_TRUE, readOnly, required);
+    AttributeMetadata(String attributeName, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
+        this(attributeName, ALWAYS_TRUE, writeAllowed, required, ALWAYS_TRUE);
     }
 
     AttributeMetadata(String attributeName, Predicate<AttributeContext> selector) {
-        this(attributeName, selector, ALWAYS_FALSE, ALWAYS_TRUE);
+        this(attributeName, selector, ALWAYS_FALSE, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, List<String> scopes, Predicate<AttributeContext> readOnly, Predicate<AttributeContext> required) {
+    AttributeMetadata(String attributeName, List<String> scopes, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
         this(attributeName, context -> {
             KeycloakSession session = context.getSession();
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
@@ -81,14 +82,17 @@ public final class AttributeMetadata {
 
             return authSession.getClientScopes().stream()
                     .map(id -> clientScopes.getClientScopeById(realm, id).getName()).anyMatch(scopes::contains);
-        }, readOnly, required);
+        }, writeAllowed, required, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> selector, Predicate<AttributeContext> readOnly, Predicate<AttributeContext> required) {
+    AttributeMetadata(String attributeName, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed,
+            Predicate<AttributeContext> required,
+            Predicate<AttributeContext> readAllowed) {
         this.attributeName = attributeName;
         this.selector = selector;
-        this.readOnly = readOnly;
+        this.writeAllowed = writeAllowed;
         this.required = required;
+        this.readAllowed = readAllowed;
     }
 
     public String getName() {
@@ -100,10 +104,14 @@ public final class AttributeMetadata {
     }
 
     public boolean isReadOnly(AttributeContext context) {
-        return readOnly.test(context);
+        return !writeAllowed.test(context);
     }
 
-    /** 
+    public boolean canView(AttributeContext context) {
+        return readAllowed.test(context);
+    }
+
+    /**
      * Check if attribute is required based on it's predicate, it is handled as required if predicate is null
      * @param context to evaluate requirement of the attribute from
      * @return true if attribute is required in provided context
@@ -140,7 +148,7 @@ public final class AttributeMetadata {
             if(this.annotations == null) {
                 this.annotations = new HashMap<>();
             }
-            
+
             this.annotations.putAll(annotations);
         }
         return this;
@@ -148,7 +156,7 @@ public final class AttributeMetadata {
 
     @Override
     public AttributeMetadata clone() {
-        AttributeMetadata cloned = new AttributeMetadata(attributeName, selector, readOnly, required);
+        AttributeMetadata cloned = new AttributeMetadata(attributeName, selector, writeAllowed, required, readAllowed);
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
@@ -159,5 +167,20 @@ public final class AttributeMetadata {
             cloned.addAnnotations(annotations);
         }
         return cloned;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof AttributeMetadata)) return false;
+
+        AttributeMetadata that = (AttributeMetadata) o;
+
+        return that.getName().equals(getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return attributeName.hashCode();
     }
 }

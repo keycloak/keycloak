@@ -155,7 +155,7 @@ public class UsersResource {
         UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
 
         try {
-            Response response = UserResource.validateUserProfile(profile);
+            Response response = UserResource.validateUserProfile(profile, null, session);
             if (response != null) {
                 return response;
             }
@@ -383,6 +383,19 @@ public class UsersResource {
         } else {
             return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
         }
+    }
+
+    /**
+     * Get representation of the user
+     *
+     * @param id User id
+     * @return
+     */
+    @Path("profile")
+    public UserProfileResource userProfile() {
+        UserProfileResource resource = new UserProfileResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {

@@ -16,12 +16,16 @@
  */
 package org.keycloak.validate.validators;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.validate.AbstractStringValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -32,7 +36,7 @@ import org.keycloak.validate.ValidatorConfig;
  * Validate String against configured RegEx pattern - accepts plain string and collection of strings, for basic behavior
  * like null/blank values handling and collections support see {@link AbstractStringValidator}.
  */
-public class PatternValidator extends AbstractStringValidator {
+public class PatternValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final String ID = "pattern";
 
@@ -41,8 +45,17 @@ public class PatternValidator extends AbstractStringValidator {
     public static final String KEY_PATTERN = "pattern";
 
     public static final String MESSAGE_NO_MATCH = "error-pattern-no-match";
+    
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
-    private PatternValidator() {
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName(KEY_PATTERN);
+        property.setLabel("RegExp pattern");
+        property.setHelpText("RegExp pattern the value must match. Java Pattern syntax is used.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
     }
 
     @Override
@@ -55,7 +68,7 @@ public class PatternValidator extends AbstractStringValidator {
         Pattern pattern = config.getPattern(KEY_PATTERN);
 
         if (!pattern.matcher(value).matches()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_NO_MATCH, value, config.getString(KEY_PATTERN)));
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_NO_MATCH, config.getString(KEY_PATTERN)));
         }
     }
 
@@ -77,6 +90,16 @@ public class PatternValidator extends AbstractStringValidator {
             }
         }
         return new ValidationResult(errors);
+    }
+    
+    @Override
+    public String getHelpText() {
+        return "RegExp Pattern validator";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
     }
 
 }

@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,4 +43,12 @@ public class ErrorResponse {
         return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
     }
 
+    public static Response errors(List<ErrorRepresentation> s, Response.Status status) {
+        if (s.size() == 1) {
+            return Response.status(status).entity(s.get(0)).type(MediaType.APPLICATION_JSON).build();
+        }
+        ErrorRepresentation error = new ErrorRepresentation();
+        error.setErrors(s);
+        return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
+    }
 }
