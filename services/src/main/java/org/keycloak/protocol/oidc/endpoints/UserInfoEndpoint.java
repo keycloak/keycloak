@@ -287,13 +287,13 @@ public class UserInfoEndpoint {
         UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
         UserSessionModel offlineUserSession = null;
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            checkTokenIssuedAt(token, userSession, event);
+            checkTokenIssuedAt(token, userSession, event, client);
             event.session(userSession);
             return userSession;
         } else {
             offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
             if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
-                checkTokenIssuedAt(token, offlineUserSession, event);
+                checkTokenIssuedAt(token, offlineUserSession, event, client);
                 event.session(offlineUserSession);
                 return offlineUserSession;
             }
@@ -314,8 +314,14 @@ public class UserInfoEndpoint {
         throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired");
     }
 
-    private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event) throws CorsErrorResponseException {
-        if (token.getIssuedAt() + 1 < userSession.getStarted()) {
+    private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event, ClientModel client) throws CorsErrorResponseException {
+        if (token.isIssuedBeforeSessionStart(userSession.getStarted())) {
+            event.error(Errors.INVALID_TOKEN);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token");
+        }
+
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (token.isIssuedBeforeSessionStart(clientSession.getStarted())) {
             event.error(Errors.INVALID_TOKEN);
             throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token");
         }

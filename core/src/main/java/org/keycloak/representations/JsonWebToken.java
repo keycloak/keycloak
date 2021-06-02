@@ -148,6 +148,15 @@ public class JsonWebToken implements Serializable, Token {
         return !isExpired() && isNotBefore(allowedTimeSkew);
     }
 
+    /**
+     * @param sessionStarted Time in seconds
+     * @return true if the particular token was issued before the given session start time. Which means that token cannot be issued by the particular session
+     */
+    @JsonIgnore
+    public boolean isIssuedBeforeSessionStart(long sessionStarted) {
+        return getIat() + 1 < sessionStarted;
+    }
+
     public Long getIat() {
         return iat;
     }

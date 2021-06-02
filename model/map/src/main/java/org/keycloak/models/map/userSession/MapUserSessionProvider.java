@@ -157,6 +157,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
         MapAuthenticatedClientSessionEntity<CK> entity =
                 new MapAuthenticatedClientSessionEntity<>(clientSessionStore.getKeyConvertor().yieldNewUniqueKey(), userSession.getId(), realm.getId(), client.getId(), false);
+        entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
         setClientSessionExpiration(entity, realm, client);
 
         LOG.tracef("createClientSession(%s, %s, %s)%s", realm, client, userSession, getShortStackTrace());
@@ -472,7 +473,9 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
         LOG.tracef("createOfflineClientSession(%s, %s)%s", clientSession, offlineUserSession, getShortStackTrace());
 
         MapAuthenticatedClientSessionEntity<CK> clientSessionEntity = createAuthenticatedClientSessionInstance(clientSession, offlineUserSession, true);
-        clientSessionEntity.setTimestamp(Time.currentTime());
+        int currentTime = Time.currentTime();
+        clientSessionEntity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(currentTime));
+        clientSessionEntity.setTimestamp(currentTime);
         setClientSessionExpiration(clientSessionEntity, clientSession.getRealm(), clientSession.getClient());
 
         Optional<MapUserSessionEntity<UK>> userSessionEntity = getOfflineUserSessionEntityStream(clientSession.getRealm(), offlineUserSession.getId()).findFirst();

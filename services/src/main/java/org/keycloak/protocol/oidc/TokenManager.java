@@ -67,6 +67,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -155,7 +156,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
         }
 
-        if (oldToken.getIssuedAt() + 1 < userSession.getStarted()) {
+        if (oldToken.isIssuedBeforeSessionStart(userSession.getStarted())) {
             logger.debug("Refresh toked issued before the user session started");
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the user session started");
         }
@@ -172,6 +173,11 @@ public class TokenManager {
             } else {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
             }
+        }
+
+        if (oldToken.isIssuedBeforeSessionStart(clientSession.getStarted())) {
+            logger.debug("Refresh toked issued before the client session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the client session started");
         }
 
         if (!client.getClientId().equals(oldToken.getIssuedFor())) {
@@ -259,8 +265,15 @@ public class TokenManager {
                 }
             }
 
-            if (valid && (token.getIssuedAt() + 1 < userSession.getStarted())) {
+            if (valid && (token.isIssuedBeforeSessionStart(userSession.getStarted()))) {
                 valid = false;
+            }
+
+            AuthenticatedClientSessionModel clientSession = userSession == null ? null : userSession.getAuthenticatedClientSessionByClient(client.getId());
+            if (clientSession != null) {
+                if (valid && (token.isIssuedBeforeSessionStart(clientSession.getStarted()))) {
+                    valid = false;
+                }
             }
 
             String tokenType = token.getType();
@@ -273,7 +286,6 @@ public class TokenManager {
             if (valid) {
                 int currentTime = Time.currentTime();
                 userSession.setLastSessionRefresh(currentTime);
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 if (clientSession != null) {
                     clientSession.setTimestamp(currentTime);
                 }
@@ -296,7 +308,8 @@ public class TokenManager {
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
         try {
-            return validateTokenReuse(session, realm, token, clientSession, false);
+            validateTokenReuse(session, realm, token, clientSession, false);
+            return true;
         } catch (OAuthErrorException e) {
             return false;
         }
@@ -403,14 +416,23 @@ public class TokenManager {
         TokenValidation validation) throws OAuthErrorException {
         if (realm.isRevokeRefreshToken()) {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
-            if (validateTokenReuse(session, realm, refreshToken, clientSession, true)) {
+            try {
+                validateTokenReuse(session, realm, refreshToken, clientSession, true);
                 int currentCount = clientSession.getCurrentRefreshTokenUseCount();
                 clientSession.setCurrentRefreshTokenUseCount(currentCount + 1);
+            } catch (OAuthErrorException oee) {
+                if (logger.isDebugEnabled()) {
+                    logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
+                            refreshToken.getId(), realm.getName(), clientSession.getClient().getClientId(), clientSession.getUserSession().getUser().getUsername(), clientSession.getUserSession().getId());
+                }
+                clientSession.detachFromUserSession();
+                throw oee;
             }
         }
     }
 
-    private boolean validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken,
+    // Will throw OAuthErrorException if validation fails
+    private void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken,
         AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
 
@@ -426,7 +448,7 @@ public class TokenManager {
                 clientSession.setCurrentRefreshToken(refreshToken.getId());
                 clientSession.setCurrentRefreshTokenUseCount(0);
             } else {
-                return true;
+                return;
             }
         }
 
@@ -435,7 +457,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                 "Maximum allowed refresh token reuse exceeded");
         }
-        return true;
+        return;
     }
 
     public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, ClientModel client, HttpRequest request, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
