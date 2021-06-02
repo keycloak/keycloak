@@ -43,14 +43,9 @@ export const LdapMapperHardcodedLdapRole = ({
   return (
     <>
       {showAssign && (
-        // MF 042921 hardcoded for now, to see modal displayed
         <AddRoleMappingModal
-          id="1a85c63a-99bd-4d16-9924-b38b8f7cceaf" // this is the ID for client-scopes > marks-client-scope
-          type="client-scope"
-          name="name"
-          // id={id}
-          // type={type}
-          // name={name}
+          id=""
+          type="user-fed"
           onAssign={selectRoles}
           isRadio={true}
           onClose={() => setShowAssign(false)}

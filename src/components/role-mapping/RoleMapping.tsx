@@ -19,7 +19,6 @@ import "./role-mapping.css";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../alert/Alerts";
-import _ from "lodash";
 
 export type CompositeRole = RoleRepresentation & {
   parent: RoleRepresentation;
@@ -85,46 +84,49 @@ export const RoleMapping = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        if (type === "service-account") {
-          await Promise.all(
-            selected.map((row) => {
-              const role = { id: row.role.id!, name: row.role.name! };
-              if (row.client) {
-                return adminClient.users.delClientRoleMappings({
-                  id,
-                  clientUniqueId: row.client!.id!,
-                  roles: [role],
-                });
-              } else {
-                return adminClient.users.delRealmRoleMappings({
-                  id,
-                  roles: [role],
-                });
-              }
-            })
-          );
-        } else if (type === "client-scope") {
-          await Promise.all(
-            selected.map((row) => {
-              const role = { id: row.role.id!, name: row.role.name! };
-              if (row.client) {
-                return adminClient.clientScopes.delClientScopeMappings(
-                  {
+        switch (type) {
+          case "service-account":
+            await Promise.all(
+              selected.map((row) => {
+                const role = { id: row.role.id!, name: row.role.name! };
+                if (row.client) {
+                  return adminClient.users.delClientRoleMappings({
                     id,
-                    client: row.client!.id!,
-                  },
-                  [role]
-                );
-              } else {
-                return adminClient.clientScopes.delRealmScopeMappings(
-                  {
+                    clientUniqueId: row.client!.id!,
+                    roles: [role],
+                  });
+                } else {
+                  return adminClient.users.delRealmRoleMappings({
                     id,
-                  },
-                  [role]
-                );
-              }
-            })
-          );
+                    roles: [role],
+                  });
+                }
+              })
+            );
+            break;
+          case "client-scope":
+            await Promise.all(
+              selected.map((row) => {
+                const role = { id: row.role.id!, name: row.role.name! };
+                if (row.client) {
+                  return adminClient.clientScopes.delClientScopeMappings(
+                    {
+                      id,
+                      client: row.client!.id!,
+                    },
+                    [role]
+                  );
+                } else {
+                  return adminClient.clientScopes.delRealmScopeMappings(
+                    {
+                      id,
+                    },
+                    [role]
+                  );
+                }
+              })
+            );
+            break;
         }
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
