@@ -314,7 +314,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
         switch (error) {
             case CANCELLED_BY_USER:
             case CANCELLED_AIA:
-                return OAuthErrorException.INTERACTION_REQUIRED;
             case CONSENT_DENIED:
                 return OAuthErrorException.ACCESS_DENIED;
             case PASSIVE_INTERACTION_REQUIRED:
