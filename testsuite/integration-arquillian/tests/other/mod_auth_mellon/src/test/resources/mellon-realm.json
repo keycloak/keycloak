@@ -128,9 +128,9 @@
         "scopeParamRequired" : false,
         "composite" : false
       } ],
-      "http://localhost:8380/auth" : [ ],
+      "https://app-saml-127-0-0-1.nip.io:8743/auth" : [ ],
       "security-admin-console" : [ ],
-      "http://localhost:8480/auth2" : [ ],
+      "https://app-saml-127-0-0-1.nip.io:8843/auth2" : [ ],
       "admin-cli" : [ ],
       "broker" : [ {
         "id" : "b0fbb4b2-6632-4c26-8292-c90a64dbf145",
@@ -324,8 +324,8 @@
     "useTemplateMappers" : false
   }, {
     "id" : "cb6eb8e4-73bf-4ccc-b817-c4f8547ae5eb",
-    "clientId" : "http://localhost:8380/auth",
-    "adminUrl" : "https://app-saml-127-0-0-1.nip.io:8743/mellon",
+    "clientId" : "https://app-saml-127-0-0-1.nip.io:8743/auth",
+    "adminUrl" : "https://app-saml-127-0-0-1.nip.io:8743",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
@@ -565,8 +565,8 @@
     "useTemplateMappers" : false
   }, {
     "id" : "cda86e1f-00bd-4727-b4b3-b35357161964",
-    "clientId" : "http://localhost:8480/auth2",
-    "adminUrl" : "https://app-saml-127-0-0-1.nip.io:8843/mellon",
+    "clientId" : "https://app-saml-127-0-0-1.nip.io:8843/auth2",
+    "adminUrl" : "https://app-saml-127-0-0-1.nip.io:8843",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
