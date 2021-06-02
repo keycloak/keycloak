@@ -36,7 +36,7 @@
     "react-hook-form": "^6.8.3",
     "react-i18next": "^11.7.0",
     "react-router-dom": "^5.2.0",
-    "use-react-router-breadcrumbs": "^1.0.5"
+    "use-react-router-breadcrumbs": "^2.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
