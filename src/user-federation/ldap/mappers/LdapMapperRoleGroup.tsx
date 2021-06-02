@@ -90,6 +90,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-name-attribute"
           data-testid="name-attribute"
+          defaultValue="cn"
           name={
             isRole
               ? "config.role-name-ldap-attribute[0]"
@@ -119,6 +120,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-object-classes"
           data-testid="object-classes"
+          defaultValue="group"
           name={
             isRole
               ? "config.role-object-classes[0]"
@@ -143,7 +145,7 @@ export const LdapMapperRoleGroup = ({
           >
             <Controller
               name="config.preserve-group-inheritance"
-              defaultValue={["false"]}
+              defaultValue={["true"]}
               control={form.control}
               render={({ onChange, value }) => (
                 <Switch
@@ -202,6 +204,7 @@ export const LdapMapperRoleGroup = ({
         <TextInput
           isRequired
           type="text"
+          defaultValue="member"
           id="kc-membership-ldap-attribute"
           data-testid="membership-ldap-attribute"
           name="config.membership-ldap-attribute[0]"
@@ -264,6 +267,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-membership-user-ldap-attribute"
           data-testid="membership-user-ldap-attribute"
+          defaultValue="cn"
           name="config.membership-user-ldap-attribute[0]"
           ref={form.register}
         />
@@ -413,6 +417,7 @@ export const LdapMapperRoleGroup = ({
           isRequired
           type="text"
           id="kc-member-of-attribute"
+          defaultValue="memberOf"
           data-testid="member-of-attribute"
           name="config.memberof-ldap-attribute[0]"
           ref={form.register}
@@ -434,7 +439,7 @@ export const LdapMapperRoleGroup = ({
           >
             <Controller
               name="config.use-realm-roles-mapping"
-              defaultValue={["false"]}
+              defaultValue={["true"]}
               control={form.control}
               render={({ onChange, value }) => (
                 <Switch
@@ -557,6 +562,7 @@ export const LdapMapperRoleGroup = ({
               type="text"
               id="kc-path"
               data-testid="path"
+              defaultValue="/"
               name="config.groups-path[0]"
               ref={form.register}
             />
