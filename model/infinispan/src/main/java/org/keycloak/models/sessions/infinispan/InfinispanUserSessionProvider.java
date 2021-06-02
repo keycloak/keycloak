@@ -188,6 +188,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
+        entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(false);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
@@ -773,6 +774,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // update timestamp to current time
         offlineClientSession.setTimestamp(Time.currentTime());
+        offlineClientSession.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(offlineClientSession.getTimestamp()));
 
         session.getProvider(UserSessionPersisterProvider.class).createClientSession(clientSession, true);
 
