@@ -39,6 +39,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -83,6 +85,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ServerURLs;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -112,6 +115,11 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
     @Page
     protected AppPage appPage;
 
+    @BeforeClass
+    public static void verifySSL() {
+        // FAPI requires SSL and does not makes sense to test it with disabled SSL
+        Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
