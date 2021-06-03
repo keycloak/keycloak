@@ -3,6 +3,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import ProviderPage from "../support/pages/admin_console/manage/providers/ProviderPage";
+import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_before";
@@ -12,6 +13,7 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const groupModal = new GroupModal();
+const createClientPage = new CreateClientPage();
 
 const providersPage = new ProviderPage();
 const modalUtils = new ModalUtils();
@@ -41,8 +43,12 @@ const providerDeleteSuccess = "The user federation provider has been deleted.";
 const providerDeleteTitle = "Delete user federation provider?";
 const mapperDeletedSuccess = "Mapping successfully deleted";
 const mapperDeleteTitle = "Delete mapping?";
-
-const groupName = "my-mappers-group";
+const groupCreatedSuccess = "Group created";
+const groupDeletedSuccess = "Group deleted";
+const clientCreatedSuccess = "Client created successfully";
+const clientDeletedSuccess = "The client has been deleted";
+const groupName = "aa-uf-mappers-group";
+const clientName = "aa-uf-mappers-client";
 
 // mapperType variables
 const msadUserAcctMapper = "msad-user-account-control-mapper";
@@ -53,9 +59,12 @@ const certLdapMapper = "certificate-ldap-mapper";
 const fullNameLdapMapper = "full-name-ldap-mapper";
 const hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
 const hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
-// const groupLdapMapper = "group-ldap-mapper";
-// const roleMapper = "role-ldap-mapper";
-// const hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
+
+const groupLdapMapper = "group-ldap-mapper";
+/* 
+const roleMapper = "role-ldap-mapper";
+const hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
+*/
 
 const creationDateMapper = "creation date";
 const emailMapper = "email";
@@ -111,7 +120,22 @@ describe("User Fed LDAP mapper tests", () => {
       .fillGroupForm(groupName)
       .clickCreate();
 
-    masthead.checkNotificationMessage("Group created");
+    masthead.checkNotificationMessage(groupCreatedSuccess);
+  });
+
+  // create a new client
+  it("Create client", () => {
+    sidebarPage.goToClients();
+    listingPage.goToCreateItem();
+    createClientPage
+      .selectClientType("openid-connect")
+      .fillClientData(clientName)
+      .continue()
+      .continue();
+
+    masthead.checkNotificationMessage(clientCreatedSuccess);
+    sidebarPage.goToClients();
+    listingPage.searchItem(clientName).itemExist(clientName);
   });
 
   // delete default mappers
@@ -156,6 +180,7 @@ describe("User Fed LDAP mapper tests", () => {
     masthead.checkNotificationMessage(mapperDeletedSuccess);
   });
 
+  // mapper CRUD tests
   // create mapper
   it("Create certificate ldap mapper", () => {
     providersPage.clickExistingCard(ldapName);
@@ -188,7 +213,7 @@ describe("User Fed LDAP mapper tests", () => {
     masthead.checkNotificationMessage(mapperDeletedSuccess);
   });
 
-  // create one of every kind of non-group/role mapper (8)
+  // create one of each mapper type
   it("Create user account control mapper", () => {
     providersPage.clickExistingCard(ldapName);
     providersPage.goToMappers();
@@ -261,17 +286,52 @@ describe("User Fed LDAP mapper tests", () => {
     listingPage.itemExist(hcLdapAttMapper, true);
   });
 
-  // *** test cleanup ***
-  it("Cleanup - delete group", () => {
-    sidebarPage.goToGroups();
-    listingPage.deleteItem(groupName);
-    modalUtils.confirmModal();
-    masthead.checkNotificationMessage("Group deleted");
+/*  COMING SOON
+  it("Create hardcoded ldap role mapper", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    providersPage.createNewMapper(hcLdapRoleMapper);
+    providersPage.save("ldap-mapper");
+    masthead.checkNotificationMessage(mapperCreatedSuccess);
+    listingPage.itemExist(hcLdapRoleMapper, true);
   });
 
+  it("Create role ldap mapper", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    providersPage.createNewMapper(roleMapper);
+    providersPage.save("ldap-mapper");
+    masthead.checkNotificationMessage(mapperCreatedSuccess);
+    listingPage.itemExist(roleMapper, true);
+  });
+*/
+
+  it("Create group ldap mapper", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    providersPage.createNewMapper(groupLdapMapper);
+    providersPage.save("ldap-mapper");
+    masthead.checkNotificationMessage(mapperCreatedSuccess);
+    listingPage.itemExist(groupLdapMapper, true);
+  });
+
+  // *** test cleanup ***
   it("Cleanup - delete LDAP provider", () => {
     providersPage.deleteCardFromMenu(provider, ldapName);
     modalUtils.checkModalTitle(providerDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(providerDeleteSuccess);
+  });
+
+  it("Cleanup - delete group", () => {
+    sidebarPage.goToGroups();
+    listingPage.deleteItem(groupName);
+    masthead.checkNotificationMessage(groupDeletedSuccess);
+  });
+
+  it("Cleanup - delete client", () => {
+    sidebarPage.goToClients();
+    listingPage.deleteItem(clientName);
+    modalUtils.checkModalTitle(`Delete ${clientName} ?`).confirmModal();
+    masthead.checkNotificationMessage(clientDeletedSuccess);
   });
 });

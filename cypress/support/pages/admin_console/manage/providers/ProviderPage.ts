@@ -44,6 +44,7 @@ export default class ProviderPage {
   private ldapAttNameInput = "data-testid=mapper-ldapAttributeName-fld";
   private ldapAttValueInput = "data-testid=mapper-ldapAttributeValue-fld";
   private groupInput = "data-testid=mapper-group-fld";
+  private ldapDnInput = "data-testid=ldap-dn";
 
   // mapper types
   private msadUserAcctMapper = "msad-user-account-control-mapper";
@@ -54,11 +55,11 @@ export default class ProviderPage {
   private fullNameLdapMapper = "full-name-ldap-mapper";
   private hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
   private hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
-  // this.groupLdapMapper = "group-ldap-mapper";
+  private groupLdapMapper = "group-ldap-mapper";
   // this.roleMapper = "role-ldap-mapper";
   // this.hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-  private groupName = "my-mappers-group";
+  private groupName = "aa-uf-mappers-group";
 
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
@@ -186,6 +187,7 @@ export default class ProviderPage {
   createNewMapper(mapperType: string) {
     const userModelAttValue = "firstName";
     const ldapAttValue = "cn";
+    const ldapDnValue = "ou=groups"
 
     cy.get(`[data-testid="add-mapper-btn"]`).click();
     cy.wait(1000);
@@ -218,8 +220,9 @@ export default class ProviderPage {
       case this.hcLdapGroupMapper:
         cy.get(`[${this.groupInput}]`).type(this.groupName);
         break;
-      // case this.groupLdapMapper:
-      //   break;
+      case this.groupLdapMapper:
+        cy.get(`[${this.ldapDnInput}]`).type(ldapDnValue);
+        break;
       // case this.roleMapper:
       //   break;
       // case this.hcLdapRoleMapper:
