@@ -43,6 +43,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPoliciesUtil;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
@@ -84,7 +85,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
 
         // Test some executor
         assertExpectedExecutors(Arrays.asList(SecureSessionEnforceExecutorFactory.PROVIDER_ID, PKCEEnforcerExecutorFactory.PROVIDER_ID, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                SecureClientUrisExecutorFactory.PROVIDER_ID, ConsentRequiredExecutorFactory.PROVIDER_ID), actualProfileRep);
+                SecureClientUrisExecutorFactory.PROVIDER_ID, ConsentRequiredExecutorFactory.PROVIDER_ID, FullScopeDisabledExecutorFactory.PROVIDER_ID), actualProfileRep);
         assertExpectedSecureSessionEnforceExecutor(actualProfileRep);
 
         // Check the "get" request without globals. Assert nothing loaded

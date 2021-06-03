@@ -9,3 +9,4 @@ org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtEx
 org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory
 org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory
 org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory
+org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory
