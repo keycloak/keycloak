@@ -506,6 +506,42 @@ public class ClientScopeTest extends AbstractClientTest {
         clientScopes().get(scopeId).remove();
     }
 
+    @Test
+    public void updateClientWithDefaultScopeAssignedAsOptionalAndOpposite() {
+        // create client
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        getCleanup().addClientUuid(clientUuid);
+
+        // Create 2 client scopes
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-opt");
+        scopeRep.setProtocol("openid-connect");
+        String scopeOptId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeOptId);
+
+        // assign "scope-def" as optional client scope to client
+        testRealmResource().clients().get(clientUuid).addOptionalClientScope(scopeDefId);
+
+        // assign "scope-opt" as default client scope to client
+        testRealmResource().clients().get(clientUuid).addDefaultClientScope(scopeOptId);
+
+        // Add scope-def as default and scope-opt as optional client scope within the realm
+        testRealmResource().addDefaultDefaultClientScope(scopeDefId);
+        testRealmResource().addDefaultOptionalClientScope(scopeOptId);
+
+        //update client - check it passes (it used to throw ModelDuplicateException before)
+        clientRep.setDescription("new_description");
+        testRealmResource().clients().get(clientUuid).update(clientRep);
+    }
 
     private ClientScopesResource clientScopes() {
         return testRealmResource().clientScopes();

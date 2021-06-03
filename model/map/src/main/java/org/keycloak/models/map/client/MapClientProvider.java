@@ -298,7 +298,8 @@ public class MapClientProvider<K> implements ClientProvider {
 
         LOG.tracef("addClientScopes(%s, %s, %s, %b)%s", realm, client, clientScopes, defaultScope, getShortStackTrace());
 
-        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, defaultScope);
+        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, true);
+        existingClientScopes.putAll(getClientScopes(realm, client, false));
 
         clientScopes.stream()
                 .filter(clientScope -> ! existingClientScopes.containsKey(clientScope.getName()))

@@ -868,7 +868,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // Defaults to openid-connect
         String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
 
-        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, defaultScope);
+        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, true);
+        existingClientScopes.putAll(getClientScopes(realm, client, false));
 
         clientScopes.stream()
             .filter(clientScope -> ! existingClientScopes.containsKey(clientScope.getName()))
