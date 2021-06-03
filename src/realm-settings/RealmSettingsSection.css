@@ -40,6 +40,10 @@ button#kc-certificate.pf-c-button.pf-m-secondary {
   margin-left: var(--pf-global--spacer--md);
 }
 
+.pf-c-data-list__item-row.test {
+  font-weight: bold;
+}
+
 .pf-c-data-list__item-content.data-list-cells {
   margin-left: var(--pf-global--spacer--xl);
 }

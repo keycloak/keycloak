@@ -53,7 +53,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     messageKey: publicKey,
     continueButtonLabel: "common:close",
     continueButtonVariant: ButtonVariant.primary,
-    noCancelButton: true,
     onConfirm: async () => {},
   });
 
@@ -62,7 +61,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     messageKey: certificate,
     continueButtonLabel: "common:close",
     continueButtonVariant: ButtonVariant.primary,
-    noCancelButton: true,
     onConfirm: async () => {},
   });
 

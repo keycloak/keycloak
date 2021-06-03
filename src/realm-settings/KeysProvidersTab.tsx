@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AlertVariant,
   Button,
   ButtonVariant,
   DataList,
+  DataListAction,
   DataListCell,
   DataListControl,
   DataListDragButton,
@@ -12,8 +14,10 @@ import {
   DataListItemRow,
   Dropdown,
   DropdownItem,
+  DropdownPosition,
   DropdownToggle,
   InputGroup,
+  KebabToggle,
   PageSection,
   TextInput,
   Toolbar,
@@ -34,10 +38,16 @@ import { HMACGeneratedModal } from "./HMACGeneratedModal";
 import { JavaKeystoreModal } from "./JavaKeystoreModal";
 import { RSAModal } from "./RSAModal";
 import { RSAGeneratedModal } from "./RSAGeneratedModal";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type ComponentData = KeyMetadataRepresentation & {
   providerDescription?: string;
   name?: string;
+  toggleHidden?: boolean;
+  config?: any;
 };
 
 type KeysTabInnerProps = {
@@ -48,9 +58,13 @@ type KeysTabInnerProps = {
 };
 
 export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation("realm-settings");
+  const { addAlert } = useAlerts();
+  const adminClient = useAdminClient();
+  const { realm } = useRealm();
 
   const [id, setId] = useState("");
+
   const [searchVal, setSearchVal] = useState("");
   const [filteredComponents, setFilteredComponents] = useState<ComponentData[]>(
     []
@@ -71,11 +85,36 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
     ""
   );
 
+  const [selectedComponent, setSelectedComponent] = useState<
+    ComponentRepresentation
+  >();
+
   const [liveText, setLiveText] = useState("");
 
   useEffect(() => {
     setItemOrder(["data", ...itemIds]);
   }, [components, searchVal]);
+
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "realm-settings:deleteProviderTitle",
+    messageKey: t("deleteProviderConfirm") + selectedComponent?.name + "?",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.components.del({
+          id: selectedComponent!.id!,
+          realm: realm,
+        });
+
+        refresh();
+
+        addAlert(t("deleteProviderSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(t("deleteProviderError", { error }), AlertVariant.danger);
+      }
+    },
+  });
 
   const onDragStart = (id: string) => {
     setLiveText(t("onDragStart", { id }));
@@ -122,6 +161,14 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
     setIsCreateModalOpen(!isCreateModalOpen);
   };
 
+  const [actionListOpen, setActionListOpen] = useState<boolean[]>(
+    components.map(() => false)
+  );
+  const toggleActionList = (index: number) => {
+    actionListOpen[index] = !actionListOpen[index];
+    setActionListOpen([...actionListOpen]);
+  };
+
   return (
     <>
       {defaultConsoleDisplayName === "aes-generated" && (
@@ -140,14 +187,6 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
           open={isCreateModalOpen}
         />
       )}
-      {/* {defaultConsoleDisplayName === "ecdsa-generated" && (
-        <ECDSAGeneratedModal
-          handleModalToggle={handleModalToggle}
-          providerType={defaultConsoleDisplayName}
-          refresh={refresh}
-          open={isCreateModalOpen}
-        />
-      )} */}
       {defaultConsoleDisplayName === "hmac-generated" && (
         <HMACGeneratedModal
           handleModalToggle={handleModalToggle}
@@ -180,6 +219,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
           open={isCreateModalOpen}
         />
       )}
+      <DeleteConfirm />
       <PageSection variant="light" padding={{ default: "noPadding" }}>
         <Toolbar>
           <>
@@ -276,14 +316,14 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
           {(filteredComponents.length === 0
             ? components
             : filteredComponents
-          ).map((component, idx) => (
+          ).map((component: ComponentData, idx) => (
             <DataListItem
               draggable
               aria-labelledby={"aria"}
               key={`data${idx}`}
               id={`data${idx}`}
             >
-              <DataListItemRow data-testid={"data-list-row"}>
+              <DataListItemRow key={idx} data-testid={"data-list-row"}>
                 <DataListControl>
                   <DataListDragButton
                     className="row-drag-button"
@@ -295,17 +335,50 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
                 </DataListControl>
                 <DataListItemCells
                   dataListCells={[
-                    <DataListCell key={"4"}>
+                    <DataListCell key={`name-${idx}`}>
                       <>
-                        <Button variant="link">{component.providerId}</Button>
+                        <Button variant="link">{component.name}</Button>
                       </>
                     </DataListCell>,
-                    <DataListCell key={"5"}>
-                      <>{component.name}</>
+                    <DataListCell key={`providerId-${idx}`}>
+                      <>{component.providerId}</>
                     </DataListCell>,
-                    <DataListCell key={"6"}>
+                    <DataListCell key={`providerDescription-${idx}`}>
                       <>{component.providerDescription}</>
                     </DataListCell>,
+                    <DataListAction
+                      aria-labelledby="data-list-action"
+                      aria-label="Actions"
+                      isPlainButtonAction
+                      key={`data-action-list-${idx}`}
+                      id={`data-action-list-${idx}`}
+                    >
+                      <Dropdown
+                        isPlain
+                        position={DropdownPosition.right}
+                        isOpen={actionListOpen[idx]}
+                        toggle={
+                          <KebabToggle
+                            onToggle={() => {
+                              toggleActionList(idx);
+                            }}
+                          />
+                        }
+                        dropdownItems={[
+                          <DropdownItem
+                            key="action"
+                            component="button"
+                            onClick={() => {
+                              setSelectedComponent(component);
+                              toggleDeleteDialog();
+                              toggleActionList(idx);
+                            }}
+                          >
+                            Delete
+                          </DropdownItem>,
+                        ]}
+                      />
+                    </DataListAction>,
                   ]}
                 />
               </DataListItemRow>
@@ -321,29 +394,33 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
 };
 
 type KeysProps = {
-  components: ComponentRepresentation[];
+  realmComponents: ComponentRepresentation[];
   keyProviderComponentTypes: ComponentTypeRepresentation[];
   refresh: () => void;
 };
 
 export const KeysProviderTab = ({
-  components,
   keyProviderComponentTypes,
+  realmComponents,
   refresh,
   ...props
 }: KeysProps) => {
   return (
     <KeysTabInner
-      components={components?.map((component) => {
+      components={realmComponents?.map((component) => {
         const provider = keyProviderComponentTypes.find(
           (componentType: ComponentTypeRepresentation) =>
             component.providerId === componentType.id
         );
-        return { ...component, providerDescription: provider?.helpText };
+
+        return {
+          ...component,
+          providerDescription: provider?.helpText,
+        };
       })}
       keyProviderComponentTypes={keyProviderComponentTypes}
       refresh={refresh}
-      realmComponents={components}
+      realmComponents={realmComponents}
       {...props}
     />
   );

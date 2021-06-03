@@ -131,7 +131,6 @@ export const RealmSettingsSection = () => {
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(0);
   const [key, setKey] = useState(0);
-  // const [keys, setKeys] = useState<KeyMetadataRepresentation[]>([]);
   const [realmComponents, setRealmComponents] = useState<
     ComponentRepresentation[]
   >();
@@ -139,6 +138,26 @@ export const RealmSettingsSection = () => {
   const kpComponentTypes = useServerInfo().componentTypes![
     "org.keycloak.keys.KeyProvider"
   ];
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      setupForm(realm);
+      setRealm(realm);
+    },
+    []
+  );
+
+  useEffect(() => {
+    const update = async () => {
+      const realmComponents = await adminClient.components.find({
+        type: "org.keycloak.keys.KeyProvider",
+        realm: realmName,
+      });
+      setRealmComponents(realmComponents);
+    };
+    setTimeout(update, 100);
+  }, [key]);
 
   useFetch(
     async () => {
@@ -270,9 +289,9 @@ export const RealmSettingsSection = () => {
                     title={<TabTitleText>{t("providers")}</TabTitleText>}
                   >
                     <KeysProviderTab
-                      refresh={refresh}
-                      components={realmComponents}
+                      realmComponents={realmComponents}
                       keyProviderComponentTypes={kpComponentTypes}
+                      refresh={refresh}
                     />
                   </Tab>
                 </Tabs>
