@@ -7,3 +7,6 @@ it is more polished and properly documented. Thanks to https://github.com/tnorim
 to https://github.com/andriimurashkin[Andrii Murashkin] and https://github.com/HryhoriiHevorkian[Hryhorii Hevorkian], who did a great deal of the work on this feature as well.
 Finally thanks to all the members of the https://github.com/keycloak/kc-sig-fapi/blob/master/members.adoc[FAPI Special interest group] for their help and feedback.
 
+== Other improvements
+
+* The support for configuring maximum number of active authentication sessions. The default value is set to 300 authentication sessions (browser tabs) per a browser's session
