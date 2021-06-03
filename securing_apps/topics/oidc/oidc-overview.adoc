@@ -1,3 +1,4 @@
+[[_oidc]]
 == OpenID Connect
 
 This section describes how you can secure applications and services with OpenID Connect using either {project_name} adapters or generic OpenID Connect

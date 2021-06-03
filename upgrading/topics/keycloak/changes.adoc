@@ -1,5 +1,13 @@
 == Migration Changes
 
+=== Migrating to 14.0.0
+
+==== Client Policies Migration
+
+The Client policies feature was a preview feature since Keycloak 12 and did not have proper support. If you tried this feature and configured some client policies or client profiles
+in Keycloak 12 or Keycloak 13, then you will need to configure your client policies and client profiles again in the new version. The format of the configuration changed significantly
+as it was only a preview and hence we do not provide automatic migration of client policies and client profiles created in Keycloak 12 or Keycloak 13.
+
 === Migrating to 13.0.0
 
 ==== Manual migration step needed

@@ -36,8 +36,8 @@ The features that can be enabled and disabled are:
 
 |client_policies
 |Add client configuration policies
-|No
-|Preview
+|Yes
+|Supported
 
 |docker
 |Docker Registry protocol

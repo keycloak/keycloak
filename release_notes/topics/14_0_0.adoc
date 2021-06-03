@@ -1,0 +1,9 @@
+= Highlights
+
+== Client Policies and Financial-grade API (FAPI) Support
+
+The {project_name} server has now official support for client policies and Financial-grade API (FAPI). This capability was previewed in earlier versions, but now
+it is more polished and properly documented. Thanks to https://github.com/tnorimat[Takashi Norimatsu], who did most of the work on this. Also thanks
+to https://github.com/andriimurashkin[Andrii Murashkin] and https://github.com/HryhoriiHevorkian[Hryhorii Hevorkian], who did a great deal of the work on this feature as well.
+Finally thanks to all the members of the https://github.com/keycloak/kc-sig-fapi/blob/master/members.adoc[FAPI Special interest group] for their help and feedback.
+

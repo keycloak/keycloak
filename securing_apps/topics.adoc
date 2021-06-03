@@ -59,6 +59,7 @@ include::topics/oidc/mod-auth-openidc.adoc[]
 endif::[]
 
 include::topics/oidc/oidc-generic.adoc[]
+include::topics/oidc/fapi-support.adoc[]
 
 include::topics/saml/saml-overview.adoc[]
 include::topics/saml/java/java-adapters.adoc[]
