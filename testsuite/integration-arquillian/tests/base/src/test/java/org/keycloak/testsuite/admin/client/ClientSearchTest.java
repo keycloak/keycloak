@@ -57,7 +57,7 @@ public class ClientSearchTest extends AbstractClientTest {
     private String client3Id;
 
     private static final String ATTR_ORG_NAME = "org";
-    private static final String ATTR_ORG_VAL = "Přísná_\"organizace\"";
+    private static final String ATTR_ORG_VAL = "Test_\"organisation\"";
     private static final String ATTR_URL_NAME = "url";
     private static final String ATTR_URL_VAL = "https://foo.bar/clflds";
     private static final String ATTR_QUOTES_NAME = "test \"123\"";
