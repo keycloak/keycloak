@@ -10,6 +10,8 @@ import React, { useState } from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { Controller, UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 
 export type LdapMapperRoleGroupProps = {
   form: UseFormMethods;
@@ -22,7 +24,7 @@ export const LdapMapperRoleGroup = ({
 }: LdapMapperRoleGroupProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-
+  const adminClient = useAdminClient();
   const [isMbAttTypeDropdownOpen, setIsMbAttTypeDropdownOpen] = useState(false);
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
   const [
@@ -30,6 +32,7 @@ export const LdapMapperRoleGroup = ({
     setIsRetrieveStratDropdownOpen,
   ] = useState(false);
   const [isClientIdDropdownOpen, setIsClientIdDropdownOpen] = useState(false);
+  const [clients, setClients] = useState<ClientRepresentation[]>([]);
 
   let isRole = true;
   const groupMapper = "group-ldap-mapper";
@@ -37,6 +40,18 @@ export const LdapMapperRoleGroup = ({
   if (type === groupMapper) {
     isRole = false;
   }
+
+  useFetch(
+    async () => {
+      const clients = await adminClient.clients.find();
+      if (clients) {
+        setClients(clients);
+      }
+      return clients;
+    },
+    (clients) => setClients(clients),
+    []
+  );
 
   return (
     <>
@@ -466,7 +481,6 @@ export const LdapMapperRoleGroup = ({
           >
             <Controller
               name="config.client-id[0]"
-              defaultValue=""
               control={form.control}
               render={({ onChange, value }) => (
                 <Select
@@ -482,12 +496,11 @@ export const LdapMapperRoleGroup = ({
                   selections={value}
                   variant={SelectVariant.single}
                 >
-                  <SelectOption key={0} value="account">
-                    Need to fetch clients here
-                  </SelectOption>
-                  <SelectOption key={1} value="admin-cli">
-                    These are placeholders
-                  </SelectOption>
+                  {clients.map((client) => (
+                    <SelectOption key={client.id} value={client.id}>
+                      {client.clientId}
+                    </SelectOption>
+                  ))}
                 </Select>
               )}
             ></Controller>
