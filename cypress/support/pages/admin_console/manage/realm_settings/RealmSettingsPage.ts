@@ -25,10 +25,17 @@ export default class RealmSettingsPage {
   fromInput = "sender-email-address";
   enableSslCheck = "enable-ssl";
   enableStartTlsCheck = "enable-start-tls";
+  addProviderDropdown = "addProviderDropdown";
+  addProviderButton = "add-provider-button";
+  displayName = "display-name-input";
 
   selectLoginThemeType(themeType: string) {
+    const themesUrl = "/auth/admin/realms/master/themes";
+    cy.intercept(themesUrl).as("themesFetch");
+
     cy.get(this.selectLoginTheme).click();
     cy.get(this.loginThemeList).contains(themeType).click();
+
     return this;
   }
 
@@ -88,6 +95,24 @@ export default class RealmSettingsPage {
     cy.getId(switchName).click();
 
     return this;
+  }
+
+  toggleAddProviderDropdown() {
+    const keysUrl = "/auth/admin/realms/master/keys";
+    cy.intercept(keysUrl).as("keysFetch");
+    cy.getId(this.addProviderDropdown).click();
+
+    return this;
+  }
+
+  addProvider() {
+    cy.getId(this.addProviderButton).click();
+
+    return this;
+  }
+
+  enterConsoleDisplayName(name: string) {
+    cy.getId(this.displayName).clear().type(name);
   }
 
   save(saveBtn: string) {

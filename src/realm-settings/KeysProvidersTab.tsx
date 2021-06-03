@@ -11,6 +11,7 @@ import {
   DataListItemCells,
   DataListItemRow,
   Dropdown,
+  DropdownItem,
   DropdownToggle,
   InputGroup,
   PageSection,
@@ -26,6 +27,13 @@ import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepre
 import type ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentTypeRepresentation";
 
 import "./RealmSettingsSection.css";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { AESGeneratedModal } from "./AESGeneratedModal";
+import { ECDSAGeneratedModal } from "./ECDSAGeneratedModal";
+import { HMACGeneratedModal } from "./HMACGeneratedModal";
+import { JavaKeystoreModal } from "./JavaKeystoreModal";
+import { RSAModal } from "./RSAModal";
+import { RSAGeneratedModal } from "./RSAGeneratedModal";
 
 type ComponentData = KeyMetadataRepresentation & {
   providerDescription?: string;
@@ -34,9 +42,12 @@ type ComponentData = KeyMetadataRepresentation & {
 
 type KeysTabInnerProps = {
   components: ComponentData[];
+  realmComponents: ComponentRepresentation[];
+  keyProviderComponentTypes: ComponentTypeRepresentation[];
+  refresh: () => void;
 };
 
-export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
+export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   const { t } = useTranslation("roles");
 
   const [id, setId] = useState("");
@@ -44,10 +55,21 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
   const [filteredComponents, setFilteredComponents] = useState<ComponentData[]>(
     []
   );
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const serverInfo = useServerInfo();
+  const providerTypes = serverInfo.componentTypes![
+    "org.keycloak.keys.KeyProvider"
+  ].map((item) => item.id);
 
   const itemIds = components.map((_, idx) => "data" + idx);
 
   const [itemOrder, setItemOrder] = useState<string[]>([]);
+  const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
+
+  const [defaultConsoleDisplayName, setDefaultConsoleDisplayName] = useState(
+    ""
+  );
 
   const [liveText, setLiveText] = useState("");
 
@@ -96,8 +118,68 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
     setSearchVal(value);
   };
 
+  const handleModalToggle = () => {
+    setIsCreateModalOpen(!isCreateModalOpen);
+  };
+
   return (
     <>
+      {defaultConsoleDisplayName === "aes-generated" && (
+        <AESGeneratedModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
+      {defaultConsoleDisplayName === "ecdsa-generated" && (
+        <ECDSAGeneratedModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
+      {/* {defaultConsoleDisplayName === "ecdsa-generated" && (
+        <ECDSAGeneratedModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )} */}
+      {defaultConsoleDisplayName === "hmac-generated" && (
+        <HMACGeneratedModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
+      {defaultConsoleDisplayName === "java-keystore" && (
+        <JavaKeystoreModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
+      {defaultConsoleDisplayName === "rsa" && (
+        <RSAModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
+      {defaultConsoleDisplayName === "rsa-generated" && (
+        <RSAGeneratedModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
       <PageSection variant="light" padding={{ default: "noPadding" }}>
         <Toolbar>
           <>
@@ -125,12 +207,31 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
                 <Dropdown
                   data-testid="addProviderDropdown"
                   className="add-provider-dropdown"
-                  onSelect={() => {}}
+                  isOpen={providerDropdownOpen}
                   toggle={
-                    <DropdownToggle isPrimary>
+                    <DropdownToggle
+                      onToggle={(val) => setProviderDropdownOpen(val)}
+                      isPrimary
+                    >
                       {t("realm-settings:addProvider")}
                     </DropdownToggle>
                   }
+                  dropdownItems={[
+                    providerTypes.map((item) => (
+                      <DropdownItem
+                        onClick={() => {
+                          handleModalToggle();
+
+                          setProviderDropdownOpen(false);
+                          setDefaultConsoleDisplayName(item);
+                        }}
+                        data-testid={`option-${item}`}
+                        key={item}
+                      >
+                        {item}
+                      </DropdownItem>
+                    )),
+                  ]}
                 />
               </ToolbarItem>
             </ToolbarGroup>
@@ -222,11 +323,13 @@ export const KeysTabInner = ({ components }: KeysTabInnerProps) => {
 type KeysProps = {
   components: ComponentRepresentation[];
   keyProviderComponentTypes: ComponentTypeRepresentation[];
+  refresh: () => void;
 };
 
 export const KeysProviderTab = ({
   components,
   keyProviderComponentTypes,
+  refresh,
   ...props
 }: KeysProps) => {
   return (
@@ -238,6 +341,9 @@ export const KeysProviderTab = ({
         );
         return { ...component, providerDescription: provider?.helpText };
       })}
+      keyProviderComponentTypes={keyProviderComponentTypes}
+      refresh={refresh}
+      realmComponents={components}
       {...props}
     />
   );
