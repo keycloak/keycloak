@@ -216,6 +216,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assert.assertFalse(client.isFullScopeAllowed());
 
         // Set new initialToken for register new clients
         setInitialAccessTokenForDynamicClientRegistration();
@@ -289,6 +290,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertFalse(client.isPublicClient());
         Assert.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assert.assertFalse(client.isFullScopeAllowed());
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
@@ -395,12 +397,13 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         client = getClientByAdmin(clientUUID);
         Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
-        // Check the Consent is enabled, Holder-of-key is enabled and default signature algorithm
+        // Check the Consent is enabled, Holder-of-key is enabled, fullScopeAllowed disabled and default signature algorithm.
         Assert.assertTrue(client.isConsentRequired());
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         Assert.assertTrue(clientConfig.isUseMtlsHokToken());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg().toString());
+        Assert.assertFalse(client.isFullScopeAllowed());
     }
 
 

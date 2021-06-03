@@ -85,6 +85,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCond
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
@@ -2128,6 +2129,84 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             });
             clientRep = getClientByAdmin(cid);
             assertEquals(Boolean.TRUE, clientRep.isImplicitFlowEnabled());
+        } catch (ClientPolicyException cpe) {
+            fail();
+        }
+    }
+
+    @Test
+    public void testFullScopeDisabledExecutor() throws Exception {
+        // register profiles - client autoConfigured to disable fullScopeAllowed
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Test Profile")
+                        .addExecutor(FullScopeDisabledExecutorFactory.PROVIDER_ID, createFullScopeDisabledExecutorConfig(true))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Client will be auto-configured to disable fullScopeAllowed
+        String clientId = generateSuffixedName("aaa-app");
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            clientRep.setFullScopeAllowed(Boolean.TRUE);
+        });
+        ClientRepresentation clientRep = getClientByAdmin(cid);
+        assertEquals(Boolean.FALSE, clientRep.isFullScopeAllowed());
+
+        // Client cannot be updated to disable fullScopeAllowed
+        updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+            cRep.setFullScopeAllowed(Boolean.TRUE);
+        });
+        clientRep = getClientByAdmin(cid);
+        assertEquals(Boolean.FALSE, clientRep.isFullScopeAllowed());
+
+        // Switch auto-configure to false. Auto-configuration won't happen, but validation will still be here, so should not be possible to enable fullScopeAllowed
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Test Profile")
+                        .addExecutor(FullScopeDisabledExecutorFactory.PROVIDER_ID, createFullScopeDisabledExecutorConfig(false))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // Not possible to register client with fullScopeAllowed due the validation
+        try {
+            createClientByAdmin(clientId, (ClientRepresentation clientRep2) -> {
+                clientRep2.setFullScopeAllowed(Boolean.TRUE);
+            });
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals(Errors.INVALID_REGISTRATION, cpe.getError());
+        }
+
+        // Not possible to update existing client to fullScopeAllowed due the validation
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+                cRep.setFullScopeAllowed(Boolean.TRUE);
+            });
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals(Errors.INVALID_REGISTRATION, cpe.getError());
+        }
+        clientRep = getClientByAdmin(cid);
+        assertEquals(Boolean.FALSE, clientRep.isFullScopeAllowed());
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+                cRep.setImplicitFlowEnabled(Boolean.TRUE);
+            });
+            clientRep = getClientByAdmin(cid);
+            assertEquals(Boolean.TRUE, clientRep.isImplicitFlowEnabled());
+            assertEquals(Boolean.FALSE, clientRep.isFullScopeAllowed());
         } catch (ClientPolicyException cpe) {
             fail();
         }

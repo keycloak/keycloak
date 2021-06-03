@@ -124,6 +124,8 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCond
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
@@ -297,7 +299,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // each executor
         assertExpectedExecutors(Arrays.asList(SecureSessionEnforceExecutorFactory.PROVIDER_ID, PKCEEnforcerExecutorFactory.PROVIDER_ID, SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
-                SecureClientUrisExecutorFactory.PROVIDER_ID, ConsentRequiredExecutorFactory.PROVIDER_ID), actualProfileRep);
+                SecureClientUrisExecutorFactory.PROVIDER_ID, ConsentRequiredExecutorFactory.PROVIDER_ID, FullScopeDisabledExecutorFactory.PROVIDER_ID), actualProfileRep);
         assertExpectedSecureSessionEnforceExecutor(actualProfileRep);
 
         // each profile - ordinal-test-profile - updated
@@ -850,6 +852,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected HolderOfKeyEnforcerExecutor.Configuration createHolderOfKeyEnforceExecutorConfig(Boolean autoConfigure) {
         HolderOfKeyEnforcerExecutor.Configuration config = new HolderOfKeyEnforcerExecutor.Configuration();
+        config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    protected FullScopeDisabledExecutor.Configuration createFullScopeDisabledExecutorConfig(Boolean autoConfigure) {
+        FullScopeDisabledExecutor.Configuration config = new FullScopeDisabledExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
         return config;
     }

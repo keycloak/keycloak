@@ -32,6 +32,12 @@
         {
           "executor": "consent-required",
           "configuration": {}
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
         }
       ]
     },
@@ -90,6 +96,12 @@
         {
           "executor": "consent-required",
           "configuration": {}
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
         },
         {
           "executor": "holder-of-key-enforcer",
