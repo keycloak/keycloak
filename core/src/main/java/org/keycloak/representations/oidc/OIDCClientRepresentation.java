@@ -62,6 +62,8 @@ public class OIDCClientRepresentation {
 
     private String jwks_uri;
 
+    private String jwks_string;
+
     private JSONWebKeySet jwks;
 
     private String sector_identifier_uri;
@@ -256,6 +258,14 @@ public class OIDCClientRepresentation {
 
     public void setJwksUri(String jwks_uri) {
         this.jwks_uri = jwks_uri;
+    }
+
+    public String getJwksString() {
+        return jwks_string;
+    }
+
+    public void setJwksString(String jwks_string) {
+        this.jwks_string = jwks_string;
     }
 
     public JSONWebKeySet getJwks() {
