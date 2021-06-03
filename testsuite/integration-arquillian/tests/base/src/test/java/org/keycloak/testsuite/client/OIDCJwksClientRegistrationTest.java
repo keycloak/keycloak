@@ -232,6 +232,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Update client with some bad JWKS_URI
         response.setJwksUri("http://localhost:4321/non-existent");
+        response.setJwks(null);
         reg.auth(Auth.token(response.getRegistrationAccessToken()))
                 .oidc().update(response);
 

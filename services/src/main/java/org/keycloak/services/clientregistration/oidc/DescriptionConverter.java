@@ -47,10 +47,12 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import com.google.common.collect.Streams;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -237,40 +239,45 @@ public class DescriptionConverter {
     }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
-        if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
-            return false;
-        }
-
-        if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
-            throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
-        }
-
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
 
         if (clientOIDC.getJwks() != null) {
+            if (clientOIDC.getJwksUri() != null) {
+                throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
+            }
+
             JSONWebKeySet keySet = clientOIDC.getJwks();
             JWK publicKeyJWk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
+
+            try {
+                configWrapper.setJwksString(JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks()));
+            } catch (IOException e) {
+                throw new ClientRegistrationException("Illegal jwks format");
+            }
+            configWrapper.setUseJwksString(true);
+            configWrapper.setUseJwksUrl(false);
+
             if (publicKeyJWk == null) {
                 return false;
-            } else {
-                PublicKey publicKey = JWKParser.create(publicKeyJWk).toPublicKey();
-                String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-                CertificateRepresentation rep = new CertificateRepresentation();
-                rep.setPublicKey(publicKeyPem);
-                rep.setKid(publicKeyJWk.getKeyId());
-                CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
-
-                configWrapper.setUseJwksUrl(false);
-
-                return true;
             }
-        } else {
+            PublicKey publicKey = JWKParser.create(publicKeyJWk).toPublicKey();
+            String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
+            CertificateRepresentation rep = new CertificateRepresentation();
+            rep.setPublicKey(publicKeyPem);
+            rep.setKid(publicKeyJWk.getKeyId());
+            CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
+
+            return true;
+        } else if (clientOIDC.getJwksUri() != null) {
             configWrapper.setUseJwksUrl(true);
             configWrapper.setJwksUrl(clientOIDC.getJwksUri());
+            configWrapper.setUseJwksString(false);
             return true;
         }
-    }
 
+        return false;
+
+    }
 
     public static OIDCClientRepresentation toExternalResponse(KeycloakSession session, ClientRepresentation client, URI uri) {
         OIDCClientRepresentation response = new OIDCClientRepresentation();
@@ -317,6 +324,13 @@ public class DescriptionConverter {
         }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());
+        }
+        if (config.isUseJwksString()) {
+            try {
+                response.setJwks(JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class));
+            } catch (IOException e) {
+                throw new ClientRegistrationException("Illegal jwks format");
+            }
         }
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5

@@ -125,6 +125,24 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.JWKS_URL, jwksUrl);
     }
 
+    public boolean isUseJwksString() {
+        String useJwksString = getAttribute(OIDCConfigAttributes.USE_JWKS_STRING);
+        return Boolean.parseBoolean(useJwksString);
+    }
+
+    public void setUseJwksString(boolean useJwksString) {
+        String val = String.valueOf(useJwksString);
+        setAttribute(OIDCConfigAttributes.USE_JWKS_STRING, val);
+    }
+
+    public String getJwksString() {
+        return getAttribute(OIDCConfigAttributes.JWKS_STRING);
+    }
+
+    public void setJwksString(String jwksString) {
+        setAttribute(OIDCConfigAttributes.JWKS_STRING, jwksString);
+    }
+
     public boolean isExcludeSessionStateFromAuthResponse() {
         String excludeSessionStateFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
         return Boolean.parseBoolean(excludeSessionStateFromAuthResponse);
