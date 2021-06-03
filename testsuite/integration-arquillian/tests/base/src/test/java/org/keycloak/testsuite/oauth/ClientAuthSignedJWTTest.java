@@ -61,6 +61,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -88,6 +89,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -297,18 +299,33 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testCodeToTokenRequestSuccessES256() throws Exception {
-        testCodeToTokenRequestSuccess(Algorithm.ES256);
+    public void testCodeToTokenRequestSuccessES256usingJwksUri() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.ES256, true);
     }
 
     @Test
-    public void testCodeToTokenRequestSuccessRS256() throws Exception {
-        testCodeToTokenRequestSuccess(Algorithm.RS256);
+    public void testCodeToTokenRequestSuccessES256usingJwks() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.ES256, false);
     }
 
     @Test
-    public void testCodeToTokenRequestSuccessPS256() throws Exception {
-        testCodeToTokenRequestSuccess(Algorithm.PS256);
+    public void testCodeToTokenRequestSuccessRS256usingJwksUri() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.RS256, true);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessRS256usingJwks() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.RS256, false);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessPS256usingJwksUri() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.PS256, true);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessPS256usingJwks() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.PS256, false);
     }
 
     @Test
@@ -328,7 +345,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRep);
 
-            testCodeToTokenRequestSuccess(Algorithm.ES256);
+            testCodeToTokenRequestSuccess(Algorithm.ES256, true);
         } catch (Exception e) {
             Assert.fail();
         } finally {
@@ -352,7 +369,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         String clientSignedToken;
         try {
             // setup Jwks
-            KeyPair keyPair = setupJwks(alg, clientRepresentation, clientResource);
+            KeyPair keyPair = setupJwksUrl(alg, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
 
@@ -370,17 +387,22 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             return clientSignedToken;
         } finally {
             // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
-    private void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
+    private void testCodeToTokenRequestSuccess(String algorithm, boolean useJwksUri) throws Exception {
         ClientRepresentation clientRepresentation = app2;
         ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
         clientRepresentation = clientResource.toRepresentation();
         try {
             // setup Jwks
-            KeyPair keyPair = setupJwks(algorithm, clientRepresentation, clientResource);
+            KeyPair keyPair;
+            if (useJwksUri) {
+                keyPair = setupJwksUrl(algorithm, clientRepresentation, clientResource);
+            } else {
+                keyPair = setupJwks(algorithm, clientRepresentation, clientResource);
+            }
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
 
@@ -402,8 +424,12 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                     .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                     .assertEvent();
         } finally {
-            // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            // Revert jwks settings
+            if (useJwksUri) {
+                revertJwksUriSettings(clientRepresentation, clientResource);
+            } else {
+                revertJwksSettings(clientRepresentation, clientResource);
+            }
         }
     }
 
@@ -438,7 +464,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         try {
             // setup Jwks
             String signingAlgorithm = Algorithm.PS256;
-            KeyPair keyPair = setupJwks(signingAlgorithm, false, clientRepresentation, clientResource);
+            KeyPair keyPair = setupJwksUrl(signingAlgorithm, false, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
 
@@ -449,7 +475,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             assertEquals(200, response.getStatusCode());
         } finally {
             // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
@@ -461,7 +487,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         try {
             // send a JWS using the default algorithm
             String signingAlgorithm = Algorithm.RS256;
-            KeyPair keyPair = setupJwks(signingAlgorithm, false, clientRepresentation, clientResource);
+            KeyPair keyPair = setupJwksUrl(signingAlgorithm, false, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
             oauth.clientId("client2");
@@ -483,7 +509,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             assertEquals("invalid signature algorithm", response.getErrorDescription());
         } finally {
             // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            revertJwksUriSettings(clientRepresentation, clientResource);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRepresentation);
         }
@@ -510,7 +536,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         clientRepresentation = clientResource.toRepresentation();
         try {
             // setup Jwks
-            KeyPair keyPair = setupJwks(algorithm, clientRepresentation, clientResource);
+            KeyPair keyPair = setupJwksUrl(algorithm, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
 
@@ -536,7 +562,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                     .assertEvent();
         } finally {
             // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
@@ -870,22 +896,27 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         ClientRepresentation clientRepresentation = app2;
         ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
         clientRepresentation = clientResource.toRepresentation();
+        try {
+            KeyPair keyPair = setupJwksUrl(Algorithm.PS256, clientRepresentation, clientResource);
+            PublicKey publicKey = keyPair.getPublic();
+            PrivateKey privateKey = keyPair.getPrivate();
+            JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
 
-        KeyPair keyPair = setupJwks(Algorithm.PS256, clientRepresentation, clientResource);
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
-        JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
+            assertion.audience(endpointUrl);
 
-        assertion.audience(endpointUrl);
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+            parameters
+                .add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION,
+                createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, assertion)));
 
-        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, assertion)));
-
-        try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
-            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
-            assertNotNull(response.getAccessToken());
+            try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
+                OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+                assertNotNull(response.getAccessToken());
+            }
+        } finally {
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
@@ -895,21 +926,27 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
         clientRepresentation = clientResource.toRepresentation();
 
-        KeyPair keyPair = setupJwks(Algorithm.PS256, clientRepresentation, clientResource);
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
-        JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
+        try {
+            KeyPair keyPair = setupJwksUrl(Algorithm.PS256, clientRepresentation, clientResource);
+            PublicKey publicKey = keyPair.getPublic();
+            PrivateKey privateKey = keyPair.getPrivate();
+            JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
 
-        assertion.audience("https://as.other.org");
+            assertion.audience("https://as.other.org");
 
-        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, assertion)));
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+            parameters
+                .add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION,
+                createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, assertion)));
 
-        try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
-            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
-            assertNull(response.getAccessToken());
+            try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
+                OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+                assertNull(response.getAccessToken());
+            }
+        } finally {
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
@@ -1092,7 +1129,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         clientRepresentation = clientResource.toRepresentation();
         try {
             // setup Jwks
-            KeyPair keyPair = setupJwks(algorithm, clientRepresentation, clientResource);
+            KeyPair keyPair = setupJwksUrl(algorithm, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
 
@@ -1118,7 +1155,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                     .assertEvent();
         } finally {
             // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
@@ -1133,7 +1170,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         clientRepresentation = clientResource.toRepresentation();
         try {
             // setup Jwks
-            setupJwks(algorithm, clientRepresentation, clientResource);
+            setupJwksUrl(algorithm, clientRepresentation, clientResource);
 
             // test
             oauth.clientId("client2");
@@ -1151,7 +1188,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                     .assertEvent();
         } finally {
             // Revert jwks_url settings
-            revertJwksSettings(clientRepresentation, clientResource);
+            revertJwksUriSettings(clientRepresentation, clientResource);
         }
     }
 
@@ -1319,11 +1356,11 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         return keyStore;
     }
 
-    private KeyPair setupJwks(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
-        return setupJwks(algorithm, true, clientRepresentation, clientResource);
+    private KeyPair setupJwksUrl(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
+        return setupJwksUrl(algorithm, true, clientRepresentation, clientResource);
     }
 
-    private KeyPair setupJwks(String algorithm, boolean advertiseJWKAlgorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
+    private KeyPair setupJwksUrl(String algorithm, boolean advertiseJWKAlgorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
         // generate and register client keypair
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.generateKeys(algorithm, advertiseJWKAlgorithm);
@@ -1342,9 +1379,36 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         return keyPair;
     }
 
-    private void revertJwksSettings(ClientRepresentation clientRepresentation, ClientResource clientResource) {
+    private KeyPair setupJwks(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource)
+        throws Exception {
+        // generate and register client keypair
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.generateKeys(algorithm);
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.getKeysAsBase64();
+        KeyPair keyPair = getKeyPairFromGeneratedBase64(generatedKeys, algorithm);
+
+        // use and set JWKS
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setUseJwksString(true);
+        JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation)
+            .setJwksString(JsonSerialization.writeValueAsString(keySet));
+        clientResource.update(clientRepresentation);
+
+        // set time offset, so that new keys are downloaded
+        setTimeOffset(20);
+
+        return keyPair;
+    }
+
+    private void revertJwksUriSettings(ClientRepresentation clientRepresentation, ClientResource clientResource) {
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setUseJwksUrl(false);
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setJwksUrl(null);
+        clientResource.update(clientRepresentation);
+    }
+
+    private void revertJwksSettings(ClientRepresentation clientRepresentation, ClientResource clientResource) {
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setUseJwksString(false);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setJwksString(null);
         clientResource.update(clientRepresentation);
     }
 

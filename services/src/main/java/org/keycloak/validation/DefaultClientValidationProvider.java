@@ -20,6 +20,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
@@ -115,6 +116,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateUrls(context);
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
+        validateJwks(context);
 
         return context.toResult();
     }
@@ -217,4 +219,12 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
     }
 
+    private void validateJwks(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+
+        if (Boolean.parseBoolean(client.getAttribute(OIDCConfigAttributes.USE_JWKS_URL))
+            && Boolean.parseBoolean(client.getAttribute(OIDCConfigAttributes.USE_JWKS_STRING))) {
+            context.addError("jwksUrl", "Illegal to use both jwks_uri and jwks_string", "duplicatedJwksSettings");
+        }
+    }
 }
