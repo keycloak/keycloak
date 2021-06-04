@@ -202,11 +202,17 @@ JWE specification determines 5 types of Key Management Mode. {project_name} supp
 
 In Key Encryption, the client generates a key pair of asymmetric cryptography. The public key is used to encrypt CEK. {project_name} generates CEK per ID token, encrypts the ID token by this generated CEK and encrypts this CEK by this client's public key. The client decrypts this encrypted CEK by their private key, and decrypt the ID token by decrypted CEK. Therefore, any party other than the client is not able to decrypt ID token.
 
-The client needs to pass their public key for encrypting CEK onto {project_name}. {project_name} supports downloading public keys from the URL the client provides. The client needs to provide their public keys according to https://datatracker.ietf.org/doc/html/rfc7517[Json Web Keys (JWK)] specification. The way to do so is defined in `Signed JWT` of <<_client-credentials, Confidential Client Credentials>>. The detailed procedure is as follows:
+The client needs to pass their public key for encrypting CEK onto {project_name}. {project_name} supports downloading public keys from the URL the client provides. The client needs to provide their public keys according to https://datatracker.ietf.org/doc/html/rfc7517[Json Web Keys (JWK)] specification. The detailed procedure is as follows:
 
 * open the client's `Keys` tab
-* toggle `JWKS URL` to ON
+* toggle `Use JWKS URL` to ON
 * input the client's public key providing URL on `JWKS URL` textbox
+
+{project_name} also supports inputting JWKS directly. The detailed procedure is as follows:
+
+* open the client's `Keys` tab
+* toggle `Use JWKS` to ON
+* input the client's JWKS on `JWKS` textbox
 
 Key Encryption's algorithms are defined in the https://datatracker.ietf.org/doc/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5), RSAES OAEP using default parameters (RSA-OAEP), and RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256). The detailed procedure to select this algorithm is as follows:
 
