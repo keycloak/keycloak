@@ -38,7 +38,7 @@ public class FullScopeDisabledExecutorFactory implements ClientPolicyExecutorPro
     public static final String AUTO_CONFIGURE = "auto-configure";
 
     private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
-            AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to disable fullScopeAllowed. " +
+            AUTO_CONFIGURE, "Auto-configure", "If On, the configuration of the client will be auto-configured to disable fullScopeAllowed during client creation or update." +
             "If off, the clients are validated to not have fullScopeAllowed enabled during create/update client", ProviderConfigProperty.BOOLEAN_TYPE, true);
 
     @Override
