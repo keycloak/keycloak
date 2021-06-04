@@ -24,7 +24,7 @@ Any user can access the Account Console.
 .Account Console
 image:images/account-console-intro.png[Account Console]
 
-=== Configure ways to sign in
+=== Configuring ways to sign in
 
 You can sign in to this console using basic authentication (a login name and password) or two-factor authentication. For two-factor authentication, use one of the following procedures.
 
@@ -71,13 +71,13 @@ image:images/account-console-signing-in.png[Signing In]
 .Signing In
 image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Security Key]
 
-. Prepare your WebAuthn Security Key. This depends on the type of WebAuthn security key how exactly to do it. For example for USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
 
-. Click *Register* to register your security key. Follow the directions that appear on the screen for setup your Security Key.
+. Click *Register* to register your security key.
 
 . Log out and log in again.
 
-. Assuming authentication flow was correctly set, You should be asked to authenticate with your Security Key as second factor.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Security Key as second factor.
 
 ==== Passwordless authentication with WebAuthn
 
@@ -96,13 +96,13 @@ image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Sec
 .Signing In
 image:images/account-console-signing-in-webauthn-passwordless.png[Signing In With Security Key]
 
-. Prepare your WebAuthn Security Key. This depends on the type of WebAuthn security key how exactly to do it. For example for USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
 
-. Click *Register* to register your security key. Follow the directions that appear on the screen for setup your Security Key.
+. Click *Register* to register your security key.
 
 . Log out and log in again.
 
-. Assuming authentication flow was correctly set, You should be asked to authenticate with your Security Key as passwordless factor. Hence you may not even provide your password for the login.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Security Key as second factor. You no longer need to provide your password to log in.
 
 === Viewing device activity
 
