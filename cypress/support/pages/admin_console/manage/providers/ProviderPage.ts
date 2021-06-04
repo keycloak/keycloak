@@ -56,10 +56,27 @@ export default class ProviderPage {
   private hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
   private hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
   private groupLdapMapper = "group-ldap-mapper";
-  // this.roleMapper = "role-ldap-mapper";
-  // this.hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
+  private roleLdapMapper = "role-ldap-mapper";
+  private hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
+
+  private tab = "#pf-tab-serviceAccount-serviceAccount";
+  private scopeTab = "scopeTab";
+  private assignRole = "assignRole";
+  private unAssign = "unAssignRole";
+  private assign = "assign";
+  private hide = "#hideInheritedRoles";
+  private assignedRolesTable = "assigned-roles";
+  private namesColumn = 'td[data-label="Name"]:visible';
+
+  private rolesTab = "#pf-tab-roles-roles";
+  private createRoleBtn = "data-testid=empty-primary-action";
+  private realmRolesSaveBtn = "data-testid=realm-roles-save-button";
+  private roleNameField = "#kc-name";
+  private clientIdSelect = "#kc-client-id";
 
   private groupName = "aa-uf-mappers-group";
+  private clientName = "aa-uf-mappers-client";
+  private roleName = "aa-uf-mappers-role";
 
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
@@ -184,10 +201,21 @@ export default class ProviderPage {
     cy.get(`[data-testid="ldap-mappers-tab"]`).click();
   }
 
+  createRole(roleName: string) {
+    cy.get(this.rolesTab).click();
+    cy.wait(1000);
+    cy.get(`[${this.createRoleBtn}]`).click();
+    cy.wait(1000);
+    cy.get(this.roleNameField).type(roleName);
+    cy.wait(1000);
+    cy.get(`[${this.realmRolesSaveBtn}]`).click();
+    cy.wait(1000);
+  }
+
   createNewMapper(mapperType: string) {
     const userModelAttValue = "firstName";
     const ldapAttValue = "cn";
-    const ldapDnValue = "ou=groups"
+    const ldapDnValue = "ou=groups";
 
     cy.get(`[data-testid="add-mapper-btn"]`).click();
     cy.wait(1000);
@@ -223,10 +251,26 @@ export default class ProviderPage {
       case this.groupLdapMapper:
         cy.get(`[${this.ldapDnInput}]`).type(ldapDnValue);
         break;
-      // case this.roleMapper:
-      //   break;
-      // case this.hcLdapRoleMapper:
-      //   break;
+
+      case this.roleLdapMapper:
+        cy.get(`[${this.ldapDnInput}]`).type(ldapDnValue);
+        // cy select clientID dropdown and choose clientName (var)
+        cy.get(this.clientIdSelect).click();
+        cy.get("button").contains(this.clientName).click({ force: true });
+        break;
+
+      case this.hcLdapRoleMapper:
+        cy.get(`[data-testid="selectRole"]`).click();
+        cy.wait(2000);
+        cy.get(this.namesColumn)
+          .contains(this.clientName)
+          .parent()
+          .parent()
+          .within(() => {
+            cy.get('input[name="radioGroup"]').click();
+          });
+        cy.getId(this.assign).click();
+        break;
       default:
         console.log("Invalid mapper type.");
         break;
@@ -264,14 +308,6 @@ export default class ProviderPage {
         cy.get(`[${this.ldapAttValueInput}]`).clear;
         cy.get(`[${this.ldapAttValueInput}]`).type(ldapAttValue);
         break;
-      // case this.hcLdapGroupMapper:
-      //   break;
-      // case this.groupLdapMapper:
-      //   break;
-      // case this.roleMapper:
-      //   break;
-      // case this.hcLdapRoleMapper:
-      //   break;
       default:
         console.log("Invalid mapper name.");
         break;

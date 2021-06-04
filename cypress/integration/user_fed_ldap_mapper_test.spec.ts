@@ -47,8 +47,10 @@ const groupCreatedSuccess = "Group created";
 const groupDeletedSuccess = "Group deleted";
 const clientCreatedSuccess = "Client created successfully";
 const clientDeletedSuccess = "The client has been deleted";
+const roleCreatedSuccess = "Role created";
 const groupName = "aa-uf-mappers-group";
 const clientName = "aa-uf-mappers-client";
+const roleName = "aa-uf-mappers-role";
 
 // mapperType variables
 const msadUserAcctMapper = "msad-user-account-control-mapper";
@@ -61,10 +63,8 @@ const hcLdapGroupMapper = "hardcoded-ldap-group-mapper";
 const hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
 
 const groupLdapMapper = "group-ldap-mapper";
-/* 
-const roleMapper = "role-ldap-mapper";
+const roleLdapMapper = "role-ldap-mapper";
 const hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
-*/
 
 const creationDateMapper = "creation date";
 const emailMapper = "email";
@@ -105,9 +105,7 @@ describe("User Fed LDAP mapper tests", () => {
       firstUuidLdapAtt,
       firstUserObjClasses
     );
-
     providersPage.save(provider);
-
     masthead.checkNotificationMessage(providerCreatedSuccess);
     sidebarPage.goToUserFederation();
   });
@@ -123,8 +121,8 @@ describe("User Fed LDAP mapper tests", () => {
     masthead.checkNotificationMessage(groupCreatedSuccess);
   });
 
-  // create a new client
-  it("Create client", () => {
+  // create a new client and then new role for that client
+  it("Create client and role", () => {
     sidebarPage.goToClients();
     listingPage.goToCreateItem();
     createClientPage
@@ -134,6 +132,10 @@ describe("User Fed LDAP mapper tests", () => {
       .continue();
 
     masthead.checkNotificationMessage(clientCreatedSuccess);
+
+    providersPage.createRole(roleName);
+    masthead.checkNotificationMessage(roleCreatedSuccess);
+
     sidebarPage.goToClients();
     listingPage.searchItem(clientName).itemExist(clientName);
   });
@@ -286,26 +288,6 @@ describe("User Fed LDAP mapper tests", () => {
     listingPage.itemExist(hcLdapAttMapper, true);
   });
 
-/*  COMING SOON
-  it("Create hardcoded ldap role mapper", () => {
-    providersPage.clickExistingCard(ldapName);
-    providersPage.goToMappers();
-    providersPage.createNewMapper(hcLdapRoleMapper);
-    providersPage.save("ldap-mapper");
-    masthead.checkNotificationMessage(mapperCreatedSuccess);
-    listingPage.itemExist(hcLdapRoleMapper, true);
-  });
-
-  it("Create role ldap mapper", () => {
-    providersPage.clickExistingCard(ldapName);
-    providersPage.goToMappers();
-    providersPage.createNewMapper(roleMapper);
-    providersPage.save("ldap-mapper");
-    masthead.checkNotificationMessage(mapperCreatedSuccess);
-    listingPage.itemExist(roleMapper, true);
-  });
-*/
-
   it("Create group ldap mapper", () => {
     providersPage.clickExistingCard(ldapName);
     providersPage.goToMappers();
@@ -313,6 +295,24 @@ describe("User Fed LDAP mapper tests", () => {
     providersPage.save("ldap-mapper");
     masthead.checkNotificationMessage(mapperCreatedSuccess);
     listingPage.itemExist(groupLdapMapper, true);
+
+    it("Create hardcoded ldap role mapper", () => {
+      providersPage.clickExistingCard(ldapName);
+      providersPage.goToMappers();
+      providersPage.createNewMapper(hcLdapRoleMapper);
+      providersPage.save("ldap-mapper");
+      masthead.checkNotificationMessage(mapperCreatedSuccess);
+      listingPage.itemExist(hcLdapRoleMapper, true);
+    });
+
+    it("Create role ldap mapper", () => {
+      providersPage.clickExistingCard(ldapName);
+      providersPage.goToMappers();
+      providersPage.createNewMapper(roleLdapMapper);
+      providersPage.save("ldap-mapper");
+      masthead.checkNotificationMessage(mapperCreatedSuccess);
+      listingPage.itemExist(roleLdapMapper, true);
+    });
   });
 
   // *** test cleanup ***
