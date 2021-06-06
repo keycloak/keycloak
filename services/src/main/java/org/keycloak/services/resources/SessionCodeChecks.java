@@ -201,6 +201,7 @@ public class SessionCodeChecks {
         if (authSession == null) {
             return false;
         }
+        session.getContext().setAuthenticationSession(authSession);
 
         // Check cached response from previous action request
         response = BrowserHistoryHelper.getInstance().loadSavedResponse(session, authSession);
@@ -218,7 +219,7 @@ public class SessionCodeChecks {
             return false;
         }
 
-        event.client(client);
+        setClientToEvent(client);
         session.getContext().setClient(client);
 
         if (!client.isEnabled()) {
@@ -270,15 +271,18 @@ public class SessionCodeChecks {
                 // In case that is replayed action, but sent to the same FORM like actual FORM, we just re-render the page
                 if (ObjectUtil.isEqualOrBothNull(execution, authSession.getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION))) {
                     String latestFlowPath = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
-                    URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId);
+                    if (latestFlowPath != null) {
+                        URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId);
 
-                    logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
-                    authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
-                    response = Response.status(Response.Status.FOUND).location(redirectUri).build();
-                } else {
-                    response = showPageExpired(authSession);
+                        logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
+                        authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
+                        response = Response.status(Response.Status.FOUND).location(redirectUri).build();
+                        return false;
+                    }
                 }
+                response = showPageExpired(authSession);
                 return false;
+
             }
 
 
@@ -288,6 +292,11 @@ public class SessionCodeChecks {
             }
             return true;
         }
+    }
+
+    // Client is not null
+    protected void setClientToEvent(ClientModel client) {
+        event.client(client);
     }
 
 
@@ -317,7 +326,7 @@ public class SessionCodeChecks {
     }
 
 
-    private boolean isActionActive(ClientSessionCode.ActionType actionType) {
+    protected boolean isActionActive(ClientSessionCode.ActionType actionType) {
         if (!clientCode.isActionActive(actionType)) {
             event.clone().error(Errors.EXPIRED_CODE);
 
@@ -364,7 +373,7 @@ public class SessionCodeChecks {
     }
 
 
-    private Response restartAuthenticationSessionFromCookie(RootAuthenticationSessionModel existingRootSession) {
+    protected Response restartAuthenticationSessionFromCookie(RootAuthenticationSessionModel existingRootSession) {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
@@ -431,5 +440,13 @@ public class SessionCodeChecks {
     private Response showPageExpired(AuthenticationSessionModel authSession) {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
                 .showPageExpired(authSession);
+    }
+
+    protected KeycloakSession getSession() {
+        return session;
+    }
+
+    protected EventBuilder getEvent() {
+        return event;
     }
 }

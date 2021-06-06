@@ -10,6 +10,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
@@ -39,6 +40,10 @@ public abstract class AbstractPhotozJavascriptExecutorTest extends AbstractExamp
     @Page
     @JavascriptBrowser
     protected OIDCLogin jsDriverTestRealmLoginPage;
+
+    @Page
+    @JavascriptBrowser
+    protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
     @JavascriptBrowser

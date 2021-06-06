@@ -82,7 +82,15 @@ public interface LoginProtocol extends Provider {
 
     Response backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession);
     Response frontchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession);
-    Response finishLogout(UserSessionModel userSession);
+
+    /**
+     * This method is called when browser logout is going to be finished. It is not triggered during backchannel logout
+     *
+     * @param userSession user session, which was logged out
+     * @param logoutSession authentication session, which was used during logout to track the logout state
+     * @return response to be sent to the client
+     */
+    Response finishBrowserLogout(UserSessionModel userSession, AuthenticationSessionModel logoutSession);
 
     /**
      * @param userSession

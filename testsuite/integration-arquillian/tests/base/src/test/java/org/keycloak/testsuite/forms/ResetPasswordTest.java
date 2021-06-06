@@ -18,6 +18,7 @@ package org.keycloak.testsuite.forms;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
@@ -39,7 +40,9 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.federation.kerberos.AbstractKerberosTest;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -47,6 +50,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -79,6 +83,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -145,6 +150,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
+    @Page
+    protected AccountUpdateProfilePage account1ProfilePage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -190,14 +201,16 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .client("account")
                 .user(userId).detail(Details.USERNAME, username).assertEvent();
 
-        String sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, username)
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username)
                 .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .client("account")
-                .assertEvent().getSessionId();
+                .assertEvent();
+        String sessionId = loginEvent.getSessionId();
 
-        oauth.openLogout();
+        account1ProfilePage.assertCurrent();
+        account1ProfilePage.logout();
 
-        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+        events.expectLogout(sessionId).user(userId).removeDetail(Details.REDIRECT_URI).assertEvent();
 
         loginPage.open();
 
@@ -311,9 +324,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).assertEvent().getSessionId();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).assertEvent();
+        String sessionId = loginEvent.getSessionId();
 
-        oauth.openLogout();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
@@ -321,11 +336,13 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("login-test", password);
 
-        sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
+        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        sessionId = loginEvent.getSessionId();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        oauth.openLogout();
+        tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
@@ -937,9 +954,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
 
-        oauth.openLogout();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
@@ -1130,7 +1150,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI, REQUIRED_URI);
             assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
 
-            oauth.openLogout();
+            account1ProfilePage.assertCurrent();
+            account1ProfilePage.logout();
 
             driver.navigate().to(REQUIRED_URI);
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI, REQUIRED_URI);
@@ -1153,7 +1174,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
-            oauth.openLogout();
+
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
             loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI);
@@ -1250,8 +1275,13 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                     .detail(Details.REDIRECT_URI, redirectUri)
                     .client(clientId)
                     .assertEvent().getSessionId();
-            oauth.openLogout();
-            events.expectLogout(sessionId).user(user.getId()).session(sessionId).assertEvent();
+
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+
+            events.expectLogout(sessionId).user(user.getId()).removeDetail(Details.REDIRECT_URI).assertEvent();
         }
 
         BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver);

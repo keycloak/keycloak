@@ -36,6 +36,7 @@ import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
+import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
@@ -285,6 +286,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
+                break;
+            case LOGOUT_CONFIRM:
+                attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
                 break;
         }
 
@@ -679,6 +683,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createFrontChannelLogoutPage() {
         return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
+    }
+
+    @Override
+    public Response createLogoutConfirmPage() {
+        return createResponse(LoginFormsPages.LOGOUT_CONFIRM);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {
