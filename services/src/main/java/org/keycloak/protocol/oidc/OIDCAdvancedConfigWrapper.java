@@ -195,6 +195,29 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
     }
 
+    public String getAuthorizationSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG);
+    }
+    public void setAuthorizationSignedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG, algName);
+    }
+
+    public String getAuthorizationEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public void setAuthorizationEncryptedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG, algName);
+    }
+
+    public String getAuthorizationEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setAuthorizationEncryptedResponseEnc(String encName) {
+        setAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC, encName);
+    }
+
     public String getTokenEndpointAuthSigningAlg() {
         return getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
     }

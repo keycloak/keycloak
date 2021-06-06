@@ -133,6 +133,9 @@ public interface OAuth2Constants {
     String DISPLAY_CONSOLE = "console";
     String INTERVAL = "interval";
     String USER_CODE = "user_code";
+
+    // https://openid.net/specs/openid-financial-api-jarm-ID1.html
+    String RESPONSE = "response";
 }
 
 

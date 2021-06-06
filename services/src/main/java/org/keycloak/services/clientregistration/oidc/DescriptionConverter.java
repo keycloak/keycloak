@@ -162,6 +162,10 @@ public class DescriptionConverter {
             configWrapper.setIdTokenEncryptedResponseEnc(clientOIDC.getIdTokenEncryptedResponseEnc());
         }
 
+        configWrapper.setAuthorizationSignedResponseAlg(clientOIDC.getAuthorizationSignedResponseAlg());
+        configWrapper.setAuthorizationEncryptedResponseAlg(clientOIDC.getAuthorizationEncryptedResponseAlg());
+        configWrapper.setAuthorizationEncryptedResponseEnc(clientOIDC.getAuthorizationEncryptedResponseEnc());
+
         if (clientOIDC.getRequestUris() != null) {
             configWrapper.setRequestUris(clientOIDC.getRequestUris());
         }
@@ -329,6 +333,15 @@ public class DescriptionConverter {
         }
         if (config.getIdTokenEncryptedResponseEnc() != null) {
             response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
+        }
+        if (config.getAuthorizationSignedResponseAlg() != null) {
+            response.setAuthorizationSignedResponseAlg(config.getAuthorizationSignedResponseAlg());
+        }
+        if (config.getAuthorizationEncryptedResponseAlg() != null) {
+            response.setAuthorizationEncryptedResponseAlg(config.getAuthorizationEncryptedResponseAlg());
+        }
+        if (config.getAuthorizationEncryptedResponseEnc() != null) {
+            response.setAuthorizationEncryptedResponseEnc(config.getAuthorizationEncryptedResponseEnc());
         }
         if (config.getRequestUris() != null) {
             response.setRequestUris(config.getRequestUris());
