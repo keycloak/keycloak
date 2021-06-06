@@ -74,7 +74,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     public static final List<String> DEFAULT_SUBJECT_TYPES_SUPPORTED = list("public", "pairwise");
 
-    public static final List<String> DEFAULT_RESPONSE_MODES_SUPPORTED = list("query", "fragment", "form_post");
+    public static final List<String> DEFAULT_RESPONSE_MODES_SUPPORTED = list("query", "fragment", "form_post", "query.jwt", "fragment.jwt", "form_post.jwt", "jwt");
 
     public static final List<String> DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
 
@@ -126,8 +126,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setRegistrationEndpoint(RealmsResource.clientRegistrationUrl(backendUriInfo).path(ClientRegistrationService.class, "provider").build(realm.getName(), OIDCClientRegistrationProviderFactory.ID).toString());
 
         config.setIdTokenSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
-        config.setIdTokenEncryptionAlgValuesSupported(getSupportedIdTokenEncryptionAlg(false));
-        config.setIdTokenEncryptionEncValuesSupported(getSupportedIdTokenEncryptionEnc(false));
+        config.setIdTokenEncryptionAlgValuesSupported(getSupportedEncryptionAlg(false));
+        config.setIdTokenEncryptionEncValuesSupported(getSupportedEncryptionEnc(false));
         config.setUserInfoSigningAlgValuesSupported(getSupportedSigningAlgorithms(true));
         config.setRequestObjectSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(true));
         config.setResponseTypesSupported(DEFAULT_RESPONSE_TYPES_SUPPORTED);
@@ -139,6 +139,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setTokenEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
         config.setIntrospectionEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
         config.setIntrospectionEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+
+        config.setAuthorizationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+        config.setAuthorizationEncryptionAlgValuesSupported(getSupportedEncryptionAlg(false));
+        config.setAuthorizationEncryptionEncValuesSupported(getSupportedEncryptionEnc(false));
 
         config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
@@ -228,11 +232,11 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         return getSupportedAsymmetricAlgorithms();
     }
 
-    private List<String> getSupportedIdTokenEncryptionAlg(boolean includeNone) {
+    private List<String> getSupportedEncryptionAlg(boolean includeNone) {
         return getSupportedAlgorithms(CekManagementProvider.class, includeNone);
     }
 
-    private List<String> getSupportedIdTokenEncryptionEnc(boolean includeNone) {
+    private List<String> getSupportedEncryptionEnc(boolean includeNone) {
         return getSupportedAlgorithms(ContentEncryptionProvider.class, includeNone);
     }
 }

@@ -130,6 +130,13 @@ public class OIDCClientRepresentation {
 
     private String backchannel_authentication_request_signing_alg;
 
+    // FAPI JARM
+    private String authorization_signed_response_alg;
+
+    private String authorization_encrypted_response_alg;
+
+    private String authorization_encrypted_response_enc;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -506,5 +513,29 @@ public class OIDCClientRepresentation {
 
     public void setBackchannelAuthenticationRequestSigningAlg(String backchannel_authentication_request_signing_alg) {
         this.backchannel_authentication_request_signing_alg = backchannel_authentication_request_signing_alg;
+    }
+
+    public String getAuthorizationSignedResponseAlg() {
+        return authorization_signed_response_alg;
+    }
+
+    public void setAuthorizationSignedResponseAlg(String authorization_signed_response_alg) {
+        this.authorization_signed_response_alg = authorization_signed_response_alg;
+    }
+
+    public String getAuthorizationEncryptedResponseAlg() {
+        return authorization_encrypted_response_alg;
+    }
+
+    public void setAuthorizationEncryptedResponseAlg(String authorization_encrypted_response_alg) {
+        this.authorization_encrypted_response_alg = authorization_encrypted_response_alg;
+    }
+
+    public String getAuthorizationEncryptedResponseEnc() {
+        return authorization_encrypted_response_enc;
+    }
+
+    public void setAuthorizationEncryptedResponseEnc(String authorization_encrypted_response_enc) {
+        this.authorization_encrypted_response_enc = authorization_encrypted_response_enc;
     }
 }

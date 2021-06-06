@@ -97,6 +97,15 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("introspection_endpoint_auth_signing_alg_values_supported")
     private List<String> introspectionEndpointAuthSigningAlgValuesSupported;
 
+    @JsonProperty("authorization_signing_alg_values_supported")
+    private List<String> authorizationSigningAlgValuesSupported;
+
+    @JsonProperty("authorization_encryption_alg_values_supported")
+    private List<String> authorizationEncryptionAlgValuesSupported;
+
+    @JsonProperty("authorization_encryption_enc_values_supported")
+    private List<String> authorizationEncryptionEncValuesSupported;
+
     @JsonProperty("claims_supported")
     private List<String> claimsSupported;
 
@@ -488,5 +497,29 @@ public class OIDCConfigurationRepresentation {
 
     public String getDeviceAuthorizationEndpoint() {
         return deviceAuthorizationEndpoint;
+    }
+
+    public List<String> getAuthorizationSigningAlgValuesSupported() {
+        return authorizationSigningAlgValuesSupported;
+    }
+
+    public void setAuthorizationSigningAlgValuesSupported(List<String> authorizationSigningAlgValuesSupported) {
+        this.authorizationSigningAlgValuesSupported = authorizationSigningAlgValuesSupported;
+    }
+
+    public List<String> getAuthorizationEncryptionAlgValuesSupported() {
+        return authorizationEncryptionAlgValuesSupported;
+    }
+
+    public void setAuthorizationEncryptionAlgValuesSupported(List<String> authorizationEncryptionAlgValuesSupported) {
+        this.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getAuthorizationEncryptionEncValuesSupported() {
+        return authorizationEncryptionEncValuesSupported;
+    }
+
+    public void setAuthorizationEncryptionEncValuesSupported(List<String> authorizationEncryptionEncValuesSupported) {
+        this.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported;
     }
 }

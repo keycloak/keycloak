@@ -1292,6 +1292,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.idTokenSignedResponseAlg = $scope.client.attributes['id.token.signed.response.alg'];
         $scope.idTokenEncryptedResponseAlg = $scope.client.attributes['id.token.encrypted.response.alg'];
         $scope.idTokenEncryptedResponseEnc = $scope.client.attributes['id.token.encrypted.response.enc'];
+        $scope.authorizationSignedResponseAlg = $scope.client.attributes['authorization.signed.response.alg'];
+        $scope.authorizationEncryptedResponseAlg = $scope.client.attributes['authorization.encrypted.response.alg'];
+        $scope.authorizationEncryptedResponseEnc = $scope.client.attributes['authorization.encrypted.response.enc'];
 
         var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
         $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
@@ -1522,6 +1525,18 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes['ciba.backchannel.auth.request.signing.alg'] = $scope.cibaBackchannelAuthRequestSigningAlg;
         }
+    };
+
+    $scope.changeAuthorizationSignedResponseAlg = function() {
+        $scope.clientEdit.attributes['authorization.signed.response.alg'] = $scope.authorizationSignedResponseAlg;
+    };
+
+    $scope.changeAuthorizationEncryptedResponseAlg = function() {
+        $scope.clientEdit.attributes['authorization.encrypted.response.alg'] = $scope.authorizationEncryptedResponseAlg;
+    };
+
+    $scope.changeAuthorizationEncryptedResponseEnc = function() {
+        $scope.clientEdit.attributes['authorization.encrypted.response.enc'] = $scope.authorizationEncryptedResponseEnc;
     };
 
     $scope.$watch(function() {

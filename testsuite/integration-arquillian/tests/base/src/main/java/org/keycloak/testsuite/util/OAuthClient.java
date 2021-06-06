@@ -71,6 +71,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -1053,6 +1054,10 @@ public class OAuthClient {
         return verifyToken(token, IDToken.class);
     }
 
+    public AuthorizationResponseToken verifyAuthorizationResponseToken(String token) {
+        return verifyToken(token, AuthorizationResponseToken.class);
+    }
+
     public RefreshToken parseRefreshToken(String refreshToken) {
         try {
             return new JWSInput(refreshToken).readJsonContent(RefreshToken.class);
@@ -1467,18 +1472,20 @@ public class OAuthClient {
         private String tokenType;
         private String expiresIn;
 
+        // Just during FAPI JARM response mode JWT
+        private String response;
+
         public AuthorizationEndpointResponse(OAuthClient client) {
             boolean fragment;
-            try {
-                fragment = client.responseType != null && OIDCResponseType.parse(client.responseType).isImplicitOrHybridFlow();
-            } catch (IllegalArgumentException iae) {
-                fragment = false;
+            if (client.responseMode == null || "jwt".equals(client.responseMode)) {
+                try {
+                    fragment = client.responseType != null && OIDCResponseType.parse(client.responseType).isImplicitOrHybridFlow();
+                } catch (IllegalArgumentException iae) {
+                    fragment = false;
+                }
+            } else {
+                fragment = "fragment".equals(client.responseMode) || "fragment.jwt".equals(client.responseMode);
             }
-
-            if ("fragment".equals(client.responseMode)) {
-                fragment = true;
-            }
-
             init (client, fragment);
         }
 
@@ -1499,6 +1506,7 @@ public class OAuthClient {
             idToken = params.get(OAuth2Constants.ID_TOKEN);
             tokenType = params.get(OAuth2Constants.TOKEN_TYPE);
             expiresIn = params.get(OAuth2Constants.EXPIRES_IN);
+            response = params.get(OAuth2Constants.RESPONSE);
         }
 
         public boolean isRedirected() {
@@ -1539,6 +1547,10 @@ public class OAuthClient {
 
         public String getExpiresIn() {
             return expiresIn;
+        }
+
+        public String getResponse() {
+            return response;
         }
     }
 
