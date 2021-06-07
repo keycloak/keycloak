@@ -24,7 +24,7 @@ When choosing this credential type you will have to also generate a private key 
 The private key will be used to sign the JWT, while the certificate is used by the server to verify the signature.
 
 .Keys Tab
-image:{project_images}/client-oidc-keys.png[]
+image:images/client-oidc-keys.png[]
 
 Click on the `Generate new keys and certificate` button to start this process.
 

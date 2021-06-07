@@ -8,7 +8,7 @@ By default, client scopes added to this policy are not specified as required and
 To create a new client scope-based policy, select *Client Scope* in the dropdown list in the upper right corner of the policy listing.
 
 .Add Client Scope-Based Policy
-image:{project_images}/policy/create-client-scope.png[alt="Add Client Scope-Based Policy"]
+image:images/policy/create-client-scope.png[alt="Add Client Scope-Based Policy"]
 
 == Configuration
 
