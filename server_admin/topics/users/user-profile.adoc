@@ -1,0 +1,303 @@
+
+
+=== User Profile
+
+In {project_name} a user is associated with a set of attributes. These attributes are used to better describe and identify users within {project_name} as well as to pass over additional information to applications about them.
+
+A user profile defines a well-defined schema for representing user attributes and how they are managed within a realm. By providing a consistent view over user information, it allows administrators to control the different aspects on how attributes are managed as well as to make a lot easier to extend {project_name} to support additional attributes.
+
+Among other capabilities, user profile enables administrators to:
+
+* Define a schema for user attributes
+* Define whether an attribute is required based on contextual information (e.g.: if required only for users, or admins, or both, or depending on the scope being requested.)
+* Define specific permissions for viewing and editing user attributes, making possible to adhere to strong privacy requirements where some attributes can not be seen or be changed by third-parties (including administrators)
+* Dynamically enforce user profile compliance so that user information is always updated and in compliance with the metadata and rules associated with attributes
+* Define validation rules on a per-attribute basis by leveraging the built-in validators or writing custom ones
+
+The User Profile capabilities are backed by the User Profile SPI. By default, there are two providers you can choose from:
+
+* Legacy User Profile Provider (`legacy-user-profile`)
+* Declarative User Profile Provider (`declarative-user-profile`)
+
+The legacy provider is enabled by default, and it provides a basic user profile configuration based on the user root attributes such as e-mail, first and last names.
+
+On the other hand, the declarative provider gives you a lot more flexibility to define the user profile configuration to a realm through the administration console and a well-defined JSON schema.
+
+In the next sections, we'll be looking at how to use the declarative provider to define your own user profile configuration.
+
+[NOTE]
+====
+In the future, the `declarative-user-profile` provider is going to replace the legacy provider and become the default.
+====
+
+==== Enabling the Declarative User Profile
+
+:tech_feature_name: Declarative User Profile
+:tech_feature_setting: -Dkeycloak.profile.feature.declarative_user_profile=enabled
+include::../templates/techpreview.adoc[]
+
+In addition to enabling the `declarative_user_profile` feature, you should use the link:{installguide_link}#_start_cli[CLI] to set the `declarative-user-profile` provider as the default provider as follows:
+
+[source]
+----
+$ /subsystem=keycloak-server/spi=userProfile:add(default-provider=declarative-user-profile)
+----
+
+After setting the default provider, make sure to restart the server.
+
+==== Managing the User Profile
+
+The user profile configuration is managed on a per-realm basis. For that, click on the
+`Realm Settings` link on the left side menu and then click on the `User Profile` tab.
+
+.User Profile Attributes
+image:{project_images}/user-profile-attributes.png[]
+
+In the `Attributes` sub-tab you have a list of the attributes currently associated with the user profile. By default, {project_name} uses a configuration based on the user root attributes and very similar to the configuration used by the legacy provider.
+
+In the `JSON Editor` sub-tab you can view and edit the configuration using a well-defined JSON schema.
+
+In the next section, you are going to learn how to manage the configuration from the `Attributes` sub-tab.
+
+==== Managing Attributes
+
+At the `Attributes` sub-tab you should be able to create, edit, and delete the attributes associated with the user profile.
+
+To define a new attribute and associate it with the user profile, click on the `Create` button in the top-right corner of the attribute listing.
+
+.Attribute Configuration
+image:{project_images}/user-profile-create-attribute.png[]
+
+When configuring the attribute you should be able to define the following settings:
+
+Name::
+The name of the attribute. This setting is required.
+
+Required::
+Set the attribute as required. If enabled, the attribute must be set by users and administrators. Otherwise, the attribute is optional.
+
+Permission::
+In this section, you can define read and write permissions for users and administrators.
+
+Validation::
+In this section, you can define custom validations when updating the attribute.
+
+Annotation::
+In this section, you can associate annotations to the attribute.
+
+==== Managing Permissions
+
+In the `Permission` section, you can define the level of access users and administrators have to read and write to an attribute.
+
+.Attribute Permission
+image:{project_images}/user-profile-permission.png[]
+
+For that, you should be able to use the following settings:
+
+Can user view?::
+If enabled, users can view the attribute. Otherwise, users don't have access to the attribute.
+
+Can user edit?::
+If enabled, users can view and edit the attribute. Otherwise, users don't have access to write to the attribute.
+
+Can admin view?::
+If enabled, administrators can view the attribute. Otherwise, administrators don't have access to the attribute.
+
+Can admin edit?::
+If enabled, administrators can view and edit the attribute. Otherwise, administrators don't have access to write to the attribute.
+
+==== Managing Validations
+
+In the `Validation` section, you can choose from different forms of validation to make sure the attribute value conforms to specific rules.
+
+.Attribute Validation
+image:{project_images}/user-profile-validation.png[]
+
+{project_name} provides different validators out of the box:
+
+[cols="2*", options="header"]
+|===
+|Name
+|Description
+
+|not-empty
+|Check that input value is not empty. It means it is not null for all data types.
+
+|not-blank
+|Check that a string value is not empty. It means it is not null nor empty.
+
+|length
+|Check the length of a string value based on a minimum and maximum length.
+
+|integer
+|Check if the value is an integer.
+
+|double
+|Check if the value is a number.
+
+|uri
+|Check if the value is a valid URI.
+
+|pattern
+|Check if the value matches a specific RegEx pattern.
+
+|email
+|Check if the value has a valid e-mail format.
+
+|local-date
+|Check if the value has a valid format based on the realm and/or user locale.
+|===
+
+==== Managing Annotations
+
+In order to pass additional information to frontends, attributes can be decorated with
+annotations to dictate how attributes should be rendered. This capability is mainly useful when extending {project_name} themes to render pages dynamically based on the annotations associated with attributes.
+
+.Attribute Annotation
+image:{project_images}/user-profile-annotation.png[]
+
+==== Using the JSON Configuration
+
+The user profile configuration is stored using a well-defined JSON schema. You can choose from editing the user profile configuration directly by clicking on the `JSON Editor` sub-tab.
+
+.JSON Configuration
+image:{project_images}/user-profile-json-config.png[]
+
+The JSON schema is defined as follows:
+
+[source:json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {
+        "roles": [ "user", "admin" ],
+        "scopes": [ "foo", "bar" ]
+      },
+      "permissions": {
+        "view": [ "admin", "user" ],
+        "edit": [ "admin", "user" ]
+      },
+      "annotations": {
+        "myannotation": "myannotation-value"
+      }
+    }
+  ]
+}
+----
+
+The schema supports as many attributes as you need.
+
+For each attribute you should define a `name` and, optionally, the `required`, `permission`, and the `annotations` settings.
+
+===== Required Property
+
+The `required` setting defines whether an attribute is required. {project_name} allows you to set an attribute as required based on different conditions.
+
+When the `required` setting is defined as an empty object, the attribute is always required.
+
+[source:json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {}
+  ]
+}
+----
+
+On the other hand, you can choose to make the attribute required only for users, or administrators, or both. As well as mark the attribute as required only in case a specific scope is requested when the user is authenticating in {project_name}.
+
+To mark an attribute as required for a user and/or administrator, set the `roles` property as follows:
+
+[source:json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {
+        "roles": ["user"]
+      }
+  ]
+}
+----
+
+The `roles` property expects an array whose values can be either `user` or `admin`, depending on whether the attribute should be required by the user or the administrator, respectively.
+
+Similarly, you can choose to make the attribute required when a set of one or more scopes is requested by a client when authenticating a user. For that, you can use the `scopes` property as follows:
+
+[source:json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "required": {
+        "scopes": ["foo"]
+      }
+  ]
+}
+----
+
+The `scopes` property is an array whose values can be any string representing a client scope.
+
+===== Permissions Property
+
+The attribute-level `permissions` property can be used to define the read and write permissions to an attribute. The permissions are set based on whether these operations can be performed on the attribute by a user, or administrator, or both.
+
+[source:json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "permissions": {
+        "view": ["admin"],
+        "edit": ["user"]
+      }
+  ]
+}
+----
+
+Both `view` and `edit` properties expect an array whose values can be either `user` or `admin`, depending on whether the attribute is viewable or editable by the user or the administrator, respectively.
+
+When the `edit` permission is granted, the `view` permission is implicitly granted.
+
+===== Annotations Property
+
+The attribute-level `annotation` property can be used to associate additional metadata to attributes. Annotations are mainly useful for passing over additional information about attributes to frontends rendering user attributes based on the user profile configuration. Each annotation is a key/value pair.
+
+[source:json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "annotations": {
+        "foo": ["foo-value"],
+        "bar": ["bar-value"]
+      }
+  ]
+}
+----
+
+==== Verifying User Profile
+
+In order to make sure user profiles are in compliance with the configuration, administrators may use the `VerifyProfile` required action to eventually force users to update their profiles when authenticating to {project_name}.
+
+When enabled, the `VerifyProfile` action is going to perform the following steps when the user is authenticating:
+
+* Check whether the user profile is fully compliant with the user profile configuration set to the realm.
+* If not, perform an additional step during the authentication so that the user can update his/her profile.
+* If the user profile is compliant with the configuration, no additional step is performed, and the user continues with the authentication process.
+
+The `VerifyProfile` action is similar to the `UpdateProfile`. However, it leverages all the capabilities provided by the user profile configuration to dynamically render the attributes defined in the user profile configuration.
+
+By default, the `VerifyProfile` action is disabled. To enabled it, click on the
+`Authentication` link on the left side menu and then click on the `Required Actions` tab. At this tab, click on the `Register` button and select the `VerifyProfile` action.
+
+.Registring the VerifyProfile Required Action
+image:{project_images}/user-profile-register-verify-profile-action.png[]

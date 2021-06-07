@@ -39,6 +39,11 @@ The features that can be enabled and disabled are:
 |Yes
 |Supported
 
+|declarative_user_profile
+|Configure user profiles using a declarative style
+|No
+|Preview
+
 |docker
 |Docker Registry protocol
 |No
