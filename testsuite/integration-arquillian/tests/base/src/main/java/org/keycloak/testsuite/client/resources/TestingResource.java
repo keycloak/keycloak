@@ -103,6 +103,7 @@ public interface TestingResource {
      * @param types       The types of events to return
      * @param client      App or oauth client name
      * @param user        User id
+     * @param sessionId   Session ID
      * @param dateFrom    From date
      * @param dateTo      To date
      * @param ipAddress   IP address
@@ -115,7 +116,7 @@ public interface TestingResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+            @QueryParam("user") String user, @QueryParam("sessionId") String sessionId, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
 

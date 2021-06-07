@@ -2143,7 +2143,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         List<EventRepresentation> events = getRealm()
-                .getEvents(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()), null, null, null, null, null, null, null);
+                .getEvents(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()), null, null, null, null, null, null, null, null);
         assertEquals(1, events.size());
     }
 

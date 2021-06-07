@@ -35,6 +35,8 @@ public interface EventQuery {
 
     EventQuery user(String userId);
 
+    EventQuery sessionId(String sessionId);
+
     EventQuery fromDate(Date fromDate);
 
     EventQuery toDate(Date toDate);
