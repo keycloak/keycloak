@@ -84,13 +84,7 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
                 ResultSet rs = statement.executeQuery()) {
 
             while (rs.next()) {
-                String realmId = rs.getString(1);
-
-                if (realmId == null || realmId.trim().isEmpty()) {
-                    continue;
-                }
-
-                realmIds.add(realmId);
+                realmIds.add(rs.getString(1));
             }
 
         } catch (Exception e) {
