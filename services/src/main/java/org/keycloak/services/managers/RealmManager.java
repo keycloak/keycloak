@@ -501,10 +501,9 @@ public class RealmManager {
      */
     public RealmModel importRealm(RealmRepresentation rep, boolean skipUserDependent) {
         String id = rep.getId();
-        if (id == null) {
+        if (id == null || id.trim().isEmpty()) {
             id = KeycloakModelUtils.generateId();
-        }
-        else {
+        } else {
             ReservedCharValidator.validate(id);
         }
         RealmModel realm = model.createRealm(id, rep.getRealm());
