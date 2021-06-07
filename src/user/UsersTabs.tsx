@@ -13,17 +13,18 @@ import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation"
 import { UserForm } from "./UserForm";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { UserGroups } from "./UserGroups";
 import { UserConsents } from "./UserConsents";
 import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");
   const { addAlert } = useAlerts();
-  const { url } = useRouteMatch();
   const history = useHistory();
+  const { realm } = useRealm();
 
   const adminClient = useAdminClient();
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
@@ -51,17 +52,17 @@ export const UsersTabs = () => {
         await adminClient.users.update({ id: user.id! }, user);
         addAlert(t("users:userSaved"), AlertVariant.success);
       } else {
-        const getNewUserId = await adminClient.users.create(user);
+        const createdUser = await adminClient.users.create(user);
 
         addedGroups.forEach(async (group) => {
           await adminClient.users.addToGroup({
-            id: getNewUserId.id!,
+            id: createdUser.id!,
             groupId: group.id!,
           });
         });
 
         addAlert(t("users:userCreated"), AlertVariant.success);
-        history.push(url.substr(0, url.lastIndexOf("/")));
+        history.push(`/${realm}/users/${createdUser.id}/settings`);
       }
     } catch (error) {
       addAlert(
@@ -75,8 +76,8 @@ export const UsersTabs = () => {
 
   return (
     <>
-      <ViewHeader titleKey={user! || t("users:createUser")} />
-      <PageSection variant="light">
+      <ViewHeader titleKey={user! || t("users:createUser")} divider={!id} />
+      <PageSection variant="light" className="pf-u-p-0">
         {id && (
           <KeycloakTabs isBox>
             <Tab
@@ -84,36 +85,44 @@ export const UsersTabs = () => {
               data-testid="user-details-tab"
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
-              <UserForm
-                onGroupsUpdate={updateGroups}
-                form={userForm}
-                save={save}
-                editMode={true}
-              />
+              <PageSection variant="light">
+                <UserForm
+                  onGroupsUpdate={updateGroups}
+                  form={userForm}
+                  save={save}
+                  editMode={true}
+                />
+              </PageSection>
             </Tab>
             <Tab
               eventKey="groups"
               data-testid="user-groups-tab"
               title={<TabTitleText>{t("groups")}</TabTitleText>}
             >
-              <UserGroups />
+              <PageSection variant="light">
+                <UserGroups />
+              </PageSection>
             </Tab>
             <Tab
               eventKey="consents"
               data-testid="user-consents-tab"
               title={<TabTitleText>{t("users:consents")}</TabTitleText>}
             >
-              <UserConsents />
+              <PageSection variant="light">
+                <UserConsents />
+              </PageSection>
             </Tab>
           </KeycloakTabs>
         )}
         {!id && (
-          <UserForm
-            onGroupsUpdate={updateGroups}
-            form={userForm}
-            save={save}
-            editMode={false}
-          />
+          <PageSection variant="light">
+            <UserForm
+              onGroupsUpdate={updateGroups}
+              form={userForm}
+              save={save}
+              editMode={false}
+            />
+          </PageSection>
         )}
       </PageSection>
     </>
