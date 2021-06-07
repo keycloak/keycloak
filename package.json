@@ -74,7 +74,7 @@
     "decompress-targz": "^4.1.1",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.3",
-    "enzyme-to-json": "^3.5.0",
+    "enzyme-to-json": "^3.6.2",
     "eslint": "^7.6.0",
     "eslint-plugin-react": "^7.23.2",
     "grunt": "^1.2.1",
