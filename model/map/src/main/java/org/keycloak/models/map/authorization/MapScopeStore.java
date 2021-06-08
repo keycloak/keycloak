@@ -109,7 +109,7 @@ public class MapScopeStore<K> implements ScopeStore {
     public Scope findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(Scope.SearchableFields.ID, Operator.EQ, id))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -120,7 +120,7 @@ public class MapScopeStore<K> implements ScopeStore {
     public Scope findByName(String name, String resourceServerId) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
+        return tx.read(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
                 Operator.EQ, name))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -131,7 +131,7 @@ public class MapScopeStore<K> implements ScopeStore {
     public List<Scope> findByResourceServer(String id) {
         LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(id))
+        return tx.read(forResourceServer(id))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -155,7 +155,7 @@ public class MapScopeStore<K> implements ScopeStore {
             }
         }
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb).map(this::entityToAdapter), firstResult, maxResult)
+        return paginatedStream(tx.read(mcb).map(this::entityToAdapter), firstResult, maxResult)
                 .collect(Collectors.toList());
     }
 }

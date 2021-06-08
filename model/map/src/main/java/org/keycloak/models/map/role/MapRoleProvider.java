@@ -110,7 +110,7 @@ public class MapRoleProvider<K> implements RoleProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
         
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
                 .sorted(COMPARE_BY_NAME)
                 .map(entityToAdapterFunc(realm));
     }
@@ -147,7 +147,7 @@ public class MapRoleProvider<K> implements RoleProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
                 .sorted(COMPARE_BY_NAME)
                 .map(entityToAdapterFunc(client.getRealm()));
     }
@@ -165,7 +165,7 @@ public class MapRoleProvider<K> implements RoleProvider {
           .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
 
         //remove role from realm-roles composites
-        try (Stream<MapRoleEntity<K>> baseStream = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapRoleEntity<K>> baseStream = tx.read(mcb)) {
 
             StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity<K>::getCompositeRoles)
                 .filter(pair -> role.getId().equals(pair.getV()))
@@ -189,7 +189,7 @@ public class MapRoleProvider<K> implements RoleProvider {
               .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
               .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
 
-            try (Stream<MapRoleEntity<K>> baseStream = tx.getUpdatedNotRemoved(mcbClient)) {
+            try (Stream<MapRoleEntity<K>> baseStream = tx.read(mcbClient)) {
                 
                 StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity<K>::getCompositeRoles)
                     .filter(pair -> role.getId().equals(pair.getV()))
@@ -246,7 +246,7 @@ public class MapRoleProvider<K> implements RoleProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, name);
 
-        String roleId = tx.getUpdatedNotRemoved(mcb)
+        String roleId = tx.read(mcb)
                 .map(entityToAdapterFunc(realm))
                 .map(RoleModel::getId)
                 .findFirst()
@@ -267,7 +267,7 @@ public class MapRoleProvider<K> implements RoleProvider {
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, name);
 
-        String roleId = tx.getUpdatedNotRemoved(mcb)
+        String roleId = tx.read(mcb)
                 .map(entityToAdapterFunc(client.getRealm()))
                 .map(RoleModel::getId)
                 .findFirst()
@@ -303,7 +303,7 @@ public class MapRoleProvider<K> implements RoleProvider {
             roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
           );
 
-        Stream<MapRoleEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapRoleEntity<K>> s = tx.read(mcb)
             .sorted(COMPARE_BY_NAME);
 
         return paginatedStream(s.map(entityToAdapterFunc(realm)), first, max);
@@ -321,7 +321,7 @@ public class MapRoleProvider<K> implements RoleProvider {
             roleStore.createCriteriaBuilder().compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
             roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
           );
-        Stream<MapRoleEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapRoleEntity<K>> s = tx.read(mcb)
             .sorted(COMPARE_BY_NAME);
 
         return paginatedStream(s,first, max).map(entityToAdapterFunc(client.getRealm()));

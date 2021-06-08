@@ -100,7 +100,7 @@ public class MapGroupProvider<K> implements GroupProvider {
             mcb = modifier.apply(mcb);
         }
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
                 .map(entityToAdapterFunc(realm))
                 .sorted(GroupModel.COMPARE_BY_NAME)
                 ;
@@ -116,7 +116,7 @@ public class MapGroupProvider<K> implements GroupProvider {
             mcb = mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
         }
 
-        Stream<GroupModel> groupModelStream = tx.getUpdatedNotRemoved(mcb)
+        Stream<GroupModel> groupModelStream = tx.read(mcb)
           .map(entityToAdapterFunc(realm))
           .sorted(Comparator.comparing(GroupModel::getName));
 
@@ -261,7 +261,7 @@ public class MapGroupProvider<K> implements GroupProvider {
           .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
           .compare(SearchableFields.NAME, Operator.EQ, group.getName());
 
-        try (Stream<MapGroupEntity<K>> possibleSiblings = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapGroupEntity<K>> possibleSiblings = tx.read(mcb)) {
             if (possibleSiblings.findAny().isPresent()) {
                 throw new ModelDuplicateException("Parent already contains subgroup named '" + group.getName() + "'");
             }
@@ -283,7 +283,7 @@ public class MapGroupProvider<K> implements GroupProvider {
           .compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null)
           .compare(SearchableFields.NAME, Operator.EQ, subGroup.getName());
 
-        try (Stream<MapGroupEntity<K>> possibleSiblings = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapGroupEntity<K>> possibleSiblings = tx.read(mcb)) {
             if (possibleSiblings.findAny().isPresent()) {
                 throw new ModelDuplicateException("There is already a top level group named '" + subGroup.getName() + "'");
             }
@@ -297,7 +297,7 @@ public class MapGroupProvider<K> implements GroupProvider {
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
-        try (Stream<MapGroupEntity<K>> toRemove = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapGroupEntity<K>> toRemove = tx.read(mcb)) {
             toRemove
                 .map(groupEntity -> session.groups().getGroupById(realm, groupEntity.getId().toString()))
                 .forEach(groupModel -> groupModel.deleteRoleMapping(role));

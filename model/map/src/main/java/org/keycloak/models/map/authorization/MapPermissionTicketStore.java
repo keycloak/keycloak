@@ -142,7 +142,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public PermissionTicket findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(PermissionTicket.SearchableFields.ID, Operator.EQ, id))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -153,7 +153,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByResourceServer(String resourceServerId) {
         LOG.tracef("findByResourceServer(%s)%s", resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId))
+        return tx.read(forResourceServer(resourceServerId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -162,7 +162,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByOwner(String owner, String resourceServerId) {
         LOG.tracef("findByOwner(%s, %s)%s", owner, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.OWNER, Operator.EQ, owner))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -172,7 +172,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByResource(String resourceId, String resourceServerId) {
         LOG.tracef("findByResource(%s, %s)%s", resourceId, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -182,7 +182,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByScope(String scopeId, String resourceServerId) {
         LOG.tracef("findByScope(%s, %s)%s", scopeId, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.SCOPE_ID, Operator.EQ, scopeId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -213,7 +213,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         );
 
         Comparator<? super MapPermissionTicketEntity<K>> c = Comparator.comparing(MapPermissionTicketEntity::getId);
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
                 .sorted(c), firstResult, maxResult)
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList()); 
@@ -297,7 +297,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
                     .findById(ticket.getResourceId(), ticket.getResourceServerId());
         }
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
                 .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
                 .sorted(MapPermissionTicketEntity.COMPARE_BY_RESOURCE_ID)
                 .map(ticketResourceMapper)
@@ -310,7 +310,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         ModelCriteriaBuilder<PermissionTicket> mcb = permissionTicketStore.createCriteriaBuilder()
                 .compare(SearchableFields.OWNER, Operator.EQ, owner);
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
                 .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
                 .sorted(MapPermissionTicketEntity.COMPARE_BY_RESOURCE_ID), first, max)
                 .map(ticket -> authorizationProvider.getStoreFactory().getResourceStore()

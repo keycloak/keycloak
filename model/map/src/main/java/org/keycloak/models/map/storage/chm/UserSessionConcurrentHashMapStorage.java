@@ -39,7 +39,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
     private final ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity<K>, AuthenticatedClientSessionModel> clientSessionStore;
 
-    private class Transaction extends MapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> {
+    private class Transaction extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> {
 
         private final MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity<K>, AuthenticatedClientSessionModel> clientSessionTr;
 
@@ -50,7 +50,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
         @Override
         public long delete(K artificialKey, ModelCriteriaBuilder<UserSessionModel> mcb) {
-            Set<K> ids = getUpdatedNotRemoved(mcb).map(AbstractEntity::getId).collect(Collectors.toSet());
+            Set<K> ids = read(mcb).map(AbstractEntity::getId).collect(Collectors.toSet());
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.IN, ids);
             clientSessionTr.delete(artificialKey, csMcb);
             return super.delete(artificialKey, mcb);
@@ -75,7 +75,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
     @Override
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session)) : (MapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel>) sessionTransaction;
+        MapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session)) : sessionTransaction;
     }
 }

@@ -113,7 +113,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public Resource findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.ID, Operator.EQ, id))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -128,7 +128,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     private void findByOwnerFilter(String ownerId, String resourceServerId, Consumer<Resource> consumer, int firstResult, int maxResult) {
         LOG.tracef("findByOwnerFilter(%s, %s, %s, %d, %d)%s", ownerId, resourceServerId, consumer, firstResult, maxResult, getShortStackTrace());
         Comparator<? super MapResourceEntity<K>> c = Comparator.comparing(MapResourceEntity::getId);
-        paginatedStream(tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        paginatedStream(tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.OWNER, Operator.EQ, ownerId))
                     .sorted(c), firstResult, maxResult)
                 .map(this::entityToAdapter)
@@ -148,7 +148,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public List<Resource> findByUri(String uri, String resourceServerId) {
         LOG.tracef("findByUri(%s, %s)%s", uri, resourceServerId, getShortStackTrace());
         
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.URI, Operator.EQ, uri))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -158,7 +158,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public List<Resource> findByResourceServer(String resourceServerId) {
         LOG.tracef("findByResourceServer(%s)%s", resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId))
+        return tx.read(forResourceServer(resourceServerId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -172,7 +172,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
                         .toArray(ModelCriteriaBuilder[]::new)
         );
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
                 .sorted(MapResourceEntity.COMPARE_BY_NAME), firstResult, maxResult)
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -210,7 +210,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByScope(%s, %s, %s)%s", scopes, resourceServerId, consumer, getShortStackTrace());
 
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes))
                 .map(this::entityToAdapter)
                 .forEach(consumer);
@@ -224,7 +224,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         LOG.tracef("findByName(%s, %s, %s)%s", name, ownerId, resourceServerId, getShortStackTrace());
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.OWNER, Operator.EQ, ownerId)
                     .compare(SearchableFields.NAME, Operator.EQ, name))
                 .findFirst()
@@ -235,7 +235,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     @Override
     public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
             .compare(SearchableFields.TYPE, Operator.EQ, type))
             .map(this::entityToAdapter)
             .forEach(consumer);
@@ -252,7 +252,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
             mcb = mcb.compare(SearchableFields.OWNER, Operator.EQ, owner);
         }
 
-        tx.getUpdatedNotRemoved(mcb)
+        tx.read(mcb)
                 .map(this::entityToAdapter)
                 .forEach(consumer);
     }
@@ -260,7 +260,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     @Override
     public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByTypeInstance(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.OWNER, Operator.NE, resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type))
                 .map(this::entityToAdapter)

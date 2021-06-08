@@ -110,7 +110,7 @@ public class MapRealmProvider<K> implements RealmProvider {
         ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        K realmId = tx.getUpdatedNotRemoved(mcb)
+        K realmId = tx.read(mcb)
                 .findFirst()
                 .map(MapRealmEntity<K>::getId)
                 .orElse(null);
@@ -132,7 +132,7 @@ public class MapRealmProvider<K> implements RealmProvider {
     }
 
     private Stream<RealmModel> getRealmsStream(ModelCriteriaBuilder<RealmModel> mcb) {
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
                 .map(this::entityToAdapter)
                 .sorted(RealmModel.COMPARE_BY_NAME);
     }
@@ -174,7 +174,7 @@ public class MapRealmProvider<K> implements RealmProvider {
         ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
                 .compare(SearchableFields.CLIENT_INITIAL_ACCESS, Operator.EXISTS);
 
-        tx.getUpdatedNotRemoved(mcb)
+        tx.read(mcb)
                 .map(e -> registerEntityForChanges(tx, e))
                 .forEach(MapRealmEntity<K>::removeExpiredClientInitialAccesses);
     }

@@ -173,7 +173,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialProvider);
 
-        tx.getUpdatedNotRemoved(mcb)
+        tx.read(mcb)
                 .map(e -> registerEntityForChanges(tx, e))
                 .forEach(userEntity -> userEntity.removeFederatedIdentity(socialProvider));
     }
@@ -209,7 +209,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialLink.getIdentityProvider(), socialLink.getUserId());
         
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(),
                         list -> {
@@ -298,7 +298,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.EQ, client.getId());
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(),
                         list -> {
@@ -382,7 +382,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.setFederationLink(null));
         }
@@ -396,7 +396,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, roleId);
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.removeRolesMembership(roleId));
         }
@@ -410,7 +410,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, groupId);
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.removeGroupsMembership(groupId));
         }
@@ -424,7 +424,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CONSENT_FOR_CLIENT, Operator.EQ, clientId);
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             s.map(e -> registerEntityForChanges(tx, e))
               .forEach(userEntity -> userEntity.removeUserConsent(clientId));
         }
@@ -444,7 +444,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, clientScope.getRealm().getId())
           .compare(SearchableFields.CONSENT_WITH_CLIENT_SCOPE, Operator.EQ, clientScopeId);
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             s.flatMap(MapUserEntity::getUserConsents)
               .forEach(consent -> consent.removeGrantedClientScopesIds(clientScopeId));
         }
@@ -462,7 +462,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
               .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
               .compare(SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, Operator.EQ, componentId);
 
-            try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+            try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
                 String providerIdS = new StorageId(componentId, "").getId();
                 s.forEach(removeConsentsForExternalClient(providerIdS));
             }
@@ -490,7 +490,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             s.map(e -> registerEntityForChanges(tx, e))
               .forEach(entity -> entity.addRolesMembership(roleId));
         }
@@ -510,7 +510,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.USERNAME, Operator.ILIKE, username);
 
-        try (Stream<MapUserEntity<K>> s = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapUserEntity<K>> s = tx.read(mcb)) {
             return s.findFirst()
               .map(entityToAdapterFunc(realm)).orElse(null);
         }
@@ -523,7 +523,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.EMAIL, Operator.EQ, email);
 
-        List<MapUserEntity<K>> usersWithEmail = tx.getUpdatedNotRemoved(mcb)
+        List<MapUserEntity<K>> usersWithEmail = tx.read(mcb)
                 .filter(userEntity -> Objects.equals(userEntity.getEmail(), email))
                 .collect(Collectors.toList());
         if (usersWithEmail.isEmpty()) return null;
@@ -584,7 +584,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
             mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
         }
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
           .sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
           .map(entityToAdapterFunc(realm));
     }
@@ -701,7 +701,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
             mcb = mcb.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
         }
 
-        Stream<MapUserEntity<K>> usersStream = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapUserEntity<K>> usersStream = tx.read(mcb)
                 .sorted(MapUserEntity.COMPARE_BY_USERNAME); // Sort before paginating
         
         return paginatedStream(usersStream, firstResult, maxResults) // paginate if necessary
@@ -716,7 +716,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, group.getId());
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb).sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
+        return paginatedStream(tx.read(mcb).sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -727,7 +727,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ATTRIBUTE, Operator.EQ, attrName, attrValue);
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
           .sorted(MapUserEntity.COMPARE_BY_USERNAME)
           .map(entityToAdapterFunc(realm));
     }
@@ -756,7 +756,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
                 .sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
                 .map(entityToAdapterFunc(realm));
     }

@@ -111,7 +111,7 @@ public class MapPolicyStore<K> implements PolicyStore {
     public Policy findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.ID, Operator.EQ, id))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -122,7 +122,7 @@ public class MapPolicyStore<K> implements PolicyStore {
     public Policy findByName(String name, String resourceServerId) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.NAME, Operator.EQ, name))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -133,7 +133,7 @@ public class MapPolicyStore<K> implements PolicyStore {
     public List<Policy> findByResourceServer(String id) {
         LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(id))
+        return tx.read(forResourceServer(id))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -153,7 +153,7 @@ public class MapPolicyStore<K> implements PolicyStore {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.NOT_EXISTS);
         }
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(tx.read(mcb)
                 .sorted(MapPolicyEntity.COMPARE_BY_NAME), firstResult, maxResult)
                 .map(MapPolicyEntity<K>::getId)
                 .map(K::toString)
@@ -205,7 +205,7 @@ public class MapPolicyStore<K> implements PolicyStore {
     public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
         LOG.tracef("findByResource(%s, %s, %s)%s", resourceId, resourceServerId, consumer, getShortStackTrace());
 
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
                 .compare(Policy.SearchableFields.RESOURCE_ID, Operator.EQ, resourceId))
                 .map(this::entityToAdapter)
                 .forEach(consumer);
@@ -213,7 +213,7 @@ public class MapPolicyStore<K> implements PolicyStore {
 
     @Override
     public void findByResourceType(String type, String resourceServerId, Consumer<Policy> policyConsumer) {
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[] {"defaultResourceType", type}))
                 .map(this::entityToAdapter)
                 .forEach(policyConsumer);
@@ -221,7 +221,7 @@ public class MapPolicyStore<K> implements PolicyStore {
 
     @Override
     public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -241,12 +241,12 @@ public class MapPolicyStore<K> implements PolicyStore {
                     .compare(SearchableFields.CONFIG, Operator.NOT_EXISTS, (Object[]) new String[] {"defaultResourceType"});
         }
         
-        tx.getUpdatedNotRemoved(mcb).map(this::entityToAdapter).forEach(consumer);
+        tx.read(mcb).map(this::entityToAdapter).forEach(consumer);
     }
 
     @Override
     public List<Policy> findByType(String type, String resourceServerId) {
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -254,7 +254,7 @@ public class MapPolicyStore<K> implements PolicyStore {
 
     @Override
     public List<Policy> findDependentPolicies(String id, String resourceServerId) {
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id))
                     .map(this::entityToAdapter)
                     .collect(Collectors.toList());
