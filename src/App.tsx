@@ -41,7 +41,9 @@ const AppContexts = ({ children }: { children: ReactNode }) => (
 const RealmPathSelector = ({ children }: { children: ReactNode }) => {
   const { setRealm } = useRealm();
   const { realm } = useParams<{ realm: string }>();
-  useEffect(() => setRealm(realm), []);
+  useEffect(() => {
+    if (realm) setRealm(realm);
+  }, []);
 
   return <>{children}</>;
 };

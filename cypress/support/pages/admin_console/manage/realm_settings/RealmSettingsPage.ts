@@ -1,3 +1,4 @@
+const expect = chai.expect;
 export default class RealmSettingsPage {
   generalSaveBtn = "general-tab-save";
   themesSaveBtn = "themes-tab-save";
@@ -28,6 +29,9 @@ export default class RealmSettingsPage {
   addProviderDropdown = "addProviderDropdown";
   addProviderButton = "add-provider-button";
   displayName = "display-name-input";
+  enableEvents = "eventsEnabled";
+  eventsUserSave = "save-user";
+  eventTypeColumn = 'tbody > tr > [data-label="Event saved type"]';
 
   selectLoginThemeType(themeType: string) {
     const themesUrl = "/auth/admin/realms/master/themes";
@@ -86,7 +90,7 @@ export default class RealmSettingsPage {
   }
 
   toggleSwitch(switchName: string) {
-    cy.getId(switchName).next().click();
+    cy.getId(switchName).click({ force: true });
 
     return this;
   }
@@ -118,6 +122,38 @@ export default class RealmSettingsPage {
   save(saveBtn: string) {
     cy.getId(saveBtn).click();
 
+    return this;
+  }
+
+  clearEvents(type: "admin" | "user") {
+    cy.getId(`clear-${type}-events`).click();
+
+    return this;
+  }
+
+  addUserEvents(events: string[]) {
+    cy.getId("addTypes").click();
+    for (const event of events) {
+      cy.get(this.eventTypeColumn)
+        .contains(event)
+        .parent()
+        .find("input")
+        .click();
+    }
+    return this;
+  }
+
+  checkUserEvents(events: string[]) {
+    cy.get(this.eventTypeColumn).should((event) => {
+      for (const user of events) {
+        expect(event).to.contain(user);
+      }
+    });
+    return this;
+  }
+
+  clickAdd() {
+    cy.getId("addEventTypeConfirm").click();
     return this;
   }
 }

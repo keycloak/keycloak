@@ -1,4 +1,10 @@
-import React, { isValidElement, ReactNode, useEffect, useState } from "react";
+import React, {
+  isValidElement,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   IAction,
@@ -175,7 +181,6 @@ export function KeycloakDataTable<T>({
   const [selected, setSelected] = useState<T[]>([]);
   const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
-  const [filteredData, setFilteredData] = useState<(Row<T> | SubRow<T>)[]>();
   const [loading, setLoading] = useState(false);
 
   const [max, setMax] = useState(10);
@@ -185,60 +190,8 @@ export function KeycloakDataTable<T>({
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  useEffect(() => {
-    if (canSelectAll) {
-      const checkboxes = document
-        .getElementsByClassName("pf-c-table__check")
-        .item(0);
-      if (checkboxes) {
-        const checkAllCheckbox = checkboxes.children!.item(
-          0
-        )! as HTMLInputElement;
-        checkAllCheckbox.indeterminate =
-          selected.length > 0 &&
-          selected.length < (filteredData || rows)!.length;
-      }
-    }
-  }, [selected]);
-
-  useFetch(
-    async () => {
-      setLoading(true);
-      return unPaginatedData || (await loader(first, max, search));
-    },
-    (data) => {
-      if (!isPaginated) {
-        setUnPaginatedData(data);
-        data = data.slice(first, first + max);
-      }
-
-      const result = convertToColumns(data);
-      setRows(result);
-      setFilteredData(result);
-      setLoading(false);
-    },
-    [key, first, max, search]
-  );
-
-  const getNodeText = (node: Cell<T>): string => {
-    if (["string", "number"].includes(typeof node)) {
-      return node!.toString();
-    }
-    if (node instanceof Array) {
-      return node.map(getNodeText).join("");
-    }
-    if (typeof node === "object" && node) {
-      return getNodeText(
-        isValidElement((node as TitleCell).title)
-          ? (node as TitleCell).title.props.children
-          : (node as JSX.Element).props.children
-      );
-    }
-    return "";
-  };
-
   const convertToColumns = (data: T[]): (Row<T> | SubRow<T>)[] => {
-    return data!
+    return data
       .map((value, index) => {
         const disabledRow = isRowDisabled ? isRowDisabled(value) : false;
         const row: (Row<T> | SubRow<T>)[] = [
@@ -279,17 +232,72 @@ export function KeycloakDataTable<T>({
       .flat();
   };
 
-  const filter = (search: string) => {
-    setFilteredData(
-      convertToColumns(unPaginatedData!).filter((row) =>
-        row.cells.some(
-          (cell) =>
-            cell &&
-            getNodeText(cell).toLowerCase().includes(search.toLowerCase())
-        )
-      )
-    );
+  const getNodeText = (node: Cell<T>): string => {
+    if (["string", "number"].includes(typeof node)) {
+      return node!.toString();
+    }
+    if (node instanceof Array) {
+      return node.map(getNodeText).join("");
+    }
+    if (typeof node === "object" && node) {
+      return getNodeText(
+        isValidElement((node as TitleCell).title)
+          ? (node as TitleCell).title.props.children
+          : (node as TitleCell).title
+          ? (node as TitleCell).title
+          : (node as JSX.Element).props.children
+      );
+    }
+    return "";
   };
+
+  const filteredData = useMemo<(Row<T> | SubRow<T>)[] | undefined>(
+    () =>
+      search === "" || isPaginated
+        ? undefined
+        : convertToColumns(unPaginatedData || []).filter((row) =>
+            row.cells.some(
+              (cell) =>
+                cell &&
+                getNodeText(cell).toLowerCase().includes(search.toLowerCase())
+            )
+          ),
+    [search]
+  );
+
+  useEffect(() => {
+    if (canSelectAll) {
+      const checkboxes = document
+        .getElementsByClassName("pf-c-table__check")
+        .item(0);
+      if (checkboxes) {
+        const checkAllCheckbox = checkboxes.children!.item(
+          0
+        )! as HTMLInputElement;
+        checkAllCheckbox.indeterminate =
+          selected.length > 0 &&
+          selected.length < (filteredData || rows)!.length;
+      }
+    }
+  }, [selected]);
+
+  useFetch(
+    async () => {
+      setLoading(true);
+      return unPaginatedData || (await loader(first, max, search));
+    },
+    (data) => {
+      if (!isPaginated) {
+        setUnPaginatedData(data);
+        data = data.slice(first, first + max);
+      }
+
+      const result = convertToColumns(data);
+      setRows(result);
+      setLoading(false);
+    },
+    [key, first, max, search]
+  );
 
   const convertAction = () =>
     actions &&
@@ -301,7 +309,7 @@ export function KeycloakDataTable<T>({
         );
         if (result) {
           if (!isPaginated) {
-            setFilteredData(undefined);
+            setSearch("");
           }
           refresh();
         }
@@ -370,9 +378,7 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnEnter={
-            isPaginated ? setSearch : (search) => filter(search)
-          }
+          inputGroupOnEnter={setSearch}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
@@ -392,7 +398,7 @@ export function KeycloakDataTable<T>({
             />
           )}
           {!loading &&
-            rows.length === 0 &&
+            (filteredData || rows).length === 0 &&
             search !== "" &&
             searchPlaceholderKey && (
               <ListEmptyState

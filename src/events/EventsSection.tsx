@@ -110,7 +110,9 @@ export const EventsSection = () => {
           <Trans i18nKey="events:eventExplain">
             If you want to configure user events, Admin events or Event
             listeners, please enter
-            <Link to={`/${realm}/`}>{t("eventConfig")}</Link>
+            <Link to={`/${realm}/realm-settings/events`}>
+              {t("eventConfig")}
+            </Link>
             page realm settings to configure.
           </Trans>
         }

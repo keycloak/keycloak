@@ -28,7 +28,7 @@ export default class ListingPage {
       const searchUrl = `/auth/admin/realms/master/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
-    cy.get(this.searchInput).type(searchValue);
+    cy.get(this.searchInput).clear().type(searchValue);
     cy.get(this.searchBtn).click();
     if (wait) {
       cy.wait(["@search"]);

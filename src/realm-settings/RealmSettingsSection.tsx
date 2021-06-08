@@ -27,6 +27,7 @@ import { PartialImportDialog } from "./PartialImport";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { KeysListTab } from "./KeysListTab";
+import { EventsTab } from "./event-config/EventsTab";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { KeysProviderTab } from "./KeysProvidersTab";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -233,7 +234,7 @@ export const RealmSettingsSection = () => {
           <KeycloakTabs isBox>
             <Tab
               eventKey="general"
-              title={<TabTitleText>{t("realm-settings:general")}</TabTitleText>}
+              title={<TabTitleText>{t("general")}</TabTitleText>}
               data-testid="rs-general-tab"
             >
               <RealmSettingsGeneralTab
@@ -243,21 +244,21 @@ export const RealmSettingsSection = () => {
             </Tab>
             <Tab
               eventKey="login"
-              title={<TabTitleText>{t("realm-settings:login")}</TabTitleText>}
+              title={<TabTitleText>{t("login")}</TabTitleText>}
               data-testid="rs-login-tab"
             >
               <RealmSettingsLoginTab save={save} realm={realm!} />
             </Tab>
             <Tab
               eventKey="email"
-              title={<TabTitleText>{t("realm-settings:email")}</TabTitleText>}
+              title={<TabTitleText>{t("email")}</TabTitleText>}
               data-testid="rs-email-tab"
             >
               {realm && <RealmSettingsEmailTab realm={realm} />}
             </Tab>
             <Tab
               eventKey="themes"
-              title={<TabTitleText>{t("realm-settings:themes")}</TabTitleText>}
+              title={<TabTitleText>{t("themes")}</TabTitleText>}
               data-testid="rs-themes-tab"
             >
               <RealmSettingsThemesTab
@@ -296,6 +297,13 @@ export const RealmSettingsSection = () => {
                   </Tab>
                 </Tabs>
               )}
+            </Tab>
+            <Tab
+              eventKey="events"
+              title={<TabTitleText>{t("events")}</TabTitleText>}
+              data-testid="rs-realm-events-tab"
+            >
+              <EventsTab />
             </Tab>
           </KeycloakTabs>
         </FormProvider>

@@ -64,7 +64,7 @@ export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
   const [key, setKey] = useState(0);
 
   useFetch(
-    () => adminClient.whoAmI.find({ realm: "master" }),
+    () => adminClient.whoAmI.find(),
     (me) => {
       const whoAmI = new WhoAmI(adminClient.keycloak?.realm, me);
       setWhoAmI(whoAmI);
