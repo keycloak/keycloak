@@ -31,13 +31,6 @@
   text-align: left;
 }
 
-/* the last child is the realm selector button, and this is the only way to style the li around it */
-.keycloak__realm_selector__context_selector li:last-child {
-  position: sticky;
-  bottom: 0;
-  background-color: var(--pf-c-context-selector__menu--BackgroundColor);
-}
-
 .keycloak__page_nav__nav_item__realm-selector {
   margin-top: var(--pf-c-nav__link--PaddingTop);
   padding-right: var(--pf-c-nav__link--PaddingRight);

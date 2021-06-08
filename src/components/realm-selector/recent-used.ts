@@ -1,5 +1,5 @@
 export class RecentUsed {
-  private readonly MAX_NUM = 3;
+  private readonly MAX_NUM = 4; // 3 plus current realm
   private readonly KEY = "recent-used-realms";
   private recentUsedRealms: string[];
 

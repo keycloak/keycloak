@@ -37,6 +37,7 @@ export const RealmSelector = () => {
   const { t } = useTranslation("common");
   const recentUsed = new RecentUsed();
   const all = recentUsed.used
+    .filter((r) => r !== realm)
     .map((name) => {
       return { name, used: true };
     })
@@ -133,6 +134,11 @@ export const RealmSelector = () => {
           searchInputValue={search}
           onSearchInputChange={(value) => setSearch(value)}
           className="keycloak__realm_selector__context_selector"
+          footer={
+            <ContextSelectorItem key="add">
+              <AddRealm />
+            </ContextSelectorItem>
+          }
         >
           {(filteredItems || all).map((item) => (
             <ContextSelectorItem key={item.name}>
@@ -140,9 +146,6 @@ export const RealmSelector = () => {
               {item.used && <Label>{t("recent")}</Label>}
             </ContextSelectorItem>
           ))}
-          <ContextSelectorItem key="add">
-            <AddRealm />
-          </ContextSelectorItem>
         </ContextSelector>
       )}
       {realms.length <= 5 && (
