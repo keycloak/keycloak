@@ -30,7 +30,17 @@ describe("Realm settings", () => {
     await new AdminClient().deleteRealm(realmName);
   });
 
-  it("Go to general tab", () => {
+  const goToKeys = () => {
+    const keysUrl = "/auth/admin/realms/master/keys";
+    cy.intercept(keysUrl).as("keysFetch");
+    cy.getId("rs-keys-tab").click();
+    cy.wait(10000);
+    cy.getId("rs-keys-list-tab").click();
+
+    return this;
+  };
+
+  it("Go to general tab", function () {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.toggleSwitch(realmSettingsPage.managedAccessSwitch);
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
@@ -134,21 +144,18 @@ describe("Realm settings", () => {
 
     cy.getId("option-aes-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_aes-generated");
-    cy.wait(200);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.getId("option-ecdsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_ecdsa-generated");
-    cy.wait(200);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.getId("option-hmac-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_hmac-generated");
-    cy.wait(200);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
@@ -156,5 +163,12 @@ describe("Realm settings", () => {
     cy.getId("option-rsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_rsa-generated");
     realmSettingsPage.addProvider();
+  });
+
+  it("Test keys", function () {
+    sidebarPage.goToRealmSettings();
+    goToKeys();
+
+    realmSettingsPage.testSelectFilter();
   });
 });

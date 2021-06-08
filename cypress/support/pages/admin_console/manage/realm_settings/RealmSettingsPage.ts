@@ -32,6 +32,9 @@ export default class RealmSettingsPage {
   enableEvents = "eventsEnabled";
   eventsUserSave = "save-user";
   eventTypeColumn = 'tbody > tr > [data-label="Event saved type"]';
+  filterSelectMenu = ".kc-filter-type-select";
+  passiveKeysOption = "passive-keys-option";
+  disabledKeysOption = "disabled-keys-option";
 
   selectLoginThemeType(themeType: string) {
     const themesUrl = "/auth/admin/realms/master/themes";
@@ -87,6 +90,13 @@ export default class RealmSettingsPage {
     }
 
     return this;
+  }
+
+  testSelectFilter() {
+    cy.get(this.filterSelectMenu).first().click();
+    cy.getId(this.passiveKeysOption).click();
+    cy.get(this.filterSelectMenu).first().click();
+    cy.getId(this.disabledKeysOption).click();
   }
 
   toggleSwitch(switchName: string) {

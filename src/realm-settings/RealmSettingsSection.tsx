@@ -279,6 +279,7 @@ export const RealmSettingsSection = () => {
                   <Tab
                     id="keysList"
                     eventKey={0}
+                    data-testid="rs-keys-list-tab"
                     title={<TabTitleText>{t("keysList")}</TabTitleText>}
                   >
                     <KeysListTab realmComponents={realmComponents} />
