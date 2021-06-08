@@ -129,11 +129,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     @Override
-    public void setSingleAttribute(String name, String value) {
-        setAttribute(name, Collections.singletonList(value));
-    }
-
-    @Override
     public void setAttribute(String name, List<String> values) {
         removeAttribute(name);
 

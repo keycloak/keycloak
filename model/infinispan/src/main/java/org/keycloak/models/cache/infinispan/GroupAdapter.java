@@ -112,12 +112,6 @@ public class GroupAdapter implements GroupModel.Streams {
     }
 
     @Override
-    public void setSingleAttribute(String name, String value) {
-        getDelegateForUpdate();
-        updated.setSingleAttribute(name, value);
-    }
-
-    @Override
     public void setAttribute(String name, List<String> values) {
         getDelegateForUpdate();
         updated.setAttribute(name, values);

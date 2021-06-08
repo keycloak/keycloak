@@ -111,11 +111,6 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
         }
 
         @Override
-        public String getFirstAttribute(String name) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public Stream<String> getAttributeStream(String name) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -167,11 +162,6 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
 
         @Override
         public void setName(String name) {
-            throw new ReadOnlyException("group is read only");
-        }
-
-        @Override
-        public void setSingleAttribute(String name, String value) {
             throw new ReadOnlyException("group is read only");
         }
 

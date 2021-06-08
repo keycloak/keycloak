@@ -104,11 +104,6 @@ public abstract class MapRoleAdapter<K> extends AbstractRoleModel<MapRoleEntity<
     }
 
     @Override
-    public void setSingleAttribute(String name, String value) {
-        setAttribute(name, Collections.singletonList(value));
-    }
-
-    @Override
     public void removeAttribute(String name) {
         entity.removeAttribute(name);
     }

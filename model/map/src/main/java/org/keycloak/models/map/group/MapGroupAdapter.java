@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -42,11 +41,6 @@ public abstract class MapGroupAdapter<K> extends AbstractGroupModel<MapGroupEnti
     @Override
     public void setName(String name) {
         entity.setName(name);
-    }
-
-    @Override
-    public void setSingleAttribute(String name, String value) {
-        entity.setAttribute(name, Collections.singletonList(value));
     }
 
     @Override

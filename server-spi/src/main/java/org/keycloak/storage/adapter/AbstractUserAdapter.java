@@ -272,12 +272,6 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public void setSingleAttribute(String name, String value) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
-    @Override
     public void removeAttribute(String name) {
         throw new ReadOnlyException("user is read only for this update");
 

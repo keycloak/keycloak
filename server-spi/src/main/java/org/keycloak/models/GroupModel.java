@@ -22,7 +22,6 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,7 +30,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface GroupModel extends RoleMapperModel {
+public interface GroupModel extends RoleMapperModel, ModelWithAttributes {
 
     public static class SearchableFields {
         public static final SearchableModelField<GroupModel> ID             = new SearchableModelField<>("id", String.class);
@@ -61,24 +60,6 @@ public interface GroupModel extends RoleMapperModel {
     void setName(String name);
 
     /**
-     * Set single value of specified attribute. Remove all other existing values
-     *
-     * @param name
-     * @param value
-     */
-    void setSingleAttribute(String name, String value);
-
-    void setAttribute(String name, List<String> values);
-
-    void removeAttribute(String name);
-
-    /**
-     * @param name
-     * @return null if there is not any value of specified attribute or first value otherwise. Don't throw exception if there are more values of the attribute
-     */
-    String getFirstAttribute(String name);
-
-    /**
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
      * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
@@ -91,12 +72,11 @@ public interface GroupModel extends RoleMapperModel {
      * @param name {@code String} Name of the attribute to be used as a filter.
      * @return Stream of all attribute values or empty stream if there are not any values. Never return {@code null}.
      */
+    @Override
     default Stream<String> getAttributeStream(String name) {
         List<String> value = this.getAttribute(name);
         return value != null ? value.stream() : Stream.empty();
     }
-
-    Map<String, List<String>> getAttributes();
 
     GroupModel getParent();
     String getParentId();

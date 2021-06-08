@@ -175,12 +175,6 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public void setSingleAttribute(String name, String value) {
-        getDelegateForUpdate();
-        updated.setSingleAttribute(name, value);
-    }
-
-    @Override
     public void setAttribute(String name, List<String> values) {
         getDelegateForUpdate();
         updated.setAttribute(name, values);

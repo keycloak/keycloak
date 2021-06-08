@@ -139,11 +139,6 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
-        public String getFirstAttribute(String name) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public Stream<String> getAttributeStream(String name) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -170,11 +165,6 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
 
         @Override
         public void removeCompositeRole(RoleModel role) {
-            throw new ReadOnlyException("role is read only");
-        }
-
-        @Override
-        public void setSingleAttribute(String name, String value) {
             throw new ReadOnlyException("role is read only");
         }
 
