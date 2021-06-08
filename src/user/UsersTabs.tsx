@@ -108,9 +108,7 @@ export const UsersTabs = () => {
               data-testid="user-consents-tab"
               title={<TabTitleText>{t("users:consents")}</TabTitleText>}
             >
-              <PageSection variant="light">
-                <UserConsents />
-              </PageSection>
+              <UserConsents />
             </Tab>
           </KeycloakTabs>
         )}

@@ -45,3 +45,7 @@ td.pf-c-table__check > input {
   width: 20px;
   vertical-align: text-top;
 }
+
+.pf-c-toolbar__content-section {
+  margin-bottom: calc(var(--pf-global--spacer--lg) * -1);
+}

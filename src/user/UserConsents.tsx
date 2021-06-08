@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { PageSection } from "@patternfly/react-core";
+import { Button, Label, PageSection } from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../util";
@@ -27,10 +27,31 @@ export const UserConsents = () => {
     return alphabetize(consents);
   };
 
+  const [labelClicked, setLabelClicked] = useState(false);
+
+   useEffect(() => {
+    console.log(labelClicked)
+  }, [labelClicked])
+
   const clientScopesRenderer = ({
     grantedClientScopes,
   }: UserConsentRepresentation) => {
-    return <>{grantedClientScopes!.join(", ")}</>;
+    if (grantedClientScopes!.length <= 5 && labelClicked) {
+      return <>{grantedClientScopes!.join(", ")}</>;
+    } else
+      return (
+        <>
+          {grantedClientScopes!.slice(1, 6).join(", ")}{" "}
+          <Label
+            color="blue"
+            style={{ cursor: "pointer" }}
+            variant="outline"
+            onClick={() => setLabelClicked(true)}
+          >
+            {grantedClientScopes!.length - 5 + " more"}
+          </Label>
+        </>
+      );
   };
 
   const createdRenderer = ({ createDate }: UserConsentRepresentation) => {
@@ -45,50 +66,49 @@ export const UserConsents = () => {
 
   return (
     <>
-      <PageSection variant="light">
-        <KeycloakDataTable
-          loader={loader}
-          ariaLabelKey="roles:roleList"
-          columns={[
-            {
-              name: "clientId",
-              displayKey: "clients:Client",
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(20)],
-            },
-            {
-              name: "grantedClientScopes",
-              displayKey: "client-scopes:grantedClientScopes",
-              cellFormatters: [emptyFormatter()],
-              cellRenderer: clientScopesRenderer,
-              transforms: [cellWidth(30)],
-            },
-            {
-              name: "createdDate",
-              displayKey: "clients:created",
-              cellFormatters: [emptyFormatter()],
-              cellRenderer: createdRenderer,
-              transforms: [cellWidth(20)],
-            },
-            {
-              name: "lastUpdatedDate",
-              displayKey: "clients:lastUpdated",
-              cellFormatters: [emptyFormatter()],
-              cellRenderer: lastUpdatedRenderer,
-              transforms: [cellWidth(20)],
-            },
-          ]}
-          emptyState={
-            <ListEmptyState
-              hasIcon={true}
-              icon={CubesIcon}
-              message={t("users:noConsents")}
-              instructions={t("users:noConsentsText")}
-              onPrimaryAction={() => {}}
-            />
-          }
-        />
-      </PageSection>
+      <KeycloakDataTable
+        loader={loader}
+        ariaLabelKey="roles:roleList"
+        searchPlaceholderKey=" "
+        columns={[
+          {
+            name: "clientId",
+            displayKey: "clients:Client",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(20)],
+          },
+          {
+            name: "grantedClientScopes",
+            displayKey: "client-scopes:grantedClientScopes",
+            cellFormatters: [emptyFormatter()],
+            cellRenderer: clientScopesRenderer,
+            transforms: [cellWidth(30)],
+          },
+          {
+            name: "createdDate",
+            displayKey: "clients:created",
+            cellFormatters: [emptyFormatter()],
+            cellRenderer: createdRenderer,
+            transforms: [cellWidth(20)],
+          },
+          {
+            name: "lastUpdatedDate",
+            displayKey: "clients:lastUpdated",
+            cellFormatters: [emptyFormatter()],
+            cellRenderer: lastUpdatedRenderer,
+            transforms: [cellWidth(20)],
+          },
+        ]}
+        emptyState={
+          <ListEmptyState
+            hasIcon={true}
+            icon={CubesIcon}
+            message={t("users:noConsents")}
+            instructions={t("users:noConsentsText")}
+            onPrimaryAction={() => {}}
+          />
+        }
+      />
     </>
   );
 };
