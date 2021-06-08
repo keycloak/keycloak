@@ -134,7 +134,7 @@ public class MapClientProvider<K> implements ClientProvider {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
           .sorted(COMPARE_BY_CLIENT_ID)
           .map(entityToAdapterFunc(realm))
         ;
@@ -248,7 +248,7 @@ public class MapClientProvider<K> implements ClientProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, clientId);
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
           .map(entityToAdapterFunc(realm))
           .findFirst()
           .orElse(null)
@@ -265,7 +265,7 @@ public class MapClientProvider<K> implements ClientProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, "%" + clientId + "%");
 
-        Stream<MapClientEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapClientEntity<K>> s = tx.read(mcb)
           .sorted(COMPARE_BY_CLIENT_ID);
 
         return paginatedStream(s, firstResult, maxResults).map(entityToAdapterFunc(realm));
@@ -280,7 +280,7 @@ public class MapClientProvider<K> implements ClientProvider {
             mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
         }
 
-        Stream<MapClientEntity<K>> s = tx.getUpdatedNotRemoved(mcb)
+        Stream<MapClientEntity<K>> s = tx.read(mcb)
                 .sorted(COMPARE_BY_CLIENT_ID);
 
         return paginatedStream(s, firstResult, maxResults).map(entityToAdapterFunc(realm));
@@ -344,7 +344,7 @@ public class MapClientProvider<K> implements ClientProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
 
-        try (Stream<MapClientEntity<K>> st = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapClientEntity<K>> st = tx.read(mcb)) {
             return st
               .filter(mce -> mce.getRedirectUris() != null && ! mce.getRedirectUris().isEmpty())
               .collect(Collectors.toMap(
@@ -358,7 +358,7 @@ public class MapClientProvider<K> implements ClientProvider {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
-        try (Stream<MapClientEntity<K>> toRemove = tx.getUpdatedNotRemoved(mcb)) {
+        try (Stream<MapClientEntity<K>> toRemove = tx.read(mcb)) {
             toRemove
                 .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))
                 .filter(Objects::nonNull)

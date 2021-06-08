@@ -195,7 +195,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 .compare(AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId())
                 .compare(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, ModelCriteriaBuilder.Operator.EQ, offline);
 
-        return clientSessionTx.getUpdatedNotRemoved(mcb)
+        return clientSessionTx.read(mcb)
                 .findFirst()
                 .map(clientEntityToAdapterFunc(client.getRealm(), client, userSession))
                 .orElse(null);
@@ -258,7 +258,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
         ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
                 .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, uuid);
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .findFirst()
                 .map(userEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -271,7 +271,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getUserSessionsStream(%s, %s)%s", realm, user, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -283,7 +283,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getUserSessionsStream(%s, %s)%s", realm, client, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -302,7 +302,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getUserSessionByBrokerUserIdStream(%s, %s)%s", realm, brokerUserId, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -314,7 +314,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getUserSessionByBrokerSessionId(%s, %s)%s", realm, brokerSessionId, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .findFirst()
                 .map(userEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -356,7 +356,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getActiveClientSessionStats(%s, %s)%s", realm, offline, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull)
                 .map(UserSessionModel::getAuthenticatedClientSessions)
@@ -496,7 +496,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s)%s", realm, user, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -508,7 +508,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionByBrokerSessionId(%s, %s)%s", realm, brokerSessionId, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .findFirst()
                 .map(userEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -521,7 +521,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionByBrokerUserIdStream(%s, %s)%s", realm, brokerUserId, getShortStackTrace());
 
-        return userSessionTx.getUpdatedNotRemoved(mcb)
+        return userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -544,7 +544,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s, %s, %s)%s", realm, client, firstResult, maxResults, getShortStackTrace());
 
-        return paginatedStream(userSessionTx.getUpdatedNotRemoved(mcb)
+        return paginatedStream(userSessionTx.read(mcb)
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(UserSessionModel::getLastSessionRefresh)), firstResult, maxResults);
@@ -595,7 +595,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, uuid);
 
         // check if it's an offline user session
-        MapUserSessionEntity<UK> userSessionEntity = userSessionTx.getUpdatedNotRemoved(mcb).findFirst().orElse(null);
+        MapUserSessionEntity<UK> userSessionEntity = userSessionTx.read(mcb).findFirst().orElse(null);
         if (userSessionEntity != null) {
             if (userSessionEntity.isOffline()) {
                 return Stream.of(userSessionEntity);
@@ -604,7 +604,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
             // no session found by the given ID, try to find by corresponding session ID
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
                     .compare(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, ModelCriteriaBuilder.Operator.EQ, userSessionId);
-            return userSessionTx.getUpdatedNotRemoved(mcb);
+            return userSessionTx.read(mcb);
         }
 
         // it's online user session so lookup offline user session by corresponding session id reference
@@ -613,7 +613,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
             UK uk = userSessionStore.getKeyConvertor().fromStringSafe(offlineUserSessionId);
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
                     .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, uk);
-            return userSessionTx.getUpdatedNotRemoved(mcb);
+            return userSessionTx.read(mcb);
         }
 
         return Stream.empty();

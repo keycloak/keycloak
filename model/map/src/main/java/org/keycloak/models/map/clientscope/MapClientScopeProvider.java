@@ -30,7 +30,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
@@ -80,7 +79,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
         ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
             .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.getUpdatedNotRemoved(mcb)
+        return tx.read(mcb)
           .sorted(COMPARE_BY_NAME)
           .map(entityToAdapterFunc(realm));
     }
