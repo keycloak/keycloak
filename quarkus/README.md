@@ -13,23 +13,19 @@ The module holds the codebase to run Keycloak on top of [Quarkus](https://quarku
     ├── The server itself, only responsible for generating the server artifacts
 ``` 
 
-## Activating the Module
-
-The module isn't enabled by default. To enable it please activate the `quarkus` profile. 
-
 ## Building
 
 To build the module and produce the artifacts to run a server:
 
-    mvn -f ../pom.xml clean install -DskipTestsuite -DskipExamples -DskipTests -Pquarkus
+    mvn -f ../pom.xml clean install -DskipTestsuite -DskipExamples -DskipTests
 
 ### Building the Distribution
     
 To build the module as well as the distribution packages:
 
-    mvn -f ../pom.xml clean install -DskipTestsuite -DskipExamples -DskipTests -Pquarkus,distribution
+    mvn -f ../pom.xml clean install -DskipTestsuite -DskipExamples -DskipTests -Pdistribution
 
-The distribution packages (ZIP and TAR) should be available at [../distribution/server-x](../distribution/server-x/target).
+The distribution packages (ZIP and TAR) should be available at [../distribution/server-x-dist](../distribution/server-x-dist/target).
 
 ## Running
 
