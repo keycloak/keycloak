@@ -124,7 +124,7 @@ public final class PropertyMappers {
         create("db", "quarkus.datasource.jdbc.driver", (db, context) -> Database.getDriver(db).orElse(null), null);
         createBuildTimeProperty("db", "quarkus.datasource.db-kind", (db, context) -> {
             if (Database.isSupported(db)) {
-                return db;
+                return Database.getDatabaseKind(db).orElse(db);
             }
             addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
             return "h2";

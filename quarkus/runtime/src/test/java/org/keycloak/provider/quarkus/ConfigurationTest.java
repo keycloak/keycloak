@@ -198,6 +198,17 @@ public class ConfigurationTest {
         config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+    }
+
+    @Test
+    public void testDatabaseKindProperties() {
+        System.setProperty("kc.config.args", "--db=postgres-10,--db-url=jdbc:postgresql://localhost/keycloak");
+        SmallRyeConfig config = createConfig();
+        assertEquals("io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+            config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:postgresql://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("postgresql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
     }
 
     @Test
