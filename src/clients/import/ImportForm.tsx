@@ -32,7 +32,7 @@ export const ImportForm = () => {
 
   const { addAlert } = useAlerts();
 
-  const handleFileChange = (value: string | File) => {
+  const handleFileChange = (obj: object) => {
     const defaultClient = {
       protocol: "",
       clientId: "",
@@ -40,12 +40,11 @@ export const ImportForm = () => {
       description: "",
     };
 
-    const obj = value ? JSON.parse(value as string) : defaultClient;
-    Object.keys(obj).forEach((k) => {
-      if (k === "attributes") {
-        convertToFormValues(obj[k], "attributes", form.setValue);
+    Object.entries(obj || defaultClient).forEach((entries) => {
+      if (entries[0] === "attributes") {
+        convertToFormValues(entries[1], "attributes", form.setValue);
       } else {
-        setValue(k, obj[k]);
+        setValue(entries[0], entries[1]);
       }
     });
   };

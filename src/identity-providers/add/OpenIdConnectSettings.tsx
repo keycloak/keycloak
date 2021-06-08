@@ -54,17 +54,17 @@ export const OpenIdConnectSettings = () => {
     }
   }, [discovering]);
 
-  const fileUpload = async (value: string) => {
-    if (value !== "") {
+  const fileUpload = async (obj: object) => {
+    if (obj) {
       const formData = new FormData();
       formData.append("providerId", id);
-      formData.append("file", new Blob([value]));
+      formData.append("file", new Blob([JSON.stringify(obj)]));
 
       try {
         const response = await fetch(
           `${getBaseUrl(
             adminClient
-          )}/admin/realms/${realm}/identity-provider/import-config`,
+          )}admin/realms/${realm}/identity-provider/import-config`,
           {
             method: "POST",
             body: formData,
@@ -173,7 +173,7 @@ export const OpenIdConnectSettings = () => {
             validated={
               discoveryResult && discoveryResult.error ? "error" : "default"
             }
-            onChange={(value) => fileUpload(value as string)}
+            onChange={(value) => fileUpload(value)}
           />
         </FormGroup>
       )}

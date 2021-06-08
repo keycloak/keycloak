@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Button,
   ButtonVariant,
@@ -11,12 +12,7 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 
-import { useTranslation } from "react-i18next";
-
-import {
-  JsonFileUpload,
-  JsonFileUploadEvent,
-} from "../components/json-file-upload/JsonFileUpload";
+import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
 
 export type PartialImportProps = {
   open: boolean;
@@ -33,21 +29,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     setImportEnabled(false);
   }, [props.open]);
 
-  const handleFileChange = (
-    value: string | File,
-    filename: string,
-    event: JsonFileUploadEvent
-  ) => {
-    setImportEnabled(value !== null);
-
-    // if user pressed clear button reset importEnabled
-    const nativeEvent = event.nativeEvent;
-    if (
-      nativeEvent instanceof MouseEvent &&
-      !(nativeEvent instanceof DragEvent)
-    ) {
-      setImportEnabled(false);
-    }
+  const handleFileChange = (value: object) => {
+    setImportEnabled(!!value);
   };
 
   return (

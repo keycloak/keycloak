@@ -29,29 +29,15 @@ export const NewRealmForm = () => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    control,
-    formState,
-    errors,
-  } = useForm<RealmRepresentation>({ mode: "onChange" });
+  const { register, handleSubmit, control, errors, setValue } = useForm<
+    RealmRepresentation
+  >({ mode: "onChange" });
 
-  const handleFileChange = (value: string | File) => {
+  const handleFileChange = (obj: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
-
-    let obj: { [name: string]: boolean | string } = defaultRealm;
-    if (value) {
-      try {
-        obj = JSON.parse(value as string);
-      } catch (error) {
-        console.warn("Invalid json, ignoring value using default");
-      }
-    }
-    Object.keys(obj).forEach((k) => {
-      setValue(k, obj[k]);
-    });
+    Object.entries(obj || defaultRealm).map((entry) =>
+      setValue(entry[0], entry[1])
+    );
   };
 
   const save = async (realm: RealmRepresentation) => {
@@ -83,7 +69,11 @@ export const NewRealmForm = () => {
           onSubmit={handleSubmit(save)}
           role="manage-realm"
         >
-          <JsonFileUpload id="kc-realm-filename" onChange={handleFileChange} />
+          <JsonFileUpload
+            id="kc-realm-filename"
+            allowEditingUploadedText
+            onChange={handleFileChange}
+          />
           <FormGroup
             label={t("realmName")}
             isRequired
@@ -118,11 +108,7 @@ export const NewRealmForm = () => {
             />
           </FormGroup>
           <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              isDisabled={!formState.isValid}
-            >
+            <Button variant="primary" type="submit">
               {t("common:create")}
             </Button>
             <Button variant="link" onClick={() => history.goBack()}>

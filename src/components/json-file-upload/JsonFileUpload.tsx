@@ -21,13 +21,9 @@ export type JsonFileUploadEvent =
   | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
   | React.MouseEvent<HTMLButtonElement, MouseEvent>; // User clicked Clear button
 
-export type JsonFileUploadProps = FileUploadProps & {
+export type JsonFileUploadProps = Omit<FileUploadProps, "onChange"> & {
   id: string;
-  onChange: (
-    value: string | File,
-    filename: string,
-    event: JsonFileUploadEvent
-  ) => void;
+  onChange: (obj: object) => void;
   helpText?: string;
   unWrap?: boolean;
 };
@@ -67,26 +63,19 @@ export const JsonFileUpload = ({
         value,
         filename,
       });
-      onChange(value, filename, event);
+
+      if (value) {
+        let obj = {};
+        try {
+          obj = JSON.parse(value as string);
+        } catch (error) {
+          console.warn("Invalid json, ignoring value using {}");
+        }
+
+        onChange(obj);
+      }
     }
   };
-
-  const JsonFileUploadComp = () => (
-    <FileUpload
-      id={id}
-      {...rest}
-      type="text"
-      value={fileUpload.value}
-      filename={fileUpload.filename}
-      onChange={handleChange}
-      onReadStarted={() => setFileUpload({ ...fileUpload, isLoading: true })}
-      onReadFinished={() => setFileUpload({ ...fileUpload, isLoading: false })}
-      isLoading={fileUpload.isLoading}
-      dropzoneProps={{
-        accept: ".json",
-      }}
-    />
-  );
 
   return (
     <>
@@ -100,9 +89,9 @@ export const JsonFileUpload = ({
             <Button
               key="confirm"
               variant="primary"
-              onClick={(event) => {
+              onClick={() => {
                 setFileUpload(defaultUpload);
-                onChange("", "", event);
+                onChange({});
               }}
             >
               {t("clear")}
@@ -115,14 +104,50 @@ export const JsonFileUpload = ({
           {t("clearFileExplain")}
         </Modal>
       )}
-      {unWrap && <JsonFileUploadComp />}
+      {unWrap && (
+        <FileUpload
+          id={id}
+          {...rest}
+          type="text"
+          value={fileUpload.value}
+          filename={fileUpload.filename}
+          onChange={handleChange}
+          onReadStarted={() =>
+            setFileUpload({ ...fileUpload, isLoading: true })
+          }
+          onReadFinished={() =>
+            setFileUpload({ ...fileUpload, isLoading: false })
+          }
+          isLoading={fileUpload.isLoading}
+          dropzoneProps={{
+            accept: ".json",
+          }}
+        />
+      )}
       {!unWrap && (
         <FormGroup
           label={t("resourceFile")}
           fieldId={id}
           helperText={t(helpText)}
         >
-          <JsonFileUploadComp />
+          <FileUpload
+            id={id}
+            {...rest}
+            type="text"
+            value={fileUpload.value}
+            filename={fileUpload.filename}
+            onChange={handleChange}
+            onReadStarted={() =>
+              setFileUpload({ ...fileUpload, isLoading: true })
+            }
+            onReadFinished={() =>
+              setFileUpload({ ...fileUpload, isLoading: false })
+            }
+            isLoading={fileUpload.isLoading}
+            dropzoneProps={{
+              accept: ".json",
+            }}
+          />
         </FormGroup>
       )}
     </>
