@@ -33,7 +33,9 @@ type ScopeFormProps = {
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation("client-scopes");
-  const { register, control, handleSubmit, errors, setValue } = useForm();
+  const { register, control, handleSubmit, errors, setValue } = useForm<
+    ClientScopeRepresentation
+  >({ defaultValues: { attributes: { "display-on-consent-screen": "true" } } });
   const history = useHistory();
   const { realm } = useRealm();
 
@@ -202,7 +204,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         <Controller
           name="attributes.display-on-consent-screen"
           control={control}
-          defaultValue="false"
+          defaultValue="true"
           render={({ onChange, value }) => (
             <Switch
               id="kc-display.on.consent.screen"
@@ -249,7 +251,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         <Controller
           name="attributes.include-in-token-scope"
           control={control}
-          defaultValue="false"
+          defaultValue="true"
           render={({ onChange, value }) => (
             <Switch
               id="includeInTokenScope"

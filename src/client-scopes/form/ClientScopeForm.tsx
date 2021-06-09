@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -26,12 +26,15 @@ import {
   changeScope,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 export const ClientScopeForm = () => {
   const { t } = useTranslation("client-scopes");
   const [clientScope, setClientScope] = useState<
     ClientScopeDefaultOptionalType
   >();
+  const history = useHistory();
+  const { realm } = useRealm();
   const [hide, setHide] = useState(false);
 
   const adminClient = useAdminClient();
@@ -117,6 +120,11 @@ export const ClientScopeForm = () => {
           adminClient,
           { ...clientScopes, id: scope.id },
           clientScopes.type
+        );
+        history.push(
+          `/${realm}/client-scopes/${scope.id}/${
+            clientScopes.type || "none"
+          }/settings`
         );
       }
       addAlert(t((id ? "update" : "create") + "Success"), AlertVariant.success);
