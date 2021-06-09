@@ -959,6 +959,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
         }
 
+        updateFederatedIdentity(context, context.getAuthenticationSession().getAuthenticatedUser());
         return Response.status(302).location(UriBuilder.fromUri(authSession.getRedirectUri()).build()).build();
     }
 
