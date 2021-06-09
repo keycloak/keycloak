@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import com.google.common.collect.ImmutableMap;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.page.Page;
@@ -26,16 +27,20 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.common.Profile;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -45,6 +50,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -85,6 +91,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.broker.AbstractRoleMapperTest.CLIENT_ROLE_MAPPER_REPRESENTATION;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -713,6 +720,24 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         } finally {
             httpClient.close();
         }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExternalExchangeWithExternalRoleMapper() throws Exception {
+        IdentityProviderMapperRepresentation externalRoleToRoleMapper = new IdentityProviderMapperRepresentation();
+        externalRoleToRoleMapper.setName("external-keycloak-role-mapper");
+        externalRoleToRoleMapper.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
+        externalRoleToRoleMapper.setConfig(ImmutableMap.<String,String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.FORCE.name())
+                .put("external.role", "user")
+                .put("role", CLIENT_ROLE_MAPPER_REPRESENTATION)
+                .build());
+        RealmResource childRealm = adminClient.realms().realm(CHILD_IDP);
+        IdentityProviderResource idpResource = childRealm.identityProviders().get(PARENT_IDP);
+        externalRoleToRoleMapper.setIdentityProviderAlias(PARENT_IDP);
+        idpResource.addMapper(externalRoleToRoleMapper).close();
+        testExternalExchange();
     }
     
     /**
