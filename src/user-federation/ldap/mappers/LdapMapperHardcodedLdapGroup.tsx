@@ -1,4 +1,4 @@
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
 import React from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { UseFormMethods } from "react-hook-form";
@@ -34,7 +34,10 @@ export const LdapMapperHardcodedLdapGroup = ({
           id="kc-group"
           data-testid="mapper-group-fld"
           name="config.group[0]"
-          ref={form.register}
+          ref={form.register({ required: true })}
+          validated={ 
+            form.errors.config && form.errors.config.group ? ValidatedOptions.error : ValidatedOptions.default
+          }
         />
       </FormGroup>
     </>
