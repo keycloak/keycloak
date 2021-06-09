@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Label } from "@patternfly/react-core";
+import { Chip, ChipGroup } from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../util";
@@ -22,38 +22,28 @@ export const UserConsents = () => {
   };
 
   const loader = async () => {
-    const consents = await adminClient.users.listConsents({ id });
+    const getConsents = await adminClient.users.listConsents({ id });
 
-    return alphabetize(consents);
+    return alphabetize(getConsents);
   };
-
-  const [labelClicked, setLabelClicked] = useState(false);
-
-  //  useEffect(() => {
-  //   console.log(labelClicked)
-  // }, [key])
-
-  const [key, setKey] = useState(0);
 
   const clientScopesRenderer = ({
     grantedClientScopes,
   }: UserConsentRepresentation) => {
-    if (grantedClientScopes!.length <= 5 && labelClicked) {
-      return <>{grantedClientScopes!.join(", ")}</>;
-    } else
-      return (
-        <>
-          {grantedClientScopes!.slice(1, 6).join(", ")}{" "}
-          <Label
-            color="blue"
-            style={{ cursor: "pointer" }}
-            variant="outline"
-            onClick={() => setLabelClicked(true)}
+    return (
+      <ChipGroup className="kc-consents-chip-group">
+        {grantedClientScopes!.map((currentChip) => (
+          <Chip
+            key={currentChip}
+            isReadOnly
+            className="kc-consents-chip"
+            id="consents-chip-text"
           >
-            {grantedClientScopes!.length - 5 + " more"}
-          </Label>
-        </>
-      );
+            {currentChip}
+          </Chip>
+        ))}
+      </ChipGroup>
+    );
   };
 
   const createdRenderer = ({ createDate }: UserConsentRepresentation) => {
@@ -70,7 +60,6 @@ export const UserConsents = () => {
     <>
       <KeycloakDataTable
         loader={loader}
-        key={key}
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey=" "
         columns={[
