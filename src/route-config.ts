@@ -243,7 +243,7 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/user-federation/ldap/new",
     component: UserFederationLdapSettings,
-    breadcrumb: t("common:settings"),
+    breadcrumb: t("user-federation:addOneLdap"),
     access: "view-realm",
   },
   {

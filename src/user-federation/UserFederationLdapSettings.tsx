@@ -131,7 +131,7 @@ const LdapSettingsHeader = ({
     <>
       <DisableConfirm />
       {!id ? (
-        <ViewHeader titleKey="LDAP" />
+        <ViewHeader titleKey={t("addOneLdap")} />
       ) : (
         <ViewHeader
           titleKey="LDAP"
@@ -286,6 +286,51 @@ export const UserFederationLdapSettings = () => {
     },
   });
 
+  const addLdapFormContent = () => {
+    return (
+      <>
+        <ScrollForm
+          sections={[
+            t("generalOptions"),
+            t("connectionAndAuthenticationSettings"),
+            t("ldapSearchingAndUpdatingSettings"),
+            t("synchronizationSettings"),
+            t("kerberosIntegration"),
+            t("cacheSettings"),
+            t("advancedSettings"),
+          ]}
+        >
+          <LdapSettingsGeneral form={form} />
+          <LdapSettingsConnection form={form} />
+          <LdapSettingsSearching form={form} />
+          <LdapSettingsSynchronization form={form} />
+          <LdapSettingsKerberosIntegration form={form} />
+          <SettingsCache form={form} />
+          <LdapSettingsAdvanced form={form} />
+        </ScrollForm>
+        <Form onSubmit={form.handleSubmit(save)}>
+          <ActionGroup className="keycloak__form_actions">
+            <Button
+              isDisabled={!form.formState.isDirty}
+              variant="primary"
+              type="submit"
+              data-testid="ldap-save"
+            >
+              {t("common:save")}
+            </Button>
+            <Button
+              variant="link"
+              onClick={() => history.push(`/${realm}/user-federation`)}
+              data-testid="ldap-cancel"
+            >
+              {t("common:cancel")}
+            </Button>
+          </ActionGroup>
+        </Form>
+      </>
+    );
+  };
+
   return (
     <>
       <DeleteConfirm />
@@ -305,52 +350,15 @@ export const UserFederationLdapSettings = () => {
         )}
       />
       <PageSection variant="light" isFilled>
-        <KeycloakTabs isBox>
-          <Tab
-            id="settings"
-            eventKey="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
-          >
-            <ScrollForm
-              sections={[
-                t("generalOptions"),
-                t("connectionAndAuthenticationSettings"),
-                t("ldapSearchingAndUpdatingSettings"),
-                t("synchronizationSettings"),
-                t("kerberosIntegration"),
-                t("cacheSettings"),
-                t("advancedSettings"),
-              ]}
+        {id ? (
+          <KeycloakTabs isBox>
+            <Tab
+              id="settings"
+              eventKey="settings"
+              title={<TabTitleText>{t("common:settings")}</TabTitleText>}
             >
-              <LdapSettingsGeneral form={form} />
-              <LdapSettingsConnection form={form} />
-              <LdapSettingsSearching form={form} />
-              <LdapSettingsSynchronization form={form} />
-              <LdapSettingsKerberosIntegration form={form} />
-              <SettingsCache form={form} />
-              <LdapSettingsAdvanced form={form} />
-            </ScrollForm>
-            <Form onSubmit={form.handleSubmit(save)}>
-              <ActionGroup className="keycloak__form_actions">
-                <Button
-                  isDisabled={!form.formState.isDirty}
-                  variant="primary"
-                  type="submit"
-                  data-testid="ldap-save"
-                >
-                  {t("common:save")}
-                </Button>
-                <Button
-                  variant="link"
-                  onClick={() => history.push(`/${realm}/user-federation`)}
-                  data-testid="ldap-cancel"
-                >
-                  {t("common:cancel")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </Tab>
-          {id && (
+              {addLdapFormContent()}
+            </Tab>
             <Tab
               id="mappers"
               eventKey="mappers"
@@ -359,8 +367,10 @@ export const UserFederationLdapSettings = () => {
             >
               <LdapMapperList />
             </Tab>
-          )}
-        </KeycloakTabs>
+          </KeycloakTabs>
+        ) : (
+          addLdapFormContent()
+        )}
       </PageSection>
     </>
   );
