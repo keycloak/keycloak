@@ -79,7 +79,6 @@ export const UserConsents = () => {
       try {
         await adminClient.users.revokeConsent({
           id,
-          // realm: realm,
           clientId: selectedClient!.clientId!,
         });
 
