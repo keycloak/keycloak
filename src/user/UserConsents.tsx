@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Chip, ChipGroup } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  ButtonVariant,
+  Chip,
+  ChipGroup,
+} from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../util";
@@ -11,15 +16,24 @@ import _ from "lodash";
 import type UserConsentRepresentation from "keycloak-admin/lib/defs/userConsentRepresentation";
 import { CubesIcon } from "@patternfly/react-icons";
 import moment from "moment";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useAlerts } from "../components/alert/Alerts";
 
 export const UserConsents = () => {
+  const [selectedClient, setSelectedClient] = useState<
+    UserConsentRepresentation
+  >();
   const { t } = useTranslation("roles");
+  const { addAlert } = useAlerts();
+  const [key, setKey] = useState(0);
 
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
   const alphabetize = (consentsList: UserConsentRepresentation[]) => {
     return _.sortBy(consentsList, (client) => client.clientId?.toUpperCase());
   };
+
+  const refresh = () => setKey(new Date().getTime());
 
   const loader = async () => {
     const getConsents = await adminClient.users.listConsents({ id });
@@ -56,10 +70,34 @@ export const UserConsents = () => {
     return <>{moment(lastUpdatedDate).format("MM/DD/YY hh:MM A")}</>;
   };
 
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "users:revokeClientScopesTitle",
+    messageKey: t("users:revokeClientScopes") + selectedClient?.clientId + "?",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.users.revokeConsent({
+          id,
+          // realm: realm,
+          clientId: selectedClient!.clientId!,
+        });
+
+        refresh();
+
+        addAlert(t("deleteGrantsSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(t("deleteGrantsError", { error }), AlertVariant.danger);
+      }
+    },
+  });
+
   return (
     <>
+      <DeleteConfirm />
       <KeycloakDataTable
         loader={loader}
+        key={key}
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey=" "
         columns={[
@@ -88,7 +126,16 @@ export const UserConsents = () => {
             displayKey: "clients:lastUpdated",
             cellFormatters: [emptyFormatter()],
             cellRenderer: lastUpdatedRenderer,
-            transforms: [cellWidth(20)],
+            transforms: [cellWidth(10)],
+          },
+        ]}
+        actions={[
+          {
+            title: t("users:revoke"),
+            onRowClick: (client) => {
+              setSelectedClient(client);
+              toggleDeleteDialog();
+            },
           },
         ]}
         emptyState={

@@ -87,12 +87,21 @@ td.pf-c-table__check > input {
   content: ", ";
 }
 
-.pf-c-chip-group.kc-consents-chip-group
+div.pf-c-chip-group.kc-consents-chip-group
   > div.pf-c-chip-group__main
   > ul.pf-c-chip-group__list
-  .pf-m-overflow
-  .pf-c-chip__text::before {
+  > li.pf-c-chip-group__list-item:last-child
+  > button.pf-c-chip.pf-m-overflow::before {
   content: "";
   margin-left: var(--pf-global--spacer--sm);
-  padding-left: 0px;
+}
+
+div.pf-c-chip-group.kc-consents-chip-group
+  > div.pf-c-chip-group__main
+  > ul.pf-c-chip-group__list
+  > li.pf-c-chip-group__list-item:last-child
+  > button.pf-c-chip.pf-m-overflow
+  > span::before {
+  content: "";
+  margin-left: var(--pf-global--spacer--sm);
 }
