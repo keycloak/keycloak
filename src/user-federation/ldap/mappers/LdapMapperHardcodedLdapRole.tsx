@@ -1,4 +1,9 @@
-import { Button, FormGroup, TextInput } from "@patternfly/react-core";
+import {
+  Button,
+  FormGroup,
+  TextInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
 import React, { useState } from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { UseFormMethods } from "react-hook-form";
@@ -71,7 +76,12 @@ export const LdapMapperHardcodedLdapRole = ({
             id="kc-role"
             data-testid="role"
             name="config.role[0]"
-            ref={form.register}
+            ref={form.register({ required: true })}
+            validated={
+              form.errors.config && form.errors.config.role
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+            }
           />
           <Button
             className="keycloak__user-federation__assign-role-btn"

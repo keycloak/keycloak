@@ -35,8 +35,10 @@ export const LdapMapperHardcodedLdapGroup = ({
           data-testid="mapper-group-fld"
           name="config.group[0]"
           ref={form.register({ required: true })}
-          validated={ 
-            form.errors.config && form.errors.config.group ? ValidatedOptions.error : ValidatedOptions.default
+          validated={
+            form.errors.config && form.errors.config.group
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
           }
         />
       </FormGroup>

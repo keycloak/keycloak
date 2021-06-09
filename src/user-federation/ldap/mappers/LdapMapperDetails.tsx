@@ -10,7 +10,7 @@ import {
   SelectOption,
   SelectVariant,
   TextInput,
-  ValidatedOptions
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
@@ -159,9 +159,11 @@ export const LdapMapperDetails = () => {
               id="kc-ldap-mapper-name"
               data-testid="ldap-mapper-name"
               name="name"
-              ref={form.register({ required: true})}
-              validated={ 
-                form.errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              ref={form.register({ required: true })}
+              validated={
+                form.errors.name
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
               }
             />
             <TextInput

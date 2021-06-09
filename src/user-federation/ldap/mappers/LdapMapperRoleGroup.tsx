@@ -5,6 +5,7 @@ import {
   SelectVariant,
   Switch,
   TextInput,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import React, { useState } from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
@@ -77,7 +78,16 @@ export const LdapMapperRoleGroup = ({
           id="kc-ldap-dn"
           data-testid="ldap-dn"
           name={isRole ? "config.roles-dn[0]" : "config.groups-dn[0]"}
-          ref={form.register}
+          ref={form.register({ required: true })}
+          validated={
+            isRole
+              ? form.errors.config && form.errors.config["roles-dn"]
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+              : form.errors.config && form.errors.config["groups-dn"]
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
+          }
         />
       </FormGroup>
       <FormGroup
@@ -297,10 +307,8 @@ export const LdapMapperRoleGroup = ({
           />
         }
         fieldId="kc-ldap-filter"
-        isRequired
       >
         <TextInput
-          isRequired
           type="text"
           id="kc-ldap-filter"
           data-testid="ldap-filter"
@@ -519,10 +527,8 @@ export const LdapMapperRoleGroup = ({
               />
             }
             fieldId="kc-mapped-attributes"
-            isRequired
           >
             <TextInput
-              isRequired
               type="text"
               id="kc-mapped-attributes"
               data-testid="mapped-attributes"
@@ -577,7 +583,12 @@ export const LdapMapperRoleGroup = ({
               data-testid="path"
               defaultValue="/"
               name="config.groups-path[0]"
-              ref={form.register}
+              ref={form.register({ required: true })}
+              validated={
+                form.errors.config && form.errors.config["groups-path"]
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
             />
           </FormGroup>
         </>
