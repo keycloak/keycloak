@@ -847,11 +847,9 @@ public class GroupTest extends AbstractGroupTest {
      */
     @Test
     public void searchForGroupsShouldOnlyReturnMatchingElementsOrIntermediatePaths() {
-        //Map Group Provider is not working the same way as JPA Group Provider
-        //see https://issues.redhat.com/browse/KEYCLOAK-18390
-        Assume.assumeTrue(Profile.getDisabledFeatures().contains(Profile.Feature.MAP_STORAGE));
+
         /*
-         * /g1/g1.1-bubu
+         * /g1/g1.1-gugu
          * /g1/g1.2-test1234
          * /g2-test1234
          * /g3/g3.1-test1234/g3.1.1
