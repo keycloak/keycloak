@@ -23,6 +23,12 @@ export class WhoAmI {
     return this.me.displayName;
   }
 
+  public getUserId(): string {
+    if (this.me === undefined) return "";
+
+    return this.me.userId;
+  }
+
   /**
    * Return the realm I am signed in to.
    */

@@ -35,6 +35,9 @@ export default class RealmSettingsPage {
   filterSelectMenu = ".kc-filter-type-select";
   passiveKeysOption = "passive-keys-option";
   disabledKeysOption = "disabled-keys-option";
+  testConnectionButton = "test-connection-button";
+  modalTestConnectionButton = "modal-test-connection-button";
+  emailAddressInput = "email-address-input";
 
   selectLoginThemeType(themeType: string) {
     const themesUrl = "/auth/admin/realms/master/themes";

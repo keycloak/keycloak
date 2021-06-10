@@ -69,6 +69,9 @@ describe("Realm settings", () => {
     realmSettingsPage.toggleCheck(realmSettingsPage.enableStartTlsCheck);
 
     realmSettingsPage.save(realmSettingsPage.emailSaveBtn);
+    cy.getId(realmSettingsPage.testConnectionButton).click();
+    cy.wait(500)
+    masthead.checkNotificationMessage("Error! Failed to send email.");
   });
 
   it("Go to themes tab", () => {

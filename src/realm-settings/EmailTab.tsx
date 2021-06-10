@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -20,23 +20,32 @@ import { emailRegexPattern } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { getBaseUrl } from "../util";
 
 import "./RealmSettingsSection.css";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import { WhoAmIContext } from "../context/whoami/WhoAmI";
+import { AddUserEmailModal } from "./AddUserEmailModal";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
+  user: UserRepresentation;
 };
 
 export const RealmSettingsEmailTab = ({
   realm: initialRealm,
+  user,
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
+  const { whoAmI } = useContext(WhoAmIContext);
 
   const [isAuthenticationEnabled, setAuthenticationEnabled] = useState("true");
   const [realm, setRealm] = useState(initialRealm);
+  const [userEmailModalOpen, setUserEmailModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserRepresentation>();
   const {
     register,
     control,
@@ -46,9 +55,19 @@ export const RealmSettingsEmailTab = ({
     reset: resetForm,
   } = useForm<RealmRepresentation>();
 
+  const userForm = useForm<UserRepresentation>({ mode: "onChange" });
+
   useEffect(() => {
     reset();
   }, [realm]);
+
+  useEffect(() => {
+    setCurrentUser(user);
+  }, []);
+
+  const handleModalToggle = () => {
+    setUserEmailModalOpen(!userEmailModalOpen);
+  };
 
   const save = async (form: RealmRepresentation) => {
     try {
@@ -64,6 +83,14 @@ export const RealmSettingsEmailTab = ({
     }
   };
 
+  const saveAndTestEmail = async (user: UserRepresentation) => {
+    await adminClient.users.update({ id: whoAmI.getUserId() }, user);
+    const updated = await adminClient.users.findOne({ id: whoAmI.getUserId() });
+    setCurrentUser(updated);
+    handleModalToggle();
+    testConnection();
+  };
+
   const reset = () => {
     if (realm) {
       resetForm(realm);
@@ -71,8 +98,39 @@ export const RealmSettingsEmailTab = ({
     }
   };
 
+  const testConnection = async () => {
+    const response = await fetch(
+      `${getBaseUrl(adminClient)}admin/realms/${
+        realm.realm
+      }/testSMTPConnection`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `bearer ${await adminClient.getAccessToken()}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(realm.smtpServer! as BodyInit),
+      }
+    );
+    response.ok
+      ? addAlert(t("testConnectionSuccess"), AlertVariant.success)
+      : addAlert(t("testConnectionError"), AlertVariant.danger);
+  };
+
   return (
     <>
+      {userEmailModalOpen && (
+        <AddUserEmailModal
+          handleModalToggle={handleModalToggle}
+          testConnection={testConnection}
+          save={(user) => {
+            saveAndTestEmail(user!);
+          }}
+          form={userForm}
+          user={currentUser!}
+        />
+      )}
       <PageSection variant="light">
         <FormPanel title={t("template")} className="kc-email-template">
           <FormAccess
@@ -324,6 +382,17 @@ export const RealmSettingsEmailTab = ({
                 data-testid="email-tab-save"
               >
                 {t("common:save")}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={
+                  currentUser?.email
+                    ? () => testConnection()
+                    : handleModalToggle
+                }
+                data-testid="test-connection-button"
+              >
+                {t("realm-settings:testConnection")}
               </Button>
               <Button variant="link" onClick={reset}>
                 {t("common:revert")}

@@ -36,6 +36,7 @@ export type ConfirmDialogProps = {
   titleKey: string;
   messageKey?: string;
   noCancelButton?: boolean;
+  confirmButtonDisabled?: boolean;
   cancelButtonLabel?: string;
   continueButtonLabel?: string;
   continueButtonVariant?: ButtonVariant;
@@ -58,6 +59,7 @@ export const ConfirmDialogModal = ({
   open = true,
   variant = ModalVariant.small,
   toggleDialog,
+  confirmButtonDisabled,
 }: ConfirmDialogModalProps) => {
   const { t } = useTranslation();
   return (
@@ -71,6 +73,7 @@ export const ConfirmDialogModal = ({
           id="modal-confirm"
           data-testid="modalConfirm"
           key="confirm"
+          isDisabled={confirmButtonDisabled}
           variant={continueButtonVariant || ButtonVariant.primary}
           onClick={() => {
             onConfirm();
