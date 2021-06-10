@@ -36,7 +36,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- * 
+ *
  */
 public class SAMLAttributeValueParser implements StaxParser {
 
@@ -105,7 +105,19 @@ public class SAMLAttributeValueParser implements StaxParser {
             return StaxParserUtil.getElementText(xmlEventReader);
         }
 
-        throw logger.parserUnknownXSI(typeValue);
+        return parseElementAsString(xmlEventReader);
+    }
+
+    private String parseElementAsString(final XMLEventReader xmlEventReader) throws ParsingException {
+        try {
+            final StringWriter sw = new StringWriter();
+            do { // Consume all child elements inside saml2:AttributeValue
+                sw.append(parseAnyTypeAsString(xmlEventReader));
+            } while(!xmlEventReader.peek().isEndElement());
+            return sw.toString();
+        } catch (Exception e) {
+            throw logger.parserError(e);
+        }
     }
 
     public static String parseAnyTypeAsString(XMLEventReader xmlEventReader) throws ParsingException {
