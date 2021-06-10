@@ -265,7 +265,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         //Evaluate alternative elements only if there are no required elements. This may also occur if there was only condition elements
         if (requiredList.isEmpty()) {
             //check if an alternative is already successful, in case we are returning in the flow after an action
-            if (alternativeList.stream().anyMatch(alternative -> processor.isSuccessful(alternative) || isSetupRequired(alternative))) {
+            if (alternativeList.isEmpty() || alternativeList.stream().anyMatch(alternative -> processor.isSuccessful(alternative) || isSetupRequired(alternative))) {
                 successful = true;
                 return null;
             }
