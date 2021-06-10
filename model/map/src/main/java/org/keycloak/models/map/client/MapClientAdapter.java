@@ -231,8 +231,10 @@ public abstract class MapClientAdapter<K> extends AbstractClientModel<MapClientE
 
     @Override
     public void setProtocol(String protocol) {
-        entity.setProtocol(protocol);
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
+        if (!Objects.equals(entity.getProtocol(), protocol)) {
+            entity.setProtocol(protocol);
+            session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
+        }
     }
 
     @Override
