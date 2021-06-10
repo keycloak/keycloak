@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
@@ -1198,7 +1199,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         apiVersion = "v2-foo";
 
         SimpleHttp.Response response = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient).auth(tokenUtil.getToken()).asResponse();
-        assertEquals("API version not found", response.asJson().get("error").textValue());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.asJson().get("error").textValue());
+        assertEquals("API version not found", response.asJson().get("error_description").textValue());
         assertEquals(404, response.getStatus());
     }
 

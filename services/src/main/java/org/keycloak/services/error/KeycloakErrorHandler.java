@@ -3,9 +3,10 @@ package org.keycloak.services.error;
 import com.fasterxml.jackson.core.JsonParseException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.Failure;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
@@ -15,6 +16,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.Cors;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LocaleBean;
@@ -29,7 +31,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -45,6 +46,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
 
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
+
+    @Context
+    private HttpRequest request;
 
     @Context
     private HttpHeaders headers;
@@ -65,14 +69,11 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         }
 
         if (!MediaTypeMatcher.isHtmlRequest(headers)) {
-            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
-
-            error.setError(getErrorCode(throwable));
-            
-            return Response.status(statusCode)
-                    .header(HttpHeaders.CONTENT_TYPE, javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
-                    .entity(error)
-                    .build();
+            OAuth2ErrorRepresentation error = getErrorRepresentation(throwable);
+            Cors cors = Cors.add(request).allowAllOrigins();
+            return cors.builder(
+                    Response.status(statusCode).type(MediaType.APPLICATION_JSON_TYPE).entity(error)
+            ).build();
         }
 
         try {
@@ -108,20 +109,31 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (throwable instanceof JsonParseException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
-        
+
         if (throwable instanceof ModelDuplicateException) {
             status = Response.Status.CONFLICT.getStatusCode();
         }
-        
+
         return status;
     }
 
-    private String getErrorCode(Throwable throwable) {
+    private OAuth2ErrorRepresentation getErrorRepresentation(Throwable throwable) {
+        OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
         if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {
-            return throwable.getMessage();
+            String message = throwable.getMessage();
+            // If exception message satisfies OAuth "error" parameter syntax,
+            // threat it as an "error" field in representation,
+            // otherwise it is only suitable for "error_description".
+            if (message.matches("^[0-9a-z_]+$")) {
+                error.setError(message);
+            } else {
+                error.setError(OAuthErrorException.INVALID_REQUEST);
+                error.setErrorDescription(message);
+            }
+        } else {
+            error.setError("unknown_error");
         }
-
-        return "unknown_error";
+        return error;
     }
 
     private RealmModel resolveRealm(KeycloakSession session) {

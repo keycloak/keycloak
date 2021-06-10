@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.util.javascript;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.ImmutableMap;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.JavascriptExecutor;
 
 import java.util.HashMap;
@@ -14,6 +17,8 @@ public class XMLHttpRequest {
     private String method;
     private Map<String, String> headers;
     private String content;
+    private boolean withCredentials;
+    private boolean jsonResponse;
 
     public static XMLHttpRequest create() {
         return new XMLHttpRequest();
@@ -44,9 +49,7 @@ public class XMLHttpRequest {
         if (headers == null) {
             headers = new HashMap<>();
         }
-
         headers.put(key, value);
-
         return this;
     }
 
@@ -60,22 +63,38 @@ public class XMLHttpRequest {
         return this;
     }
 
-    public Map<String, Object> send(JavascriptExecutor jsExecutor) {
-        String requestCode = "var callback = arguments[arguments.length - 1];" +
-                        "var req = new XMLHttpRequest();" +
-                        "        req.open('" + method + "', '" + url + "', true);" +
-                        getHeadersString() +
-                        "        req.onreadystatechange = function () {" +
-                        "            if (req.readyState == 4) {" +
-                        "                callback({\"status\" : req.status, \"responseHeaders\" : req.getAllResponseHeaders(), \"res\" : req.response})" +
-                        "            }" +
-                        "        };" +
-                        "        req.send(" + content + ");";
-
-        return (Map<String, Object>) jsExecutor.executeAsyncScript(requestCode);
+    public XMLHttpRequest withCredentials() {
+        this.withCredentials = true;
+        return this;
     }
 
-    private String getHeadersString() {
+    public XMLHttpRequest jsonResponse() {
+        this.jsonResponse = true;
+        addHeader("Accept", "application/json");
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> send(JavascriptExecutor jsExecutor) {
+
+        String requestCode = "var callback = arguments[arguments.length - 1];" +
+                "var req = new XMLHttpRequest();" +
+                "        req.open('" + method + "', '" + url + "', true);" +
+                buildHeadersString() +
+                buildWithCredentialsString() +
+                "        req.onreadystatechange = function () {" +
+                "            if (req.readyState == 4) {" +
+                "                callback({\"status\" : req.status, \"responseHeaders\" : req.getAllResponseHeaders(), \"res\" : req.response})" +
+                "            }" +
+                "        };" +
+                "        req.send(" + content + ");";
+
+        Map<String, Object> res = (Map<String, Object>) jsExecutor.executeAsyncScript(requestCode);
+        return jsonResponse ? parseJsonResponse(res) : res;
+
+    }
+
+    private String buildHeadersString() {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             builder.append("req.setRequestHeader('")
@@ -84,8 +103,23 @@ public class XMLHttpRequest {
                     .append(entry.getValue())
                     .append("');");
         }
-
         return builder.toString();
+    }
+
+    private String buildWithCredentialsString() {
+        return withCredentials ? "req.withCredentials = true;" : "";
+    }
+
+    private Map<String, Object> parseJsonResponse(Map<String, Object> res) {
+        try {
+            String jsonString = (String) res.get("res");
+            Map<String, Object> json = JsonSerialization.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
+            // create new immutable map because input map is also immutable and cannot be modified directly
+            ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
+            return builder.putAll(res).put("json", json).build();
+        } catch (Exception e) {
+            return res;
+        }
     }
 
 }
