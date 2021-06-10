@@ -482,6 +482,7 @@
                                                 <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
                                                 <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
                                                 <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
+                                                <property name="keycloak.connectionsJpa.schema">${keycloak.connectionsJpa.schema}</property>
                                             </ant>
                                         </target>
                                     </configuration>
