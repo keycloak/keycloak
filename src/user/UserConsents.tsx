@@ -72,7 +72,9 @@ export const UserConsents = () => {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "users:revokeClientScopesTitle",
-    messageKey: t("users:revokeClientScopes") + selectedClient?.clientId + "?",
+    messageKey: t("users:revokeClientScopes", {
+      clientId: selectedClient?.clientId,
+    }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {

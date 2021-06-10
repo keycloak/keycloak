@@ -63,7 +63,7 @@
     "whoWillAppearPopoverText": "Groups are hierarchical. When you select Direct Membership, you see only the child group that the user joined. Ancestor groups are not included.",
     "revoke": "Revoke",
     "revokeClientScopesTitle": "Revoke all granted client scopes?",
-    "revokeClientScopes": "Are you sure you want to revoke all granted client scopes for ",
+    "revokeClientScopes": "Are you sure you want to revoke all granted client scopes for {{clientId}}?",
     "deleteGrantsSuccess": "Grants successfully revoked.",
     "deleteGrantsError": "Error deleting grants."
   }
