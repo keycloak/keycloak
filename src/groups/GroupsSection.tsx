@@ -97,7 +97,7 @@ export const GroupsSection = () => {
         />
       )}
       <ViewHeader
-        titleKey="groups:groups"
+        titleKey={!id ? "groups:groups" : currentGroup()?.name!}
         subKey={!id ? "groups:groupsDescription" : ""}
         divider={!id}
         dropdownItems={

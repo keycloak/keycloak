@@ -5,11 +5,13 @@ import _ from "lodash";
 import {
   AlertVariant,
   Button,
+  ButtonVariant,
   Dropdown,
   DropdownItem,
   KebabToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { cellWidth } from "@patternfly/react-table";
 import { UsersIcon } from "@patternfly/react-icons";
 
 import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
@@ -22,6 +24,7 @@ import { GroupsModal } from "./GroupsModal";
 import { getLastId } from "./groupIdUtils";
 import { MoveGroupDialog } from "./MoveGroupDialog";
 import { useSubGroups } from "./SubGroupsContext";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 type GroupTableData = GroupRepresentation & {
   membersLength?: number;
@@ -71,27 +74,22 @@ export const GroupTable = () => {
     return [];
   };
 
-  const deleteGroup = async (group: GroupRepresentation) => {
+  const multiDelete = async () => {
     try {
-      await adminClient.groups.del({
-        id: group.id!,
-      });
-      addAlert(t("groupDelete"), AlertVariant.success);
+      for (const group of selectedRows) {
+        await adminClient.groups.del({
+          id: group.id!,
+        });
+      }
+      addAlert(
+        t("groupDeleted", { count: selectedRows.length }),
+        AlertVariant.success
+      );
+      setSelectedRows([]);
     } catch (error) {
       addAlert(t("groupDeleteError", { error }), AlertVariant.danger);
     }
-    return true;
-  };
-
-  const multiDelete = async () => {
-    if (selectedRows!.length !== 0) {
-      const chainedPromises = selectedRows!.map((group) => deleteGroup(group));
-
-      await Promise.all(chainedPromises);
-      addAlert(t("groupsDeleted"), AlertVariant.success);
-      setSelectedRows([]);
-      refresh();
-    }
+    refresh();
   };
 
   const GroupNameCell = (group: GroupTableData) => (
@@ -120,8 +118,17 @@ export const GroupTable = () => {
     setIsCreateModalOpen(!isCreateModalOpen);
   };
 
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: t("deleteConfirmTitle", { count: selectedRows.length }),
+    messageKey: t("deleteConfirm", { count: selectedRows.length }),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: multiDelete,
+  });
+
   return (
     <>
+      <DeleteConfirm />
       <KeycloakDataTable
         key={`${id}${key}`}
         onSelect={(rows) => setSelectedRows([...rows])}
@@ -143,7 +150,10 @@ export const GroupTable = () => {
             <ToolbarItem>
               <Dropdown
                 toggle={
-                  <KebabToggle onToggle={() => setIsKebabOpen(!isKebabOpen)} />
+                  <KebabToggle
+                    onToggle={() => setIsKebabOpen(!isKebabOpen)}
+                    isDisabled={selectedRows!.length === 0}
+                  />
                 }
                 isOpen={isKebabOpen}
                 isPlain
@@ -152,7 +162,7 @@ export const GroupTable = () => {
                     key="action"
                     component="button"
                     onClick={() => {
-                      multiDelete();
+                      toggleDeleteDialog();
                       setIsKebabOpen(false);
                     }}
                   >
@@ -174,8 +184,8 @@ export const GroupTable = () => {
           {
             title: t("common:delete"),
             onRowClick: async (group: GroupRepresentation) => {
-              await deleteGroup(group);
-              refresh();
+              setSelectedRows([group]);
+              toggleDeleteDialog();
               return true;
             },
           },
@@ -185,6 +195,7 @@ export const GroupTable = () => {
             name: "name",
             displayKey: "groups:groupName",
             cellRenderer: GroupNameCell,
+            transforms: [cellWidth(15)],
           },
           {
             name: "members",

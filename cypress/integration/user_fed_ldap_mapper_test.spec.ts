@@ -265,6 +265,7 @@ describe("User Fed LDAP mapper tests", () => {
   it("Cleanup - delete group", () => {
     sidebarPage.goToGroups();
     listingPage.deleteItem(groupName);
+    modalUtils.confirmModal();
     masthead.checkNotificationMessage("Group deleted");
   });
 

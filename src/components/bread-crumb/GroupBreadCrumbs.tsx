@@ -42,7 +42,7 @@ export const GroupBreadCrumbs = () => {
                   {group.name}
                 </Link>
               )}
-              {subGroups.length - 1 === i && <>{group.name}</>}
+              {subGroups.length - 1 === i && <>{t("groups:groupDetails")}</>}
             </BreadcrumbItem>
           ))}
         </Breadcrumb>

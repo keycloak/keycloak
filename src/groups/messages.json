@@ -1,6 +1,7 @@
 {
   "groups": {
     "groups": "Groups",
+    "groupDetails": "Group details",
     "childGroups": "Child groups",
     "createGroup": "Create group",
     "groupName": "Group name",
@@ -48,8 +49,12 @@
     "noGroupsInThisRealmInstructions": "You haven't created any groups in this realm. Create a group to get started.",
     "noGroupsInThisSubGroup": "No groups in this sub group",
     "noGroupsInThisSubGroupInstructions": "You haven't created any groups in this sub group.",
-    "groupDelete": "Group deleted",
-    "groupsDeleted": "Groups deleted",
+    "deleteConfirmTitle": "Delete group?",
+    "deleteConfirmTitle_plural": "Delete groups?",
+    "deleteConfirm": "Are you sure you want to delete this group",
+    "deleteConfirm_plural": "Are you sure you want to delete this groups.",
+    "groupDeleted": "Group deleted",
+    "groupDeleted_plural": "Groups deleted",
     "groupDeleteError": "Error deleting group {error}",
     "attributes": "Attributes",
     "groupUpdated": "Group updated",

@@ -9,6 +9,7 @@ import LoginPage from "../support/pages/LoginPage";
 import ViewHeaderPage from "../support/pages/ViewHeaderPage";
 import AdminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_before";
+import ModalUtils from "../support/util/ModalUtils";
 
 describe("Group test", () => {
   const loginPage = new LoginPage();
@@ -19,6 +20,7 @@ describe("Group test", () => {
   const groupModal = new GroupModal();
   const searchGroupPage = new SearchGroupPage();
   const moveGroupModal = new MoveGroupModal();
+  const modalUtils = new ModalUtils();
 
   let groupName = "group";
 
@@ -53,6 +55,7 @@ describe("Group test", () => {
 
       // Delete
       listingPage.deleteItem(groupName);
+      modalUtils.checkModalTitle("Delete group?").confirmModal();
       masthead.checkNotificationMessage("Group deleted");
     });
 
@@ -71,6 +74,7 @@ describe("Group test", () => {
       sidebarPage.goToGroups();
       listingPage.searchItem(newName, false).itemExist(newName);
       listingPage.deleteItem(newName);
+      modalUtils.checkModalTitle("Delete group?").confirmModal();
       masthead.checkNotificationMessage("Group deleted");
     });
 
@@ -95,6 +99,7 @@ describe("Group test", () => {
       listingPage.itemExist(groupName);
       sidebarPage.goToGroups();
       listingPage.deleteItem(targetGroupName);
+      modalUtils.checkModalTitle("Delete group?").confirmModal();
       masthead.checkNotificationMessage("Group deleted");
     });
 
@@ -112,7 +117,9 @@ describe("Group test", () => {
 
       new GroupDetailPage().checkListSubGroup(groups);
       listingPage.deleteItem(groups[0]);
+      modalUtils.checkModalTitle("Delete group?").confirmModal();
       listingPage.deleteItem(groups[1]);
+      modalUtils.checkModalTitle("Delete group?").confirmModal();
     });
 
     it("Group search", () => {

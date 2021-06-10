@@ -129,7 +129,7 @@ exports[`Group BreadCrumbs tests couple of crumbs 1`] = `
                   </svg>
                 </AngleRightIcon>
               </span>
-              active group
+              Group details
             </li>
           </BreadcrumbItem>
         </ol>
