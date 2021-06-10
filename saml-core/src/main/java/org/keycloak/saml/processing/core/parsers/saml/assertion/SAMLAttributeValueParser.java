@@ -36,7 +36,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- * 
+ *
  */
 public class SAMLAttributeValueParser implements StaxParser {
 
@@ -105,7 +105,10 @@ public class SAMLAttributeValueParser implements StaxParser {
             return StaxParserUtil.getElementText(xmlEventReader);
         }
 
-        throw logger.parserUnknownXSI(typeValue);
+        // KEYCLOAK-18417: Simply ignore unknown types
+        logger.debug("Skipping attribute value of unsupported type " + typeValue);
+        StaxParserUtil.bypassElementBlock(xmlEventReader);
+        return null;
     }
 
     public static String parseAnyTypeAsString(XMLEventReader xmlEventReader) throws ParsingException {
