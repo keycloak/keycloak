@@ -34,8 +34,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
@@ -169,7 +167,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             expiresIn = Integer.valueOf(requestedExpiry);
         }
 
-        request.exp(Time.currentTime() + expiresIn.longValue());
+        request.exp(request.getIat() + expiresIn.longValue());
 
         StringBuilder scopes = new StringBuilder(Optional.ofNullable(request.getScope()).orElse(""));
         client.getClientScopes(true)
