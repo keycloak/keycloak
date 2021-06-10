@@ -46,6 +46,7 @@ public class JWKSUtilsTest {
         String kidRsa2 = "key2";
         String kidEC1 = "key3";
         String kidEC2 = "key4";
+        String kidRsa3MissingUse = "key5";
         String jwksJson = "{" +
                 "\"keys\": [" +
                 "  {" +
@@ -80,6 +81,12 @@ public class JWKSUtilsTest {
                 "   \"x\": \"KVZ5h_W0-8fXmUrxmyRpO_9vwwI7urXfyxGdxm1hpEuhPj2hhDxivnb2BhNvtC6O\"," +
                 "   \"y\": \"1J3JVw_zR3uB3biAE7fs3V_4tJy2M1JinzWj9a4je5GSoW6zgGV4bk85OcuyUAhj\"" +
                 "  }" +
+                "  ,{" +
+                "   \"kty\": \"RSA\"," +
+                "   \"kid\": \"" + kidRsa3MissingUse + "\"," +
+                "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
+                "   \"e\": \"AQAB\"" +
+                "  }" +
                 "] }";
         JSONWebKeySet jsonWebKeySet = JsonSerialization.readValue(jwksJson, JSONWebKeySet.class);
         Map<String, KeyWrapper> keyWrappersForUse = JWKSUtils.getKeyWrappersForUse(jsonWebKeySet, JWK.Use.SIG);
@@ -113,6 +120,5 @@ public class JWKSUtilsTest {
         assertEquals(kidEC2, key.getKid());
         assertEquals("EC", key.getType());
     }
-
 
 }

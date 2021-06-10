@@ -37,7 +37,8 @@ public class JWKSUtils {
 
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+            if (jwk.getPublicKeyUse() != null && 
+                  jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 result.put(jwk.getKeyId(), parser.toPublicKey());
             }
         }
@@ -49,7 +50,8 @@ public class JWKSUtils {
         Map<String, KeyWrapper> result = new HashMap<>();
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+            if (jwk.getPublicKeyUse()!= null && 
+                  jwk.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 KeyWrapper keyWrapper = new KeyWrapper();
                 keyWrapper.setKid(jwk.getKeyId());
                 if (jwk.getAlgorithm() != null) {
@@ -82,7 +84,9 @@ public class JWKSUtils {
     public static JWK getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+            JWK jwkParsed = parser.getJwk();
+            if (jwkParsed.getPublicKeyUse() != null && 
+                  jwkParsed.getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 return jwk;
             }
         }
