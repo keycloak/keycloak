@@ -23,12 +23,13 @@ import { FilterIcon } from "@patternfly/react-icons";
 import { Row, ServiceRole } from "./RoleMapping";
 import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 
-export type MappingType = "service-account" | "client-scope";
+export type MappingType = "service-account" | "client-scope" | "user-fed";
 
 type AddRoleMappingModalProps = {
   id: string;
   type: MappingType;
-  name: string;
+  name?: string;
+  isRadio?: boolean;
   onAssign: (rows: Row[]) => void;
   onClose: () => void;
 };
@@ -45,6 +46,7 @@ export const AddRoleMappingModal = ({
   id,
   name,
   type,
+  isRadio = false,
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
@@ -67,18 +69,28 @@ export const AddRoleMappingModal = ({
         await Promise.all(
           clients.map(async (client) => {
             let roles: RoleRepresentation[] = [];
-            if (type === "service-account") {
-              roles = await adminClient.users.listAvailableClientRoleMappings({
-                id: id,
-                clientUniqueId: client.id!,
-              });
-            } else if (type === "client-scope") {
-              roles = await adminClient.clientScopes.listAvailableClientScopeMappings(
-                {
-                  id,
-                  client: client.id!,
-                }
-              );
+
+            switch (type) {
+              case "service-account":
+                roles = await adminClient.users.listAvailableClientRoleMappings(
+                  {
+                    id: id,
+                    clientUniqueId: client.id!,
+                  }
+                );
+                break;
+
+              case "client-scope":
+                roles = await adminClient.clientScopes.listAvailableClientScopeMappings(
+                  {
+                    id,
+                    client: client.id!,
+                  }
+                );
+                break;
+              case "user-fed":
+                roles = await adminClient.roles.find();
+                break;
             }
             return {
               roles,
@@ -118,15 +130,25 @@ export const AddRoleMappingModal = ({
     }
 
     let availableRoles: RoleRepresentation[] = [];
-    if (type === "service-account") {
-      availableRoles = await adminClient.users.listAvailableRealmRoleMappings({
-        id,
-      });
-    } else if (type === "client-scope") {
-      availableRoles = await adminClient.clientScopes.listAvailableRealmScopeMappings(
-        { id }
-      );
+
+    switch (type) {
+      case "service-account":
+        availableRoles = await adminClient.users.listAvailableRealmRoleMappings(
+          {
+            id,
+          }
+        );
+        break;
+      case "client-scope":
+        availableRoles = await adminClient.clientScopes.listAvailableRealmScopeMappings(
+          { id }
+        );
+        break;
+      case "user-fed":
+        availableRoles = await adminClient.roles.find();
+        break;
     }
+
     const realmRoles = availableRoles.map((role) => {
       return {
         role,
@@ -143,18 +165,28 @@ export const AddRoleMappingModal = ({
       await Promise.all(
         allClients.map(async (client) => {
           let clientAvailableRoles: RoleRepresentation[] = [];
-          if (type === "service-account") {
-            clientAvailableRoles = await adminClient.users.listAvailableClientRoleMappings(
-              {
-                id,
-                clientUniqueId: client.id!,
-              }
-            );
-          } else if (type === "client-scope") {
-            clientAvailableRoles = await adminClient.clientScopes.listAvailableClientScopeMappings(
-              { id, client: client.id! }
-            );
+
+          switch (type) {
+            case "service-account":
+              clientAvailableRoles = await adminClient.users.listAvailableClientRoleMappings(
+                {
+                  id,
+                  clientUniqueId: client.id!,
+                }
+              );
+              break;
+            case "client-scope":
+              clientAvailableRoles = await adminClient.clientScopes.listAvailableClientScopeMappings(
+                { id, client: client.id! }
+              );
+              break;
+            case "user-fed":
+              clientAvailableRoles = await adminClient.clients.listRoles({
+                id: client.id!,
+              });
+              break;
           }
+
           return clientAvailableRoles.map((role) => {
             return {
               role,
@@ -220,7 +252,7 @@ export const AddRoleMappingModal = ({
         toggleId="role"
         onToggle={() => setSearchToggle(!searchToggle)}
         isOpen={searchToggle}
-        variant={SelectVariant.checkbox}
+        variant={isRadio ? SelectVariant.single : SelectVariant.checkbox}
         hasInlineFilter
         menuAppendTo="parent"
         placeholderText={
@@ -270,6 +302,7 @@ export const AddRoleMappingModal = ({
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="clients:searchByRoleName"
         canSelectAll={false}
+        isRadio={isRadio}
         loader={loader}
         ariaLabelKey="clients:roles"
         columns={[

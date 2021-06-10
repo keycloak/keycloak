@@ -5,11 +5,14 @@ import {
   SelectVariant,
   Switch,
   TextInput,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import React, { useState } from "react";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { Controller, UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 
 export type LdapMapperRoleGroupProps = {
   form: UseFormMethods;
@@ -22,7 +25,7 @@ export const LdapMapperRoleGroup = ({
 }: LdapMapperRoleGroupProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-
+  const adminClient = useAdminClient();
   const [isMbAttTypeDropdownOpen, setIsMbAttTypeDropdownOpen] = useState(false);
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
   const [
@@ -30,6 +33,7 @@ export const LdapMapperRoleGroup = ({
     setIsRetrieveStratDropdownOpen,
   ] = useState(false);
   const [isClientIdDropdownOpen, setIsClientIdDropdownOpen] = useState(false);
+  const [clients, setClients] = useState<ClientRepresentation[]>([]);
 
   let isRole = true;
   const groupMapper = "group-ldap-mapper";
@@ -37,6 +41,18 @@ export const LdapMapperRoleGroup = ({
   if (type === groupMapper) {
     isRole = false;
   }
+
+  useFetch(
+    async () => {
+      const clients = await adminClient.clients.find();
+      if (clients) {
+        setClients(clients);
+      }
+      return clients;
+    },
+    (clients) => setClients(clients),
+    []
+  );
 
   return (
     <>
@@ -62,7 +78,16 @@ export const LdapMapperRoleGroup = ({
           id="kc-ldap-dn"
           data-testid="ldap-dn"
           name={isRole ? "config.roles-dn[0]" : "config.groups-dn[0]"}
-          ref={form.register}
+          ref={form.register({ required: true })}
+          validated={
+            isRole
+              ? form.errors.config && form.errors.config["roles-dn"]
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+              : form.errors.config && form.errors.config["groups-dn"]
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
+          }
         />
       </FormGroup>
       <FormGroup
@@ -90,6 +115,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-name-attribute"
           data-testid="name-attribute"
+          defaultValue="cn"
           name={
             isRole
               ? "config.role-name-ldap-attribute[0]"
@@ -119,6 +145,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-object-classes"
           data-testid="object-classes"
+          defaultValue="group"
           name={
             isRole
               ? "config.role-object-classes[0]"
@@ -143,7 +170,7 @@ export const LdapMapperRoleGroup = ({
           >
             <Controller
               name="config.preserve-group-inheritance"
-              defaultValue={["false"]}
+              defaultValue={["true"]}
               control={form.control}
               render={({ onChange, value }) => (
                 <Switch
@@ -202,6 +229,7 @@ export const LdapMapperRoleGroup = ({
         <TextInput
           isRequired
           type="text"
+          defaultValue="member"
           id="kc-membership-ldap-attribute"
           data-testid="membership-ldap-attribute"
           name="config.membership-ldap-attribute[0]"
@@ -264,6 +292,7 @@ export const LdapMapperRoleGroup = ({
           type="text"
           id="kc-membership-user-ldap-attribute"
           data-testid="membership-user-ldap-attribute"
+          defaultValue="cn"
           name="config.membership-user-ldap-attribute[0]"
           ref={form.register}
         />
@@ -278,10 +307,8 @@ export const LdapMapperRoleGroup = ({
           />
         }
         fieldId="kc-ldap-filter"
-        isRequired
       >
         <TextInput
-          isRequired
           type="text"
           id="kc-ldap-filter"
           data-testid="ldap-filter"
@@ -413,6 +440,7 @@ export const LdapMapperRoleGroup = ({
           isRequired
           type="text"
           id="kc-member-of-attribute"
+          defaultValue="memberOf"
           data-testid="member-of-attribute"
           name="config.memberof-ldap-attribute[0]"
           ref={form.register}
@@ -434,7 +462,7 @@ export const LdapMapperRoleGroup = ({
           >
             <Controller
               name="config.use-realm-roles-mapping"
-              defaultValue={["false"]}
+              defaultValue={["true"]}
               control={form.control}
               render={({ onChange, value }) => (
                 <Switch
@@ -461,7 +489,6 @@ export const LdapMapperRoleGroup = ({
           >
             <Controller
               name="config.client-id[0]"
-              defaultValue=""
               control={form.control}
               render={({ onChange, value }) => (
                 <Select
@@ -477,12 +504,11 @@ export const LdapMapperRoleGroup = ({
                   selections={value}
                   variant={SelectVariant.single}
                 >
-                  <SelectOption key={0} value="account">
-                    Need to fetch clients here
-                  </SelectOption>
-                  <SelectOption key={1} value="admin-cli">
-                    These are placeholders
-                  </SelectOption>
+                  {clients.map((client) => (
+                    <SelectOption key={client.id} value={client.id}>
+                      {client.clientId}
+                    </SelectOption>
+                  ))}
                 </Select>
               )}
             ></Controller>
@@ -501,10 +527,8 @@ export const LdapMapperRoleGroup = ({
               />
             }
             fieldId="kc-mapped-attributes"
-            isRequired
           >
             <TextInput
-              isRequired
               type="text"
               id="kc-mapped-attributes"
               data-testid="mapped-attributes"
@@ -557,8 +581,14 @@ export const LdapMapperRoleGroup = ({
               type="text"
               id="kc-path"
               data-testid="path"
+              defaultValue="/"
               name="config.groups-path[0]"
-              ref={form.register}
+              ref={form.register({ required: true })}
+              validated={
+                form.errors.config && form.errors.config["groups-path"]
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
             />
           </FormGroup>
         </>
