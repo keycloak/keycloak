@@ -43,6 +43,7 @@ const providerDeleteSuccess = "The user federation provider has been deleted.";
 const providerDeleteTitle = "Delete user federation provider?";
 const mapperDeletedSuccess = "Mapping successfully deleted";
 const mapperDeleteTitle = "Delete mapping?";
+const groupDeleteTitle = "Delete group?";
 const groupCreatedSuccess = "Group created";
 const groupDeletedSuccess = "Group deleted";
 const clientCreatedSuccess = "Client created successfully";
@@ -325,6 +326,7 @@ describe("User Fed LDAP mapper tests", () => {
   it("Cleanup - delete group", () => {
     sidebarPage.goToGroups();
     listingPage.deleteItem(groupName);
+    modalUtils.checkModalTitle(groupDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(groupDeletedSuccess);
   });
 
