@@ -238,6 +238,7 @@ public class TokenManager {
                     .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE)
                     .verify();
         } catch (VerificationException e) {
+            logger.debug("JWT check failed: " + e.getMessage());
             return false;
         }
 
@@ -327,6 +328,7 @@ public class TokenManager {
                     .withChecks(NotBeforeCheck.forModel(session ,realm, user))
                     .verify();
         } catch (VerificationException e) {
+            logger.debug("JWT check failed: " + e.getMessage());
             return false;
         }
         return true;
