@@ -98,13 +98,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 /**
  * Test class for SAML parser.
  *
@@ -185,6 +184,18 @@ public class SAMLParserTest {
         assertThat(ea, notNullValue());
         assertThat(ea.getEncryptedElement(), notNullValue());
         assertThat(ea.getEncryptedElement().getLocalName(), is("EncryptedAssertion"));
+    }
+
+    @Test
+    public void testSaml20EncryptedId() throws Exception {
+        ResponseType rt = assertParsed("saml20-encrypted-id-response.xml",  ResponseType.class);
+
+        assertThat(rt, notNullValue());
+        assertThat(rt.getAssertions(), notNullValue());
+        assertThat(rt.getAssertions().size(), is(1));
+        assertThat(rt.getAssertions().get(0).getAssertion().getSubject(), notNullValue());
+        assertThat(rt.getAssertions().get(0).getAssertion().getSubject().getSubType(), notNullValue());
+        assertThat(rt.getAssertions().get(0).getAssertion().getSubject().getSubType().getEncryptedID(), notNullValue());
     }
 
     @Test
