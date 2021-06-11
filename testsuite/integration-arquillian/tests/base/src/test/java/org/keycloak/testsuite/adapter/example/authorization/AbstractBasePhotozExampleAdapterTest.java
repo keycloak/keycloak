@@ -42,6 +42,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -127,7 +128,7 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
     @Before
     public void beforePhotozExampleAdapterTest() throws Exception {
         DroneUtils.addWebDriver(jsDriver);
-        this.deployer.deploy(RESOURCE_SERVER_ID);
+        deployIgnoreIfDuplicate(RESOURCE_SERVER_ID);
 
         clientPage.navigateTo();
 //        waitForPageToLoad();
@@ -288,5 +289,27 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
         ClientRepresentation clientRep = html5ClientApp.toRepresentation();
         clientRep.setFullScopeAllowed(false);
         html5ClientApp.update(clientRep);
+    }
+
+    /**
+     * Redeploy if duplicate resource is present.
+     * KEYCLOAK-18442
+     *
+     * @param name Name of the deployment
+     */
+    protected void deployIgnoreIfDuplicate(String name) {
+        try {
+            deployer.deploy(name);
+        } catch (Exception e) {
+            //DeploymentException is thrown by an deployer event handler and cannot be explicitly caught
+            //noinspection ConstantConditions
+            if (e instanceof DeploymentException && e.getMessage().contains("Duplicate resource")) {
+                log.warnf("Duplicate resource '%s'. Trying to undeploy and deploy again...", name);
+                deployer.undeploy(name);
+                deployer.deploy(name);
+                return;
+            }
+            throw e;
+        }
     }
 }
