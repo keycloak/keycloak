@@ -32,6 +32,7 @@ org.keycloak.authentication.authenticators.resetcred.ResetCredentialChooseUser
 org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail
 org.keycloak.authentication.authenticators.resetcred.ResetOTP
 org.keycloak.authentication.authenticators.resetcred.ResetPassword
+org.keycloak.authentication.authenticators.resetcred.ResetWebAuthnPasswordless
 org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory
 org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory
 org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticatorFactory
