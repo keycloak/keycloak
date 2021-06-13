@@ -238,6 +238,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case SAML_POST_FORM:
                 attributes.put("samlPost", new SAMLPostFormBean(formData));
                 break;
+            case FRONTCHANNEL_LOGOUT:
+                attributes.put("frontchannelLogout", formData);
+                break;
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
@@ -595,6 +598,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createSamlPostForm() {
         return createResponse(LoginFormsPages.SAML_POST_FORM);
+    }
+
+    @Override
+    public Response createFrontchannelLogoutPage() {
+        return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {

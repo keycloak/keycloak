@@ -1045,6 +1045,9 @@ public class TokenManager {
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
             idToken.setAcr(accessToken.getAcr());
+            if(client.isFrontchannelLogout()){                
+                idToken.setOtherClaims("sid", userSession.getId());
+            }
             if (isIdTokenAsDetachedSignature == false) {
                 transformIDToken(session, idToken, userSession, clientSessionCtx);
             }

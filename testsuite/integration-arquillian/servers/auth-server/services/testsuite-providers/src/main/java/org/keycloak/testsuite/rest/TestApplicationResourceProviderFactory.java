@@ -46,6 +46,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
     private BlockingQueue<LogoutAction> adminLogoutActions = new LinkedBlockingDeque<>();
     private BlockingQueue<LogoutToken> backChannelLogoutTokens = new LinkedBlockingDeque<>();
+    private BlockingQueue<LogoutToken> frontChannelLogoutTokens = new LinkedBlockingDeque<>();
     private BlockingQueue<PushNotBeforeAction> pushNotBeforeActions = new LinkedBlockingDeque<>();
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
 
@@ -55,7 +56,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
         TestApplicationResourceProvider provider = new TestApplicationResourceProvider(session, adminLogoutActions,
-                backChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests);
+                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests);
 
         ResteasyProviderFactory.getInstance().injectProperties(provider);
 

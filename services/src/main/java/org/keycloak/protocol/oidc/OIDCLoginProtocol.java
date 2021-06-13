@@ -31,6 +31,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -61,6 +62,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -338,8 +340,30 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public Response frontchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
-        // todo oidc redirect support
-        throw new RuntimeException("NOT IMPLEMENTED");
+        if (clientSession != null) {
+            String url = clientSession.getClient().getAttribute("frontchannel.logout.url");
+            if (url != null && !url.trim().isEmpty()) {
+                UriBuilder builder = UriBuilder.fromUri(url);
+                builder.queryParam("sid", userSession.getId());
+                builder.queryParam("iss", clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                URI uri = builder.build();
+                appendUserSession(userSession,"frontchannel_logout_urls",uri.toString());
+                appendUserSession(userSession,"allow_frame_src",uri.getAuthority());
+            }
+            clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+        }
+        return null;
+    }
+
+    private void appendUserSession(UserSessionModel userSession,String name,String value){
+        StringBuilder sb = new StringBuilder();
+        String values = userSession.getNote(name);
+        if(values!=null){
+            sb.append(values);
+            sb.append(' ');
+        }
+        sb.append(value);
+        userSession.setNote(name, sb.toString());
     }
 
     @Override
@@ -351,7 +375,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
             event.detail(Details.REDIRECT_URI, redirectUri);
         }
         event.user(userSession.getUser()).session(userSession).success();
-
+        String frontchannel_logout_urls = userSession.getNote("frontchannel_logout_urls");
+        if(frontchannel_logout_urls != null && !frontchannel_logout_urls.trim().isEmpty()){
+            userSession.removeNote("frontchannel_logout_urls");
+            MultivaluedHashMap<String,String> formData = new MultivaluedHashMap<>();            
+            formData.add("urls", frontchannel_logout_urls);
+            formData.add("redirectUri", redirectUri);
+            session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(userSession.getNote("allow_frame_src"));
+            return session.getProvider(LoginFormsProvider.class).setFormData(formData).createFrontchannelLogoutPage();
+        }
         if (redirectUri != null) {
             UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
             if (state != null)
