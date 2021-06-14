@@ -74,6 +74,10 @@ public class RealmBean {
         return realm.isLoginWithEmailAllowed();
     }
 
+    public boolean isDuplicateEmailsAllowed() {
+        return realm.isDuplicateEmailsAllowed();
+    }
+
     public boolean isResetPasswordAllowed() {
         return realm.isResetPasswordAllowed();
     }

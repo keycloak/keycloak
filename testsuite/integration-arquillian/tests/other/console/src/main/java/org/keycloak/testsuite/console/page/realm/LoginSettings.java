@@ -54,6 +54,12 @@ public class LoginSettings extends RealmSettings {
         @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='registrationEmailAsUsername']]")
         private OnOffSwitch emailAsUsernameOnOffSwitch;
 
+        @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='loginWithEmailAllowed']]")
+        private OnOffSwitch loginWithEmailAllowed;
+
+        @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='duplicateEmailsAllowed']]")
+        private OnOffSwitch duplicateEmailsAllowed;
+
         @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='editUsernameAllowed']]")
         private OnOffSwitch editUsernameAllowed;
         
@@ -75,6 +81,22 @@ public class LoginSettings extends RealmSettings {
         
         public void setRegistrationAllowed(boolean allowed) {
             registrationAllowed.setOn(allowed);
+        }
+
+        public boolean isLoginWithEmailAllowed() {
+            return loginWithEmailAllowed.isOn();
+        }
+
+        public void setLoginWithEmailAllowed(boolean allowed) {
+            loginWithEmailAllowed.setOn(allowed);
+        }
+
+        public boolean isDuplicateEmailsAllowed() {
+            return duplicateEmailsAllowed.isOn();
+        }
+
+        public void setDuplicateEmailsAllowed(boolean allowed) {
+            duplicateEmailsAllowed.setOn(allowed);
         }
         
         public void setEmailAsUsername(boolean emailAsUsername) {

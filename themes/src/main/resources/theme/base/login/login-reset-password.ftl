@@ -35,6 +35,10 @@
             </div>
         </form>
     <#elseif section = "info" >
-        ${msg("emailInstruction")}
+        <#if realm.duplicateEmailsAllowed>
+            ${msg("emailInstructionUsername")}
+        <#else>
+            ${msg("emailInstructionUsernameOrEmail")}
+        </#if>
     </#if>
 </@layout.registrationLayout>

@@ -197,6 +197,34 @@ public class LoginSettingsTest extends AbstractRealmTest {
         assertFalse(testRealmLoginPage.form().isForgotPasswordLinkPresent());
         log.info("verified reset password is disabled");
     }
+
+
+
+    @Test
+    public void resetPasswordWithDuplicateEmailsAllowed() throws InterruptedException {
+
+        log.info("disabling email as username");
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setLoginWithEmailAllowed(false);
+        assertFalse(loginSettingsPage.form().isLoginWithEmailAllowed());
+        log.info("enabling duplicate emails");
+        loginSettingsPage.form().setDuplicateEmailsAllowed(true);
+        assertTrue(loginSettingsPage.form().isDuplicateEmailsAllowed());
+        log.info("enabling reset password");
+        loginSettingsPage.form().setResetPasswordAllowed(true);
+        assertTrue(loginSettingsPage.form().isResetPasswordAllowed());
+        loginSettingsPage.form().save();
+        assertAlertSuccess();
+        log.debug("enabled");
+
+        testRealmAdminConsolePage.navigateTo();
+        testRealmLoginPage.form().forgotPassword();
+
+        Assert.assertEquals("Enter your username and we will send you instructions on how to create a new password.",
+                testRealmForgottenPasswordPage.getInfoMessage());
+        log.info("verified reset password is enabled");
+
+    }
     
     @Test
     public void rememberMe() {
