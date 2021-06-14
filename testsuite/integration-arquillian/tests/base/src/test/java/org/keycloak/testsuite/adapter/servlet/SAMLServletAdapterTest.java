@@ -109,6 +109,7 @@ import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -493,6 +494,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     private void assertSuccessfulLogin(AbstractPage page, UserRepresentation user, Login loginPage, String expectedString) {
         page.navigateTo();
+        waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
         loginPage.form().login(user);
         waitUntilElement(By.xpath("//body")).text().contains(expectedString);
@@ -662,7 +664,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
-        org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.addFirst("priority", priority);
         config.addFirst(Attributes.PRIVATE_KEY_KEY, NEW_KEY_PRIVATE_KEY_PEM);
         rep.setConfig(config);
@@ -683,6 +685,10 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage) throws Exception {
+        testRotatedKeysPropagated(servletPage, loginPage, true);
+    }
+
+    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage, boolean shouldLogout) throws Exception {
         boolean keyDropped = false;
         try {
             log.info("Creating new key");
@@ -693,8 +699,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             keyDropped = true;
             testSuccessfulAndUnauthorizedLogin(servletPage, loginPage);
         } finally {
-            if (! keyDropped) {
+            if (!keyDropped) {
                 dropKeys("1000");
+            }
+            if (shouldLogout) {
+                servletPage.logout();
             }
         }
     }
