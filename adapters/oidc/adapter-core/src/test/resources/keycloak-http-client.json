@@ -1,0 +1,8 @@
+{
+  "realm": "demo",
+  "resource": "customer-portal",
+  "auth-server-url": "https://localhost:8443/auth",
+  "public-client": true,
+  "socket-timeout": 2000,
+  "connection-timeout": 6000
+}
