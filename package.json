@@ -77,7 +77,7 @@
     "enzyme-to-json": "^3.6.2",
     "eslint": "^7.6.0",
     "eslint-plugin-react": "^7.23.2",
-    "grunt": "^1.2.1",
+    "grunt": "^1.4.1",
     "grunt-contrib-copy": "^1.0.0",
     "jest": "^26.6.3",
     "mutationobserver-shim": "^0.3.7",
