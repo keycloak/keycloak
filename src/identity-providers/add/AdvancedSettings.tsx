@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import {
-  ActionGroup,
-  Button,
   FormGroup,
   Select,
   SelectOption,
@@ -29,7 +27,12 @@ const LoginFlow = ({
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
   const [open, setOpen] = useState(false);
 
-  useFetch(() => adminClient.authenticationManagement.getFlows(), setFlows, []);
+  useFetch(
+    () => adminClient.authenticationManagement.getFlows(),
+    (flows) =>
+      setFlows(flows?.filter((flow) => flow.providerId === "basic-flow")),
+    []
+  );
 
   return (
     <FormGroup
@@ -56,21 +59,30 @@ const LoginFlow = ({
               onChange(value as string);
               setOpen(false);
             }}
-            selections={value}
+            selections={value || t("common:none")}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
           >
-            {flows &&
-              flows.map((option) => (
-                <SelectOption
-                  selected={option.alias === value}
-                  key={option.id}
-                  value={option.alias}
-                >
-                  {option.alias}
+            <>
+              {defaultValue === "" && (
+                <SelectOption key="empty" value={defaultValue}>
+                  {t("common:none")}
                 </SelectOption>
-              ))}
+              )}
+            </>
+            <>
+              {flows &&
+                flows.map((option) => (
+                  <SelectOption
+                    selected={option.alias === value}
+                    key={option.id}
+                    value={option.alias}
+                  >
+                    {option.alias}
+                  </SelectOption>
+                ))}
+            </>
           </Select>
         )}
       />
@@ -159,15 +171,6 @@ export const AdvancedSettings = ({ isOIDC }: { isOIDC: boolean }) => {
           )}
         />
       </FormGroup>
-
-      <ActionGroup className="keycloak__form_actions">
-        <Button data-testid={"save"} variant="tertiary" type="submit">
-          {t("common:save")}
-        </Button>
-        <Button data-testid={"revert"} variant="link" onClick={() => {}}>
-          {t("common:revert")}
-        </Button>
-      </ActionGroup>
     </>
   );
 };

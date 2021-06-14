@@ -35,6 +35,8 @@
     "disable": "Disable",
     "selectOne": "Select an option",
     "choose": "Choose...",
+    "any": "Any",
+    "none": "None",
     "signOut": "Sign out",
     "manageAccount": "Manage account",
     "serverInfo": "Server info",

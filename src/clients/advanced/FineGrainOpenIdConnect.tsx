@@ -83,10 +83,10 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectOptions = [
     <SelectOption key="any" value="any">
-      {t("any")}
+      {t("common:any")}
     </SelectOption>,
     <SelectOption key="none" value="none">
-      {t("none")}
+      {t("common:none")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />

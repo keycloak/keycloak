@@ -164,8 +164,6 @@
     "addNode": "Add node",
     "push": "Push",
     "clear": "Clear",
-    "none": "None",
-    "any": "Any",
     "nodeReRegistrationTimeout": "Node Re-registration timeout",
     "registeredClusterNodes": "Registered cluster nodes",
     "nodeHost": "Node host",

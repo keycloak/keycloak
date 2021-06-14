@@ -159,7 +159,7 @@ export const AdvancedTab = ({
     if (date > 0) {
       return moment(date * 1000).format("LLL");
     } else {
-      return t("none");
+      return t("common:none");
     }
   };
 

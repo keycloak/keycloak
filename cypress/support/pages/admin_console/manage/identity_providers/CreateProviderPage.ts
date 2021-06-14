@@ -45,7 +45,7 @@ export default class CreateProviderPage {
   }
 
   clickCreateDropdown() {
-    cy.contains('Add provider').click();
+    cy.contains("Add provider").click();
     return this;
   }
 
@@ -69,7 +69,8 @@ export default class CreateProviderPage {
   }
 
   fillDiscoveryUrl(value: string) {
-    cy.getId(this.discoveryEndpoint).type(value).blur();
+    cy.getId(this.discoveryEndpoint).type("x");
+    cy.getId(this.discoveryEndpoint).clear().type(value).blur();
     return this;
   }
 

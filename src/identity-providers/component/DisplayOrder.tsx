@@ -31,9 +31,10 @@ export const DisplayOrder = () => {
           <NumberInput
             value={value}
             data-testid="displayOrder"
-            onMinus={() => onChange(value - 1)}
+            min={0}
+            onMinus={() => onChange(Number.parseInt(value) - 1)}
             onChange={onChange}
-            onPlus={() => onChange(value + 1)}
+            onPlus={() => onChange(Number.parseInt(value) + 1)}
             inputName="input"
             inputAriaLabel={t("displayOrder")}
             minusBtnAriaLabel={t("common:minus")}

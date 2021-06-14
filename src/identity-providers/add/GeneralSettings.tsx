@@ -4,10 +4,18 @@ import { RedirectUrl } from "../component/RedirectUrl";
 import { ClientIdSecret } from "../component/ClientIdSecret";
 import { DisplayOrder } from "../component/DisplayOrder";
 
-export const GeneralSettings = () => (
+type GeneralSettingsProps = {
+  id: string;
+  create?: boolean;
+};
+
+export const GeneralSettings = ({
+  create = true,
+  id,
+}: GeneralSettingsProps) => (
   <>
-    <RedirectUrl />
-    <ClientIdSecret />
+    <RedirectUrl id={id} />
+    <ClientIdSecret create={create} />
     <DisplayOrder />
   </>
 );

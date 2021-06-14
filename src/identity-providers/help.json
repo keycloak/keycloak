@@ -5,7 +5,7 @@
     "displayName": "Friendly name for Identity Providers.",
     "clientId": "The client identifier registered with the identity provider.",
     "clientSecret": "The client secret registered with the identity provider. This field is able to obtain its value from vault, use ${vault.ID} format.",
-    "displayOrder": "Number defining order of the provider in GUI (for example, on Login page).",
+    "displayOrder": "Number defining the order of the providers in GUI (for example, on the Login page). The lowest number will be applied first.",
     "useDiscoveryEndpoint": "If this setting is enabled, the discovery endpoint will be used to fetch the provider config. Keycloak can load the config from the endpoint and automatically update the config if the source has any updates",
     "discoveryEndpoint": "Import metadata from a remote IDP discovery descriptor.",
     "importConfig": "Import metadata from a downloaded IDP discovery descriptor.",
@@ -30,7 +30,7 @@
     "accountLinkingOnly": "If true, users cannot log in through this provider.  They can only link to this provider.  This is useful if you don't want to allow login from the provider, but want to integrate with a provider",
     "hideOnLoginPage": "If hidden, login with this provider is possible only if requested explicitly, for example using the 'kc_idp_hint' parameter.",
     "firstBrokerLoginFlowAlias": "Alias of authentication flow, which is triggered after first login with this identity provider. Term 'First Login' means that no Keycloak account is currently linked to the authenticated identity provider account.",
-    "postBrokerLoginFlowAlias": "Alias of authentication flow, which is triggered after each login with this identity provider. Useful if you want additional verification of each user authenticated with this identity provider (for example OTP). Leave this empty if you need no any additional authenticators to be triggered after login with this identity provider. Also note that authenticator implementations must assume that user is already set in ClientSession as identity provider already set it.",
+    "postBrokerLoginFlowAlias": "Alias of authentication flow, which is triggered after each login with this identity provider. Useful if you want additional verification of each user authenticated with this identity provider (for example OTP). Leave this to \"None\" if you need no any additional authenticators to be triggered after login with this identity provider. Also note that authenticator implementations must assume that user is already set in ClientSession as identity provider already set it.",
     "syncMode": "Default sync mode for all mappers. The sync mode determines when user data will be synced using the mappers. Possible values are: 'legacy' to keep the behaviour before this option was introduced, 'import' to only import the user once during first login of the user with this identity provider, 'force' to always update the user during every login with this identity provider."
   }
 }

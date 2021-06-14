@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -19,10 +19,16 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { useAlerts } from "../../components/alert/Alerts";
 
+type DiscoveryIdentity = IdentityProviderRepresentation & {
+  discoveryEndpoint?: string;
+};
+
 export const AddOpenIdConnect = () => {
   const { t } = useTranslation("identity-providers");
   const history = useHistory();
-  const id = "oidc";
+  const { url } = useRouteMatch();
+  const isKeycloak = url.endsWith("keycloak-oidc");
+  const id = `${isKeycloak ? "keycloak-" : ""}oidc`;
 
   const form = useForm<IdentityProviderRepresentation>({
     defaultValues: { alias: id },
@@ -36,7 +42,8 @@ export const AddOpenIdConnect = () => {
   const { addAlert } = useAlerts();
   const { realm } = useRealm();
 
-  const save = async (provider: IdentityProviderRepresentation) => {
+  const save = async (provider: DiscoveryIdentity) => {
+    delete provider.discoveryEndpoint;
     try {
       await adminClient.identityProviders.create({
         ...provider,
@@ -45,13 +52,22 @@ export const AddOpenIdConnect = () => {
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(`/${realm}/identity-providers/${id}/settings`);
     } catch (error) {
-      addAlert(t("createError", { error }), AlertVariant.danger);
+      addAlert(
+        t("createError", {
+          error: error.response?.data?.errorMessage || error,
+        }),
+        AlertVariant.danger
+      );
     }
   };
 
   return (
     <>
-      <ViewHeader titleKey={t("addOpenIdProvider")} />
+      <ViewHeader
+        titleKey={t(
+          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider"
+        )}
+      />
       <PageSection variant="light">
         <FormProvider {...form}>
           <FormAccess
@@ -59,7 +75,7 @@ export const AddOpenIdConnect = () => {
             isHorizontal
             onSubmit={handleSubmit(save)}
           >
-            <OIDCGeneralSettings />
+            <OIDCGeneralSettings id={id} />
             <OpenIdConnectSettings />
             <OIDCAuthentication />
             <ActionGroup>

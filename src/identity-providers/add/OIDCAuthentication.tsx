@@ -18,7 +18,7 @@ const clientAuthenticationTypes = [
   "clientAuth_privatekey_jwt",
 ];
 
-export const OIDCAuthentication = () => {
+export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
   const { t } = useTranslation("identity-providers");
   const { t: th } = useTranslation("identity-providers-help");
 
@@ -76,6 +76,7 @@ export const OIDCAuthentication = () => {
       </FormGroup>
       <ClientIdSecret
         secretRequired={clientAuthMethod !== "clientAuth_privatekey_jwt"}
+        create={create}
       />
     </>
   );

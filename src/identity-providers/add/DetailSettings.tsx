@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
+  ActionGroup,
   AlertVariant,
+  Button,
   ButtonVariant,
   Divider,
   DropdownItem,
@@ -55,7 +57,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     <>
       <DisableConfirm />
       <ViewHeader
-        titleKey={t("addIdentityProvider", { provider: toUpperCase(id) })}
+        titleKey={toUpperCase(id)}
         divider={false}
         dropdownItems={[
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
@@ -80,8 +82,9 @@ export const DetailSettings = () => {
   const { t } = useTranslation("identity-providers");
   const { id } = useParams<{ id: string }>();
 
+  const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, setValue, getValues } = form;
+  const { handleSubmit, setValue, getValues, reset } = form;
 
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
@@ -91,7 +94,10 @@ export const DetailSettings = () => {
   useFetch(
     () => adminClient.identityProviders.findOne({ alias: id }),
     (provider) => {
-      Object.entries(provider).map((entry) => setValue(entry[0], entry[1]));
+      if (provider) {
+        setProvider(provider);
+        Object.entries(provider).map((entry) => setValue(entry[0], entry[1]));
+      }
     },
     []
   );
@@ -103,6 +109,7 @@ export const DetailSettings = () => {
         { alias: id },
         { ...p, alias: id, providerId: id }
       );
+      setProvider(p);
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
       addAlert(
@@ -131,7 +138,7 @@ export const DetailSettings = () => {
   });
 
   const sections = [t("generalSettings"), t("advancedSettings")];
-  const isOIDC = id === "oidc";
+  const isOIDC = id.indexOf("oidc") !== -1;
 
   if (isOIDC) {
     sections.splice(1, 0, t("oidcSettings"));
@@ -168,15 +175,15 @@ export const DetailSettings = () => {
                   isHorizontal
                   onSubmit={handleSubmit(save)}
                 >
-                  {!isOIDC && <GeneralSettings />}
-                  {isOIDC && <OIDCGeneralSettings />}
+                  {!isOIDC && <GeneralSettings create={false} id={id} />}
+                  {isOIDC && <OIDCGeneralSettings id={id} />}
                 </FormAccess>
                 {isOIDC && (
                   <>
                     <DiscoverySettings readOnly={false} />
                     <Form isHorizontal className="pf-u-py-lg">
                       <Divider />
-                      <OIDCAuthentication />
+                      <OIDCAuthentication create={false} />
                     </Form>
                     <ExtendedNonDiscoverySettings />
                   </>
@@ -187,6 +194,20 @@ export const DetailSettings = () => {
                   onSubmit={handleSubmit(save)}
                 >
                   <AdvancedSettings isOIDC={isOIDC} />
+                  <ActionGroup className="keycloak__form_actions">
+                    <Button data-testid={"save"} type="submit">
+                      {t("common:save")}
+                    </Button>
+                    <Button
+                      data-testid={"revert"}
+                      variant="link"
+                      onClick={() => {
+                        reset(provider);
+                      }}
+                    >
+                      {t("common:revert")}
+                    </Button>
+                  </ActionGroup>
                 </FormAccess>
               </ScrollForm>
             </Tab>

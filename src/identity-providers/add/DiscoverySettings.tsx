@@ -136,7 +136,6 @@ export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
         </ExpandableSection>
       )}
       {!readOnly && <Fields readOnly={readOnly} />}
-      <Divider />
     </>
   );
 };

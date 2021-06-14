@@ -9,6 +9,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 
+import type { BreadcrumbData } from "use-react-router-breadcrumbs";
 import type IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { toUpperCase } from "../../util";
@@ -17,6 +18,29 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { GeneralSettings } from "./GeneralSettings";
+
+export const IdentityProviderCrumb = ({ match, location }: BreadcrumbData) => {
+  const { t } = useTranslation();
+  const {
+    params: { id },
+  } = (match as unknown) as {
+    params: { [id: string]: string };
+  };
+  return (
+    <>
+      {t(
+        `identity-providers:${
+          location.pathname.endsWith("settings")
+            ? "provider"
+            : "addIdentityProvider"
+        }`,
+        {
+          provider: toUpperCase(id),
+        }
+      )}
+    </>
+  );
+};
 
 export const AddIdentityProvider = () => {
   const { t } = useTranslation("identity-providers");
@@ -42,7 +66,12 @@ export const AddIdentityProvider = () => {
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(`/${realm}/identity-providers/${id}/settings`);
     } catch (error) {
-      addAlert(t("createError", { error }), AlertVariant.danger);
+      addAlert(
+        t("createError", {
+          error: error.response?.data?.errorMessage || error,
+        }),
+        AlertVariant.danger
+      );
     }
   };
 
@@ -58,7 +87,7 @@ export const AddIdentityProvider = () => {
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>
-            <GeneralSettings />
+            <GeneralSettings id={id} />
           </FormProvider>
           <ActionGroup>
             <Button

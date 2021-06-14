@@ -136,7 +136,7 @@ export const IdentityProvidersSection = () => {
       {manageDisplayDialog && (
         <ManageOderDialog
           onClose={() => setManageDisplayDialog(false)}
-          providers={providers!}
+          providers={providers?.filter((p) => p.enabled)}
         />
       )}
       <ViewHeader

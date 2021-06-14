@@ -30,7 +30,10 @@ import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
 import { SearchGroups } from "./groups/SearchGroups";
 import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
 import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
-import { AddIdentityProvider } from "./identity-providers/add/AddIdentityProvider";
+import {
+  AddIdentityProvider,
+  IdentityProviderCrumb,
+} from "./identity-providers/add/AddIdentityProvider";
 import { AddOpenIdConnect } from "./identity-providers/add/AddOpenIdConnect";
 import { DetailSettings } from "./identity-providers/add/DetailSettings";
 
@@ -199,13 +202,19 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-identity-providers",
   },
   {
-    path: "/:realm/identity-providers/:id",
-    component: AddIdentityProvider,
-    breadcrumb: t("identity-providers:provider"),
+    path: "/:realm/identity-providers/keycloak-oidc",
+    component: AddOpenIdConnect,
+    breadcrumb: t("identity-providers:addKeycloakOpenIdProvider"),
     access: "manage-identity-providers",
   },
   {
-    path: "/:realm/identity-providers/:id/settings",
+    path: "/:realm/identity-providers/:id",
+    component: AddIdentityProvider,
+    breadcrumb: IdentityProviderCrumb,
+    access: "manage-identity-providers",
+  },
+  {
+    path: "/:realm/identity-providers/:id/:tab?",
     component: DetailSettings,
     breadcrumb: null,
     access: "manage-identity-providers",

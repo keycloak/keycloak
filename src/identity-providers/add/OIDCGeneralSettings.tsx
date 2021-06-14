@@ -8,7 +8,7 @@ import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import { DisplayOrder } from "../component/DisplayOrder";
 
-export const OIDCGeneralSettings = () => {
+export const OIDCGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
   const { t: th } = useTranslation("identity-providers-help");
 
@@ -16,7 +16,7 @@ export const OIDCGeneralSettings = () => {
 
   return (
     <>
-      <RedirectUrl />
+      <RedirectUrl id={id} />
 
       <FormGroup
         label={t("alias")}
@@ -30,7 +30,7 @@ export const OIDCGeneralSettings = () => {
         fieldId="alias"
         isRequired
         validated={
-          errors.errors ? ValidatedOptions.error : ValidatedOptions.default
+          errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
         helperTextInvalid={t("common:required")}
       >
@@ -40,6 +40,9 @@ export const OIDCGeneralSettings = () => {
           id="alias"
           data-testid="alias"
           name="alias"
+          validated={
+            errors.alias ? ValidatedOptions.error : ValidatedOptions.default
+          }
           ref={register({ required: true })}
         />
       </FormGroup>
