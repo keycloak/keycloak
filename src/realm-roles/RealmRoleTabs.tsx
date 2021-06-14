@@ -154,7 +154,9 @@ export const RealmRoleTabs = () => {
           });
         }
         setRole(convert(createdRole));
-        history.push(`/${realm}/roles/${createdRole.id}`);
+        history.push(
+          url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id + "/details"
+        );
       }
       addAlert(t(id ? "roleSaveSuccess" : "roleCreated"), AlertVariant.success);
     } catch (error) {
@@ -202,7 +204,7 @@ export const RealmRoleTabs = () => {
           });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        history.replace(`/${realm}/roles`);
+        history.push(url.substr(0, url.indexOf("/roles") + "/roles".length));
       } catch (error) {
         addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
       }
@@ -316,12 +318,14 @@ export const RealmRoleTabs = () => {
                 title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
               >
                 <PageSection variant="light">
-                  <AssociatedRolesTab
-                    additionalRoles={additionalRoles}
-                    addComposites={addComposites}
-                    parentRole={role!}
-                    onRemove={() => refresh()}
-                  />
+                  {role && (
+                    <AssociatedRolesTab
+                      additionalRoles={additionalRoles}
+                      addComposites={addComposites}
+                      parentRole={role}
+                      onRemove={() => refresh()}
+                    />
+                  )}
                 </PageSection>
               </Tab>
             )}

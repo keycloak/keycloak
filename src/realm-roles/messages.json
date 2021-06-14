@@ -44,7 +44,7 @@
     "removeRoles": "Remove roles",
     "removeAllAssociatedRolesConfirmDialog": "This action will remove the associated roles of {{name}}. Users who have permission to {{name}} will no longer have access to these roles.",
     "roleRemoveAssociatedRoleConfirm": "Remove associated role?",
-    "roleRemoveAssociatedText": "This action will remove {{role}} from {{roleName}. All the associated roles of {{role}} will also be removed.",
+    "roleRemoveAssociatedText": "This action will remove {{role}} from {{roleName}}. All the associated roles of {{role}} will also be removed.",
     "compositeRoleOff": "Composite role turned off",
     "associatedRolesRemoved": "Associated roles have been removed",
     "compositesRemovedAlertDescription": "All the associated roles have been removed",
