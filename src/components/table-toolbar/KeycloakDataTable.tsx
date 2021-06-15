@@ -133,6 +133,7 @@ export type DataListProps<T> = {
   actionResolver?: IActionsResolver;
   searchTypeComponent?: ReactNode;
   toolbarItem?: ReactNode;
+  subToolbar?: ReactNode;
   emptyState?: ReactNode;
   icon?: React.ComponentClass<SVGIconProps>;
   isNotCompact?: boolean;
@@ -178,6 +179,7 @@ export function KeycloakDataTable<T>({
   actionResolver,
   searchTypeComponent,
   toolbarItem,
+  subToolbar,
   emptyState,
   icon,
   ...props
@@ -387,6 +389,7 @@ export function KeycloakDataTable<T>({
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
+          subToolbar={subToolbar}
         >
           {!loading && (filteredData || rows).length > 0 && (
             <DataTable

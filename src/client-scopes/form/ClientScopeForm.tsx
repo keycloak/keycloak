@@ -65,29 +65,29 @@ export const ClientScopeForm = () => {
   );
 
   const loader = async () => {
-    const assignedRoles = await adminClient.clientScopes.listRealmScopeMappings(
-      { id }
-    );
-    const effectiveRoles = await adminClient.clientScopes.listCompositeRealmScopeMappings(
-      { id }
-    );
+    const assignedRoles = (
+      await adminClient.clientScopes.listRealmScopeMappings({ id })
+    ).map((role) => ({ role }));
+    const effectiveRoles = (
+      await adminClient.clientScopes.listCompositeRealmScopeMappings({ id })
+    ).map((role) => ({ role }));
     const clients = await adminClient.clients.find();
 
     const clientRoles = (
       await Promise.all(
         clients.map(async (client) => {
-          const clientAssignedRoles = await adminClient.clientScopes.listClientScopeMappings(
-            {
+          const clientAssignedRoles = (
+            await adminClient.clientScopes.listClientScopeMappings({
               id,
               client: client.id!,
-            }
-          );
-          const clientEffectiveRoles = await adminClient.clientScopes.listCompositeClientScopeMappings(
-            {
+            })
+          ).map((role) => ({ role, client }));
+          const clientEffectiveRoles = (
+            await adminClient.clientScopes.listCompositeClientScopeMappings({
               id,
               client: client.id!,
-            }
-          );
+            })
+          ).map((role) => ({ role, client }));
           return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
         })
       )

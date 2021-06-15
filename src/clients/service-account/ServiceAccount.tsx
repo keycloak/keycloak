@@ -40,27 +40,29 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
     });
     const id = serviceAccount.id!;
 
-    const assignedRoles = await adminClient.users.listRealmRoleMappings({ id });
-    const effectiveRoles = await adminClient.users.listCompositeRealmRoleMappings(
-      { id }
-    );
+    const assignedRoles = (
+      await adminClient.users.listRealmRoleMappings({ id })
+    ).map((role) => ({ role }));
+    const effectiveRoles = (
+      await adminClient.users.listCompositeRealmRoleMappings({ id })
+    ).map((role) => ({ role }));
 
     const clients = await adminClient.clients.find();
     const clientRoles = (
       await Promise.all(
         clients.map(async (client) => {
-          const clientAssignedRoles = await adminClient.users.listClientRoleMappings(
-            {
+          const clientAssignedRoles = (
+            await adminClient.users.listClientRoleMappings({
               id,
               clientUniqueId: client.id!,
-            }
-          );
-          const clientEffectiveRoles = await adminClient.users.listCompositeClientRoleMappings(
-            {
+            })
+          ).map((role) => ({ role, client }));
+          const clientEffectiveRoles = (
+            await adminClient.users.listCompositeClientRoleMappings({
               id,
               clientUniqueId: client.id!,
-            }
-          );
+            })
+          ).map((role) => ({ role, client }));
           return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
         })
       )

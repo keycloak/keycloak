@@ -31,23 +31,26 @@ export type Row = {
 };
 
 export const mapRoles = (
-  assignedRoles: RoleRepresentation[],
-  effectiveRoles: RoleRepresentation[],
+  assignedRoles: Row[],
+  effectiveRoles: Row[],
   hide: boolean
 ) => {
   return [
     ...(hide
-      ? assignedRoles.map((role) => ({
+      ? assignedRoles.map((row) => ({
+          ...row,
           role: {
-            ...role,
+            ...row.role,
             isInherited: false,
           },
         }))
-      : effectiveRoles.map((role) => ({
+      : effectiveRoles.map((row) => ({
+          ...row,
           role: {
-            ...role,
+            ...row.role,
             isInherited:
-              assignedRoles.find((r) => r.id === role.id) === undefined,
+              assignedRoles.find((r) => r.role.id === row.role.id) ===
+              undefined,
           },
         }))),
   ];
