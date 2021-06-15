@@ -240,11 +240,7 @@ public class AdminEventBuilder {
         eventCopy.setTime(Time.currentTimeMillis());
 
         if (store != null) {
-            try {
-                store.onEvent(eventCopy, includeRepresentation);
-            } catch (Throwable t) {
-                ServicesLogger.LOGGER.failedToSaveEvent(t);
-            }
+            store.onEvent(eventCopy, includeRepresentation);
         }
 
         if (listeners != null) {
