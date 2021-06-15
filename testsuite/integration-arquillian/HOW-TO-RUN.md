@@ -816,6 +816,8 @@ It is possible to specify additional parameters:
 
 Example: `-Pauth-server-wildfly,cache-server-infinispan,cache-auth -Dhotrod.sasl.mechanism=SCRAM-SHA-512`
 
+Note: The cache authentication is not implemented for `SAMLAdapterCrossDCTest`.
+
 Note: The `cache-auth` profile currently doesn't work with the legacy Infinispan/Datagrid modules. See: [KEYCLOAK-18336](https://issues.redhat.com/browse/KEYCLOAK-18336).
 
 ### Data Grid

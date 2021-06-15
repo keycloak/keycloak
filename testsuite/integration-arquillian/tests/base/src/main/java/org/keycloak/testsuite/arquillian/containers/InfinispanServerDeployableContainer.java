@@ -58,7 +58,7 @@ public class InfinispanServerDeployableContainer implements DeployableContainer<
     private File pidFile;
     private JMXServiceURL jmxServiceURL;
 
-    private static final Boolean CACHE_SERVER_AUTH = Boolean.parseBoolean(System.getProperty("cache.server.auth", "false"));
+    public static final Boolean CACHE_SERVER_AUTH = Boolean.parseBoolean(System.getProperty("cache.server.auth", "false"));
 
     @Override
     public Class<InfinispanServerConfiguration> getConfigurationClass() {
