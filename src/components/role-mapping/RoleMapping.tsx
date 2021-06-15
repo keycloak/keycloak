@@ -22,11 +22,35 @@ import { useAlerts } from "../alert/Alerts";
 
 export type CompositeRole = RoleRepresentation & {
   parent: RoleRepresentation;
+  isInherited?: boolean;
 };
 
 export type Row = {
   client?: ClientRepresentation;
-  role: CompositeRole | RoleRepresentation;
+  role: RoleRepresentation | CompositeRole;
+};
+
+export const mapRoles = (
+  assignedRoles: RoleRepresentation[],
+  effectiveRoles: RoleRepresentation[],
+  hide: boolean
+) => {
+  return [
+    ...(hide
+      ? assignedRoles.map((role) => ({
+          role: {
+            ...role,
+            isInherited: false,
+          },
+        }))
+      : effectiveRoles.map((role) => ({
+          role: {
+            ...role,
+            isInherited:
+              assignedRoles.find((r) => r.id === role.id) === undefined,
+          },
+        }))),
+  ];
 };
 
 export const ServiceRole = ({ role, client }: Row) => (
@@ -152,10 +176,13 @@ export const RoleMapping = ({
         data-testid="assigned-roles"
         key={key}
         loader={loader}
-        canSelectAll={hide}
-        onSelect={hide ? (rows) => setSelected(rows) : undefined}
+        canSelectAll
+        onSelect={(rows) => setSelected(rows)}
         searchPlaceholderKey="clients:searchByName"
         ariaLabelKey="clients:clientScopeList"
+        isRowDisabled={(value) =>
+          (value.role as CompositeRole).isInherited || false
+        }
         toolbarItem={
           <>
             <ToolbarItem>

@@ -358,7 +358,7 @@ export const ClientDetails = () => {
                 eventKey="serviceAccount"
                 title={<TabTitleText>{t("serviceAccount")}</TabTitleText>}
               >
-                <ServiceAccount clientId={clientId} />
+                <ServiceAccount client={client} />
               </Tab>
             )}
             <Tab
