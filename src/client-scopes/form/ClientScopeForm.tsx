@@ -205,11 +205,15 @@ export const ClientScopeForm = () => {
         titleKey={
           clientScope ? clientScope.name! : "client-scopes:createClientScope"
         }
-        dropdownItems={[
-          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
-            {t("common:delete")}
-          </DropdownItem>,
-        ]}
+        dropdownItems={
+          clientScope
+            ? [
+                <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+                  {t("common:delete")}
+                </DropdownItem>,
+              ]
+            : undefined
+        }
         badge={clientScope ? clientScope.protocol : undefined}
         divider={!id}
       />

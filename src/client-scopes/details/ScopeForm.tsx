@@ -13,6 +13,8 @@ import {
   Switch,
   ActionGroup,
   Button,
+  TextArea,
+  NumberInput,
 } from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
@@ -228,7 +230,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           }
           fieldId="kc-consent-screen-text"
         >
-          <TextInput
+          <TextArea
             ref={register}
             type="text"
             id="kc-consent-screen-text"
@@ -273,23 +275,23 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           />
         }
         fieldId="kc-gui-order"
-        helperTextInvalid={t("shouldBeANumber")}
-        validated={
-          errors.attributes && errors.attributes["gui_order"]
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
       >
-        <TextInput
-          ref={register({ pattern: /^([0-9]*)$/ })}
-          type="text"
-          id="kc-gui-order"
+        <Controller
           name="attributes.gui-order"
-          validated={
-            errors.attributes && errors.attributes["gui_order"]
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
+          defaultValue={1}
+          control={control}
+          render={({ onChange, value }) => (
+            <NumberInput
+              type="text"
+              id="kc-gui-order"
+              value={value}
+              onPlus={() => onChange(value + 1)}
+              onMinus={() => onChange(value - 1)}
+              onChange={(event) =>
+                onChange(Number((event.target as HTMLInputElement).value))
+              }
+            />
+          )}
         />
       </FormGroup>
       <ActionGroup>
