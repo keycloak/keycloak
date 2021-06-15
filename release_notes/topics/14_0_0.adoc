@@ -17,6 +17,17 @@ details proceed to link:{adminguide_link}#user-profile[{adminguide_name}]
 
 Thanks to the community and all the individuals involved in this effort.
 
+== Improvements to offline sessions
+
+Offline session preloading has been improved and should be faster thanks to https://github.com/Flintholm[Peter Flintholm].
+
+ifeval::[{project_community}==true]
+As a preview feature, offline session preloading can be skipped in favor of lazy loading thanks
+to https://github.com/thomasdarimont[Thomas Darimont]'s efforts. This feature has to be explicitly
+activated in the server configuration, see Server administration guide for details.
+endif::[]
+
+
 == Other improvements
 
 * The support for configuring maximum number of active authentication sessions. The default value is set to 300 authentication sessions (browser tabs) per a browser's session
