@@ -288,7 +288,7 @@ export const AddRoleMappingModal = ({
           </ToolbarItem>
         }
         subToolbar={
-          <ToolbarItem variant="chip-group">
+          <ToolbarItem widths={{ default: "100%" }}>
             <ChipGroup>
               {selectedClients.map((client) => (
                 <Chip
