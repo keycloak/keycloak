@@ -133,6 +133,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientExchanger.setClientId("client-exchanger");
         clientExchanger.setPublicClient(false);
         clientExchanger.setDirectAccessGrantsEnabled(true);
+        clientExchanger.setServiceAccountsEnabled(true);
         clientExchanger.setEnabled(true);
         clientExchanger.setSecret("secret");
         clientExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -274,6 +275,30 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
             Assert.assertEquals(403, response.getStatusCode());
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeServiceAccount() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-exchanger");
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "service-account-client-exchanger");
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "service-account-client-exchanger");
         }
     }
 
