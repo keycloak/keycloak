@@ -142,7 +142,6 @@ export const IdentityProvidersSection = () => {
       <ViewHeader
         titleKey="common:identityProviders"
         subKey="identity-providers:listExplain"
-        divider={false}
       />
       <PageSection
         variant={providers.length === 0 ? "default" : "light"}
