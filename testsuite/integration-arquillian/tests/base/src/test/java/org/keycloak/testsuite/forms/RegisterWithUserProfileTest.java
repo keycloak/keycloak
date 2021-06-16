@@ -26,6 +26,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.pages.*;
@@ -51,6 +52,7 @@ import java.util.Collections;
         beforeEnableFeature = false,
         onlyUpdateDefault = true
 )
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -89,10 +91,10 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         testRealm.setClientScopes(Collections.singletonList(ClientScopeBuilder.create().name(SCOPE_LAST_NAME).protocol("openid-connect").build()));
         client_scope_default = KeycloakModelUtils.createClient(testRealm, "client-a");
         client_scope_default.setDefaultClientScopes(Collections.singletonList(SCOPE_LAST_NAME));
-        client_scope_default.setRedirectUris(Collections.singletonList("https://*"));
+        client_scope_default.setRedirectUris(Collections.singletonList("*"));
         client_scope_optional = KeycloakModelUtils.createClient(testRealm, "client-b");
         client_scope_optional.setOptionalClientScopes(Collections.singletonList(SCOPE_LAST_NAME));
-        client_scope_optional.setRedirectUris(Collections.singletonList("https://*"));
+        client_scope_optional.setRedirectUris(Collections.singletonList("*"));
 
     }
 
