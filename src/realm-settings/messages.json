@@ -1,4 +1,3 @@
-  
 {
   "realm-settings": {
     "partialImport": "Partial import",
@@ -477,7 +476,6 @@
         "name": "Refresh token error",
         "description": "Refresh token error"
       }
-
     },
     "emptyEvents": "Nothing to add",
     "emptyEventsInstructions": "There are no more events types left to add",
@@ -494,8 +492,14 @@
     "confirm": "Confirm"
   },
   "partial-import": {
-    "partialImportHeaderText": "Partial import allows you to import users, clients, and resources from a previously exported json file.",
-    "import": "Import"
+    "partialImportHeaderText": "Partial import allows you to import users, clients, and other resources from a previously exported json file.",
+    "selectRealm": "Select realm",
+    "chooseResources": "Choose the resources you want to import",
+    "selectIfResourceExists": "If a resource already exists, specify what should be done",
+    "import": "Import",
+    "FAIL": "Fail import",
+    "SKIP": "Skip",
+    "OVERWRITE": "Overwrite"
   },
   "onDragStart": "Dragging started for item {{id}}",
   "onDragMove": "Dragging item {{id}}",
