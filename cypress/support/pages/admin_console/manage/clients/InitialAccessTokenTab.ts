@@ -1,7 +1,7 @@
 export default class InitialAccessTokenTab {
   private initialAccessTokenTab = "initialAccessToken";
 
-  private emptyAction = "empty-primary-action";
+  private emptyAction = "no-initial-access-tokens-empty-action";
 
   private expirationInput = "expiration";
   private countInput = "count";

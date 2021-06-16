@@ -289,12 +289,12 @@ export function KeycloakDataTable<T>({
   useFetch(
     async () => {
       setLoading(true);
-      return unPaginatedData || (await loader(first, max, search));
+      return unPaginatedData || (await loader(first, max + 1, search));
     },
     (data) => {
       if (!isPaginated) {
         setUnPaginatedData(data);
-        data = data.slice(first, first + max);
+        data = data.slice(first, first + max + 1);
       }
 
       const result = convertToColumns(data);
@@ -360,8 +360,9 @@ export function KeycloakDataTable<T>({
     onSelect!(selectedRows);
   };
 
+  const data = filteredData || rows;
+
   const onCollapse = (isOpen: boolean, rowIndex: number) => {
-    const data = filteredData || rows;
     (data![rowIndex] as Row<T>).isOpen = isOpen;
     setRows([...data!]);
   };
@@ -369,9 +370,9 @@ export function KeycloakDataTable<T>({
   return (
     <>
       {!rows && loading && <Loading />}
-      {rows && (
+      {((data && data.length > 0) || search !== "" || !emptyState) && (
         <PaginatingTableToolbar
-          count={rows.length}
+          count={data?.length || 0}
           first={first}
           max={max}
           onNextClick={setFirst}
@@ -388,7 +389,7 @@ export function KeycloakDataTable<T>({
           searchTypeComponent={searchTypeComponent}
           toolbarItem={toolbarItem}
         >
-          {!loading && (filteredData || rows).length > 0 && (
+          {!loading && data && data.length > 0 && (
             <DataTable
               {...props}
               canSelectAll={canSelectAll}
@@ -396,7 +397,7 @@ export function KeycloakDataTable<T>({
               onCollapse={detailColumns ? onCollapse : undefined}
               actions={convertAction()}
               actionResolver={actionResolver}
-              rows={filteredData || rows}
+              rows={data}
               columns={columns}
               isNotCompact={isNotCompact}
               isRadio={isRadio}
@@ -404,8 +405,8 @@ export function KeycloakDataTable<T>({
             />
           )}
           {!loading &&
-            (filteredData || rows).length === 0 &&
-            search !== "" &&
+            (!data || data.length === 0) &&
+            (search !== "" || !emptyState) &&
             searchPlaceholderKey && (
               <ListEmptyState
                 hasIcon={true}
@@ -420,7 +421,7 @@ export function KeycloakDataTable<T>({
       )}
       <>
         {!loading &&
-          (filteredData || rows)?.length === 0 &&
+          (!data || data?.length === 0) &&
           search === "" &&
           emptyState}
       </>

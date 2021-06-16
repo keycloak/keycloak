@@ -21,10 +21,10 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import moment from "moment";
-import { JoinGroupDialog } from "./JoinGroupDialog";
 import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
 import { emailRegexPattern } from "../util";
+import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 
 export type UserFormProps = {
   form: UseFormMethods<UserRepresentation>;
@@ -52,8 +52,7 @@ export const UserForm = ({
   const { id } = useParams<{ id: string }>();
 
   const watchUsernameInput = watch("username");
-  const [timestamp, setTimestamp] = useState(null);
-  const [chips, setChips] = useState<(string | undefined)[]>([]);
+  const [user, setUser] = useState<UserRepresentation>();
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     []
   );
@@ -67,19 +66,18 @@ export const UserForm = ({
       if (editMode) return await adminClient.users.findOne({ id: id });
     },
     (user) => {
-      if (user) setupForm(user);
+      if (user) {
+        setupForm(user);
+        setUser(user);
+      }
     },
-    [chips]
+    [selectedGroups]
   );
 
   const setupForm = (user: UserRepresentation) => {
     reset();
     Object.entries(user).map((entry) => {
-      if (entry[0] == "createdTimestamp") {
-        setTimestamp(entry[1]);
-      } else {
-        setValue(entry[0], entry[1]);
-      }
+      setValue(entry[0], entry[1]);
     });
   };
 
@@ -103,25 +101,14 @@ export const UserForm = ({
   };
 
   const deleteItem = (id: string) => {
-    const copyOfChips = chips;
-    const copyOfGroups = selectedGroups;
-
-    setChips(copyOfChips.filter((item) => item !== id));
-    setSelectedGroups(copyOfGroups.filter((item) => item.name !== id));
+    setSelectedGroups(selectedGroups.filter((item) => item.name !== id));
     onGroupsUpdate(selectedGroups);
   };
 
   const addChips = async (groups: GroupRepresentation[]): Promise<void> => {
-    const newSelectedGroups = groups;
-
-    const newGroupNames: (string | undefined)[] = newSelectedGroups!.map(
-      (item) => item.name
-    );
-    setChips([...chips!, ...newGroupNames]);
-    setSelectedGroups([...selectedGroups!, ...newSelectedGroups]);
+    setSelectedGroups([...selectedGroups!, ...groups]);
+    onGroupsUpdate([...selectedGroups!, ...groups]);
   };
-
-  onGroupsUpdate(selectedGroups);
 
   const addGroups = async (groups: GroupRepresentation[]): Promise<void> => {
     const newGroups = groups;
@@ -129,7 +116,7 @@ export const UserForm = ({
     newGroups.forEach(async (group) => {
       try {
         await adminClient.users.addToGroup({
-          id: id,
+          id,
           groupId: group.id!,
         });
         addAlert(t("users:addedGroupMembership"), AlertVariant.success);
@@ -154,44 +141,34 @@ export const UserForm = ({
       className="pf-u-mt-lg"
     >
       {open && (
-        <JoinGroupDialog
-          open={open}
-          onClose={() => setOpen(!open)}
-          onConfirm={editMode ? addGroups : addChips}
-          toggleDialog={() => toggleModal()}
-          chips={chips}
+        <GroupPickerDialog
+          type="selectMany"
+          text={{
+            title: "users:selectGroups",
+            ok: "users:join",
+          }}
+          onConfirm={(groups) => {
+            editMode ? addGroups(groups) : addChips(groups);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+          filterGroups={selectedGroups.map((g) => g.name!)}
         />
       )}
-      {editMode ? (
+      {editMode && user ? (
         <>
-          <FormGroup
-            label={t("common:id")}
-            fieldId="kc-id"
-            isRequired
-            validated={errors.id ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
-          >
-            <TextInput
-              ref={register({ required: !editMode })}
-              type="text"
-              id="kc-id"
-              name="id"
-              isReadOnly={editMode}
-            />
+          <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
+            <TextInput id={user.id} value={user.id} type="text" isReadOnly />
           </FormGroup>
-          <FormGroup
-            label={t("createdAt")}
-            fieldId="kc-created-at"
-            isRequired
-            validated={errors.createdTimestamp ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
-          >
+          <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
             <TextInput
-              value={moment(timestamp).format("MM/DD/YY hh:MM:ss A")}
+              value={moment(user.createdTimestamp).format(
+                "MM/DD/YY hh:MM:ss A"
+              )}
               type="text"
               id="kc-created-at"
               name="createdTimestamp"
-              isReadOnly={editMode}
+              isReadOnly
             />
           </FormGroup>
         </>
@@ -235,7 +212,7 @@ export const UserForm = ({
         helperTextInvalid={t("common:required")}
         labelIcon={
           <HelpItem
-            helpText={t("emailVerifiedHelpText")}
+            helpText="users-help:emailVerified"
             forLabel={t("emailVerified")}
             forID="email-verified"
           />
@@ -256,7 +233,7 @@ export const UserForm = ({
               labelOff={t("common:off")}
             />
           )}
-        ></Controller>
+        />
       </FormGroup>
       <FormGroup
         label={t("firstName")}
@@ -291,7 +268,7 @@ export const UserForm = ({
         fieldId="kc-enabled"
         labelIcon={
           <HelpItem
-            helpText={t("disabledHelpText")}
+            helpText="users-help:disabled"
             forLabel={t("enabled")}
             forID="enabled-label"
           />
@@ -299,20 +276,19 @@ export const UserForm = ({
       >
         <Controller
           name="enabled"
-          defaultValue={false}
+          defaultValue={true}
           control={control}
           render={({ onChange, value }) => (
             <Switch
               data-testid="user-enabled-switch"
               id={"kc-user-enabled"}
-              isDisabled={false}
               onChange={(value) => onChange(value)}
               isChecked={value}
               label={t("common:on")}
               labelOff={t("common:off")}
             />
           )}
-        ></Controller>
+        />
       </FormGroup>
       <FormGroup
         label={t("requiredUserActions")}
@@ -321,7 +297,7 @@ export const UserForm = ({
         helperTextInvalid={t("common:required")}
         labelIcon={
           <HelpItem
-            helpText={t("requiredUserActionsHelpText")}
+            helpText="users-help:requiredUserActions"
             forLabel={t("requiredUserActions")}
             forID="required-user-actions-label"
           />
@@ -368,9 +344,9 @@ export const UserForm = ({
           helperTextInvalid={t("common:required")}
           labelIcon={
             <HelpItem
-              helpText={t("requiredUserActionsHelpText")}
-              forLabel={t("requiredUserActions")}
-              forID="required-user-actions-label"
+              helpText="users-help:groups"
+              forLabel={t("common:groups")}
+              forID="kc-join-groups-button"
             />
           }
         >
@@ -383,12 +359,12 @@ export const UserForm = ({
               <>
                 <InputGroup>
                   <ChipGroup categoryName={" "}>
-                    {chips.map((currentChip) => (
+                    {selectedGroups.map((currentChip) => (
                       <Chip
-                        key={currentChip}
-                        onClick={() => deleteItem(currentChip!)}
+                        key={currentChip.id}
+                        onClick={() => deleteItem(currentChip.name!)}
                       >
-                        {currentChip}
+                        {currentChip.path}
                       </Chip>
                     ))}
                   </ChipGroup>
@@ -414,14 +390,16 @@ export const UserForm = ({
           variant="primary"
           type="submit"
         >
-          {!editMode ? t("common:Create") : t("common:Save")}
+          {editMode ? t("common:save") : t("common:create")}
         </Button>
         <Button
           data-testid="cancel-create-user"
-          onClick={() => history.push(`/${realm}/users`)}
+          onClick={() =>
+            editMode ? setupForm(user!) : history.push(`/${realm}/users`)
+          }
           variant="link"
         >
-          {t("common:cancel")}
+          {editMode ? t("common:revert") : t("common:cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>

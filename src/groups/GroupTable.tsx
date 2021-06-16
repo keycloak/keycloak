@@ -22,7 +22,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { GroupsModal } from "./GroupsModal";
 import { getLastId } from "./groupIdUtils";
-import { MoveGroupDialog } from "./MoveGroupDialog";
+import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useSubGroups } from "./SubGroupsContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
@@ -223,15 +223,23 @@ export const GroupTable = () => {
         />
       )}
       {move && (
-        <MoveGroupDialog
-          group={move}
+        <GroupPickerDialog
+          type="selectOne"
+          filterGroups={[move.name!]}
+          text={{
+            title: "groups:moveToGroup",
+            ok: "groups:moveHere",
+          }}
           onClose={() => setMove(undefined)}
-          onMove={async (id) => {
+          onConfirm={async (group) => {
             delete move.membersLength;
             try {
               try {
-                if (id) {
-                  await adminClient.groups.setOrCreateChild({ id }, move);
+                if (group[0].id) {
+                  await adminClient.groups.setOrCreateChild(
+                    { id: group[0].id },
+                    move
+                  );
                 } else {
                   await adminClient.groups.create(move);
                 }

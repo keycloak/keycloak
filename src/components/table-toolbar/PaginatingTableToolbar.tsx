@@ -46,10 +46,10 @@ export const PaginatingTableToolbar = ({
       isCompact
       toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
         <b>
-          {firstIndex} - {lastIndex! - (count < max ? 1 : 0)}
+          {firstIndex} - {lastIndex}
         </b>
       )}
-      itemCount={count + page * max + (count <= max ? 1 : 0)}
+      itemCount={count + page * max}
       page={page + 1}
       perPage={max}
       onNextClick={(_, p) => onNextClick((p - 1) * max)}

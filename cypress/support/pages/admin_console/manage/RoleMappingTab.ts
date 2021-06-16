@@ -2,7 +2,7 @@ const expect = chai.expect;
 export default class RoleMappingTab {
   private tab = "#pf-tab-serviceAccount-serviceAccount";
   private scopeTab = "scopeTab";
-  private assignRole = "assignRole";
+  private assignRole = "no-roles-for-this-client-empty-action";
   private unAssign = "unAssignRole";
   private assign = "assign";
   private hide = "#hideInheritedRoles";

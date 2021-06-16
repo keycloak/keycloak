@@ -115,7 +115,7 @@ describe("User Fed LDAP mapper tests", () => {
   it("Create group", () => {
     sidebarPage.goToGroups();
     groupModal
-      .open("empty-primary-action")
+      .open("no-groups-in-this-realm-empty-action")
       .fillGroupForm(groupName)
       .clickCreate();
 

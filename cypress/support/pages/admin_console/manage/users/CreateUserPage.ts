@@ -13,11 +13,11 @@ export default class CreateUserPage {
     this.usernameInput = "#kc-username";
 
     this.usersEmptyState = "empty-state";
-    this.emptyStateCreateUserBtn = "empty-primary-action";
+    this.emptyStateCreateUserBtn = "no-users-found-empty-action";
     this.searchPgCreateUserBtn = "create-new-user";
     this.addUserBtn = "add-user";
     this.joinGroupsBtn = "join-groups-button";
-    this.joinBtn = "join-button";
+    this.joinBtn = "users:join-button";
     this.saveBtn = "create-user";
     this.cancelBtn = "cancel-create-user";
   }

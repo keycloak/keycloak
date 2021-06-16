@@ -53,7 +53,9 @@ export const ListEmptyState = ({
         <EmptyStateBody>{instructions}</EmptyStateBody>
         {primaryActionText && (
           <Button
-            data-testid="empty-primary-action"
+            data-testid={`${message
+              .replace(/\W+/g, "-")
+              .toLowerCase()}-empty-action`}
             variant="primary"
             onClick={onPrimaryAction}
           >

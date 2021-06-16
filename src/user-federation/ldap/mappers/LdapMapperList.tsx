@@ -127,6 +127,7 @@ export const LdapMapperList = () => {
             message={t("common:emptyMappers")}
             instructions={t("common:emptyMappersInstructions")}
             primaryActionText={t("common:emptyPrimaryAction")}
+            onPrimaryAction={() => history.push(`${url}/new`)}
           />
         }
       />

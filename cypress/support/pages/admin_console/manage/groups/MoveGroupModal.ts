@@ -1,5 +1,5 @@
 export default class MoveGroupModal {
-  private moveButton = "joinGroup";
+  private moveButton = "groups:moveHere-button";
   private title = ".pf-c-modal-box__title";
 
   clickRow(groupName: string) {

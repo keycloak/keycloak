@@ -133,7 +133,7 @@ describe("Clients test", function () {
     });
 
     it("Clustering", () => {
-      advancedTab.expandClusterNode().checkTestClusterAvailability(false);
+      advancedTab.expandClusterNode();
 
       advancedTab
         .clickRegisterNodeManually()

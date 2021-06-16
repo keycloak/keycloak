@@ -69,7 +69,7 @@ export default class ProviderPage {
   private namesColumn = 'td[data-label="Name"]:visible';
 
   private rolesTab = "#pf-tab-roles-roles";
-  private createRoleBtn = "data-testid=empty-primary-action";
+  private createRoleBtn = "data-testid=no-roles-for-this-client-empty-action";
   private realmRolesSaveBtn = "data-testid=realm-roles-save-button";
   private roleNameField = "#kc-name";
   private clientIdSelect = "#kc-client-id";
@@ -217,7 +217,7 @@ export default class ProviderPage {
     const ldapAttValue = "cn";
     const ldapDnValue = "ou=groups";
 
-    cy.get(`[data-testid="add-mapper-btn"]`).click();
+    cy.contains("Add").click();
     cy.wait(1000);
 
     cy.get("#kc-providerId").click();

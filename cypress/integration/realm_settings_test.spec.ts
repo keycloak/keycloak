@@ -165,7 +165,7 @@ describe("Realm settings", () => {
     realmSettingsPage.addProvider();
   });
 
-  it("Test keys", function () {
+  it("Test keys", () => {
     sidebarPage.goToRealmSettings();
     goToKeys();
 

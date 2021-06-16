@@ -41,7 +41,9 @@ export function useFetch<T>(
   useEffect(() => {
     adminClientCall()
       .then((result) => {
-        callback(result);
+        if (!source.token.reason) {
+          callback(result);
+        }
       })
       .catch((error) => {
         if (!axios.isCancel(error)) {

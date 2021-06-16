@@ -44,7 +44,7 @@ describe("Group test", () => {
       groupName += "_" + (Math.random() + 1).toString(36).substring(7);
 
       groupModal
-        .open("empty-primary-action")
+        .open("no-groups-in-this-realm-empty-action")
         .fillGroupForm(groupName)
         .clickCreate();
 
@@ -61,7 +61,7 @@ describe("Group test", () => {
 
     it("Should rename group", () => {
       groupModal
-        .open("empty-primary-action")
+        .open("no-groups-in-this-realm-empty-action")
         .fillGroupForm(groupName)
         .clickCreate();
       clickGroup(groupName);
@@ -80,7 +80,7 @@ describe("Group test", () => {
 
     it("Should move group", () => {
       const targetGroupName = "target";
-      groupModal.open("empty-primary-action");
+      groupModal.open("no-groups-in-this-realm-empty-action");
       groupModal.fillGroupForm(groupName).clickCreate();
 
       groupModal.open().fillGroupForm(targetGroupName).clickCreate();
@@ -106,7 +106,7 @@ describe("Group test", () => {
     it("Should move group to root", async () => {
       const groups = ["group1", "group2"];
       groupModal
-        .open("empty-primary-action")
+        .open("no-groups-in-this-realm-empty-action")
         .fillGroupForm(groups[0])
         .clickCreate();
       groupModal.open().fillGroupForm(groups[1]).clickCreate();

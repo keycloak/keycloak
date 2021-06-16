@@ -19,6 +19,7 @@ import "./role-mapping.css";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../alert/Alerts";
+import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 
 export type CompositeRole = RoleRepresentation & {
   parent: RoleRepresentation;
@@ -207,6 +208,14 @@ export const RoleMapping = ({
             cellFormatters: [emptyFormatter()],
           },
         ]}
+        emptyState={
+          <ListEmptyState
+            message={t("noRoles")}
+            instructions={t("noRolesInstructions")}
+            primaryActionText={t("assignRole")}
+            onPrimaryAction={() => setShowAssign(true)}
+          />
+        }
       />
     </>
   );

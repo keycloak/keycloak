@@ -6,7 +6,7 @@ export default class UserGroupsPage {
   constructor() {
     this.userGroupsTab = "user-groups-tab";
     this.addGroupButton = "add-group-button";
-    this.joinGroupButton = "join-button";
+    this.joinGroupButton = "users:join-button";
   }
 
   goToGroupsTab() {

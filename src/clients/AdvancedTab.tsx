@@ -37,6 +37,7 @@ import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointCon
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { SaveOptions } from "./ClientDetails";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 
 type AdvancedProps = {
   save: (options?: SaveOptions) => void;
@@ -345,6 +346,14 @@ export const AdvancedTab = ({
                     ],
                   },
                 ]}
+                emptyState={
+                  <ListEmptyState
+                    message={t("noNodes")}
+                    instructions={t("noNodesInstructions")}
+                    primaryActionText={t("registerNodeManually")}
+                    onPrimaryAction={() => setAddNodeOpen(true)}
+                  />
+                }
               />
             </ExpandableSection>
           </>

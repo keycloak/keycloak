@@ -167,6 +167,8 @@
     "nodeReRegistrationTimeout": "Node Re-registration timeout",
     "registeredClusterNodes": "Registered cluster nodes",
     "nodeHost": "Node host",
+    "noNodes": "No nodes registered",
+    "noNodesInstructions": "There are no nodes registered, you can add one manually.",
     "lastRegistration": "Last registration",
     "testClusterAvailability": "Test cluster availability",
     "registerNodeManually": "Register node manually",

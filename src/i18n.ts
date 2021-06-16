@@ -13,6 +13,7 @@ import groups from "./groups/messages.json";
 import realm from "./realm/messages.json";
 import roles from "./realm-roles/messages.json";
 import users from "./user/messages.json";
+import usersHelp from "./user/help.json";
 import sessions from "./sessions/messages.json";
 import events from "./events/messages.json";
 import realmSettings from "./realm-settings/messages.json";
@@ -40,6 +41,7 @@ const initOptions = {
       ...roles,
       ...groups,
       ...users,
+      ...usersHelp,
       ...sessions,
       ...userFederation,
       ...events,

@@ -28,10 +28,8 @@ describe("Group creation", () => {
   function createNewGroup() {
     groupName += "_" + (Math.random() + 1).toString(36).substring(7);
 
-    groupModal
-      .open("openCreateGroupModal")
-      .fillGroupForm(groupName)
-      .clickCreate();
+    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+    groupModal.open().fillGroupForm(groupName).clickCreate();
 
     groupsList = [...groupsList, groupName];
     masthead.checkNotificationMessage("Group created");

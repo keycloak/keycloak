@@ -9,7 +9,7 @@ export default class AdvancedTab {
   private clusterNodesExpand =
     ".pf-c-expandable-section .pf-c-expandable-section__toggle";
   private testClusterAvailability = "#testClusterAvailability";
-  private registerNodeManually = "#registerNodeManually";
+  private registerNodeManually = "no-nodes-registered-empty-action";
   private nodeHost = "#nodeHost";
   private addNodeConfirm = "#add-node-confirm";
 
@@ -65,7 +65,7 @@ export default class AdvancedTab {
   }
 
   clickRegisterNodeManually() {
-    cy.get(this.registerNodeManually).click();
+    cy.getId(this.registerNodeManually).click();
     return this;
   }
 

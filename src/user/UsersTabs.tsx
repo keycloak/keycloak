@@ -49,7 +49,7 @@ export const UsersTabs = () => {
   const save = async (user: UserRepresentation) => {
     try {
       if (id) {
-        await adminClient.users.update({ id: user.id! }, user);
+        await adminClient.users.update({ id }, user);
         addAlert(t("users:userSaved"), AlertVariant.success);
       } else {
         const createdUser = await adminClient.users.create(user);
