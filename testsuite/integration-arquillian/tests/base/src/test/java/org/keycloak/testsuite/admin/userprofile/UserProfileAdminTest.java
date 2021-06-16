@@ -31,6 +31,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.userprofile.UserProfileSpi;
@@ -44,6 +45,7 @@ import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
         beforeEnableFeature = false,
         onlyUpdateDefault = true
 )
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Override
