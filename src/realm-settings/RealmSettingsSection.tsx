@@ -31,6 +31,7 @@ import { EventsTab } from "./event-config/EventsTab";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { KeysProviderTab } from "./KeysProvidersTab";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { LocalizationTab } from "./LocalizationTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -129,9 +130,9 @@ export const RealmSettingsSection = () => {
   const { addAlert } = useAlerts();
   const form = useForm();
   const { control, getValues, setValue, reset: resetForm } = form;
+  const [key, setKey] = useState(0);
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(0);
-  const [key, setKey] = useState(0);
   const [realmComponents, setRealmComponents] = useState<
     ComponentRepresentation[]
   >();
@@ -149,17 +150,6 @@ export const RealmSettingsSection = () => {
     []
   );
 
-  useEffect(() => {
-    const update = async () => {
-      const realmComponents = await adminClient.components.find({
-        type: "org.keycloak.keys.KeyProvider",
-        realm: realmName,
-      });
-      setRealmComponents(realmComponents);
-    };
-    setTimeout(update, 100);
-  }, [key]);
-
   useFetch(
     async () => {
       const realm = await adminClient.realms.findOne({ realm: realmName });
@@ -174,23 +164,12 @@ export const RealmSettingsSection = () => {
       setRealm(result.realm);
       setRealmComponents(result.realmComponents);
     },
-    []
+    [key]
   );
 
   const refresh = () => {
     setKey(new Date().getTime());
   };
-
-  useEffect(() => {
-    const update = async () => {
-      const realmComponents = await adminClient.components.find({
-        type: "org.keycloak.keys.KeyProvider",
-        realm: realmName,
-      });
-      setRealmComponents(realmComponents);
-    };
-    setTimeout(update, 100);
-  }, [key]);
 
   useEffect(() => {
     if (realm) setupForm(realm);
@@ -264,6 +243,7 @@ export const RealmSettingsSection = () => {
               <RealmSettingsThemesTab
                 save={save}
                 reset={() => setupForm(realm!)}
+                realm={realm!}
               />
             </Tab>
             <Tab
@@ -306,6 +286,22 @@ export const RealmSettingsSection = () => {
             >
               <EventsTab />
             </Tab>
+
+            {realm && (
+              <Tab
+                id="localization"
+                eventKey="localization"
+                title={<TabTitleText>{t("localization")}</TabTitleText>}
+              >
+                <LocalizationTab
+                  key={key}
+                  refresh={refresh}
+                  save={save}
+                  reset={() => setupForm(realm)}
+                  realm={realm}
+                />
+              </Tab>
+            )}
           </KeycloakTabs>
         </FormProvider>
       </PageSection>

@@ -54,3 +54,7 @@ td.pf-c-table__check > input {
   margin-top: var(--pf-c-table__check--input--MarginTop);
   vertical-align: baseline;
 }
+
+.pf-c-pagination.pf-m-bottom.pf-m-compact {
+  padding: 0px;
+}

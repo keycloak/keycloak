@@ -214,8 +214,9 @@ export const RSAGeneratedModal = ({
               }
             >
               <Controller
-                name="algorithm"
-                defaultValue=""
+                name="config.algorithm"
+                control={control}
+                defaultValue={["RS256"]}
                 render={({ onChange, value }) => (
                   <Select
                     toggleId="kc-rsa-algorithm"
@@ -223,7 +224,7 @@ export const RSAGeneratedModal = ({
                       setIsRSAalgDropdownOpen(!isRSAalgDropdownOpen)
                     }
                     onSelect={(_, value) => {
-                      onChange(value as string);
+                      onChange([value + ""]);
                       setIsRSAalgDropdownOpen(false);
                     }}
                     selections={[value + ""]}

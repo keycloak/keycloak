@@ -80,3 +80,15 @@ button.pf-c-button.pf-m-link.add-provider {
 .add-provider-modal > div.pf-c-modal-box__body {
   overflow: visible;
 }
+
+.pf-c-content.messageBundleDescription {
+  max-width: 1024px;
+  padding-bottom: var(--pf-global--spacer--lg);
+}
+
+div.tableBorder {
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--pf-global--BorderColor--100);
+  max-width: 1024px;
+}

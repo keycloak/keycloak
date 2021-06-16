@@ -127,6 +127,7 @@
       "tr": "Türkçe",
       "zh-CN": "中文"
     },
+    "placeholderText": "Select one",
     "userManagedAccess": "User-managed access",
     "endpoints": "Endpoints",
     "openIDEndpointConfiguration": "OpenID Endpoint Configuration",
@@ -136,6 +137,9 @@
     "adminTheme": "Admin console theme",
     "emailTheme": "Email theme",
     "internationalization": "Internationalization",
+    "localization": "Localization",
+    "key": "Key",
+    "value": "Value",
     "supportedLocales": "Supported locales",
     "defaultLocale": "Default locale",
 
@@ -489,7 +493,10 @@
     "user-events-cleared-error": "Could not clear the user events {{error}}",
     "events-disable-title": "Unsave events?",
     "events-disable-confirm": "If \"Save events\" is disabled, subsequent events will not be displayed in the \"Events\" menu",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "noMessageBundles": "No message bundles",
+    "noMessageBundlesInstructions": "Add a message bundle to get started.",
+    "messageBundleDescription": "You can edit the supported locales. If you haven't selected supported locales yet, you can only edit the English locale."
   },
   "partial-import": {
     "partialImportHeaderText": "Partial import allows you to import users, clients, and other resources from a previously exported json file.",
