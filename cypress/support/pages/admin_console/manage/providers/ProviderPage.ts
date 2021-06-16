@@ -221,7 +221,7 @@ export default class ProviderPage {
     cy.wait(1000);
 
     cy.get("#kc-providerId").click();
-    cy.get("#kc-providerId + ul").contains(mapperType).click();
+    cy.get("button").contains(mapperType).click();
 
     cy.get(`[data-testid="ldap-mapper-name"]`).type(`${mapperType}-test`);
 
