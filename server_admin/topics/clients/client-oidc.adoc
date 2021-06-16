@@ -219,5 +219,36 @@ ID token encryption algorithms by CEK are also defined in the https://datatracke
 * open `Fine Grain OpenID Connect Configuration`
 * select the algorithm from `ID Token Encryption Content Encryption Algorithm` pulldown menu
 
+[[_pushed_authorization_requests]]
+*OAuth 2.0 Pushed Authorization Requests*
 
+Basic features of https://datatracker.ietf.org/doc/html/draft-ietf-oauth-par[OAuth 2.0 Pushed Authorization Requests] has been supported.
 
+For more details about PAR, see https://datatracker.ietf.org/doc/html/draft-ietf-oauth-par[PAR Specification].
+
+:tech_feature_name: OAuth 2.0 Pushed Authorization Requests
+:tech_feature_setting: -Dkeycloak.profile.feature.par=enabled
+include::../templates/techpreview.adoc[]
+
+There are two configuration parameters. The former can be set up on Advanced Settings per client for activating and deactivating PAR.
+
+|===
+|Configuration|Description
+
+|Pushed Authorization Request Enabled
+|Boolean parameter indicating whether the authorization server accepts authorization request data only via the pushed authorization request method.
+
+|===
+
+The latter can be set up on Realm Setting's Token tab per realm for determining lifetime of PAR's Request URI.
+
+|===
+|Configuration|Description
+
+|Lifetime of the Request URI for Pushed Authorization Request
+|Number that represents the lifetime of the request URI in minutes or hours, the default value is 1 minute.
+
+|===
+ 
+
+ 
