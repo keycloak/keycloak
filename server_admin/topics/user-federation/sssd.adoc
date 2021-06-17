@@ -1,9 +1,9 @@
 
 [[_sssd]]
 
-=== SSSD and FreeIPA Identity Management Integration
+=== SSSD and FreeIPA Identity Management integration
 
-{project_name} includes a https://fedoraproject.org/wiki/Features/SSSD[System Security Services Daemon (SSSD)] plugin. SSSD is part of the Fedora and Red Hat Enterprise Linux (RHEL), and it provides access to multiple identities and authentication providers. SSSD also provides benefits such as failover and offline support. For more information, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/sssd[the Red Hat Enterprise Linux Identity Management documentation].
+{project_name} includes the https://fedoraproject.org/wiki/Features/SSSD[System Security Services Daemon (SSSD)] plugin. SSSD is part of the Fedora and Red Hat Enterprise Linux (RHEL), and it provides access to multiple identities and authentication providers. SSSD also provides benefits such as failover and offline support. For more information, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/sssd[the Red Hat Enterprise Linux Identity Management documentation].
 
 SSSD integrates with the FreeIPA identity management (IdM) server, providing authentication and access control. With this integration, {project_name} can authenticate against privileged access management (PAM) services and retrieve user data from SSSD. For more information about using Red Hat Identity Management in Linux environments, see https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/linux_domain_identity_authentication_and_policy_guide/index[the Red Hat Enterprise Linux Identity Management documentation].
 
@@ -16,9 +16,9 @@ image:{project_images}/keycloak-sssd-freeipa-integration-overview.png[]
 {project_name} registers groups and roles automatically but does not synchronize them. Any changes made by the {project_name} administrator in {project_name} do not synchronize with SSSD.
 ====
 
-==== FreeIPA/IdM Server
+==== FreeIPA/IdM server
 
-A https://hub.docker.com/r/freeipa/freeipa-server/[FreeIPA Docker image] is available in Docker. To set up a FreeIPA server, see the https://www.freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
+The https://hub.docker.com/r/freeipa/freeipa-server/[FreeIPA Docker image] is available in Docker Hub. To set up the FreeIPA server, see the https://www.freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
 
 .Procedure
 . Run your FreeIPA server using this command:
@@ -136,7 +136,7 @@ If you do not have permission to access the SSSD service, ensure that the user r
 allowed_uids = root, your_username
 ----
 
-==== Enabling the SSSD Federation Provider
+==== Enabling the SSSD federation provider
 
 {project_name} uses DBus-Java to communicate at a low level with D-Bus. D-Bus depends on the http://www.matthew.ath.cx/projects/java/[Unix Sockets Library].
 
@@ -188,7 +188,7 @@ Use the `sssctl user-checks` command to validate your setup:
   $ sudo sssctl user-checks admin -s keycloak
 ----
 
-=== Configuring a Federated SSSD Store
+=== Configuring a federated SSSD store
 
 After the installation, configure a federated SSSD store.
 

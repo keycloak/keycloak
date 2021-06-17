@@ -35,7 +35,7 @@ To add a user to a group:
 . Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
 . Click *Groups*.
 +
-.User Groups
+.User groups
 image:{project_images}/user-groups.png[]
 +
 . Select a group from the *Available Groups* tree.
@@ -48,5 +48,5 @@ To remove a group from a user:
 
 In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the *Members* tab for the group.
 
-.Group Membership
+.Group membership
 image:{project_images}/group-membership.png[]

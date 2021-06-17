@@ -1,7 +1,7 @@
 
 [[_general-idp-config]]
 
-=== General Configuration
+=== General configuration
 
 The foundations of the identity broker configuration are identity providers (IDPs). {project_name} creates identity providers for each realm and enables them for every application by default. Users from a realm can use any of the registered identity providers when signing in to an application.
 
@@ -13,7 +13,7 @@ image:{project_images}/identity-providers.png[Identity Providers]
 +
 . From the `Add provider` list, select the identity provider you want to add. {project_name} displays the configuration page for the identity provider you selected.
 +
-.Add Facebook Identity Provider
+.Add facebook identity Provider
 image:{project_images}/add-identity-provider.png[Add Facebook Identity Provider]
 +
 When you configure an identity provider, the identity provider appears on the {project_name} login page as an option. You can place custom icons on the login screen for each identity provider. See  link:{developerguide_link}#custom-identity-providers-icons[custom icons] for more information.

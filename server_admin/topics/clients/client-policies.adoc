@@ -1,5 +1,6 @@
+
 [[_client_policies]]
-=== Client Policies
+= Client Policies
 
 To make it easy to secure client applications, it is beneficial to realize the following points in a unified way.
 
@@ -9,7 +10,7 @@ To make it easy to secure client applications, it is beneficial to realize the f
 
 To realize these points in a unified way, _Client Policies_ concept is introduced.
 
-==== Use-cases
+== Use-cases
 
 Client Policies realize the following points mentioned as follows.
 
@@ -34,15 +35,15 @@ Conformance to a required security standards and profiles such as FAPI::
     be compliant with the FAPI. The administrator can configure client profiles and client policies, so that {project_name} clients can be easily made compliant with various other
     security profiles like SPA, Native App, Open Banking and so on.
 
-==== Protocol
+== Protocol
 
 The client policy concept is independent of any specific protocol. However, {project_name} currently supports it only just for the link:{adapterguide_link}#_oidc[OpenID Connect (OIDC) protocol].
 
-==== Architecture
+== Architecture
 
 Client Policies consists of the four building blocks: Condition, Executor, Profile and Policy.
 
-===== Condition
+=== Condition
 
 A condition determines to which client a policy is adopted and when it is adopted. Some conditions are checked at the time of client create/update when some other conditions are
 checked during client requests (OIDC Authorization request, Token endpoint request and so on). The condition checks whether one specified criteria is satisfied. For example,
@@ -83,7 +84,7 @@ Client Domain Name, Host or IP Address::
 Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
 
-===== Executor
+=== Executor
 
 An executor specifies what action is executed on a client to which a policy is adopted. The executor executes one or several specified actions. For example,
 some executor checks whether the value of the parameter `redirect_uri` in the authorization request matches exactly with one of the pre-registered redirect URIs on
@@ -123,20 +124,20 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce `binding_message` parameter is used for CIBA requests
 
 [[_client_policy_profile]]
-===== Profile
+=== Profile
 
 A profile consists of several executors, which can realize a security profile like FAPI. Profile can be configured by the Admin REST API (Admin Console) together with its executors.
 Three _global profiles_ exist and they are configured in {project_name} by default with pre-configured executors compliant with the FAPI Baseline, FAPI Advanced and FAPI CIBA specifications.
 More details exist in the FAPI section of the link:{adapterguide_link}#_fapi-support[{adapterguide_name}].
 
 [[_client_policy_policy]]
-===== Policy
+=== Policy
 
 A policy consists of several conditions and profiles. The policy can be adopted to clients satisfying all conditions of this policy. The policy refers several profiles and all
 executors of these profiles execute their task against the client that this policy is adopted to.
 
 
-==== Configuration
+== Configuration
 
 Policies, profiles, conditions, executors can be configured by Admin REST API, which means also the Admin Console. To do so, there is a tab _Realm_ -> _Realm Settings_ -> _Client Policies_
 , which means the administrator can have client policies per realm.
@@ -146,7 +147,7 @@ configured by default. This means that the administrator is always required to c
 profiles cannot be updated, but the administrator can easily use them as a template and create their own profile if they want to do some slight changes in the global profile configurations.
 There is JSON Editor available in the Admin Console, which simplifies the creation of new profile based on some global profile.
 
-==== Backward Compatibility
+== Backward Compatibility
 
 Client Policies can replace Client Registration Policies described in the link:{adapterguide_link}#_client_registration_policies[{adapterguide_name}].
 However, Client Registration Policies also still co-exist. This means that for example during a Dynamic Client Registration request to create/update a client, both client policies and

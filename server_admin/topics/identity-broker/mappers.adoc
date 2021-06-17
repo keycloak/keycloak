@@ -1,6 +1,6 @@
 
 [[_mappers]]
-=== Mapping Claims and Assertions
+=== Mapping claims and assertions
 
 You can import the SAML and OpenID Connect metadata, provided by the external IDP you are authenticating with, into the realm. After importing, you can extract user profile metadata and other information, so you can make it available to your applications.
 
@@ -11,12 +11,12 @@ Each user logging into your realm using an external identity provider has an ent
 . Select one of the identity providers in the list.
 . Click the *Mappers* tab.
 +
-.identity provider mappers
+.Identity provider mappers
 image:{project_images}/identity-provider-mappers.png[identity provider mappers]
 +
 . Click *Create*.
 +
-.identity provider mapper
+.Identity provider mapper
 image:{project_images}/identity-provider-mapper.png[identity provider mapper]
 +
 . Select a value for *Sync Mode Override*. The mapper updates user information when users log in repeatedly according to this setting.

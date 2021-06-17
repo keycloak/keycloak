@@ -671,7 +671,7 @@ There are 2 ways to take the site offline.
 This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `server1` server and take the `site2` offline.
 More details about this are available in the
 ifeval::[{project_product}==true]
-link:{jdgserver_crossdcdocs_link}#xsite_auto_offline-xsite[{jdgserver_name} documentation].
+link:{jdgserver_crossdcdocs_link}[{jdgserver_name} documentation].
 endif::[]
 ifeval::[{project_community}==true]
 link:{jdgserver_crossdcdocs_link}[{jdgserver_name} documentation].
@@ -714,7 +714,7 @@ A bidirectional state transfer will ensure that entities which were created *aft
 Unfortunately, there is no any universal solution to this. Split-brains and network outages are just state, which is usually impossible to be handled 100% correctly with 100% consistent data between sites. In the case of {project_name}, it typically is not a critical issue. In the worst case, users will need to re-login again to their clients, or have the improper count of loginFailures tracked for brute force protection. See the {jdgserver_name}/JGroups documentation for more tips how to deal with split-brain.
 
 The state transfer can be also done on the {jdgserver_name} server side through JMX. The operation name is `pushState`. There are few other operations to monitor status, cancel push state, and so on.
-More info about state transfer is available in the link:{jdgserver_crossdcdocs_link}#cli_xsite_push-cli-ops[{jdgserver_name} docs].
+More info about state transfer is available in the link:{jdgserver_crossdcdocs_link}[{jdgserver_name} docs].
 
 
 [[clearcache]]

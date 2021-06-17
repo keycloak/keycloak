@@ -86,7 +86,7 @@ or `resourceAccess` properties, you may need to increase the priority of your ma
 
 Audiences of all the clients, for which authenticated user has at least one client role in the token, are automatically added
 to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
-frontend client, for which it was issued. Read the link:{adminguide_link}#_audience[{adminguide_name}] for more details.
+frontend client, for which it was issued. See the link:{adminguide_link}#_audience_resolve[{adminguide_name}] for more details.
 
 === Upgrade to EAP 7.2
 
@@ -126,7 +126,7 @@ the native promise. This was causing issues as the error handler was not always 
 resulted in `Uncaught (in promise)` error.
 
 === Microsoft Identity Provider updated to use the Microsoft Graph API
- 
+
 The Microsoft Identity Provider implementation in {project_name} used to rely on the Live SDK
 endpoints for authorization and obtaining the user profile. From November 2018 onwards, Microsoft is removing support
 for the Live SDK API in favor of the new Microsoft Graph API. The {project_name} identity provider has been updated

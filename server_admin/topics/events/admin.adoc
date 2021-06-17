@@ -1,5 +1,5 @@
 
-=== Admin Events
+=== Admin events
 
 You can record all actions that are performed by an administrator in the Admin Console. The Admin Console performs administrative actions by invoking the {project_name} REST interface and {project_name} audits these REST invocations. You can view the resulting events in the Admin Console.
 
@@ -9,12 +9,12 @@ To enable auditing of Admin actions:
 . Click *Events* in the menu.
 . Click the *Config* tab.
 +
-.Event Configuration
+.Event configuration
 image:{project_images}/login-events-config.png[Event Configuration]
 +
 . Toggle *Save Events* to *ON* in the *Admin Events Settings* section. {project_name} displays the *Include Representation* switch.
 +
-.Admin Event Configuration
+.Admin event configuration
 image:{project_images}/admin-events-settings.png[Admin Event Configuration]
 +
 . Toggle *Include Representation* to *ON*.
@@ -23,15 +23,15 @@ The `Include Representation` switch includes JSON documents sent through the adm
 
 To view the admin events, click the *Admin Events* tab.
 
-.Admin Events
+.Admin events
 image:{project_images}/admin-events.png[Admin Events]
 
 If the `Details` column has a *Representation* button, click the *Representation* button to view the JSON {project_name} sent with the operation.
 
-.Admin Representation
+.Admin representation
 image:{project_images}/admin-events-representation.png[Admin Representation]
 
 Click `Filter` to view specific events.
 
-.Admin Event Filter
+.Admin event filter
 image:{project_images}/admin-events-filter.png[Admin Event Filter]

@@ -93,7 +93,7 @@ from the dropdown. You can change the priority to make sure the new keypair beco
 
 .Procedure
 . Select the realm in the Admin Console.
-. Click *Realm settings*.
+. Click Realm settings.
 . Click the *Keys* tab.
 . Click the *Active* tab.
 . Click the provider of the key you want to make passive.

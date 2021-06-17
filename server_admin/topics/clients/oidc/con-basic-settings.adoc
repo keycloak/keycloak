@@ -1,5 +1,5 @@
 [id="con-basic-settings_{context}"]
-= Basic Settings
+= Basic settings
 [role="_abstract"]
 
 When you create an OIDC client, you see the following fields on the *Settings* tab.
@@ -33,11 +33,12 @@ _Bearer-only_::
 
 *Direct Access Grants Enabled*:: When enabled, clients can use the OIDC xref:_oidc-auth-flows-direct[Direct Access Grants].
 
-*OAuth 2.0 Device Authorization Grant Enabled*
+*OAuth 2.0 Device Authorization Grant Enabled*:: If this is on, clients are allowed to use the OIDC xref:con-oidc-auth-flows_server_administration_guide[Device Authorization Grant].
 
-If this is on, clients are allowed to use the OIDC xref:con-oidc-auth-flows_server_administration_guide[Device Authorization Grant].
+*OpenID Connect Client Initiated Backchannel Authentication Grant Enabled*:: 
+If this is on, clients are allowed to use the OIDC xref:con-oidc-auth-flows_{context}[Client Initiated Backchannel Authentication Grant].
 
-*Root URL*:: This value adds a prefix to any configured URLS that {project_name} uses.
+*Root URL*:: If {project_name} uses any configured relative URLs, this value is prepended to them.
 
 *Valid Redirect URIs*:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. You can use wildcards at the end of the URL pattern. For example $$http://host.com/*$$
 +

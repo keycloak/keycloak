@@ -1,5 +1,5 @@
 
-=== CSRF Attacks
+=== CSRF attacks
 
 A Cross-site request forgery (CSRF) attack uses HTTP requests from users that websites have already authenticated. Any site using cookie-based authentication is vulnerable to CSRF attacks. You can mitigate these attacks by matching a state cookie against a posted form or query parameter.
 

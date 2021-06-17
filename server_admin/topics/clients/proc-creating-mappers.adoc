@@ -7,7 +7,7 @@ You can add mapper types as follows:
 . Go to the *Mappers* tab.
 . Click *Create*.
 +
-.Add Mapper
+.Add mapper
 image:{project_images}/add-mapper.png[]
 +
 . Select a *Mapper Type* from the list box.

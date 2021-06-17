@@ -5,7 +5,7 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `Openshift`.
 +
-.Add Identity Provider
+.Add identity provider
 image:images/openshift-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
@@ -51,7 +51,7 @@ curl -s -k -H "Authorization: Bearer $(oc whoami -t)" \https://<openshift-user-f
 . Click *Identity Providers* in the {project_name} menu.
 . From the `Add provider` list, select `Openshift`.
 +
-.Add Identity Provider
+.Add identity provider
 image:images/openshift-4-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.

@@ -114,7 +114,7 @@ public class HeaderMojo extends AbstractMojo {
             try(PrintStream ps = new PrintStream(new FileOutputStream(out));BufferedReader br = new BufferedReader(new FileReader(f));){
                 for (String l = br.readLine(); l != null; l = br.readLine()) {
                     ps.println(l);
-                    if (l.contains("=")) {
+                    if (l.startsWith("=")) {
                         break;
                     }
                 }

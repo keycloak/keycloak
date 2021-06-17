@@ -2,7 +2,7 @@
 
 [[_client_installation]]
 
-= Generating Client Adapter Config
+= Generating client adapter config
 [role="_abstract"]
 
 {project_name} can generate configuration files that you can use to install a client adapter in your application's deployment environment. A number of adapter types are supported for OIDC and SAML.

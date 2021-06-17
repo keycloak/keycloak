@@ -1,7 +1,7 @@
 
 [[_identity_broker_overview]]
 
-=== Brokering Overview
+=== Brokering overview
 
 When using {project_name} as an identity broker, {project_name} does not force users to provide their credentials to authenticate in a specific realm. {project_name} displays a list of identity providers from which they can authenticate.
 
@@ -12,8 +12,8 @@ If you configure a default identity provider, {project_name} redirects users to 
 Different protocols may require different authentication flows. All the identity providers supported by {project_name} use the following flow.
 ====
 
-.Identity Broker Flow
-image:images/identity_broker_flow.png[Identity Broker Flow]
+.Identity broker flow
+image:images/identity_broker_flow.png[Identity broker flow]
 
 . The unauthenticated user requests a protected resource in a client application.
 . The client application redirects the user to {project_name} to authenticate.

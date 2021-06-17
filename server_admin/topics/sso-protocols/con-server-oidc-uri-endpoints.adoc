@@ -1,8 +1,8 @@
 [id="con-server-oidc-uri-endpoints_{context}"]
 
-====  {project_name} Server OIDC URI Endpoints
+====  {project_name} server OIDC URI endpoints
 [role="_abstract"]
-The following is a list of OIDC endpoints that {project_name} publishes. These endpoints can be used when a non-{project_name} client adapter uses OIDC to communicate with the authentication server. They are all relative URLs. The root of the URL consists of the HTTP(S) protocol, hostname, and the path, which is usually prefixed with _/auth_:  For example 
+The following is a list of OIDC endpoints that {project_name} publishes. These endpoints can be used when a non-{project_name} client adapter uses OIDC to communicate with the authentication server. They are all relative URLs. The root of the URL consists of the HTTP(S) protocol, hostname, and the path, which is usually prefixed with _/auth_:  For example
 
 [source, subs="attributes"]
 ----
@@ -22,11 +22,11 @@ https://localhost:8080/auth
   Used for the User Info service described in the OIDC specification.
 
 /realms/{realm-name}/protocol/openid-connect/revoke::
-  Used for OAuth 2.0 Token Revocation described in https://tools.ietf.org/html/rfc7009[RFC7009].
+  Used for OAuth 2.0 Token Revocation described in https://datatracker.ietf.org/doc/html/rfc7009[RFC7009].
 
 /realms/{realm-name}/protocol/openid-connect/certs::
   Used for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)
-  
+
 /realms/{realm-name}/protocol/openid-connect/auth/device::
   Used for Device Authorization Grant to obtain a device code and a user code.
 

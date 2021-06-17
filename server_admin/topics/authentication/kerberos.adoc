@@ -57,7 +57,7 @@ Install a Kerberos client on your machine.
 
 .Procedure
 . Install a Kerberos client. If your machine runs Fedora, Ubuntu, or RHEL, install the link:https://www.freeipa.org/page/Downloads[freeipa-client] package, containing a Kerberos client and other utilities.
-. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html`[/etc/krb5.conf] file ). 
+. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ). 
 +
 Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on. 
 +
@@ -74,16 +74,16 @@ For example, for the MYDOMAIN.ORG realm, you can configure the `domain_realm` se
 +
 For the MIT Kerberos example above, we exported keytab to the `/tmp/http.keytab` file. If your _Key Distribution Centre (KDC)_ and {project_name} run on the same host, the file is already available.
 
-===== Enabling SPNEGO Processing
+===== Enabling SPNEGO processing
 
 By default, {project_name} disables SPNEGO protocol support. To enable it, go to the <<_authentication-flows, browser flow>> and enable *Kerberos*.
 
-.Browser Flow
+.Browser flow
 image:{project_images}/browser-flow.png[Browser Flow]
 
 Set the *Kerberos* requirement from _disabled_ to _alternative_ (Kerberos is optional) or _required_ (browser must have Kerberos enabled). If you have not configured the browser to work with SPNEGO or Kerberos, {project_name} falls back to the regular login screen.
 
-===== Configure Kerberos User Storage Federation Provider
+===== Configure Kerberos user storage federation providerxs
 
 You must now use <<_user-storage-federation,User Storage Federation>> to configure how {project_name} interprets Kerberos tickets. Two different federation providers exist with Kerberos authentication support.
 
@@ -92,7 +92,7 @@ To authenticate with Kerberos backed by an LDAP server, configure the <<_ldap, L
 .Procedure
 . Go to the configuration page for your LDAP provider.
 +
-.LDAP Kerberos Integration
+.Ldap kerberos integration
 image:{project_images}/ldap-kerberos.png[LDAP Kerberos Integration]
 +
 . Toggle *Allow Kerberos authentication* to *ON* 
@@ -105,7 +105,7 @@ If an LDAP server is not backing up your Kerberos solution, use the *Kerberos* U
 . Click *User Federation* in the menu.
 . Select *Kerberos* from the *Add provider* select box.
 +
-.Kerberos User Storage Provider
+.Kerberos user storage provider
 image:{project_images}/kerberos-provider.png[Kerberos User Storage Provider]
 
 The *Kerberos* provider parses the Kerberos ticket for simple principal information and imports the information into the local {project_name} database.
@@ -122,7 +122,7 @@ In Windows domains, clients do not need to adjust their configuration. Internet 
 ifeval::[{project_community}==true]
 ==== Example setups
 
-===== {project_name} and FreeIPA docker image
+===== {Project_name} and FreeIPA docker image
 
 When you install https://www.docker.com/[docker], run a docker image with the FreeIPA server installed. FreeIPA provides an integrated security solution with MIT Kerberos and 389 LDAP server. The image also contains a {project_name} server configured with an LDAP Federation provider and enabled SPNEGO/Kerberos authentication against the FreeIPA server. See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here].
 
@@ -131,7 +131,7 @@ When you install https://www.docker.com/[docker], run a docker image with the Fr
 For quick testing and unit tests, use a simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server. You must build {project_name} from the source and then run the Kerberos server with the maven-exec-plugin from our test suite. See details https://github.com/keycloak/keycloak/blob/master/docs/tests.md#kerberos-server[here].
 endif::[]
 
-==== Credential Delegation
+==== Credential delegation
 
 Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can re-use it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
 

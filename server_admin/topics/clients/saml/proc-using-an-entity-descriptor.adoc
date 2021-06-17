@@ -6,7 +6,7 @@ Instead of registering a SAML 2.0 client manually, you can import the client usi
 
 The Add Client page includes an *Import* option.
 
-.Add Client
+.Add client
 image:{project_images}/add-client-saml.png[]
 
 .Procedure

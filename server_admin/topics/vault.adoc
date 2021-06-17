@@ -33,7 +33,7 @@ To use a vault, register a vault provider in {project_name}. You can use the pro
 
 [[_providers]]
 
-=== Kubernetes / OpenShift Files Plain-text Vault Provider
+=== Kubernetes / OpenShift files plain-text vault provider
 
 {project_name} supports vault implementation for https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes secrets]. You can mount Kubernetes secrets as data volumes, and they appear as a directory with a flat-file structure. {project_name} represents each secret as a file with the file's name as the secret name and the file's contents as the secret value.
 
@@ -61,7 +61,7 @@ Here is the equivalent configuration using CLI commands:
 /subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true,properties={dir => "${jboss.home.dir}/standalone/configuration/vault"})
 ----
 
-=== Elytron Credential Store Vault Provider
+=== Elytron credential store vault provider
 
 {project_name} also provides support for reading secrets stored in an Elytron credential store. The `elytron-cs-keystore` vault provider can retrieve secrets from the credential store's keystore based implementation, which is also the default implementation Elytron provides.
 
@@ -116,7 +116,7 @@ For more information about creating and managing elytron credential stores and m
 {project_name} implements the `elytron-cs-keystore` vault provider as a WildFly extension and is available if the {project_name} server runs on WildFly/JBoss EAP only.
 ====
 
-=== Key Resolvers
+=== Key resolvers
 
 All built-in providers support the configuration of key resolvers. A key resolver implements the algorithm or strategy for combining the realm name with the key, obtained from the `${vault.key}` expression, into the final entry name used to retrieve the secret from the vault. {project_name} uses the `keyResolvers` property to configure the resolvers that the provider uses. The value is a comma-separated list of resolver names. An example of the configuration for the `files-plaintext` provider follows:
 
@@ -181,7 +181,7 @@ The `FACTORY_PROVIDED` resolver provides a hook that you can use to implement a 
     }
 ----
 
-The custom factory returns a key resolver that combines the realm and key with a triple `#` character. For example, an entry would be `master_realm###smtp_key`. Install this factory like any custom provider.
+The custom factory returns a key resolver that combines the realm and key with a triple # character. For example, an entry would be `master_realm###smtp_key`. Install this factory like any custom provider.
 
 [NOTE]
 ====

@@ -1,6 +1,6 @@
 [id="proc-creating-realm-roles_{context}"]
 
-= Creating a Realm Role
+= Creating a realm role
 [role="_abstract"]
 Realm-level roles are a namespace for defining your roles. To see the list of roles, click *Roles* in the menu.
 
@@ -12,7 +12,7 @@ image:{project_images}/roles.png[]
 . Enter a *Description*.
 . Click *Save*.
 
-.Add Role
-image:{project_images}/role.png[]
+.Add role
+image:{project_images}/role.png[Add role]
 
 The *description* field can be localizable by specifying a substitution variable with `$\{var-name}` strings. The localized value is configured to your theme within the themes property files. See the link:{developerguide_link}[{developerguide_name}] for more details.

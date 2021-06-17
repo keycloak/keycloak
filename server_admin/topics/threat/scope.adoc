@@ -1,5 +1,5 @@
 
-=== Limiting Scope
+=== Limiting scope
 
 By default, new client applications have unlimited `role scope mappings`. Every access token for that client contains all permissions that the user has. If an attacker compromises the client and obtains the client's access tokens, each system that the user can access is compromised. 
 

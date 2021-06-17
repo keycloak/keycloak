@@ -1,5 +1,5 @@
 
-=== Login Events
+=== Login events
 
 You can record and view every event that affects users. {project_name} triggers login events for actions such as successful user login, a user entering an incorrect password, or a user account updating. By default, {project_name} does not store or display events in the Admin Console. Only the error events are logged to the Admin Console and the server’s log file.
 
@@ -30,12 +30,12 @@ image:{project_images}/login-events.png[Login Events]
 
 You can filter events using the *Filter* button.
 
-.Login Event Filter
-image:{project_images}/login-events-filter.png[Login Event Filter]
+.Login Events Filter
+image:{project_images}/login-events-filter.png[Login Events Filter]
 
 In this example, we filter only `Login` events. Click *Update* to run the filter.
 
-==== Event Types
+==== Event types
 
 *Login events:*
 
@@ -98,11 +98,11 @@ In this example, we filter only `Login` events. Click *Update* to run the filter
 
 Each event has a corresponding error event.
 
-==== Event Listener
+==== Event listener
 
 Event listeners listen for events and perform actions based on that event. {project_name} includes two built-in listeners, the Logging Event Listener and Email Event Listener.
 
-===== The Logging Event Listener
+===== The logging event listener
 When the Logging Event Listener is enabled, this listener writes to a log file when an error event occurs.
 
 An example log message from a Logging Event Listener:

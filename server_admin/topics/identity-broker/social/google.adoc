@@ -6,7 +6,7 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `Google`.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
 +
 . In a separate browser tab, https://support.google.com/googleapi/answer/6251787[create a google project].

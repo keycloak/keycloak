@@ -1,6 +1,6 @@
 
 [[_identity_broker_oidc]]
-=== OpenID Connect v1.0 Identity Providers
+=== OpenID Connect v1.0 identity providers
 
 {project_name} brokers identity providers based on the OpenID Connect protocol. These identity providers (IDPs) must support the xref:proc-creating-oidc-client_{context}[Authorization Code Flow] defined in the specification to authenticate users and authorize access.
 
@@ -9,12 +9,12 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `OpenID Connect v1.0`.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/oidc-add-identity-provider.png[Add Identity Provider]
 +
 . Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
 +
-.OpenID Connect Config
+.OpenID connect config
 |===
 |Configuration|Description
 

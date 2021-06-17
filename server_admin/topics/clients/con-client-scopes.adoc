@@ -1,7 +1,7 @@
-[id="con-client-scopes_{context}"]
+//[id="con-client-scopes_{context}"]//
 
 [[_client_scopes]]
-= Client Scopes
+= Client scopes
 
 [role="_abstract"]
 Use {project_name} to define a shared client configuration in an entity called a _client scope_. A _client scope_ configures <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
@@ -9,6 +9,7 @@ Use {project_name} to define a shared client configuration in an entity called a
 Client scopes also support the OAuth 2 *scope* parameter. Client applications use this parameter to request claims or roles in the access token, depending on the requirement of the application.
 
 include::proc-creating-client-scopes.adoc[]
+
 
 == Protocol
 When you create a client scope, choose the *Protocol*. Clients linked in the same scope must have the same protocol.
@@ -43,7 +44,7 @@ The client scopes *profile*, *email*, *address* and *phone* are defined in the h
 
 For example, when you open the *phone* client scope and open the *Mappers* tab, you will see the protocol mappers which correspond to the claims defined in the specification for the scope *phone*.
 
-.Client Scope Mappers
+.Client scope mappers
 image:{project_images}/client-scopes-phone.png[]
 
 When the *phone* client scope is linked to a client, the client automatically inherits all the protocol mappers defined in the *phone* client scope. Access tokens issued for this client contain the phone number information about the user, assuming that the user has a defined phone number.
@@ -60,7 +61,7 @@ Consent Screen Text::
   The text displayed on the consent screen when this client scope is added to a client when consent required defaults to the name of client scope. The value for this text can be customised by specifying a substitution variable with *${var-name}* strings. The customised value is  configured within the property files in your theme. See the  link:{developerguide_link}[{developerguide_name}] for more information on customisation.
 
 [[_client_scopes_linking]]
-== Link Client Scope with the Client
+== Link client scope with the client
 Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. Two ways of linking between client scope and client are available.
 
 Default Client Scopes::
@@ -83,7 +84,7 @@ The scope parameter contains the string, with the scope values divided by spaces
 == Evaluating Client Scopes
 include::proc-evaluating-client-scopes.adoc[]
 
-== Client Scopes Permissions
+== Client scopes permissions
 
 When issuing tokens to a user, the client scope applies only if the user is permitted to use it.
 
@@ -91,7 +92,7 @@ When a client scope does not have any role scope mappings defined, each user is 
 
 If a user is not permitted to use the client scope, no protocol mappers or role scope mappings will be used when generating tokens. The client scope will not appear in the _scope_ value in the token.
 
-== Realm Default Client Scopes
+== Realm default client scopes
 include::proc-updating-default-scopes.adoc[]
 
 == Scopes explained
@@ -104,6 +105,7 @@ This is available under the *Scope* tab of a client or client scope. Use *Role s
 ifeval::[{project_community}==true]
 
 Authorization scopes::
-The *Authorization Scope* covers the actions that can be perfoemdd in the application. See the link:{authorizationguide_link}[Authorization Services Guide] for more details.
+The *Authorization Scope* covers the actions that can be performed in the application. See the link:{authorizationguide_link}[Authorization Services Guide] for more details.
 
 endif::[]
+

@@ -1,6 +1,6 @@
 
 [id="con-oidc-auth-flows_{context}"]
-==== OIDC Auth Flows
+==== OIDC auth flows
 [role="_abstract"]
 OIDC has several methods, or flows, that clients or applications can use to authenticate users and receive _identity_ and _access_ tokens.  The method depends on the type of application or client requesting access.
 
@@ -20,14 +20,14 @@ to exchange the code for an _identity_ and _access_ and _refresh_ token.  To pre
 
 [NOTE]
 ====
-A system is vulnerable to a stolen token for the lifetime of that token. For security and scalability reasons, access_ tokens are generally set to expire quickly so subsequent token requests fail. If a token expires, an application can obtain a new access token using the additional _refresh_ token sent by the login protocol. 
+A system is vulnerable to a stolen token for the lifetime of that token. For security and scalability reasons, access tokens are generally set to expire quickly so subsequent token requests fail. If a token expires, an application can obtain a new access token using the additional _refresh_ token sent by the login protocol. 
 ====
 
 [[_confidential-clients]]
 _Confidential_ clients provide client secrets when they exchange the temporary codes for tokens. _Public_ clients are not required to provide client secrets.
 _Public_ clients are secure when HTTPS is strictly enforced and redirect URIs registered for the client are strictly controlled.  HTML5/JavaScript clients have to be _public_ clients because there is no way to securely transmit the client secret to HTML5/JavaScript clients. For more details, see the xref:assembly-managing-clients_{context}[Managing Clients] chapter.
 
-{project_name} also supports the https://tools.ietf.org/html/rfc7636[Proof Key for Code Exchange] specification.
+{project_name} also supports the https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange] specification.
 
 [[_oidc-auth-flows-implicit]]
 
@@ -55,7 +55,7 @@ redirects to the application using the callback URL and additionally adds the _i
 
 [[_oidc-auth-flows-direct]]
 
-===== Resource Owner Password Credentials Grant (Direct Access Grants)
+===== Resource owner password credentials grant (Direct Access Grants)
 
 _Direct Access Grants_ are used by REST clients to obtain tokens on behalf of users.  It is a HTTP POST request that contains:
 
@@ -66,13 +66,13 @@ _Direct Access Grants_ are used by REST clients to obtain tokens on behalf of us
 The HTTP response contains the _identity_, _access_, and _refresh_ tokens.
 
 [[_client_credentials_grant]]
-===== Client Credentials Grant
+===== Client credentials grant
 
 The _Client Credentials Grant_ creates a token based on the metadata and permissions of a service account associated with the client instead of obtaining a token that works on behalf of an external user. _Client Credentials Grants_ are used by REST clients.
 
 See the <<_service_accounts,Service Accounts>> chapter for more information.
 
-===== Device Authorization Grant
+===== Device authorization grant
 
 This is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser. Here's a brief summary of the protocol:
 
@@ -81,7 +81,7 @@ This is used by clients running on internet-connected devices that have limited 
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
 [[_client_initiated_backchannel_authentication_grant]]
-===== Client Initiated Backchannel Authentication Grant
+===== Client initiated backchannel authentication grant
 
 :tech_feature_name: Client Initiated Backchannel Authentication Grant
 :tech_feature_setting: -Dkeycloak.profile.feature.ciba=enabled
@@ -297,4 +297,33 @@ User Resolver Provider is provided as SPI provider so that users of {project_nam
 
 * Only support `login_hint` parameter and is used as default.
 * `username` of UserModel in {project_name} is used to represent the user on CD, {project_name} and the authentication entity.
+
+[[_oidc-logout]]
+
+==== OIDC Logout
+
+OIDC has three different specifications relevant to logout mechanisms, all of these are currently in draft status:
+
+. https://openid.net/specs/openid-connect-session-1_0.html[Session Management]
+. https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout]
+. https://openid.net/specs/openid-connect-backchannel-1_0.html[Back-Channel Logout]
+
+Again since all of this is described in the OIDC specification we will only give a brief overview here.
+
+===== Session Management
+
+This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
+When the session is terminated at {project_name} the application will notice and trigger it's own logout.
+
+===== Frontchannel Logout
+
+This is also a browser-based logout. In contrast to the Session Managment based logout approach {project_name} will send logout
+requests to the clients. Applications or clients need to have a frontchannel logout URL registered at {project_name}.
+After triggering a logout at {project_name}, it will send logout requests to these registered URLs that will terminate the client sessions.
+
+===== Backchannel Logout
+
+This is a non browser-based logout that uses direct backchannel communication between {project_name} and clients. 
+{project_name} sends a HTTP POST request containing a logout token to all clients logged into {project_name}. These
+requests are sent to a registered backchannel logout URLs at {project_name} and are supposed to trigger a logout at client side.
 

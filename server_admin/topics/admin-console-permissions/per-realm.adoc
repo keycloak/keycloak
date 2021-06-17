@@ -1,6 +1,6 @@
 [[_per_realm_admin_permissions]]
 
-=== Dedicated Realm Admin Consoles
+=== Dedicated realm admin consoles
 
 Each realm has a dedicated Admin Console that can be accessed by going to the url `/auth/admin/{realm-name}/console`.
 Users within that realm can be granted realm management permissions by assigning specific user role mappings.

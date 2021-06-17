@@ -1,11 +1,11 @@
 
 [[_timeouts]]
-=== Session and Token Timeouts
+=== Session and token timeouts
 [role="_abstract"]
 
 {project_name} includes control of the session, cookie, and token timeouts through the *Tokens* tab in the *Realm Settings* menu.
 
-.Tokens Tab
+.Tokens tab
 image:{project_images}/tokens-tab.png[]
 
 |===
@@ -25,10 +25,10 @@ image:{project_images}/tokens-tab.png[]
 |The maximum time before a user session expires.
 
 |SSO Session Idle Remember Me
-|This setting is similar to the standard SSO Session Idle configuration but specific to logins with `Remember Me` enabled. Users can specify longer session idle timeouts when they click `Remember Me` when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same idle timeout as the SSO Session Idle configuration.
+|This setting is similar to the standard SSO Session Idle configuration but specific to logins with *Remember Me* enabled. Users can specify longer session idle timeouts when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same idle timeout as the SSO Session Idle configuration.
 
 |SSO Session Max Remember Me
-|This setting is similar to the standard SSO Session Max but specific to `Remember Me` logins. Users can specify longer sessions when they click `Remember Me` when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same session lifespan as the SSO Session Max configuration.
+|This setting is similar to the standard SSO Session Max but specific to *Remember Me* logins. Users can specify longer sessions when they click *Remember Me* when logging in. This setting is an optional configuration and, if its value is not greater than zero, it uses the same session lifespan as the SSO Session Max configuration.
 
 [[_offline-session-idle]]
 |Offline Session Idle

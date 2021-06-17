@@ -1,4 +1,4 @@
-=== Offline Sessions Preloading
+=== Offline sessions preloading
 
 In addition to {jdgserver_name} caches, offline sessions are stored in a database which means they will be available even after server restart.
 By default, the offline sessions are preloaded from the database into the {jdgserver_name} caches during the server startup.
@@ -10,7 +10,7 @@ It can be achieved by setting `preloadOfflineSessionsFromDatabase` property in `
 The following example shows how to configure lazy offline sessions loading.
 
 [source,xml]
-----     
+----
 <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
     ...
     <spi name="userSessions">

@@ -1,6 +1,6 @@
 [id="con-comparing-groups-roles_{context}"]
 
-= Groups Compared to Roles
+= Groups compared to roles
 [role="_abstract"]
 Groups and roles have some similarities and differences. In {project_name}, groups are a collection of users to which you apply roles and attributes. Roles define types of users and applications assign permissions and access control to roles.
 

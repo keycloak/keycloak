@@ -1,5 +1,6 @@
 
-=== Brute Force Attacks
+[[password-guess-brute-force-attacks]]
+=== Brute force attacks
 
 A brute force attack attempts to guess a user's password by trying to log in multiple times. {project_name} has brute force detection capabilities and can temporarily disable a user account if the number of login failures exceeds a specified threshold.
 
@@ -12,11 +13,11 @@ A brute force attack attempts to guess a user's password by trying to log in mul
 
 To enable this protection:
 
-. Click the *Realm Settings* menu
+. Click *Realm Settings* in the menu
 . Click the *Security Defenses* tab.
 . Click the *Brute Force Detection* tab.
 +
-.Brute Force Detection
+.Brute force detection
 image:{project_images}/brute-force.png[]
 
 {project_name} can deploy permanent lockout and temporary lockout actions when it detects an attack. Permanent lockout disables a user account until an administrator re-enables it. Temporary lockout disables a user account for a specific period of time. The time period that the account is disabled increases as the attack continues.
@@ -97,6 +98,6 @@ The downside of {project_name} brute force detection is that the server becomes 
 
 Consider using intrusion prevention software (IPS). {project_name} logs every login failure and client IP address failure. You can point the IPS to the {project_name} server's log file, and the IPS can modify firewalls to block connections from these IP addresses.
 
-==== Password Policies
+==== Password policies
 
 Ensure you have a complex password policy to force users to choose complex passwords. See the <<_password-policies, Password Policies>> chapter for more information. Prevent password guessing by setting up the {project_name} server to use one-time-passwords.

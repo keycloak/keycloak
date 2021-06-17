@@ -7,7 +7,7 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `LinkedIn`.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.

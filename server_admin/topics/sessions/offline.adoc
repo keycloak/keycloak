@@ -1,7 +1,7 @@
 
 [[_offline-access]]
 
-=== Offline Access
+=== Offline access
 [role="_abstract"]
 
 During https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[offline access] logins, the client application requests an offline token instead of a refresh token. The client application saves this offline token and can use it for future logins if the user logs out. This action is useful if your application needs to perform offline actions on behalf of the user even when the user is not online. For example, a regular data backup.

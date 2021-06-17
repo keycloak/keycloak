@@ -15,8 +15,8 @@ To add a storage provider, perform the following procedure:
 .Procedure
 . Click *User Federation* in the menu.
 +
-.User Federation
-image:{project_images}/user-federation.png[User Federation]
+.User federation
+image:{project_images}/user-federation.png[User federation]
 +
 . Select the provider type from the *Add Provider* list. {project_name} brings you to that provider's configuration page.
 

@@ -3,17 +3,17 @@
 
 ==== GitHub
 
-To log in with Github, perform the following procedure. 
+To log in with Github, perform the following procedure.
 
 .Procedure
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `Github`.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/github-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
-. In a separate browser tab, https://docs.github.com/en/developers/apps/creating-an-oauth-app[create an OAUTH app].
+. In a separate browser tab, https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app[create an OAUTH app].
 .. Enter the value of *Redirect URI* into the `Authorization callback URL` field when creating the app.
 .. Note the Client ID and Client secret on the management page of your OAUTH app.
 . In {project_name}, paste the value of the `Client ID` into the *Client ID* field.

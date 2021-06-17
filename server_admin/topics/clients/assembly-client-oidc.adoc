@@ -1,6 +1,6 @@
 
-[id="assembly-oidc-clients_{context}"]
-= OIDC Clients
+[[_oidc_clients]]
+= OIDC clients
 [role="_abstract"]
 xref:con-oidc_{context}[OpenID Connect] is the recommended protocol to secure applications.  It was designed from the ground up to be web friendly and it works best with HTML5/JavaScript applications.
 

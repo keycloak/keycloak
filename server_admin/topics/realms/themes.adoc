@@ -9,8 +9,8 @@ For a given realm, you can change the appearance of any UI, including the langua
 
 . Click the *Themes* tab.
 +
-.Themes Tab
-image:{project_images}/themes-tab.png[Themes Tab]
+.Themes tab
+image:{project_images}/themes-tab.png[Themes tab]
 
 . Pick the theme you want for each UI category and click *Save*.
 +
@@ -50,7 +50,7 @@ The next time a user logs in, that user can choose a language on the login page 
 how you can offer additional languages. All internationalized texts which are provided by the theme can be overwritten by realm-specific texts on the *Localization* tab.
 
 [[_user_locale_selection]]
-== User Locale selection
+== User locale selection
 
 A locale selector provider suggests the best locale on the information available. However, it is often unknown who the user is. For this reason, the previously authenticated user's locale is remembered in a persisted cookie.
 

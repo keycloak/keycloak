@@ -10,7 +10,7 @@
 
 . Click the *Email* tab.
 +
-.Email Tab
+.Email tab
 image:{project_images}/email-tab.png[Email Tab]
 
 . Fill in the fields and toggle the switches as needed.

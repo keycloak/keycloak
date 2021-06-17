@@ -6,7 +6,7 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `Facebook`. {project_name} displays the configuration page for the Facebook identity provider.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/facebook-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, follow the https://developers.facebook.com/docs/development/[Facebook Developer Guide's] instructions to create a project and client in Facebook.

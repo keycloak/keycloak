@@ -1,5 +1,5 @@
 
-=== Compromised Authorization Code
+=== Compromised authorization code
 
 For the xref:con-oidc-auth-flows_{context}[OIDC Auth Code Flow], {project_name} generates a cryptographically strong random value for its authorization codes. An authorization code is used only once to obtain an access token.
 

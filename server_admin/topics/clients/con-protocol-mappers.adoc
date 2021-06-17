@@ -1,7 +1,7 @@
 [id="con-protocol-mappers_{context}"]
 [[_protocol-mappers]]
 
-= OIDC Token and SAML Assertion Mappings
+= OIDC token and SAML assertion mappings
 
 [role="_abstract"]
 Applications receiving ID tokens, access tokens, or SAML assertions may require different roles and user metadata. 
@@ -14,7 +14,7 @@ You can use {project_name} to:
 
 You perform these actions in the *Mappers* tab in the Admin Console.
 
-.Mappers Tab
+.Mappers tab
 image:{project_images}/mappers-oidc.png[]
 
 New clients do not have built-in mappers but they can inherit some mappers from client scopes. See the <<_client_scopes, client scopes section>> for more details. 
@@ -24,7 +24,7 @@ a specific claim in the identity and access token. The function of a mapper shou
 
 Each mapper has a set of common settings. Additional settings are available, depending on the mapper type. Click *Edit* next to a mapper to access the configuration screen to adjust these settings.
 
-.Mapper Config
+.Mapper config
 image:{project_images}/mapper-config.png[]
 
 Details on each option can be viewed by hovering over its tooltip.
@@ -45,7 +45,7 @@ For example, to compute the roles which will be included with a token:
 . Process a JavaScript script that uses the roles and audiences already available in the token.
 
 [[_protocol-mappers_oidc-user-session-note-mappers]]
-== OIDC User Session Note Mappers
+== OIDC user session note mappers
 
 User session details are defined using mappers and are automatically included when you use or enable a feature on a client. Click *Add builtin* to include session details.
 
@@ -60,7 +60,7 @@ Service account sessions provide the following details:
 * *clientAddress*: The remote host IP of the service account's authenticated device.
 * *clientHost*: The remote host name of the service account's authenticated device.
 
-== Script Mapper
+== Script mapper
 
 Use the *Script Mapper* to map claims to tokens by running user-defined JavaScript code. For more details about deploying scripts to the server, see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 

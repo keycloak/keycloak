@@ -8,7 +8,7 @@
 [role="_abstract"]
 As a new user, you must complete a registration form to log in for the first time. You add profile information and a password to register.
 
-.Registration Form
+.Registration form
 image:{project_images}/registration-form.png[]
 
 .Prerequisite

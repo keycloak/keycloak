@@ -1,7 +1,7 @@
 
 [[_revocation-policy]]
 
-=== Revocation Policies
+=== Revocation policies
 [role="_abstract"]
 
 If your system is compromised, you can revoke all active sessions and access tokens by clicking the `Sessions` screen *Revocation* tab.

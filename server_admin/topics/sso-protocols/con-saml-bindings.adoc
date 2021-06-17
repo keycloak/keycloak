@@ -1,10 +1,10 @@
 [id="con-saml-bindings_{context}"]
 
-==== SAML Bindings
+==== SAML bindings
 [role="_abstract"]
 {project_name} supports three binding types.
 
-===== Redirect Binding
+===== Redirect binding
 
 _Redirect_ binding uses a series of browser redirect URIs to exchange information.
 
@@ -18,19 +18,15 @@ _Redirect_ binding uses a series of browser redirect URIs to exchange informatio
 . The application receives the redirect URI and extracts the XML document.
 . The application verifies the realm's signature to ensure it is receiving a valid authentication response.  The information inside the SAML assertion is used to make access decisions or display user data.
 
-===== POST Binding
+===== POST binding
 
 _POST_ binding is similar to _Redirect_ binding but _POST_ binding exchanges XML documents using POST requests instead of using GET requests. _POST_ Binding uses JavaScript to make the browser send a POST request to the {project_name} server or application when exchanging documents. HTTP responds with an HTML document which contains an HTML form containing embedded JavaScript.  When the page loads, the JavaScript automatically invokes the form.
 
 _POST_ binding is recommended due to two restrictions:
 
-*Security*
+* *Security* -- With _Redirect_ binding, the SAML response is part of the URL. It is less secure as it is possible to capture the response in logs.
 
-With _Redirect_ binding, the SAML response is part of the URL. It is less secure as it is possible to capture the response in logs.
-
-*Size*
-
-Sending the document in the HTTP payload provides more scope for large amounts of data than in a limited URL.
+* *Size* -- Sending the document in the HTTP payload provides more scope for large amounts of data than in a limited URL.
 
 ===== ECP
 

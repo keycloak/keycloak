@@ -1,5 +1,5 @@
 
-== Configuring Realms
+== Configuring realms
 
 A realm manages a set of users, credentials, roles, and groups.  A user belongs to and logs into a realm.  Realms are isolated from one another
 and can only manage and authenticate the users that they control.  One {project_name} deployment can define, store, and manage as many realms

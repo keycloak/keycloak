@@ -1,12 +1,11 @@
-
-=== Conditions in Conditional flows
+=== Conditions in conditional flows
 
 As was mentioned in <<_execution-requirements, Execution requirements>>, _Condition_ executions can be only contained in _Conditional_ subflow.
 If all _Condition_ executions evaluate as true, then the _Conditional_ sub-flow acts as _Required_.
 You can process the next execution in the _Conditional_ sub-flow.
 If some executions included in the _Conditional_ sub-flow evaluate as false, then the whole sub-flow is considered as _Disabled_.
 
-==== Available Conditions
+==== Available conditions
 
 `Condition - User Role`::
 This execution has the ability to determine if the user has a role defined by _User role_ field.
@@ -72,10 +71,10 @@ This example includes `Condition - User Role` and `Deny Access` executions.
 .Browser flow
 image:images/deny-access-flow.png[]
 
-.Condition - User Role configuration
+.Condition - user role configuration
 image:images/deny-access-role-condition.png[]
 
-.Configuration of the `Deny Access` is really easy. You can specify an arbitrary alias and required message like this:
+.Configuration of the `Deny Access` is really easy. You can specify an arbitrary Alias and required message like this:
 image:images/deny-access-execution-cond.png[]
 
 The last thing is defining the property with an error message in the login theme `messages_en.properties` (for English):

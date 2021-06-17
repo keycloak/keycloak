@@ -10,7 +10,7 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `Twitter`.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/twitter-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.

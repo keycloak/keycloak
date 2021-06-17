@@ -4,7 +4,7 @@
 [role="_abstract"]
 {project_name} includes the ability to export and import its entire database. 
 
-You can migrate the whole {project_name} database from one environment to another or migrate to another database (for example from MySQL to Oracle). The export/import triggers at server boot time, and its parameters pass through Java properties. 
+You can migrate the whole {project_name} database from one environment to another or migrate to another database. The export/import triggers at server boot time, and its parameters pass through Java properties. 
 
 [NOTE]
 ====

@@ -1,5 +1,5 @@
 
-== SSO Protocols
+== SSO protocols
 [role="_abstract"]
 This section discusses authentication protocols, the {project_name} authentication server and how applications, secured by the {project_name} authentication server, interact with these protocols.
 

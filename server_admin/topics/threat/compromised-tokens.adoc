@@ -1,5 +1,5 @@
 
-=== Compromised Access and Refresh Tokens
+=== Compromised access and refresh tokens
 
 {project_name} includes several actions to prevent malicious actors from stealing access tokens and refresh tokens. The crucial action is to enforce SSL/HTTPS communication between {project_name} and its clients and applications. {project_name} does not enable SSL by default.
 

@@ -31,7 +31,7 @@ reCAPTCHA.
 . Click *Actions* to the right of the reCAPTCHA flow entry.
 . Click the *Config* link.
 +
-.Recaptcha Config Page
+.Recaptcha config page
 image:{project_images}/recaptcha-config.png[]
 
 .. Enter the *Recaptcha Site Key* generated from the Google reCAPTCHA website.

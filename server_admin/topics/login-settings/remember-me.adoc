@@ -8,7 +8,7 @@ A logged-in user closing their browser destroys their session, and that user mus
 . Click the *Login* tab.
 . Toggle the *Remember Me* switch to *ON*.
 +
-.Login Tab
+.Login tab
 image:{project_images}/login-tab.png[]
 
 When you save this setting, a `remember me` checkbox displays on the realm's login page.

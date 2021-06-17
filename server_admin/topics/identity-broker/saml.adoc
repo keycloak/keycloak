@@ -7,7 +7,7 @@
 . Click *Identity Providers* in the menu.
 . From the `Add provider` list, select `SAML v2.0`.
 +
-.Add Identity Provider
+.Add identity provider
 image:{project_images}/saml-add-identity-provider.png[Add Identity Provider]
 +
 . Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
@@ -32,6 +32,8 @@ image:{project_images}/saml-add-identity-provider.png[Add Identity Provider]
 
 |Principal Type
 |Specifies which part of the SAML assertion will be used to identify and track external user identities. Can be either Subject NameID or SAML attribute (either by name or by friendly name). Subject NameID value can not be set together with 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient' NameID Policy Format value.
+=======
+|Specifies the part of the SAML assertion {project_name} uses to identify and track external user identities. The Principal Type can be Subject NameID or SAML attribute (by name or by friendly name).
 
 |Principal Attribute
 |If a Principal type is non-blank, this field specifies the name ("Attribute [Name]") or the friendly name ("Attribute [Friendly Name]") of the identifying attribute.
@@ -110,7 +112,7 @@ http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/de
 Ensure you save any configuration changes before accessing the descriptor.
 
 [[_identity_broker_saml_login_hint]]
-==== Send Subject in SAML requests
+==== Send subject in SAML requests
 
 By default, a social button pointing to a SAML Identity Provider redirects the user to the following login URL:
 

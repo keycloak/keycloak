@@ -3,13 +3,13 @@
 // server_admin/topics/users.adoc
 
 [id="con-user-impersonation_{context}"]
-= User Impersonation
+= User impersonation
 
 An administrator with the appropriate permissions can impersonate a user. For example, if a user experiences a bug in an application, an administrator can impersonate the user to investigate or duplicate the issue. 
 
 Any user with the `impersonation` role in the realm can impersonate a user. 
 
-image:{project_images}/user-details.png[]
+Image:{project_images}/user-details.png[]
 
 * If the administrator and the user are in the same realm, then the administrator will be logged out and automatically logged in as the user being impersonated.  
 * If the administrator and user are in different realms, the administrator will remain logged in, and additionally will be logged in as the user in that user's realm.  

@@ -1,6 +1,6 @@
 
 [id="con-client-links_{context}"]
-= Client Links
+= Client links
 [role="_abstract"]
 To link from one client to another, {project_name} provides a redirect endpoint: `/realms/realm_name/clients/\{client-id}/redirect`.
 

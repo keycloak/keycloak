@@ -1,5 +1,5 @@
 [id="proc-allow-user-to-delete-account_{context}"]
-= Enabling Account Deletion by Users
+= Enabling account deletion by users
 
 End users and applications can delete their accounts in the Account Console if you enable this capability in the Admin Console. Once you enable this capability, you can give that capability to specific users.
 
@@ -12,10 +12,10 @@ You enable this capability on the *Required Actions* tab.
 . Click the *Required Actions* tab.
 . Select *Enabled* on the *Delete Account* row.
 +
-.Delete Account on Required Actions tab
+.Delete account on required actions tab
 image:images/enable-delete-account-action.png[]
 
-== Giving a User the *delete-account* Role
+== Giving a user the *delete-account* role
 
 You can give specific users a role that allows account deletion.
 
@@ -27,8 +27,8 @@ You can give specific users a role that allows account deletion.
 . Under *Available Roles*, select *delete-account*.
 . Click *Add selected*.
 +
-.delete-account role
-image:images/delete-account-client-role.png[]
+.Delete-account role
+image:images/delete-account-client-role.png[delete-account role]
 
 == Deleting your account
 
@@ -37,7 +37,7 @@ Once you have the *delete-account* role, you can delete your own account.
 . Log into the Account Console.
 . At the bottom of the *Personal Info* page, click *Delete Account*.
 +
-.Delete Account Page
+.Delete account page
 image:images/delete-account-page.png[]
 
 . Enter your credentials and confirm the deletion.

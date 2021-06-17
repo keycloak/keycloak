@@ -12,8 +12,8 @@ WARNING:  {project_name} generates a self-signed certificate the first time it r
 
 . Click the *Login* tab.
 +
-.Login Tab
-image:{project_images}/login-tab.png[Login Tab]
+.Login tab
+image:{project_images}/login-tab.png[Login tab]
 
 . Set *Require SSL* to one of the following SSL modes:
 

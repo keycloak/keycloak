@@ -3,7 +3,7 @@
 // server_admin/topics/users.adoc
 
 [id="con-required-actions_{context}"]
-= Required Actions
+= Required actions
 
 You can set the actions that a user must perform at the first login. These actions are required after the user provides credentials. After the first login, these actions are no longer required. You add required actions on the *Details* tab of that user.
 

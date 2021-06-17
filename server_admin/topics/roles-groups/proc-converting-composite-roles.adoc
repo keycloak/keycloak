@@ -12,8 +12,8 @@ Any realm or client level role can become a _composite role_. A _composite role_
 . Click the role that you want to convert.
 . Toggle *Composite Roles* to *ON*.
 
-.Composite Role
-image:{project_images}/composite-role.png[]
+.Composite role
+image:{project_images}/composite-role.png[Composite role]
 
 The role selection UI is displayed on the page and you can associate realm level and client level roles to the composite role you are creating.
 

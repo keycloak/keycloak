@@ -1,6 +1,6 @@
-[[_x509]]
 
-=== X.509 Client Certificate User Authentication
+[[_x509]]
+=== X.509 client certificate user authentication
 
 {project_name} supports logging in with an X.509 client certificate if you have configured the server to use mutual SSL authentication.
 
@@ -44,7 +44,7 @@ Supported Certificate Identity Sources:
 * SHA-256 Certificate thumbprint
 * Full certificate in PEM format
 
-===== Regular Expressions
+===== Regular expressions
 {project_name} extracts the certificate identity from Subject DN or Issuer DN by using a regular expression as a filter. For example, this regular expression matches the email attribute:
 
 ```
@@ -65,21 +65,21 @@ The certificate identity mapping can map the extracted user identity to an exist
 * Using `Full certificate in PEM format` as an identity source is limited to the custom attributes mapped to external federation sources, such as LDAP. {project_name} cannot store certificates in its database due to length limitations, so in the case of LDAP, you must enable `Always Read Value From LDAP`.
 ====
 
-====== Extended Certificate Validation
+====== Extended certificate validation
 * Revocation status checking using CRL.
 * Revocation status checking using CRL/Distribution Point.
 * Revocation status checking using OCSP/Responder URI.
 * Certificate KeyUsage validation.
 * Certificate ExtendedKeyUsage validation.
 
-==== Enable X.509 Client Certificate User Authentication
+==== Enable X.509 client certificate user authentication
 
 The following sections describe how to configure {appserver_name}/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
 
 [[_enable-mtls-wildfly]]
 ===== Enable mutual SSL in {appserver_name}
 
-See link:https://docs.wildfly.org/19/Admin_Guide.html#enable-ssl[Enable SSL] for the instructions to enable SSL in {appserver_name}.
+See link:https://docs.wildfly.org/24/Admin_Guide.html#enable-ssl[Enable SSL] for the instructions to enable SSL in {appserver_name}.
 
 * Open {project_dirref}/standalone/configuration/standalone.xml and add a new realm:
 ```xml
@@ -134,9 +134,9 @@ The password to open the truststore.
 
 ===== Enable HTTPS listener
 
-See link:https://docs.wildfly.org/19/Admin_Guide.html#https-listener[HTTPS Listener] for the instructions to enable HTTPS in WildFly.
+See link:https://docs.wildfly.org/24/Admin_Guide.html#https-listener[HTTPS Listener] for the instructions to enable HTTPS in WildFly.
 
-Add the <https-listener> element as shown below:
+* Add the <https-listener> element.
 
 [source,xml,subs="attributes+"]
 ----
@@ -159,7 +159,7 @@ If set to *REQUESTED*, the server optionally asks for a client certificate.
 If set to *REQUIRED*, the server refuses inbound connections if no client certificate has been provided.
 
 [[_browser_flow]]
-==== Adding X.509 Client Certificate Authentication to browser flows
+==== Adding X.509 client certificate authentication to browser flows
 
 . Click *Authentication* in the menu.
 . Click the "Browser" flow.
@@ -171,13 +171,13 @@ If set to *REQUIRED*, the server refuses inbound connections if no client certif
 . Click "X509/Validate Username Form".
 . Click *Save*.
 +
-.X509 Execution
+.X509 execution
 image:images/x509-execution.png[X509 Execution]
 +
 . Click the up/down arrow buttons to move the "X509/Validate Username Form" over the "Browser Forms" execution.
 . Set the requirement to "ALTERNATIVE".
 +
-.X509 Browser Flow
+.X509 browser flow
 image:images/x509-browser-flow.png[X509 Browser Flow]
 +
 . Click the *Bindings* tab.
@@ -185,56 +185,53 @@ image:images/x509-browser-flow.png[X509 Browser Flow]
 . Click the copy of the browser flow from the drop-down list.
 . Click *Save*.
 +
-.X509 Browser Flow Bindings
+.X509 browser flow bindings
 image:images/x509-browser-flow-bindings.png[X509 Browser Flow Bindings]
 
-==== Configuring X.509 Client Certificate Authentication
+==== Configuring X.509 client certificate authentication
 
-.X509 Configuration
+.X509 configuration
 image:images/x509-configuration.png[X509 Configuration]
 
 *User Identity Source*::
 Defines the method for extracting the user identity from a client certificate.
 
-*Canonical DN representation enabled (optional)*::
+*Canonical DN representation enabled*::
 Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
 
-*Enable Serial Number hexadecimal representation (optional)*::
-Represent the link:https://tools.ietf.org/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC5280. See link:https://tools.ietf.org/html/rfc5280#appendix-B[RFC5280, appendix-B] for more details.
+*Enable Serial Number hexadecimal representation*::
+Represent the link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC5280. See link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC5280, appendix-B] for more details.
 
-*A regular expression (optional)*::
+*A regular expression*::
 A regular expression to use as a filter for extracting the certificate identity. The expression must contain a single group.
 
 *User Mapping Method*::
 Defines the method to match the certificate identity with an existing user. _Username or email_ searches for existing users by username or email. _Custom Attribute Mapper_ searches for existing users with a custom attribute that matches the certificate identity. The name of the custom attribute is configurable.
 
-*A name of user attribute (optional)*::
+*A name of user attribute*::
 A custom attribute whose value matches against the certificate identity. Use multiple custom attributes when attribute mapping is related to multiple values, For example,  'Certificate Serial Number and IssuerDN'.
 
-WARNING: It is highly recommended that attribute used here is read-only for the users. By default, only the `usercertificate` attribute is read-only by {project_name}.
-If you use a different attribute name, you may need to add it to the list of read-only attributes. See the details in the link:#_read_only_user_attributes[Threat model mitigation chapter].
-
-*CRL Checking Enabled (optional)*::
+*CRL Checking Enabled*::
 Check the revocation status of the certificate by using the Certificate Revocation List. The location of the list is defined in the *CRL file path* attribute.
 
-*Enable CRL Distribution Point to check certificate revocation status (optional)*::
+*Enable CRL Distribution Point to check certificate revocation status*::
 Use CDP to check the certificate revocation status. Most PKI authorities include CDP in their certificates.
 
-*CRL file path (optional)*::
+*CRL file path*::
 The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
 
-*OCSP Checking Enabled (optional)*::
+*OCSP Checking Enabled*::
 Checks the certificate revocation status by using Online Certificate Status Protocol.
 
-*OCSP Responder URI (optional)*::
+*OCSP Responder URI*::
 Override the value of the OCSP responder URI in the certificate.
 
-*Validate Key Usage (optional)*::
+*Validate Key Usage*::
 Verifies the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" verifies if bits 0 and 2 in the KeyUsage extension are set.
-Leave this parameter empty to disable the Key Usage validation. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
+Leave this parameter empty to disable the Key Usage validation. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
 
-*Validate Extended Key Usage (optional)*::
-Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
+*Validate Extended Key Usage*::
+Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
 
 *Bypass identity confirmation*::
 If enabled, X.509 client certificate authentication does not prompt the user to confirm the certificate identity. {project_name} signs in the user upon successful authentication.
@@ -257,7 +254,7 @@ If set, the client certificate trust chain will be always verified at the applic
 . Click "X509/Validate Username".
 . Click *Save*.
 +
-.X509 Direct Grant Execution
+.X509 direct grant execution
 image:images/x509-directgrant-execution.png[X509 Direct Grant Execution]
 +
 . Set up the x509 authentication configuration by following the steps described in the <<_browser_flow, x509 Browser Flow>> section.
@@ -266,7 +263,7 @@ image:images/x509-directgrant-execution.png[X509 Direct Grant Execution]
 . Click the newly created "x509 Direct Grant" flow.
 . Click *Save*.
 +
-.X509 Direct Grant Flow Bindings
+.X509 direct grant flow bindings
 image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
 
 ==== Client certificate lookup
