@@ -7,6 +7,23 @@ and https://openid.net/specs/openid-financial-api-part-2-1_0.html[Financial-grad
 for the authorization server, which are mentioned in the specifications. {project_name} adapters do not have any specific support for the FAPI, hence the required validations on the client (application)
 side may need to be still done manually or through some other third-party solutions.
 
+==== FAPI client profiles
+
 To make sure that your clients are FAPI compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#_client_policies[{adminguide_name}]
-and link them to the global client profiles for FAPI support, which are automatically available in each realm.
+and link them to the global client profiles for FAPI support, which are automatically available in each realm. You can use either `fapi-1-baseline` or `fapi-1-advanced` profile based on which FAPI
+profile you need your clients to conform with.
+
+==== TLS considerations
+
+As confidential information is being exchanged, all interactions shall be encrypted with TLS (HTTPS). Moreover, there are some requirements in the FAPI specification for
+the cipher suites and TLS protocol versions used. To match these requirements, you can consider configure allowed ciphers. This configuration can be done in the
+`KEYCLOAK_HOME/standalone/configuration/standalone-*.xml` file in the Elytron subsystem. For example this element can be added under `tls` -> `server-ssl-contexts`
+
+[source,xml]
+<server-ssl-context name="kcSSLContext" want-client-auth="true" protocols="TLSv1.2" \
+key-manager="kcKeyManager" trust-manager="kcTrustManager" \
+cipher-suite-filter="TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" protocols="TLSv1.2" />
+
+The references to `kcKeyManager` and `kcTrustManager` refers to the corresponding Keystore and Truststore. See the documentation of Wildfly Elytron subsystem for more details and also
+other parts of {project_name} documentation such as link:{installguide_link}#_network[Network Setup Section] or link:{adminguide_link}#_x509[X.509 Authentication Section].
 
