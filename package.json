@@ -1,8 +1,14 @@
 {
   "name": "keycloak-admin-ui",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
-  "license": "MIT",
+  "homepage": "https://github.com/keycloak/keycloak-admin-ui",
+  "bugs": "https://github.com/keycloak/keycloak-admin-ui/issues",
+  "repository": {
+    "url": "https://github.com/keycloak/keycloak-admin-ui",
+    "type": "git"
+  },
+  "license": "Apache",
   "engines": {
     "node": "16"
   },
