@@ -223,7 +223,7 @@ export const LdapMapperDetails = () => {
             >
               <Controller
                 name="providerId"
-                defaultValue=" "
+                defaultValue=""
                 control={form.control}
                 data-testid="ldap-mapper-type-select"
                 render={({ onChange, value }) => (
@@ -239,7 +239,7 @@ export const LdapMapperDetails = () => {
                       setIsMapperDropdownOpen(false);
                     }}
                     selections={value}
-                    variant={SelectVariant.single}
+                    variant={SelectVariant.typeahead}
                   >
                     <SelectOption
                       key={0}
