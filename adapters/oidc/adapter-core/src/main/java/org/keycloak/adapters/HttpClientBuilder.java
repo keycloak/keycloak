@@ -36,6 +36,7 @@ import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.adapters.config.AdapterHttpClientConfig;
@@ -57,6 +58,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 
@@ -67,7 +69,7 @@ import org.apache.http.client.params.CookiePolicy;
  * @version $Revision: 1 $
  */
 public class HttpClientBuilder {
-    public static enum HostnameVerificationPolicy {
+    public enum HostnameVerificationPolicy {
         /**
          * Hostname verification is not done on the server's certificate
          */
@@ -82,6 +84,10 @@ public class HttpClientBuilder {
         STRICT
     }
 
+    private static final Logger log = Logger.getLogger(HttpClientBuilder.class);
+
+    public static final String SOCKET_TIMEOUT_PROPERTY = "adapters.http.client.socket.timeout";
+    public static final String CONNECTION_TIMEOUT_PROPERTY = "adapters.http.client.connection.timeout";
 
     /**
      * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -299,11 +305,22 @@ public class HttpClientBuilder {
 
             if (socketTimeout > -1) {
                 HttpConnectionParams.setSoTimeout(params, (int) socketTimeoutUnits.toMillis(socketTimeout));
-
+            } else {
+                Long socketTimeoutProperty = getLongSystemProperty(SOCKET_TIMEOUT_PROPERTY);
+                if (socketTimeoutProperty != null) {
+                    HttpConnectionParams.setSoTimeout(params, socketTimeoutProperty.intValue());
+                }
             }
+
             if (establishConnectionTimeout > -1) {
                 HttpConnectionParams.setConnectionTimeout(params, (int) establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
+            } else {
+                Long connTimeoutProperty = getLongSystemProperty(CONNECTION_TIMEOUT_PROPERTY);
+                if (connTimeoutProperty != null) {
+                    HttpConnectionParams.setConnectionTimeout(params, connTimeoutProperty.intValue());
+                }
             }
+
             DefaultHttpClient client = new DefaultHttpClient(cm, params);
 
             if (disableCookieCache) {
@@ -396,5 +413,24 @@ public class HttpClientBuilder {
 
         URI uri = URI.create(adapterConfig.getProxyUrl());
         this.proxyHost = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+    }
+
+    /**
+     * Get <code>Long</code> value from system property
+     *
+     * @param propertyName name of system property
+     */
+    private Long getLongSystemProperty(String propertyName) {
+        String property = System.getProperty(propertyName, "");
+        if (!property.equals("")) {
+            try {
+                return Long.parseLong(property);
+            } catch (NumberFormatException e) {
+                log.warnf("System property '%s' is present, but cannot be parsed.", propertyName);
+                return null;
+            }
+        }
+        log.warnf("Cannot find system property '%s'", propertyName);
+        return null;
     }
 }

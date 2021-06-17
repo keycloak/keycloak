@@ -16,11 +16,15 @@
  */
 package org.keycloak.adapters;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.params.CoreConnectionPNames;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -66,6 +70,30 @@ public class KeycloakDeploymentTest {
         keycloakDeployment.setAuthServerBaseUrl(config);
 
         assertEquals("https://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
+    }
+
+    @Test
+    public void testHttpClientTimeoutSystemProperties() {
+        expectHttpClientTimeouts(-1L, -1L);
+
+        System.setProperty(HttpClientBuilder.SOCKET_TIMEOUT_PROPERTY, "5000");
+        System.setProperty(HttpClientBuilder.CONNECTION_TIMEOUT_PROPERTY, "6000");
+
+        expectHttpClientTimeouts(5000L, 6000L);
+    }
+
+    private void expectHttpClientTimeouts(Long socketTimeout, Long connectionTimeout) {
+        assertThat(socketTimeout,CoreMatchers.notNullValue());
+        assertThat(connectionTimeout,CoreMatchers.notNullValue());
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak.json"));
+        assertThat(deployment, CoreMatchers.notNullValue());
+
+        HttpClient httpClient = deployment.getClient();
+        assertThat(httpClient, CoreMatchers.notNullValue());
+
+        assertThat(httpClient.getParams().getIntParameter(CoreConnectionPNames.SO_TIMEOUT, -1), CoreMatchers.is(socketTimeout.intValue()));
+        assertThat(httpClient.getParams().getIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, -1), CoreMatchers.is(connectionTimeout.intValue()));
     }
 
     class KeycloakDeploymentMock extends KeycloakDeployment {
