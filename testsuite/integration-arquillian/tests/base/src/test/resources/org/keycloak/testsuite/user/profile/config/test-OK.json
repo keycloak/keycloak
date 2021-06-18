@@ -49,6 +49,9 @@
                 "scopes" : ["phone-1", "phone-2"],
                 "roles" : ["user", "admin"]
             },
+            "selector" : {
+                "scopes" : ["phone-1-sel", "phone-2-sel", "phone-3-sel"]
+            },
             "permissions": {
                 "view": ["admin", "user"], 
                 "edit": ["admin"]

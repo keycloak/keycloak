@@ -45,7 +45,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.AttributeContext;
-import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.DefaultAttributes;
@@ -283,11 +282,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID));
 
-        metadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID,
-                BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));
-
-        metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME)));
-
         metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
         		new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()),
         		new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
@@ -310,10 +304,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
         metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID));
-
-        metadata.addAttribute(UserModel.FIRST_NAME,	new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));
-
-        metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME)));
 
         metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
         		new AttributeValidatorMetadata(EmailValidator.ID));

@@ -22,8 +22,12 @@ package org.keycloak.userprofile.legacy;
 import java.util.Map;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.validator.BlankAttributeValidator;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
@@ -53,5 +57,14 @@ public class DefaultUserProfileProvider extends AbstractUserProfileProvider<Defa
     @Override
     public int order() {
         return 1;
+    }
+    
+    protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
+        UserProfileContext ctx = metadata.getContext();
+        if(ctx != UserProfileContext.USER_API && ctx != UserProfileContext.REGISTRATION_USER_CREATION) {
+            metadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));
+            metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME)));
+        }
+        return metadata;
     }
 }

@@ -524,6 +524,125 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         assertEquals("ExistingLast", user.getLastName());
         assertEquals("ExistingDepartment", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
+    
+    @Test
+    public void testAttributeRequiredButNotSelectedByScopeDoesntForceVerificationScreen() {
+        
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
+        
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "]}");
+
+        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        
+        loginPage.assertCurrent();
+        loginPage.login("login-test5", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+    }
+    
+    @Test
+    public void testAttributeRequiredAndSelectedByScope() {
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
+
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "]}");
+
+        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        
+        loginPage.assertCurrent();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+        
+        verifyProfilePage.update("FirstAA", "LastAA", "DepartmentAA");
+        
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
+        
+        UserRepresentation user = getUser(user5Id);
+        assertEquals("FirstAA", user.getFirstName());
+        assertEquals("LastAA", user.getLastName());
+        assertEquals("DepartmentAA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
+    }
+
+    @Test
+    public void testAttributeNotRequiredAndSelectedByScopeCanBeUpdatedFromVerificationScreenForcedByAnotherAttribute() {
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", null, null);
+
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "]}");
+
+        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        
+        loginPage.assertCurrent();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+        
+        Assert.assertTrue(verifyProfilePage.isDepartmentPresent());
+        verifyProfilePage.update("FirstAA", "LastAA", "Department AA");
+        
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
+        
+        UserRepresentation user = getUser(user5Id);
+        assertEquals("FirstAA", user.getFirstName());
+        assertEquals("LastAA", user.getLastName());
+        assertEquals("Department AA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
+    }
+    
+    @Test
+    public void testAttributeRequiredButNotSelectedByScopeIsNotRenderedOnVerificationScreenForcedByAnotherAttribute() {
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", null, null);
+
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "]}");
+
+        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        
+        loginPage.assertCurrent();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+        
+        Assert.assertFalse(verifyProfilePage.isDepartmentPresent());
+        verifyProfilePage.update("FirstAA", "LastAA");
+        
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
+        
+        UserRepresentation user = getUser(user5Id);
+        assertEquals("FirstAA", user.getFirstName());
+        assertEquals("LastAA", user.getLastName());
+        assertEquals(null, user.firstAttribute(ATTRIBUTE_DEPARTMENT));
+    }
 
     @Test
     public void testCustomValidationInCustomAttribute() {

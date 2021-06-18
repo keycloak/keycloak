@@ -19,7 +19,6 @@
 
 package org.keycloak.userprofile;
 
-import static org.keycloak.userprofile.AttributeMetadata.ALWAYS_FALSE;
 import static org.keycloak.userprofile.AttributeMetadata.ALWAYS_TRUE;
 
 import java.util.ArrayList;
@@ -73,8 +72,8 @@ public final class UserProfileMetadata implements Cloneable {
         return addAttribute(new AttributeMetadata(name).addValidator(validators));
     }
 
-    public AttributeMetadata addAttribute(String name, List<AttributeValidatorMetadata> validator, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required, Predicate<AttributeContext> readAllowed) {
-        return addAttribute(new AttributeMetadata(name, ALWAYS_TRUE, writeAllowed, required, readAllowed).addValidator(validator));
+    public AttributeMetadata addAttribute(String name, List<AttributeValidatorMetadata> validator, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required, Predicate<AttributeContext> readAllowed) {
+        return addAttribute(new AttributeMetadata(name, selector, writeAllowed, required, readAllowed).addValidator(validator));
     }
 
     /**
