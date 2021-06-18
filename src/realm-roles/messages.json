@@ -34,6 +34,8 @@
     "roleDeleteConfirmDialog": "This action will permanently delete the role {{selectedRoleName}} and cannot be undone.",
     "roleDeletedSuccess": "The role has been deleted",
     "roleDeleteError": "Could not delete role: {{error}}",
+    "defaultRole": "This role serves as a container for both realm and client default roles. It cannot be removed.",
+    "defaultRoleDeleteError": "You cannot delete a default role.",
     "roleSaveSuccess": "The role has been saved",
     "roleSaveError": "Could not save role: {{error}}",
     "noRoles": "No roles in this realm",

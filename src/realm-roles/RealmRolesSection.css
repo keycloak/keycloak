@@ -1,5 +1,3 @@
-
-
 .kc-who-will-appear-button {
   padding-left: 0px;
 }
@@ -33,3 +31,12 @@
   margin-bottom: var(--pf-global--spacer--md);
 }
 
+button#default-role-help-icon.pf-c-form__group-label-help {
+  margin-left: var(--pf-global--spacer--xs);
+  vertical-align: middle;
+}
+
+.pf-c-tab-content.kc-attributes-tab {
+  padding-left: var(--pf-global--spacer--xl);
+  padding-top: var(--pf-global--spacer--lg);
+}

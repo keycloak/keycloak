@@ -57,7 +57,7 @@ export default class AssociatedRolesPage {
 
     cy.get(this.addAssociatedRolesModalButton).contains("Add").click();
 
-    cy.wait(2500);
+    cy.wait(5000);
 
     cy.contains("Users in role").click().get(this.usersPage).should("exist");
   }

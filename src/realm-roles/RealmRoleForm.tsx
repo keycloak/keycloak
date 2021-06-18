@@ -20,7 +20,7 @@ export type RealmRoleFormProps = {
 };
 
 export const RealmRoleForm = ({
-  form: { handleSubmit, errors, register },
+  form: { handleSubmit, errors, register, getValues },
   save,
   editMode,
   reset,
@@ -59,6 +59,7 @@ export const RealmRoleForm = ({
       >
         <TextArea
           name="description"
+          isDisabled={getValues().name?.includes("default-roles")}
           ref={register({
             maxLength: {
               value: 255,

@@ -10,12 +10,14 @@ type HelpItemProps = {
   forID: string;
   noVerticalAlign?: boolean;
   unWrap?: boolean;
+  id?: string;
 };
 
 export const HelpItem = ({
   helpText,
   forLabel,
   forID,
+  id,
   noVerticalAlign = true,
   unWrap = false,
 }: HelpItemProps) => {
@@ -28,7 +30,7 @@ export const HelpItem = ({
           <>
             {!unWrap && (
               <button
-                id={helpText}
+                id={id}
                 aria-label={t(`helpLabel`, { label: forLabel })}
                 onClick={(e) => e.preventDefault()}
                 aria-describedby={forID}

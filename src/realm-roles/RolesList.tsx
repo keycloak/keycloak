@@ -3,13 +3,25 @@ import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter, upperCaseFormatter } from "../util";
+import { useRealm } from "../context/realm-context/RealmContext";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import { HelpItem } from "../components/help-enabler/HelpItem";
+
+import "./RealmRolesSection.css";
+
+type myRealmRepresentation = RealmRepresentation & {
+  defaultRole?: {
+    id: string;
+    name: string;
+  };
+};
 
 type RolesListProps = {
   paginated?: boolean;
@@ -42,12 +54,32 @@ export const RolesList = ({
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { url } = useRouteMatch();
+  const { realm: realmName } = useRealm();
+  const [realm, setRealm] = useState<myRealmRepresentation>();
 
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      setRealm(realm);
+    },
+    []
+  );
 
   const RoleDetailLink = (role: RoleRepresentation) => (
     <>
       <RoleLink role={role} />
+      {role.name?.includes("default-role") ? (
+        <HelpItem
+          helpText={t("defaultRole")}
+          forLabel={t("defaultRole")}
+          forID="kc-defaultRole"
+          id="default-role-help-icon"
+        />
+      ) : (
+        ""
+      )}
     </>
   );
 
@@ -97,8 +129,12 @@ export const RolesList = ({
           {
             title: t("common:delete"),
             onRowClick: (role) => {
-              setSelectedRole(role);
-              toggleDeleteDialog();
+              setSelectedRole(role as RoleRepresentation);
+              if (
+                (role as RoleRepresentation).name === realm!.defaultRole!.name
+              ) {
+                addAlert(`${t("defaultRoleDeleteError")}`, AlertVariant.danger);
+              } else toggleDeleteDialog();
             },
           },
         ]}

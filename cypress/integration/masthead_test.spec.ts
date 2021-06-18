@@ -39,12 +39,12 @@ describe("Masthead tests in desktop mode", () => {
     listingPage.goToItemDetails("address");
 
     cy.get("#view-header-subkey").should("exist");
-    cy.get(`#${CSS.escape("client-scopes-help:name")}`).should("exist");
+    cy.get(`#name-help-icon`).should("exist");
 
     masthead.toggleGlobalHelp();
 
     cy.get("#view-header-subkey").should("not.exist");
-    cy.get(`#${CSS.escape("client-scopes-help:name")}`).should("not.exist");
+    cy.get(`#name-help-icon`).should("not.exist");
   });
 
   logOutTest();

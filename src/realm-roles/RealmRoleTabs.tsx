@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useFieldArray, useForm } from "react-hook-form";
 
 import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import type Composites from "keycloak-admin/lib/defs/roleRepresentation";
 import {
@@ -29,9 +29,17 @@ import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
 import { UsersInRoleTab } from "./UsersInRoleTab";
+import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 
 export type RoleFormType = Omit<RoleRepresentation, "attributes"> & {
   attributes: KeyValueType[];
+};
+
+type myRealmRepresentation = RealmRepresentation & {
+  defaultRole?: {
+    id: string;
+    name: string;
+  };
 };
 
 export const RealmRoleTabs = () => {
@@ -46,7 +54,7 @@ export const RealmRoleTabs = () => {
 
   const { url } = useRouteMatch();
 
-  const { realm } = useRealm();
+  const { realm: realmName } = useRealm();
 
   const [key, setKey] = useState("");
 
@@ -68,6 +76,17 @@ export const RealmRoleTabs = () => {
       ...rest,
     };
   };
+
+  const [realm, setRealm] = useState<myRealmRepresentation>();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      setRealm(realm);
+    },
+
+    []
+  );
 
   useEffect(() => {
     const update = async () => {
@@ -124,7 +143,7 @@ export const RealmRoleTabs = () => {
         }
 
         await adminClient.roles.createComposite(
-          { roleId: id, realm },
+          { roleId: id, realm: realmName },
           additionalRoles
         );
 
@@ -175,7 +194,7 @@ export const RealmRoleTabs = () => {
 
     try {
       await adminClient.roles.createComposite(
-        { roleId: id, realm: realm },
+        { roleId: id, realm: realmName },
         compositeArray
       );
       history.push(url.substr(0, url.lastIndexOf("/") + 1) + "AssociatedRoles");
@@ -210,6 +229,54 @@ export const RealmRoleTabs = () => {
       }
     },
   });
+
+  const dropdownItems =
+    url.includes("AssociatedRoles") && !realm?.defaultRole
+      ? [
+          <DropdownItem
+            key="delete-all-associated"
+            component="button"
+            onClick={() => toggleDeleteAllAssociatedRolesDialog()}
+          >
+            {t("roles:removeAllAssociatedRoles")}
+          </DropdownItem>,
+          <DropdownItem
+            key="delete-role"
+            component="button"
+            onClick={() => {
+              toggleDeleteDialog();
+            }}
+          >
+            {t("deleteRole")}
+          </DropdownItem>,
+        ]
+      : id && realm?.defaultRole && url.includes("AssociatedRoles")
+      ? [
+          <DropdownItem
+            key="delete-all-associated"
+            component="button"
+            onClick={() => toggleDeleteAllAssociatedRolesDialog()}
+          >
+            {t("roles:removeAllAssociatedRoles")}
+          </DropdownItem>,
+        ]
+      : [
+          <DropdownItem
+            key="toggle-modal"
+            data-testid="add-roles"
+            component="button"
+            onClick={() => toggleModal()}
+          >
+            {t("addAssociatedRolesText")}
+          </DropdownItem>,
+          <DropdownItem
+            key="delete-role"
+            component="button"
+            onClick={() => toggleDeleteDialog()}
+          >
+            {t("deleteRole")}
+          </DropdownItem>,
+        ];
 
   const [
     toggleDeleteAllAssociatedRolesDialog,
@@ -256,45 +323,7 @@ export const RealmRoleTabs = () => {
         badgeIsRead={true}
         subKey={id ? "" : "roles:roleCreateExplain"}
         actionsDropdownId="roles-actions-dropdown"
-        divider={!id}
-        dropdownItems={
-          url.includes("AssociatedRoles")
-            ? [
-                <DropdownItem
-                  key="delete-all-associated"
-                  component="button"
-                  onClick={() => toggleDeleteAllAssociatedRolesDialog()}
-                >
-                  {t("roles:removeAllAssociatedRoles")}
-                </DropdownItem>,
-                <DropdownItem
-                  key="delete-role"
-                  component="button"
-                  onClick={() => toggleDeleteDialog()}
-                >
-                  {t("deleteRole")}
-                </DropdownItem>,
-              ]
-            : id
-            ? [
-                <DropdownItem
-                  key="toggle-modal"
-                  data-testid="add-roles"
-                  component="button"
-                  onClick={() => toggleModal()}
-                >
-                  {t("addAssociatedRolesText")}
-                </DropdownItem>,
-                <DropdownItem
-                  key="delete-role"
-                  component="button"
-                  onClick={() => toggleDeleteDialog()}
-                >
-                  {t("deleteRole")}
-                </DropdownItem>,
-              ]
-            : undefined
-        }
+        dropdownItems={dropdownItems}
       />
       <PageSection variant="light" className="pf-u-p-0">
         {id && (
@@ -329,25 +358,28 @@ export const RealmRoleTabs = () => {
                 </PageSection>
               </Tab>
             )}
-            <Tab
-              eventKey="attributes"
-              title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
-            >
-              <PageSection variant="light">
+            {form.getValues().name !== realm?.defaultRole?.name && (
+              <Tab
+                eventKey="attributes"
+                className="kc-attributes-tab"
+                title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
+              >
                 <AttributesForm
                   form={form}
                   save={save}
                   array={{ fields, append, remove }}
                   reset={() => form.reset(role)}
                 />
-              </PageSection>
-            </Tab>
-            <Tab
-              eventKey="users-in-role"
-              title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
-            >
-              <UsersInRoleTab data-cy="users-in-role-tab" />
-            </Tab>
+              </Tab>
+            )}
+            {form.getValues().name !== realm?.defaultRole?.name && (
+              <Tab
+                eventKey="users-in-role"
+                title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
+              >
+                <UsersInRoleTab data-cy="users-in-role-tab" />
+              </Tab>
+            )}
           </KeycloakTabs>
         )}
         {!id && (

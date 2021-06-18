@@ -66,6 +66,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("common:name")}
         labelIcon={
           <HelpItem
+            id="name-help-icon"
             helpText="client-scopes-help:name"
             forLabel={t("common:name")}
             forID="kc-name"
