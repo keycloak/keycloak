@@ -1,6 +1,6 @@
 [[_migrate_themes]]
 
-== Migrating Themes
+== Theme migration
 
 If you have created any custom themes they must be migrated to the new server. Any changes to the built-in themes might
 need to be reflected in your custom themes, depending on which aspects you have customized.
@@ -24,7 +24,7 @@ include::rhsso/migrate_themes-changes-72.adoc[leveloffset=0]
 include::rhsso/migrate_themes-changes-71.adoc[leveloffset=0]
 endif::[]
 
-=== Migrating Templates
+=== Migrating templates
 
 If you have customized any of the templates you need to carefully review the changes that have been made to the templates
 to decide if you need to apply these changes to your customized templates. Most likely you will need to apply the same
@@ -54,7 +54,7 @@ From this comparison it is easy to identify what has been changed in the base te
 make the same changes to your modified template. Since this approach is not as simple as the first approach, only use
 this approach if the first one is not feasible.
 
-=== Migrating Messages
+=== Migrating messages
 
 If you have added support for another language, you need to apply all the changes listed above. If you have not added
 support for another language, you might not need to change anything; you only have to make changes if you have changed
@@ -66,7 +66,7 @@ For renamed keys, rename the key in your custom theme.
 
 For changed values, check the value in the base theme to determine if you need to make changes to your custom theme.
 
-=== Migrating Styles
+=== Migrating styles
 
 If you are inheriting styles from the keycloak or rh-sso themes you might need to update your custom styles to reflect
 changes made to the styles from the built-in themes.

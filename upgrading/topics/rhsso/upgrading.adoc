@@ -1,6 +1,6 @@
 [[_upgrading]]
 
-== Upgrading {project_name} Server
+== Upgrading the {project_name} server
 
 The upgrade or migration process for the {project_name} server depends on the previous version of the software.
 
@@ -11,7 +11,7 @@ The upgrade or migration process for the {project_name} server depends on the pr
 * If you are upgrading to a new micro release, for example from 7.1.0 to 7.1.1, follow the steps in xref:_upgrading_micro[Micro Upgrades].
 
 [[_upgrading_minor]]
-=== Minor Upgrades
+=== Performing a minor upgrade
 
 include::../prep_migration.adoc[leveloffset=2]
 
@@ -22,12 +22,11 @@ include::../migrate_db.adoc[leveloffset=2]
 include::../migrate_themes.adoc[leveloffset=2]
 
 [[_upgrading_micro]]
-=== Micro Upgrades
+=== Performing a micro upgrade
 
 include::patching-zip-installation.adoc[leveloffset=3]
-include::patching-rpm-installation.adoc[leveloffset=3]
-include::patching_maven_repo.adoc[leveloffset=3]
+include::patching-rpm-installation.adoc[leveloffset=3]include::patching_maven_repo.adoc[leveloffset=3]
 
-== Upgrading {project_name} Adapters
+== Upgrading {project_name} adapters
 
 include::../upgrade_adapters.adoc[leveloffset=1]

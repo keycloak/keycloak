@@ -11,10 +11,10 @@
 For a managed domain, the RH-SSO domain controller should be updated first.
 ====
 
-
 To install a RH-SSO patch via RPM from your subscribed repository, update your Red Hat Enterprise Linux system using the following command:
 
 [source,bash,options="nowrap"]
 ----
 yum update
 ----
+

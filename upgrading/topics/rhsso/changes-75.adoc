@@ -73,7 +73,7 @@ Read-only user attributes are now available.  Some of these user attributes are 
 
 * Custom user storage providers
 * Custom authenticators
-* Custom Javascript authorization policies that establish authorization based on a user attribute
+* Custom JavaScript authorization policies that establish authorization based on a user attribute
 * X.509 authenticator with a custom attribute for mapping the X.509 certificate to the user identity
 * Any other custom functionality where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather than simple user profile information.
 

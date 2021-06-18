@@ -1,6 +1,6 @@
 [[_install_new_version]]
 
-== Upgrading {project_name} server
+== Upgrading the {project_name} server
 
 [WARNING]
 ====
@@ -11,9 +11,10 @@ Please refer to the migration changes for details on the version you are upgradi
 
 It is important that you upgrade {project_name} server before upgrading the adapters.
 
-To upgrade {project_name} server, complete the following steps:
+.Prerequisites
+* Handle any open transactions and delete the data/tx-object-store/ transaction directory.
 
-. Prior to applying the upgrade, handle any open transactions and delete the data/tx-object-store/ transaction directory.
+.Procedure
 . Download the new server archive
 . Move the downloaded archive to the desired location.
 . Extract the archive. This step installs a clean instance of the latest {project_name} release.
@@ -31,11 +32,30 @@ Files in the bin directory should not be overwritten by the files from previous 
 . Copy any custom modules that have been added to the modules directory.
 . Run the applicable upgrade script below.
 
-ifeval::[{project_product}==true]
-To upgrade {project_name} server RPM distribution, complete the following steps:
+[id="upgrade-script"]
+== Run the server upgrade script
 
-. Prior to applying the upgrade, handle any open transactions and delete the /var/opt/rh/rh-sso7/lib/keycloak/standalone/data/tx-object-store/ transaction directory.
-. Make sure you have subscribed to proper repositories containing JBOSS EAP and {project_name}.
+Based on your previous installation, run the appropriate upgrade script that applies to your situation:
+
+ifeval::[{project_product}==true]
+* xref:rpm-upgrade[RPM distribution]
+endif::[]
+* xref:standalone-mode[Standalone mode]
+* xref:standalone-ha[Standalone high availability mode]
+* xref:domain-mode[Domain mode]
+* xref:domain-clustered[Domain-clustered mode]
+
+ifeval::[{project_product}==true]
+
+[id="rpm-upgrade"]
+=== Run the RPM distribution script
+
+.Prerequisites
+* Handle any open transactions and delete the /var/opt/rh/rh-sso7/lib/keycloak/standalone/data/tx-object-store/ transaction directory.
+
+.Procedure
+
+. Make sure you have subscribed to the proper repositories containing JBOSS EAP and {project_name}.
 +
 For Red Hat Enterprise Linux 7:
 +
@@ -72,8 +92,10 @@ Use it when calling migration scripts below.
 ====
 endif::[]
 
-=== Running the Standalone Mode Upgrade Script
-To run the upgrade script for standalone mode, complete the following steps:
+[id="standalone-mode"]
+=== Running the Standalone Mode upgrade script
+
+.Procedure
 
 . If you are using a different configuration file than the default one, edit the migration script to specify the new file name.
 . Stop the server.
@@ -81,26 +103,38 @@ To run the upgrade script for standalone mode, complete the following steps:
 
  bin/jboss-cli.sh --file=bin/migrate-standalone.cli
 
-=== Running the Standalone-High Availability Mode Upgrade Script
+[id="standalone-ha"]
+=== Running the Standalone-High Availability Mode upgrade script
 For standalone-high availability (HA) mode, all instances must be upgraded at the same time.
 
-To run the upgrade script for standalone-HA mode, complete the following steps:
-
+.Procedure
 . If you are using a different configuration file than the default one, edit the migration script to specify the new file name.
 . Stop the server.
 . Run the upgrade script:
 
  bin/jboss-cli.sh --file=bin/migrate-standalone-ha.cli
 
-=== Running the Domain Mode Upgrade Script
+[id="domain-mode"]
+=== Running the Domain Mode upgrade script
 For domain mode, all instances must be upgraded at the same time.
 
-To run the upgrade script for domain mode, complete the following steps:
+.Procedure
 
 . If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script.
 . Edit the domain script to include the location of the keycloak-server.json file.
 . Stop the server.
-. Run the upgrade script on the domain controller only:
-
+. Run the upgrade script on the domain controller
  bin/jboss-cli.sh --file=bin/migrate-domain.cli
 
+[id="domain-clustered"]
+=== Running the Domain-clustered Mode upgrade script
+For domain-clustered mode, all instances must be upgraded at the same time.
+
+.Procedure
+
+. If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script.
+. Edit the domain-clustered script to include the location of the keycloak-server.json file.
+. Stop the server.
+. Run the upgrade script on the domain controller only:
+
+ bin/jboss-cli.sh --file=bin/migrate-domain-clustered.cli

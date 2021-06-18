@@ -16,18 +16,19 @@ In those cases, we added Compatibility modes. For OpenId Connect clients, there 
 in the {project_name} admin console, on the page with client details. Here, you can disable some new aspects of the {project_name} server
 to preserve compatibility with older client adapters. More details are available in the tool tips of individual switches.
 
-
 [[_upgrade_eap_adapter]]
-== Upgrading the EAP Adapter
+== Upgrading the EAP adapter
 
 ifeval::[{project_product}==true]
 
-If you originally installed the adapter using a downloaded archive, to upgrade the {appserver_name} adapter, complete the following steps:
+.Procedure
+If you originally installed the adapter using a downloaded archive, to upgrade the {appserver_name} adapter, perform the following procedure.
 
 . Download the new adapter archive.
 . Remove the previous adapter modules by deleting the `{appserver_dirref}/modules/system/add-ons/keycloak/` directory.
 . Unzip the downloaded archive into {appserver_dirref}.
 
+.Procedure
 If you originally installed the adapter using RPM, to upgrade the adapter, complete the following steps, which are different depending on whether you are performing a minor or a micro upgrade:
 
 . For minor upgrades, use Yum to uninstall any adapters you currently have installed and then use Yum to install the new version of the adapters.
@@ -42,6 +43,7 @@ endif::[]
 
 ifeval::[{project_community}==true]
 
+.Procedure
 To upgrade the {appserver_name} adapter, complete the following steps:
 
 . Download the new adapter archive.
@@ -51,19 +53,21 @@ To upgrade the {appserver_name} adapter, complete the following steps:
 endif::[]
 
 [[_upgrade_js_adapter]]
-== Upgrading the JavaScript Adapter
+== Upgrading the JavaScript adapter
 
-To upgrade a JavaScript adapter that has been copied to your web application, complete the following steps: 
+To upgrade a JavaScript adapter that has been copied to your web application, perform the following procedure.
+
+.Procedure
 
 . Download the new adapter archive.
 . Overwrite the keycloak.js file in your application with the keycloak.js file from the downloaded archive.
 
-
 [[_upgrade_nodejs_adapter]]
-== Upgrading the Node.js Adapter
+== Upgrading the Node.js adapter
 
-To upgrade a Node.js adapter that has been copied to your web application, complete the following steps:
+To upgrade a Node.js adapter that has been copied to your web application, perform the following procedure.
 
+.Procedure
 . Download the new adapter archive.
 . Remove the existing Node.js adapter directory
 . Unzip the updated file into its place

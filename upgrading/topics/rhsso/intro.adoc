@@ -1,6 +1,6 @@
 [[intro]]
 
-== Introduction
+== Upgrading Red Hat Single Sign-On
 
 Red Hat Single Sign-On (RH-SSO) {project_versionDoc} is based on the Keycloak project and provides security for your web applications by
 providing Web single sign-on capabilities based on popular standards such as SAML 2.0, OpenID Connect, and OAuth 2.0.
@@ -16,22 +16,24 @@ implemented. Specific instructions for each mode are provided where applicable.
 The purpose of this guide is to document the steps that are required to successfully upgrade from
 Red Hat Single Sign-On 7.x to Red Hat Single Sign-On {project_versionDoc}.
 
-=== About Upgrades
+=== About upgrades
 
-==== Major Upgrades
+Depending on your version of RH-SSO, you choose one of three types of upgrade. However, if you starting from Keycloak, you choose xref:keycloak-migration[this procedure].
+
+==== Major upgrades
 
 A major upgrade or migration is required when RH-SSO is upgraded from one major release to another, for example, from
 Red Hat Single Sign-On 7.2 to Red Hat Single Sign-On 8.0. There may be breaking API changes between major releases
 that could require rewriting parts of applications or server extensions.
 
-==== Minor Updates
+==== Minor updates
 
 Red Hat Single Sign-On periodically provides point releases, which are minor updates that include bug fixes, security
 fixes, and new features. If you plan to upgrade from one Red Hat Single Sign-On point release to another, for example,
 from Red Hat Single Sign-On 7.3 to Red Hat Single Sign-On {project_versionDoc}, code changes should not be required for applications or
 custom server extensions as long as no private, unsupported, or tech preview APIs are used.
 
-==== Micro Updates
+==== Micro updates
 
 Red Hat Single Sign-On {project_versionDoc} also periodically provides micro releases that contain bug and security fixes.
 Micro releases increment the minor release version by the last digit, for example from  {project_versionDoc}.0 to {project_versionDoc}.1. These releases
@@ -42,7 +44,8 @@ A micro release only contains the artifacts that have changed. For example if Re
 the server and the JavaScript adapter, but not the EAP adapter, only the server and JavaScript adapter are released and require
 updating.
 
-=== Migration from Keycloak
+[id="keycloak-migration"]
+=== Migrating Keycloak to RH-SSO
 
 You can migrate to Red Hat Single Sign-On, the supported Red Hat product, from Keycloak, the community project.
 

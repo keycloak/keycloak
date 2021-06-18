@@ -2,7 +2,7 @@
 
 The following changes have occurred from RH-SSO 7.2 to RH-SSO 7.3.
 
-=== Changes to Authorization Services
+=== Changes to authorization services
 
 We added support for UMA 2.0. This version of the UMA specification introduced some important changes on how permissions are obtained from the server.
 
@@ -22,8 +22,8 @@ Entitlement API was removed::
 Changes to UMA Discovery Endpoint::
   UMA Discovery document changed, see link:{authorizationguide_link}#_service_authorization_api[{authorizationguide_name}] for details.
 
-Changes to {project_name} Authorization JavaScript Adapter::
-  The {project_name} Authorization JavaScript Adapter (keycloak-authz.js) changed in order to comply with the changes introduced by UMA 2.0 while keeping
+Changes to {project_name} Authorization JavaScript adapter::
+  The {project_name} Authorization JavaScript adapter (keycloak-authz.js) changed in order to comply with the changes introduced by UMA 2.0 while keeping
   the same behavior as before. The main change is on how you invoke both `authorization` and `entitlement` methods which now
   expect a specific object type representing an authorization request. This new object type provides more flexibility on how
   permissions can be obtained from the server by supporting the different parameters supported by the UMA grant type.
@@ -116,7 +116,7 @@ set a fixed hostname which makes it easier to make sure the valid hostname is us
 applications to invoke {project_name} through an alternative URL, for example an internal IP address. It is
 recommended that you switch to this approach in production.
 
-=== JavaScipt Adapter Promise
+=== JavaScript adapter promise
 
 To use native JavaScript promise with the JavaScript adapter it is now required to set `promiseType` to `native` in the
 init options.

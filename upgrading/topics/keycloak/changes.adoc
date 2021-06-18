@@ -112,7 +112,7 @@ use:
 
 * Custom user storage providers
 * Custom authenticators
-* Custom Javascript authorization policies, which establish authorization based on some user attribute
+* Custom JavaScript authorization policies, which establish authorization based on some user attribute
 * X.509 authenticator with custom attribute for mapping the X.509 certificate to the user identity
 * Any other custom functionality, where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather
 than simple user profile informations.
@@ -499,7 +499,7 @@ Audiences of all the clients, for which authenticated user has at least one clie
 to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
 frontend client, for which it was issued. Read the link:{adminguide_link}#audience-support[{adminguide_name}] for more details.
 
-==== JavaScript Adapter Promise
+==== JavaScript adapter Promise
 
 To use native JavaScript promise with the JavaScript adapter it is now required to set `promiseType` to `native` in the
 init options.
@@ -631,8 +631,8 @@ Entitlement API was removed::
 Changes to UMA Discovery Endpoint::
   UMA Discovery document changed, see link:{authorizationguide_link}#_service_authorization_api[{authorizationguide_name}] for details.
 
-Changes to {project_name} Authorization JavaScript Adapter::
-  The {project_name} Authorization JavaScript Adapter (keycloak-authz.js) changed in order to comply with the changes introduced by UMA 2.0 while keeping
+Changes to {project_name} Authorization JavaScript adapter::
+  The {project_name} Authorization JavaScript adapter (keycloak-authz.js) changed in order to comply with the changes introduced by UMA 2.0 while keeping
   the same behavior as before. The main change is on how you invoke both `authorization` and `entitlement` methods which now
   expect a specific object type representing an authorization request. This new object type provides more flexibility on how
   permissions can be obtained from the server by supporting the different parameters supported by the UMA grant type.
@@ -848,7 +848,7 @@ We've moved the themes and providers directories from `standalone/configuration/
 If you have added custom themes and providers you need to move them to the new location.
 You also need to update `keycloak-server.json` as it's changed due to this.
 
-==== Adapter Subsystems only bring in dependencies if Keycloak is on
+==== adapter Subsystems only bring in dependencies if Keycloak is on
 
 Previously, if you had installed our SAML or OIDC Keycloak subsystem adapters into WildFly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
 These libraries are now only added to your deployment if you have Keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml)
@@ -882,9 +882,9 @@ Same goes with mongo and Infinispan under modules keycloak-model-mongo and keycl
 To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/WildFly, Jetty 9), the Keycloak OIDC and SAML adapters will change the session id after login.
 You can turn off this behavior check adapter config switches.
 
-==== SAML SP Client Adapter Changes
+==== SAML SP Client adapter Changes
 
-Keycloak SAML SP Client Adapter now requires a specific endpoint, `/saml` to be registered with your IDP.
+Keycloak SAML SP Client adapter now requires a specific endpoint, `/saml` to be registered with your IDP.
 
 === Migrating to 1.8.0
 
@@ -1115,7 +1115,7 @@ Facebook admin console).
 
 === Migrating from 1.1.0.Beta1 to 1.1.0.Beta2
 
-* Adapters are now a separate download.  They are not included in appliance and war distribution.  We have too many now and the distro
+* adapters are now a separate download.  They are not included in appliance and war distribution.  We have too many now and the distro
   is getting bloated.
 * `org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve`
 +`org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve`
@@ -1182,7 +1182,7 @@ Facebook admin console).
   AccessToken, AccessScope, KeycloakPrincipal, and KeycloakAuthenticatedSession respectively.
 * ServletOAuthClient.getBearerToken() method signature has changed.  It now returns an AccessTokenResponse
   so that you can obtain a refresh token too.
-* Adapters now check the access token expiration with every request.  If the token is expired, they will
+* adapters now check the access token expiration with every request.  If the token is expired, they will
   attempt to invoke a refresh on the auth server using a saved refresh token.
 * Subject in AccessToken has been changed to the User ID.
 

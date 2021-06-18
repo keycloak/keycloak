@@ -1,5 +1,5 @@
 [[zip-patching]]
-= Patching a ZIP/Installer Installation
+= ZIP/installer installation patching
 
 Patches for a ZIP installation of RH-SSO are available to download from the
 link:https://access.redhat.com/[Red Hat Customer Portal].
@@ -8,23 +8,23 @@ For multiple RH-SSO hosts in a managed domain environment, individual hosts can 
 
 In addition to applying a patch, you can also roll back the application of a patch.
 
-== Important Notes on ZIP Installation Patching
+== Important notes on ZIP installation patching
 
 * If you apply a patch that updates a module, the new patched JARs that are used at runtime are stored in `RHSSO_HOME/modules/system/layers/base/.overlays/_PATCH_ID_/_MODULE_`. The original unpatched files are left in `RHSSO_HOME/modules/system/layers/base/_MODULE_`, but these JARs are *not* used at runtime.
 * In order to significantly decrease the size of cumulative patch releases for RH-SSO 7 you cannot perform a partial roll back of a cumulative patch. For a patch that has been applied, you will only be able to roll back the whole patch.
 +
 For example, if you apply CP03 to RH-SSO 7.0.0, you will not be able to roll back to CP01 or CP02. If you would like the ability to roll back to each cumulative patch release, each cumulative patch must be applied separately in the order they were released.
 
-== Applying a Patch
+== Applying a patch
 
 NOTE:  RH-SSO servers that have been installed using the RPM method cannot be updated using these instructions. See the xref:rpm-patching[RPM instructions for applying a patch] instead.
-
 
 You can apply downloaded patches to a RH-SSO server using either the xref:zip_patching_management_cli[management CLI] or the xref:zip_patching_management_console[management console].
 
 [[zip_patching_management_cli]]
-.Applying a Patch to RH-SSO Using the Management CLI
+.Applying a patch to RH-SSO using the management CLI
 
+.Procedure
 . Download the patch file from the Red Hat Customer Portal at https://access.redhat.com/downloads/.
 
 . From the link:{appserver_managementcli_link}[management CLI], apply the patch using the following command, including the appropriate path to the patch file:
@@ -54,7 +54,10 @@ shutdown --restart=true
 ----
 
 [[zip_patching_management_console]]
-.Applying a Patch to RH-SSO Using the Management Console
+.Applying a patch to RH-SSO using the Management Console
+
+.Procedure
+
 . Download the patch file from the Red Hat Customer Portal at https://access.redhat.com/downloads/.
 . Open the link:{appserver_managementconsole_link}[management console] and navigate to the *Patch Management* view.
 .. For a standalone server, click the *Patching* tab.
@@ -77,7 +80,7 @@ image:images/patching-select-patch.png[Apply Patch Screen]
 
 . After the patch has been successfully applied, select whether to restart RH-SSO now for the patch to take effect, and click *Finish*.
 
-== Rolling Back a Patch
+== Rolling back a patch
 
 You can roll back a previously applied RH-SSO patch using either the xref:zip_rollback_management_cli[management CLI] or the xref:zip_rollback_management_console[management console].
 
@@ -97,6 +100,9 @@ If set to `FALSE`, the server configuration files will not be rolled back. In th
 
 [[zip_rollback_management_cli]]
 .Rolling Back a Patch Using the Management CLI
+
+.Procedure
+
 . From the management CLI, use the `patch history` command to find the ID of the patch that you want to roll back.
 +
 --
@@ -120,7 +126,9 @@ shutdown --restart=true
 ----
 
 [[zip_rollback_management_console]]
-.Rolling Back a Patch Using the Management Console
+.Rolling back a patch using the Management Console
+
+.Procedure
 . Open the management console and navigate to the *Patch Management* view.
 .. For a standalone server, click the *Patching* tab.
 .. For a server in a managed domain, click the *Patching* tab, then select the host that you want to patch from the table, and click *View*.
@@ -141,7 +149,7 @@ image:images/patching-rollback-options.png[Patch Rollback Options]
 
 . After the patch has been successfully rolled back, select whether to restart the RH-SSO server now for the changes to take effect, and click *Finish*.
 
-== Clearing Patch History
+== Clearing patch history
 
 When patches are applied to a RH-SSO server, the content and history of the patches are preserved for use in rollback operations. If multiple cumulative patches are applied, the patch history may use a significant amount of disk space.
 

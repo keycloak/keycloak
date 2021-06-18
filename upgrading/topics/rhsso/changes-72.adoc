@@ -2,7 +2,7 @@
 
 The following changes have occurred from RH-SSO 7.1 to RH-SSO 7.2.
 
-=== New Password Hashing algorithms
+=== New password hashing algorithms
 
 We have added two new password hashing algorithms (pbkdf2-sha256 and pbkdf2-sha512). New realms will use the pbkdf2-sha256
 hashing algorithm with 27500 hashing iterations. Since pbkdf2-sha256 is slightly faster than pbkdf2 the iterations was
@@ -73,7 +73,7 @@ It is possible that you will need to adjust custom mappers for non-standard clai
 information endpoint and are provided under different name by Google Sign-in API. Please consult Google documentation
 for the most up-to-date information on available claims.
 
-=== LinkedIn Social Broker Updated to Version 2 of LinkedIn APIs
+=== LinkedIn Social Broker updated to Version 2 of LinkedIn APIs
 
 Accordingly with LinkedIn, all developers need to migrate to version 2.0 of their APIs and OAuth 2.0. As such, we have updated
 our LinkedIn Social Broker so if this integration is in use make sure you upgrade to {project_name} version 7.2.6 or later.
@@ -89,3 +89,4 @@ Due to these privacy restrictions imposed by LinkedIn in regards to access to me
 current member's Profile API, the LinkedIn Social Broker
 is now using the member's email address as the default username. That means that the `r_emailaddress` is always set when
 sending authorization requests during the authentication.
+

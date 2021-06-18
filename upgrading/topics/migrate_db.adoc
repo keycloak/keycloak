@@ -1,11 +1,11 @@
 [[_migrate_db]]
 
-== Migrating the Database
+== Database migration
 
 {project_name} can automatically migrate the database schema, or you can choose to do it manually. By default the
 database is automatically migrated when you start the new installation for the first time.
 
-=== Automatic Relational Database Migration
+=== Automatic relational database migration
 
 To enable automatic upgrading of the database schema, set the migrationStrategy property value to "update" for the
 default connectionsJpa provider:
@@ -60,7 +60,7 @@ Or run this CLI command:
 /subsystem=keycloak-server/spi=connectionsLiquibase/provider=default/:add(properties={indexCreationThreshold => "300000"},enabled=true)
 ----
 
-=== Manual Relational Database Migration
+=== Manual relational database migration
 
 To enable manual upgrading of the database schema, set the migrationStrategy property value to "manual" for the default
 connectionsJpa provider:
@@ -88,3 +88,4 @@ When you start the server with this configuration it checks if the database need
 are written to an SQL file that you can review and manually run against the database. For further details on how to
 apply this file to the database, see the documentation for the relational database you're using. After the changes have
 been written to the file, the server exits.
+
