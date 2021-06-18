@@ -1,3 +1,5 @@
+= Upgrading the {project_name} Admin Client
+
 [[_upgrade_admin_client]]
 
 It is important that you upgrade the {project_name} server first, and then upgrade the admin-client. Earlier versions of the

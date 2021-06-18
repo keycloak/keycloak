@@ -18,13 +18,13 @@ It is important that you upgrade {project_name} server before upgrading the adap
 . Download the new server archive
 . Move the downloaded archive to the desired location.
 . Extract the archive. This step installs a clean instance of the latest {project_name} release.
-. For standalone installations, copy the {project_dirref}/standalone/ directory from the previous installation over the
+. For standalone installations, copy the `{project_dirref}/standalone/` directory from the previous installation over the
   directory in the new installation.
 +
-For domain installations, copy the {project_dirref}/domain/ directory from the previous installation over the directory
+For domain installations, copy the `{project_dirref}/domain/` directory from the previous installation over the directory
 in the new installation.
 +
-For domain installations, create the empty directory {project_dirref}/domain/deployments.
+For domain installations, create the empty directory `{project_dirref}/domain/deployments`.
 +
 NOTE:
 Files in the bin directory should not be overwritten by the files from previous versions. Changes should be made manually.
@@ -124,6 +124,7 @@ For domain mode, all instances must be upgraded at the same time.
 . Edit the domain script to include the location of the keycloak-server.json file.
 . Stop the server.
 . Run the upgrade script on the domain controller
+
  bin/jboss-cli.sh --file=bin/migrate-domain.cli
 
 [id="domain-clustered"]

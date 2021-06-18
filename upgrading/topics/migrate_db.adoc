@@ -7,7 +7,7 @@ database is automatically migrated when you start the new installation for the f
 
 === Automatic relational database migration
 
-To enable automatic upgrading of the database schema, set the migrationStrategy property value to "update" for the
+To enable automatic upgrading of the database schema, set the migrationStrategy property value to `update` for the
 default connectionsJpa provider:
 
 [source,xml]
@@ -62,7 +62,7 @@ Or run this CLI command:
 
 === Manual relational database migration
 
-To enable manual upgrading of the database schema, set the migrationStrategy property value to "manual" for the default
+To enable manual upgrading of the database schema, set the migrationStrategy property value to `manual` for the default
 connectionsJpa provider:
 
 [source,xml]

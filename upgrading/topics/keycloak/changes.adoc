@@ -14,7 +14,7 @@ include::changes-16_0_0.adoc[leveloffset=3]
 
 === Migrating to 14.0.0
 
-==== Client Policies Migration
+==== Client policies migration
 
 The Client policies feature was a preview feature since Keycloak 12 and did not have proper support. If you tried this feature and configured some client policies or client profiles
 in Keycloak 12 or Keycloak 13, then you will need to configure your client policies and client profiles again in the new version. The format of the configuration changed significantly
@@ -268,7 +268,7 @@ See JavaDocs for further details on exact methods that have been deprecated and 
 
 === Migrating to 8.0.2
 
-==== More Authentication flows changes
+==== More authentication flows changes
 
 REQUIRED and ALTERNATIVE executions not supported at same flow::
     In previous version, it was possible to have REQUIRED and ALTERNATIVE executions in the same authentication flow at the same level.
@@ -282,7 +282,7 @@ REQUIRED and ALTERNATIVE executions not supported at same flow::
 
 === Migrating to 8.0.0
 
-==== New Default Hostname provider
+==== New default Hostname provider
 
 The old request and fixed hostname providers are replaced with a new default hostname provider. The request
 and fixed hostname providers are now deprecated and it is recommended to switch to the default hostname provider as
@@ -304,7 +304,7 @@ Cross-Datacenter Replication changes::
   * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
   not guaranteed as we don't test it anymore.
 
-==== Deploying Scripts to the Server
+==== Deploying scripts to the server
 
 Until now, administrators were allowed to upload scripts to the server through the {project_name} Administration Console as well as
 through the RESTful Admin API.
@@ -312,7 +312,7 @@ through the RESTful Admin API.
 For now on, this capability is *disabled* by default and users should prefer to deploy scripts directly to the server. For more details,
 please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
-==== Client Credentials in the JavaScript adapter
+==== Client credentials in the JavaScript adapter
 
 In the previous releases, developers were allowed to provide client credentials to the JavaScript adapter. For now on, this capability was *removed*, because client-side apps are not safe to keep secrets.
 
@@ -436,7 +436,7 @@ It is possible that you will need to adjust custom mappers for non-standard clai
 information endpoint and are provided under different name by Google Sign-in API. Please consult Google documentation
 for the most up-to-date information on available claims.
 
-==== LinkedIn Social Broker Updated to Version 2 of LinkedIn APIs
+==== LinkedIn social broker updated to Version 2 of LinkedIn APIs
 
 Accordingly with LinkedIn, all developers need to migrate to version 2.0 of their APIs and OAuth 2.0. As such, we have updated
 our LinkedIn Social Broker.
@@ -474,7 +474,7 @@ Audiences of all the clients, for which authenticated user has at least one clie
 to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
 frontend client, for which it was issued. Read the link:{adminguide_link}#audience-support[{adminguide_name}] for more details.
 
-==== JavaScript adapter Promise
+==== JavaScript adapter promise
 
 To use native JavaScript promise with the JavaScript adapter it is now required to set `promiseType` to `native` in the
 init options.
@@ -644,7 +644,7 @@ to upgrade the server to 4.0.0.Beta1 or newer.
 
 === Migrating to 3.2.0
 
-==== New Password Hashing algorithms
+==== New password hashing algorithms
 
 We've added two new password hashing algorithms (pbkdf2-sha256 and pbkdf2-sha512). New realms will use the pbkdf2-sha256
 hashing algorithm with 27500 hashing iterations. Since pbkdf2-sha256 is slightly faster than pbkdf2 the iterations was
@@ -823,7 +823,7 @@ We've moved the themes and providers directories from `standalone/configuration/
 If you have added custom themes and providers you need to move them to the new location.
 You also need to update `keycloak-server.json` as it's changed due to this.
 
-==== adapter Subsystems only bring in dependencies if Keycloak is on
+==== Adapter subsystems only bring in dependencies if Keycloak is on
 
 Previously, if you had installed our SAML or OIDC Keycloak subsystem adapters into WildFly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
 These libraries are now only added to your deployment if you have Keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml)
@@ -845,7 +845,7 @@ This also applies to the validate token endpoint that is replaced with the new i
 
 Feedback in template.ftl has been moved and format has changed slightly.
 
-==== Module and Source Code Re-org
+==== Module and source code reorganization
 
 Most of our modules and source code have been consolidated into two maven modules:  keycloak-server-spi and keycloak-services.
 SPI interfaces are in server-spi, implementations are in keycloak-services.
@@ -857,7 +857,7 @@ Same goes with mongo and Infinispan under modules keycloak-model-mongo and keycl
 To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/WildFly, Jetty 9), the Keycloak OIDC and SAML adapters will change the session id after login.
 You can turn off this behavior check adapter config switches.
 
-==== SAML SP Client adapter Changes
+==== SAML SP Client adapter changes
 
 Keycloak SAML SP Client adapter now requires a specific endpoint, `/saml` to be registered with your IDP.
 
@@ -868,7 +868,7 @@ Keycloak SAML SP Client adapter now requires a specific endpoint, `/saml` to be 
 In previous releases we shipped with a default admin user with a default password, this has now been removed.
 If you are doing a new installation of 1.8 you will have to create an admin user as a first step.
 
-==== OAuth2 Token Introspection
+==== OAuth2 token introspection
 
 In order to add more compliance with OAuth2 specification, we added a new endpoint for token introspection.
 The new endpoint can reached at `/realms/{realm-name}/protocols/openid-connect/token/introspect` and it is solely based on `RFC-7662`.

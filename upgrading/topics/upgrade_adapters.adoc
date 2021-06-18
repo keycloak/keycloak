@@ -1,3 +1,5 @@
+= Upgrading {project_name} adapters
+
 [[_upgrade_adapters]]
 
 It is important that you upgrade {project_name} server first, and then upgrade the adapters. Earlier versions of the
@@ -26,14 +28,14 @@ If you originally installed the adapter using a downloaded archive, to upgrade t
 
 . Download the new adapter archive.
 . Remove the previous adapter modules by deleting the `{appserver_dirref}/modules/system/add-ons/keycloak/` directory.
-. Unzip the downloaded archive into {appserver_dirref}.
+. Unzip the downloaded archive into `{appserver_dirref}`.
 
 .Procedure
 If you originally installed the adapter using RPM, to upgrade the adapter, complete the following steps, which are different depending on whether you are performing a minor or a micro upgrade:
 
 . For minor upgrades, use Yum to uninstall any adapters you currently have installed and then use Yum to install the new version of the adapters.
 . For micro upgrades, use Yum to upgrade the adapter. This is the only step for micro upgrades.
-
++
 [source,bash,options="nowrap"]
 ----
 yum update
@@ -48,7 +50,7 @@ To upgrade the {appserver_name} adapter, complete the following steps:
 
 . Download the new adapter archive.
 . Remove the previous adapter modules by deleting the `{appserver_dirref}/modules/system/add-ons/keycloak/` directory.
-. Unzip the downloaded archive into {appserver_dirref}.
+. Unzip the downloaded archive into `{appserver_dirref}`.
 
 endif::[]
 
