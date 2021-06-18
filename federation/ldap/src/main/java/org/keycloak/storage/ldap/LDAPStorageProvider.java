@@ -525,7 +525,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
             if(existingLocalUser != null){
                 imported = existingLocalUser;
                 // Need to evict the existing user from cache
-                session.userCache().evict(realm, existingLocalUser);
+                if (session.userCache() != null) {
+                    session.userCache().evict(realm, existingLocalUser);			
+                }
             } else {
                 imported = session.userLocalStorage().addUser(realm, ldapUsername);
             }
