@@ -104,7 +104,6 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(att.getRequired().getRoles());
         Assert.assertEquals(2, att.getRequired().getRoles().size());
         
-        // permissions
         att = config.getAttributes().get(3);
         Assert.assertTrue(att.getRequired().isAlways());
         
@@ -117,6 +116,12 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(2, att.getPermissions().getView().size());
         Assert.assertTrue(att.getPermissions().getView().contains("admin"));
         Assert.assertTrue(att.getPermissions().getView().contains("user"));
+        
+        //selector
+        att = config.getAttributes().get(4);
+        Assert.assertNotNull(att.getSelector().getScopes());
+        Assert.assertEquals(3, att.getSelector().getScopes().size());
+        Assert.assertTrue(att.getSelector().getScopes().contains("phone-3-sel"));
     }
 
     /**

@@ -135,7 +135,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         }
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, "address"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, "address"));
 
         attributes.put("address", "myaddress");
 
@@ -415,7 +415,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = profile.create();
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, "address", "department"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, "address", "department"));
 
         assertNull(user.getFirstAttribute("department"));
 

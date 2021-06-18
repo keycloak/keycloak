@@ -35,6 +35,8 @@ public class UPAttribute {
     private UPAttributeRequired required;
     /** null means everyone can view and edit the attribute */
     private UPAttributePermissions permissions;
+    /** null means it is always selected */
+    private UPAttributeSelector selector;
 
     public String getName() {
         return name;
@@ -83,9 +85,16 @@ public class UPAttribute {
         validations.put(validator, config);
     }
 
+    public UPAttributeSelector getSelector() {
+        return selector;
+    }
+
+    public void setSelector(UPAttributeSelector selector) {
+        this.selector = selector;
+    }
+
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", permissions=" + permissions + ", required=" + required + ", validations=" + validations + ", annotations="
-                + annotations + "]";
+        return "UPAttribute [name=" + name + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + "]";
     }
 }

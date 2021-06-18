@@ -78,7 +78,14 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
     private static final String UP_PIECE_COMPONENT_CONFIG_KEY_BASE = "config-piece-";
 
-    private static boolean createRequiredForScopePredicate(AttributeContext context, List<String> requiredScopes) {
+    /**
+     * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
+     * 
+     * @param context to get current auth flow from
+     * @param configuredScopes to be evaluated
+     * @return
+     */
+    private static boolean requestedScopePredicate(AttributeContext context, List<String> configuredScopes) {
         KeycloakSession session = context.getSession();
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
 
@@ -89,7 +96,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         String requestedScopesString = authenticationSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
         ClientModel client = authenticationSession.getClient();
 
-        return getRequestedClientScopes(requestedScopesString, client).map((csm) -> csm.getName()).anyMatch(requiredScopes::contains);
+        return getRequestedClientScopes(requestedScopesString, client).map((csm) -> csm.getName()).anyMatch(configuredScopes::contains);
     }
 
     private String defaultRawConfig;
@@ -251,7 +258,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             UPAttributeRequired rc = attrConfig.getRequired();
             Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
 
-            if (rc != null && !(UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName))) {
+            if (rc != null && !isUsernameOrEmailAttribute(attributeName)) {
                 // do not take requirements from config for username and email as they are
                 // driven by business logic from parent!
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
@@ -259,7 +266,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
-                    required = (c) -> createRequiredForScopePredicate(c, rc.getScopes());
+                    required = (c) -> requestedScopePredicate(c, rc.getScopes());
                 }
 
                 validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
@@ -285,9 +292,17 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 }
             }
 
+            Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
+            UPAttributeSelector sc = attrConfig.getSelector();
+            if (sc != null && !isUsernameOrEmailAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+                // for contexts executed from auth flow and with configured scopes selector
+                // we have to create correct predicate
+                selector = (c) -> requestedScopePredicate(c, sc.getScopes());
+            }
+
             Map<String, Object> annotations = attrConfig.getAnnotations();
 
-            if (UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName)) {
+            if (isUsernameOrEmailAttribute(attributeName)) {
                 if (permissions == null) {
                     writeAllowed = AttributeMetadata.ALWAYS_TRUE;
                 }
@@ -305,12 +320,16 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             } else {
                 // always add validation for imuttable/read-only attributes
                 validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
-                decoratedMetadata.addAttribute(attributeName, validators, writeAllowed, required, readAllowed).addAnnotations(annotations);
+                decoratedMetadata.addAttribute(attributeName, validators, selector, writeAllowed, required, readAllowed).addAnnotations(annotations);
             }
         }
 
         return decoratedMetadata;
 
+    }
+
+    private boolean isUsernameOrEmailAttribute(String attributeName) {
+        return UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName);
     }
 
     private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
