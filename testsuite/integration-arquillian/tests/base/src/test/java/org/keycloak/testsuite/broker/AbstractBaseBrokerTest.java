@@ -292,7 +292,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     /**
      * Get the login page for an existing client in provided realm
      *
-     * @param contextRoot
+     * @param contextRoot server base url without /auth
      * @param realmName Name of the realm
      * @param clientId ClientId of a client. Client has to exists in the realm.
      * @return Login URL
@@ -303,6 +303,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
 
         String redirectURI = clients.get(0).getBaseUrl();
+        if (redirectURI.startsWith("/")) {
+            redirectURI = contextRoot + "/auth" + redirectURI;
+        }
 
         return contextRoot + "/auth/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
                 clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=openid";
