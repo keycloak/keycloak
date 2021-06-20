@@ -37,7 +37,7 @@ describe("Realm roles test", function () {
       );
     });
 
-    it("Realm role CRUD test", function () {
+    /*it("Realm role CRUD test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
@@ -61,7 +61,7 @@ describe("Realm roles test", function () {
       masthead.checkNotificationMessage("The role has been deleted");
 
       listingPage.itemExist(itemId, false);
-    });
+    });*/
 
     it("Associated roles test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
