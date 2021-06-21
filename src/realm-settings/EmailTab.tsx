@@ -53,6 +53,7 @@ export const RealmSettingsEmailTab = ({
     errors,
     setValue,
     reset: resetForm,
+    getValues,
   } = useForm<RealmRepresentation>();
 
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
@@ -83,12 +84,25 @@ export const RealmSettingsEmailTab = ({
     }
   };
 
-  const saveAndTestEmail = async (user: UserRepresentation) => {
-    await adminClient.users.update({ id: whoAmI.getUserId() }, user);
-    const updated = await adminClient.users.findOne({ id: whoAmI.getUserId() });
-    setCurrentUser(updated);
-    handleModalToggle();
-    testConnection();
+  const saveAndTestEmail = async (email?: UserRepresentation) => {
+    if (email) {
+      await adminClient.users.update({ id: whoAmI.getUserId() }, email);
+      const updated = await adminClient.users.findOne({
+        id: whoAmI.getUserId(),
+      });
+      setCurrentUser(updated);
+
+      await save(getValues());
+      testConnection();
+    } else {
+      const user = await adminClient.users.findOne({ id: whoAmI.getUserId() });
+      if (!user.email) {
+        handleModalToggle();
+      } else {
+        await save(getValues());
+        testConnection();
+      }
+    }
   };
 
   const reset = () => {
@@ -110,7 +124,7 @@ export const RealmSettingsEmailTab = ({
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(realm.smtpServer! as BodyInit),
+        body: JSON.stringify(getValues()["smtpServer"] as BodyInit),
       }
     );
     response.ok
@@ -124,8 +138,9 @@ export const RealmSettingsEmailTab = ({
         <AddUserEmailModal
           handleModalToggle={handleModalToggle}
           testConnection={testConnection}
-          save={(user) => {
-            saveAndTestEmail(user!);
+          save={(email) => {
+            saveAndTestEmail(email!);
+            handleModalToggle();
           }}
           form={userForm}
           user={currentUser!}
@@ -385,11 +400,7 @@ export const RealmSettingsEmailTab = ({
               </Button>
               <Button
                 variant="secondary"
-                onClick={
-                  currentUser?.email
-                    ? () => testConnection()
-                    : handleModalToggle
-                }
+                onClick={() => saveAndTestEmail()}
                 data-testid="test-connection-button"
               >
                 {t("realm-settings:testConnection")}
