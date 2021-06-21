@@ -170,20 +170,61 @@ public class RedirectUtils {
 
     private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
         for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
+            if (validRedirect.contains("*") && !validRedirect.contains("?")) {
                 // strip off the query component - we don't check them when wildcards are effective
                 String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
-                // strip off *
-                int length = validRedirect.length() - 1;
-                validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return true;
+
+                if (equalsByWildcards(r, validRedirect)) return true;
+                int length = validRedirect.length();
+                if (validRedirect.charAt(length - 1) == '/') length--;
                 // strip off trailing '/'
-                if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
                 if (validRedirect.equals(r)) return true;
             } else if (validRedirect.equals(redirect)) return true;
         }
         return false;
+    }
+
+    private static boolean equalsByWildcards(String str, String pattern) {
+        int strLength = str.length();
+        int wildcardsFilterLength = pattern.length();
+
+        // lookup table for storing results of subproblems
+        boolean[][] lookup = new boolean[strLength + 1][wildcardsFilterLength + 1];
+
+        // initialise lookup table to false
+        for (int i = 0; i < strLength + 1; i++)
+            Arrays.fill(lookup[i], false);
+
+        // empty pattern can match with empty string
+        lookup[0][0] = true;
+
+        // Only '*' can match with empty string
+        for (int j = 1; j <= wildcardsFilterLength; j++)
+            if (pattern.charAt(j - 1) == '*')
+                lookup[0][j] = lookup[0][j - 1];
+
+        // fill the table in bottom-up fashion
+        for (int i = 1; i <= strLength; i++)
+        {
+            for (int j = 1; j <= wildcardsFilterLength; j++)
+            {
+                // Two cases if we see a '*'
+                // a) We ignore '*'' character and move to next  character in the pattern,
+                //     i.e., '*' indicates an empty sequence.
+                // b) '*' character matches with its character in input
+                if (pattern.charAt(j - 1) == '*')
+                    lookup[i][j] = lookup[i][j - 1] || lookup[i - 1][j];
+
+                // Current characters are considered as matching if characters actually match
+                else if (str.charAt(i - 1) == pattern.charAt(j - 1))
+                    lookup[i][j] = lookup[i - 1][j - 1];
+                // If characters don't match
+                else
+                    lookup[i][j] = false;
+            }
+        }
+        return lookup[strLength][wildcardsFilterLength];
     }
 
     private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
