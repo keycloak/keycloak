@@ -88,7 +88,7 @@
     "jest": "^26.6.3",
     "mutationobserver-shim": "^0.3.7",
     "postcss": "^8.3.3",
-    "postcss-cli": "^7.1.1",
+    "postcss-cli": "^8.3.1",
     "postcss-import": "^12.0.1",
     "prettier": "^2.0.5",
     "snowpack": "2.11.1",
