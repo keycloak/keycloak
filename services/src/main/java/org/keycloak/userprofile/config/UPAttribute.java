@@ -28,6 +28,7 @@ import java.util.Map;
 public class UPAttribute {
 
     private String name;
+    private String displayName;
     /** key in the Map is name of the validator, value is its configuration */
     private Map<String, Map<String, Object>> validations;
     private Map<String, Object> annotations;
@@ -93,8 +94,16 @@ public class UPAttribute {
         this.selector = selector;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + "]";
+        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + "]";
     }
 }

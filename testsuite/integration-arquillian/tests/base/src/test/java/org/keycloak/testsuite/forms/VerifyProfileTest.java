@@ -149,6 +149,33 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     
     @ArquillianResource
     protected OAuthClient oauth;
+    
+    @Test
+    public void testDisplayName() {
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
+        
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}" 
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+
+        //assert field names
+        // i18n replaced
+        Assert.assertEquals("First name",verifyProfilePage.getLabelForField("firstName"));
+        // attribute name used if no display name set
+        Assert.assertEquals("lastName",verifyProfilePage.getLabelForField("lastName"));
+        // direct value in display name
+        Assert.assertEquals("Department",verifyProfilePage.getLabelForField("department"));
+        
+    }
 
     @Test
     public void testDefaultProfile() {

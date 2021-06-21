@@ -42,6 +42,7 @@ public final class AttributeMetadata {
     public static final Predicate<AttributeContext> ALWAYS_FALSE = context -> false;
 
     private final String attributeName;
+    private String attributeDisplayName;
     private final Predicate<AttributeContext> selector;
     private final Predicate<AttributeContext> writeAllowed;
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
@@ -166,7 +167,20 @@ public final class AttributeMetadata {
         if(annotations != null) {
             cloned.addAnnotations(annotations);
         }
+        cloned.setAttributeDisplayName(attributeDisplayName);
         return cloned;
+    }
+    
+    public String getAttributeDisplayName() {
+        if(attributeDisplayName == null || attributeDisplayName.trim().isEmpty())
+            return attributeName;
+        return attributeDisplayName;
+    }
+
+    public AttributeMetadata setAttributeDisplayName(String attributeDisplayName) {
+        if(attributeDisplayName != null)
+            this.attributeDisplayName = attributeDisplayName;
+        return this;
     }
 
     @Override

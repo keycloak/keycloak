@@ -280,12 +280,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 AbstractUserProfileProvider::editUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
-                new AttributeValidatorMetadata(UsernameMutationValidator.ID));
+                new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
         		new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()),
         		new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
-        		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID));
+        		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID)).setAttributeDisplayName("${email}");
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
@@ -303,10 +303,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createBrokeringProfile(AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
-        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID));
+        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
-        		new AttributeValidatorMetadata(EmailValidator.ID));
+        		new AttributeValidatorMetadata(EmailValidator.ID)).setAttributeDisplayName("${email}");
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 

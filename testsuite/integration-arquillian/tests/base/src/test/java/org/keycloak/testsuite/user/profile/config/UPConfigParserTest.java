@@ -122,6 +122,10 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(att.getSelector().getScopes());
         Assert.assertEquals(3, att.getSelector().getScopes().size());
         Assert.assertTrue(att.getSelector().getScopes().contains("phone-3-sel"));
+        
+        //displayName
+        att = config.getAttributes().get(4);
+        Assert.assertEquals("${profile.phone}", att.getDisplayName());
     }
 
     /**

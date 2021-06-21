@@ -235,7 +235,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case OAUTH_GRANT:
                 attributes.put("oauth",
                         new OAuthGrantBean(accessCode, client, clientScopesRequested));
-                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
@@ -321,6 +320,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         try {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+            attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
             messagesBundle = new Properties();

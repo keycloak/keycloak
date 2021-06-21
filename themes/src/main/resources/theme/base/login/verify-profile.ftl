@@ -8,7 +8,7 @@
             <#list profile.attributes as attribute>
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="${attribute.name}" class="${properties.kcLabelClass!}">${msg("${attribute.name}")}</label>
+                        <label for="${attribute.name}" class="${properties.kcLabelClass!}">${advancedMsg(attribute.displayName!'')}</label>
                         <#if attribute.required>*</#if>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
