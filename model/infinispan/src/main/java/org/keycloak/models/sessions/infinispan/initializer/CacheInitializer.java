@@ -36,6 +36,7 @@ public abstract class CacheInitializer {
                     Thread.sleep(1000);
                 } catch (InterruptedException ie) {
                     log.error("Interrupted", ie);
+                    throw new RuntimeException("Loading sessions failed", ie);
                 }
             } else {
                 startLoading();
