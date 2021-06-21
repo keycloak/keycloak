@@ -12,7 +12,7 @@
         <table class="datatable table table-striped table-bordered dataTable no-footer">
             <thead>
             <tr>
-                <th class="kc-table-actions" colspan="3">
+                <th class="kc-table-actions" colspan="4">
                     <div class="form-inline">
                         <div class="pull-right" data-ng-show="access.manageClients">
                             <button class="btn btn-default" data-ng-click="create()">
@@ -23,13 +23,15 @@
                 </th>
             </tr>
             <tr>
-                <th width="90%">{{:: 'name' | translate}}</th>
+                <th width="25%">{{:: 'name' | translate}}</th>
+                <th width="65%">{{:: 'user.profile.attribute.displayName' | translate}}</th>
                 <th colspan="2">{{:: 'actions' | translate}}</th>
             </tr>
             </thead>
             <tbody>
             <tr ng-repeat="attribute in config.attributes">
                 <td><a href="" data-ng-click="edit(attribute)">{{attribute.name}}</a></td>
+                <td>{{attribute.displayName}}</td>
                 <td class="kc-action-cell" data-ng-click="edit(attribute)">{{:: 'edit' | translate}}</td>
                 <td class="kc-action-cell" data-ng-click="removeAttribute(attribute)">{{:: 'delete' | translate}}</td>
             </tr>
@@ -73,6 +75,14 @@
                        type="text" class="form-control"
                         data-ng-readonly="!isCreate"
                        required/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="currentAttribute.displayName">{{:: 'user.profile.attribute.displayName' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.displayName.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-4">
+                <input name="currentAttribute.displayName" data-ng-model="currentAttribute.displayName" id="currentAttribute.displayName"
+                       type="text" class="form-control"/>
             </div>
         </div>
         <div class="form-group">

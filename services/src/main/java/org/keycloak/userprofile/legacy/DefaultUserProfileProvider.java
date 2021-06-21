@@ -62,8 +62,8 @@ public class DefaultUserProfileProvider extends AbstractUserProfileProvider<Defa
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
         UserProfileContext ctx = metadata.getContext();
         if(ctx != UserProfileContext.USER_API && ctx != UserProfileContext.REGISTRATION_USER_CREATION) {
-            metadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME)));
-            metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME)));
+            metadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_FIRST_NAME))).setAttributeDisplayName("${firstName}");
+            metadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME))).setAttributeDisplayName("${lastName}");
         }
         return metadata;
     }

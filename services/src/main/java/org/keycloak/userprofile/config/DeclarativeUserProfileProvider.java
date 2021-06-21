@@ -312,15 +312,15 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 if (atts.isEmpty()) {
                     // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
                     // doesn't require it.
-                    decoratedMetadata.addAttribute(attributeName, writeAllowed, validators).addAnnotations(annotations);
+                    decoratedMetadata.addAttribute(attributeName, writeAllowed, validators).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName());
                 } else {
                     // only add configured validators and annotations if attribute metadata exist
-                    atts.stream().forEach(c -> c.addValidator(validators).addAnnotations(annotations));
+                    atts.stream().forEach(c -> c.addValidator(validators).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName()));
                 }
             } else {
                 // always add validation for imuttable/read-only attributes
                 validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
-                decoratedMetadata.addAttribute(attributeName, validators, selector, writeAllowed, required, readAllowed).addAnnotations(annotations);
+                decoratedMetadata.addAttribute(attributeName, validators, selector, writeAllowed, required, readAllowed).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName());
             }
         }
 

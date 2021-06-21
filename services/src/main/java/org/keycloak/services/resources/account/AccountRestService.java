@@ -46,11 +46,13 @@ import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -158,9 +160,10 @@ public class AccountRestService {
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.ACCOUNT, rep.toAttributes(), auth.getUser());
+
         try {
-            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
-            UserProfile profile = profileProvider.create(UserProfileContext.ACCOUNT, rep.toAttributes(), auth.getUser());
 
             profile.update();
 
@@ -170,24 +173,28 @@ public class AccountRestService {
         } catch (ValidationException pve) {
             List<ErrorRepresentation> errors = new ArrayList<>();
             for(Error err: pve.getErrors()) {
-                errors.add(new ErrorRepresentation(err.getAttribute(), err.getMessage(), validationErrorParamsToString(err.getMessageParameters())));
+                errors.add(new ErrorRepresentation(err.getAttribute(), err.getMessage(), validationErrorParamsToString(err.getMessageParameters(), profile.getAttributes())));
             }
-            return ErrorResponse.errors(errors, pve.getStatusCode());
+            return ErrorResponse.errors(errors, pve.getStatusCode(), false);
         } catch (ReadOnlyException e) {
             return ErrorResponse.error(Messages.READ_ONLY_USER, Response.Status.BAD_REQUEST);
         }
     }
 
-    private String[] validationErrorParamsToString(Object[] messageParameters) {
+    private String[] validationErrorParamsToString(Object[] messageParameters, Attributes userProfileAttributes) {
         if(messageParameters == null)
             return null;
         String[] ret = new String[messageParameters.length];
         int i = 0;
         for(Object p: messageParameters) {
             if(p != null) {
-                //first parameter is field name, we add replacer code so it is localized in React UI
+                //first parameter is user profile attribute name, we have to take Display Name for it
                 if(i==0) {
-                    ret[i++] = "${"+p.toString()+"}";
+                    AttributeMetadata am = userProfileAttributes.getMetadata(p.toString());
+                    if(am != null)
+                        ret[i++] = am.getAttributeDisplayName();
+                    else 
+                        ret[i++] = p.toString();
                 } else {
                     ret[i++] = p.toString();
                 }

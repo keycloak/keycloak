@@ -97,6 +97,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
+
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -141,14 +142,14 @@ public class UserResource {
 
     @Context
     protected HttpHeaders headers;
-
+    
     public UserResource(RealmModel realm, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.user = user;
         this.adminEvent = adminEvent.resource(ResourceType.USER);
     }
-
+    
     /**
      * Update the user
      *
@@ -214,7 +215,7 @@ public class UserResource {
             List<ErrorRepresentation> errors = new ArrayList<>();
 
             for (ValidationException.Error error : pve.getErrors()) {
-                errors.add(new ErrorRepresentation(error.getFormattedMessage()));
+                errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
             }
 
             return ErrorResponse.errors(errors, Response.Status.BAD_REQUEST);
