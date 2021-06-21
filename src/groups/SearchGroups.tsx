@@ -21,6 +21,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { GroupPath } from "../components/group/GroupPath";
 import { useSubGroups } from "./SubGroupsContext";
 
 type SearchGroup = GroupRepresentation & {
@@ -101,6 +102,8 @@ export const SearchGroups = () => {
     return result;
   };
 
+  const Path = (group: GroupRepresentation) => <GroupPath group={group} />;
+
   return (
     <>
       <PageSection variant={PageSectionVariants.light}>
@@ -155,6 +158,7 @@ export const SearchGroups = () => {
             {
               name: "path",
               displayKey: "groups:path",
+              cellRenderer: Path,
             },
           ]}
           emptyState={

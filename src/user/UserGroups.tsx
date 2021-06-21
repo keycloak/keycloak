@@ -22,6 +22,7 @@ import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation"
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { HelpContext } from "../components/help-enabler/HelpHeader";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
+import { GroupPath } from "../components/group/GroupPath";
 
 type GroupTableData = GroupRepresentation & {
   membersLength?: number;
@@ -271,6 +272,8 @@ export const UserGroups = () => {
     });
   };
 
+  const Path = (group: GroupRepresentation) => <GroupPath group={group} />;
+
   return (
     <>
       <PageSection variant="light">
@@ -345,7 +348,7 @@ export const UserGroups = () => {
             {
               name: "path",
               displayKey: "users:path",
-              cellFormatters: [emptyFormatter()],
+              cellRenderer: Path,
               transforms: [cellWidth(45)],
             },
 
@@ -362,6 +365,8 @@ export const UserGroups = () => {
                 hasIcon={true}
                 message={t("noGroups")}
                 instructions={t("noGroupsText")}
+                primaryActionText={t("joinGroup")}
+                onPrimaryAction={toggleModal}
               />
             ) : (
               ""
