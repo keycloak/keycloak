@@ -28,13 +28,27 @@
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-description.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="applyToResourceTypeFlag">{{:: 'authz-permission-scope-apply-to-resource-type' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="applyToResourceTypeFlag" id="applyToResourceTypeFlag" onoffswitch data-ng-click="applyToResourceType()"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-permission-scope-apply-to-resource-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="applyToResourceTypeFlag">
                 <label class="col-md-2 control-label" for="resources">{{:: 'authz-resource' | translate}}</label>
-
                 <div class="col-md-6">
                     <input type="hidden" ui-select2="resourcesUiSelect" data-ng-change="selectResource()" id="resources" data-ng-model="selectedResource" data-placeholder="{{:: 'authz-any-resource' | translate}}..." />
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-resource.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="applyToResourceTypeFlag">
+                <label class="col-md-2 control-label" for="resourceType">{{:: 'authz-resource-type' | translate}} <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="resourceType" name="policy.resourceType" data-ng-model="policy.resourceType" data-ng-required="applyToResourceTypeFlag">
+                </div>
+
+                <kc-tooltip>{{:: 'authz-permission-resource-type.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="selectedResource">
                 <label class="col-md-2 control-label" for="resourceScopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
