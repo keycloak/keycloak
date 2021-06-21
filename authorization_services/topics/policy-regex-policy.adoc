@@ -1,0 +1,31 @@
+[[_policy_regex]]
+= Regex-Based Policy
+
+You can use this type of policy to define regex conditions for your permissions.
+
+To create a new regex-based policy, select *Regex* in the item list in the upper right corner of the policy listing.
+
+.Add Regex-Based Policy
+image:images/policy/create-regex.png[alt="Add Regex-Based Policy"]
+
+== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Target Claim*
++
+Specifies the name of the target claim in the token.
++
+* *Regex Pattern*
++
+Specifies the regex pattern.
++
+* *Logic*
++
+The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
