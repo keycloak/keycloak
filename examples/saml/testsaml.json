@@ -93,7 +93,7 @@
             "baseUrl": "http://localhost:8080/employee-sig/",
             "adminUrl": "http://localhost:8080/employee-sig/saml",
             "redirectUris": [
-                "http://localhost:8080/*-sig/*"
+                "http://localhost:8080/employee-sig/*"
             ],
             "attributes": {
                 "saml.server.signature": "true",
