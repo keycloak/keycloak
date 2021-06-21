@@ -70,7 +70,7 @@ describe("Realm settings", () => {
 
     realmSettingsPage.save(realmSettingsPage.emailSaveBtn);
     cy.getId(realmSettingsPage.testConnectionButton).click();
-    cy.wait(500)
+    cy.wait(1000);
     masthead.checkNotificationMessage("Error! Failed to send email.");
   });
 
