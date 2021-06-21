@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage;
+package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -46,7 +46,7 @@ import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.storage.SearchableModelField;
 import java.util.HashMap;
 import java.util.Map;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.UserConsentEntity;
@@ -56,11 +56,13 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 
 /**
@@ -90,7 +92,7 @@ public class MapFieldPredicates {
 
     static {
         put(REALM_PREDICATES, RealmModel.SearchableFields.NAME,                   MapRealmEntity::getName);
-        put(REALM_PREDICATES, RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS,  MapFieldPredicates::checkRealmsWithClientInitialAccess);
+        put(REALM_PREDICATES, RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS,  MapRealmEntity::getClientInitialAccesses);
         put(REALM_PREDICATES, RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, MapFieldPredicates::checkRealmsWithComponentType);
 
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.REALM_ID,             MapClientEntity::getRealmId);
@@ -299,10 +301,15 @@ public class MapFieldPredicates {
             throw new CriterionNotSupportedException(ClientModel.SearchableFields.ATTRIBUTE, op, "Invalid arguments, expected (String attribute_name), got: " + Arrays.toString(values));
         }
         String attrNameS = (String) attrName;
-        Function<MapClientEntity<Object>, ?> getter = ue -> ue.getAttribute(attrNameS);
-        Object[] realValue = {values[1]};
+        Object[] realValues = new Object[values.length - 1];
+        System.arraycopy(values, 1, realValues, 0, values.length - 1);
+        Predicate<Object> valueComparator = CriteriaOperator.predicateFor(op, realValues);
+        Function<MapClientEntity<Object>, ?> getter = ue -> {
+            final List<String> attrs = ue.getAttribute(attrNameS);
+            return attrs != null && attrs.stream().anyMatch(valueComparator);
+        };
 
-        return mcb.fieldCompare(op, getter, realValue);
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
     private static MapModelCriteriaBuilder<Object, MapUserEntity<Object>, UserModel> checkGrantedUserRole(MapModelCriteriaBuilder<Object, MapUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
@@ -459,14 +466,6 @@ public class MapFieldPredicates {
               .anyMatch(aue -> Objects.equals(idpAlias, aue.getIdentityProvider()) && Objects.equals(idpUserId, aue.getUserId()));
         }
 
-        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
-    }
-
-    private static MapModelCriteriaBuilder<Object, MapRealmEntity<Object>, RealmModel> checkRealmsWithClientInitialAccess(MapModelCriteriaBuilder<Object, MapRealmEntity<Object>, RealmModel> mcb, Operator op, Object[] values) {
-        if (op != Operator.EXISTS) {
-            throw new CriterionNotSupportedException(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, op);
-        }
-        Function<MapRealmEntity<Object>, ?> getter = MapRealmEntity::hasClientInitialAccess;
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 

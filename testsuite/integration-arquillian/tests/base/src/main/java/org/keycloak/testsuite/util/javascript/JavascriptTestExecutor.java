@@ -183,8 +183,8 @@ public class JavascriptTestExecutor {
         String script = "var callback = arguments[arguments.length - 1];" +
                 "   window.keycloak.init(" + arguments + ").then(function (authenticated) {" +
                 "       callback(\"Init Success (\" + (authenticated ? \"Authenticated\" : \"Not Authenticated\") + \")\");" +
-                "   }).catch(function () {" +
-                "       callback(\"Init Error\");" +
+                "   }).catch(function (error) {" +
+                "       callback(error);" +
                 "   });";
 
         Object output;

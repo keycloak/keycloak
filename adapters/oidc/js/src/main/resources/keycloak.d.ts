@@ -178,6 +178,14 @@ declare namespace Keycloak {
 		 * @default false
 		 */
 		enableLogging?: boolean
+
+		/**
+		 * Configures how long will Keycloak adapter wait for receiving messages from server in ms. This is used,
+		 * for example, when waiting for response of 3rd party cookies check.
+		 *
+		 * @default 10000
+		 */
+		messageReceiveTimeout?: number
 	}
 
 	interface KeycloakLoginOptions {

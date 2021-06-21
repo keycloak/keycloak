@@ -19,6 +19,9 @@
 
 package org.keycloak.testsuite.user.profile;
 
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
+
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -27,10 +30,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
@@ -232,5 +236,13 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
 
             }
         };
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        if (testRealm.getAttributes() == null) {
+            testRealm.setAttributes(new HashMap<>());
+        }
+        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
 }

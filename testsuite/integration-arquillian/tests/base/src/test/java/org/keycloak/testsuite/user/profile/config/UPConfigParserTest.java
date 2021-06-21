@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
@@ -51,6 +53,12 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
 	@Override
 	public void configureTestRealm(RealmRepresentation testRealm) {
+	    testRealm.setClientScopes(new ArrayList<>());
+	    testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-1-sel").build());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-1").build());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-2-sel").build());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-2").build());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("phone-3-sel").build());
 	}
 	
     @Test
@@ -104,7 +112,6 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(att.getRequired().getRoles());
         Assert.assertEquals(2, att.getRequired().getRoles().size());
         
-        // permissions
         att = config.getAttributes().get(3);
         Assert.assertTrue(att.getRequired().isAlways());
         
@@ -117,6 +124,16 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(2, att.getPermissions().getView().size());
         Assert.assertTrue(att.getPermissions().getView().contains("admin"));
         Assert.assertTrue(att.getPermissions().getView().contains("user"));
+        
+        //selector
+        att = config.getAttributes().get(4);
+        Assert.assertNotNull(att.getSelector().getScopes());
+        Assert.assertEquals(3, att.getSelector().getScopes().size());
+        Assert.assertTrue(att.getSelector().getScopes().contains("phone-3-sel"));
+        
+        //displayName
+        att = config.getAttributes().get(4);
+        Assert.assertEquals("${profile.phone}", att.getDisplayName());
     }
 
     /**
@@ -149,39 +166,51 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void validateConfiguration_OK() throws IOException {
-        List<String> errors = validate(null, loadValidConfig());
+    public void validateConfiguration_OK() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_OK);
+    }
+
+    public static void validateConfiguration_OK(KeycloakSession session) throws IOException {
+        List<String> errors = validate(session, loadValidConfig());
         Assert.assertTrue(errors.isEmpty());
     }
 
     @Test
-    public void validateConfiguration_attributeNameErrors() throws IOException {
+    public void validateConfiguration_attributeNameErrors() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeNameErrors);
+    }
+
+    public static void validateConfiguration_attributeNameErrors(KeycloakSession session) throws IOException {
         UPConfig config = loadValidConfig();
         //we run this test without KeycloakSession so validator configs are not validated here
 
         UPAttribute attConfig = config.getAttributes().get(1);
 
         attConfig.setName(null);
-        List<String> errors = validate(null, config);
+        List<String> errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
 
         attConfig.setName(" ");
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
 
         // duplicate attribute name
         attConfig.setName("firstName");
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
 
         // attribute name format error - unallowed character
         attConfig.setName("ema il");
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
     }
 
     @Test
-    public void validateConfiguration_attributePermissionsErrors() throws IOException {
+    public void validateConfiguration_attributePermissionsErrors() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributePermissionsErrors);
+    }
+
+    public static void validateConfiguration_attributePermissionsErrors(KeycloakSession session) throws IOException {
         UPConfig config = loadValidConfig();
         //we run this test without KeycloakSession so validator configs are not validated here
         
@@ -189,38 +218,41 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
         // no permissions configures at all
         attConfig.setPermissions(null);
-        List<String> errors = validate(null, config);
+        List<String> errors = validate(session, config);
         Assert.assertEquals(0, errors.size());
 
         // no permissions structure fields configured
         UPAttributePermissions permsConfig = new UPAttributePermissions();
         attConfig.setPermissions(permsConfig);
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertTrue(errors.isEmpty());
 
         // valid if both are present, even empty
-        permsConfig.setEdit(Collections.emptyList());
-        permsConfig.setView(Collections.emptyList());
+        permsConfig.setEdit(Collections.emptySet());
+        permsConfig.setView(Collections.emptySet());
         attConfig.setPermissions(permsConfig);
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(0, errors.size());
 
-        List<String> withInvRole = new ArrayList<>();
-        withInvRole.add("invalid");
+        Set<String> withInvRole = Collections.singleton("invalid");
 
         // invalid role used for view
         permsConfig.setView(withInvRole);
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
 
         // invalid role used for edit also
         permsConfig.setEdit(withInvRole);
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(2, errors.size());
     }
 
     @Test
-    public void validateConfiguration_attributeRequirementsErrors() throws IOException {
+    public void validateConfiguration_attributeRequirementsErrors() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeRequirementsErrors);
+    }
+
+    public static void validateConfiguration_attributeRequirementsErrors(KeycloakSession session) throws IOException {
         UPConfig config = loadValidConfig();
         //we run this test without KeycloakSession so validator configs are not validated here
         
@@ -228,22 +260,19 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
         // it is OK without requirements configures at all
         attConfig.setRequired(null);
-        List<String> errors = validate(null, config);
+        List<String> errors = validate(session, config);
         Assert.assertEquals(0, errors.size());
 
         // it is OK with empty config as it means ALWAYS required
         UPAttributeRequired reqConfig = new UPAttributeRequired();
         attConfig.setRequired(reqConfig);
-        errors = validate(null, config);
+        errors = validate(session, config);
         Assert.assertEquals(0, errors.size());
         Assert.assertTrue(reqConfig.isAlways());
 
-        List<String> withInvRole = new ArrayList<>();
-        withInvRole.add("invalid");
-
         // invalid role used
-        reqConfig.setRoles(withInvRole);;
-        errors = validate(null, config);
+        reqConfig.setRoles(Collections.singleton("invalid"));
+        errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
         Assert.assertFalse(reqConfig.isAlways());
 
@@ -251,7 +280,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     @Test
 	public void validateConfiguration_attributeValidationsErrors() {
-		getTestingClient().server().run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeValidationsErrors);
+		getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeValidationsErrors);
 	}
     
     private static void validateConfiguration_attributeValidationsErrors(KeycloakSession session) throws IOException {
@@ -265,8 +294,8 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         //add validation config for one attribute for testing purposes
         Map<String, Map<String, Object>> validationConfig = new HashMap<>();
         config.getAttributes().get(1).setValidations(validationConfig);
-        
-        // empty validator name 
+
+        // empty validator name
         validationConfig.put(" ",null);
         List<String> errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
@@ -279,9 +308,5 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 		validationConfig.put("length", vc );
         errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
-        
-        
     }
-
-	
 }

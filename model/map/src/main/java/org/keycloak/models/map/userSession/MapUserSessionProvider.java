@@ -162,7 +162,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("createClientSession(%s, %s, %s)%s", realm, client, userSession, getShortStackTrace());
 
-        clientSessionTx.create(entity.getId(), entity);
+        clientSessionTx.create(entity);
 
         MapUserSessionEntity<UK> userSessionEntity = getUserSessionById(userSessionStore.getKeyConvertor().fromString(userSession.getId()));
 
@@ -227,7 +227,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 throw new ModelDuplicateException("User session exists: " + entity.getId());
             }
 
-            userSessionTx.create(entity.getId(), entity);
+            userSessionTx.create(entity);
         }
 
         UserSessionModel userSession = userEntityToAdapterFunc(realm).apply(entity);
@@ -434,7 +434,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
         offlineUserSession.setLastSessionRefresh(currentTime);
         setUserSessionExpiration(offlineUserSession, userSession.getRealm());
 
-        userSessionTx.create(offlineUserSession.getId(), offlineUserSession);
+        userSessionTx.create(offlineUserSession);
 
         return userEntityToAdapterFunc(userSession.getRealm()).apply(offlineUserSession);
     }
@@ -483,7 +483,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
             userSessionEntity.get().addAuthenticatedClientSession(clientSession.getClient().getId(), clientSessionStore.getKeyConvertor().keyToString(clientSessionEntity.getId()));
         }
 
-        clientSessionTx.create(clientSessionEntity.getId(), clientSessionEntity);
+        clientSessionTx.create(clientSessionEntity);
 
         return clientEntityToAdapterFunc(clientSession.getRealm(),
                 clientSession.getClient(), offlineUserSession).apply(clientSessionEntity);
@@ -570,12 +570,12 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
                     userSessionEntity.addAuthenticatedClientSession(entry.getKey(), clientSessionStore.getKeyConvertor().keyToString(clientSession.getId()));
 
-                    clientSessionTx.create(clientSession.getId(), clientSession);
+                    clientSessionTx.create(clientSession);
                 }
 
                 return userSessionEntity;
             })
-            .forEach(use -> userSessionTx.create(use.getId(), use));
+            .forEach(use -> userSessionTx.create(use));
     }
 
     @Override

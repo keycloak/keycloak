@@ -43,7 +43,6 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -53,14 +52,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.userprofile.UserProfileSpi;
-import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
+import org.keycloak.userprofile.config.UPAttributeSelector;
 import org.keycloak.userprofile.config.UPConfig;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -78,16 +75,15 @@ import org.keycloak.validate.validators.LengthValidator;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
-@SetDefaultProvider(spi = UserProfileSpi.ID, providerId = DeclarativeUserProfileProvider.ID,
-        beforeEnableFeature = false,
-        onlyUpdateDefault = true)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileTest extends AbstractUserProfileTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.setClientScopes(Collections.singletonList(ClientScopeBuilder.create().name("customer").protocol("openid-connect").build()));
+        super.configureTestRealm(testRealm);
+        testRealm.setClientScopes(new ArrayList<>());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("customer").protocol("openid-connect").build());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("client-a").protocol("openid-connect").build());
         ClientRepresentation client = KeycloakModelUtils.createClient(testRealm, "client-a");
         client.setDefaultClientScopes(Collections.singletonList("customer"));
         KeycloakModelUtils.createClient(testRealm, "client-b");
@@ -135,7 +131,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         }
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, "address"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, "address"));
 
         attributes.put("address", "myaddress");
 
@@ -284,7 +280,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        permissions.setEdit(Collections.singletonList(ROLE_USER));
+        permissions.setEdit(Collections.singleton(ROLE_USER));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -415,7 +411,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = profile.create();
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, "address", "department"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, "address", "department"));
 
         assertNull(user.getFirstAttribute("department"));
 
@@ -709,7 +705,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        permissions.setEdit(Collections.singletonList(ROLE_USER));
+        permissions.setEdit(Collections.singleton(ROLE_USER));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -820,14 +816,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         UPAttributeRequired requirements = new UPAttributeRequired();
 
-        List<String> roles = new ArrayList<>();
-        roles.add(ROLE_USER);
-        requirements.setRoles(roles);
+        requirements.setRoles(Collections.singleton(ROLE_USER));
 
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        permissions.setEdit(Collections.singletonList(ROLE_USER));
+        permissions.setEdit(Collections.singleton(ROLE_USER));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -889,12 +883,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         UPAttributeRequired requirements = new UPAttributeRequired();
 
-        requirements.setRoles(Collections.singletonList(ROLE_ADMIN));
+        requirements.setRoles(Collections.singleton(ROLE_ADMIN));
 
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        permissions.setEdit(Collections.singletonList(UPConfigUtils.ROLE_ADMIN));
+        permissions.setEdit(Collections.singleton(UPConfigUtils.ROLE_ADMIN));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -946,7 +940,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        permissions.setEdit(Collections.singletonList(UPConfigUtils.ROLE_ADMIN));
+        permissions.setEdit(Collections.singleton(UPConfigUtils.ROLE_ADMIN));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -994,9 +988,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        List<String> roles = new ArrayList<>();
-        roles.add(UPConfigUtils.ROLE_USER);
-        permissions.setEdit(roles);
+        permissions.setEdit(Collections.singleton(UPConfigUtils.ROLE_USER));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -1039,14 +1031,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         UPAttributeRequired requirements = new UPAttributeRequired();
 
-        List<String> scopes = new ArrayList<>();
-        scopes.add("client-a");
-        requirements.setScopes(scopes);
+        requirements.setScopes(Collections.singleton("client-a"));
 
         attribute.setRequired(requirements);
 
         UPAttributePermissions permissions = new UPAttributePermissions();
-        permissions.setEdit(Collections.singletonList("user"));
+        permissions.setEdit(Collections.singleton("user"));
         attribute.setPermissions(permissions);
 
         config.addAttribute(attribute);
@@ -1112,5 +1102,41 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
         }
 
+    }
+
+    @Test
+    public void testConfigurationInvalidScope() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testConfigurationInvalidScope);
+    }
+
+    private static void testConfigurationInvalidScope(KeycloakSession session) throws IOException {
+        RealmModel realm = session.getContext().getRealm();
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        ComponentModel component = provider.getComponentModel();
+
+        assertNotNull(component);
+
+        UPConfig config = new UPConfig();
+        UPAttribute attribute = new UPAttribute();
+
+        attribute.setName(ATT_ADDRESS);
+
+        UPAttributeRequired requirements = new UPAttributeRequired();
+
+        requirements.setScopes(Collections.singleton("invalid"));
+
+        attribute.setRequired(requirements);
+
+        attribute.setSelector(new UPAttributeSelector());
+        attribute.getSelector().setScopes(Collections.singleton("invalid"));
+
+        config.addAttribute(attribute);
+
+        try {
+            provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+            Assert.fail("Expected to fail due to invalid client scope");
+        } catch (ComponentValidationException cve) {
+            //ignore
+        }
     }
 }

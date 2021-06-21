@@ -253,6 +253,8 @@ public interface RealmModel extends RoleContainerModel {
 
     CibaConfig getCibaPolicy();
 
+    ParConfig getParPolicy();
+
     /**
      * This method will return a map with all the lifespans available
      * or an empty map, but never null.

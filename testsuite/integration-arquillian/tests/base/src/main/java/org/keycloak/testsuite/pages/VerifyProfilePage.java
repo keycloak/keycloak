@@ -83,6 +83,10 @@ public class VerifyProfilePage extends AbstractPage {
             return null;
         }
     }
+    
+    public String getLabelForField(String fieldId) {
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+    }
 
     public String getFirstName() {
         return firstNameInput.getAttribute("value");

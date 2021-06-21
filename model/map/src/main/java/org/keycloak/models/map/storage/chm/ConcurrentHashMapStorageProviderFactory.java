@@ -214,7 +214,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
                     JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(List.class, valueType);
 
                     List<V> values = Serialization.MAPPER.readValue(f, type);
-                    values.forEach((V mce) -> store.create(mce.getId(), mce));
+                    values.forEach((V mce) -> store.create(mce));
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }

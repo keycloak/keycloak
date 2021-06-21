@@ -146,6 +146,80 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
     }
 
+    /**
+     * TODO: replace issue id
+     * KEYCLOAK-XXXXX
+     *
+     */
+    @Test
+    public void testFilterRegistratior() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ctx.getLdapModel().put(LDAPConstants.SYNC_REGISTRATIONS, "true");
+            ctx.getLdapModel().put(LDAPConstants.FILTER_REGISTRATIONS, "false");
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+        });
+
+        UserRepresentation newUser1 = AbstractAuthTest.createUserRepresentation("newUser1", null, null, null, true);
+        Response resp1 = testRealm().users().create(newUser1);
+        String userId1 = ApiUtil.getCreatedId(resp1);
+        resp1.close();
+
+        testRealm().users().get(userId1).toRepresentation();
+        Assert.assertFalse(StorageId.isLocalStorage(userId1));
+        Assert.assertNotNull(newUser1.getFederationLink());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ctx.getLdapModel().put(LDAPConstants.SYNC_REGISTRATIONS, "true");
+            ctx.getLdapModel().put(LDAPConstants.FILTER_REGISTRATIONS, "true");
+            ctx.getLdapModel().put(LDAPConstants.REGISTRATIONS_REGEX_FILTER, "(.*)");
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+        });
+
+        UserRepresentation newUser2 = AbstractAuthTest.createUserRepresentation("newUser2", null, null, null, true);
+        Response resp2 = testRealm().users().create(newUser2);
+        String userId2 = ApiUtil.getCreatedId(resp2);
+        resp2.close();
+
+        testRealm().users().get(userId2).toRepresentation();
+        Assert.assertFalse(StorageId.isLocalStorage(userId2));
+        Assert.assertNotNull(newUser2.getFederationLink());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ctx.getLdapModel().put(LDAPConstants.SYNC_REGISTRATIONS, "true");
+            ctx.getLdapModel().put(LDAPConstants.FILTER_REGISTRATIONS, "true");
+            ctx.getLdapModel().put(LDAPConstants.REGISTRATIONS_REGEX_FILTER, "test-(.*)");
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+        });
+
+        UserRepresentation newUser3 = AbstractAuthTest.createUserRepresentation("test-test", null, null, null, true);
+        Response resp3 = testRealm().users().create(newUser3);
+        String userId3 = ApiUtil.getCreatedId(resp3);
+        resp3.close();
+
+        testRealm().users().get(userId3).toRepresentation();
+        Assert.assertFalse(StorageId.isLocalStorage(userId3));
+        Assert.assertNotNull(newUser3.getFederationLink());
+
+        UserRepresentation newUser4 = AbstractAuthTest.createUserRepresentation("notest-test", null, null, null, true);
+        Response resp4 = testRealm().users().create(newUser4);
+        String userId4 = ApiUtil.getCreatedId(resp4);
+        resp4.close();
+
+        testRealm().users().get(userId4).toRepresentation();
+        Assert.assertTrue(StorageId.isLocalStorage(userId4));
+        Assert.assertNull(newUser4.getFederationLink());
+
+        // Revert
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.FILTER_REGISTRATIONS, "false");
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+        });
+    }
 
     @Test
     public void testRemoveImportedUsers() {

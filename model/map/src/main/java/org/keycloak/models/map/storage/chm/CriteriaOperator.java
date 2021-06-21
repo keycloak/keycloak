@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage;
+package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import java.util.Arrays;
@@ -106,14 +106,34 @@ class CriteriaOperator {
         if (value != null && value.length != 0) {
             throw new IllegalStateException("Invalid argument: " + Arrays.toString(value));
         }
-        return Objects::nonNull;
+        
+        return CriteriaOperator::collectionAwareExists;
+    }
+    
+    private static boolean collectionAwareExists(Object checkedObject) {
+        if (checkedObject instanceof Collection) {
+            return !((Collection<?>) checkedObject).isEmpty();
+        }
+
+        return Objects.nonNull(checkedObject);
     }
 
     public static Predicate<Object> notExists(Object[] value) {
         if (value != null && value.length != 0) {
             throw new IllegalStateException("Invalid argument: " + Arrays.toString(value));
         }
-        return Objects::isNull;
+
+        return CriteriaOperator::collectionAwareNotExists;
+    }
+    
+    private static boolean collectionAwareNotExists(Object checkedObject) {
+        if (Objects.isNull(checkedObject)) return true;
+
+        if (checkedObject instanceof Collection) {
+            return ((Collection<?>) checkedObject).isEmpty();
+        }
+
+        return false;
     }
 
     public static Predicate<Object> in(Object[] value) {

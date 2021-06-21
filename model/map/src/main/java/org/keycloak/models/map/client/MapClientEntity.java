@@ -19,9 +19,11 @@ package org.keycloak.models.map.client;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -49,7 +51,7 @@ public class MapClientEntity<K> implements AbstractEntity<K> {
     private String secret;
     private String registrationToken;
     private String protocol;
-    private Map<String, String> attributes = new HashMap<>();
+    private Map<String, List<String>> attributes = new HashMap<>();
     private Map<String, String> authFlowBindings = new HashMap<>();
     private boolean publicClient;
     private boolean fullScopeAllowed;
@@ -190,13 +192,12 @@ public class MapClientEntity<K> implements AbstractEntity<K> {
         this.protocol = protocol;
     }
 
-    public Map<String, String> getAttributes() {
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
-        this.updated |= ! Objects.equals(this.attributes, attributes);
-        this.attributes = attributes;
+    public void setAttribute(String name, List<String> values) {
+        this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
     }
 
     public Map<String, String> getAuthFlowBindings() {
@@ -411,17 +412,12 @@ public class MapClientEntity<K> implements AbstractEntity<K> {
         updated |= this.redirectUris.remove(redirectUri);
     }
 
-    public void setAttribute(String name, String value) {
-        this.updated = true;
-        this.attributes.put(name, value);
-    }
-
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
     }
 
-    public String getAttribute(String name) {
-        return this.attributes.get(name);
+    public List<String> getAttribute(String name) {
+        return attributes.getOrDefault(name, Collections.EMPTY_LIST);
     }
 
     public String getAuthenticationFlowBindingOverride(String binding) {

@@ -16,29 +16,53 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Vlastimil Elias <velias@redhat.com>
  */
-public class RegisterBean {
+public class RegisterBean extends AbstractUserProfileBean {
 
-    private Map<String, String> formData;
+    private Map<String, String> formDataLegacy = new HashMap<>();
 
-    public RegisterBean(MultivaluedMap<String, String> formData) {
-        this.formData = new HashMap<>();
-
+    public RegisterBean(MultivaluedMap<String, String> formData, KeycloakSession session) {
+        
+        super(formData);
+        init(session, true);
+        
         if (formData != null) {
             for (String k : formData.keySet()) {
-                this.formData.put(k, formData.getFirst(k));
+                this.formDataLegacy.put(k, formData.getFirst(k));
             }
         }
     }
 
+    @Override
+    protected UserProfile createUserProfile(UserProfileProvider provider) {
+        return provider.create(UserProfileContext.REGISTRATION_PROFILE, null, null);
+    }
+
+    @Override
+    protected String getAttributeDefaultValue(String name) {
+        return null;
+    }
+    
+    @Override 
+    public String getContext() {
+        return UserProfileContext.REGISTRATION_PROFILE.name();
+    }
+    
     public Map<String, String> getFormData() {
-        return formData;
+        return formDataLegacy;
     }
 
 }

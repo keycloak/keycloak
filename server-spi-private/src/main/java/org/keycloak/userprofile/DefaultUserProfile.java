@@ -58,7 +58,7 @@ public final class DefaultUserProfile implements UserProfile {
 
     @Override
     public void validate() {
-        ValidationException validationException = new ValidationException(session, user);
+        ValidationException validationException = new ValidationException();
 
         for (String attributeName : attributes.nameSet()) {
             this.attributes.validate(attributeName, validationException);

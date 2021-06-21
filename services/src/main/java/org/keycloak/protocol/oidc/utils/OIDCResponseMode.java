@@ -22,14 +22,40 @@ package org.keycloak.protocol.oidc.utils;
  */
 public enum OIDCResponseMode {
 
-    QUERY, FRAGMENT, FORM_POST;
+    QUERY("query"),
+    FRAGMENT("fragment"),
+    FORM_POST("form_post"),
+    QUERY_JWT("query.jwt"),
+    FRAGMENT_JWT("fragment.jwt"),
+    FORM_POST_JWT("form_post.jwt");
+
+    private String value;
+
+    OIDCResponseMode(String v) {
+        value = v;
+    }
 
     public static OIDCResponseMode parse(String responseMode, OIDCResponseType responseType) {
         if (responseMode == null) {
             return getDefaultResponseMode(responseType);
+        } else if(responseMode.equals("jwt")) {
+            return getDefaultJarmResponseMode(responseType);
         } else {
-            return Enum.valueOf(OIDCResponseMode.class, responseMode.toUpperCase());
+            return fromValue(responseMode);
         }
+    }
+
+    public String value() {
+        return value;
+    }
+
+    private static OIDCResponseMode fromValue(String v) {
+        for (OIDCResponseMode c : OIDCResponseMode.values()) {
+            if (c.value.equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
     }
 
     private static OIDCResponseMode getDefaultResponseMode(OIDCResponseType responseType) {
@@ -37,6 +63,14 @@ public enum OIDCResponseMode {
             return OIDCResponseMode.FRAGMENT;
         } else {
             return OIDCResponseMode.QUERY;
+        }
+    }
+
+    private static OIDCResponseMode getDefaultJarmResponseMode(OIDCResponseType responseType) {
+        if (responseType.isImplicitOrHybridFlow()) {
+            return OIDCResponseMode.FRAGMENT_JWT;
+        } else {
+            return OIDCResponseMode.QUERY_JWT;
         }
     }
 }

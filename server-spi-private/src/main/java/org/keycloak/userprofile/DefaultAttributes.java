@@ -168,6 +168,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public Map<String, List<String>> getReadable() {
+        if(user == null)
+            return null;
+        
         Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
 
         if (attributes.isEmpty()) {
@@ -272,11 +275,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             List<String> values = EMPTY_VALUE;
             AttributeMetadata metadata = metadataByAttribute.get(attributeName);
 
-            // if the attribute is not provided and does not have view permission, use the current values
-            // this check makes possible to decide whether or not validation should happen for read-only attributes
-            // when the context does not have access to such attributes
-            if (user != null && !metadata.canView(createAttributeContext(metadata))) {
-                values = user.getAttributes().get(attributeName);
+            if (user != null && isIncludeAttributeIfNotProvided(metadata)) {
+                values = user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE);
             }
 
             newAttributes.put(attributeName, values);
@@ -297,6 +297,11 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return newAttributes;
+    }
+
+    protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
+        // user api expects that attributes are not updated if not provided when in legacy mode
+        return UserProfileContext.USER_API.equals(context);
     }
 
     /**

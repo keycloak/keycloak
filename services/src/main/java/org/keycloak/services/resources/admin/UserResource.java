@@ -97,11 +97,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
+
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -141,14 +143,14 @@ public class UserResource {
 
     @Context
     protected HttpHeaders headers;
-
+    
     public UserResource(RealmModel realm, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.user = user;
         this.adminEvent = adminEvent.resource(ResourceType.USER);
     }
-
+    
     /**
      * Update the user
      *
@@ -214,7 +216,7 @@ public class UserResource {
             List<ErrorRepresentation> errors = new ArrayList<>();
 
             for (ValidationException.Error error : pve.getErrors()) {
-                errors.add(new ErrorRepresentation(error.getFormattedMessage()));
+                errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
             }
 
             return ErrorResponse.errors(errors, Response.Status.BAD_REQUEST);
@@ -285,10 +287,15 @@ public class UserResource {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(USER_API, user);
 
-        Map<String, List<String>> attributes = profile.getAttributes().getReadable(false);
+        if (rep.getAttributes() != null) {
+            Map<String, List<String>> allowedAttributes = profile.getAttributes().getReadable(false);
+            Iterator<String> iterator = rep.getAttributes().keySet().iterator();
 
-        if (!attributes.isEmpty()) {
-            rep.setAttributes(attributes);
+            while (iterator.hasNext()) {
+                if (!allowedAttributes.containsKey(iterator.next())) {
+                    iterator.remove();
+                }
+            }
         }
 
         return rep;

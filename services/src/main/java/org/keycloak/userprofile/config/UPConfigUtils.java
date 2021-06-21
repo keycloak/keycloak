@@ -20,14 +20,19 @@ import static org.keycloak.common.util.ObjectUtil.isBlank;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationResult;
@@ -42,6 +47,7 @@ import org.keycloak.validate.Validators;
  */
 public class UPConfigUtils {
 
+    private static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
     public static final String ROLE_USER = "user";
     public static final String ROLE_ADMIN = "admin";
 
@@ -127,6 +133,25 @@ public class UPConfigUtils {
         }
         if (attributeConfig.getRequired() != null) {
             validateRoles(attributeConfig.getRequired().getRoles(), "required.roles", errors, attributeName);
+            validateScopes(attributeConfig.getRequired().getScopes(), "required.scopes", attributeName, errors, session);
+        }
+        if (attributeConfig.getSelector() != null) {
+            validateScopes(attributeConfig.getSelector().getScopes(), "selector.scopes", attributeName, errors, session);
+        }
+    }
+
+    private static void validateScopes(Set<String> scopes, String propertyName, String attributeName, List<String> errors, KeycloakSession session) {
+        if (scopes == null) {
+            return;
+        }
+
+        for (String scope : scopes) {
+            RealmModel realm = session.getContext().getRealm();
+            Stream<ClientScopeModel> realmScopes = realm.getClientScopesStream();
+
+            if (!realmScopes.anyMatch(cs -> cs.getName().equals(scope))) {
+                errors.add(new StringBuilder("'").append(propertyName).append("' configuration for attribute '").append(attributeName).append("' contains unsupported scope '").append(scope).append("'").toString());
+            }
         }
     }
 
@@ -146,7 +171,7 @@ public class UPConfigUtils {
      * @param errors to ass error message into
      * @param attributeName we are validating for use in erorr messages
      */
-    private static void validateRoles(List<String> roles, String fieldName, List<String> errors, String attributeName) {
+    private static void validateRoles(Set<String> roles, String fieldName, List<String> errors, String attributeName) {
         if (roles != null) {
             for (String role : roles) {
                 if (!PSEUDOROLES.contains(role)) {
@@ -223,7 +248,7 @@ public class UPConfigUtils {
      * @param roles to be inspected
      * @return true if roles list contains role representing checked context
      */
-    public static boolean isRoleForContext(UserProfileContext context, List<String> roles) {
+    public static boolean isRoleForContext(UserProfileContext context, Set<String> roles) {
         if (roles == null)
             return false;
         if (context == UserProfileContext.USER_API)
@@ -238,4 +263,11 @@ public class UPConfigUtils {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
+    public static String readDefaultConfig() {
+        try (InputStream is = UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
+            return StreamUtil.readString(is, Charset.defaultCharset());
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to load default user profile config file", cause);
+        }
+    }
 }

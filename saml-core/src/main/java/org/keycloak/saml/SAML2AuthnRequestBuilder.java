@@ -75,6 +75,11 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
+    public SAML2AuthnRequestBuilder attributeConsumingServiceIndex(Integer attributeConsumingServiceIndex) {
+        this.authnRequestType.setAttributeConsumingServiceIndex(attributeConsumingServiceIndex);
+        return this;
+    }
+
     public SAML2AuthnRequestBuilder forceAuthn(boolean forceAuthn) {
         this.authnRequestType.setForceAuthn(forceAuthn);
         return this;
@@ -85,8 +90,8 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
-    public SAML2AuthnRequestBuilder nameIdPolicy(SAML2NameIDPolicyBuilder nameIDPolicy) {
-        this.authnRequestType.setNameIDPolicy(nameIDPolicy.build());
+    public SAML2AuthnRequestBuilder nameIdPolicy(SAML2NameIDPolicyBuilder nameIDPolicyBuilder) {
+        this.authnRequestType.setNameIDPolicy(nameIDPolicyBuilder.build());
         return this;
     }
 

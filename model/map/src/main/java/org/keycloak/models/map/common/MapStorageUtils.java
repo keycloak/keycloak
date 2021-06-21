@@ -37,7 +37,7 @@ public class MapStorageUtils {
      */
     public static <K, V extends AbstractEntity<K>> V registerEntityForChanges(MapKeycloakTransaction<K, V, ?> tx, V origEntity) {
         final V res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, AbstractEntity<K>::isUpdated);
+        tx.updateIfChanged(res, AbstractEntity<K>::isUpdated);
         return res;
     }
 }

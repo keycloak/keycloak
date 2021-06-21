@@ -25,6 +25,8 @@ public interface SignatureProvider extends Provider {
 
     SignatureVerifierContext verifier(String kid) throws VerificationException;
 
+    boolean isAsymmetricAlgorithm();
+
     @Override
     default void close() {
     }

@@ -178,8 +178,15 @@ public class MapGroupProvider<K> implements GroupProvider {
           (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%")
         );
 
+        final Stream<String> groups = paginatedStream(groupModelStream.map(GroupModel::getId), firstResult, maxResults);
 
-        return paginatedStream(groupModelStream, firstResult, maxResults);
+        return groups.map(id -> {
+            GroupModel groupById = session.groups().getGroupById(realm,id);
+            while (Objects.nonNull(groupById.getParentId())) {
+                groupById = session.groups().getGroupById(realm, groupById.getParentId());
+            }
+            return groupById;
+        }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
     }
 
     @Override
@@ -204,7 +211,7 @@ public class MapGroupProvider<K> implements GroupProvider {
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Group exists: " + entityId);
         }
-        tx.create(entity.getId(), entity);
+        tx.create(entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }

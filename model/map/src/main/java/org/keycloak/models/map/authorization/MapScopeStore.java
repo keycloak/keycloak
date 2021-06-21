@@ -94,7 +94,7 @@ public class MapScopeStore<K> implements ScopeStore {
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
 
-        tx.create(uid, entity);
+        tx.create(entity);
 
         return entityToAdapter(entity);
     }

@@ -390,6 +390,80 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testAuthorizationResponseSigningAlg() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+            OIDCClientRepresentation clientRep = createRep();
+            clientRep.setAuthorizationSignedResponseAlg(Algorithm.PS256.toString());
+
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals(Algorithm.PS256.toString(), response.getAuthorizationSignedResponseAlg());
+
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(Algorithm.PS256.toString(), config.getAuthorizationSignedResponseAlg());
+
+            reg.auth(Auth.token(response));
+            response.setAuthorizationSignedResponseAlg(null);
+            updated = reg.oidc().update(response);
+            Assert.assertEquals(null, response.getAuthorizationSignedResponseAlg());
+
+            kcClient = getClient(updated.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(null, config.getAuthorizationSignedResponseAlg());
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setAuthorizationSignedResponseAlg(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
+    public void testAuthorizationEncryptedResponse() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+            OIDCClientRepresentation clientRep = createRep();
+            clientRep.setAuthorizationEncryptedResponseAlg(JWEConstants.RSA1_5);
+            clientRep.setAuthorizationEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+
+            // create
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals(JWEConstants.RSA1_5, response.getAuthorizationEncryptedResponseAlg());
+            Assert.assertEquals(JWEConstants.A128CBC_HS256, response.getAuthorizationEncryptedResponseEnc());
+
+            // Test Keycloak representation
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(JWEConstants.RSA1_5, config.getAuthorizationEncryptedResponseAlg());
+            Assert.assertEquals(JWEConstants.A128CBC_HS256, config.getAuthorizationEncryptedResponseEnc());
+
+            // update
+            reg.auth(Auth.token(response));
+            response.setAuthorizationEncryptedResponseAlg(null);
+            response.setAuthorizationEncryptedResponseEnc(null);
+            updated = reg.oidc().update(response);
+            Assert.assertNull(updated.getAuthorizationEncryptedResponseAlg());
+            Assert.assertNull(updated.getAuthorizationEncryptedResponseEnc());
+
+            // Test Keycloak representation
+            kcClient = getClient(updated.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertNull(config.getAuthorizationEncryptedResponseAlg());
+            Assert.assertNull(config.getAuthorizationEncryptedResponseEnc());
+
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setAuthorizationEncryptedResponseAlg(null);
+            updated.setAuthorizationEncryptedResponseEnc(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
     public void testCIBASettings() throws Exception {
         OIDCClientRepresentation clientRep = null;
         OIDCClientRepresentation response = null;

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 
@@ -175,17 +174,20 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     @Override
-    public void update(K key, V value) {
-        addTask(key, new UpdateOperation(key, value));
+    public void update(V value) {
+        K key = value.getId();
+        addTask(key, new UpdateOperation(value));
     }
 
     @Override
-    public void create(K key, V value) {
-        addTask(key, new CreateOperation(key, value));
+    public void create(V value) {
+        K key = value.getId();
+        addTask(key, new CreateOperation(value));
     }
 
     @Override
-    public void updateIfChanged(K key, V value, Predicate<V> shouldPut) {
+    public void updateIfChanged(V value, Predicate<V> shouldPut) {
+        K key = value.getId();
         log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
 
         K taskKey = key;
@@ -193,7 +195,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
             @Override
             public void execute() {
                 if (shouldPut.test(getValue())) {
-                    map.update(key, getValue());
+                    map.update(getValue());
                 }
             }
             @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
@@ -322,26 +324,20 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     private class CreateOperation extends MapTaskWithValue {
-        private final K key;
-
-        public CreateOperation(K key, V value) {
+        public CreateOperation(V value) {
             super(value);
-            this.key = key;
         }
 
-        @Override public void execute() { map.create(key, getValue()); }
+        @Override public void execute() { map.create(getValue()); }
         @Override public MapOperation getOperation() { return MapOperation.CREATE; }
     }
 
     private class UpdateOperation extends MapTaskWithValue {
-        private final K key;
-
-        public UpdateOperation(K key, V value) {
+        public UpdateOperation(V value) {
             super(value);
-            this.key = key;
         }
 
-        @Override public void execute() { map.update(key, getValue()); }
+        @Override public void execute() { map.update(getValue()); }
         @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
     }
 

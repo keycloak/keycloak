@@ -18,9 +18,7 @@ package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapFieldPredicates;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
@@ -29,7 +27,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.StringKeyConvertor;
 import java.util.Iterator;
 import java.util.Objects;
@@ -53,7 +51,8 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public V create(K key, V value) {
+    public V create(V value) {
+        K key = value.getId();
         return store.putIfAbsent(key, value);
     }
 
@@ -64,7 +63,8 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public V update(K key, V value) {
+    public V update(V value) {
+        K key = value.getId();
         return store.replace(key, value);
     }
 

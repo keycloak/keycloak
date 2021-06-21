@@ -127,7 +127,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         entity.setOwner(owner);
         entity.setResourceServerId(resourceServer.getId());
 
-        tx.create(entity.getId(), entity);
+        tx.create(entity);
 
         return entityToAdapter(entity);
     }

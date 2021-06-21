@@ -39,13 +39,14 @@ import java.util.stream.Stream;
 public interface MapStorage<K, V extends AbstractEntity<K>, M> {
 
     /**
-     * Creates an object in the store identified by given {@code key}.
-     * @param key Key of the object as seen in the logical level
-     * @param value Entity
-     * @return Reference to the entity created in the store
+     * Creates an object in the store identified. The ID of the {@code value} should be non-{@code null}.
+     * If the ID is {@code null}, then the {@code value}'s ID will be returned
+     * @param value Entity to create in the store
      * @throws NullPointerException if object or its {@code key} is {@code null}
+     * @see AbstractEntity#getId()
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
      */
-    V create(K key, V value);
+    V create(V value);
 
     /**
      * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
@@ -82,12 +83,13 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
     long getCount(ModelCriteriaBuilder<M> criteria);
 
     /**
-     * Updates the object with the given {@code id} in the storage if it already exists.
+     * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
      * @param key Primary key of the object to update
      * @param value Updated value
-     * @throws NullPointerException if object or its {@code id} is {@code null}
+     * @throws NullPointerException if the object or its {@code id} is {@code null}
+     * @see AbstractEntity#getId()
      */
-    V update(K key, V value);
+    V update(V value);
 
     /**
      * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.

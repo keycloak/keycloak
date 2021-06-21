@@ -46,6 +46,10 @@ public class ErrorRepresentation {
         return field;
     }
 
+    public void setField(String field) {
+        this.field = field;
+    }
+
     public String getErrorMessage() {
         return errorMessage;
     }

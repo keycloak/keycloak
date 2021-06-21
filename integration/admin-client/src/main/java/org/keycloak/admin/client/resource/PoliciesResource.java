@@ -106,4 +106,7 @@ public interface PoliciesResource {
 
     @Path("client-scope")
     ClientScopePoliciesResource clientScope();
+    
+    @Path("regex")
+    RegexPoliciesResource regex();
 }
