@@ -52,6 +52,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,6 +119,26 @@ public class RoleMapperResource {
     public MappingsRepresentation getRoleMappings() {
         viewPermission.require();
 
+        return getMappingsRepresentation(roleMapping ->
+                Collections.singletonList(ModelToRepresentation.toBriefRepresentation(roleMapping)));
+    }
+
+    /**
+     * Get role mappings with composites
+     *
+     * @return
+     */
+    @Path("overview")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public MappingsRepresentation getOverview() {
+        viewPermission.require();
+
+        return getMappingsRepresentation(ModelToRepresentation::toBriefCompositeRepresentation);
+    }
+
+    private MappingsRepresentation getMappingsRepresentation(Function<RoleModel, List<? extends RoleRepresentation>> convertor) {
         List<RoleRepresentation> realmRolesRepresentation = new ArrayList<>();
         Map<String, ClientMappingsRepresentation> appMappings = new HashMap<>();
 
@@ -126,7 +147,7 @@ public class RoleMapperResource {
         roleMapper.getRoleMappingsStream().forEach(roleMapping -> {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
-                realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
+                realmRolesRepresentation.addAll(convertor.apply(roleMapping));
             } else if (container instanceof ClientModel) {
                 ClientModel clientModel = (ClientModel) container;
                 mappings.set(appMappings.get(clientModel.getClientId()));
@@ -137,7 +158,7 @@ public class RoleMapperResource {
                     mappings.get().setMappings(new ArrayList<>());
                     appMappings.put(clientModel.getClientId(), mappings.get());
                 }
-                mappings.get().getMappings().add(ModelToRepresentation.toBriefRepresentation(roleMapping));
+                mappings.get().getMappings().addAll(convertor.apply(roleMapping));
             }
         });
 

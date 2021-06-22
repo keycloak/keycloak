@@ -73,7 +73,7 @@ public abstract class AbstractIdentityProviderMapperTest extends AbstractBaseBro
         assertThat("Username has to match", user.getUsername(), equalTo(userName));
         assertThat("Email has to match", user.getEmail(), equalTo(email));
 
-        MappingsRepresentation roles = consumerUsers.get(user.getId()).roles().getAll();
+        MappingsRepresentation<RoleRepresentation> roles = consumerUsers.get(user.getId()).roles().getAll();
 
         List<String> realmRoles = roles.getRealmMappings().stream()
                 .map(RoleRepresentation::getName)

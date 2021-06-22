@@ -296,6 +296,15 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static List<CompositeRoleRepresentation> toBriefCompositeRepresentation(RoleModel role) {
+        List<CompositeRoleRepresentation> result = new ArrayList<>();
+        role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation).map(CompositeRoleRepresentation::new).forEach(composite -> {
+            composite.setParent(toBriefRepresentation(role));
+            result.add(composite);
+        });
+        return result;
+    }
+
     public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
@@ -846,7 +855,7 @@ public class ModelToRepresentation {
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
         return toRepresentation(policy, authorization, genericRepresentation, export, false);
     }
-    
+
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export, boolean allFields) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
@@ -871,7 +880,7 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        
+
         if (allFields) {
             representation.setResourcesData(policy.getResources().stream().map(
                     resource -> toRepresentation(resource, resource.getResourceServer(), authorization, true)).collect(Collectors.toSet()));
