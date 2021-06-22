@@ -41,16 +41,18 @@
     <packaging>pom</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-galleon-pack</artifactId>
-            <type>pom</type>
-            <scope>provided</scope>
+         <dependency>
+             <groupId>${ee.maven.groupId}</groupId>
+             <artifactId>wildfly-ee-galleon-pack</artifactId>
+             <version>${ee.maven.version}</version>
+             <type>pom</type>
+             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-galleon-pack</artifactId>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-galleon-pack</artifactId>
             <type>zip</type>
+            <version>${ee.maven.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -114,11 +116,11 @@
                                         <name>bin.appclient</name>
                                     </excluded-packages>
                                 </feature-pack>
-                                <feature-pack>
+                                <!-- feature-pack>
                                     <transitive>true</transitive>
-                                    <groupId>org.wildfly</groupId>
+                                    <groupId>${ee.maven.groupId}</groupId>
                                     <artifactId>wildfly-galleon-pack</artifactId>
-                                    <version>${wildfly.version}</version>
+                                    <version>${ee.maven.version}</version>
                                     <included-packages>
                                         <name>bin</name>
                                         <name>bin.domain</name>
@@ -129,7 +131,7 @@
                                         <name>appclient</name>
                                         <name>bin.appclient</name>
                                     </excluded-packages>
-                                </feature-pack>
+                                </feature-pack -->
                                 <feature-pack>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-server-galleon-pack</artifactId>
@@ -207,6 +209,12 @@
                                         <exclude>index.html</exclude>
                                     </excludes>
                                 </fileset>
+                                <fileset>
+                                    <directory>${basedir}/target/${project.build.finalName}/modules/system/layers/keycloak/org/jboss/as/product</directory>
+                                    <excludes>
+                                        <exclude>${product.slot}/**/*</exclude>
+                                    </excludes>
+                                </fileset>
                             </filesets>
                         </configuration>
                     </execution>
@@ -265,4 +273,64 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <type>pom</type>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <type>zip</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${ee.maven.groupId}</groupId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <type>pom</type>
+                    <version>${ee.maven.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>${ee.maven.groupId}</groupId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <type>zip</type>
+                    <version>${ee.maven.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
 </project>
