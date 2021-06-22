@@ -73,6 +73,12 @@ describe("Realm settings", () => {
     realmSettingsPage.fillHostField("localhost");
     cy.getId(realmSettingsPage.testConnectionButton).click();
 
+    realmSettingsPage.fillEmailField(
+      "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"
+    );
+
+    cy.getId(realmSettingsPage.modalTestConnectionButton).click();
+
     masthead.checkNotificationMessage("Error! Failed to send email.");
   });
 
