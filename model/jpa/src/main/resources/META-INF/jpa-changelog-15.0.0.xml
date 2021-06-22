@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2020 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!-- change datatype of field REALM_LOCALIZATIONS.TEXTS to NCLOB (instead of CLOB) -->
+    <changeSet author="keycloak" id="15.0.0-KEYCLOAK-18467">
+        <addColumn tableName="REALM_LOCALIZATIONS">
+            <column name="TEXTS_NEW" type="NCLOB">
+                <!-- not-null constraint has to be added at the end, when data has been copied -->
+                <!--<constraints nullable="false"/>-->
+            </column>
+        </addColumn>
+        <update tableName="REALM_LOCALIZATIONS">
+            <column name="TEXTS_NEW" valueComputed="TEXTS"/>
+        </update>
+        <dropColumn tableName="REALM_LOCALIZATIONS" columnName="TEXTS"/>
+        <renameColumn tableName="REALM_LOCALIZATIONS" oldColumnName="TEXTS_NEW" newColumnName="TEXTS" columnDataType="NCLOB"/>
+        <addNotNullConstraint tableName="REALM_LOCALIZATIONS" columnName="TEXTS" columnDataType="NCLOB" />
+    </changeSet>
+
+</databaseChangeLog>
