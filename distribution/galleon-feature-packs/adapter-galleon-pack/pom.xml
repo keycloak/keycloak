@@ -281,7 +281,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.eap</groupId>
-                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
                     <version>${eap.version}</version>
                     <type>zip</type>
                     <scope>provided</scope>
