@@ -6,6 +6,7 @@ import {
   AlertVariant,
   Button,
   Checkbox,
+  formatBreakpointMods,
   FormGroup,
   PageSection,
   Switch,
@@ -51,12 +52,15 @@ export const RealmSettingsEmailTab = ({
     control,
     handleSubmit,
     errors,
+    watch,
     setValue,
     reset: resetForm,
     getValues,
   } = useForm<RealmRepresentation>();
 
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
+  const watchFromValue = watch("smtpServer.from", "");
+  const watchHostValue = watch("smtpServer.host", "");
 
   useEffect(() => {
     reset();
@@ -402,6 +406,9 @@ export const RealmSettingsEmailTab = ({
                 variant="secondary"
                 onClick={() => saveAndTestEmail()}
                 data-testid="test-connection-button"
+                isDisabled={
+                  !(emailRegexPattern.test(watchFromValue) && watchHostValue)
+                }
               >
                 {t("realm-settings:testConnection")}
               </Button>
