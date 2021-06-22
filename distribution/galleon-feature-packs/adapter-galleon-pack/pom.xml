@@ -23,8 +23,8 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>${galleon-adapter-group-id}</groupId>
+    
+    <groupId>org.keycloak</groupId>
     <artifactId>keycloak-adapter-galleon-pack</artifactId>
 
     <name>Keycloak Galleon Feature Pack: Adapter</name>
