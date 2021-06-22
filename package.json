@@ -61,7 +61,7 @@
     "@storybook/preset-typescript": "^3.0.0",
     "@storybook/react": "^6.2.9",
     "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^10.4.6",
+    "@testing-library/react": "^11.2.7",
     "@types/dot": "^1.1.4",
     "@types/enzyme": "^3.10.8",
     "@types/enzyme-adapter-react-16": "^1.0.6",
