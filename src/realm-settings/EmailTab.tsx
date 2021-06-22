@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -42,7 +42,6 @@ export const RealmSettingsEmailTab = ({
   const { addAlert } = useAlerts();
   const { whoAmI } = useContext(WhoAmIContext);
 
-  const [isAuthenticationEnabled, setAuthenticationEnabled] = useState("true");
   const [realm, setRealm] = useState(initialRealm);
   const [userEmailModalOpen, setUserEmailModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserRepresentation>();
@@ -60,6 +59,12 @@ export const RealmSettingsEmailTab = ({
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
   const watchFromValue = watch("smtpServer.from", "");
   const watchHostValue = watch("smtpServer.host", "");
+
+  const authenticationEnabled = useWatch({
+    control,
+    name: "smtpServer.authentication",
+    defaultValue: realm?.smtpServer!.authentication,
+  });
 
   useEffect(() => {
     reset();
@@ -329,7 +334,7 @@ export const RealmSettingsEmailTab = ({
               <Controller
                 name="smtpServer.authentication"
                 control={control}
-                defaultValue="true"
+                defaultValue={authenticationEnabled}
                 render={({ onChange, value }) => (
                   <Switch
                     id="kc-authentication"
@@ -339,13 +344,12 @@ export const RealmSettingsEmailTab = ({
                     isChecked={value === "true"}
                     onChange={(value) => {
                       onChange("" + value);
-                      setAuthenticationEnabled(String(value));
                     }}
                   />
                 )}
               />
             </FormGroup>
-            {isAuthenticationEnabled === "true" && (
+            {authenticationEnabled === "true" && (
               <>
                 <FormGroup
                   label={t("username")}
