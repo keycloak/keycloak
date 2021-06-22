@@ -67,6 +67,11 @@ export default class RealmSettingsPage {
     return this;
   }
 
+  fillEmailField(email: string) {
+    cy.getId(this.emailAddressInput).type(email);
+    return this;
+  }
+
   setDefaultLocale(locale: string) {
     cy.get(this.selectDefaultLocale).click();
     cy.get(this.defaultLocaleList).contains(locale).click();

@@ -70,7 +70,13 @@ describe("Realm settings", () => {
 
     realmSettingsPage.save(realmSettingsPage.emailSaveBtn);
     cy.getId(realmSettingsPage.testConnectionButton).click();
-    cy.wait(5000);
+
+    realmSettingsPage.fillEmailField(
+      "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"
+    );
+
+    cy.getId(realmSettingsPage.modalTestConnectionButton).click();
+
     masthead.checkNotificationMessage("Error! Failed to send email.");
   });
 
