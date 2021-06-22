@@ -220,6 +220,16 @@ export const RoleMapping = ({
             </ToolbarItem>
           </>
         }
+        actions={[
+          {
+            title: t("unAssignRole"),
+            onRowClick: async (role) => {
+              setSelected([role]);
+              toggleDeleteDialog();
+              return false;
+            },
+          },
+        ]}
         columns={[
           {
             name: "role.name",
