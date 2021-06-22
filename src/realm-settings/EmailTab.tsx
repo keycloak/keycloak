@@ -6,7 +6,6 @@ import {
   AlertVariant,
   Button,
   Checkbox,
-  formatBreakpointMods,
   FormGroup,
   PageSection,
   Switch,
