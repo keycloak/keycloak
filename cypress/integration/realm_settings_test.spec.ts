@@ -69,6 +69,17 @@ describe("Realm settings", () => {
     realmSettingsPage.toggleCheck(realmSettingsPage.enableStartTlsCheck);
 
     realmSettingsPage.save(realmSettingsPage.emailSaveBtn);
+
+    realmSettingsPage.fillHostField("localhost");
+    cy.getId(realmSettingsPage.testConnectionButton).click();
+
+    realmSettingsPage.fillEmailField(
+      "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"
+    );
+
+    cy.getId(realmSettingsPage.modalTestConnectionButton).click();
+
+    masthead.checkNotificationMessage("Error! Failed to send email.");
   });
 
   it("Go to themes tab", () => {

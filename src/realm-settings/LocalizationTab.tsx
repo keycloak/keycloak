@@ -239,7 +239,7 @@ export const LocalizationTab = ({
           </FormAccess>
         </FormPanel>
 
-        <FormPanel className="kc-login-screen" title="Edit message bundles">
+        <FormPanel className="kc-message-bundles" title="Edit message bundles">
           <TextContent className="messageBundleDescription">
             {t("messageBundleDescription")}
           </TextContent>

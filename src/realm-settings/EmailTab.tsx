@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -20,35 +20,63 @@ import { emailRegexPattern } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { getBaseUrl } from "../util";
 
 import "./RealmSettingsSection.css";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import { WhoAmIContext } from "../context/whoami/WhoAmI";
+import { AddUserEmailModal } from "./AddUserEmailModal";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
+  user: UserRepresentation;
 };
 
 export const RealmSettingsEmailTab = ({
   realm: initialRealm,
+  user,
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
+  const { whoAmI } = useContext(WhoAmIContext);
 
-  const [isAuthenticationEnabled, setAuthenticationEnabled] = useState("true");
   const [realm, setRealm] = useState(initialRealm);
+  const [userEmailModalOpen, setUserEmailModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserRepresentation>();
   const {
     register,
     control,
     handleSubmit,
     errors,
+    watch,
     setValue,
     reset: resetForm,
+    getValues,
   } = useForm<RealmRepresentation>();
+
+  const userForm = useForm<UserRepresentation>({ mode: "onChange" });
+  const watchFromValue = watch("smtpServer.from", "");
+  const watchHostValue = watch("smtpServer.host", "");
+
+  const authenticationEnabled = useWatch({
+    control,
+    name: "smtpServer.authentication",
+    defaultValue: realm?.smtpServer!.authentication,
+  });
 
   useEffect(() => {
     reset();
   }, [realm]);
+
+  useEffect(() => {
+    setCurrentUser(user);
+  }, []);
+
+  const handleModalToggle = () => {
+    setUserEmailModalOpen(!userEmailModalOpen);
+  };
 
   const save = async (form: RealmRepresentation) => {
     try {
@@ -64,6 +92,27 @@ export const RealmSettingsEmailTab = ({
     }
   };
 
+  const saveAndTestEmail = async (email?: UserRepresentation) => {
+    if (email) {
+      await adminClient.users.update({ id: whoAmI.getUserId() }, email);
+      const updated = await adminClient.users.findOne({
+        id: whoAmI.getUserId(),
+      });
+      setCurrentUser(updated);
+
+      await save(getValues());
+      testConnection();
+    } else {
+      const user = await adminClient.users.findOne({ id: whoAmI.getUserId() });
+      if (!user.email) {
+        handleModalToggle();
+      } else {
+        await save(getValues());
+        testConnection();
+      }
+    }
+  };
+
   const reset = () => {
     if (realm) {
       resetForm(realm);
@@ -71,8 +120,40 @@ export const RealmSettingsEmailTab = ({
     }
   };
 
+  const testConnection = async () => {
+    const response = await fetch(
+      `${getBaseUrl(adminClient)}admin/realms/${
+        realm.realm
+      }/testSMTPConnection`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `bearer ${await adminClient.getAccessToken()}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(getValues()["smtpServer"] as BodyInit),
+      }
+    );
+    response.ok
+      ? addAlert(t("testConnectionSuccess"), AlertVariant.success)
+      : addAlert(t("testConnectionError"), AlertVariant.danger);
+  };
+
   return (
     <>
+      {userEmailModalOpen && (
+        <AddUserEmailModal
+          handleModalToggle={handleModalToggle}
+          testConnection={testConnection}
+          save={(email) => {
+            saveAndTestEmail(email!);
+            handleModalToggle();
+          }}
+          form={userForm}
+          user={currentUser!}
+        />
+      )}
       <PageSection variant="light">
         <FormPanel title={t("template")} className="kc-email-template">
           <FormAccess
@@ -253,7 +334,7 @@ export const RealmSettingsEmailTab = ({
               <Controller
                 name="smtpServer.authentication"
                 control={control}
-                defaultValue="true"
+                defaultValue={authenticationEnabled}
                 render={({ onChange, value }) => (
                   <Switch
                     id="kc-authentication"
@@ -263,13 +344,12 @@ export const RealmSettingsEmailTab = ({
                     isChecked={value === "true"}
                     onChange={(value) => {
                       onChange("" + value);
-                      setAuthenticationEnabled(String(value));
                     }}
                   />
                 )}
               />
             </FormGroup>
-            {isAuthenticationEnabled === "true" && (
+            {authenticationEnabled === "true" && (
               <>
                 <FormGroup
                   label={t("username")}
@@ -324,6 +404,16 @@ export const RealmSettingsEmailTab = ({
                 data-testid="email-tab-save"
               >
                 {t("common:save")}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => saveAndTestEmail()}
+                data-testid="test-connection-button"
+                isDisabled={
+                  !(emailRegexPattern.test(watchFromValue) && watchHostValue)
+                }
+              >
+                {t("realm-settings:testConnection")}
               </Button>
               <Button variant="link" onClick={reset}>
                 {t("common:revert")}

@@ -56,6 +56,8 @@ describe("Realm roles test", function () {
       // Delete
       listingPage.deleteItem(itemId);
 
+      cy.wait(500);
+
       modalUtils.checkModalTitle("Delete role?").confirmModal();
 
       masthead.checkNotificationMessage("The role has been deleted");
