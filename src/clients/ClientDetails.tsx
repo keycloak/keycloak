@@ -81,6 +81,7 @@ const ClientDetailHeader = ({
         subKey="clients:clientsExplain"
         badge={client.protocol}
         divider={false}
+        helpTextKey="clients-help:enableDisable"
         dropdownItems={[
           <DropdownItem key="download" onClick={() => toggleDownloadDialog()}>
             {t("downloadAdapterConfig")}

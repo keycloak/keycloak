@@ -1,5 +1,6 @@
 {
   "clients-help": {
+    "enableDisable": "Disabled clients cannot initiate a login or have obtained access tokens.",
     "clientType": "'OpenID connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.",
     "serviceAccount": "Allows you to authenticate this client to Keycloak and retrieve access token dedicated to this client. In terms of OAuth2 specification, this enables support of 'Client Credentials Grant' for this client.",
     "authentication": "This defines the type of the OIDC client. When it's ON, the OIDC type is set to confidential access type. When it's OFF, it is set to public access type",

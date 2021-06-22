@@ -21,6 +21,7 @@ import {
   FormattedLink,
   FormattedLinkProps,
 } from "../external-link/FormattedLink";
+import { HelpItem } from "../help-enabler/HelpItem";
 
 export type ViewHeaderProps = {
   titleKey: string;
@@ -36,6 +37,7 @@ export type ViewHeaderProps = {
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
   divider?: boolean;
+  helpTextKey?: string;
 };
 
 export const ViewHeader = ({
@@ -51,6 +53,7 @@ export const ViewHeader = ({
   isEnabled = true,
   onToggle,
   divider = true,
+  helpTextKey,
 }: ViewHeaderProps) => {
   const { t } = useTranslation();
   const { enabled } = useContext(HelpContext);
@@ -106,6 +109,13 @@ export const ViewHeader = ({
                         }
                       }}
                     />
+                    {helpTextKey && (
+                      <HelpItem
+                        helpText={t(helpTextKey)}
+                        forLabel={t("common:enabled")}
+                        forID={`${titleKey}-switch`}
+                      />
+                    )}
                   </ToolbarItem>
                 )}
                 {dropdownItems && (
