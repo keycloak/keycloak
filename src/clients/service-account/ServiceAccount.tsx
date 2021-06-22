@@ -1,99 +1,74 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertVariant } from "@patternfly/react-core";
 
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import type { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
-import { useAdminClient } from "../../context/auth/AdminClient";
-import { RealmContext } from "../../context/realm-context/RealmContext";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import {
-  CompositeRole,
+  mapRoles,
   RoleMapping,
   Row,
 } from "../../components/role-mapping/RoleMapping";
 
 type ServiceAccountProps = {
-  clientId: string;
+  client: ClientRepresentation;
 };
 
-export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
+export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const { realm } = useContext(RealmContext);
   const { addAlert } = useAlerts();
 
   const [hide, setHide] = useState(false);
-  const [serviceAccountId, setServiceAccountId] = useState("");
-  const [name, setName] = useState("");
+  const [serviceAccount, setServiceAccount] = useState<UserRepresentation>();
+
+  useFetch(
+    () =>
+      adminClient.clients.getServiceAccountUser({
+        id: client.id!,
+      }),
+    (serviceAccount) => setServiceAccount(serviceAccount),
+    []
+  );
 
   const loader = async () => {
     const serviceAccount = await adminClient.clients.getServiceAccountUser({
-      id: clientId,
+      id: client.id!,
     });
-    setServiceAccountId(serviceAccount.id!);
-    const effectiveRoles = await adminClient.users.listCompositeRealmRoleMappings(
-      { id: serviceAccount.id! }
-    );
-    const assignedRoles = await adminClient.users.listRealmRoleMappings({
-      id: serviceAccount.id!,
-    });
+    const id = serviceAccount.id!;
+
+    const assignedRoles = (
+      await adminClient.users.listRealmRoleMappings({ id })
+    ).map((role) => ({ role }));
+    const effectiveRoles = (
+      await adminClient.users.listCompositeRealmRoleMappings({ id })
+    ).map((role) => ({ role }));
 
     const clients = await adminClient.clients.find();
-    setName(clients.find((c) => c.id === clientId)?.clientId!);
     const clientRoles = (
       await Promise.all(
         clients.map(async (client) => {
-          return {
-            client,
-            roles: await adminClient.users.listClientRoleMappings({
-              id: serviceAccount.id!,
+          const clientAssignedRoles = (
+            await adminClient.users.listClientRoleMappings({
+              id,
               clientUniqueId: client.id!,
-            }),
-          };
+            })
+          ).map((role) => ({ role, client }));
+          const clientEffectiveRoles = (
+            await adminClient.users.listCompositeClientRoleMappings({
+              id,
+              clientUniqueId: client.id!,
+            })
+          ).map((role) => ({ role, client }));
+          return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
         })
       )
-    ).filter((rows) => rows.roles.length > 0);
+    ).flat();
 
-    const findClient = (role: RoleRepresentation) => {
-      const row = clientRoles.filter((row) =>
-        row.roles.find((r) => r.id === role.id)
-      )[0];
-      return row ? row.client : undefined;
-    };
-
-    const clientRolesFlat = clientRoles.map((row) => row.roles).flat();
-
-    const addInherentData = await (async () =>
-      Promise.all(
-        effectiveRoles.map(async (role) => {
-          const compositeRoles = await adminClient.roles.getCompositeRolesForRealm(
-            { realm, id: role.id! }
-          );
-          return compositeRoles.length > 0
-            ? compositeRoles.map((r) => {
-                return { ...r, parent: role };
-              })
-            : { ...role, parent: undefined };
-        })
-      ))();
-    const uniqueRolesWithParent = addInherentData
-      .flat()
-      .filter(
-        (role, index, array) =>
-          array.findIndex((r) => r.id === role.id) === index
-      );
-    return ([
-      ...(hide ? assignedRoles : uniqueRolesWithParent),
-      ...clientRolesFlat,
-    ] as CompositeRole[])
-      .sort((r1, r2) => r1.name!.localeCompare(r2.name!))
-      .map((role) => {
-        return {
-          client: findClient(role),
-          role,
-        } as Row;
-      });
+    return [...mapRoles(assignedRoles, effectiveRoles, hide), ...clientRoles];
   };
 
   const assignRoles = async (rows: Row[]) => {
@@ -103,7 +78,7 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
         .map((row) => row.role as RoleMappingPayload)
         .flat();
       adminClient.users.addRealmRoleMappings({
-        id: serviceAccountId,
+        id: serviceAccount?.id!,
         roles: realmRoles,
       });
       await Promise.all(
@@ -111,7 +86,7 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
           .filter((row) => row.client !== undefined)
           .map((row) =>
             adminClient.users.addClientRoleMappings({
-              id: serviceAccountId,
+              id: serviceAccount?.id!,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],
             })
@@ -128,13 +103,17 @@ export const ServiceAccount = ({ clientId }: ServiceAccountProps) => {
     }
   };
   return (
-    <RoleMapping
-      name={name}
-      id={serviceAccountId}
-      type={"service-account"}
-      loader={loader}
-      save={assignRoles}
-      onHideRolesToggle={() => setHide(!hide)}
-    />
+    <>
+      {serviceAccount && (
+        <RoleMapping
+          name={client.clientId!}
+          id={serviceAccount.id!}
+          type="service-account"
+          loader={loader}
+          save={assignRoles}
+          onHideRolesToggle={() => setHide(!hide)}
+        />
+      )}
+    </>
   );
 };

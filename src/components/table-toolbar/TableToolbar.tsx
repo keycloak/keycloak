@@ -1,4 +1,4 @@
-import React, { FormEvent, Fragment, ReactNode } from "react";
+import React, { FormEvent, Fragment, ReactNode, useState } from "react";
 import {
   Toolbar,
   ToolbarContent,
@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 
 type TableToolbarProps = {
   toolbarItem?: ReactNode;
+  subToolbar?: ReactNode;
   toolbarItemFooter?: ReactNode;
   children: ReactNode;
   searchTypeComponent?: ReactNode;
@@ -28,6 +29,7 @@ type TableToolbarProps = {
 
 export const TableToolbar = ({
   toolbarItem,
+  subToolbar,
   toolbarItemFooter,
   children,
   searchTypeComponent,
@@ -37,7 +39,7 @@ export const TableToolbar = ({
   inputGroupOnEnter,
 }: TableToolbarProps) => {
   const { t } = useTranslation();
-  const [searchValue, setSearchValue] = React.useState<string>("");
+  const [searchValue, setSearchValue] = useState<string>("");
 
   const onSearch = () => {
     if (searchValue !== "") {
@@ -99,6 +101,11 @@ export const TableToolbar = ({
           {toolbarItem}
         </ToolbarContent>
       </Toolbar>
+      {subToolbar && (
+        <Toolbar>
+          <ToolbarContent>{subToolbar}</ToolbarContent>
+        </Toolbar>
+      )}
       <Divider />
       {children}
       <Toolbar>{toolbarItemFooter}</Toolbar>

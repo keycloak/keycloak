@@ -19,7 +19,11 @@ import { convertFormValuesToObject } from "../../util";
 import { MapperList } from "../details/MapperList";
 import { ScopeForm } from "../details/ScopeForm";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
+import {
+  mapRoles,
+  RoleMapping,
+  Row,
+} from "../../components/role-mapping/RoleMapping";
 import type { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
 import {
   AllClientScopes,
@@ -61,41 +65,35 @@ export const ClientScopeForm = () => {
   );
 
   const loader = async () => {
-    const assignedRoles = hide
-      ? await adminClient.clientScopes.listRealmScopeMappings({ id })
-      : await adminClient.clientScopes.listCompositeRealmScopeMappings({ id });
+    const assignedRoles = (
+      await adminClient.clientScopes.listRealmScopeMappings({ id })
+    ).map((role) => ({ role }));
+    const effectiveRoles = (
+      await adminClient.clientScopes.listCompositeRealmScopeMappings({ id })
+    ).map((role) => ({ role }));
     const clients = await adminClient.clients.find();
 
     const clientRoles = (
       await Promise.all(
         clients.map(async (client) => {
-          const clientScope = hide
-            ? await adminClient.clientScopes.listClientScopeMappings({
-                id,
-                client: client.id!,
-              })
-            : await adminClient.clientScopes.listCompositeClientScopeMappings({
-                id,
-                client: client.id!,
-              });
-          return clientScope.map((scope) => {
-            return {
-              client,
-              role: scope,
-            };
-          });
+          const clientAssignedRoles = (
+            await adminClient.clientScopes.listClientScopeMappings({
+              id,
+              client: client.id!,
+            })
+          ).map((role) => ({ role, client }));
+          const clientEffectiveRoles = (
+            await adminClient.clientScopes.listCompositeClientScopeMappings({
+              id,
+              client: client.id!,
+            })
+          ).map((role) => ({ role, client }));
+          return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
         })
       )
     ).flat();
 
-    return [
-      ...assignedRoles.map((role) => {
-        return {
-          role,
-        };
-      }),
-      ...clientRoles,
-    ];
+    return [...mapRoles(assignedRoles, effectiveRoles, hide), ...clientRoles];
   };
 
   const save = async (clientScopes: ClientScopeDefaultOptionalType) => {

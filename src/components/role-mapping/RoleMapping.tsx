@@ -23,11 +23,38 @@ import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 
 export type CompositeRole = RoleRepresentation & {
   parent: RoleRepresentation;
+  isInherited?: boolean;
 };
 
 export type Row = {
   client?: ClientRepresentation;
-  role: CompositeRole | RoleRepresentation;
+  role: RoleRepresentation | CompositeRole;
+};
+
+export const mapRoles = (
+  assignedRoles: Row[],
+  effectiveRoles: Row[],
+  hide: boolean
+) => {
+  return [
+    ...(hide
+      ? assignedRoles.map((row) => ({
+          ...row,
+          role: {
+            ...row.role,
+            isInherited: false,
+          },
+        }))
+      : effectiveRoles.map((row) => ({
+          ...row,
+          role: {
+            ...row.role,
+            isInherited:
+              assignedRoles.find((r) => r.role.id === row.role.id) ===
+              undefined,
+          },
+        }))),
+  ];
 };
 
 export const ServiceRole = ({ role, client }: Row) => (
@@ -153,10 +180,13 @@ export const RoleMapping = ({
         data-testid="assigned-roles"
         key={key}
         loader={loader}
-        canSelectAll={hide}
-        onSelect={hide ? (rows) => setSelected(rows) : undefined}
+        canSelectAll
+        onSelect={(rows) => setSelected(rows)}
         searchPlaceholderKey="clients:searchByName"
         ariaLabelKey="clients:clientScopeList"
+        isRowDisabled={(value) =>
+          (value.role as CompositeRole).isInherited || false
+        }
         toolbarItem={
           <>
             <ToolbarItem>
@@ -191,6 +221,16 @@ export const RoleMapping = ({
             </ToolbarItem>
           </>
         }
+        actions={[
+          {
+            title: t("unAssignRole"),
+            onRowClick: async (role) => {
+              setSelected([role]);
+              toggleDeleteDialog();
+              return false;
+            },
+          },
+        ]}
         columns={[
           {
             name: "role.name",

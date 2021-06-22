@@ -248,60 +248,64 @@ export const AddRoleMappingModal = ({
         </Button>,
       ]}
     >
-      <Select
-        toggleId="role"
-        onToggle={() => setSearchToggle(!searchToggle)}
-        isOpen={searchToggle}
-        variant={isRadio ? SelectVariant.single : SelectVariant.checkbox}
-        hasInlineFilter
-        menuAppendTo="parent"
-        placeholderText={
-          <>
-            <FilterIcon /> {t("filterByOrigin")}
-          </>
-        }
-        isGrouped
-        onFilter={(evt) => {
-          const value = evt?.target.value || "";
-          return createSelectGroup(
-            clients.filter((client) => client.clientId?.includes(value))
-          );
-        }}
-        selections={selectedClients}
-        onClear={() => setSelectedClients([])}
-        onSelect={(_, selection) => {
-          const client = selection as ClientRole;
-          if (selectedClients.includes(client)) {
-            removeClient(client);
-          } else {
-            setSelectedClients([...selectedClients, client]);
-          }
-        }}
-      >
-        {createSelectGroup(clients)}
-      </Select>
-      <ToolbarItem variant="chip-group">
-        <ChipGroup>
-          {selectedClients.map((client) => (
-            <Chip
-              key={`chip-${client.id}`}
-              onClick={() => {
-                removeClient(client);
-                refresh();
-              }}
-            >
-              {client.clientId || t("realmRoles")}
-              <Badge isRead={true}>{client.numberOfRoles}</Badge>
-            </Chip>
-          ))}
-        </ChipGroup>
-      </ToolbarItem>
-
       <KeycloakDataTable
         key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="clients:searchByRoleName"
-        canSelectAll={false}
+        searchTypeComponent={
+          <ToolbarItem>
+            <Select
+              toggleId="role"
+              onToggle={() => setSearchToggle(!searchToggle)}
+              isOpen={searchToggle}
+              variant={isRadio ? SelectVariant.single : SelectVariant.checkbox}
+              hasInlineFilter
+              placeholderText={
+                <>
+                  <FilterIcon /> {t("filterByOrigin")}
+                </>
+              }
+              isGrouped
+              onFilter={(evt) => {
+                const value = evt?.target.value || "";
+                return createSelectGroup(
+                  clients.filter((client) => client.clientId?.includes(value))
+                );
+              }}
+              selections={selectedClients}
+              onClear={() => setSelectedClients([])}
+              onSelect={(_, selection) => {
+                const client = selection as ClientRole;
+                if (selectedClients.includes(client)) {
+                  removeClient(client);
+                } else {
+                  setSelectedClients([...selectedClients, client]);
+                }
+              }}
+            >
+              {createSelectGroup(clients)}
+            </Select>
+          </ToolbarItem>
+        }
+        subToolbar={
+          <ToolbarItem widths={{ default: "100%" }}>
+            <ChipGroup>
+              {selectedClients.map((client) => (
+                <Chip
+                  key={`chip-${client.id}`}
+                  onClick={() => {
+                    removeClient(client);
+                    refresh();
+                  }}
+                >
+                  {client.clientId || t("realmRoles")}
+                  <Badge isRead={true}>{client.numberOfRoles}</Badge>
+                </Chip>
+              ))}
+            </ChipGroup>
+          </ToolbarItem>
+        }
+        canSelectAll
         isRadio={isRadio}
         loader={loader}
         ariaLabelKey="clients:roles"

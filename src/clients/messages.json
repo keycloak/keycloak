@@ -105,7 +105,7 @@
     "authenticationFlow": "Authentication flow",
     "standardFlow": "Standard flow",
     "directAccess": "Direct access grants",
-    "serviceAccount": "Service accounts",
+    "serviceAccount": "Service accounts roles",
     "enableServiceAccount": "Enable service account roles",
     "assignRolesTo": "Assign roles to {{client}} account",
     "searchByRoleName": "Search by role name",
