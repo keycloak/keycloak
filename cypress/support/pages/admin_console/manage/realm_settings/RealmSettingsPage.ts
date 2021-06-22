@@ -11,6 +11,7 @@ export default class RealmSettingsPage {
   adminThemeList = "#kc-admin-console-theme + ul";
   selectEmailTheme = "#kc-email-theme";
   emailThemeList = "#kc-email-theme + ul";
+  hostInput = "#kc-host";
   selectDefaultLocale = "select-default-locale";
   defaultLocaleList = "select-default-locale + ul";
   emailSaveBtn = "email-tab-save";
@@ -69,6 +70,11 @@ export default class RealmSettingsPage {
 
   fillEmailField(email: string) {
     cy.getId(this.emailAddressInput).type(email);
+    return this;
+  }
+
+  fillHostField(host: string) {
+    cy.get(this.hostInput).type(host);
     return this;
   }
 

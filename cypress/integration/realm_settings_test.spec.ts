@@ -75,6 +75,8 @@ describe("Realm settings", () => {
       "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"
     );
 
+    realmSettingsPage.fillHostField("localhost");
+
     cy.getId(realmSettingsPage.modalTestConnectionButton).click();
 
     masthead.checkNotificationMessage("Error! Failed to send email.");
