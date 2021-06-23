@@ -832,7 +832,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .add("realm", "invalid-realm-name")
                 .add("clientId", CLIENT_ID);
 
-        JSObjectBuilder initOptions = defaultArguments();
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
 
         testExecutor
                 .configure(keycloakConfig)
@@ -850,7 +850,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .add("realm", REALM_NAME)
                 .add("clientId", CLIENT_ID);
 
-        JSObjectBuilder initOptions = defaultArguments();
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
 
         testExecutor
                 .configure(keycloakConfig)
