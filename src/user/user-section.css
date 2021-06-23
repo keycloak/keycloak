@@ -7,8 +7,8 @@ button.pf-c-button.pf-m-primary.kc-join-group-button {
   margin-right: var(--pf-global--spacer--xl);
 }
 
-.pf-c-chip-group,
-.pf-c-chip-group__list {
+.kc-consents-chip-group .pf-c-chip-group,
+kc-consents-chip-group .pf-c-chip-group__list {
   width: 100%;
 }
 
@@ -16,35 +16,15 @@ button#kc-join-groups-button {
   height: min-content;
 }
 
-.pf-c-chip-group.pf-m-category {
-  margin-right: var(--pf-global--spacer--md);
-  padding: var(--pf-global--spacer--xs);
-}
-
 .join-group-dialog-row-m-disabled {
   pointer-events: none;
   color: var(--pf-global--disabled-color--200);
 }
 
-input#kc-direct-membership-checkbox {
-  width: 20px;
+.kc-who-will-appear-button {
+  margin-left: var(--pf-global--spacer--md);
 }
 
-.join-group-modal-check > div > input {
-  height: 20px;
-  width: 20px;
-}
-
-.data-list-check > input {
-  height: 20px;
-  width: 20px;
-}
-
-td.pf-c-table__check > input {
-  height: 20px;
-  width: 20px;
-  vertical-align: text-top;
-}
 
 .pf-c-toolbar__content-section {
   margin-bottom: calc(var(--pf-global--spacer--lg) * -1);
@@ -59,7 +39,7 @@ td.pf-c-table__check > input {
   padding: 0px;
 }
 
-.pf-c-chip-group__list-item {
+.kc-consents-chip-group .pf-c-chip-group__list-item {
   margin-right: 0px;
 }
 
