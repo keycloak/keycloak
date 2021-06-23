@@ -439,6 +439,7 @@ Options is an Object, where:
 * enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
 * pkceMethod - The method for Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
+* messageReceiveTimeout - Set a timeout in milliseconds for waiting for message responses from the Keycloak server. This is used, for example, when waiting for a message during 3rd party cookies check. The default value is 10000.
 
 Returns a promise that resolves when initialization completes.
 
