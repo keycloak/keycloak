@@ -651,4 +651,11 @@ if (outcome == success) && (result == "") of /profile=$standaloneProfile/subsyst
     echo
 end-if
 
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:read-resource
+    echo Add pending-puts local cache standalone and expiration time 60000L
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:add
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/component=expiration/:write-attribute(name=max-idle,value=60000L)
+    echo
+end-if
+
 echo *** End Migration of /profile=$standaloneProfile ***

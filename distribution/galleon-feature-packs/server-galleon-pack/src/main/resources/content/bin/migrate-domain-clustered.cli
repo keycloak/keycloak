@@ -750,4 +750,11 @@ if (outcome == success) && (result == "") of /profile=$clusteredProfile/subsyste
     echo
 end-if
 
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:read-resource
+    echo Add pending-puts local cache clustered and expiration time 60000L
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:add
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/component=expiration/:write-attribute(name=max-idle,value=60000L)
+    echo
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***
