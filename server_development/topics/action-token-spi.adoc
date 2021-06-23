@@ -16,7 +16,7 @@ In addition to that, it is possible to implement any functionality that initiate
 using action token SPI, details of which are described in the text below.
 
 [[_action_token_anatomy]]
-=== Anatomy of Action Token
+=== Anatomy of action token
 
 Action token is a standard Json Web Token signed with active realm key where the payload contains several fields:
 
@@ -31,7 +31,7 @@ Action token is a standard Json Web Token signed with active realm key where the
 
 In addition, an action token can contain any number of custom fields serializable into JSON.
 
-=== Action Token Processing
+=== Action token processing
 
 When an action token is passed to a {project_name} endpoint
 `_KEYCLOAK_ROOT_/auth/realms/master/login-actions/action-token` via `key` parameter, it is validated and a proper action
@@ -60,9 +60,9 @@ action according to parameters in the token.
 5. *Invalidation of single-Use tokens.* If the token is set to single-use, once the authentication flow finishes, the
 action token is invalidated.
 
-=== Implement Your Own Action Token and its Handler
+=== Implement your own action token and its handler
 
-==== How to Create an Action Token
+==== How to create an action token
 
 As action token is just a signed JWT with few mandatory fields (see <<_action_token_anatomy,Anatomy of action token>>
 above), it can be serialized and signed as such using Keycloak's `JWSBuilder` class. This way has been already
@@ -131,7 +131,7 @@ public class DemoActionToken extends DefaultActionToken {
 ----
 
 
-==== Packaging Classes and Deployment
+==== Packaging classes and deployment
 
 To plug your own action token and its handler, you need to implement few interfaces on server side:
 

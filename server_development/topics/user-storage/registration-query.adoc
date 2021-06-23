@@ -1,13 +1,13 @@
 
-=== Add/Remove User and Query Capability interfaces
+=== Add/Remove user and query capability interfaces
 
 One thing we have not done with our example is allow it to add and remove users or change passwords. Users defined in our example are
-also not queryable or viewable in the administration console. To add these enhancements, our example provider must implement
+also not queryable or viewable in the Admin Console. To add these enhancements, our example provider must implement
 the `UserQueryProvider` and `UserRegistrationProvider` interfaces.
 
 ==== Implementing UserRegistrationProvider
 
-To implement adding and removing users from this particular store, we first have to be able to save our properties
+Use this procedure to implement adding and removing users from the particular store, we first have to be able to save our properties
 file to disk.
 
 .PropertyFileUserStorageProvider
@@ -120,11 +120,11 @@ We can now also implement disabling a password.
     }
 ----
 
-With these methods implemented, you'll now be able to change and disable the password for the user in the administration console.
+With these methods implemented, you'll now be able to change and disable the password for the user in the Admin Console.
 
 ==== Implementing UserQueryProvider
 
-Without implementing `UserQueryProvider` the administration console would not be able to view and manage users that were loaded
+Without implementing `UserQueryProvider` the Admin Console would not be able to view and manage users that were loaded
 by our example provider. Let's look at implementing this interface.
 
 .PropertyFileUserStorageProvider

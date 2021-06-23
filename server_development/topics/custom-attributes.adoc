@@ -1,16 +1,25 @@
 [[_custom_user_attributes]]
-== Custom User Attributes
+== Custom user attributes
 
-You can add custom user attributes to the registration page and account management console with a custom theme. This chapter describes how to add attributes
-to a custom theme, but you should refer to the <<_themes,Themes>> chapter on how to create a custom theme.
+You can add custom user attributes to the registration page and account management console with a custom theme.
 
-=== Registration Page
+[role="_additional-resources"]
+.Additional resources
 
-To be able to enter custom attributes in the registration page copy the template `themes/base/login/register.ftl` to the login type of your custom theme. Then
-open the copy in an editor.
+* See <<_themes,Themes>> for how to create a custom theme.
 
-As an example to add a mobile number to the registration page add the following snippet to the form:
+=== Registration page
 
+Use this procedure to enter custom attributes in the registration page.
+
+.Procedure
+
+. copy the template `themes/base/login/register.ftl` to the login type of your custom theme.
+
+. open the copy in an editor.
++
+For example, to add a mobile number to the registration page, add the following snippet to the form:
++
 [source,html]
 ----
 <div class="form-group">
@@ -24,17 +33,22 @@ As an example to add a mobile number to the registration page add the following 
 </div>
 ----
 
-Ensure the name of the input html element starts with `user.attributes.`. In the example above, the attribute will be stored by Keycloak with the name `mobile`.
+. Ensure the name of the input html element starts with `user.attributes.`. In the example above, the attribute will be stored by {project_name} with the name `mobile`.
 
-To see the changes make sure your realm is using your custom theme for the login theme and open the registration page.
+. To see the changes, make sure your realm is using your custom theme for the login theme and open the registration page.
 
 === Account Management Console
 
-To be able to manage custom attributes in the user profile page in the account management console copy the template `themes/base/account/account.ftl` to the
-account type of your custom theme. Then open the copy in an editor.
+Use this procedure to manage custom attributes in the user profile page in the account management console.
 
+.Procedure
+. copy the template `themes/base/account/account.ftl` to the
+account type of your custom theme.
+
+. Open the copy in an editor.
++
 As an example to add a mobile number to the account page add the following snippet to the form:
-
++
 [source,html]
 ----
 <div class="form-group">
@@ -48,6 +62,6 @@ As an example to add a mobile number to the account page add the following snipp
 </div>
 ----
 
-Ensure the name of the input html element starts with `user.attributes.`.
+. Ensure the name of the input html element starts with `user.attributes.`.
 
-To see the changes make sure your realm is using your custom theme for the account theme and open the user profile page in the account management console.
+. To see the changes, make sure your realm is using your custom theme for the account theme and open the user profile page in the account management console.

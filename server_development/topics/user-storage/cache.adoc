@@ -97,7 +97,7 @@ public interface CachedUserModel extends UserModel {
 This `CachedUserModel` interface allows you to evict the user from the cache and get the provider `UserModel` instance.
 The `getCachedWith()` method returns a map that allows you to cache additional information pertaining to the user. For example, credentials are not part of the `UserModel` interface. If you wanted to cache credentials in memory, you would implement `OnUserCache` and cache your user's credentials using the `getCachedWith()` method.
 
-==== Cache Policies
+==== Cache policies
 
 On the administration console management page for your user storage provider, you can specify a unique cache policy.
 

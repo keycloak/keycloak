@@ -1,5 +1,5 @@
 
-===  Provider Interfaces
+===  Provider interfaces
 
 When building an implementation of the User Storage SPI you have to define a provider class and a provider factory.
 Provider class instances are created per transaction by provider factories.

@@ -1,5 +1,5 @@
 
-=== Import Implementation Strategy
+=== Import implementation strategy
 
 When implementing a user storage provider, there's another strategy you can take. Instead of using user federated storage,
 you can create a user locally in the {project_name} built-in user database and copy attributes from your external
@@ -77,7 +77,7 @@ NOTE: If your provider is implementing the `UserRegistrationProvider` interface,
       note that `removeUser()` will be invoked before it is removed from local storage.
 
 
-==== ImportedUserValidation Interface
+==== ImportedUserValidation interface
 
 If you remember earlier in this chapter, we discussed how querying for a user worked.  Local storage is queried first,
 if the user is found there, then the query ends.  This is a problem for our above implementation as we want
@@ -104,7 +104,7 @@ Whenever a linked local user is loaded, if the user storage provider class imple
 new `UserModel` will be used. You can also optionally do a check to see if the user still exists in the external store.
 If `validate()` returns `null`, then the local user will be removed from the database.
 
-==== ImportSynchronization Interface
+==== ImportSynchronization interface
 
 With the import strategy you can see that it is possible for the local user copy to get out of sync with
 external storage. For example, maybe a user has been removed from the external store. The User Storage SPI has

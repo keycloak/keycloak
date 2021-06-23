@@ -2,19 +2,24 @@
 
 {project_name} comes with a fully functional Admin REST API with all features provided by the Admin Console.
 
-To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in
-{adminguide_link}[{adminguide_name}].
+To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in the Server Administration Guide. 
 
-A token can be obtained by enabling authenticating to your application with {project_name}; see the
-{adapterguide_link}[{adapterguide_name}]. You can also use direct access grant to obtain an access token.
+A token can be obtained by enabling authenticating to your application with {project_name}; see the Securing Applications and Services Guide. You can also use direct access grant to obtain an access token.
 
-For complete documentation see {apidocs_link}[{apidocs_name}].
+.Additional resources
+[role="_additional-resources"]
+* {adminguide_link}[{adminguide_name}]
+* {adapterguide_link}[{adapterguide_name}]
+* {apidocs_link}[{apidocs_name}]
 
-=== Examples using CURL
+=== Examples of using CURL
 
 ==== Authenticate with username and password
 
-Obtain access token for user in the realm `master` with username `admin` and password `password`:
+.Procedure
+
+. Obtain an access token for user in the realm `master` with username `admin` and password `password`:
++
 [source,bash]
 ----
 curl \
@@ -24,14 +29,17 @@ curl \
   -d "grant_type=password" \
   "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
 ----
-
++
 NOTE: By default this token expires in 1 minute
++
+The result will be a JSON document.
 
-The result will be a JSON document. To invoke the API you need to extract the value of the `access_token` property. You can then invoke the API by including
-the value in the `Authorization` header of requests to the API.
+. Invoke the API you need by extracting the value of the `access_token` property.
 
+. Invoke the API by including the value in the `Authorization` header of requests to the API.
++
 The following example shows how to get the details of the master realm:
-
++
 [source,bash]
 ----
 curl \
@@ -71,6 +79,7 @@ The following example shows how to use the Java client library to get the detail
 
 [source,java]
 ----
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
 ...
@@ -86,3 +95,4 @@ RealmRepresentation realm = keycloak.realm("master").toRepresentation();
 
 Complete Javadoc for the admin client is available at {apidocs_link}[{apidocs_name}].
 endif::[]
+

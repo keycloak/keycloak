@@ -4,10 +4,10 @@
 {project_name} includes a range of different authentication mechanisms: kerberos, password, otp and others.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.
 {project_name} provides an authentication SPI that you can use to write new plugins.
-The admin console supports applying, ordering, and configuring these new mechanisms.
+The Admin Console supports applying, ordering, and configuring these new mechanisms.
 
 {project_name} also supports a simple registration form.
-Different aspects of this form can be enabled and disabled i.e.
+Different aspects of this form can be enabled and disabled for example
 Recaptcha support can be turned off and on.
 The same authentication SPI can be used to add another page to the registration flow or reimplement it entirely.
 There's also an additional fine-grained SPI you can use to add specific validations and user extensions to the built in registration form.
@@ -26,7 +26,7 @@ To first learn about the Authentication SPI, let's go over some of the terms use
 
 Authentication Flow::
   A flow is a container for all authentications that must happen during login or registration.
-  If you go to the admin console authentication page, you can view all the defined flows in the system and what authenticators they are made up of.
+  If you go to the Admin Console authentication page, you can view all the defined flows in the system and what authenticators they are made up of.
   Flows can contain other flows.
   You can also bind a new different flow for browser login, direct grant access, and registration.
 
@@ -54,7 +54,7 @@ Required Action::
   After authentication completes, the user might have one or more one-time actions he must complete before he is allowed to login.
   The user might be required to set up an OTP token generator or reset an expired password or even accept a Terms and Conditions document.
 
-=== Algorithm Overview
+=== Algorithm overview
 
 Let's talk about how this all works for browser login.
 Let's assume the following flows, executions and sub flows.
@@ -146,7 +146,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
 . After all required actions have been resolved, the user is finally logged in.
 
 [[_auth_spi_walkthrough]]
-=== Authenticator SPI Walk Through
+=== Authenticator SPI walk through
 
 In this section, we'll take a look at the Authenticator interface.
 For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".
@@ -169,7 +169,7 @@ These types of authenticators are called CredentialValidators, and will require 
 
 The SecretQuestionAuthenticator we'll see in this walk through is a CredentialValidator, so we'll see how to implement all these classes.
 
-==== Packaging Classes and Deployment
+==== Packaging classes and deployment
 
 You will package your classes within a single jar.
 This jar must contain a file named  `org.keycloak.authentication.AuthenticatorFactory` and must be contained in the `META-INF/services/` directory of your jar.
@@ -218,7 +218,7 @@ Where:
 * `created_date` is the creation timestamp (in long format) of the credential.
 * `user_label` is the editable name of the credential by the user
 * `secret_data` contains a static json with the information that cannot be transmitted outside of {project_name}
-* `credential_data` contains a json with the static information of the credential that can be shared in the admin console or via the REST API.
+* `credential_data` contains a json with the static information of the credential that can be shared in the Admin Console or via the REST API.
 * `priority` defines how "preferred" a credential is for a user, to determine which credential to present when a user has multiple choices.
 
 As the secret_data and credential_data fields are designed to contain json, it is up to you to determine how to structure, read and write into
@@ -479,7 +479,7 @@ public boolean isConfiguredFor(RealmModel realm, UserModel user, String credenti
 }
 ----
 
-==== Implementing an Authenticator
+==== Implementing an authenticator
 
 When implementing an authenticator that uses Credentials to authenticate a user, you should have the authenticator implement
 the CredentialValidator interface. This interfaces takes a class extending a CredentialProvider as a parameter, and will
@@ -644,7 +644,7 @@ protected void setCookie(AuthenticationFlowContext context) {
 We obtain an AuthenticatorConfigModel from the AuthenticationFlowContext.getAuthenticatorConfig() method.
 If configuration exists we pull the max age config out of it.
 We will see how we can define what should be configured when we talk about the AuthenticatorFactory implementation.
-The config values can be defined within the admin console if you set up config definitions in your AuthenticatorFactory implementation.
+The config values can be defined within the Admin Console if you set up config definitions in your AuthenticatorFactory implementation.
 
 [source,java]
 ----
@@ -699,7 +699,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
 
 The next thing the factory is responsible for is to specify the allowed requirement switches.
 While there are four different requirement types:  ALTERNATIVE, REQUIRED, CONDITIONAL, DISABLED, AuthenticatorFactory implementations can limit which
-requirement options are shown in the admin console when defining a flow. CONDITIONAL should only always be used for subflows, and unless there's a good
+requirement options are shown in the Admin Console when defining a flow. CONDITIONAL should only always be used for subflows, and unless there's a good
 reason for doing otherwise, the requirement on a authenticator should be REQUIRED, ALTERNATIVE and DISABLED:
 
 [source,java]
@@ -730,7 +730,7 @@ If it returns true, then the flow manager will invoke Authenticator.setRequiredA
 ----
 
 The next few methods define how the Authenticator can be configured.
-The isConfigurable() method is a flag which specifies to the admin console on whether the Authenticator can be configured within a flow.
+The isConfigurable() method is a flag which specifies to the Admin Console on whether the Authenticator can be configured within a flow.
 The getConfigProperties() method returns a list of ProviderConfigProperty objects.
 These objects define a specific configuration attribute.
 
@@ -757,18 +757,18 @@ These objects define a specific configuration attribute.
 
 Each ProviderConfigProperty defines the name of the config property.
 This is the key used in the config map stored in AuthenticatorConfigModel.
-The label defines how the config option will be displayed in the admin console.
+The label defines how the config option will be displayed in the Admin Console.
 The type defines if it is a String, Boolean, or other type.
-The admin console will display different UI inputs depending on the type.
-The help text is what will be shown in the tooltip for the config attribute in the admin console.
+The Admin Console will display different UI inputs depending on the type.
+The help text is what will be shown in the tooltip for the config attribute in the Admin Console.
 Read the javadoc of ProviderConfigProperty for more detail.
 
-The rest of the methods are for the admin console.
+The rest of the methods are for the Admin Console.
 getHelpText() is the tooltip text that will be shown when you are picking the Authenticator you want to bind to an execution.
-getDisplayType() is the text that will be shown in the admin console when listing the Authenticator.
+getDisplayType() is the text that will be shown in the Admin Console when listing the Authenticator.
 getReferenceCategory() is just a category the Authenticator belongs to.
 
-==== Adding Authenticator Form
+==== Adding an authenticator form
 
 {project_name} comes with a Freemarker <<_themes,theme and template engine>>.
 The createForm() method you called within authenticate() of your Authenticator class, builds an HTML page from a file within your login theme: `secret-question.ftl`.
@@ -818,9 +818,9 @@ Importing this template, instead of the standard `template.ftl` allows {project_
 a different credential or execution.
 
 [[_adding_authenticator]]
-==== Adding Authenticator to a Flow
+==== Adding an authenticator to a flow
 
-Adding an Authenticator to a flow must be done in the admin console.
+Adding an Authenticator to a flow must be done in the Admin Console.
 If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently defined flows.
 You cannot modify built in flows, so, to add the Authenticator we've created you have to copy an existing flow or create your own.
 Our hope is that the user interface is sufficiently clear so that you can determine how to create a flow and add the Authenticator. For
@@ -829,13 +829,13 @@ more details, see the `Authentication Flows` chapter in link:{adminguide_link}[{
 After you've created your flow, you have to bind it to the login action you want to bind it to.
 If you go to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to the browser, registration, or direct grant flow.
 
-=== Required Action Walkthrough
+=== Required action walkthrough
 
 In this section we will discuss how to define a required action.
 In the Authenticator section you may have wondered, "How will we get the user's answer to the secret question entered into the system?".  As we showed in the example, if the answer is not set up, a required action will be triggered.
 This section discusses how to implement the required action for the Secret Question Authenticator.
 
-==== Packaging Classes and Deployment
+==== Packaging classes and deployment
 
 You will package your classes within a single jar.
 This jar does not have to be separate from other provider classes but it must contain a file named  `org.keycloak.authentication.RequiredActionFactory`                and must be contained in the `META-INF/services/` directory of your jar.
@@ -927,17 +927,17 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
     }
 ----
 
-The getDisplayText() method is just for the admin console when it wants to display a friendly name for the required action.
+The getDisplayText() method is just for the Admin Console when it wants to display a friendly name for the required action.
 
-==== Enable Required Action
+==== Enable required action
 
-The final thing you have to do is go into the admin console.
+The final thing you have to do is go into the Admin Console.
 Click on the Authentication left menu.
 Click on the Required Actions tab.
 Click on the Register button and choose your new Required Action.
 Your new required action should now be displayed and enabled in the required actions list.
 
-=== Modifying/Extending the Registration Form
+=== Modifying or extending the registration form
 
 It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how registration is done in {project_name}.
 But what you'll usually want to do is just add a little bit of validation to the out of the box registration page.
@@ -945,7 +945,7 @@ An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
 We'll look at both the implementation of the user profile registration processing as well as the registration Google Recaptcha plugin.
 
-==== Implementation FormAction Interface
+==== Implementation FormAction interface
 
 The core interface you have to implement is the FormAction interface.
 A FormAction is responsible for rendering and processing a portion of the page.
@@ -1025,8 +1025,7 @@ We then validate the recaptcha.
 If successful, ValidationContext.success() is called.
 If not, we invoke ValidationContext.validationError() passing in the formData (so the user doesn't have to re-enter data), we also specify an error message we want displayed.
 The error message must point to a message bundle property in the internationalized message bundles.
-For other registration extensions validate() might be validating the format of a form element, i.e.
-an alternative email attribute.
+For other registration extensions validate() might be validating the format of a form element, for example an alternative email attribute.
 
 Let's also look at the user profile plugin that is used to validate email address and other user information when registering.
 
@@ -1106,7 +1105,7 @@ The appropriate methods are called to initialize UserModel data.
 Finally, you are also required to define a FormActionFactory class.
 This class is implemented similarly to AuthenticatorFactory, so we won't go over it.
 
-==== Packaging the Action
+==== Packaging the action
 
 You will package your classes within a single jar.
 This jar must contain a file named  `org.keycloak.authentication.FormActionFactory`                and must be contained in the `META-INF/services/` directory of your jar.
@@ -1124,9 +1123,9 @@ This services/ file is used by {project_name} to scan the providers it has to lo
 
 To deploy this jar, just copy it to the `standalone/deployments` directory.
 
-==== Adding FormAction to the Registration Flow
+==== Adding FormAction to the registration flow
 
-Adding a FormAction to a registration page flow must be done in the admin console.
+Adding a FormAction to a registration page flow must be done in the Admin Console.
 If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently defined flows.
 You cannot modify built in flows, so, to add the Authenticator we've created you have to copy an existing flow or create your own.
 I'm hoping the UI is intuitive enough so that you can figure out for yourself how to create a flow and add the FormAction.
@@ -1139,10 +1138,10 @@ Make sure your FormAction comes after "Registration User Creation" by using the 
 After you've created your flow, you have to bind it to registration.
 If you go to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to the browser, registration, or direct grant flow.
 
-=== Modifying Forgot Password/Credential Flow
+=== Modifying forgot password/credential flow
 
 {project_name} also has a specific authentication flow for forgot password, or rather credential reset initiated by a user.
-If you go to the admin console flows page, there is a "reset credentials" flow.
+If you go to the Admin Console flows page, there is a "reset credentials" flow.
 By default, {project_name} asks for the email or username of the user and sends an email to them.
 If the user clicks on the link, then they are able to reset both their password and OTP (if an OTP has been set up).  You can disable automatic OTP reset by disabling the "Reset OTP" authenticator in the flow.
 
@@ -1160,11 +1159,14 @@ So, if AuthenticationFlowContext.getUser() returns null, you should proceed with
 I suggest that if you want to add secret questions to this flow, you should ask these questions after the email is sent.
 In other words, add your custom authenticator after the "Send Reset Email" authenticator.
 
-=== Modifying First Broker Login Flow
+=== Modifying first broker login flow
 
 First Broker Login flow is used during first login with some identity provider.
 Term `First Login` means that there is not yet existing {project_name} account linked with the particular authenticated identity provider account.
-For more details about this flow see the `Identity Brokering` chapter in link:{adminguide_link}[{adminguide_name}] .
+
+[role="_additional-resource"]
+.Additional resources
+* See the `Identity Brokering` chapter in link:{adminguide_link}[{adminguide_name}] .
 
 [[_client_authentication]]
 === Authentication of clients
@@ -1175,7 +1177,9 @@ to the {project_name} server (like the request for exchange code to access token
 But the client authentication can be also used directly by you during `Direct Access grants` (represented by OAuth2 `Resource Owner Password Credentials Flow`)
 or during `Service account` authentication (represented by OAuth2 `Client Credentials Flow`).
 
-For more details about {project_name} adapter and OAuth2 flows see link:{adapterguide_link}[{adapterguide_name}].
+[role="_additional-resource"]
+.Additional resources
+* For more details about {project_name} adapter and OAuth2 flows see link:{adapterguide_link}[{adapterguide_name}].
 
 ==== Default implementations
 

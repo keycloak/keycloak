@@ -1,8 +1,8 @@
-=== Simple Read-Only, Lookup Example
+=== Simple read-only, lookup example
 
 To illustrate the basics of implementing the User Storage SPI let's walk through a simple example. In this chapter you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file. The property file contains username and password definitions and is hardcoded to a specific location on the classpath. The provider will be able to look up the user by ID and username and also be able to validate passwords. Users that originate from this provider will be read-only.
 
-==== Provider Class
+==== Provider class
 
 The first thing we will walk through is the `UserStorageProvider` class.
 
@@ -37,7 +37,7 @@ Our provider class, `PropertyFileUserStorageProvider`, implements many interface
 
 The constructor for this provider class is going to store the reference to the `KeycloakSession`, `ComponentModel`, and property file. We'll use all of these later. Also notice that there is a map of loaded users. Whenever we find a user we will store it in this map so that we avoid re-creating it again within the same transaction. This is a good practice to follow as many providers will need to do this (that is, any provider that integrates with JPA). Remember also that provider class instances are created once per transaction and are closed after the transaction completes.
 
-===== UserLookupProvider Implementation
+===== UserLookupProvider implementation
 
 [source,java]
 ----
@@ -92,7 +92,7 @@ The `getUserById()` method parses the `id` parameter using the `org.keycloak.sto
 
 Emails are not stored, so the `getUserByEmail()` method returns null.
 
-===== CredentialInputValidator Implementation
+===== CredentialInputValidator implementation
 
 Next let's look at the method implementations for `CredentialInputValidator`.
 
@@ -125,7 +125,7 @@ The `supportsCredentialType()` method returns whether validation is supported fo
 
 The `isValid()` method is responsible for validating passwords. The `CredentialInput` parameter is really just an abstract interface for all credential types. We make sure that we support the credential type and also that it is an instance of `UserCredentialModel`. When a user logs in through the login page, the plain text of the password input is put into an instance of `UserCredentialModel`. The `isValid()` method checks this value against the plain text password stored in the properties file. A return value of `true` means the password is valid.
 
-===== CredentialInputUpdater Implementation
+===== CredentialInputUpdater implementation
 
 As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overridden in {project_name} local storage. We'll talk more about this later in this chapter.
 
@@ -151,7 +151,7 @@ As noted before, the only reason we implement the `CredentialInputUpdater` inter
 
 The `updateCredential()` method just checks to see if the credential type is password.  If it is, a `ReadOnlyException` is thrown.
 
-==== Provider Factory Implementation
+==== Provider factory implementation
 
 Now that the provider class is complete, we now turn our attention to the provider factory class.
 
@@ -234,7 +234,7 @@ public void init(Config.Scope config) {
 }
 ----
 
-===== Create Method
+===== Create method
 
 Our last step in creating the provider factory is the `create()` method.
 
@@ -248,7 +248,7 @@ Our last step in creating the provider factory is the `create()` method.
 
 We simply allocate the `PropertyFileUserStorageProvider` class.  This create method will be called once per transaction.
 
-==== Packaging and Deployment
+==== Packaging and deployment
 
 The class files for our provider implementation should be placed in a jar.  You also have to declare the provider factory class within the `META-INF/services/org.keycloak.storage.UserStorageProviderFactory` file.
 
@@ -258,25 +258,34 @@ org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 
 Once you create the jar you can deploy it using regular {appserver_name} means: copy the jar into the `standalone/deployments/` directory or using the JBoss CLI.
 
-==== Enabling the Provider in the Administration Console
+==== Enabling the provider in the Admin Console
 
-You enable user storage providers per realm within the `User Federation` page in the administration console.
+You enable user storage providers per realm within the *User Federation* page in the Admin Console.
 
 ifeval::[{project_community}==true]
 .User Federation
 image:{project_images}/empty-user-federation-page.png[]
 endif::[]
 
-Select the provider we just created from the list: `readonly-property-file`. It brings you to the configuration page for our provider.  We do not have anything to configure, so click *Save*.
+.Procedure
 
+. Select the provider we just created from the list: `readonly-property-file`.
++
+The configuration page for our provider displays.
+
+. Click *Save* because we have nothing to configure.
 ifeval::[{project_community}==true]
++
 .Configured Provider
 image:{project_images}/storage-provider-created.png[]
 endif::[]
 
-When you go back to the main `User Federation` page, you now see your provider listed.
+. Return to the main *User Federation* page
++
+You now see your provider listed.
 
 ifeval::[{project_community}==true]
++
 .User Federation
 image:{project_images}/user-federation-page.png[]
 endif::[]

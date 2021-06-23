@@ -1,5 +1,5 @@
 [[_saml_role_mappings_spi]]
-== SAML Role Mappings SPI
+== SAML role mappings SPI
 
 {project_name} defines a SPI for mapping SAML roles into roles that exist in the SP environment. The roles returned by
 a third-party IDP might not always correspond to the roles that were defined for the SP application so there is a need for a
@@ -13,7 +13,7 @@ roles assigned to the SAML principal) depending on the use case.
 For details about the configuration of the role mappings provider for the SAML adapter as well as a description of the default
 implementations available see the link:{adapterguide_link}[{adapterguide_name}].
 
-=== Implementing a Custom Role Mappings Provider
+=== Implementing a custom role mappings provider
 
 To implement a custom role mappings provider one first needs to implement the `org.keycloak.adapters.saml.RoleMappingsProvider`
 interface. Then, a `META-INF/services/org.keycloak.adapters.saml.RoleMappingsProvider` file containing the fully qualified name

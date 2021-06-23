@@ -1,5 +1,5 @@
 
-=== Model Interfaces
+=== Model interfaces
 
 Most of the methods defined in the _capability_ _interfaces_ either return or are passed in representations of a user. These representations are defined by the `org.keycloak.models.UserModel` interface. App developers are required to implement this interface. It provides a mapping between the external user store and the user metamodel that {project_name} uses.
 

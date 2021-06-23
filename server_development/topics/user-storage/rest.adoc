@@ -1,5 +1,5 @@
 
-=== REST Management API
+=== REST management API
 
 You can create, remove, and update your user storage provider deployments through the administrator REST API. The User Storage SPI
 is built on top of a generic component interface so you will be using that generic API to manage your providers.

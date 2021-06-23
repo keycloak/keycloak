@@ -47,7 +47,7 @@ public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFact
 }
 ----
 
-NOTE: Keycloak creates a single instance of provider factories which makes it possible to store state for multiple requests.
+NOTE: {project_name} creates a single instance of provider factories which makes it possible to store state for multiple requests.
 Provider instances are created by calling create on the factory for each request so these should be light-weight object.
 
 Example ThemeSelectorProvider:
@@ -126,11 +126,11 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
 ----
 
 [[_providers_admin_console]]
-==== Show info from your SPI implementation in admin console
+==== Show info from your SPI implementation in the Admin Console
 
-Sometimes it is useful to show additional info about your Provider to a {project_name} administrator. You can show provider build time information (eg. version of
+Sometimes it is useful to show additional info about your Provider to a {project_name} administrator. You can show provider build time information (for example, version of
 custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info
-(average time of response from remote system your provider talks to). {project_name} admin console provides Server Info page to show this kind of information.
+(average time of response from remote system your provider talks to). {project_name} Admin Console provides Server Info page to show this kind of information.
 
 To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.
 
@@ -194,7 +194,7 @@ The alternative approach is to deploy as a module.
 
 If you are creating a custom SPI you will need to deploy it as a module, otherwise we recommend using the {project_name} deployer approach.
 
-==== Using the {project_name} Deployer
+==== Using the {project_name} deployer
 
 If you copy your provider jar to the {project_name} `standalone/deployments/` directory, your provider will automatically be deployed.
 Hot deployment works too.  Additionally, your provider jar works similarly to other components deployed in a {appserver_name}
@@ -206,20 +206,22 @@ it really easy to use third party jars as you can just put these libraries in th
 
 ==== Register a provider using Modules
 
-To register a provider using Modules first create a module.
-To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
+.Procedure
+. To register a provider using Modules, create a module.
++
+You can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
++
 For example to add the event listener sysout example provider using the `jboss-cli` script execute:
-
++
 [source]
 ----
 KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.acme.provider --resources=target/provider.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi"
 ----
-Or to manually create it start by creating the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`.
-Then copy `provider.jar` to this folder and create `module.xml` with the following content:
 
+. To manually create the module, create the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`. Then copy `provider.jar` to this folder and create `module.xml` with the following content:
++
 [source,xml]
 ----
-
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="urn:jboss:module:1.3" name="org.acme.provider">
     <resources>
@@ -232,10 +234,9 @@ Then copy `provider.jar` to this folder and create `module.xml` with the followi
 </module>
 ----
 
-Once you've created the module you need to register this module with {project_name}.
-This is done by editing the keycloak-server subsystem section of
+. Register this module with {project_name} by editing the keycloak-server subsystem section of
 `standalone.xml`, `standalone-ha.xml`, or `domain.xml`, and adding it to the providers:
-
++
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
@@ -306,13 +307,13 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
 }
 ----
 
-You have to define the `@Local` annotation and specify your provider class there.  If you don't do this, EJB will
+You define the `@Local` annotation and specify your provider class there.  If you don't do this, EJB will
 not proxy the provider instance correctly and your provider won't work.
 
-You must put the `@Remove` annotation on the `close()` method of your provider.  If you don't, the stateful bean
+You put the `@Remove` annotation on the `close()` method of your provider.  If you don't, the stateful bean
 will never be cleaned up and you may eventually see error messages.
 
-Implementations of `ProviderFactory` are required to be plain java objects.  Your factory class would
+Ixmplementations of `ProviderFactory` are required to be plain java objects.  Your factory class would
 perform a JNDI lookup of the Stateful EJB in its `create()` method.
 
 [source,java]
@@ -336,7 +337,7 @@ public class EjbExampleUserStorageProviderFactory
 ----
 
 [[_script_providers]]
-=== JavaScript Providers
+=== JavaScript providers
 
 {project_name} has the ability to execute scripts during runtime in order to allow administrators to customize specific functionalities:
 
@@ -448,7 +449,7 @@ For JavaScript Policies when using {project_name} Authorization Services. You ca
 +
 For OpenID Connect Script Protocol Mappers. You can have one or multiple mappers in the same JAR file
 
-For each script file in your `JAR` file you must have a corresponding entry in `META-INF/keycloak-scripts.json` that maps your scripts files to a specific provider type. For that you should provide the following properties for each entry:
+For each script file in your `JAR` file, you need a corresponding entry in `META-INF/keycloak-scripts.json` that maps your scripts files to a specific provider type. For that you should provide the following properties for each entry:
 
 * `name`
 +
@@ -463,13 +464,13 @@ An optional text that better describes the intend of the script file
 +
 The name of the script file. This property is *mandatory* and should map to a file within the JAR.
 
-==== Deploy the Script JAR
+==== Deploy the script JAR
 
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `standalone/deployments/` directory.
 
-==== Using {project_name} Administration Console to upload scripts
+==== Using the {project_name} Admin Console to upload scripts
 
-NOTE: Ability to upload scripts through the admin console is deprecated and will be removed in a future version of {project_name}
+NOTE: Ability to upload scripts through the Admin Console is deprecated and will be removed in a future version of {project_name}.
 
 Administrators cannot upload scripts to the server. This behavior prevents potential harm to the system in case
 malicious scripts are accidentally executed. Administrators should always deploy scripts directly to the server using a
@@ -482,4 +483,4 @@ For more details about how to enable the `upload_scripts` feature. Please, take 
 
 === Available SPIs
 
-If you want to see list of all available SPIs at runtime, you can check `Server Info` page in admin console as described in <<_providers_admin_console,Admin Console>> section.
+If you want to see list of all available SPIs at runtime, you can check `Server Info` page in Admin Console as described in <<_providers_admin_console,Admin Console>> section.

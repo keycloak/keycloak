@@ -1,5 +1,5 @@
 
-=== Retrieving External IDP Tokens
+=== Retrieving external IDP tokens
 
 {project_name} allows you to store tokens and responses from the authentication process with the external IDP.
 For that, you can use the `Store Token` configuration option on the IDP's settings page.
