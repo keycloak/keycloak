@@ -99,7 +99,7 @@ export const LocalizationTab = ({
               <Controller
                 name="internationalizationEnabled"
                 control={control}
-                defaultValue={realm?.internationalizationEnabled}
+                defaultValue={false}
                 render={({ onChange, value }) => (
                   <Switch
                     id="kc-l-internationalization"

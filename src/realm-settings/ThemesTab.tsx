@@ -244,7 +244,7 @@ export const RealmSettingsThemesTab = ({
             <Controller
               name="internationalizationEnabled"
               control={control}
-              defaultValue={internationalizationEnabled}
+              defaultValue={false}
               render={({ onChange, value }) => (
                 <Switch
                   id="kc-t-internationalization"
