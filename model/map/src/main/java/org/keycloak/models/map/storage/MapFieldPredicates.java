@@ -56,6 +56,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -299,10 +300,15 @@ public class MapFieldPredicates {
             throw new CriterionNotSupportedException(ClientModel.SearchableFields.ATTRIBUTE, op, "Invalid arguments, expected (String attribute_name), got: " + Arrays.toString(values));
         }
         String attrNameS = (String) attrName;
-        Function<MapClientEntity<Object>, ?> getter = ue -> ue.getAttribute(attrNameS);
-        Object[] realValue = {values[1]};
+        Object[] realValues = new Object[values.length - 1];
+        System.arraycopy(values, 1, realValues, 0, values.length - 1);
+        Predicate<Object> valueComparator = CriteriaOperator.predicateFor(op, realValues);
+        Function<MapClientEntity<Object>, ?> getter = ue -> {
+            final List<String> attrs = ue.getAttribute(attrNameS);
+            return attrs != null && attrs.stream().anyMatch(valueComparator);
+        };
 
-        return mcb.fieldCompare(op, getter, realValue);
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
     private static MapModelCriteriaBuilder<Object, MapUserEntity<Object>, UserModel> checkGrantedUserRole(MapModelCriteriaBuilder<Object, MapUserEntity<Object>, UserModel> mcb, Operator op, Object[] values) {
