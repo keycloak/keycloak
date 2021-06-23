@@ -16,7 +16,7 @@
  */
 package org.keycloak.userprofile.config;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Config of the rules when attribute is selected.
@@ -26,13 +26,13 @@ import java.util.List;
  */
 public class UPAttributeSelector {
 
-    private List<String> scopes;
+    private Set<String> scopes;
 
-    public List<String> getScopes() {
+    public Set<String> getScopes() {
         return scopes;
     }
 
-    public void setScopes(List<String> scopes) {
+    public void setScopes(Set<String> scopes) {
         this.scopes = scopes;
     }
 

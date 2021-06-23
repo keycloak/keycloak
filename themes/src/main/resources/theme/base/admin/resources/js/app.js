@@ -268,7 +268,10 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 realm : function(RealmLoader) {
                     return RealmLoader();
-                }
+                },
+                clientScopes : function(ClientScopeListLoader) {
+                    return ClientScopeListLoader();
+                },
             },
             controller : 'RealmUserProfileCtrl'
         })

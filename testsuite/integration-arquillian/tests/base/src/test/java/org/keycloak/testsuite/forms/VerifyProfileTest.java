@@ -126,7 +126,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         actions.add(action);
         testRealm.setRequiredActions(actions);
         
-        testRealm.setClientScopes(Collections.singletonList(ClientScopeBuilder.create().name(SCOPE_DEPARTMENT).protocol("openid-connect").build()));
+        testRealm.setClientScopes(new ArrayList<>());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name(SCOPE_DEPARTMENT).protocol("openid-connect").build());
+        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("profile").protocol("openid-connect").build());
         client_scope_default = KeycloakModelUtils.createClient(testRealm, "client-a");
         client_scope_default.setDefaultClientScopes(Collections.singletonList(SCOPE_DEPARTMENT));
         client_scope_default.setRedirectUris(Collections.singletonList("*"));
