@@ -1,13 +1,16 @@
 {
 	"attributes": [
 		{
-			"name": "username"
+			"name": "username",
+			"displayName": "${username}"
 		},
 		{
-			"name": "email"
+			"name": "email",
+			"displayName": "${email}"
 		},
 		{
 			"name": "firstName",
+			"displayName": "${firstName}",
 	        "required": {"roles" : ["user"]},
 			"permissions": {
 				"view": ["admin", "user"],
@@ -16,6 +19,7 @@
 		},
 		{
 			"name": "lastName",
+			"displayName": "${lastName}",
 	        "required": {"roles" : ["user"]},
 			"permissions": {
 				"view": ["admin", "user"],

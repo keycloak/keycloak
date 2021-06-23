@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import org.keycloak.common.Profile;
@@ -41,6 +42,8 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientScopeModel.ClientScopeRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -48,6 +51,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeMetadata;
@@ -85,7 +89,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
      * @param configuredScopes to be evaluated
      * @return
      */
-    private static boolean requestedScopePredicate(AttributeContext context, List<String> configuredScopes) {
+    private static boolean requestedScopePredicate(AttributeContext context, Set<String> configuredScopes) {
         KeycloakSession session = context.getSession();
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
 
@@ -277,13 +281,13 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             UPAttributePermissions permissions = attrConfig.getPermissions();
 
             if (permissions != null) {
-                List<String> editRoles = permissions.getEdit();
+                Set<String> editRoles = permissions.getEdit();
 
                 if (!editRoles.isEmpty()) {
                     writeAllowed = ac -> UPConfigUtils.isRoleForContext(ac.getContext(), editRoles);
                 }
 
-                List<String> viewRoles = permissions.getView();
+                Set<String> viewRoles = permissions.getView();
 
                 if (viewRoles.isEmpty()) {
                     readAllowed = writeAllowed;
@@ -333,7 +337,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
-            List<String> viewRoles) {
+            Set<String> viewRoles) {
         return ac -> UPConfigUtils.isRoleForContext(ac.getContext(), viewRoles) || canEdit.test(ac);
     }
 
