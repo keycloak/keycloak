@@ -12,17 +12,18 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { emptyFormatter, exportClient, getBaseUrl } from "../util";
+import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { emptyFormatter, exportClient, getBaseUrl } from "../util";
 import { useAlerts } from "../components/alert/Alerts";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { cellWidth, TableText } from "@patternfly/react-table";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -77,6 +78,14 @@ export const ClientsSection = () => {
           </Badge>
         )}
       </Link>
+    </>
+  );
+
+  const ClientDescription = (client: ClientRepresentation) => (
+    <>
+      <TableText wrapModifier="truncate">
+        {emptyFormatter()(client.description)}
+      </TableText>
     </>
   );
 
@@ -150,7 +159,8 @@ export const ClientsSection = () => {
                 {
                   name: "description",
                   displayKey: "common:description",
-                  cellFormatters: [emptyFormatter()],
+                  transforms: [cellWidth(20)],
+                  cellRenderer: ClientDescription,
                 },
                 {
                   name: "baseUrl",
