@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('firstName','lastName','email','username','password','password-confirm'); section>
+<@layout.registrationLayout displayMessage=!messagesPerField.existsError('firstName','lastName','email','username','password','password-confirm','termsAccepted'); section>
     <#if section = "header">
         ${msg("registerTitle")}
     <#elseif section = "form">
@@ -114,6 +114,32 @@
                             </span>
                         </#if>
                     </div>
+                </div>
+            </#if>
+
+            <#if termsAcceptanceRequired??>
+                <div class="form-group">
+                    <div class="${properties.kcInputWrapperClass!}">
+                        ${msg("termsTitle")}
+                        <div id="kc-registration-terms-text">
+                            ${kcSanitize(msg("termsText"))?no_esc}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="${properties.kcLabelWrapperClass!}">
+                        <input type="checkbox" id="termsAccepted" name="termsAccepted" class="${properties.kcCheckboxInputClass!}"
+                               aria-invalid="<#if messagesPerField.existsError('termsAccepted')>true</#if>"
+                        />
+                        <label for="termsAccepted" class="${properties.kcLabelClass!}">${msg("acceptTerms")}</label>
+                    </div>
+                    <#if messagesPerField.existsError('termsAccepted')>
+                        <div class="${properties.kcLabelWrapperClass!}">
+                            <span id="input-error-terms-accepted" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+                                ${kcSanitize(messagesPerField.get('termsAccepted'))?no_esc}
+                            </span>
+                        </div>
+                    </#if>
                 </div>
             </#if>
 

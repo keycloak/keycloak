@@ -140,6 +140,14 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(registrationFormFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("registration-terms-and-conditions");
+        execution.setPriority(70);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
     }
 
     public static void browserFlow(RealmModel realm) {

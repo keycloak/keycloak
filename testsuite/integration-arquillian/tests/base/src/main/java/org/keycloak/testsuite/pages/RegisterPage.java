@@ -55,6 +55,9 @@ public class RegisterPage extends AbstractPage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
+    @FindBy(id = "termsAccepted")
+    private WebElement termsAcceptedInput;
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
@@ -67,8 +70,11 @@ public class RegisterPage extends AbstractPage {
     @FindBy(linkText = "« Back to Login")
     private WebElement backToLoginLink;
 
-
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
+        register(firstName, lastName, email, username, password, passwordConfirm, null);
+    }
+
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, Boolean termsAccepted) {
         firstNameInput.clear();
         if (firstName != null) {
             firstNameInput.sendKeys(firstName);
@@ -97,6 +103,15 @@ public class RegisterPage extends AbstractPage {
         passwordConfirmInput.clear();
         if (passwordConfirm != null) {
             passwordConfirmInput.sendKeys(passwordConfirm);
+        }
+
+        try {
+            termsAcceptedInput.clear();
+        } catch (NoSuchElementException e) {
+            // ignore
+        }
+        if (termsAccepted != null && termsAccepted) {
+            termsAcceptedInput.click();
         }
 
         submitButton.click();
