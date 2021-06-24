@@ -9,4 +9,4 @@ Version: 1
 === URI scheme
 Host: localhost:8080
 BasePath: /auth
-Schemes: HTTP
+Schemes: HTTP, HTTPS
