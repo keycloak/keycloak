@@ -56,6 +56,8 @@ public class Templates {
                 return "select-authenticator.ftl";
             case REGISTER:
                 return "register.ftl";
+            case REGISTER_USER_PROFILE:
+                return "register-user-profile.ftl";
             case INFO:
                 return "info.ftl";
             case ERROR:

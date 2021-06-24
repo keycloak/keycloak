@@ -67,12 +67,12 @@ import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     
-    private static final String SCOPE_DEPARTMENT = "department";
-    private static final String ATTRIBUTE_DEPARTMENT = "department";
+    public static final String SCOPE_DEPARTMENT = "department";
+    public static final String ATTRIBUTE_DEPARTMENT = "department";
     
-    public static String PERMISSIONS_ALL = "\"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}";
-    public static String PERMISSIONS_ADMIN_ONLY = "\"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}";
-    public static String PERMISSIONS_ADMIN_EDITABLE = "\"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}";
+    public static final String PERMISSIONS_ALL = "\"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}";
+    public static final String PERMISSIONS_ADMIN_ONLY = "\"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}";
+    public static final String PERMISSIONS_ADMIN_EDITABLE = "\"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}";
     
     public static String VALIDATIONS_LENGTH = "\"validations\": {\"length\": { \"min\": 3, \"max\": 255 }}";
 
