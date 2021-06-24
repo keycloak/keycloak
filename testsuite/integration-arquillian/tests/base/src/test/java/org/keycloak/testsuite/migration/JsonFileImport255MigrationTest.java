@@ -46,6 +46,10 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         try {
             reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
             masterRep = reps.remove("master");
+
+            //the realm with special characters in its id is intended for db migration test, not json file test
+            reps.remove("test ' and ; and -- and \"");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
