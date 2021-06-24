@@ -79,7 +79,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         KeycloakSession session = c.getSession();
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
-        return realm.isEditUsernameAllowed();
+        return ((c.getContext() == REGISTRATION_PROFILE || c.getContext() == IDP_REVIEW) && !realm.isRegistrationEmailAsUsername()) || realm.isEditUsernameAllowed();
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {

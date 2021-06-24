@@ -168,6 +168,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public Map<String, List<String>> getReadable() {
+        if(user == null)
+            return null;
+        
         Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
 
         if (attributes.isEmpty()) {

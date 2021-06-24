@@ -22,7 +22,7 @@ public class VerifyProfileBean extends AbstractUserProfileBean {
     public VerifyProfileBean(UserModel user, MultivaluedMap<String, String> formData, KeycloakSession session) {
         super(formData);
         this.user = user;
-        init(session);
+        init(session, false);
     }
 
     @Override
@@ -33,6 +33,11 @@ public class VerifyProfileBean extends AbstractUserProfileBean {
     @Override
     protected List<String> getAttributeDefaultValue(String name) {
         return singletonList(user.getFirstAttribute(name));
+    }
+    
+    @Override 
+    public String getContext() {
+        return UserProfileContext.UPDATE_PROFILE.name();
     }
 
 }

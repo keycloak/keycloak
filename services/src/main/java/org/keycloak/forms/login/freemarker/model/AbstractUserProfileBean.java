@@ -32,12 +32,14 @@ public abstract class AbstractUserProfileBean {
      * Subclass have to call this method at the end of constructor to init user profile data. 
      * 
      * @param session
+     * @param writeableOnly if true then only writeable (no read-only) attributes are put into template, if false then all readable attributes are there 
      */
-    protected void init(KeycloakSession session) {
+    protected void init(KeycloakSession session, boolean writeableOnly) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         this.profile = createUserProfile(provider);
-        this.attributes = toAttributes(profile.getAttributes().getReadable());
-        this.attributesByName = attributes.stream().collect(Collectors.toMap((a) -> a.getName(), (a) -> a));        
+        this.attributes = toAttributes(profile.getAttributes().getReadable(), writeableOnly);
+        if(this.attributes != null)
+            this.attributesByName = attributes.stream().collect(Collectors.toMap((a) -> a.getName(), (a) -> a));        
     }
 
     /**
@@ -57,6 +59,13 @@ public abstract class AbstractUserProfileBean {
     protected abstract List<String> getAttributeDefaultValue(String name);
 
     /**
+     * Get context the template is used for, so view can be customized for distinct contexts. 
+     * 
+     * @return name of the context
+     */
+    public abstract String getContext();
+    
+    /**
      * All attributes to be shown in form sorted by the configured GUI order. Useful to render dynamic form.
      * 
      * @return list of attributes
@@ -74,8 +83,10 @@ public abstract class AbstractUserProfileBean {
         return attributesByName;
     }
 
-    private List<Attribute> toAttributes(Map<String, List<String>> readable) {
-        return readable.keySet().stream().map(name -> profile.getAttributes().getMetadata(name)).map(Attribute::new).sorted().collect(Collectors.toList());
+    private List<Attribute> toAttributes(Map<String, List<String>> attributes, boolean writeableOnly) {
+        if(attributes == null)
+            return null;
+        return attributes.keySet().stream().map(name -> profile.getAttributes().getMetadata(name)).filter((am) -> writeableOnly ? !profile.getAttributes().isReadOnly(am.getName()) : true).map(Attribute::new).sorted().collect(Collectors.toList());
     }
 
     /**
@@ -98,7 +109,7 @@ public abstract class AbstractUserProfileBean {
         }
 
         public String getValue() {
-            List<String> v = formData.getOrDefault(getName(), getAttributeDefaultValue(getName()));
+            List<String> v = formData!=null ? formData.getOrDefault(getName(), getAttributeDefaultValue(getName())): getAttributeDefaultValue(getName());
             if (v == null || v.isEmpty()) {
                 return null;
             }
@@ -111,6 +122,15 @@ public abstract class AbstractUserProfileBean {
 
         public boolean isReadOnly() {
             return profile.getAttributes().isReadOnly(getName());
+        }
+        
+        /** define value of the autocomplete attribute for html input tag. if null then no html input tag attribute is added */
+        public String getAutocomplete() {
+            if(getName().equals("email") || getName().equals("username"))
+                return getName();
+            else
+                return null;    
+            
         }
 
         public Map<String, Object> getAnnotations() {

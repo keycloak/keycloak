@@ -186,9 +186,14 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
+        return expectRegister(username, email, DEFAULT_CLIENT_ID);
+    }
+    
+    public ExpectedEvent expectRegister(String username, String email, String clientId) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER)
                 .user(user != null ? user.getId() : null)
+                .client(clientId)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")

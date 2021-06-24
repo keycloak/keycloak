@@ -63,6 +63,7 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -180,6 +181,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @SuppressWarnings("incomplete-switch")
     protected Response createResponse(LoginFormsPages page) {
+        
         Theme theme;
         try {
             theme = getTheme();
@@ -230,7 +232,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
             case REGISTER:
-                attributes.put("register", new RegisterBean(formData));
+                if(isDynamicUserProfile()) {
+                    page = LoginFormsPages.REGISTER_USER_PROFILE;
+                }
+                RegisterBean rb = new RegisterBean(formData,session);
+                //legacy bean for static template
+                attributes.put("register", rb);
+                //bean for dynamic template
+                attributes.put("profile", rb);
                 break;
             case OAUTH_GRANT:
                 attributes.put("oauth",
@@ -251,6 +260,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
+    }
+    
+    private boolean isDynamicUserProfile() {
+        return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
     }
     
     @Override
