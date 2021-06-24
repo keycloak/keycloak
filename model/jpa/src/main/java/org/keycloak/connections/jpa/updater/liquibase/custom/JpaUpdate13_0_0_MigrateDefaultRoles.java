@@ -59,14 +59,15 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
                 // assign the role to the realm
                 new UpdateStatement(null, null, database.correctObjectName("REALM", Table.class))
                     .addNewColumnValue("DEFAULT_ROLE", id)
-                    .setWhereClause("REALM.ID = '" + realmId + "'")
+                    .setWhereClause("REALM.ID=?")
+                    .addWhereParameter(realmId)
             );
 
             statements.add(
                 // copy data from REALM_DEFAULT_ROLES to COMPOSITE_ROLE
                 new RawSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
                         "SELECT '" + id + "', ROLE_ID FROM " + getTableName("REALM_DEFAULT_ROLES") +
-                        " WHERE REALM_ID = '" + realmId + "'")
+                        " WHERE REALM_ID = '" + database.escapeStringForDatabase(realmId) + "'")
             );
             statements.add(
                 // copy data from CLIENT_DEFAULT_ROLES to COMPOSITE_ROLE
@@ -74,7 +75,7 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
                         "SELECT '" + id + "', " + clientDefaultRolesTable + ".ROLE_ID FROM " + 
                         clientDefaultRolesTable + " INNER JOIN " + clientTable + " ON " + 
                         clientTable + ".ID = " + clientDefaultRolesTable + ".CLIENT_ID AND " +
-                        clientTable + ".REALM_ID = '" + realmId + "'")
+                        clientTable + ".REALM_ID = '" + database.escapeStringForDatabase(realmId) + "'")
             );
         }
     }
