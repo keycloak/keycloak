@@ -280,8 +280,10 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
         }
     }
     $scope.realm = angular.copy(realm);
+    $scope.realm.attributes['userProfileEnabled'] = $scope.realm.attributes['userProfileEnabled'] == 'true';
 
     var oldCopy = angular.copy($scope.realm);
+    $scope.realmCopy = oldCopy;
 
     $scope.changed = $scope.create;
 
@@ -309,6 +311,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
                     if (Current.realms[i].realm == realmCopy.realm) {
                         Current.realm = Current.realms[i];
                         oldCopy = angular.copy($scope.realm);
+                        $scope.realmCopy = oldCopy;
                     }
                 }
             });

@@ -17,9 +17,11 @@
 package org.keycloak.testsuite.forms;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -29,15 +31,12 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -47,19 +46,12 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.userprofile.UserProfileSpi;
-import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  * @author Vlastimil Elias <velias@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE, skipRestart = false)
-@SetDefaultProvider(spi = UserProfileSpi.ID, providerId = DeclarativeUserProfileProvider.ID,
-        beforeEnableFeature = false,
-        onlyUpdateDefault = true
-)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
@@ -103,18 +95,21 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         List<String> scopes = new ArrayList<>();
         scopes.add(SCOPE_LAST_NAME);
         scopes.add(VerifyProfileTest.SCOPE_DEPARTMENT);
-        
+
         client_scope_default = KeycloakModelUtils.createClient(testRealm, "client-a");
         client_scope_default.setDefaultClientScopes(scopes);
         client_scope_default.setRedirectUris(Collections.singletonList("*"));
         client_scope_optional = KeycloakModelUtils.createClient(testRealm, "client-b");
         client_scope_optional.setOptionalClientScopes(scopes);
         client_scope_optional.setRedirectUris(Collections.singletonList("*"));
-
+        if (testRealm.getAttributes() == null) {
+            testRealm.setAttributes(new HashMap<>());
+        }
+        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
 
     @Test
-    public void testRregisterUserSuccess_lastNameOptional() {
+    public void testRegisterUserSuccess_lastNameOptional() {
         setUserProfileConfiguration("{\"attributes\": ["
                 + UP_CONFIG_BASIC_ATTRIBUTES
                 + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
@@ -248,14 +243,14 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         events.expectRegister("registeruserinvalidlastnamelength", "registerUserInvalidLastNameLength@email")
                 .error("invalid_registration").assertEvent();
     }
-    
+
     @Test
     public void testAttributeDisplayName() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}}" 
+                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
         loginPage.open();
@@ -271,50 +266,50 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         // direct value in display name
         Assert.assertEquals("Department",registerPage.getLabelForField("department"));
     }
-    
+
     @Test
     public void testRegisterUserSuccess_requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}" 
+                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
         loginPage.open();
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
-        
+
         Assert.assertFalse(registerPage.isDepartmentPresent());
 
-        
+
         registerPage.register("FirstName", "LastName", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration@email", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration", "password", "password");
-        
+
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
-    
-    
+
+
     @Test
     public void testRegisterUserSuccess_attributeRequiredAndSelectedByScopeMustBeSet() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.scope(VerifyProfileTest.SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
-        
+
         //check required validation works
         registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", "password", "password", "");
         registerPage.assertCurrent();
-        
+
         registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", "password", "password", "DepartmentAA");
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -327,23 +322,23 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRegisterUserSuccess_attributeNotRequiredAndSelectedByScopeCanBeIgnored() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.scope(VerifyProfileTest.SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
-        
+
         Assert.assertTrue(registerPage.isDepartmentPresent());
         registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email", "attributeNotRequiredAndSelectedByScopeCanBeIgnored", "password", "password", null);
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        String userId = events.expectRegister("attributeNotRequiredAndSelectedByScopeCanBeIgnored", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email",client_scope_optional.getClientId()).assertEvent().getUserId();        
+        String userId = events.expectRegister("attributeNotRequiredAndSelectedByScopeCanBeIgnored", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email",client_scope_optional.getClientId()).assertEvent().getUserId();
         UserRepresentation user = getUser(userId);
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
@@ -353,23 +348,23 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRegisterUserSuccess_attributeNotRequiredAndSelectedByScopeCanBeSet() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.clientId(client_scope_default.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
-        
+
         Assert.assertTrue(registerPage.isDepartmentPresent());
         registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeSet@email", "attributeNotRequiredAndSelectedByScopeCanBeSet", "password", "password", "Department AA");
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        String userId = events.expectRegister("attributeNotRequiredAndSelectedByScopeCanBeSet", "attributeNotRequiredAndSelectedByScopeCanBeSet@email",client_scope_default.getClientId()).assertEvent().getUserId();        
+        String userId = events.expectRegister("attributeNotRequiredAndSelectedByScopeCanBeSet", "attributeNotRequiredAndSelectedByScopeCanBeSet@email",client_scope_default.getClientId()).assertEvent().getUserId();
         UserRepresentation user = getUser(userId);
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
@@ -379,19 +374,19 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRegisterUserSuccess_attributeRequiredButNotSelectedByScopeIsNotRenderedAndNotBlockingRegistration() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+VerifyProfileTest.SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
-        
+
         Assert.assertFalse(registerPage.isDepartmentPresent());
         registerPage.register("FirstAA", "LastAA", "attributeRequiredButNotSelectedByScopeIsNotRendered@email", "attributeRequiredButNotSelectedByScopeIsNotRendered", "password", "password");
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -402,7 +397,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         assertEquals(null, user.firstAttribute(VerifyProfileTest.ATTRIBUTE_DEPARTMENT));
     }
 
-    
+
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {
         events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
 
@@ -421,7 +416,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     protected UserRepresentation getUser(String userId) {
         return testRealm().users().get(userId).toRepresentation();
     }
-    
+
     protected UserRepresentation getUserByUsername(String username) {
         List<UserRepresentation> users = testRealm().users().search(username);
         if(users!=null && !users.isEmpty())

@@ -1,4 +1,4 @@
-package org.keycloak.userprofile.config;
+package org.keycloak.userprofile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -7,6 +7,7 @@ import java.util.Map;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
@@ -38,5 +39,10 @@ public class DeclarativeAttributes extends DefaultAttributes {
         }
 
         return attributes;
+    }
+
+    @Override
+    protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
+        return !metadata.canView(createAttributeContext(metadata));
     }
 }
