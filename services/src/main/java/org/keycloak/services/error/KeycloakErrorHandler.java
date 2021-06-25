@@ -45,6 +45,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
 
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
+    public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
 
     @Context
     private HttpHeaders headers;
@@ -62,6 +63,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
         if (statusCode >= 500 && statusCode <= 599) {
             logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
+        }
+        else {
+            logger.debugv(throwable, ERROR_RESPONSE_TEXT, statusCode);
         }
 
         if (!MediaTypeMatcher.isHtmlRequest(headers)) {
