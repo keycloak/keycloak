@@ -20,6 +20,7 @@
 package org.keycloak.userprofile.config;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**

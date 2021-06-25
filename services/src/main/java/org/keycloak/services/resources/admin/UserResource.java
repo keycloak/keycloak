@@ -286,10 +286,14 @@ public class UserResource {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(USER_API, user);
 
-        Map<String, List<String>> attributes = profile.getAttributes().getReadable(false);
+        if (rep.getAttributes() != null) {
+            Map<String, List<String>> allowedAttributes = profile.getAttributes().getReadable(false);
 
-        if (!attributes.isEmpty()) {
-            rep.setAttributes(attributes);
+            for (String attributeName : rep.getAttributes().keySet()) {
+                if (!allowedAttributes.containsKey(attributeName)) {
+                    rep.getAttributes().remove(attributeName);
+                }
+            }
         }
 
         return rep;

@@ -20,50 +20,40 @@
 package org.keycloak.testsuite.admin.userprofile;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
+import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
-import org.keycloak.userprofile.UserProfileSpi;
-import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE, skipRestart = false)
-@SetDefaultProvider(spi = UserProfileSpi.ID, providerId = DeclarativeUserProfileProvider.ID,
-        beforeEnableFeature = false,
-        onlyUpdateDefault = true
-)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-
+        if (testRealm.getAttributes() == null) {
+            testRealm.setAttributes(new HashMap<>());
+        }
+        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
 
     @Test
     public void testDefaultConfigIfNoneSet() {
-        String defaultRawConfig;
-
-        try (InputStream is = DeclarativeUserProfileProvider.class.getResourceAsStream(DeclarativeUserProfileProvider.SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
-            defaultRawConfig = StreamUtil.readString(is, Charset.defaultCharset());
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to load default user profile config file", cause);
-        }
-
-        assertEquals(defaultRawConfig, testRealm().users().userProfile().getConfiguration());
+        assertEquals(readDefaultConfig(), testRealm().users().userProfile().getConfiguration());
     }
 
     @Test

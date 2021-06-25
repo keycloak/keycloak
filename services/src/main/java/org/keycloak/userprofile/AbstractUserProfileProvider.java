@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.userprofile.legacy;
+package org.keycloak.userprofile;
 
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
@@ -44,16 +44,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.userprofile.AttributeContext;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
-import org.keycloak.userprofile.Attributes;
-import org.keycloak.userprofile.DefaultAttributes;
-import org.keycloak.userprofile.DefaultUserProfile;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.UserProfileMetadata;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.UserProfileProviderFactory;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
 import org.keycloak.userprofile.validator.DuplicateEmailValidator;
@@ -79,7 +69,20 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         KeycloakSession session = c.getSession();
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
-        return ((c.getContext() == REGISTRATION_PROFILE || c.getContext() == IDP_REVIEW) && !realm.isRegistrationEmailAsUsername()) || realm.isEditUsernameAllowed();
+
+        switch (c.getContext()) {
+            case REGISTRATION_PROFILE:
+            case IDP_REVIEW:
+                return !realm.isRegistrationEmailAsUsername();
+            case ACCOUNT_OLD:
+            case ACCOUNT:
+            case UPDATE_PROFILE:
+                return realm.isEditUsernameAllowed();
+            case USER_API:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
