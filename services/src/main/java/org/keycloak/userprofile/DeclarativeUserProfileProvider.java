@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.userprofile.config;
+package org.keycloak.userprofile;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes;
@@ -25,8 +25,6 @@ import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,33 +33,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientScopeModel.ClientScopeRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderEvent;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.userprofile.AttributeContext;
-import org.keycloak.userprofile.AttributeMetadata;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
-import org.keycloak.userprofile.Attributes;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.UserProfileMetadata;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.legacy.AbstractUserProfileProvider;
+import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
+import org.keycloak.userprofile.config.UPAttribute;
+import org.keycloak.userprofile.config.UPAttributePermissions;
+import org.keycloak.userprofile.config.UPAttributeRequired;
+import org.keycloak.userprofile.config.UPAttributeSelector;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
+import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
@@ -73,12 +66,12 @@ import org.keycloak.validate.ValidatorConfig;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<DeclarativeUserProfileProvider>
-        implements AmphibianProviderFactory<DeclarativeUserProfileProvider>, EnvironmentDependentProviderFactory {
+public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<UserProfileProvider>
+        implements AmphibianProviderFactory<UserProfileProvider> {
 
-    public static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
     public static final String ID = "declarative-user-profile";
     public static final String UP_PIECES_COUNT_COMPONENT_CONFIG_KEY = "config-pieces-count";
+    public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
     private static final String UP_PIECE_COMPONENT_CONFIG_KEY_BASE = "config-piece-";
 
@@ -106,7 +99,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     private String defaultRawConfig;
 
     public DeclarativeUserProfileProvider() {
-        // for reflection
+        defaultRawConfig = UPConfigUtils.readDefaultConfig();
     }
 
     public DeclarativeUserProfileProvider(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry, String defaultRawConfig) {
@@ -120,18 +113,33 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     @Override
-    protected DeclarativeUserProfileProvider create(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
+    protected UserProfileProvider create(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
         return new DeclarativeUserProfileProvider(session, metadataRegistry, defaultRawConfig);
     }
 
     @Override
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
+        if (!isEnabled(session)) {
+            return new DefaultAttributes(context, attributes, user, metadata, session);
+        }
         return new DeclarativeAttributes(context, attributes, user, metadata, session);
     }
 
     @Override
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {
+        UserProfileContext context = metadata.getContext();
+        UserProfileMetadata decoratedMetadata = metadata.clone();
+
+        if (!isEnabled(session)) {
+            if(!context.equals(UserProfileContext.USER_API) && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)) {
+                decoratedMetadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
+                        Messages.MISSING_FIRST_NAME))).setAttributeDisplayName("${firstName}");
+                decoratedMetadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME))).setAttributeDisplayName("${lastName}");
+                return decoratedMetadata;
+            }
+        }
+
         ComponentModel model = getComponentModelOrCreate(session);
         Map<UserProfileContext, UserProfileMetadata> metadataMap = model.getNote(PARSED_CONFIG_COMPONENT_KEY);
 
@@ -141,7 +149,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             model.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
-        return metadataMap.computeIfAbsent(metadata.getContext(), (context) -> decorateUserProfileForCache(metadata, model));
+        return metadataMap.computeIfAbsent(context, (c) -> decorateUserProfileForCache(decoratedMetadata, model));
     }
 
     @Override
@@ -175,6 +183,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     @Override
     public String getConfiguration() {
+        if (!isEnabled(session)) {
+            return null;
+        }
+
         String cfg = getConfigJsonFromComponentModel(getComponentModel());
 
         if (isBlank(cfg)) {
@@ -190,6 +202,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         removeConfigJsonFromComponentModel(component);
 
+        RealmModel realm = session.getContext().getRealm();
+
         if (!isBlank(configuration)) {
             // store new parts
             List<String> parts = UPConfigUtils.getChunks(configuration, 3800);
@@ -202,19 +216,15 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             for (String part : parts) {
                 config.putSingle(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + (i++), part);
             }
-        }
 
-        session.getContext().getRealm().updateComponent(component);
+            realm.updateComponent(component);
+        } else {
+            realm.removeComponent(component);
+        }
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        // TODO: We should avoid blocking operations during startup. Need to review this.
-        try (InputStream is = getClass().getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
-            defaultRawConfig = StreamUtil.readString(is, Charset.defaultCharset());
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to load default user profile config file", cause);
-        }
     }
 
     @Override
@@ -231,22 +241,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
      * This method is called for each {@link UserProfileContext} in each realm, and metadata are cached then and this
      * method is called again only if configuration changes.
      *
-     * @param metadata base to be decorated based on configuration loaded from component model
+     * @param decoratedMetadata base to be decorated based on configuration loaded from component model
      * @param model component model to get "per realm" configuration from
      * @return decorated metadata
      */
-    protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata metadata, ComponentModel model) {
-        UserProfileContext context = metadata.getContext();
+    protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, ComponentModel model) {
+        UserProfileContext context = decoratedMetadata.getContext();
         UPConfig parsedConfig = getParsedConfig(model);
 
         // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
         if (parsedConfig == null || context == UserProfileContext.REGISTRATION_USER_CREATION) {
-            return metadata;
+            return decoratedMetadata;
         }
-
-        // need to clone otherwise changes to profile config are going to be reflected
-        // in the default config
-        UserProfileMetadata decoratedMetadata = metadata.clone();
 
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
             String attributeName = attrConfig.getName();
@@ -425,8 +431,14 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         model.getConfig().remove(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY);
     }
 
-    @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
+    /**
+     * Returns whether the declarative provider is enabled to a realm
+     *
+     * @deprecated should be removed once {@link DeclarativeUserProfileProvider} becomes the default.
+     * @param session the session
+     * @return {@code true} if the declarative provider is enabled. Otherwise, {@code false}.
+     */
+    private Boolean isEnabled(KeycloakSession session) {
+        return session.getContext().getRealm().getAttribute(REALM_USER_PROFILE_ENABLED, false);
     }
 }

@@ -39,6 +39,10 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.*;
 import javax.mail.internet.MimeMessage;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -261,10 +265,20 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
-        assertEquals("Please specify first name.", registerPage.getInputAccountErrors().getFirstNameError());
-        assertEquals("Please specify last name.", registerPage.getInputAccountErrors().getLastNameError());
-        assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
-        assertEquals("Please specify password.", registerPage.getInputPasswordErrors().getPasswordError());
+        assertThat(registerPage.getInputAccountErrors().getFirstNameError(), anyOf(
+                containsString("Please specify first name"),
+                containsString("Please specify firstName field.")
+        ));
+        assertThat(registerPage.getInputAccountErrors().getLastNameError(), anyOf(
+                containsString("Please specify last name"),
+                containsString("Please specify lastName field.")
+        ));
+        assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify email field.")
+        ));
+
+        assertThat(registerPage.getInputPasswordErrors().getPasswordError(), is("Please specify password."));
 
         events.expectRegister(null, "registerUserMissingUsername@email")
                 .removeDetail(Details.USERNAME)

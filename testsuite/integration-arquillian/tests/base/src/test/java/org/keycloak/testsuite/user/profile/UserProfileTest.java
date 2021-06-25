@@ -43,10 +43,8 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -54,11 +52,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.userprofile.UserProfileSpi;
-import org.keycloak.userprofile.config.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
@@ -80,15 +75,12 @@ import org.keycloak.validate.validators.LengthValidator;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
-@SetDefaultProvider(spi = UserProfileSpi.ID, providerId = DeclarativeUserProfileProvider.ID,
-        beforeEnableFeature = false,
-        onlyUpdateDefault = true)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileTest extends AbstractUserProfileTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
         testRealm.setClientScopes(new ArrayList<>());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name("customer").protocol("openid-connect").build());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name("client-a").protocol("openid-connect").build());

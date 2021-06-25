@@ -138,6 +138,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
@@ -1075,6 +1076,11 @@ public class RepresentationToModel {
     public static void updateRealm(RealmRepresentation rep, RealmModel realm, KeycloakSession session) {
         if (rep.getRealm() != null) {
             renameRealm(realm, rep.getRealm());
+        }
+
+        if (!Boolean.parseBoolean(rep.getAttributesOrEmpty().get("userProfileEnabled"))) {
+            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+            provider.setConfiguration(null);
         }
 
         // Import attributes first, so the stuff saved directly on representation (displayName, bruteForce etc) has bigger priority
