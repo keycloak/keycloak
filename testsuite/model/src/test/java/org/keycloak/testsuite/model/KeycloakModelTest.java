@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.model;
 
+import org.junit.AfterClass;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
@@ -242,6 +243,11 @@ public abstract class KeycloakModelTest {
           )
           .collect(Collectors.toList());
 
+
+        for (KeycloakModelParameters kmp : KeycloakModelTest.MODEL_PARAMETERS) {
+            kmp.suiteRule(CONFIG);
+        }
+
         reinitializeKeycloakSessionFactory();
         DEFAULT_FACTORY = getFactory();
     }
@@ -398,6 +404,13 @@ public abstract class KeycloakModelTest {
             reinitializeKeycloakSessionFactory();
         }
         KeycloakModelUtils.runJobInTransaction(getFactory(), this::cleanEnvironment);
+    }
+
+    @AfterClass
+    public static void freeResources() {
+        for (KeycloakModelParameters kmp : KeycloakModelTest.MODEL_PARAMETERS) {
+            kmp.afterClass();
+        }
     }
 
     protected <T> Stream<T> getParameters(Class<T> clazz) {

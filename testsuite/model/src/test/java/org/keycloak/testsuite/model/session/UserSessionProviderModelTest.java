@@ -32,17 +32,11 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.keycloak.testsuite.model.KeycloakModelTest;
-import org.keycloak.testsuite.model.RequireProvider;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
 
@@ -65,6 +59,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
         realm.setSsoSessionMaxLifespan(36000);
+        realm.setClientSessionIdleTimeout(500);
         this.realmId = realm.getId();
         this.kcSession = s;
 
@@ -137,8 +132,6 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
             InfinispanTestUtil.setTestingTimeService(kcSession);
         }
 
-        AtomicReference<List<String>> clientSessionIds = new AtomicReference<>();
-
         try {
             UserSessionModel[] origSessions = inComittedTransaction(session -> {
                 // create some user and client sessions
@@ -160,20 +153,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 Assert.assertEquals(origSessions[1], userSession);
             });
 
-            inComittedTransaction(session -> {
-                RealmModel realm = session.realms().getRealm(realmId);
-
-                UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[0].getId());
-
-                Collection<AuthenticatedClientSessionModel> values = userSession.getAuthenticatedClientSessions().values();
-                List<String> clientSessions = new LinkedList<>();
-                values.stream().forEach(clientSession -> {
-                    // expire client sessions
-                    clientSession.setTimestamp(1);
-                    clientSessions.add(clientSession.getId());
-                });
-                clientSessionIds.set(clientSessions);
-            });
+            Time.setOffset(1000);
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
@@ -183,8 +163,9 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 Assert.assertEquals(origSessions[0], userSession);
 
                 // assert the client sessions are expired
-                clientSessionIds.get().forEach(clientSessionId ->
-                        Assert.assertNull(session.sessions().getClientSession(userSession, realm.getClientByClientId("test-app"), UUID.fromString(clientSessionId), false)));
+                userSession.getAuthenticatedClientSessions().values().stream()
+                        .map(AuthenticatedClientSessionModel::getId).forEach(clientSessionId ->
+                        Assert.assertNull(session.sessions().getClientSession(userSession, realm.getClientByClientId("test-app"), clientSessionId, false)));
             });
         } finally {
             Time.setOffset(0);

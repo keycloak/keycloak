@@ -181,6 +181,13 @@
         </profile>
 
         <profile>
+            <id>jpa+cross-dc-infinispan</id>
+            <properties>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa+infinispan-sessions-preloading-disabled</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
