@@ -67,4 +67,7 @@ public class KeycloakModelParameters {
         return base;
     }
 
+    public void beforeSuite(Config cf) {
+
+    }
 }

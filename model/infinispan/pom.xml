@@ -75,5 +75,10 @@
             <artifactId>microprofile-metrics-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-hotrod</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
     </dependencies>
 </project>

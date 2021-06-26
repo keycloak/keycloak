@@ -27,7 +27,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 
 /**
  * TODO: Check if Boolean can be used as single-use cache argument instead of ActionTokenValueEntity. With respect to other single-use cache usecases like "Revoke Refresh Token" .
