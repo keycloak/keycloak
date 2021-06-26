@@ -124,6 +124,14 @@
         }
     },
 
+    "connectionsHotRod": {
+        "default": {
+            "embedded": "${keycloak.connectionsHotRod.embedded:true}",
+            "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+        }
+    },
+
     "scripting": {
     },
 

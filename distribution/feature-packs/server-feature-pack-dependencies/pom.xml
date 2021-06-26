@@ -202,6 +202,16 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map-hot-rod</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
             <exclusions>
                 <exclusion>

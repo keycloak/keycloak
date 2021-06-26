@@ -35,5 +35,6 @@
         <module>infinispan</module>
         <module>map</module>
         <module>build-processor</module>
+        <module>hot-rod</module>
     </modules>
 </project>

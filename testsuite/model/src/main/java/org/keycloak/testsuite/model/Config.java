@@ -133,7 +133,7 @@ public class Config implements ConfigProvider {
         @Override
         public Scope scope(String... scope) {
             StringBuilder sb = new StringBuilder();
-            sb.append(prefix).append(".");
+            sb.append(prefix);
             for (String s : scope) {
                 sb.append(s);
                 sb.append(".");
