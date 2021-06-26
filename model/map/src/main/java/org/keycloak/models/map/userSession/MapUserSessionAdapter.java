@@ -111,22 +111,22 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         Map<String, AuthenticatedClientSessionModel> result = new HashMap<>();
         List<String> removedClientUUIDS = new LinkedList<>();
 
-        entity.getAuthenticatedClientSessions().entrySet()
-                .stream()
-                .forEach(entry -> {
-                    String clientUUID = entry.getKey();
-                    ClientModel client = realm.getClientById(clientUUID);
+        // to avoid concurrentModificationException
+        Map<String, String> authenticatedClientSessions = new HashMap<>(entity.getAuthenticatedClientSessions());
 
-                    if (client != null) {
-                        AuthenticatedClientSessionModel clientSession = session.sessions()
-                                .getClientSession(this, client, entry.getValue(), isOffline());
-                        if (clientSession != null) {
-                            result.put(clientUUID, clientSession);
-                        }
-                    } else {
-                        removedClientUUIDS.add(clientUUID);
-                    }
-                });
+        authenticatedClientSessions.forEach((clientUUID, clientSessionId) -> {
+            ClientModel client = realm.getClientById(clientUUID);
+
+            if (client != null) {
+                AuthenticatedClientSessionModel clientSession = session.sessions()
+                        .getClientSession(this, client, clientSessionId, isOffline());
+                if (clientSession != null) {
+                    result.put(clientUUID, clientSession);
+                }
+            } else {
+                removedClientUUIDS.add(clientUUID);
+            }
+        });
 
         removeAuthenticatedClientSessions(removedClientUUIDS);
 

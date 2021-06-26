@@ -18,11 +18,12 @@
 
 package org.keycloak.testsuite.model.infinispan;
 
-import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+
+import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -47,7 +48,7 @@ public class InfinispanTestUtil {
 
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
         EmbeddedCacheManager cacheManager = ispnProvider.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getCacheManager();
-        origTimeService = DefaultInfinispanConnectionProviderFactory.setTimeServiceToKeycloakTime(cacheManager);
+        origTimeService = setTimeServiceToKeycloakTime(cacheManager);
     }
 
     public static void revertTimeService() {

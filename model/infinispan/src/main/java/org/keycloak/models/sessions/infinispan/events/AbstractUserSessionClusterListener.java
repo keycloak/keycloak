@@ -24,7 +24,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 
