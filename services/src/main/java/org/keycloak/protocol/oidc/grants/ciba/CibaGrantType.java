@@ -57,6 +57,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.utils.ProfileHelper;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -75,6 +77,20 @@ public class CibaGrantType {
 
     public static final String REQUEST = OIDCLoginProtocol.REQUEST_PARAM;
     public static final String REQUEST_URI = OIDCLoginProtocol.REQUEST_URI_PARAM;
+    /**
+     * Prefix used to store additional params from the original authentication callback response into {@link AuthenticationSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
+     * prevent collisions with internally used notes.
+     *
+     * @see AuthenticationSessionModel#getClientNote(String)
+     */
+    public static final String ADDITIONAL_CALLBACK_PARAMS_PREFIX = "ciba_callback_response_param_";
+    /**
+     * Prefix used to store additional params from the backchannel authentication request into {@link AuthenticationSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
+     * prevent collisions with internally used notes.
+     *
+     * @see AuthenticationSessionModel#getClientNote(String)
+     */
+    public static final String ADDITIONAL_BACKCHANNEL_REQ_PARAMS_PREFIX = "ciba_backchannel_request_param_";
 
     public static UriBuilder authorizationUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(baseUriBuilder);
@@ -168,7 +184,7 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.AUTHORIZATION_PENDING, "The authorization request is still pending as the end-user hasn't yet been authenticated.", Response.Status.BAD_REQUEST);
         }
 
-        UserSessionModel userSession = createUserSession(request);
+        UserSessionModel userSession = createUserSession(request, deviceCode.getAdditionalParams());
         UserModel user = userSession.getUser();
 
         store.removeDeviceCode(realm, request.getId());
@@ -191,7 +207,7 @@ public class CibaGrantType {
 
     }
 
-    private UserSessionModel createUserSession(CIBAAuthenticationRequest request) {
+    private UserSessionModel createUserSession(CIBAAuthenticationRequest request, Map<String, String> additionalParams) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
         // here Client Model of CD(Consumption Device) needs to be used to bind its Client Session with User Session.
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -200,6 +216,16 @@ public class CibaGrantType {
         authSession.setAction(AuthenticatedClientSessionModel.Action.AUTHENTICATE.name());
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
+        if (additionalParams != null) {
+            for (String paramName : additionalParams.keySet()) {
+                authSession.setClientNote(ADDITIONAL_CALLBACK_PARAMS_PREFIX + paramName, additionalParams.get(paramName));
+            }
+        }
+        if (request.getOtherClaims() != null) {
+            for (String paramName : request.getOtherClaims().keySet()) {
+                authSession.setClientNote(ADDITIONAL_BACKCHANNEL_REQ_PARAMS_PREFIX + paramName, request.getOtherClaims().get(paramName).toString());
+            }
+        }
 
         UserModel user = session.users().getUserById(realm, request.getSubject());
 

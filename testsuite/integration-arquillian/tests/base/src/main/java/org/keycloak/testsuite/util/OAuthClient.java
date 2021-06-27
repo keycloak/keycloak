@@ -712,6 +712,10 @@ public class OAuthClient {
     }
 
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
+        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, acrValues, null);
+    }
+
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues, Map<String, String> additionalParams) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
 
@@ -732,6 +736,11 @@ public class OAuthClient {
             }
             if (request != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
+            }
+            if (additionalParams != null) {
+                for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
+                    parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                }
             }
 
             UrlEncodedFormEntity formEntity;

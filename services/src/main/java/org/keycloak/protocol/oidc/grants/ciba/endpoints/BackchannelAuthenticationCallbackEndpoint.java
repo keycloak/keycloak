@@ -16,17 +16,6 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
@@ -44,6 +33,18 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Map;
+
+import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
 
 public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpoint {
 
@@ -72,7 +73,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
 
         switch (status) {
             case SUCCEED:
-                approveRequest(bearerToken);
+                approveRequest(bearerToken, response.getAdditionalParams());
                 break;
             case CANCELLED:
             case UNAUTHORIZED:
@@ -141,9 +142,9 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         store.removeUserCode(realm, authResultId);
     }
 
-    private void approveRequest(AccessToken authReqId) {
+    private void approveRequest(AccessToken authReqId, Map<String, String> additionalParams) {
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        store.approve(realm, authReqId.getId(), "fake");
+        store.approve(realm, authReqId.getId(), "fake", additionalParams);
     }
 
     private void denyRequest(AccessToken authReqId, Status status) {
