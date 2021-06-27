@@ -16,19 +16,6 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ID_TOKEN_HINT;
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.Optional;
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -52,6 +39,19 @@ import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthe
 import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.JsonSerialization;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.util.Collections;
+import java.util.Optional;
+
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ID_TOKEN_HINT;
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
 
 public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
@@ -183,7 +183,15 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
                     Response.Status.BAD_REQUEST);
         }
 
+        extractAdditionalParams(endpointRequest, request);
+
         return request;
+    }
+
+    protected void extractAdditionalParams(BackchannelAuthenticationEndpointRequest endpointRequest, CIBAAuthenticationRequest request) {
+        for (String paramName : endpointRequest.getAdditionalReqParams().keySet()) {
+            request.setOtherClaims(paramName, endpointRequest.getAdditionalReqParams().get(paramName));
+        }
     }
 
     private UserModel resolveUser(BackchannelAuthenticationEndpointRequest endpointRequest, String authRequestedUserHint) {

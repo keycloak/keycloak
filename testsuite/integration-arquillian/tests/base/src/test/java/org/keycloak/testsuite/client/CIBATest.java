@@ -1435,7 +1435,11 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     private AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String username, String bindingMessage) throws Exception {
-        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, username, bindingMessage, null);
+        return doBackchannelAuthenticationRequest(clientId, clientSecret, username, bindingMessage, null);
+    }
+
+    private AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String username, String bindingMessage, Map<String, String> additionalParameters) throws Exception {
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, username, bindingMessage, null, additionalParameters);
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
         return response;
@@ -1602,6 +1606,8 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         try {
             final String username = "nutzername-rot";
             final String bindingMessage = "BASTION";
+            Map<String, String> additionalParameters = new HashMap<>();
+            additionalParameters.put("user_device", "mobile");
 
             // prepare CIBA settings
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
@@ -1612,7 +1618,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             if (isOfflineAccess) oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, additionalParameters);
 
             // user Authentication Channel Request
             TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
@@ -1620,6 +1626,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
             if (isOfflineAccess) assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
             assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+            assertThat(authenticationChannelReq.getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
 
             // user Authentication Channel completed
             EventRepresentation loginEvent = doAuthenticationChannelCallback(testRequest);

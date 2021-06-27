@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
+import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
@@ -27,6 +28,7 @@ import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -153,14 +155,14 @@ public class InfinispanOAuth2DeviceTokenStoreProvider implements OAuth2DeviceTok
     }
 
     @Override
-    public boolean approve(RealmModel realm, String userCode, String userSessionId) {
+    public boolean approve(RealmModel realm, String userCode, String userSessionId, Map<String, String> additionalParams) {
         try {
             OAuth2DeviceCodeModel deviceCode = findDeviceCodeByUserCode(realm, userCode);
             if (deviceCode == null) {
                 return false;
             }
 
-            OAuth2DeviceCodeModel approved = deviceCode.approve(userSessionId);
+            OAuth2DeviceCodeModel approved = deviceCode.approve(userSessionId, additionalParams);
 
             // Update the device code with approved status
             BasicCache<String, ActionTokenValueEntity> cache = codeCache.get();
