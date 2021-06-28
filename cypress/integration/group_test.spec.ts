@@ -25,10 +25,8 @@ describe("Group test", () => {
   let groupName = "group";
 
   const clickGroup = (itemName: string) => {
-    const groupUrl = "/auth/admin/realms/master/groups/*/members*";
-    cy.intercept(groupUrl).as("groupFetch");
+    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
     cy.get("table").contains(itemName).click();
-    cy.wait(["@groupFetch"]);
 
     return this;
   };
@@ -83,6 +81,7 @@ describe("Group test", () => {
       groupModal.open("no-groups-in-this-realm-empty-action");
       groupModal.fillGroupForm(groupName).clickCreate();
 
+      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
       groupModal.open().fillGroupForm(targetGroupName).clickCreate();
 
       listingPage.clickRowDetails(groupName).clickDetailMenu("Move to");

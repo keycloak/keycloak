@@ -18,11 +18,7 @@ export default class GroupModal {
   }
 
   clickCreate() {
-    cy.intercept("/auth/admin/realms/master/groups/*/members").as(
-      "groupCreate"
-    );
     cy.getId(this.createButton).click();
-    cy.wait(["@groupCreate"]);
 
     return this;
   }
