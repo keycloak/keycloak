@@ -180,7 +180,8 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     @Override
-    public void create(K key, V value) {
+    public void create(V value) {
+        K key = value.getId();
         addTask(key, new CreateOperation(key, value));
     }
 
@@ -329,7 +330,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
             this.key = key;
         }
 
-        @Override public void execute() { map.create(key, getValue()); }
+        @Override public void execute() { map.create(getValue()); }
         @Override public MapOperation getOperation() { return MapOperation.CREATE; }
     }
 

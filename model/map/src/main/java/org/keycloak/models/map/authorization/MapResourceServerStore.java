@@ -82,7 +82,7 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
 
         MapResourceServerEntity<K> entity = new MapResourceServerEntity<>(resourceServerStore.getKeyConvertor().fromString(clientId));
 
-        tx.create(entity.getId(), entity);
+        tx.create(entity);
 
         return entityToAdapter(entity);
     }

@@ -118,9 +118,9 @@ public class MapStorageTest extends KeycloakModelTest {
             MapClientEntity<K1> client1 = new MapClientEntity<>(id1, realmId);
             MapClientEntity<K2> client2 = new MapClientEntity<>(id2, realmId);
 
-            storageMain.create(clientMain.getId(), clientMain);
-            storage1.create(client1.getId(), client1);
-            storage2.create(client2.getId(), client2);
+            storageMain.create(clientMain);
+            storage1.create(client1);
+            storage2.create(client2);
 
             return new Object[] {idMain, id1, id2};
         });

@@ -28,10 +28,9 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
     /**
      * Instructs this transaction to add a new value into the underlying store on commit.
      *
-     * @param key an identifier that will be associated with the {@code value}
      * @param value the value
      */
-    void create(K key, V value);
+    void create(V value);
 
     /**
      * Provides possibility to lookup for values by a {@code key} in the underlying store with respect to changes done
