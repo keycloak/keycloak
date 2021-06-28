@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite;
 
+import org.hamcrest.MatcherAssert;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -145,14 +146,18 @@ public class Assert extends org.junit.Assert {
     }
 
     public static void assertExpiration(int actual, int expected) {
-        org.junit.Assert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
+        assertExpiration((long) actual, (long) expected);
+    }
+
+    public static void assertExpiration(long actual, long expected) {
+        MatcherAssert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
     }
 
     public static void assertRoleAttributes(Map<String, List<String>> expected, Map<String, List<String>> actual) {
-        assertThat(actual.keySet(), equalTo(expected.keySet()));
+        MatcherAssert.assertThat(actual.keySet(), equalTo(expected.keySet()));
         for (String expectedKey : expected.keySet()) {
-            assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
-            assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
+            MatcherAssert.assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
+            MatcherAssert.assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
         }
     }
 }
