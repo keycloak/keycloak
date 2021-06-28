@@ -83,12 +83,13 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
     long getCount(ModelCriteriaBuilder<M> criteria);
 
     /**
-     * Updates the object with the given {@code id} in the storage if it already exists.
+     * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
      * @param key Primary key of the object to update
      * @param value Updated value
-     * @throws NullPointerException if object or its {@code id} is {@code null}
+     * @throws NullPointerException if the object or its {@code id} is {@code null}
+     * @see AbstractEntity#getId()
      */
-    V update(K key, V value);
+    V update(V value);
 
     /**
      * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.

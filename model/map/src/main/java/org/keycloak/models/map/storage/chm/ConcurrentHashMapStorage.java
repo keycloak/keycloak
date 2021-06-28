@@ -54,6 +54,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
 
     @Override
     public V create(V value) {
+        K key = value.getId();
         return store.putIfAbsent(key, value);
     }
 
@@ -64,7 +65,8 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public V update(K key, V value) {
+    public V update(V value) {
+        K key = value.getId();
         return store.replace(key, value);
     }
 
