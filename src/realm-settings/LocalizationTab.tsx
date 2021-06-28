@@ -19,7 +19,6 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { getBaseUrl } from "../util";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 
 type LocalizationTabProps = {
@@ -42,7 +41,6 @@ export const LocalizationTab = ({
   const [defaultLocaleOpen, setDefaultLocaleOpen] = useState(false);
 
   const { getValues, control, handleSubmit } = useFormContext();
-  // const [selectedLocale, setSelectedLocale] = useState("en");
   const [valueSelected, setValueSelected] = useState(false);
   const themeTypes = useServerInfo().themes!;
 
@@ -60,21 +58,11 @@ export const LocalizationTab = ({
 
   const loader = async () => {
     if (realm) {
-      const response = await fetch(
-        `${getBaseUrl(adminClient)}admin/realms/${realm.realm}/localization/${
-          getValues("defaultLocale") || "en"
-        }`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `bearer ${await adminClient.getAccessToken()}`,
-          },
-        }
-      );
-
-      const result = await response.json();
-      const resultTest = Object.keys(result).map((key) => [key, result[key]]);
-      return resultTest;
+      const result = await adminClient.realms.getRealmLocalizationTexts({
+        realm: realm.realm!,
+        selectedLocale: getValues("defaultLocale") || "en",
+      });
+      return Object.keys(result).map((key) => [key, result[key]]);
     }
     return [[]];
   };

@@ -12329,10 +12329,10 @@ junk@^3.1.0:
   resolved "https://registry.yarnpkg.com/junk/-/junk-3.1.0.tgz#31499098d902b7e98c5d9b9c80f43457a88abfa1"
   integrity sha512-pBxcB3LFc8QVgdggvZWyeys+hnrNWg4OcZIU/1X59k5jQdLBlCsYGRQaz234SqoRLTCgMH00fY0xRJH+F9METQ==
 
-keycloak-admin@1.14.17:
-  version "1.14.17"
-  resolved "https://registry.yarnpkg.com/keycloak-admin/-/keycloak-admin-1.14.17.tgz#fbeba43ae3a2d7ee6876afd334549f5675e272d8"
-  integrity sha512-YbGq0wXOuK5StzKdmsO/2WwfJxQmVPUpRScYETkEj7HmiE0IwECzh1OjeSXZ9lXJPFwH+lCQ6q5pNEL6/6gv9Q==
+keycloak-admin@1.14.18:
+  version "1.14.18"
+  resolved "https://registry.yarnpkg.com/keycloak-admin/-/keycloak-admin-1.14.18.tgz#f6be3942d733fd4a1759665d7ff002bdee364e75"
+  integrity sha512-Jtj8guOrXNwyWXog8Q+Zzxemcj2yh+QxtOGDf+A2Q90lMVRL8+yR6zsKMeFFaWnoa8Z9F5LlBrL6eJFROsTJJw==
   dependencies:
     axios "^0.21.0"
     camelize "^1.0.0"

@@ -20,7 +20,6 @@ import { emailRegexPattern } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { getBaseUrl } from "../util";
 
 import "./RealmSettingsSection.css";
 import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
@@ -121,23 +120,15 @@ export const RealmSettingsEmailTab = ({
   };
 
   const testConnection = async () => {
-    const response = await fetch(
-      `${getBaseUrl(adminClient)}admin/realms/${
-        realm.realm
-      }/testSMTPConnection`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `bearer ${await adminClient.getAccessToken()}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(getValues()["smtpServer"] as BodyInit),
-      }
-    );
-    response.ok
-      ? addAlert(t("testConnectionSuccess"), AlertVariant.success)
-      : addAlert(t("testConnectionError"), AlertVariant.danger);
+    try {
+      await adminClient.realms.testSMTPConnection(
+        { realm: realm.realm! },
+        getValues()["smtpServer"] || {}
+      );
+      addAlert(t("testConnectionSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(t("testConnectionError"), AlertVariant.danger);
+    }
   };
 
   return (
