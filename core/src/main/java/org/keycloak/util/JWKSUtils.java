@@ -17,7 +17,6 @@
 
 package org.keycloak.util;
 
-import org.jboss.logging.Logger;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -27,13 +26,15 @@ import org.keycloak.jose.jwk.JWKParser;
 import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWKSUtils {
 
-    private static final Logger logger = Logger.getLogger(JWKSUtils.class);
+    private static final Logger logger = Logger.getLogger(JWKSUtils.class.getName());
 
     public static Map<String, PublicKey> getKeysForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
         Map<String, PublicKey> result = new HashMap<>();
@@ -41,7 +42,7 @@ public class JWKSUtils {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
             if (jwk.getPublicKeyUse() == null) {
-                logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
+                logger.log(Level.FINE, "Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
             } else if (requestedUse.asString().equals(jwk.getPublicKeyUse()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 result.put(jwk.getKeyId(), parser.toPublicKey());
             }
@@ -55,7 +56,7 @@ public class JWKSUtils {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
             if (jwk.getPublicKeyUse() == null) {
-                logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
+                logger.log(Level.FINE, "Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
             } else if (requestedUse.asString().equals(jwk.getPublicKeyUse()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 KeyWrapper keyWrapper = new KeyWrapper();
                 keyWrapper.setKid(jwk.getKeyId());
@@ -90,7 +91,7 @@ public class JWKSUtils {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
             if (jwk.getPublicKeyUse() == null) {
-                logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
+                logger.log(Level.FINE, "Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
             } else if (requestedUse.asString().equals(parser.getJwk().getPublicKeyUse()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 return jwk;
             }
