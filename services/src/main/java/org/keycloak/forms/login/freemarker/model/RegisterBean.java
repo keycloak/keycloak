@@ -17,7 +17,6 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -53,7 +52,7 @@ public class RegisterBean extends AbstractUserProfileBean {
     }
 
     @Override
-    protected List<String> getAttributeDefaultValue(String name) {
+    protected String getAttributeDefaultValue(String name) {
         return null;
     }
     

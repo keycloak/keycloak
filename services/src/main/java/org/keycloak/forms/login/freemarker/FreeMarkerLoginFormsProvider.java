@@ -150,7 +150,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
 
                 actionMessage = Messages.UPDATE_PROFILE;
-                page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
+                if(isDynamicUserProfile()) {
+                    page = LoginFormsPages.UPDATE_USER_PROFILE;
+                } else {
+                    page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
+                }
                 break;
             case UPDATE_PASSWORD:
                 boolean isRequestedByAdmin = user.getRequiredActionsStream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
@@ -166,7 +170,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, verifyProfile);
 
                 actionMessage = Messages.UPDATE_PROFILE;
-                page = LoginFormsPages.VERIFY_PROFILE;
+                page = LoginFormsPages.UPDATE_USER_PROFILE;
                 break;
             default:
                 return Response.serverError().build();
@@ -254,7 +258,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case SAML_POST_FORM:
                 attributes.put("samlPost", new SAMLPostFormBean(formData));
                 break;
-            case VERIFY_PROFILE:
+            case UPDATE_USER_PROFILE:
                 attributes.put("profile", new VerifyProfileBean(user, formData, session));
                 break;
         }

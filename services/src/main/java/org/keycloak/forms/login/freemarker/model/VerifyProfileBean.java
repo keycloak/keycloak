@@ -1,9 +1,5 @@
 package org.keycloak.forms.login.freemarker.model;
 
-import static java.util.Collections.singletonList;
-
-import java.util.List;
-
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.KeycloakSession;
@@ -31,8 +27,8 @@ public class VerifyProfileBean extends AbstractUserProfileBean {
     }
 
     @Override
-    protected List<String> getAttributeDefaultValue(String name) {
-        return singletonList(user.getFirstAttribute(name));
+    protected String getAttributeDefaultValue(String name) {
+        return user.getFirstAttribute(name);
     }
     
     @Override 

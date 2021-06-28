@@ -19,6 +19,7 @@ package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -42,6 +43,9 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     @FindBy(id = "email")
     private WebElement emailInput;
+    
+    @FindBy(id = "department")
+    private WebElement departmentInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -53,6 +57,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
     private WebElement loginAlertErrorMessage;
 
     public void update(String firstName, String lastName, String email) {
+        updateWithDepartment(firstName, lastName, null, email);
+    }
+    
+    public void updateWithDepartment(String firstName, String lastName, String department, String email) {
         if (firstName != null) {
             firstNameInput.clear();
             firstNameInput.sendKeys(firstName);
@@ -66,6 +74,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
             emailInput.sendKeys(email);
         }
 
+        if(department != null) {
+            departmentInput.clear();
+            departmentInput.sendKeys(department);
+        }
+        
         clickLink(submitButton);
     }
 
@@ -92,6 +105,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public String getEmail() {
         return emailInput.getAttribute("value");
     }
+    
+    public String getDepartment() {
+        return departmentInput.getAttribute("value");
+    }
+
+    public boolean isDepartmentEnabled() {
+        return departmentInput.isEnabled();
+    }
 
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Update Account Information");
@@ -99,6 +120,19 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     public UpdateProfileErrors getInputErrors() {
         return errorsPage;
+    }
+    
+    public String getLabelForField(String fieldId) {
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+    }
+    
+    public boolean isDepartmentPresent() {
+        try {
+          isDepartmentEnabled();
+          return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
     @Override
@@ -120,8 +154,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
         @FindBy(id = "input-error-firstname")
         private WebElement inputErrorFirstName;
 
+        @FindBy(id = "input-error-firstName")
+        private WebElement inputErrorFirstNameDynamic;
+
         @FindBy(id = "input-error-lastname")
         private WebElement inputErrorLastName;
+        
+        @FindBy(id = "input-error-lastName")
+        private WebElement inputErrorLastNameDynamic;
 
         @FindBy(id = "input-error-email")
         private WebElement inputErrorEmail;
@@ -133,7 +173,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
             try {
                 return getTextFromElement(inputErrorFirstName);
             } catch (NoSuchElementException e) {
-                return null;
+                try {
+                    return getTextFromElement(inputErrorFirstNameDynamic);
+                } catch (NoSuchElementException ex) {
+                    return null;
+                }
             }
         }
 
@@ -141,7 +185,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
             try {
                 return getTextFromElement(inputErrorLastName);
             } catch (NoSuchElementException e) {
-                return null;
+                try {
+                    return getTextFromElement(inputErrorLastNameDynamic);
+                } catch (NoSuchElementException ex) {
+                    return null;
+                }
             }
         }
 

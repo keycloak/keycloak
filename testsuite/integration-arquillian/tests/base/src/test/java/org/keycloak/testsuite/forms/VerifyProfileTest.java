@@ -36,6 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -44,7 +45,6 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -54,11 +54,11 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     
     public static final String SCOPE_DEPARTMENT = "department";
@@ -70,7 +70,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     
     public static String VALIDATIONS_LENGTH = "\"validations\": {\"length\": { \"min\": 3, \"max\": 255 }}";
 
-    private static final String CONFIGURATION_FOR_USER_EDIT = "{\"attributes\": [" 
+    public static final String CONFIGURATION_FOR_USER_EDIT = "{\"attributes\": [" 
             + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "}," 
             + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
             + "{\"name\": \"department\"," + PERMISSIONS_ALL + "}" 
@@ -94,6 +94,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        
+        enableDynamicUserProfile(testRealm);
+        
         UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password("password").build();
         userId = user.getId();
 
@@ -134,10 +137,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         client_scope_optional = KeycloakModelUtils.createClient(testRealm, "client-b");
         client_scope_optional.setOptionalClientScopes(Collections.singletonList(SCOPE_DEPARTMENT));
         client_scope_optional.setRedirectUris(Collections.singletonList("*"));
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
 
     @Rule
@@ -179,9 +178,82 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("lastName",verifyProfilePage.getLabelForField("lastName"));
         // direct value in display name
         Assert.assertEquals("Department",verifyProfilePage.getLabelForField("department"));
-        
     }
+    
+    @Test
+    public void testAttributeGuiOrder() {
 
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}},"
+                + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + "}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+        
+        //assert fields location in form
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-update-profile-form > div:nth-child(1) > div:nth-child(2) > input#lastName")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-update-profile-form > div:nth-child(2) > div:nth-child(2) > input#department")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-update-profile-form > div:nth-child(3) > div:nth-child(2) > input#username")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-update-profile-form > div:nth-child(4) > div:nth-child(2) > input#firstName")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
+            ).isDisplayed()
+        );
+    }
+    
+    @Test
+    public void testEvents() {
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
+        
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}}" 
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+        //event when form is shown
+        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).detail("fields_to_update", "department").assertEvent();
+        
+        verifyProfilePage.update("First", "Last", "Department");
+        //event after profile is updated
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).user(user5Id)
+        .detail(Details.PREVIOUS_FIRST_NAME, "ExistingFirst").detail(Details.UPDATED_FIRST_NAME, "First")
+        .detail(Details.PREVIOUS_LAST_NAME, "ExistingLast").detail(Details.UPDATED_LAST_NAME, "Last")
+        .assertEvent();
+    }
+    
     @Test
     public void testDefaultProfile() {
         setUserProfileConfiguration(null);
@@ -203,8 +275,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(userId).assertEvent();
-
         UserRepresentation user = getUser(userId);
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
@@ -214,6 +284,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     public void testUsernameOnlyIfEditAllowed() {
         RealmRepresentation realm = testRealm().toRepresentation();
 
+        boolean r = realm.isEditUsernameAllowed();
         try {
             setUserProfileConfiguration(null);
 
@@ -231,7 +302,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             driver.navigate().refresh();
             assertTrue(verifyProfilePage.isUsernamePresent());
         } finally {
-            realm.setEditUsernameAllowed(false);
+            realm.setEditUsernameAllowed(r);
             testRealm().update(realm);
         }
     }
@@ -251,8 +322,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user2Id).assertEvent();
 
         UserRepresentation user = getUser(user2Id);
         assertEquals("First", user.getFirstName());
@@ -284,8 +353,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).assertEvent();
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("First", user.getFirstName());
@@ -363,8 +430,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user3Id).assertEvent();
-
         UserRepresentation user = getUser(user3Id);
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
@@ -391,8 +456,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user4Id).assertEvent();
 
         UserRepresentation user = getUser(user4Id);
         assertEquals("First", user.getFirstName());
@@ -423,12 +486,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         //submit OK
         verifyProfilePage.update("FirstCC", "LastCC", "DepartmentCC");
 
-        
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).assertEvent();
-        
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstCC", user.getFirstName());
         assertEquals("LastCC", user.getLastName());
@@ -463,8 +523,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).assertEvent();
-        
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstCC", user.getFirstName());
         assertEquals("LastCC", user.getLastName());
@@ -516,8 +574,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
         
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -552,8 +608,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_default).user(user5Id).assertEvent();
         
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstBB", user.getFirstName());
@@ -630,8 +684,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
         
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -663,8 +715,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
         
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -696,8 +746,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).client(client_scope_optional).user(user5Id).assertEvent();
         
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -732,8 +780,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id).assertEvent();
         
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstCC", user.getFirstName());
@@ -761,22 +807,48 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
     
     protected UserRepresentation getUser(String userId) {
-        return testRealm().users().get(userId).toRepresentation();
+        return getUser(testRealm(), userId);
     }
 
     protected void updateUser(String userId, String firstName, String lastName, String department) {
-        UserRepresentation ur = testRealm().users().get(userId).toRepresentation();
+        updateUser(testRealm(), userId, firstName, lastName, department);
+    }
+    
+    protected void setUserProfileConfiguration(String configuration) {
+        setUserProfileConfiguration(testRealm(), configuration);
+    }
+
+    public static void enableDynamicUserProfile(RealmRepresentation testRealm) {
+        if (testRealm.getAttributes() == null) {
+            testRealm.setAttributes(new HashMap<>());
+        }
+        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
+    }
+    
+    public static void setUserProfileConfiguration(RealmResource testRealm, String configuration) {
+        Response r = testRealm.users().userProfile().update(configuration);
+        if (r.getStatus() != 200) {
+            Assert.fail("UserProfile Configuration not set due to error: " + r.readEntity(String.class));
+        }
+    }
+    
+    public static UserRepresentation getUser(RealmResource testRealm, String userId) {
+        return testRealm.users().get(userId).toRepresentation();
+    }
+
+    public static UserRepresentation getUserByUsername(RealmResource testRealm, String username) {
+        List<UserRepresentation> users = testRealm.users().search(username);
+        if(users!=null && !users.isEmpty())
+            return users.get(0);
+        return null;
+    }
+
+    public static void updateUser(RealmResource testRealm, String userId, String firstName, String lastName, String department) {
+        UserRepresentation ur = getUser(testRealm, userId);
         ur.setFirstName(firstName);
         ur.setLastName(lastName);
         ur.singleAttribute(ATTRIBUTE_DEPARTMENT, department);
-        testRealm().users().get(userId).update(ur);
+        testRealm.users().get(userId).update(ur);
     }
-
-    protected void setUserProfileConfiguration(String configuration) {
-        Response r = testRealm().users().userProfile().update(configuration);
-        if (r.getStatus() != 200) {
-            Assert.fail("Configuration not set due to error: " + r.readEntity(String.class));
-        }
-    }
-
+    
 }
