@@ -396,13 +396,13 @@ jobs:
         run: keycloak/.github/scripts/quickstarts/prepare-server.sh
 
       - name: Build Quickstarts
-        run: .github/scripts/build-quickstarts.sh
+        run: scripts/build-quickstarts.sh
 
       - name: Start Keycloak
-        run: .github/scripts/start-local-server.sh
+        run: scripts/start-local-server.sh
 
       - name: Run tests
-        run: .github/scripts/run-tests.sh
+        run: scripts/run-tests.sh
 
       - name: Archive logs
         if: ${{ always() }}
