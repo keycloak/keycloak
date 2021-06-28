@@ -53,7 +53,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public V create(K key, V value) {
+    public V create(V value) {
         return store.putIfAbsent(key, value);
     }
 

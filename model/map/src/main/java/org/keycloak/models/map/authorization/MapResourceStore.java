@@ -97,7 +97,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
         entity.setResourceServerId(resourceServer.getId());
         entity.setOwner(owner);
 
-        tx.create(uid, entity);
+        tx.create(entity);
 
         return entityToAdapter(entity);
     }
