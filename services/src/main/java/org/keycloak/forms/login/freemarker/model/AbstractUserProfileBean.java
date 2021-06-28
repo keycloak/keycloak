@@ -55,9 +55,9 @@ public abstract class AbstractUserProfileBean {
      * Get attribute default value to be pre-filled into the form on first show.
      * 
      * @param name of the attribute
-     * @return attribute default value (can be null or empty list)
+     * @return attribute default value (can be null)
      */
-    protected abstract List<String> getAttributeDefaultValue(String name);
+    protected abstract String getAttributeDefaultValue(String name);
 
     /**
      * Get context the template is used for, so view can be customized for distinct contexts. 
@@ -110,11 +110,12 @@ public abstract class AbstractUserProfileBean {
         }
 
         public String getValue() {
-            List<String> v = formData!=null ? formData.getOrDefault(getName(), getAttributeDefaultValue(getName())): getAttributeDefaultValue(getName());
+            List<String> v = formData != null ? formData.get(getName()) : null;
             if (v == null || v.isEmpty()) {
-                return null;
+                return getAttributeDefaultValue(getName());
+            } else {
+                return v.get(0);
             }
-            return v.get(0);
         }
 
         public boolean isRequired() {
@@ -143,7 +144,7 @@ public abstract class AbstractUserProfileBean {
 
             return annotations;
         }
-        
+      
         /**
          * Get info about validators applied to attribute.  
          * 

@@ -138,6 +138,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME))).setAttributeDisplayName("${lastName}");
                 return decoratedMetadata;
             }
+            return decoratedMetadata;
         }
 
         ComponentModel model = getComponentModelOrCreate(session);

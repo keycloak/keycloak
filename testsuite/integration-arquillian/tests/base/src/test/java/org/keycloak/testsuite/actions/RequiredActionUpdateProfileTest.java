@@ -63,6 +63,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected ErrorPage errorPage;
+    
+    protected boolean isDynamicForm() {
+        return false;
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -166,7 +170,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Please specify first name.", updateProfilePage.getInputErrors().getFirstNameError());
+        if(isDynamicForm())
+            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
+        else
+            Assert.assertEquals("Please specify first name.", updateProfilePage.getInputErrors().getFirstNameError());
 
         events.assertEmpty();
     }
@@ -188,7 +195,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Please specify last name.", updateProfilePage.getInputErrors().getLastNameError());
+        if(isDynamicForm())
+            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
+        else
+            Assert.assertEquals("Please specify last name.", updateProfilePage.getInputErrors().getLastNameError());
 
         events.assertEmpty();
     }
