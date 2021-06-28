@@ -38,6 +38,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -64,6 +65,8 @@ import javax.ws.rs.core.Response;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -476,6 +479,25 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         // https://tools.ietf.org/html/rfc7636#section-4
         if (request.getCodeChallenge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
         if (request.getCodeChallengeMethod() != null) authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
+
+        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
+        List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
+
+        if (acrValues.isEmpty()) {
+            acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr());
+        } else {
+            authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
+        }
+
+        acrValues.stream().mapToInt(acr -> {
+            try {
+                Integer loa = acrLoaMap.get(acr);
+                return loa == null ? Integer.parseInt(acr) : loa;
+            } catch (NumberFormatException e) {
+                // this is an unknown acr, we assume it is very high
+                return Constants.MAXIMUM_LOA;
+            }
+        }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {

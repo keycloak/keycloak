@@ -1392,6 +1392,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.client.requestUris = [];
         }
+
+        try {
+          $scope.acrLoaMap = JSON.parse($scope.client.attributes["acr.loa.map"] || "{}");
+        } catch (e) {
+          $scope.acrLoaMap = {};
+        }
     }
 
     if (!$scope.create) {
@@ -1513,6 +1519,24 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.clientEdit.attributes['pkce.code.challenge.method'] = $scope.pkceCodeChallengeMethod;
     };
 
+    $scope.$watch('newAcr', function() {
+            $scope.changed = isChanged();
+        }, true);
+    $scope.$watch('newLoa', function() {
+            $scope.changed = isChanged();
+        }, true);
+    $scope.deleteAcrLoaMapping = function(acr) {
+        delete $scope.acrLoaMap[acr];
+        $scope.changed = true;
+    }
+    $scope.addAcrLoaMapping = function() {
+        if ($scope.newLoa.match(/^[0-9]+$/)) {
+            $scope.acrLoaMap[$scope.newAcr] = $scope.newLoa;
+            $scope.newAcr = $scope.newLoa = "";
+            $scope.changed = true;
+        }
+    }
+
     $scope.$watch(function() {
         return $location.path();
     }, function() {
@@ -1530,6 +1554,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             return true;
         }
         if ($scope.newRequestUri && $scope.newRequestUri.length > 0) {
+            return true;
+        }
+        if ($scope.newAcr && $scope.newAcr.length > 0 && $scope.newLoa && $scope.newLoa.length > 0) {
             return true;
         }
         return false;
@@ -1691,6 +1718,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes["saml.artifact.binding"] = "false";
         }
+
+        if ($scope.newAcr && $scope.newAcr.length > 0 && $scope.newLoa && $scope.newLoa.length > 0) {
+          $scope.addAcrLoaMapping();
+        }
+
         if ($scope.samlServerSignature == true) {
             $scope.clientEdit.attributes["saml.server.signature"] = "true";
         } else {
@@ -1813,6 +1845,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes["backchannel.logout.revoke.offline.tokens"] = "false";
         }
+
+        $scope.clientEdit.attributes["acr.loa.map"] = JSON.stringify($scope.acrLoaMap);
 
         $scope.clientEdit.protocol = $scope.protocol;
         $scope.clientEdit.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;

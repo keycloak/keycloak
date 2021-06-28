@@ -19,6 +19,8 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -46,9 +48,12 @@ public class CookieAuthenticator implements Authenticator {
         } else {
             AuthenticationSessionModel clientSession = context.getAuthenticationSession();
             LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, clientSession.getProtocol());
+            clientSession.setUserSessionNote(Constants.LEVEL_OF_AUTHENTICATION, authResult.getSession().getNote(Constants.LEVEL_OF_AUTHENTICATION));
+            context.setUser(authResult.getUser());
 
             // Cookie re-authentication is skipped if re-authentication is required
-            if (protocol.requireReauthentication(authResult.getSession(), clientSession)) {
+            if (protocol.requireReauthentication(authResult.getSession(), clientSession)
+                || !AuthenticatorUtil.isLevelOfAuthenticationSatisfied(clientSession)) {
                 context.attempted();
             } else {
                 context.getAuthenticationSession().setAuthNote(AuthenticationManager.SSO_AUTH, "true");
