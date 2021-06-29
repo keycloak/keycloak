@@ -176,7 +176,7 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertThat(multiStringPropertyForm.getItem(1), is("third"));
 
         createIdentityProviderMapperPage.form().save();
-        assertAlertSuccess();
+        refreshPageAndWaitForLoad();
 
         // add empty item
         assertThat(multiStringPropertyForm.getItems().size(), is(3));
