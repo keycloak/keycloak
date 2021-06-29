@@ -213,7 +213,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
      * Sub-types can override this method to customize how contextual profile metadata is configured at runtime.
      *
      * @param metadata the profile metadata
-     * @param metadata the current session
+     * @param session the current session
      * @return the metadata
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {

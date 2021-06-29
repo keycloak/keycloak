@@ -44,7 +44,7 @@ public abstract class AbstractUserProfileBean {
     }
 
     /**
-     * Create UserProfile instance of the relevant type. Is called from {@link #init(KeycloakSession)}.
+     * Create UserProfile instance of the relevant type. Is called from {@link #init(KeycloakSession, boolean)}.
      * 
      * @param provider to create UserProfile from
      * @return user profile instance
@@ -156,6 +156,36 @@ public abstract class AbstractUserProfileBean {
                 return Collections.emptyMap();
             }
             return metadata.getValidators().stream().collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
+        }
+
+        public String getGroup() {
+            if (metadata.getAttributeGroupMetadata() != null) {
+                return metadata.getAttributeGroupMetadata().getName();
+            }
+            return null;
+        }
+
+        public String getGroupDisplayHeader() {
+            if (metadata.getAttributeGroupMetadata() != null) {
+                return metadata.getAttributeGroupMetadata().getDisplayHeader();
+            }
+            return null;
+        }
+
+        public String getGroupDisplayDescription() {
+            if (metadata.getAttributeGroupMetadata() != null) {
+                return metadata.getAttributeGroupMetadata().getDisplayDescription();
+            }
+            return null;
+        }
+
+        public Map<String, Object> getGroupAnnotations() {
+
+            if ((metadata.getAttributeGroupMetadata() == null) || (metadata.getAttributeGroupMetadata().getAnnotations() == null)) {
+                return Collections.emptyMap();
+            }
+            
+            return metadata.getAttributeGroupMetadata().getAnnotations();
         }
 
         @Override

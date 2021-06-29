@@ -1,4 +1,14 @@
 {
+	"groups" : [
+		{
+			"name" : "contact",
+			"displayHeader" : "Contact information",
+			"displayDescription" : "Required to contact you in case of emergency",
+			"annotations" : {
+				"contactanno1" : "value1"
+			}
+		}
+	],
 	"attributes": [
 	    {
 		    "name":"username", 
@@ -46,6 +56,7 @@
 			"validations": 	{
 				"not-blank":{}
 			},
+			"group": "contact",
 			"required": {
                 "scopes" : ["phone-1", "phone-2"],
                 "roles" : ["user", "admin"]
