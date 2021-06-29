@@ -6,7 +6,6 @@ import {
   Button,
   ButtonVariant,
   Checkbox,
-  PageSection,
   Popover,
 } from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
