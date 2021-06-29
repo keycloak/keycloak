@@ -20,6 +20,7 @@ package org.keycloak.testsuite.arquillian;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jboss.arquillian.container.test.api.BeforeDeployment;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -191,6 +192,16 @@ public class AppServerTestEnricher {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void checkBeforeDeployment(@Observes(precedence = 1) BeforeClass event) {
+        Arrays.stream(event.getTestClass().getMethods(BeforeDeployment.class)).forEach(method -> {
+            try {
+                method.invoke(null);
+            } catch (Exception e) {
+                throw new RuntimeException("Could not execute @BeforeDeployment method: " + method.getName(), e);
+            }
+        });
     }
 
     public void startAppServer(@Observes(precedence = -1) BeforeClass event) throws MalformedURLException, InterruptedException, IOException {

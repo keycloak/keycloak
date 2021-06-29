@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.jboss.arquillian.container.test.api.BeforeDeployment;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -32,6 +33,13 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
         filterDependency = "org.keycloak:keycloak-servlet-filter-adapter", skipPattern = "/error.html")
 public class DemoFilterServletAdapterTest extends DemoServletsAdapterTest {
 
+    @BeforeDeployment
+    public static void setUpHttpConfig() {
+        GLOBAL_HTTP_CLIENT_JSON_CONFIG = (config) -> {
+            config.setSocketTimeout(15_000L);
+            config.setConnectionTimeout(15_000L);
+        };
+    }
 
     @Test
     @Override
