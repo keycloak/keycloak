@@ -120,7 +120,10 @@ export type Action<T> = IAction & {
   onRowClick?: (row: T) => Promise<boolean> | void;
 };
 
-export type DataListProps<T> = Omit<TableProps, "rows" | "cells"> & {
+export type DataListProps<T> = Omit<
+  TableProps,
+  "rows" | "cells" | "onSelect"
+> & {
   loader: (first?: number, max?: number, search?: string) => Promise<T[]>;
   onSelect?: (value: T[]) => void;
   canSelectAll?: boolean;
