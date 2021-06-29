@@ -140,7 +140,6 @@ public class AccountRestService {
         rep.setLastName(user.getLastName());
         rep.setEmail(user.getEmail());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setEmailVerified(user.isEmailVerified());
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.ACCOUNT, user);
