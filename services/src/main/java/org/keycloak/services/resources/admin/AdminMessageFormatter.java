@@ -48,10 +48,10 @@ public class AdminMessageFormatter implements BiFunction<String, Object[], Strin
         try {
             KeycloakContext context = session.getContext();
             locale = context.resolveLocale(user);
-            messages = getTheme(session).getMessages(locale);
+            messages = new Properties();
+            messages.putAll(getTheme(session).getMessages(locale));
             RealmModel realm = context.getRealm();
-            Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
-            messages.putAll(localizationTexts);
+            messages.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to configure error messages", cause);
         }
