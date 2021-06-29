@@ -6,7 +6,6 @@ import {
   Button,
   ButtonVariant,
   Checkbox,
-  PageSection,
   Popover,
 } from "@patternfly/react-core";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -276,104 +275,103 @@ export const UserGroups = () => {
 
   return (
     <>
-      <PageSection variant="light">
-        <DeleteConfirm />
-        {open && (
-          <GroupPickerDialog
-            id={id}
-            type="selectMany"
-            text={{
-              title: t("joinGroupsFor", { username }),
-              ok: "users:join",
-            }}
-            onClose={() => setOpen(false)}
-            onConfirm={(groups) => {
-              addGroups(groups);
-              setOpen(false);
-            }}
-          />
-        )}
-        <KeycloakDataTable
-          key={key}
-          loader={loader}
-          isPaginated
-          ariaLabelKey="roles:roleList"
-          searchPlaceholderKey="groups:searchGroup"
-          canSelectAll
-          onSelect={() => {}}
-          toolbarItem={
-            <>
-              <Button
-                className="kc-join-group-button"
-                key="join-group-button"
-                onClick={toggleModal}
-                data-testid="add-group-button"
-              >
-                {t("joinGroup")}
-              </Button>
-              <Checkbox
-                label={t("directMembership")}
-                key="direct-membership-check"
-                id="kc-direct-membership-checkbox"
-                onChange={() => setDirectMembership(!isDirectMembership)}
-                isChecked={isDirectMembership}
-                className="direct-membership-check"
-              />
-              {enabled && (
-                <Popover
-                  aria-label="Basic popover"
-                  position="bottom"
-                  bodyContent={<div>{t("whoWillAppearPopoverText")}</div>}
-                >
-                  <Button
-                    variant="link"
-                    className="kc-who-will-appear-button"
-                    key="who-will-appear-button"
-                    icon={<QuestionCircleIcon />}
-                  >
-                    {t("whoWillAppearLinkText")}
-                  </Button>
-                </Popover>
-              )}
-            </>
-          }
-          columns={[
-            {
-              name: "groupMembership",
-              displayKey: "users:groupMembership",
-              cellRenderer: AliasRenderer,
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(40)],
-            },
-            {
-              name: "path",
-              displayKey: "users:path",
-              cellRenderer: Path,
-              transforms: [cellWidth(45)],
-            },
-
-            {
-              name: "",
-              cellRenderer: LeaveButtonRenderer,
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(20)],
-            },
-          ]}
-          emptyState={
-            !search ? (
-              <ListEmptyState
-                hasIcon={true}
-                message={t("noGroups")}
-                instructions={t("noGroupsText")}
-                primaryActionText={t("joinGroup")}
-                onPrimaryAction={toggleModal}
-              />
-            ) : (
-              ""
-            )
-          }
+      <DeleteConfirm />
+      {open && (
+        <GroupPickerDialog
+          id={id}
+          type="selectMany"
+          text={{
+            title: t("joinGroupsFor", { username }),
+            ok: "users:join",
+          }}
+          onClose={() => setOpen(false)}
+          onConfirm={(groups) => {
+            addGroups(groups);
+            setOpen(false);
+          }}
         />
-      </PageSection>
+      )}
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        className="keycloak_user-section_groups-table"
+        isPaginated
+        ariaLabelKey="roles:roleList"
+        searchPlaceholderKey="groups:searchGroup"
+        canSelectAll
+        onSelect={() => {}}
+        toolbarItem={
+          <>
+            <Button
+              className="kc-join-group-button"
+              key="join-group-button"
+              onClick={toggleModal}
+              data-testid="add-group-button"
+            >
+              {t("joinGroup")}
+            </Button>
+            <Checkbox
+              label={t("directMembership")}
+              key="direct-membership-check"
+              id="kc-direct-membership-checkbox"
+              onChange={() => setDirectMembership(!isDirectMembership)}
+              isChecked={isDirectMembership}
+              className="direct-membership-check"
+            />
+            {enabled && (
+              <Popover
+                aria-label="Basic popover"
+                position="bottom"
+                bodyContent={<div>{t("whoWillAppearPopoverText")}</div>}
+              >
+                <Button
+                  variant="link"
+                  className="kc-who-will-appear-button"
+                  key="who-will-appear-button"
+                  icon={<QuestionCircleIcon />}
+                >
+                  {t("whoWillAppearLinkText")}
+                </Button>
+              </Popover>
+            )}
+          </>
+        }
+        columns={[
+          {
+            name: "groupMembership",
+            displayKey: "users:groupMembership",
+            cellRenderer: AliasRenderer,
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(40)],
+          },
+          {
+            name: "path",
+            displayKey: "users:path",
+            cellRenderer: Path,
+            transforms: [cellWidth(45)],
+          },
+
+          {
+            name: "",
+            cellRenderer: LeaveButtonRenderer,
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(20)],
+          },
+        ]}
+        emptyState={
+          !search ? (
+            <ListEmptyState
+              hasIcon={true}
+              message={t("noGroups")}
+              instructions={t("noGroupsText")}
+              primaryActionText={t("joinGroup")}
+              onPrimaryAction={toggleModal}
+            />
+          ) : (
+            ""
+          )
+        }
+      />
     </>
   );
 };

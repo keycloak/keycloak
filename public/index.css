@@ -10,6 +10,12 @@
   margin-bottom: 52px;
 }
 
+input[type='checkbox'] {
+  height: 20px;
+  width: 20px;
+  vertical-align: baseline;
+}
+
 label.pf-c-form__label {
   display: inline-flex;
 }
@@ -46,8 +52,8 @@ label.pf-c-form__label {
   cursor: pointer;
 }
 
-td.pf-c-table__check > input {
-  vertical-align: baseline;
+td.pf-c-table__check > input[type='checkbox'] {
+  vertical-align: text-bottom;
 }
 
 .pf-c-table.tbody.pf-c-table__check > input {

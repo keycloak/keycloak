@@ -99,9 +99,7 @@ export const UsersTabs = () => {
               data-testid="user-groups-tab"
               title={<TabTitleText>{t("groups")}</TabTitleText>}
             >
-              <PageSection variant="light">
-                <UserGroups />
-              </PageSection>
+              <UserGroups />
             </Tab>
             <Tab
               eventKey="consents"

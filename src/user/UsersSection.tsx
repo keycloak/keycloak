@@ -1,5 +1,6 @@
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import {
   AlertVariant,
   Button,
@@ -27,7 +28,6 @@ import { emptyFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 import "./user-section.css";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
