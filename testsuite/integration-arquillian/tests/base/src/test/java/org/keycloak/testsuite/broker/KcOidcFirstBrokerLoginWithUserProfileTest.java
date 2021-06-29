@@ -71,6 +71,74 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         // direct value in display name
         Assert.assertEquals("Department", updateAccountInformationPage.getLabelForField("department"));
     }
+
+    @Test
+    public void testAttributeGrouping() {
+        
+        updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"group\": \"company\"},"
+                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"group\": \"contact\"}"
+                + "], \"groups\": ["
+                + "{\"name\": \"company\", \"displayDescription\": \"Company field desc\" },"
+                + "{\"name\": \"contact\" }"
+                + "]}");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+
+        //assert fields location in form
+        String htmlFormId = "kc-idp-review-profile-form";
+        
+        //assert fields and groups location in form
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#firstName")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(1) > label#header-company")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > label#description-company")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#department")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-contact")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#email")
+                ).isDisplayed()
+        );
+    }
     
     @Test
     public void testAttributeGuiOrder() {
