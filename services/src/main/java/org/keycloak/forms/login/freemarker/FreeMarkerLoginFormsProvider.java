@@ -198,8 +198,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
-        messagesBundle.putAll(localizationTexts);
 
         handleMessages(locale, messagesBundle);
 
@@ -288,8 +286,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
 
         handleMessages(locale, messagesBundle);
 
@@ -339,9 +335,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale) {
-        Properties messagesBundle;
+        Properties messagesBundle = new Properties();
         try {
-            messagesBundle = theme.getMessages(locale);
+            messagesBundle.putAll(theme.getMessages(locale));
+            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
