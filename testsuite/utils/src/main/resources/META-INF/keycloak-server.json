@@ -63,7 +63,9 @@
     "mapStorage": {
         "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
-            "dir": "${project.build.directory:target}"
+            "dir": "${project.build.directory:target/map}",
+            "keyType.realms": "string", 
+            "keyType.authz-resource-servers": "string"
         }
     },
 
