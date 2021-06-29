@@ -47,7 +47,7 @@
   "devDependencies": {
     "@babel/core": "^7.10.5",
     "@babel/preset-typescript": "^7.14.5",
-    "@jest/types": "^26.6.2",
+    "@jest/types": "^27.0.2",
     "@snowpack/app-scripts-react": "^1.10.0",
     "@snowpack/plugin-postcss": "1.4.0",
     "@snowpack/plugin-webpack": "2.3.1",
