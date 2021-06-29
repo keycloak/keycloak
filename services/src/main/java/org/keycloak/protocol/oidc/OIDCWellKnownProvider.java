@@ -24,9 +24,6 @@ import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
-import org.keycloak.crypto.HS256ClientSignatureVerifierProviderFactory;
-import org.keycloak.crypto.HS384ClientSignatureVerifierProviderFactory;
-import org.keycloak.crypto.HS512ClientSignatureVerifierProviderFactory;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
@@ -186,13 +183,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     @Override
     public void close() {
-    }
-
-    public static boolean isAsymmetricAlgorithm(String alg) {
-        if (HS256ClientSignatureVerifierProviderFactory.ID.equals(alg)) return false;
-        if (HS384ClientSignatureVerifierProviderFactory.ID.equals(alg)) return false;
-        if (HS512ClientSignatureVerifierProviderFactory.ID.equals(alg)) return false;
-        return true;
     }
 
     private static List<String> list(String... values) {
