@@ -30,6 +30,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.utils.StreamsUtil;
 
 public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implements MapKeycloakTransaction<K, V, M> {
 
@@ -133,11 +135,11 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
      * Returns the stream of records that match given criteria and includes changes made in this transaction, i.e.
      * the result contains updates and excludes records that have been deleted in this transaction.
      *
-     * @param mcb
+     * @param queryParameters
      * @return
      */
     @Override
-    public Stream<V> read(ModelCriteriaBuilder<M> mcb) {
+    public Stream<V> read(QueryParameters<M> queryParameters) {
         Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
           .filter(BulkDeleteOperation.class::isInstance)
           .map(BulkDeleteOperation.class::cast)
@@ -145,7 +147,9 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
           .reduce(Predicate::and)
           .orElse(v -> true);
 
-        Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(mcb)
+        ModelCriteriaBuilder<M> mcb = queryParameters.getModelCriteriaBuilder();
+
+        Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(queryParameters)
           .filter(filterOutAllBulkDeletedObjects)
           .map(this::getUpdated)      // If the object has been removed, tx.get will return null, otherwise it will return me.getValue()
           .filter(Objects::nonNull);
@@ -159,12 +163,17 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
               updatedAndNotRemovedObjectsStream
             );
 
-        return res;
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            res = res.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
+        }
+
+
+        return StreamsUtil.paginatedStream(res, queryParameters.getOffset(), queryParameters.getLimit());
     }
 
     @Override
-    public long getCount(ModelCriteriaBuilder<M> mcb) {
-        return read(mcb).count();
+    public long getCount(QueryParameters<M> queryParameters) {
+        return read(queryParameters).count();
     }
 
     @Override
@@ -210,11 +219,11 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
 
 
     @Override
-    public long delete(K artificialKey, ModelCriteriaBuilder<M> mcb) {
+    public long delete(K artificialKey, QueryParameters<M> queryParameters) {
         log.tracef("Adding operation DELETE_BULK");
 
         // Remove all tasks that create / update / delete objects deleted by the bulk removal.
-        final BulkDeleteOperation bdo = new BulkDeleteOperation(mcb);
+        final BulkDeleteOperation bdo = new BulkDeleteOperation(queryParameters);
         Predicate<V> filterForNonDeletedObjects = bdo.getFilterForNonDeletedObjects();
         long res = 0;
         for (Iterator<Entry<K, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
@@ -355,29 +364,29 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
 
     private class BulkDeleteOperation extends MapTaskWithValue {
 
-        private final ModelCriteriaBuilder<M> mcb;
+        private final QueryParameters<M> queryParameters;
 
-        public BulkDeleteOperation(ModelCriteriaBuilder<M> mcb) {
+        public BulkDeleteOperation(QueryParameters<M> queryParameters) {
             super(null);
-            this.mcb = mcb;
+            this.queryParameters = queryParameters;
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void execute() {
-            map.delete(mcb);
+            map.delete(queryParameters);
         }
 
         public Predicate<V> getFilterForNonDeletedObjects() {
-            if (! (mcb instanceof MapModelCriteriaBuilder)) {
+            if (! (queryParameters.getModelCriteriaBuilder() instanceof MapModelCriteriaBuilder)) {
                 return t -> true;
             }
 
             @SuppressWarnings("unchecked")
-            final MapModelCriteriaBuilder<K, V, M> mmcb = (MapModelCriteriaBuilder<K, V, M>) mcb;
+            final MapModelCriteriaBuilder<K, V, M> mmcb = (MapModelCriteriaBuilder<K, V, M>) queryParameters.getModelCriteriaBuilder();
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
-            Predicate<? super K> keyFilter = ((MapModelCriteriaBuilder) mcb).getKeyFilter();
+            Predicate<? super K> keyFilter = mmcb.getKeyFilter();
             return v -> v == null || ! (keyFilter.test(v.getId()) && entityFilter.test(v));
         }
 
@@ -387,7 +396,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
         }
 
         private long getCount() {
-            return map.getCount(mcb);
+            return map.getCount(queryParameters);
         }
     }
 }

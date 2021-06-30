@@ -23,11 +23,14 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.StringKeyConvertor;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 /**
  * User session storage with a naive implementation of referential integrity in client to user session relation, restricted to
@@ -49,17 +52,19 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
         }
 
         @Override
-        public long delete(K artificialKey, ModelCriteriaBuilder<UserSessionModel> mcb) {
-            Set<K> ids = read(mcb).map(AbstractEntity::getId).collect(Collectors.toSet());
+        public long delete(K artificialKey, QueryParameters<UserSessionModel> queryParameters) {
+            ModelCriteriaBuilder<UserSessionModel> mcb = queryParameters.getModelCriteriaBuilder();
+
+            Set<K> ids = read(queryParameters).map(AbstractEntity::getId).collect(Collectors.toSet());
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.IN, ids);
-            clientSessionTr.delete(artificialKey, csMcb);
-            return super.delete(artificialKey, mcb);
+            clientSessionTr.delete(artificialKey, withCriteria(csMcb));
+            return super.delete(artificialKey, queryParameters);
         }
 
         @Override
         public void delete(K key) {
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, key);
-            clientSessionTr.delete(key, csMcb);
+            clientSessionTr.delete(key, withCriteria(csMcb));
             super.delete(key);
         }
 

@@ -29,6 +29,7 @@ import java.util.function.Function;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -66,7 +67,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
         LOG.tracef("getUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        return userLoginFailureTx.read(mcb)
+        return userLoginFailureTx.read(withCriteria(mcb))
                 .findFirst()
                 .map(userLoginFailureEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -80,7 +81,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
         LOG.tracef("addUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        MapUserLoginFailureEntity<K> userLoginFailureEntity = userLoginFailureTx.read(mcb).findFirst().orElse(null);
+        MapUserLoginFailureEntity<K> userLoginFailureEntity = userLoginFailureTx.read(withCriteria(mcb)).findFirst().orElse(null);
 
         if (userLoginFailureEntity == null) {
             userLoginFailureEntity = new MapUserLoginFailureEntity<>(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), realm.getId(), userId);
@@ -99,7 +100,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
         LOG.tracef("removeUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), mcb);
+        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
     }
 
     @Override
@@ -109,7 +110,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
         LOG.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
-        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), mcb);
+        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
     }
 
     @Override

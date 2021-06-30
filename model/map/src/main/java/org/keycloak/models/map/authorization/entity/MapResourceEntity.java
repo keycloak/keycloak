@@ -29,8 +29,6 @@ import java.util.Set;
 
 public class MapResourceEntity<K> implements AbstractEntity<K> {
     
-    public static final Comparator<MapResourceEntity<?>> COMPARE_BY_NAME = Comparator.comparing(MapResourceEntity::getName);
-
     private final K id;
     private String name;
     private String displayName;

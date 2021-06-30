@@ -35,7 +35,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +44,8 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
+import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -90,7 +91,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
                         .toArray(ModelCriteriaBuilder[]::new)
         );
 
-        return tx.getCount(mcb);
+        return tx.getCount(withCriteria(mcb));
     }
 
     @Override
@@ -108,8 +109,8 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         if (scopeId != null) {
             mcb = mcb.compare(SearchableFields.SCOPE_ID, Operator.EQ, scopeId);
         }
-        
-        if (tx.getCount(mcb) > 0) {
+
+        if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("Permission ticket for resource server: '" + resourceServer.getId()
                     + ", Resource: " + resourceId + ", owner: " + owner + ", scopeId: " + scopeId + " already exists.");
         }
@@ -142,8 +143,8 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public PermissionTicket findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                    .compare(PermissionTicket.SearchableFields.ID, Operator.EQ, id))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -153,7 +154,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByResourceServer(String resourceServerId) {
         LOG.tracef("findByResourceServer(%s)%s", resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -162,8 +163,8 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByOwner(String owner, String resourceServerId) {
         LOG.tracef("findByOwner(%s, %s)%s", owner, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.OWNER, Operator.EQ, owner))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.OWNER, Operator.EQ, owner)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -172,8 +173,8 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByResource(String resourceId, String resourceServerId) {
         LOG.tracef("findByResource(%s, %s)%s", resourceId, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -182,8 +183,8 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     public List<PermissionTicket> findByScope(String scopeId, String resourceServerId) {
         LOG.tracef("findByScope(%s, %s)%s", scopeId, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.SCOPE_ID, Operator.EQ, scopeId))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.SCOPE_ID, Operator.EQ, scopeId)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -212,11 +213,9 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
                     .toArray(ModelCriteriaBuilder[]::new)
         );
 
-        Comparator<? super MapPermissionTicketEntity<K>> c = Comparator.comparing(MapPermissionTicketEntity::getId);
-        return paginatedStream(tx.read(mcb)
-                .sorted(c), firstResult, maxResult)
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.ID))
                 .map(this::entityToAdapter)
-                .collect(Collectors.toList()); 
+                .collect(Collectors.toList());
     }
     
     private ModelCriteriaBuilder<PermissionTicket> filterEntryToModelCriteriaBuilder(Map.Entry<PermissionTicket.FilterOption, String> entry) {
@@ -297,12 +296,11 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
                     .findById(ticket.getResourceId(), ticket.getResourceServerId());
         }
 
-        return paginatedStream(tx.read(mcb)
-                .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
-                .sorted(MapPermissionTicketEntity.COMPARE_BY_RESOURCE_ID)
-                .map(ticketResourceMapper)
-                .filter(Objects::nonNull), first, max)
-                .collect(Collectors.toList());
+        return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
+            .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
+            .map(ticketResourceMapper)
+            .filter(Objects::nonNull), first, max)
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -310,11 +308,10 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         ModelCriteriaBuilder<PermissionTicket> mcb = permissionTicketStore.createCriteriaBuilder()
                 .compare(SearchableFields.OWNER, Operator.EQ, owner);
 
-        return paginatedStream(tx.read(mcb)
-                .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))
-                .sorted(MapPermissionTicketEntity.COMPARE_BY_RESOURCE_ID), first, max)
-                .map(ticket -> authorizationProvider.getStoreFactory().getResourceStore()
-                        .findById(ticket.getResourceId(), ticket.getResourceServerId()))
-                .collect(Collectors.toList());
+        return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
+            .filter(distinctByKey(MapPermissionTicketEntity::getResourceId)), first, max)
+            .map(ticket -> authorizationProvider.getStoreFactory().getResourceStore()
+                    .findById(ticket.getResourceId(), ticket.getResourceServerId()))
+            .collect(Collectors.toList());
     }
 }

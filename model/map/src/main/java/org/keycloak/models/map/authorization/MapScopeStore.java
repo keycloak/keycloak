@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 public class MapScopeStore<K> implements ScopeStore {
 
@@ -84,7 +84,7 @@ public class MapScopeStore<K> implements ScopeStore {
         ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        if (tx.getCount(mcb) > 0) {
+        if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
         }
 
@@ -109,8 +109,8 @@ public class MapScopeStore<K> implements ScopeStore {
     public Scope findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                    .compare(Scope.SearchableFields.ID, Operator.EQ, id))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -120,8 +120,8 @@ public class MapScopeStore<K> implements ScopeStore {
     public Scope findByName(String name, String resourceServerId) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
-                Operator.EQ, name))
+        return tx.read(withCriteria(forResourceServer(resourceServerId).compare(SearchableFields.NAME,
+                Operator.EQ, name)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -131,7 +131,7 @@ public class MapScopeStore<K> implements ScopeStore {
     public List<Scope> findByResourceServer(String id) {
         LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
 
-        return tx.read(forResourceServer(id))
+        return tx.read(withCriteria(forResourceServer(id)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -155,7 +155,8 @@ public class MapScopeStore<K> implements ScopeStore {
             }
         }
 
-        return paginatedStream(tx.read(mcb).map(this::entityToAdapter), firstResult, maxResult)
-                .collect(Collectors.toList());
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+            .map(this::entityToAdapter)
+            .collect(Collectors.toList());
     }
 }

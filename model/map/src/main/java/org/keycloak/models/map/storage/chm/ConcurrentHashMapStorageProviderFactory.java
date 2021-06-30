@@ -57,6 +57,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+
 /**
  *
  * @author hmlnarik
@@ -171,7 +173,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
                     LOG.debugf("Storing contents to %s", f.getCanonicalPath());
                     @SuppressWarnings("unchecked")
                     final ModelCriteriaBuilder readAllCriteria = store.createCriteriaBuilder();
-                    Serialization.MAPPER.writeValue(f, store.read(readAllCriteria));
+                    Serialization.MAPPER.writeValue(f, store.read(withCriteria(readAllCriteria)));
                 } else {
                     LOG.debugf("Not storing contents of %s because directory not set", mapName);
                 }

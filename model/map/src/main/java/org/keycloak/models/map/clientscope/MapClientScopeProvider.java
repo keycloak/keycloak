@@ -17,7 +17,6 @@
 
 package org.keycloak.models.map.clientscope;
 
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -38,6 +37,8 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
+import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 public class MapClientScopeProvider<K> implements ClientScopeProvider {
 
@@ -45,8 +46,6 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
     private final KeycloakSession session;
     private final MapKeycloakTransaction<K, MapClientScopeEntity<K>, ClientScopeModel> tx;
     private final MapStorage<K, MapClientScopeEntity<K>, ClientScopeModel> clientScopeStore;
-
-    private static final Comparator<MapClientScopeEntity> COMPARE_BY_NAME = Comparator.comparing(MapClientScopeEntity::getName);
 
     public MapClientScopeProvider(KeycloakSession session, MapStorage<K, MapClientScopeEntity<K>, ClientScopeModel> clientScopeStore) {
         this.session = session;
@@ -79,8 +78,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
         ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
             .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.read(mcb)
-          .sorted(COMPARE_BY_NAME)
+        return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
           .map(entityToAdapterFunc(realm));
     }
 
@@ -91,7 +89,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
             .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
             .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        if (tx.getCount(mcb) > 0) {
+        if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("Client scope with name '" + name + "' in realm " + realm.getName());
         }
 
