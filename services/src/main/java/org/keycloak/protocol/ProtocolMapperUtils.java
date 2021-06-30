@@ -48,6 +48,7 @@ public class ProtocolMapperUtils {
     public static final String USER_MODEL_PROPERTY_HELP_TEXT = "usermodel.prop.tooltip";
     public static final String USER_MODEL_ATTRIBUTE_LABEL = "usermodel.attr.label";
     public static final String USER_MODEL_ATTRIBUTE_HELP_TEXT = "usermodel.attr.tooltip";
+    public static final String USER_PROFILE_ATTRIBUTE = "user.profile.attribute";
 
     public static final String USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID = "usermodel.clientRoleMapping.clientId";
     public static final String USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID_LABEL = "usermodel.clientRoleMapping.clientId.label";

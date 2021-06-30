@@ -18,16 +18,19 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
@@ -49,6 +52,14 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(ProtocolMapperUtils.USER_PROFILE_ATTRIBUTE);
+        property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
+        property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
+        configProperties.add(property);
+
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserAttributeMapper.class);
 
         property = new ProviderConfigProperty();
@@ -96,11 +107,23 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
 
         UserModel user = userSession.getUser();
-        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+        String attributeName = getAttributeName(mappingModel, userSession.getRealm());
         boolean aggregateAttrs = Boolean.valueOf(mappingModel.getConfig().get(ProtocolMapperUtils.AGGREGATE_ATTRS));
         Collection<String> attributeValue = KeycloakModelUtils.resolveAttribute(user, attributeName, aggregateAttrs);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
+    }
+
+    private String getAttributeName(ProtocolMapperModel mappingModel, RealmModel realm) {
+        Map<String, String> config = mappingModel.getConfig();
+        String name = config.get(ProtocolMapperUtils.USER_ATTRIBUTE);
+
+        if (realm.getAttribute(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, false)) {
+            // defaults to the default config property for backward compatibility
+            return config.getOrDefault(ProtocolMapperUtils.USER_PROFILE_ATTRIBUTE, name);
+        }
+
+        return name;
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
@@ -112,11 +135,22 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
+            String userAttribute,
+            String tokenClaimName, String claimType,
+            boolean accessToken, boolean idToken,
+            boolean multivalued, boolean aggregateAttrs) {
+        return createClaimMapper(name, userAttribute, null, tokenClaimName, claimType,
+                accessToken, idToken, multivalued, aggregateAttrs);
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
+                                                        String userProfileAttribute,
                                                         String tokenClaimName, String claimType,
                                                         boolean accessToken, boolean idToken,
                                                         boolean multivalued, boolean aggregateAttrs) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
+                userProfileAttribute,
                 tokenClaimName, claimType,
                 accessToken, idToken,
                 PROVIDER_ID);

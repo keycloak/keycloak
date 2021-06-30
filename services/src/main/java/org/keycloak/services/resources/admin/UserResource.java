@@ -103,6 +103,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -288,10 +289,11 @@ public class UserResource {
 
         if (rep.getAttributes() != null) {
             Map<String, List<String>> allowedAttributes = profile.getAttributes().getReadable(false);
+            Iterator<String> iterator = rep.getAttributes().keySet().iterator();
 
-            for (String attributeName : rep.getAttributes().keySet()) {
-                if (!allowedAttributes.containsKey(attributeName)) {
-                    rep.getAttributes().remove(attributeName);
+            while (iterator.hasNext()) {
+                if (!allowedAttributes.containsKey(iterator.next())) {
+                    iterator.remove();
                 }
             }
         }
