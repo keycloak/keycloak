@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
 import {
   AlertVariant,
   Button,
@@ -12,7 +11,6 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
-import { UsersIcon } from "@patternfly/react-icons";
 
 import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
@@ -26,10 +24,6 @@ import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useSubGroups } from "./SubGroupsContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
-type GroupTableData = GroupRepresentation & {
-  membersLength?: number;
-};
-
 export const GroupTable = () => {
   const { t } = useTranslation("groups");
 
@@ -39,7 +33,7 @@ export const GroupTable = () => {
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
-  const [move, setMove] = useState<GroupTableData>();
+  const [move, setMove] = useState<GroupRepresentation>();
 
   const { subGroups, setSubGroups } = useSubGroups();
 
@@ -50,28 +44,16 @@ export const GroupTable = () => {
   const location = useLocation();
   const id = getLastId(location.pathname);
 
-  const getMembers = async (id: string) => {
-    const response = await adminClient.groups.listMembers({ id });
-    return response ? response.length : 0;
-  };
-
   const loader = async () => {
     const groupsData = id
       ? (await adminClient.groups.findOne({ id })).subGroups
       : await adminClient.groups.find();
 
-    if (groupsData) {
-      const memberPromises = groupsData.map((group) => getMembers(group.id!));
-      const memberData = await Promise.all(memberPromises);
-      return _.cloneDeep(groupsData).map((group: GroupTableData, i) => {
-        group.membersLength = memberData[i];
-        return group;
-      });
-    } else {
+    if (!groupsData) {
       history.push(`/${realm}/groups`);
     }
 
-    return [];
+    return groupsData || [];
   };
 
   const multiDelete = async () => {
@@ -92,26 +74,18 @@ export const GroupTable = () => {
     refresh();
   };
 
-  const GroupNameCell = (group: GroupTableData) => (
+  const GroupNameCell = (group: GroupRepresentation) => (
     <>
       <Link
         key={group.id}
         to={`${location.pathname}/${group.id}`}
         onClick={() => {
-          delete group.membersLength;
           setSubGroups([...subGroups, group]);
         }}
       >
         {group.name}
       </Link>
     </>
-  );
-
-  const GroupMemberCell = (group: GroupTableData) => (
-    <div className="keycloak-admin--groups__member-count">
-      <UsersIcon key={`user-icon-${group.id}`} />
-      {group.membersLength}
-    </div>
   );
 
   const handleModalToggle = () => {
@@ -195,12 +169,7 @@ export const GroupTable = () => {
             name: "name",
             displayKey: "groups:groupName",
             cellRenderer: GroupNameCell,
-            transforms: [cellWidth(15)],
-          },
-          {
-            name: "members",
-            displayKey: "groups:members",
-            cellRenderer: GroupMemberCell,
+            transforms: [cellWidth(90)],
           },
         ]}
         emptyState={
@@ -232,7 +201,6 @@ export const GroupTable = () => {
           }}
           onClose={() => setMove(undefined)}
           onConfirm={async (group) => {
-            delete move.membersLength;
             try {
               try {
                 if (group[0].id) {

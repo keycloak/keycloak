@@ -18,9 +18,7 @@ export default class MoveGroupModal {
   }
 
   clickMove() {
-    cy.intercept("/auth/admin/realms/master/groups/*/members").as("groupMove");
     cy.getId(this.moveButton).click();
-    cy.wait(["@groupMove"]);
     return this;
   }
 }
