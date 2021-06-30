@@ -30,8 +30,6 @@ import java.util.Objects;
 
 public class MapPolicyEntity<K> implements AbstractEntity<K> {
     
-    public static final Comparator<MapPolicyEntity<?>> COMPARE_BY_NAME = Comparator.comparing(MapPolicyEntity::getName);
-    
     private final K id;
     private String name;
     private String description;

@@ -58,20 +58,19 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * transaction by methods {@link MapKeycloakTransaction#create}, {@link MapKeycloakTransaction#update},
      * {@link MapKeycloakTransaction#delete}, etc.
      *
-     * @param mcb criteria to filter values
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return values that fulfill the given criteria, that are updated based on changes in the current transaction
      */
-    Stream<V> read(ModelCriteriaBuilder<M> mcb);
-
+    Stream<V> read(QueryParameters<M> queryParameters);
 
     /**
      * Returns a number of values present in the underlying storage that fulfill the given criteria with respect to
      * changes done in the current transaction.
      *
-     * @param mcb criteria to filter values
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return number of values present in the storage that fulfill the given criteria
      */
-    long getCount(ModelCriteriaBuilder<M> mcb);
+    long getCount(QueryParameters<M> queryParameters);
 
     /**
      * Instructs this transaction to force-update the {@code value} associated with the identifier {@code value.getId()} in the
@@ -116,8 +115,9 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      *
      * @param artificialKey key to record the transaction with, must be a key that does not exist in this transaction to
      *                      prevent collisions with other operations in this transaction
-     * @param mcb criteria to delete values
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return number of removed objects (might return {@code -1} if not supported)
      */
-    long delete(K artificialKey, ModelCriteriaBuilder<M> mcb);
+    long delete(K artificialKey, QueryParameters<M> queryParameters);
 
 }

@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -144,7 +145,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.TIMESTAMP, Operator.LT, expired);
 
-        long deletedCount = tx.delete(sessionStore.getKeyConvertor().yieldNewUniqueKey(), mcb);
+        long deletedCount = tx.delete(sessionStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
 
         LOG.debugf("Removed %d expired authentication sessions for realm '%s'", deletedCount, realm.getName());
     }
@@ -155,7 +156,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
         ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = sessionStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        sessionStore.delete(mcb);
+        sessionStore.delete(withCriteria(mcb));
     }
 
     @Override

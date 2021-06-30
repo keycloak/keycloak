@@ -20,12 +20,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+
 /**
  * Implementation of this interface interacts with a persistence storage storing various entities, e.g. users, realms.
- * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.ModelCriteriaBuilder)}
- * and bulk {@link #delete(org.keycloak.models.map.storage.ModelCriteriaBuilder)} operations, 
+ * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
+ * and bulk {@link #delete(org.keycloak.models.map.storage.QueryParameters)} operations,
  * and operation for determining the number of the objects satisfying given criteria
- * ({@link #getCount(org.keycloak.models.map.storage.ModelCriteriaBuilder)}).
+ * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
  *
  * @author hmlnarik
  * @param <K> Type of the primary key. Various storages can
@@ -62,29 +64,27 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * Returns stream of objects satisfying given {@code criteria} from the storage.
      * The criteria are specified in the given criteria builder based on model properties.
      *
-     * @param criteria Criteria filtering out the object, originally obtained 
-     *   from {@link #createCriteriaBuilder()} method of this object.
-     *   If {@code null}, it returns an empty stream.
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Stream of objects. Never returns {@code null}.
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    Stream<V> read(ModelCriteriaBuilder<M> criteria);
+    Stream<V> read(QueryParameters<M> queryParameters);
 
     /**
      * Returns the number of objects satisfying given {@code criteria} from the storage.
      * The criteria are specified in the given criteria builder based on model properties.
      *
-     * @param criteria
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Number of objects. Never returns {@code null}.
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    long getCount(ModelCriteriaBuilder<M> criteria);
+    long getCount(QueryParameters<M> queryParameters);
 
     /**
      * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
-     * @param key Primary key of the object to update
+     *
      * @param value Updated value
      * @throws NullPointerException if the object or its {@code id} is {@code null}
      * @see AbstractEntity#getId()
@@ -100,12 +100,12 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
 
     /**
      * Deletes objects that match the given criteria.
-     * @param criteria
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Number of removed objects (might return {@code -1} if not supported)
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    long delete(ModelCriteriaBuilder<M> criteria);
+    long delete(QueryParameters<M> queryParameters);
 
     
     /**
@@ -122,7 +122,6 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @return See description. Never returns {@code null}
      */
     ModelCriteriaBuilder<M> createCriteriaBuilder();
-
     
     /**
      * Creates a {@code MapKeycloakTransaction} object that tracks a new transaction related to this storage.

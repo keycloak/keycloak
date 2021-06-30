@@ -24,8 +24,6 @@ import java.util.Objects;
 
 public class MapPermissionTicketEntity<K> implements AbstractEntity<K> {
 
-    public static final Comparator<MapPermissionTicketEntity<?>> COMPARE_BY_RESOURCE_ID = Comparator.comparing(MapPermissionTicketEntity::getResourceId);
-
     private final K id;
     private String owner;
     private String requester;
