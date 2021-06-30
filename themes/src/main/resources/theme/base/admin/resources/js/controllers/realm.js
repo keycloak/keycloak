@@ -1536,6 +1536,19 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
 		return attributeName != "username" && attributeName != "email";
 	}; 
 
+	$scope.guiOrderUp = function(index) {
+		$scope.moveAttribute(index, index - 1);
+	};
+
+	$scope.guiOrderDown = function(index) {
+		$scope.moveAttribute(index, index + 1);
+	};
+	
+	$scope.moveAttribute = function(old_index, new_index){
+    	$scope.config.attributes.splice(new_index, 0, $scope.config.attributes.splice(old_index, 1)[0]);
+		$scope.save();
+	}
+
     $scope.removeAttribute = function(attribute) {
         Dialog.confirmDelete(attribute.name, 'attribute', function() {
             let newAttributes = [];
@@ -1737,7 +1750,7 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
                 delete $scope.canUserEdit;
                 delete $scope.canAdminEdit;
                 $route.reload();
-                Notifications.success("The attribute has been added.");
+                Notifications.success("User Profile configuration has been saved.");
             });
     };
 

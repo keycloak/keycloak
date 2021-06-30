@@ -133,9 +133,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         if (!isEnabled(session)) {
             if(!context.equals(UserProfileContext.USER_API) && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)) {
-                decoratedMetadata.addAttribute(UserModel.FIRST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
+                decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
                         Messages.MISSING_FIRST_NAME))).setAttributeDisplayName("${firstName}");
-                decoratedMetadata.addAttribute(UserModel.LAST_NAME, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME))).setAttributeDisplayName("${lastName}");
+                decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME))).setAttributeDisplayName("${lastName}");
                 return decoratedMetadata;
             }
         }
@@ -254,6 +254,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             return decoratedMetadata;
         }
 
+        int guiOrder = 0;
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
             String attributeName = attrConfig.getName();
             List<AttributeValidatorMetadata> validators = new ArrayList<>();
@@ -322,15 +323,16 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 if (atts.isEmpty()) {
                     // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
                     // doesn't require it.
-                    decoratedMetadata.addAttribute(attributeName, writeAllowed, validators).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName());
+                    decoratedMetadata.addAttribute(attributeName, guiOrder++, writeAllowed, validators).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName());
                 } else {
+                    final int localGuiOrder = guiOrder++;
                     // only add configured validators and annotations if attribute metadata exist
-                    atts.stream().forEach(c -> c.addValidator(validators).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName()));
+                    atts.stream().forEach(c -> c.addValidator(validators).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName()).setGuiOrder(localGuiOrder));
                 }
             } else {
                 // always add validation for imuttable/read-only attributes
                 validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
-                decoratedMetadata.addAttribute(attributeName, validators, selector, writeAllowed, required, readAllowed).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName());
+                decoratedMetadata.addAttribute(attributeName, guiOrder++, validators, selector, writeAllowed, required, readAllowed).addAnnotations(annotations).setAttributeDisplayName(attrConfig.getDisplayName());
             }
         }
 

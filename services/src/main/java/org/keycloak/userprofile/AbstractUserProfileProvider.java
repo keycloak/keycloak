@@ -267,11 +267,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createRegistrationUserCreationProfile() {
         UserProfileMetadata metadata = new UserProfileMetadata(REGISTRATION_USER_CREATION);
 
-        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID));
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID));
 
-        metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID));
+        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID));
 
-        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
 
         return metadata;
     }
@@ -279,13 +279,13 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createDefaultProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(context);
 
-        metadata.addAttribute(UserModel.USERNAME, AbstractUserProfileProvider::editUsernameCondition,
+        metadata.addAttribute(UserModel.USERNAME, -2, AbstractUserProfileProvider::editUsernameCondition,
                 AbstractUserProfileProvider::editUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
 
-        metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
+        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
         		new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()),
         		new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
         		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID)).setAttributeDisplayName("${email}");
@@ -298,7 +298,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             readonlyValidators.add(readOnlyValidator);
         }
 
-        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, readonlyValidators);
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
         return metadata;
     }
@@ -306,9 +306,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createBrokeringProfile(AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
-        metadata.addAttribute(UserModel.USERNAME, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
 
-        metadata.addAttribute(UserModel.EMAIL, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
+        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL)),
         		new AttributeValidatorMetadata(EmailValidator.ID)).setAttributeDisplayName("${email}");
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
@@ -319,7 +319,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             readonlyValidators.add(readOnlyValidator);
         }
 
-        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, readonlyValidators);
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
         return metadata;
     }
@@ -335,7 +335,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
         readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(adminReadOnlyAttributesPattern));
 
-        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, readonlyValidators);
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
         return metadata;
     }

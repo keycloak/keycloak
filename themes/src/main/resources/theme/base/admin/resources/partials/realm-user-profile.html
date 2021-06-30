@@ -30,7 +30,11 @@
             </thead>
             <tbody>
             <tr ng-repeat="attribute in config.attributes">
-                <td><a href="" data-ng-click="edit(attribute)">{{attribute.name}}</a></td>
+	            <td class="kc-sorter">
+	                <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="guiOrderUp($index)"><i class="fa fa-angle-up"></i></button>
+	                <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="guiOrderDown($index)"><i class="fa fa-angle-down"></i></button>
+	                <span><a href="" data-ng-click="edit(attribute)">{{attribute.name}}</a></span>
+	            </td>
                 <td>{{attribute.displayName}}</td>
                 <td class="kc-action-cell" data-ng-click="edit(attribute)">{{:: 'edit' | translate}}</td>
                 <td class="kc-action-cell" data-ng-click="removeAttribute(attribute)">{{:: 'delete' | translate}}</td>

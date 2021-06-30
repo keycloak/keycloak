@@ -46,6 +46,7 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.openqa.selenium.By;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -265,6 +266,60 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("lastName",registerPage.getLabelForField("lastName"));
         // direct value in display name
         Assert.assertEquals("Department",registerPage.getLabelForField("department"));
+    }
+
+    @Test
+    public void testAttributeGuiOrder() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}},"
+                + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + "}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+
+        registerPage.assertCurrent();
+        
+        //assert fields location in form
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(1) > div:nth-child(2) > input#lastName")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(2) > div:nth-child(2) > input#department")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(3) > div:nth-child(2) > input#username")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(4) > div:nth-child(2) > input#password")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(5) > div:nth-child(2) > input#password-confirm")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(6) > div:nth-child(2) > input#firstName")
+            ).isDisplayed()
+        );
+        Assert.assertTrue(
+            driver.findElement(
+                By.cssSelector("form#kc-register-form > div:nth-child(7) > div:nth-child(2) > input#email")
+            ).isDisplayed()
+        );
     }
 
     @Test
