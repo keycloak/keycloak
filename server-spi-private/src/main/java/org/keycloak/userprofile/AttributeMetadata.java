@@ -50,21 +50,23 @@ public final class AttributeMetadata {
     private final Predicate<AttributeContext> readAllowed;
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
+    private int guiOrder;
+    
 
-    AttributeMetadata(String attributeName) {
-        this(attributeName, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
+    AttributeMetadata(String attributeName, int guiOrder) {
+        this(attributeName, guiOrder, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
-        this(attributeName, ALWAYS_TRUE, writeAllowed, required, ALWAYS_TRUE);
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
+        this(attributeName, guiOrder, ALWAYS_TRUE, writeAllowed, required, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> selector) {
-        this(attributeName, selector, ALWAYS_FALSE, ALWAYS_TRUE, ALWAYS_TRUE);
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> selector) {
+        this(attributeName, guiOrder, selector, ALWAYS_FALSE, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, List<String> scopes, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
-        this(attributeName, context -> {
+    AttributeMetadata(String attributeName, int guiOrder, List<String> scopes, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required) {
+        this(attributeName, guiOrder, context -> {
             KeycloakSession session = context.getSession();
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
@@ -86,7 +88,7 @@ public final class AttributeMetadata {
         }, writeAllowed, required, ALWAYS_TRUE);
     }
 
-    AttributeMetadata(String attributeName, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed,
+    AttributeMetadata(String attributeName, int guiOrder, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed,
             Predicate<AttributeContext> required,
             Predicate<AttributeContext> readAllowed) {
         this.attributeName = attributeName;
@@ -94,10 +96,20 @@ public final class AttributeMetadata {
         this.writeAllowed = writeAllowed;
         this.required = required;
         this.readAllowed = readAllowed;
+        this.guiOrder = guiOrder;
     }
 
     public String getName() {
         return attributeName;
+    }
+
+    public int getGuiOrder() {
+        return guiOrder;
+    }
+
+    public AttributeMetadata setGuiOrder(int guiOrder) {
+        this.guiOrder = guiOrder;
+        return this;
     }
 
     public boolean isSelected(AttributeContext context) {
@@ -157,7 +169,7 @@ public final class AttributeMetadata {
 
     @Override
     public AttributeMetadata clone() {
-        AttributeMetadata cloned = new AttributeMetadata(attributeName, selector, writeAllowed, required, readAllowed);
+        AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, writeAllowed, required, readAllowed);
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {

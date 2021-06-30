@@ -159,7 +159,7 @@ public abstract class AbstractUserProfileBean {
 
         @Override
         public int compareTo(Attribute o) {
-            return getName().compareTo(o.getName());
+            return Integer.compare(metadata.getGuiOrder(), o.metadata.getGuiOrder());
         }
     }
 }
