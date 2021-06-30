@@ -33,7 +33,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,6 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapResourceStore<K extends Comparable<K>> implements ResourceStore {
 
@@ -127,12 +125,13 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
 
     private void findByOwnerFilter(String ownerId, String resourceServerId, Consumer<Resource> consumer, int firstResult, int maxResult) {
         LOG.tracef("findByOwnerFilter(%s, %s, %s, %d, %d)%s", ownerId, resourceServerId, consumer, firstResult, maxResult, getShortStackTrace());
-        Comparator<? super MapResourceEntity<K>> c = Comparator.comparing(MapResourceEntity::getId);
-        paginatedStream(tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.OWNER, Operator.EQ, ownerId))
-                    .sorted(c), firstResult, maxResult)
-                .map(this::entityToAdapter)
-                .forEach(consumer);
+
+        tx.read(forResourceServer(resourceServerId).compare(SearchableFields.OWNER, Operator.EQ, ownerId),
+            resourceStore.createQueryParametersBuilder()
+                .pagination(firstResult, maxResult, SearchableFields.ID)
+                .build()
+            ).map(this::entityToAdapter)
+            .forEach(consumer);
     }
 
     @Override
@@ -172,9 +171,10 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
                         .toArray(ModelCriteriaBuilder[]::new)
         );
 
-        return paginatedStream(tx.read(mcb)
-                .sorted(MapResourceEntity.COMPARE_BY_NAME), firstResult, maxResult)
-                .map(this::entityToAdapter)
+        return tx.read(mcb, resourceStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResult, SearchableFields.NAME)
+                    .build()
+                ).map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
 

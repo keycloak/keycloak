@@ -79,8 +79,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
         ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
             .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return tx.read(mcb)
-          .sorted(COMPARE_BY_NAME)
+        return tx.read(mcb, clientScopeStore.createQueryParametersBuilder().orderBy(SearchableFields.NAME).build())
           .map(entityToAdapterFunc(realm));
     }
 

@@ -16,24 +16,31 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapModelCriteriaBuilder;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapFieldPredicates;
+import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.storage.SearchableModelField;
+
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.StringKeyConvertor;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Predicate;
+
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  *
@@ -74,7 +81,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public long delete(ModelCriteriaBuilder<M> criteria) {
+    public long delete(ModelCriteriaBuilder<M> criteria, QueryParameters<M> queryParameters) {
         long res;
         if (criteria == null) {
             res = store.size();
@@ -89,11 +96,22 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
         Predicate<? super K> keyFilter = b.getKeyFilter();
         Predicate<? super V> entityFilter = b.getEntityFilter();
         res = 0;
-        for (Iterator<Entry<K, V>> iterator = store.entrySet().iterator(); iterator.hasNext();) {
+
+        Stream<Entry<K, V>> storeStream = store.entrySet().stream();
+
+        if (queryParameters != null && queryParameters.getOrdering() != null && !queryParameters.getOrdering().isEmpty()) {
+            Comparator<V> comparator = MapFieldPredicates.getComparator(queryParameters.getOrdering().stream());
+            storeStream = paginatedStream(
+                    storeStream.sorted((entry1, entry2) -> comparator.compare(entry1.getValue(), entry2.getValue())),
+                    queryParameters.getLimit(),
+                    queryParameters.getOffset());
+        }
+
+        for (Iterator<Entry<K, V>> iterator = storeStream.iterator(); iterator.hasNext();) {
             Entry<K, V> next = iterator.next();
             if (keyFilter.test(next.getKey()) && entityFilter.test(next.getValue())) {
                 res++;
-                iterator.remove();
+                store.remove(next.getKey());
             }
         }
         return res;
@@ -102,6 +120,11 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     @Override
     public ModelCriteriaBuilder<M> createCriteriaBuilder() {
         return new MapModelCriteriaBuilder<>(fieldPredicates);
+    }
+
+    @Override
+    public QueryParameters.Builder<M> createQueryParametersBuilder() {
+        return QueryParameters.Builder.create();
     }
 
     @Override
@@ -117,7 +140,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public Stream<V> read(ModelCriteriaBuilder<M> criteria) {
+    public Stream<V> read(ModelCriteriaBuilder<M> criteria, QueryParameters<M> queryParameters) {
         if (criteria == null) {
             return Stream.empty();
         }
@@ -135,7 +158,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> impleme
     }
 
     @Override
-    public long getCount(ModelCriteriaBuilder<M> criteria) {
+    public long getCount(ModelCriteriaBuilder<M> criteria, QueryParameters<M> queryParameters) {
         return read(criteria).count();
     }
 

@@ -132,9 +132,8 @@ public class MapRealmProvider<K> implements RealmProvider {
     }
 
     private Stream<RealmModel> getRealmsStream(ModelCriteriaBuilder<RealmModel> mcb) {
-        return tx.read(mcb)
-                .map(this::entityToAdapter)
-                .sorted(RealmModel.COMPARE_BY_NAME);
+        return tx.read(mcb, realmStore.createQueryParametersBuilder().orderBy(SearchableFields.NAME).build())
+                .map(this::entityToAdapter);
     }
 
     @Override

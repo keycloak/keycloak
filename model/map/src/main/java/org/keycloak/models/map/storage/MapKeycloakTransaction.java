@@ -62,8 +62,21 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * @param mcb criteria to filter values
      * @return values that fulfill the given criteria, that are updated based on changes in the current transaction
      */
-    Stream<V> read(ModelCriteriaBuilder<M> mcb);
+    default Stream<V> read(ModelCriteriaBuilder<M> mcb) {
+        return read(mcb, null);
+    }
 
+    /**
+     * Returns a stream of values from underlying storage that are updated based on the current transaction changes;
+     * i.e. the result contains updates and excludes of records that have been created, updated or deleted in this
+     * transaction by methods {@link MapKeycloakTransaction#create}, {@link MapKeycloakTransaction#update},
+     * {@link MapKeycloakTransaction#delete}, etc.
+     *
+     * @param mcb criteria to filter values
+     * @param queryParameters parameters for query like firstResult, maxResult, requested ordering, etc.
+     * @return values that fulfill the given criteria, that are updated based on changes in the current transaction
+     */
+    Stream<V> read(ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters);
 
     /**
      * Returns a number of values present in the underlying storage that fulfill the given criteria with respect to
@@ -72,7 +85,19 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * @param mcb criteria to filter values
      * @return number of values present in the storage that fulfill the given criteria
      */
-    long getCount(ModelCriteriaBuilder<M> mcb);
+    default long getCount(ModelCriteriaBuilder<M> mcb) {
+        return getCount(mcb, null);
+    }
+
+    /**
+     * Returns a number of values present in the underlying storage that fulfill the given criteria with respect to
+     * changes done in the current transaction.
+     *
+     * @param mcb criteria to filter values
+     * @param queryParameters parameters for query like firstResult, maxResult, requested ordering, etc.
+     * @return number of values present in the storage that fulfill the given criteria
+     */
+    long getCount(ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters);
 
     /**
      * Instructs this transaction to force-update the {@code value} associated with the identifier {@code key} in the
@@ -119,7 +144,21 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * @param artificialKey key to record the transaction with, must be a key that does not exist in this transaction to
      *                      prevent collisions with other operations in this transaction
      * @param mcb criteria to delete values
+     * @return number of removed objects (might return {@code -1} if not supported)
      */
-    long delete(K artificialKey, ModelCriteriaBuilder<M> mcb);
+    default long delete(K artificialKey, ModelCriteriaBuilder<M> mcb) {
+        return delete(artificialKey, mcb, null);
+    }
+
+    /**
+     * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store on commit.
+     *
+     * @param artificialKey key to record the transaction with, must be a key that does not exist in this transaction to
+     *                      prevent collisions with other operations in this transaction
+     * @param mcb criteria to delete values
+     * @param queryParameters parameters for query like firstResult, maxResult, requested ordering, etc.
+     * @return number of removed objects (might return {@code -1} if not supported)
+     */
+    long delete(K artificialKey, ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters);
 
 }

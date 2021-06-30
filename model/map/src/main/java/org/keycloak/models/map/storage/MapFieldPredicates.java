@@ -44,6 +44,8 @@ import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.storage.SearchableModelField;
+
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
@@ -60,6 +62,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 
@@ -87,6 +90,7 @@ public class MapFieldPredicates {
 
     @SuppressWarnings("unchecked")
     private static final Map<Class<?>, Map> PREDICATES = new HashMap<>();
+    private static final Map<SearchableModelField<?>, Comparator<?>> COMPARATORS = new HashMap<>();
 
     static {
         put(REALM_PREDICATES, RealmModel.SearchableFields.NAME,                   MapRealmEntity::getName);
@@ -134,7 +138,7 @@ public class MapFieldPredicates {
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.REALM_ID,    MapRootAuthenticationSessionEntity::getRealmId);
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.TIMESTAMP,   MapRootAuthenticationSessionEntity::getTimestamp);
 
-        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID, MapResourceServerEntity::getId);
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID, predicateForKeyField(MapResourceServerEntity::getId));
 
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.ID, predicateForKeyField(MapResourceEntity::getId));
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.NAME, MapResourceEntity::getName);
@@ -205,9 +209,11 @@ public class MapFieldPredicates {
         PREDICATES.put(UserLoginFailureModel.class,             USER_LOGIN_FAILURE_PREDICATES);
     }
 
-    private static <K, V extends AbstractEntity<K>, M> void put(
+    private static <K, V extends AbstractEntity<K>, M, L extends Comparable<? super L>> void put(
       Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> map,
-      SearchableModelField<M> field, Function<V, Object> extractor) {
+      SearchableModelField<M> field, Function<V, L> extractor) {
+
+        COMPARATORS.put(field, Comparator.comparing(extractor));
         map.put(field, (mcb, op, values) -> mcb.fieldCompare(op, extractor, values));
     }
 
@@ -217,7 +223,7 @@ public class MapFieldPredicates {
         map.put(field, function);
     }
 
-    private static <V extends AbstractEntity<?>> Function<V, Object> predicateForKeyField(Function<V, Object> extractor) {
+    private static <V extends AbstractEntity<?>> Function<V, String> predicateForKeyField(Function<V, Object> extractor) {
         return entity -> {
             Object o = extractor.apply(entity);
             return o == null ? null : o.toString();
@@ -476,8 +482,33 @@ public class MapFieldPredicates {
 
     protected static <K, V extends AbstractEntity<K>, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> basePredicates(SearchableModelField<M> idField) {
         Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates = new HashMap<>();
-        fieldPredicates.put(idField, (o, op, values) -> o.idCompare(op, values));
+        fieldPredicates.put(idField, MapModelCriteriaBuilder::idCompare);
         return fieldPredicates;
+    }
+
+    public static <K, V extends AbstractEntity<K>, M> Comparator<V> getComparator(QueryParameters.OrderingTuple<M> orderingTuple) {
+        SearchableModelField<M> searchableModelField = orderingTuple.getModelField();
+        QueryParameters.Order order = orderingTuple.getOrder();
+
+        @SuppressWarnings("unchecked")
+        Comparator<V> comparator = (Comparator<V>) COMPARATORS.get(searchableModelField);
+
+        if (comparator == null) {
+            throw new IllegalArgumentException("Comparator for field " + searchableModelField.getName() + " is not configured.");
+        }
+
+        if (order == QueryParameters.Order.DESCENDING) {
+            return comparator.reversed();
+        }
+
+        return comparator;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V extends AbstractEntity<K>, M> Comparator<V> getComparator(Stream<QueryParameters.OrderingTuple<M>> ordering) {
+        return (Comparator<V>) ordering.map(MapFieldPredicates::getComparator)
+                .reduce(Comparator::thenComparing)
+                .orElseThrow(() -> new IllegalArgumentException("Cannot create comparator for " + ordering));
     }
 
     @SuppressWarnings("unchecked")

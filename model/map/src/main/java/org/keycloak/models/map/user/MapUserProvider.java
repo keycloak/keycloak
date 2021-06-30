@@ -70,7 +70,6 @@ import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialStore.Streams {
 
@@ -584,9 +583,10 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
             mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
         }
 
-        return paginatedStream(tx.read(mcb)
-          .sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
-          .map(entityToAdapterFunc(realm));
+        return tx.read(mcb, userStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResults, SearchableFields.USERNAME)
+                    .build())
+                .map(entityToAdapterFunc(realm));
     }
 
     @Override
@@ -701,10 +701,9 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
             mcb = mcb.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
         }
 
-        Stream<MapUserEntity<K>> usersStream = tx.read(mcb)
-                .sorted(MapUserEntity.COMPARE_BY_USERNAME); // Sort before paginating
-        
-        return paginatedStream(usersStream, firstResult, maxResults) // paginate if necessary
+        return tx.read(mcb, userStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResults, SearchableFields.USERNAME)
+                    .build())
                 .map(entityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -716,7 +715,9 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, group.getId());
 
-        return paginatedStream(tx.read(mcb).sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
+        return tx.read(mcb, userStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResults, SearchableFields.USERNAME)
+                    .build())
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -727,8 +728,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ATTRIBUTE, Operator.EQ, attrName, attrValue);
 
-        return tx.read(mcb)
-          .sorted(MapUserEntity.COMPARE_BY_USERNAME)
+        return tx.read(mcb, userStore.createQueryParametersBuilder().orderBy(SearchableFields.USERNAME).build())
           .map(entityToAdapterFunc(realm));
     }
 
@@ -756,8 +756,9 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
 
-        return paginatedStream(tx.read(mcb)
-                .sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
+        return tx.read(mcb, userStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResults, SearchableFields.USERNAME)
+                    .build())
                 .map(entityToAdapterFunc(realm));
     }
 

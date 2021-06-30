@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapScopeStore<K> implements ScopeStore {
 
@@ -155,7 +154,10 @@ public class MapScopeStore<K> implements ScopeStore {
             }
         }
 
-        return paginatedStream(tx.read(mcb).map(this::entityToAdapter), firstResult, maxResult)
-                .collect(Collectors.toList());
+        return tx.read(mcb, scopeStore.createQueryParametersBuilder()
+            .pagination(firstResult, maxResult, SearchableFields.NAME)
+            .build()
+        ).map(this::entityToAdapter)
+        .collect(Collectors.toList());
     }
 }

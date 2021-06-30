@@ -27,10 +27,13 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
+import org.keycloak.models.map.storage.MapFieldPredicates;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.utils.StreamsUtil;
 
 public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implements MapKeycloakTransaction<K, V, M> {
 
@@ -138,7 +141,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
      * @return
      */
     @Override
-    public Stream<V> read(ModelCriteriaBuilder<M> mcb) {
+    public Stream<V> read(ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters) {
         Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
           .filter(BulkDeleteOperation.class::isInstance)
           .map(BulkDeleteOperation.class::cast)
@@ -160,12 +163,20 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
               updatedAndNotRemovedObjectsStream
             );
 
+        if (queryParameters != null && queryParameters.getOrdering() != null && !queryParameters.getOrdering().isEmpty()) {
+            res = StreamsUtil.paginatedStream(
+                    res.sorted(MapFieldPredicates.getComparator(queryParameters.getOrdering().stream())),
+                    queryParameters.getOffset(),
+                    queryParameters.getLimit());
+        }
+
+
         return res;
     }
 
     @Override
-    public long getCount(ModelCriteriaBuilder<M> mcb) {
-        return read(mcb).count();
+    public long getCount(ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters) {
+        return read(mcb, queryParameters).count();
     }
 
     @Override
@@ -208,11 +219,11 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
 
 
     @Override
-    public long delete(K artificialKey, ModelCriteriaBuilder<M> mcb) {
+    public long delete(K artificialKey, ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters) {
         log.tracef("Adding operation DELETE_BULK");
 
         // Remove all tasks that create / update / delete objects deleted by the bulk removal.
-        final BulkDeleteOperation bdo = new BulkDeleteOperation(mcb);
+        final BulkDeleteOperation bdo = new BulkDeleteOperation(mcb, queryParameters);
         Predicate<V> filterForNonDeletedObjects = bdo.getFilterForNonDeletedObjects();
         long res = 0;
         for (Iterator<Entry<K, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
@@ -360,16 +371,18 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     private class BulkDeleteOperation extends MapTaskWithValue {
 
         private final ModelCriteriaBuilder<M> mcb;
+        private final QueryParameters<M> queryParameters;
 
-        public BulkDeleteOperation(ModelCriteriaBuilder<M> mcb) {
+        public BulkDeleteOperation(ModelCriteriaBuilder<M> mcb, QueryParameters<M> queryParameters) {
             super(null);
             this.mcb = mcb;
+            this.queryParameters = queryParameters;
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void execute() {
-            map.delete(mcb);
+            map.delete(mcb, queryParameters);
         }
 
         public Predicate<V> getFilterForNonDeletedObjects() {
@@ -391,7 +404,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
         }
 
         private long getCount() {
-            return map.getCount(mcb);
+            return ConcurrentHashMapKeycloakTransaction.this.getCount(mcb, queryParameters);
         }
     }
 }

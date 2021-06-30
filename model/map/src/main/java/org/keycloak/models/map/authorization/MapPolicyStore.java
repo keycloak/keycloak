@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapPolicyStore<K> implements PolicyStore {
 
@@ -153,12 +152,14 @@ public class MapPolicyStore<K> implements PolicyStore {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.NOT_EXISTS);
         }
 
-        return paginatedStream(tx.read(mcb)
-                .sorted(MapPolicyEntity.COMPARE_BY_NAME), firstResult, maxResult)
-                .map(MapPolicyEntity<K>::getId)
-                .map(K::toString)
-                .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId)) // We need to go through cache
-                .collect(Collectors.toList());
+        return tx.read(mcb, policyStore.createQueryParametersBuilder()
+                .pagination(firstResult, maxResult, SearchableFields.NAME)
+                .build()
+            )
+            .map(MapPolicyEntity<K>::getId)
+            .map(policyStore.getKeyConvertor()::keyToString)
+            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId)) // We need to go through cache
+            .collect(Collectors.toList());
     }
 
     private ModelCriteriaBuilder<Policy> filterEntryToModelCriteriaBuilder(Map.Entry<Policy.FilterOption, String[]> entry) {

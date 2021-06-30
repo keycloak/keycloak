@@ -52,17 +52,17 @@ public class SearchableModelField<M> {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final SearchableModelField<?> other = (SearchableModelField<?>) obj;
-        if ( ! Objects.equals(this.name, other.name)) {
-            return false;
-        }
-        return true;
+//        if (obj == null) {
+//            return false;
+//        }
+//        if (getClass() != obj.getClass()) {
+//            return false;
+//        }
+//        final SearchableModelField<?> other = (SearchableModelField<?>) obj;
+//        if ( ! Objects.equals(this.name, other.name)) {
+//            return false;
+//        }
+        return false;
     }
 
     @Override

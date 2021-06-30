@@ -50,7 +50,6 @@ import static org.keycloak.models.UserSessionModel.SessionPersistenceState.TRANS
 import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.userSession.SessionExpiration.setClientSessionExpiration;
 import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessionExpiration;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -291,8 +290,17 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
     @Override
     public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client,
                                                           Integer firstResult, Integer maxResults) {
-        return paginatedStream(getUserSessionsStream(realm, client)
-                .sorted(Comparator.comparing(UserSessionModel::getLastSessionRefresh)), firstResult, maxResults);
+        LOG.tracef("getUserSessionsStream(%s, %s, %s, %s)%s", realm, client, firstResult, maxResults, getShortStackTrace());
+
+        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId());
+
+
+        return userSessionTx.read(mcb, userSessionStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResults, UserSessionModel.SearchableFields.LAST_SESSION_REFRESH)
+                    .build())
+                .map(userEntityToAdapterFunc(realm))
+                .filter(Objects::nonNull);
     }
 
     @Override
@@ -544,10 +552,11 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s, %s, %s)%s", realm, client, firstResult, maxResults, getShortStackTrace());
 
-        return paginatedStream(userSessionTx.read(mcb)
+        return userSessionTx.read(mcb, userSessionStore.createQueryParametersBuilder()
+                    .pagination(firstResult, maxResults, UserSessionModel.SearchableFields.LAST_SESSION_REFRESH)
+                    .build())
                 .map(userEntityToAdapterFunc(realm))
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(UserSessionModel::getLastSessionRefresh)), firstResult, maxResults);
+                .filter(Objects::nonNull);
     }
 
     @Override

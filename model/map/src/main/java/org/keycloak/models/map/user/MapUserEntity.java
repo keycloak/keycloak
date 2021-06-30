@@ -65,8 +65,6 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
     private String serviceAccountClientLink;
     private int notBefore;
 
-    static Comparator<MapUserEntity<?>> COMPARE_BY_USERNAME = Comparator.comparing(MapUserEntity::getUsername);
-
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */

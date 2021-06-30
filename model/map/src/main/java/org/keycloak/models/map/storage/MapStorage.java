@@ -68,7 +68,23 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    Stream<V> read(ModelCriteriaBuilder<M> criteria);
+    default Stream<V> read(ModelCriteriaBuilder<M> criteria) {
+        return read(criteria, null);
+    }
+
+    /**
+     * Returns stream of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param criteria Criteria filtering out the object, originally obtained
+     * @param queryParameters parameters for query like firstResult, maxResult, requested ordering, etc.
+     *   from {@link #createCriteriaBuilder()} method of this object.
+     *   If {@code null}, it returns an empty stream.
+     * @return Stream of objects. Never returns {@code null}.
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
+    Stream<V> read(ModelCriteriaBuilder<M> criteria, QueryParameters<M> queryParameters);
 
     /**
      * Returns the number of objects satisfying given {@code criteria} from the storage.
@@ -79,7 +95,21 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    long getCount(ModelCriteriaBuilder<M> criteria);
+    default long getCount(ModelCriteriaBuilder<M> criteria) {
+        return getCount(criteria, null);
+    }
+
+    /**
+     * Returns the number of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param criteria
+     * @param queryParameters parameters for query like firstResult, maxResult, requested ordering, etc.
+     * @return Number of objects. Never returns {@code null}.
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
+    long getCount(ModelCriteriaBuilder<M> criteria, QueryParameters<M> queryParameters);
 
     /**
      * Updates the object with the given {@code id} in the storage if it already exists.
@@ -103,7 +133,19 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    long delete(ModelCriteriaBuilder<M> criteria);
+    default long delete(ModelCriteriaBuilder<M> criteria) {
+        return delete(criteria, null);
+    }
+
+    /**
+     * Deletes objects that match the given criteria.
+     * @param criteria
+     * @param queryParameters parameters for query like firstResult, maxResult, requested ordering, etc.
+     * @return Number of removed objects (might return {@code -1} if not supported)
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
+    long delete(ModelCriteriaBuilder<M> criteria, QueryParameters<M> queryParameters);
 
     
     /**
@@ -120,6 +162,8 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @return See description. Never returns {@code null}
      */
     ModelCriteriaBuilder<M> createCriteriaBuilder();
+
+    QueryParameters.Builder<M> createQueryParametersBuilder();
 
     
     /**
