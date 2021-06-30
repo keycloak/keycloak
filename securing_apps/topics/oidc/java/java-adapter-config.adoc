@@ -27,6 +27,9 @@ This is what one might look like:
    },
 
    "connection-pool-size" : 20,
+   "socket-timeout-millis": 5000,
+   "connection-timeout-millis": 6000,
+   "connection-ttl-millis": 500,
    "disable-trust-manager": false,
    "allow-any-hostname" : false,
    "truststore" : "path/to/truststore.jks",
@@ -149,6 +152,27 @@ connection-pool-size::
   This config option defines how many connections to the {project_name} server should be pooled.
   This is _OPTIONAL_.
   The default value is `20`.
+
+socket-timeout-millis::
+  Timeout for socket waiting for data after establishing the connection in milliseconds.
+  Maximum time of inactivity between two data packets.
+  A timeout value of zero is interpreted as an infinite timeout.
+  A negative value is interpreted as undefined (system default if applicable).
+  The default value is `-1`.
+  This is _OPTIONAL_.
+
+connection-timeout-millis::
+  Timeout for establishing the connection with the remote host in milliseconds.
+  A timeout value of zero is interpreted as an infinite timeout.
+  A negative value is interpreted as undefined (system default if applicable).
+  The default value is `-1`.
+  This is _OPTIONAL_.
+
+connection-ttl-millis::
+  Connection time-to-live for client in milliseconds.
+  A value less than or equal to zero is interpreted as an infinite value.
+  The default value is `-1`.
+  This is _OPTIONAL_.
 
 disable-trust-manager::
   If the {project_name} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
