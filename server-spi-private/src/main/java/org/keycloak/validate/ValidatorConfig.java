@@ -59,7 +59,11 @@ public class ValidatorConfig {
         }
         return new ValidatorConfig(map);
     }
-    
+
+    public Map<String, Object> asMap(){
+        return config;
+    }
+
     public boolean containsKey(String key) {
         return config.containsKey(key);
     }

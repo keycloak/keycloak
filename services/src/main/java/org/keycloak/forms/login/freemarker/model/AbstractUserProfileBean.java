@@ -9,6 +9,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 
@@ -141,6 +142,19 @@ public abstract class AbstractUserProfileBean {
             }
 
             return annotations;
+        }
+        
+        /**
+         * Get info about validators applied to attribute.  
+         * 
+         * @return never null, map where key is validatorId and value is map with configuration for given validator (loaded from UserProfile configuration, never null)
+         */
+        public Map<String, Map<String, Object>> getValidators(){
+            
+            if(metadata.getValidators() == null) {
+                return Collections.emptyMap();
+            }
+            return metadata.getValidators().stream().collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
         }
 
         @Override
