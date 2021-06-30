@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.keycloak.OAuthErrorException.INVALID_REDIRECT_URI;
 import static org.keycloak.services.clientpolicy.executor.RegexRedirectUriExecutorFactory.REGEX_PATTERNS_CONFIG_FIELD;
 
 public class RegexRedirectUriExecutor 
@@ -56,10 +57,10 @@ public class RegexRedirectUriExecutor
         }
       }
       
-      throw new ClientPolicyException("invalid_request", "Invalid redirect_uri");
+      throw new ClientPolicyException(INVALID_REDIRECT_URI, "Invalid redirect_uri");
 
     } else {
-      throw new ClientPolicyException("invalid_request", "no redirect_uri specified.");
+      throw new ClientPolicyException(INVALID_REDIRECT_URI, "no redirect_uri specified.");
     }
   }
 
