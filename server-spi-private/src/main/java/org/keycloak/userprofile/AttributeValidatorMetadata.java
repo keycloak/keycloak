@@ -19,6 +19,8 @@
 
 package org.keycloak.userprofile;
 
+import java.util.Map;
+
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.Validator;
 import org.keycloak.validate.ValidatorConfig;
@@ -50,6 +52,15 @@ public final class AttributeValidatorMetadata {
      */
     public String getValidatorId() {
         return validatorId;
+    }
+    
+    /**
+     * Get validator configuration as map.
+     * 
+     * @return never null
+     */
+    public Map<String, Object> getValidatorConfig(){
+        return validatorConfig.asMap();
     }
     
     /**
