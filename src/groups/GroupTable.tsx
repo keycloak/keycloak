@@ -10,6 +10,7 @@ import {
   KebabToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { cellWidth } from "@patternfly/react-table";
 
 import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
@@ -168,6 +169,7 @@ export const GroupTable = () => {
             name: "name",
             displayKey: "groups:groupName",
             cellRenderer: GroupNameCell,
+            transforms: [cellWidth(90)],
           },
         ]}
         emptyState={
