@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -85,10 +86,12 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     private static String user4Id;
     
     private static String user5Id;
-    
+
+    private static String user6Id;
+
     private static ClientRepresentation client_scope_default;
     private static ClientRepresentation client_scope_optional;
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password("password").build();
@@ -106,7 +109,10 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user5 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test5").email("login5@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
         user5Id = user5.getId();
 
-        RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5);
+        UserRepresentation user6 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test6").email("login6@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
+        user6Id = user6.getId();
+
+        RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6);
 
         RequiredActionProviderRepresentation action = new RequiredActionProviderRepresentation();
         action.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
@@ -304,6 +310,35 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+    }
+
+    @Test
+    public void testDoNotValidateUsernameWhenRegistrationAsEmailEnabled() {
+        RealmResource realmResource = testRealm();
+        RealmRepresentation realm = realmResource.toRepresentation();
+
+        try {
+            setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+            updateUser(user6Id, "ExistingFirst", "ExistingLast", "Department");
+
+            realm.setRegistrationEmailAsUsername(true);
+
+            realmResource.update(realm);
+
+            setUserProfileConfiguration("{\"attributes\": ["
+                    + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                    + "{\"name\": \"lastName\"," + PERMISSIONS_ALL +","+VALIDATIONS_LENGTH + "}"
+                    + "]}");
+
+            loginPage.open();
+            loginPage.login("login6@test.com", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+            realmResource.update(realm);
+        }
     }
     
     @Test
@@ -553,7 +588,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     
     @Test
     public void testAttributeRequiredButNotSelectedByScopeDoesntForceVerificationScreen() {
-        
+
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
         

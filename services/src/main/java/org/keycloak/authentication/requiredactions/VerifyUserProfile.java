@@ -95,11 +95,6 @@ public class VerifyUserProfile implements RequiredActionProvider, RequiredAction
         EventBuilder event = context.getEvent();
         event.event(EventType.VERIFY_PROFILE);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-
-        if (!context.getRealm().isEditUsernameAllowed()) {
-            formData.putSingle(UserModel.USERNAME, context.getUser().getUsername());
-        }
-
         UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, context.getUser());
 
