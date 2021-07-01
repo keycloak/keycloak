@@ -23,6 +23,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
 import { useAlerts } from "../components/alert/Alerts";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -58,8 +59,7 @@ export const LocalizationTab = ({
   const themeTypes = useServerInfo().themes!;
   const bundleForm = useForm<BundleForm>({ mode: "onChange" });
   const { addAlert } = useAlerts();
-
-  console.log(realm.supportedLocales);
+  const { realm: currentRealm } = useRealm();
 
   const watchSupportedLocales = useWatch({
     control,
@@ -73,14 +73,8 @@ export const LocalizationTab = ({
     defaultValue: realm?.internationalizationEnabled,
   });
 
-  console.log("ok", realm);
-
   const loader = async () => {
     if (realm) {
-      // if(realm.supportedLocales?.length === 0) {
-      //   return [[]];
-      // }
-      // else {
       const result = await adminClient.realms.getRealmLocalizationTexts({
         realm: realm.realm!,
         selectedLocale: getValues("defaultLocale") || "en",
@@ -88,7 +82,6 @@ export const LocalizationTab = ({
       return Object.keys(result).map((key) => [key, result[key]]);
     }
 
-    // }
     return [[]];
   };
 
@@ -103,7 +96,7 @@ export const LocalizationTab = ({
       });
       await adminClient.realms.addLocalization(
         {
-          realm: realm.realm!,
+          realm: currentRealm!,
           selectedLocale: getValues("defaultLocale") || "en",
           key: pair.key,
         },
@@ -111,7 +104,7 @@ export const LocalizationTab = ({
       );
 
       adminClient.setConfig({
-        realmName: realm.realm,
+        realmName: currentRealm!,
       });
       refresh();
       addAlert(t("realm-settings:pairCreatedSuccess"), AlertVariant.success);
