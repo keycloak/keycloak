@@ -1532,6 +1532,10 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
         };
     };
 
+	$scope.isNotUsernameOrEmail = function(attributeName) {
+		return attributeName != "username" && attributeName != "email";
+	}; 
+
     $scope.removeAttribute = function(attribute) {
         Dialog.confirmDelete(attribute.name, 'attribute', function() {
             let newAttributes = [];
