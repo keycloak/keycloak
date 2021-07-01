@@ -28,7 +28,6 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -38,7 +37,6 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
-import org.keycloak.models.map.common.StreamUtils;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
@@ -159,53 +157,6 @@ public class MapRoleProvider<K> implements RoleProvider {
 
         session.users().preRemove(realm, role);
 
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.IS_CLIENT_ROLE, Operator.EQ, false)
-          .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
-
-        //remove role from realm-roles composites
-        try (Stream<MapRoleEntity<K>> baseStream = tx.read(mcb)) {
-
-            StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity<K>::getCompositeRoles)
-                .filter(pair -> role.getId().equals(pair.getV()))
-                .collect(Collectors.toSet())
-                .forEach(pair -> {
-                    MapRoleEntity<K> origEntity = pair.getK();
-                    
-                    //
-                    // TODO: Investigate what this is for - the return value is ignored
-                    //
-                    registerEntityForChanges(tx, origEntity);
-                    origEntity.removeCompositeRole(role.getId());
-                });
-        }
-
-        //remove role from client-roles composites
-        session.clients().getClientsStream(realm).forEach(client -> {
-            client.deleteScopeMapping(role);
-            ModelCriteriaBuilder<RoleModel> mcbClient = roleStore.createCriteriaBuilder()
-              .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-              .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-              .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
-
-            try (Stream<MapRoleEntity<K>> baseStream = tx.read(mcbClient)) {
-                
-                StreamUtils.leftInnerJoinIterable(baseStream, MapRoleEntity<K>::getCompositeRoles)
-                    .filter(pair -> role.getId().equals(pair.getV()))
-                    .collect(Collectors.toSet())
-                    .forEach(pair -> {
-                        MapRoleEntity<K> origEntity = pair.getK();
-
-                        //
-                        // TODO: Investigate what this is for - the return value is ignored
-                        //
-                        registerEntityForChanges(tx, origEntity);
-                        origEntity.removeCompositeRole(role.getId());
-                    });
-            }
-        });
-        
         // TODO: Sending an event should be extracted to store layer
         session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
             @Override
