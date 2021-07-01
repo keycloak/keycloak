@@ -32,18 +32,20 @@ import type ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentT
 
 import "./RealmSettingsSection.css";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { AESGeneratedModal } from "./AESGeneratedModal";
-import { ECDSAGeneratedModal } from "./ECDSAGeneratedModal";
-import { HMACGeneratedModal } from "./HMACGeneratedModal";
-import { JavaKeystoreModal } from "./JavaKeystoreModal";
-import { RSAModal } from "./RSAModal";
-import { RSAGeneratedModal } from "./RSAGeneratedModal";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { Link, useRouteMatch } from "react-router-dom";
+import { AESGeneratedModal } from "./AESGeneratedModal";
+import { JavaKeystoreModal } from "./JavaKeystoreModal";
+import { HMACGeneratedModal } from "./HMACGeneratedModal";
+import { ECDSAGeneratedModal } from "./ECDSAGeneratedModal";
+import { RSAModal } from "./RSAModal";
+import { RSAGeneratedModal } from "./RSAGeneratedModal";
 
 type ComponentData = KeyMetadataRepresentation & {
+  id?: string;
   providerDescription?: string;
   name?: string;
   toggleHidden?: boolean;
@@ -62,6 +64,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   const { addAlert } = useAlerts();
   const adminClient = useAdminClient();
   const { realm } = useRealm();
+  const { url } = useRouteMatch();
 
   const [id, setId] = useState("");
 
@@ -335,9 +338,18 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
                 </DataListControl>
                 <DataListItemCells
                   dataListCells={[
-                    <DataListCell key={`name-${idx}`}>
+                    <DataListCell
+                      data-testId="provider-name"
+                      key={`name-${idx}`}
+                    >
                       <>
-                        <Button variant="link">{component.name}</Button>
+                        <Link
+                          key={component.name}
+                          data-testId="provider-name-link"
+                          to={`${url}/${component.id}/${component.providerId}/settings`}
+                        >
+                          {component.name}
+                        </Link>
                       </>
                     </DataListCell>,
                     <DataListCell key={`providerId-${idx}`}>

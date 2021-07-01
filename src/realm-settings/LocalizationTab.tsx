@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,
+  AlertVariant,
   Button,
   FormGroup,
   PageSection,
@@ -20,6 +21,8 @@ import { FormPanel } from "../components/scroll-form/FormPanel";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { AddMessageBundleModal } from "./AddMessageBundleModal";
+import { useAlerts } from "../components/alert/Alerts";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -28,13 +31,23 @@ type LocalizationTabProps = {
   realm: RealmRepresentation;
 };
 
+export type KeyValueType = { key: string; value: string };
+
+export type BundleForm = {
+  messageBundle: KeyValueType;
+};
+
 export const LocalizationTab = ({
   save,
   reset,
   realm,
+  refresh,
 }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
+  const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] = useState(
+    false
+  );
   const [key, setKey] = useState(0);
 
   const [supportedLocalesOpen, setSupportedLocalesOpen] = useState(false);
@@ -43,6 +56,10 @@ export const LocalizationTab = ({
   const { getValues, control, handleSubmit } = useFormContext();
   const [valueSelected, setValueSelected] = useState(false);
   const themeTypes = useServerInfo().themes!;
+  const bundleForm = useForm<BundleForm>({ mode: "onChange" });
+  const { addAlert } = useAlerts();
+
+  console.log(realm.supportedLocales);
 
   const watchSupportedLocales = useWatch({
     control,
@@ -56,19 +73,68 @@ export const LocalizationTab = ({
     defaultValue: realm?.internationalizationEnabled,
   });
 
+  console.log("ok", realm);
+
   const loader = async () => {
     if (realm) {
+      // if(realm.supportedLocales?.length === 0) {
+      //   return [[]];
+      // }
+      // else {
       const result = await adminClient.realms.getRealmLocalizationTexts({
         realm: realm.realm!,
         selectedLocale: getValues("defaultLocale") || "en",
       });
       return Object.keys(result).map((key) => [key, result[key]]);
     }
+
+    // }
     return [[]];
+  };
+
+  const handleModalToggle = () => {
+    setAddMessageBundleModalOpen(!addMessageBundleModalOpen);
+  };
+
+  const addKeyValue = async (pair: KeyValueType): Promise<void> => {
+    try {
+      adminClient.setConfig({
+        requestConfig: { headers: { "Content-Type": "text/plain" } },
+      });
+      await adminClient.realms.addLocalization(
+        {
+          realm: realm.realm!,
+          selectedLocale: getValues("defaultLocale") || "en",
+          key: pair.key,
+        },
+        pair.value
+      );
+
+      adminClient.setConfig({
+        realmName: realm.realm,
+      });
+      refresh();
+      addAlert(t("realm-settings:pairCreatedSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(
+        t("realm-settings:pairCreatedError", { error }),
+        AlertVariant.danger
+      );
+    }
   };
 
   return (
     <>
+      {addMessageBundleModalOpen && (
+        <AddMessageBundleModal
+          handleModalToggle={handleModalToggle}
+          save={(pair: any) => {
+            addKeyValue(pair);
+            handleModalToggle();
+          }}
+          form={bundleForm}
+        />
+      )}
       <PageSection variant="light">
         <FormPanel
           className="kc-login-screen"
@@ -236,13 +302,22 @@ export const LocalizationTab = ({
               key={key}
               loader={loader}
               ariaLabelKey="client-scopes:clientScopeList"
+              toolbarItem={
+                <Button
+                  data-testid="add-bundle-button"
+                  onClick={() => setAddMessageBundleModalOpen(true)}
+                >
+                  {t("addMessageBundle")}
+                </Button>
+              }
               searchPlaceholderKey=" "
               emptyState={
                 <ListEmptyState
                   hasIcon={true}
                   message={t("noMessageBundles")}
                   instructions={t("noMessageBundlesInstructions")}
-                  onPrimaryAction={() => {}}
+                  onPrimaryAction={handleModalToggle}
+                  primaryActionText={t("addMessageBundle")}
                 />
               }
               canSelectAll

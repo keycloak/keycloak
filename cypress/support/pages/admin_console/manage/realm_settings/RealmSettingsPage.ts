@@ -39,6 +39,10 @@ export default class RealmSettingsPage {
   testConnectionButton = "test-connection-button";
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";
+  addBundleButton = "no-message-bundles-empty-action";
+  confirmAddBundle = "add-bundle-confirm-button";
+  keyInput = "key-input";
+  valueInput = "value-input";
 
   selectLoginThemeType(themeType: string) {
     const themesUrl = "/auth/admin/realms/master/themes";
@@ -135,6 +139,17 @@ export default class RealmSettingsPage {
 
   addProvider() {
     cy.getId(this.addProviderButton).click();
+
+    return this;
+  }
+
+  addKeyValuePair(key: string, value: string) {
+    cy.getId(this.addBundleButton).click();
+
+    cy.getId(this.keyInput).type(key);
+    cy.getId(this.valueInput).type(value);
+
+    cy.getId(this.confirmAddBundle).click();
 
     return this;
   }
