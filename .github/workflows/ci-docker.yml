@@ -30,7 +30,7 @@ jobs:
           context: server
           file: server/Dockerfile
           push: true
-          build-args: GIT_REPO=keycloak/keycloak
+          build-args: GIT_REPO=primesign/keycloak
           # cache-from: type=registry,ref=primesign/keycloak:latest
           # cache-to: type=inline
           tags: |
