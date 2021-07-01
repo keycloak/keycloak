@@ -94,7 +94,7 @@ public class MapGroupProvider<K> implements GroupProvider {
     private Stream<GroupModel> getGroupsStreamInternal(RealmModel realm, UnaryOperator<ModelCriteriaBuilder<GroupModel>> modifier) {
         LOG.tracef("getGroupsStream(%s)%s", realm, getShortStackTrace());
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         if (modifier != null) {
             mcb = modifier.apply(mcb);
@@ -110,7 +110,7 @@ public class MapGroupProvider<K> implements GroupProvider {
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
           .compare(SearchableFields.ID, Operator.IN, ids.map(groupStore.getKeyConvertor()::fromString))
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         if (search != null) {
             mcb = mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
@@ -127,10 +127,10 @@ public class MapGroupProvider<K> implements GroupProvider {
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         LOG.tracef("getGroupsCount(%s, %s)%s", realm, onlyTopGroups, getShortStackTrace());
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         if (Objects.equals(onlyTopGroups, Boolean.TRUE)) {
-            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null);
+            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
         }
 
         return tx.getCount(mcb);
@@ -139,7 +139,7 @@ public class MapGroupProvider<K> implements GroupProvider {
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
 
         return tx.getCount(mcb);
@@ -149,7 +149,7 @@ public class MapGroupProvider<K> implements GroupProvider {
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         LOG.tracef("getGroupsByRole(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
         Stream<GroupModel> groupModelStream = getGroupsStreamInternal(realm,
-          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId())
+          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.ASSIGNED_ROLE, Operator.HAS_VALUE, role.getId())
         );
 
         return paginatedStream(groupModelStream, firstResult, maxResults);
@@ -159,7 +159,7 @@ public class MapGroupProvider<K> implements GroupProvider {
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
         LOG.tracef("getTopLevelGroupsStream(%s)%s", realm, getShortStackTrace());
         return getGroupsStreamInternal(realm,
-          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null)
+          (ModelCriteriaBuilder<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS)
         );
     }
 
@@ -197,9 +197,9 @@ public class MapGroupProvider<K> implements GroupProvider {
         // Check Db constraint: uniqueConstraints = { @UniqueConstraint(columnNames = {"REALM_ID", "PARENT_GROUP", "NAME"})}
         String parentId = toParent == null ? null : toParent.getId();
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
-          .compare(SearchableFields.NAME, Operator.EQ, name);
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.PARENT_ID, Operator.HAS_VALUE, parentId)
+          .compare(SearchableFields.NAME, Operator.HAS_VALUE, name);
 
         if (tx.getCount(mcb) > 0) {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
@@ -264,9 +264,9 @@ public class MapGroupProvider<K> implements GroupProvider {
         
         String parentId = toParent == null ? null : toParent.getId();
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
-          .compare(SearchableFields.NAME, Operator.EQ, group.getName());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.PARENT_ID, Operator.HAS_VALUE, parentId)
+          .compare(SearchableFields.NAME, Operator.HAS_VALUE, group.getName());
 
         try (Stream<MapGroupEntity<K>> possibleSiblings = tx.read(mcb)) {
             if (possibleSiblings.findAny().isPresent()) {
@@ -286,9 +286,9 @@ public class MapGroupProvider<K> implements GroupProvider {
         LOG.tracef("addTopLevelGroup(%s, %s)%s", realm, subGroup, getShortStackTrace());
 
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null)
-          .compare(SearchableFields.NAME, Operator.EQ, subGroup.getName());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS)
+          .compare(SearchableFields.NAME, Operator.HAS_VALUE, subGroup.getName());
 
         try (Stream<MapGroupEntity<K>> possibleSiblings = tx.read(mcb)) {
             if (possibleSiblings.findAny().isPresent()) {
@@ -302,8 +302,8 @@ public class MapGroupProvider<K> implements GroupProvider {
     public void preRemove(RealmModel realm, RoleModel role) {
         LOG.tracef("preRemove(%s, %s)%s", realm, role, getShortStackTrace());
         ModelCriteriaBuilder<GroupModel> mcb = groupStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.ASSIGNED_ROLE, Operator.HAS_VALUE, role.getId());
         try (Stream<MapGroupEntity<K>> toRemove = tx.read(mcb)) {
             toRemove
                 .map(groupEntity -> session.groups().getGroupById(realm, groupEntity.getId().toString()))

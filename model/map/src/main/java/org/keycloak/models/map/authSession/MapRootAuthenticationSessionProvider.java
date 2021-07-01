@@ -141,7 +141,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
         int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
         ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = sessionStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
           .compare(SearchableFields.TIMESTAMP, Operator.LT, expired);
 
         long deletedCount = tx.delete(sessionStore.getKeyConvertor().yieldNewUniqueKey(), mcb);
@@ -153,7 +153,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
     public void onRealmRemoved(RealmModel realm) {
         Objects.requireNonNull(realm, "The provided realm can't be null!");
         ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = sessionStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         sessionStore.delete(mcb);
     }

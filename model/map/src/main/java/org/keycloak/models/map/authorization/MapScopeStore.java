@@ -71,7 +71,7 @@ public class MapScopeStore<K> implements ScopeStore {
 
         return resourceServerId == null
                 ? mcb
-                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.EQ,
+                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.HAS_VALUE,
                 resourceServerId);
     }
 
@@ -82,7 +82,7 @@ public class MapScopeStore<K> implements ScopeStore {
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
         ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServer.getId())
-                .compare(SearchableFields.NAME, Operator.EQ, name);
+                .compare(SearchableFields.NAME, Operator.HAS_VALUE, name);
 
         if (tx.getCount(mcb) > 0) {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
@@ -110,7 +110,7 @@ public class MapScopeStore<K> implements ScopeStore {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId)
-                    .compare(Scope.SearchableFields.ID, Operator.EQ, id))
+                    .compare(Scope.SearchableFields.ID, Operator.HAS_VALUE, id))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -121,7 +121,7 @@ public class MapScopeStore<K> implements ScopeStore {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
-                Operator.EQ, name))
+                Operator.HAS_VALUE, name))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);

@@ -73,7 +73,7 @@ public interface UserModel extends RoleMapperModel {
         /**
          * Search for users that have consent set for a particular client.
          */
-        public static final SearchableModelField<UserModel> CONSENT_FOR_CLIENT = new SearchableModelField<>("clientConsent", String.class);
+        public static final SearchableModelField<UserModel> CONSENT_FOR_CLIENT_ID = new SearchableModelField<>("clientConsent", String.class);
         /**
          * Search for users that have consent set for a particular client that originates in the given client provider.
          */
@@ -81,7 +81,7 @@ public interface UserModel extends RoleMapperModel {
         /**
          * Search for users that have consent that has given client scope.
          */
-        public static final SearchableModelField<UserModel> CONSENT_WITH_CLIENT_SCOPE = new SearchableModelField<>("consentWithClientScope", String.class);
+        public static final SearchableModelField<UserModel> CONSENT_WITH_CLIENT_SCOPE_ID = new SearchableModelField<>("consentWithClientScope", String.class);
         /**
          * ID of the client corresponding to the service account
          */

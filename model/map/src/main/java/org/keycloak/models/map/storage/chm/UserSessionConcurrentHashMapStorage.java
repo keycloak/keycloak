@@ -58,7 +58,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
         @Override
         public void delete(K key) {
-            ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, key);
+            ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.HAS_VALUE, key);
             clientSessionTr.delete(key, csMcb);
             super.delete(key);
         }

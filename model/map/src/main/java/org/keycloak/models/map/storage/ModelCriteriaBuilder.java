@@ -61,10 +61,22 @@ public interface ModelCriteriaBuilder<M> {
      * is now.
      */
     public enum Operator {
-        /** Equals to */
-        EQ,
-        /** Not equals to */
-        NE,
+        /**
+         * This single-parameter operator checks that the property has the given value:
+         * <ul>
+         *     <li>In case of single values, this corresponds to equality check to the operand</li>
+         *     <li>In case of lists, this corresponds to checking that this list contains an object equivalent to the operand</li>
+         * </ul>
+         */
+        HAS_VALUE,
+        /**
+         * This single-parameter operator checks that the property does NOT have the given value:
+         * <ul>
+         *     <li>In case of single values, this corresponds to non-equality check to the operand</li>
+         *     <li>In case of lists, this corresponds to checking that this list does NOT contain an object equivalent to the operand</li>
+         * </ul>
+         */
+        HAS_NOT_VALUE,
         /** Less than */
         LT,
         /** Less than or equal */

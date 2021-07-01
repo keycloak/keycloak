@@ -78,7 +78,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
 
         return resourceServerId == null
                 ? mcb
-                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.EQ,
+                : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.HAS_VALUE,
                 resourceServerId);
     }
     
@@ -101,12 +101,12 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
 
         // @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
         ModelCriteriaBuilder<PermissionTicket> mcb = forResourceServer(resourceServer.getId())
-                .compare(SearchableFields.OWNER, Operator.EQ, owner)
-                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId)
-                .compare(SearchableFields.REQUESTER, Operator.EQ, requester);
+                .compare(SearchableFields.OWNER, Operator.HAS_VALUE, owner)
+                .compare(SearchableFields.RESOURCE_ID, Operator.HAS_VALUE, resourceId)
+                .compare(SearchableFields.REQUESTER, Operator.HAS_VALUE, requester);
 
         if (scopeId != null) {
-            mcb = mcb.compare(SearchableFields.SCOPE_ID, Operator.EQ, scopeId);
+            mcb = mcb.compare(SearchableFields.SCOPE_ID, Operator.HAS_VALUE, scopeId);
         }
         
         if (tx.getCount(mcb) > 0) {
@@ -143,7 +143,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId)
-                    .compare(PermissionTicket.SearchableFields.ID, Operator.EQ, id))
+                    .compare(PermissionTicket.SearchableFields.ID, Operator.HAS_VALUE, id))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -163,7 +163,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         LOG.tracef("findByOwner(%s, %s)%s", owner, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.OWNER, Operator.EQ, owner))
+                    .compare(SearchableFields.OWNER, Operator.HAS_VALUE, owner))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -173,7 +173,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         LOG.tracef("findByResource(%s, %s)%s", resourceId, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId))
+                .compare(SearchableFields.RESOURCE_ID, Operator.HAS_VALUE, resourceId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -183,7 +183,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
         LOG.tracef("findByScope(%s, %s)%s", scopeId, resourceServerId, getShortStackTrace());
 
         return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.SCOPE_ID, Operator.EQ, scopeId))
+                .compare(SearchableFields.SCOPE_ID, Operator.HAS_VALUE, scopeId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -231,7 +231,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
             case REQUESTER:
             case POLICY_ID:
                 return permissionTicketStore.createCriteriaBuilder()
-                        .compare(name.getSearchableModelField(), Operator.EQ, value);
+                        .compare(name.getSearchableModelField(), Operator.HAS_VALUE, value);
             case SCOPE_IS_NULL:
             case GRANTED:
             case REQUESTER_IS_NULL: {
@@ -275,7 +275,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     @Override
     public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
         ModelCriteriaBuilder<PermissionTicket> mcb = permissionTicketStore.createCriteriaBuilder()
-                .compare(SearchableFields.REQUESTER, Operator.EQ, requester)
+                .compare(SearchableFields.REQUESTER, Operator.HAS_VALUE, requester)
                 .compare(SearchableFields.GRANTED_TIMESTAMP, Operator.EXISTS);
 
         Function<MapPermissionTicketEntity<K>, Resource> ticketResourceMapper;
@@ -308,7 +308,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     @Override
     public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
         ModelCriteriaBuilder<PermissionTicket> mcb = permissionTicketStore.createCriteriaBuilder()
-                .compare(SearchableFields.OWNER, Operator.EQ, owner);
+                .compare(SearchableFields.OWNER, Operator.HAS_VALUE, owner);
 
         return paginatedStream(tx.read(mcb)
                 .filter(distinctByKey(MapPermissionTicketEntity::getResourceId))

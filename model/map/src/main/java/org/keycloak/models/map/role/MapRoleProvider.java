@@ -107,8 +107,8 @@ public class MapRoleProvider<K> implements RoleProvider {
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.IS_CLIENT_ROLE, Operator.HAS_NOT_VALUE, true);
         
         return tx.read(mcb)
                 .sorted(COMPARE_BY_NAME)
@@ -144,8 +144,8 @@ public class MapRoleProvider<K> implements RoleProvider {
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client) {
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
-          .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, client.getRealm().getId())
+          .compare(SearchableFields.CLIENT_ID, Operator.HAS_VALUE, client.getId());
 
         return tx.read(mcb)
                 .sorted(COMPARE_BY_NAME)
@@ -160,9 +160,9 @@ public class MapRoleProvider<K> implements RoleProvider {
         session.users().preRemove(realm, role);
 
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.IS_CLIENT_ROLE, Operator.EQ, false)
-          .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+          .compare(SearchableFields.IS_CLIENT_ROLE, Operator.HAS_VALUE, false)
+          .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.HAS_VALUE, false);
 
         //remove role from realm-roles composites
         try (Stream<MapRoleEntity<K>> baseStream = tx.read(mcb)) {
@@ -185,9 +185,9 @@ public class MapRoleProvider<K> implements RoleProvider {
         session.clients().getClientsStream(realm).forEach(client -> {
             client.deleteScopeMapping(role);
             ModelCriteriaBuilder<RoleModel> mcbClient = roleStore.createCriteriaBuilder()
-              .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-              .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-              .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.EQ, false);
+              .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+              .compare(SearchableFields.CLIENT_ID, Operator.HAS_VALUE, client.getId())
+              .compare(SearchableFields.IS_COMPOSITE_ROLE, Operator.HAS_VALUE, false);
 
             try (Stream<MapRoleEntity<K>> baseStream = tx.read(mcbClient)) {
                 
@@ -243,7 +243,7 @@ public class MapRoleProvider<K> implements RoleProvider {
         LOG.tracef("getRealmRole(%s, %s)%s", realm, name, getShortStackTrace());
 
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, name);
 
         String roleId = tx.read(mcb)
@@ -263,8 +263,8 @@ public class MapRoleProvider<K> implements RoleProvider {
         LOG.tracef("getClientRole(%s, %s)%s", client, name, getShortStackTrace());
 
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
-          .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, client.getRealm().getId())
+          .compare(SearchableFields.CLIENT_ID, Operator.HAS_VALUE, client.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, name);
 
         String roleId = tx.read(mcb)
@@ -297,7 +297,7 @@ public class MapRoleProvider<K> implements RoleProvider {
             return Stream.empty();
         }
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
           .or(
             roleStore.createCriteriaBuilder().compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
             roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
@@ -315,8 +315,8 @@ public class MapRoleProvider<K> implements RoleProvider {
             return Stream.empty();
         }
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
-          .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
+          .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, client.getRealm().getId())
+          .compare(SearchableFields.CLIENT_ID, Operator.HAS_VALUE, client.getId())
           .or(
             roleStore.createCriteriaBuilder().compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
             roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")

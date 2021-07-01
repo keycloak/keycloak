@@ -77,7 +77,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
         ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
-            .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+            .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId());
 
         return tx.read(mcb)
           .sorted(COMPARE_BY_NAME)
@@ -88,8 +88,8 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
         // Check Db constraint: @UniqueConstraint(columnNames = {"REALM_ID", "NAME"})
         ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
-            .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-            .compare(SearchableFields.NAME, Operator.EQ, name);
+            .compare(SearchableFields.REALM_ID, Operator.HAS_VALUE, realm.getId())
+            .compare(SearchableFields.NAME, Operator.HAS_VALUE, name);
 
         if (tx.getCount(mcb) > 0) {
             throw new ModelDuplicateException("Client scope with name '" + name + "' in realm " + realm.getName());
