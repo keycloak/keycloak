@@ -3,6 +3,8 @@ import { Control, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
 import {
+  ActionGroup,
+  Button,
   FormGroup,
   Select,
   SelectOption,
@@ -12,7 +14,6 @@ import {
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
-import { SaveReset } from "./SaveReset";
 
 type AuthenticationOverridesProps = {
   control: Control<Record<string, any>>;
@@ -122,7 +123,14 @@ export const AuthenticationOverrides = ({
           />
         </FormGroup>
       )}
-      <SaveReset name="authenticationOverrides" save={save} reset={reset} />
+      <ActionGroup>
+        <Button variant="tertiary" onClick={save}>
+          {t("common:save")}
+        </Button>
+        <Button variant="link" onClick={reset}>
+          {t("common:revert")}
+        </Button>
+      </ActionGroup>
     </FormAccess>
   );
 };
