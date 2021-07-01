@@ -142,6 +142,7 @@ export type DataListProps<T> = Omit<
   icon?: React.ComponentClass<SVGIconProps>;
   isNotCompact?: boolean;
   isRadio?: boolean;
+  isSearching?: boolean;
 };
 
 /**
@@ -186,6 +187,7 @@ export function KeycloakDataTable<T>({
   subToolbar,
   emptyState,
   icon,
+  isSearching = false,
   ...props
 }: DataListProps<T>) {
   const { t } = useTranslation();
@@ -256,7 +258,7 @@ export function KeycloakDataTable<T>({
           ? (node as TitleCell).title.props.children
           : (node as TitleCell).title
           ? (node as TitleCell).title
-          : (node as JSX.Element).props.children
+          : (node as JSX.Element).props?.children
       );
     }
     return "";
@@ -375,8 +377,10 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
-      {!rows && loading && <Loading />}
-      {((data && data.length > 0) || search !== "" || !emptyState) && (
+      {((data && data.length > 0) ||
+        search !== "" ||
+        isSearching ||
+        loading) && (
         <PaginatingTableToolbar
           count={data?.length || 0}
           first={first}
@@ -413,7 +417,7 @@ export function KeycloakDataTable<T>({
           )}
           {!loading &&
             (!data || data.length === 0) &&
-            (search !== "" || !emptyState) &&
+            (search !== "" || !isSearching) &&
             searchPlaceholderKey && (
               <ListEmptyState
                 hasIcon={true}

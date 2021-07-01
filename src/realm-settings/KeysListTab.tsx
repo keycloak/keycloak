@@ -272,19 +272,18 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
               transforms: [cellWidth(20)],
             },
           ]}
+          isSearching={!!filterType}
           emptyState={
-            filterType ? undefined : (
-              <ListEmptyState
-                hasIcon={true}
-                message={t("realm-settings:noKeys")}
-                instructions={
-                  t(`realm-settings:noKeysDescription`) +
-                  `${filterType.toLocaleLowerCase()}.`
-                }
-                primaryActionText={t("createRole")}
-                onPrimaryAction={goToCreate}
-              />
-            )
+            <ListEmptyState
+              hasIcon={true}
+              message={t("realm-settings:noKeys")}
+              instructions={
+                t(`realm-settings:noKeysDescription`) +
+                `${filterType.toLocaleLowerCase()}.`
+              }
+              primaryActionText={t("createRole")}
+              onPrimaryAction={goToCreate}
+            />
           }
         />
       </PageSection>
