@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage;
+package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -46,7 +46,7 @@ import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.storage.SearchableModelField;
 import java.util.HashMap;
 import java.util.Map;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.UserConsentEntity;
@@ -62,6 +62,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 
 /**

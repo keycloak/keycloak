@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage;
+package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import java.util.Arrays;
