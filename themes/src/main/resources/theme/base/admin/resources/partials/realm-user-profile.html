@@ -85,14 +85,14 @@
                        type="text" class="form-control"/>
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
             <label class="col-md-2 control-label" for="selectorByScopeSelect">{{:: 'user.profile.attribute.selector.scopes' | translate}}</label>
             <kc-tooltip>{{:: 'user.profile.attribute.selector.scopes.tooltip' | translate}}</kc-tooltip>
             <div class="col-md-6">
                 <input type="hidden" ui-select2="selectorByScopeSelect" id="selectorByScopeSelect" data-ng-model="selectorByScope" data-placeholder="Select a scope..." multiple/>
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
             <label class="col-md-2 control-label" for="isRequired">{{:: 'user.profile.attribute.required' | translate}}</label>
             <kc-tooltip>{{:: 'user.profile.attribute.required.tooltip' | translate}}</kc-tooltip>
             <div class="col-md-6">
@@ -114,7 +114,7 @@
                 <input type="hidden" ui-select2="isRequiredScopes" id="isRequiredScopes" data-ng-model="requiredScopes" data-placeholder="Select a scope..." multiple/>
             </div>
         </div>
-        <fieldset class="border-top">
+        <fieldset class="border-top" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
             <legend collapsed><span class="text">{{:: 'user.profile.attribute.permission' | translate}}</span></legend>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="canUserView">{{:: 'user.profile.attribute.canUserView' | translate}}</label>
