@@ -153,21 +153,29 @@ exports[`<JsonFileUpload /> render 1`] = `
                         onClick={[Function]}
                         variant="control"
                       >
-                        <button
-                          aria-disabled={false}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control"
-                          data-ouia-component-id="OUIA-Generated-Button-control-1"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={false}
+                        <ButtonBase
                           id="test-browse-button"
+                          innerRef={null}
+                          isDisabled={false}
                           onClick={[Function]}
-                          role={null}
-                          type="button"
+                          variant="control"
                         >
-                          Browse...
-                        </button>
+                          <button
+                            aria-disabled={false}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control"
+                            data-ouia-component-id="OUIA-Generated-Button-control-1"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={false}
+                            id="test-browse-button"
+                            onClick={[Function]}
+                            role={null}
+                            type="button"
+                          >
+                            Browse...
+                          </button>
+                        </ButtonBase>
                       </Button>
                       <Button
                         isDisabled={true}
@@ -175,21 +183,28 @@ exports[`<JsonFileUpload /> render 1`] = `
                         onClick={[Function]}
                         variant="control"
                       >
-                        <button
-                          aria-disabled={true}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control pf-m-disabled"
-                          data-ouia-component-id="OUIA-Generated-Button-control-2"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={true}
+                        <ButtonBase
+                          innerRef={null}
+                          isDisabled={true}
                           onClick={[Function]}
-                          role={null}
-                          tabIndex={null}
-                          type="button"
+                          variant="control"
                         >
-                          Clear
-                        </button>
+                          <button
+                            aria-disabled={true}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control pf-m-disabled"
+                            data-ouia-component-id="OUIA-Generated-Button-control-2"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={true}
+                            onClick={[Function]}
+                            role={null}
+                            tabIndex={null}
+                            type="button"
+                          >
+                            Clear
+                          </button>
+                        </ButtonBase>
                       </Button>
                     </div>
                   </InputGroup>
@@ -427,21 +442,29 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                         onClick={[Function]}
                         variant="control"
                       >
-                        <button
-                          aria-disabled={false}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control"
-                          data-ouia-component-id="OUIA-Generated-Button-control-3"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={false}
+                        <ButtonBase
                           id="upload-browse-button"
+                          innerRef={null}
+                          isDisabled={false}
                           onClick={[Function]}
-                          role={null}
-                          type="button"
+                          variant="control"
                         >
-                          Browse...
-                        </button>
+                          <button
+                            aria-disabled={false}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control"
+                            data-ouia-component-id="OUIA-Generated-Button-control-3"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={false}
+                            id="upload-browse-button"
+                            onClick={[Function]}
+                            role={null}
+                            type="button"
+                          >
+                            Browse...
+                          </button>
+                        </ButtonBase>
                       </Button>
                       <Button
                         isDisabled={true}
@@ -449,21 +472,28 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                         onClick={[Function]}
                         variant="control"
                       >
-                        <button
-                          aria-disabled={true}
-                          aria-label={null}
-                          className="pf-c-button pf-m-control pf-m-disabled"
-                          data-ouia-component-id="OUIA-Generated-Button-control-4"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe={true}
-                          disabled={true}
+                        <ButtonBase
+                          innerRef={null}
+                          isDisabled={true}
                           onClick={[Function]}
-                          role={null}
-                          tabIndex={null}
-                          type="button"
+                          variant="control"
                         >
-                          Clear
-                        </button>
+                          <button
+                            aria-disabled={true}
+                            aria-label={null}
+                            className="pf-c-button pf-m-control pf-m-disabled"
+                            data-ouia-component-id="OUIA-Generated-Button-control-4"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe={true}
+                            disabled={true}
+                            onClick={[Function]}
+                            role={null}
+                            tabIndex={null}
+                            type="button"
+                          >
+                            Clear
+                          </button>
+                        </ButtonBase>
                       </Button>
                     </div>
                   </InputGroup>

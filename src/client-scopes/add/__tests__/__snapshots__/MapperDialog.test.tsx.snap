@@ -114,6 +114,9 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                     >
                       <p
                         class=""
+                        data-ouia-component-id="OUIA-Generated-Text-1"
+                        data-ouia-component-type="PF4/Text"
+                        data-ouia-safe="true"
                         data-pf-content="true"
                       >
                         predefinedMappingDescription
@@ -1157,43 +1160,51 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                           onClick={[Function]}
                           variant="plain"
                         >
-                          <button
-                            aria-disabled={false}
+                          <ButtonBase
                             aria-label="Close"
-                            className="pf-c-button pf-m-plain"
-                            data-ouia-component-id="OUIA-Generated-Button-plain-1"
-                            data-ouia-component-type="PF4/Button"
-                            data-ouia-safe={true}
-                            disabled={false}
+                            className=""
+                            innerRef={null}
                             onClick={[Function]}
-                            role={null}
-                            type="button"
+                            variant="plain"
                           >
-                            <TimesIcon
-                              color="currentColor"
-                              noVerticalAlign={false}
-                              size="sm"
+                            <button
+                              aria-disabled={false}
+                              aria-label="Close"
+                              className="pf-c-button pf-m-plain"
+                              data-ouia-component-id="OUIA-Generated-Button-plain-1"
+                              data-ouia-component-type="PF4/Button"
+                              data-ouia-safe={true}
+                              disabled={false}
+                              onClick={[Function]}
+                              role={null}
+                              type="button"
                             >
-                              <svg
-                                aria-hidden={true}
-                                aria-labelledby={null}
-                                fill="currentColor"
-                                height="1em"
-                                role="img"
-                                style={
-                                  Object {
-                                    "verticalAlign": "-0.125em",
-                                  }
-                                }
-                                viewBox="0 0 352 512"
-                                width="1em"
+                              <TimesIcon
+                                color="currentColor"
+                                noVerticalAlign={false}
+                                size="sm"
                               >
-                                <path
-                                  d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
-                                />
-                              </svg>
-                            </TimesIcon>
-                          </button>
+                                <svg
+                                  aria-hidden={true}
+                                  aria-labelledby={null}
+                                  fill="currentColor"
+                                  height="1em"
+                                  role="img"
+                                  style={
+                                    Object {
+                                      "verticalAlign": "-0.125em",
+                                    }
+                                  }
+                                  viewBox="0 0 352 512"
+                                  width="1em"
+                                >
+                                  <path
+                                    d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                                  />
+                                </svg>
+                              </TimesIcon>
+                            </button>
+                          </ButtonBase>
                         </Button>
                       </ModalBoxCloseButton>
                       <ModalBoxHeader
@@ -1235,6 +1246,9 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                               <Text>
                                 <p
                                   className=""
+                                  data-ouia-component-id="OUIA-Generated-Text-1"
+                                  data-ouia-component-type="PF4/Text"
+                                  data-ouia-safe={true}
                                   data-pf-content={true}
                                 >
                                   predefinedMappingDescription
@@ -20381,22 +20395,29 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                             key="confirm"
                             onClick={[Function]}
                           >
-                            <button
-                              aria-disabled={true}
-                              aria-label={null}
-                              className="pf-c-button pf-m-primary pf-m-disabled"
-                              data-ouia-component-id="OUIA-Generated-Button-primary-2"
-                              data-ouia-component-type="PF4/Button"
-                              data-ouia-safe={true}
-                              disabled={true}
+                            <ButtonBase
                               id="modal-confirm"
+                              innerRef={null}
+                              isDisabled={true}
                               onClick={[Function]}
-                              role={null}
-                              tabIndex={null}
-                              type="button"
                             >
-                              add
-                            </button>
+                              <button
+                                aria-disabled={true}
+                                aria-label={null}
+                                className="pf-c-button pf-m-primary pf-m-disabled"
+                                data-ouia-component-id="OUIA-Generated-Button-primary-2"
+                                data-ouia-component-type="PF4/Button"
+                                data-ouia-safe={true}
+                                disabled={true}
+                                id="modal-confirm"
+                                onClick={[Function]}
+                                role={null}
+                                tabIndex={null}
+                                type="button"
+                              >
+                                add
+                              </button>
+                            </ButtonBase>
                           </Button>
                           <Button
                             id="modal-cancel"
@@ -20404,21 +20425,28 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
                             onClick={[Function]}
                             variant="link"
                           >
-                            <button
-                              aria-disabled={false}
-                              aria-label={null}
-                              className="pf-c-button pf-m-link"
-                              data-ouia-component-id="OUIA-Generated-Button-link-1"
-                              data-ouia-component-type="PF4/Button"
-                              data-ouia-safe={true}
-                              disabled={false}
+                            <ButtonBase
                               id="modal-cancel"
+                              innerRef={null}
                               onClick={[Function]}
-                              role={null}
-                              type="button"
+                              variant="link"
                             >
-                              cancel
-                            </button>
+                              <button
+                                aria-disabled={false}
+                                aria-label={null}
+                                className="pf-c-button pf-m-link"
+                                data-ouia-component-id="OUIA-Generated-Button-link-1"
+                                data-ouia-component-type="PF4/Button"
+                                data-ouia-safe={true}
+                                disabled={false}
+                                id="modal-cancel"
+                                onClick={[Function]}
+                                role={null}
+                                type="button"
+                              >
+                                cancel
+                              </button>
+                            </ButtonBase>
                           </Button>
                         </footer>
                       </ModalBoxFooter>
@@ -20436,21 +20464,27 @@ exports[`<MapperDialog/> should have disabled add button when nothing is selecte
     id="open"
     onClick={[Function]}
   >
-    <button
-      aria-disabled={false}
-      aria-label={null}
-      className="pf-c-button pf-m-primary"
-      data-ouia-component-id="OUIA-Generated-Button-primary-1"
-      data-ouia-component-type="PF4/Button"
-      data-ouia-safe={true}
-      disabled={false}
+    <ButtonBase
       id="open"
+      innerRef={null}
       onClick={[Function]}
-      role={null}
-      type="button"
     >
-      Hide
-    </button>
+      <button
+        aria-disabled={false}
+        aria-label={null}
+        className="pf-c-button pf-m-primary"
+        data-ouia-component-id="OUIA-Generated-Button-primary-1"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe={true}
+        disabled={false}
+        id="open"
+        onClick={[Function]}
+        role={null}
+        type="button"
+      >
+        Hide
+      </button>
+    </ButtonBase>
   </Button>
 </Test>
 `;
@@ -20550,6 +20584,9 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                     >
                       <p
                         class=""
+                        data-ouia-component-id="OUIA-Generated-Text-3"
+                        data-ouia-component-type="PF4/Text"
+                        data-ouia-safe="true"
                         data-pf-content="true"
                       >
                         predefinedMappingDescription
@@ -21015,43 +21052,51 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                           onClick={[Function]}
                           variant="plain"
                         >
-                          <button
-                            aria-disabled={false}
+                          <ButtonBase
                             aria-label="Close"
-                            className="pf-c-button pf-m-plain"
-                            data-ouia-component-id="OUIA-Generated-Button-plain-3"
-                            data-ouia-component-type="PF4/Button"
-                            data-ouia-safe={true}
-                            disabled={false}
+                            className=""
+                            innerRef={null}
                             onClick={[Function]}
-                            role={null}
-                            type="button"
+                            variant="plain"
                           >
-                            <TimesIcon
-                              color="currentColor"
-                              noVerticalAlign={false}
-                              size="sm"
+                            <button
+                              aria-disabled={false}
+                              aria-label="Close"
+                              className="pf-c-button pf-m-plain"
+                              data-ouia-component-id="OUIA-Generated-Button-plain-3"
+                              data-ouia-component-type="PF4/Button"
+                              data-ouia-safe={true}
+                              disabled={false}
+                              onClick={[Function]}
+                              role={null}
+                              type="button"
                             >
-                              <svg
-                                aria-hidden={true}
-                                aria-labelledby={null}
-                                fill="currentColor"
-                                height="1em"
-                                role="img"
-                                style={
-                                  Object {
-                                    "verticalAlign": "-0.125em",
-                                  }
-                                }
-                                viewBox="0 0 352 512"
-                                width="1em"
+                              <TimesIcon
+                                color="currentColor"
+                                noVerticalAlign={false}
+                                size="sm"
                               >
-                                <path
-                                  d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
-                                />
-                              </svg>
-                            </TimesIcon>
-                          </button>
+                                <svg
+                                  aria-hidden={true}
+                                  aria-labelledby={null}
+                                  fill="currentColor"
+                                  height="1em"
+                                  role="img"
+                                  style={
+                                    Object {
+                                      "verticalAlign": "-0.125em",
+                                    }
+                                  }
+                                  viewBox="0 0 352 512"
+                                  width="1em"
+                                >
+                                  <path
+                                    d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                                  />
+                                </svg>
+                              </TimesIcon>
+                            </button>
+                          </ButtonBase>
                         </Button>
                       </ModalBoxCloseButton>
                       <ModalBoxHeader
@@ -21093,6 +21138,9 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                               <Text>
                                 <p
                                   className=""
+                                  data-ouia-component-id="OUIA-Generated-Text-3"
+                                  data-ouia-component-type="PF4/Text"
+                                  data-ouia-safe={true}
                                   data-pf-content={true}
                                 >
                                   predefinedMappingDescription
@@ -22138,21 +22186,27 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
     id="open"
     onClick={[Function]}
   >
-    <button
-      aria-disabled={false}
-      aria-label={null}
-      className="pf-c-button pf-m-primary"
-      data-ouia-component-id="OUIA-Generated-Button-primary-5"
-      data-ouia-component-type="PF4/Button"
-      data-ouia-safe={true}
-      disabled={false}
+    <ButtonBase
       id="open"
+      innerRef={null}
       onClick={[Function]}
-      role={null}
-      type="button"
     >
-      Hide
-    </button>
+      <button
+        aria-disabled={false}
+        aria-label={null}
+        className="pf-c-button pf-m-primary"
+        data-ouia-component-id="OUIA-Generated-Button-primary-5"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe={true}
+        disabled={false}
+        id="open"
+        onClick={[Function]}
+        role={null}
+        type="button"
+      >
+        Hide
+      </button>
+    </ButtonBase>
   </Button>
 </Test>
 `;
