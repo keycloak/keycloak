@@ -807,7 +807,7 @@ public class TokenEndpoint {
     private String getRequestedScopes() {
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        if (!TokenManager.isValidScope(scope, client)) {
+        if (!TokenManager.isValidScope(session, scope, client)) {
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
                     Status.BAD_REQUEST);
