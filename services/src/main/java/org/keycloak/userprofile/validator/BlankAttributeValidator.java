@@ -23,6 +23,7 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorConfig.ValidatorConfigBuilder;
 
 /**
  * Validator to check that User Profile attribute value is not blank (null value is OK!). Expects List of Strings as
@@ -37,6 +38,8 @@ public class BlankAttributeValidator implements SimpleValidator {
 
     public static final String CFG_ERROR_MESSAGE = "error-message";
 
+    public static final String CFG_FAIL_ON_NULL = "fail-on-null";
+    
     @Override
     public String getId() {
         return ID;
@@ -47,13 +50,15 @@ public class BlankAttributeValidator implements SimpleValidator {
         @SuppressWarnings("unchecked")
         List<String> values = (List<String>) input;
 
-        if (values.isEmpty()) {
+        boolean failOnNull = config.getBooleanOrDefault(CFG_FAIL_ON_NULL, false);
+        
+        if (values.isEmpty() && !failOnNull) {
             return context;
         }
 
-        String value = values.get(0);
+        String value = values.isEmpty() ? null: values.get(0);
 
-        if (value != null && Validation.isBlank(value)) {
+        if ((failOnNull || value != null) && Validation.isBlank(value)) {
             context.addError(new ValidationError(ID, inputHint, config.getStringOrDefault(CFG_ERROR_MESSAGE, AttributeRequiredByMetadataValidator.ERROR_USER_ATTRIBUTE_REQUIRED)));
         }
 
@@ -64,13 +69,16 @@ public class BlankAttributeValidator implements SimpleValidator {
      * Create config for this validator to get customized error message
      * 
      * @param errorMessage to be used if validation fails
+     * @param failOnNull makes validator fail on null values also (not on empty string only as is the default behavior)
      * @return config
      */
-    public static ValidatorConfig createConfig(String errorMessage) {
+    public static ValidatorConfig createConfig(String errorMessage, boolean failOnNull) {
+        ValidatorConfigBuilder builder = ValidatorConfig.builder();
+        builder.config(CFG_FAIL_ON_NULL, failOnNull);
         if (errorMessage != null) {
-            return ValidatorConfig.builder().config(CFG_ERROR_MESSAGE, errorMessage).build();
+            builder.config(CFG_ERROR_MESSAGE, errorMessage);
         }
-        return ValidatorConfig.EMPTY;
+        return builder.build();
     }
 
 }

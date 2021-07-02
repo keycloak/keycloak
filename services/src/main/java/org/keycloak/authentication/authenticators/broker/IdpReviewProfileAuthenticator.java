@@ -91,9 +91,17 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             updateProfileFirstLogin = authenticatorConfig.getConfig().get(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN);
         }
 
-        RealmModel realm = context.getRealm();
-        return IdentityProviderRepresentation.UPFLM_ON.equals(updateProfileFirstLogin)
-                || (IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin) && !Validation.validateUserMandatoryFields(realm, userCtx));
+        if(IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin)) {
+            try {
+                UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+                profileProvider.create(UserProfileContext.IDP_REVIEW, userCtx.getAttributes()).validate();
+                return false;
+            } catch (ValidationException pve) {
+                return true;
+            }
+        } else {
+            return IdentityProviderRepresentation.UPFLM_ON.equals(updateProfileFirstLogin);
+        }
     }
 
     @Override

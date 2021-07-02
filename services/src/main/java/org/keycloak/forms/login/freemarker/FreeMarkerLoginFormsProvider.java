@@ -30,6 +30,7 @@ import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
+import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
@@ -63,6 +64,7 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
 
@@ -260,6 +262,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case UPDATE_USER_PROFILE:
                 attributes.put("profile", new VerifyProfileBean(user, formData, session));
+                break;
+            case IDP_REVIEW_USER_PROFILE:
+                UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+                attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
                 break;
         }
 
@@ -557,7 +563,15 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             setMessage(MessageType.WARNING, Messages.UPDATE_PROFILE);
         }
 
-        return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
+        if(isDynamicUserProfile()) {
+            UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+            if(userCtx != null && userCtx.getUserProfileContext() == UserProfileContext.IDP_REVIEW)
+                return createResponse(LoginFormsPages.IDP_REVIEW_USER_PROFILE);
+            else
+                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE); 
+        } else {
+            return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
+        }
     }
 
     @Override
