@@ -17,8 +17,6 @@
 
 package org.keycloak.services.validation;
 
-import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.userprofile.ValidationException;
 
@@ -40,17 +38,6 @@ public class Validation {
 
     private static void addError(List<FormMessage> errors, String field, String message, Object... parameters){
         errors.add(new FormMessage(field, message, parameters));
-    }
-
-    /**
-     * Validate if user object contains all mandatory fields.
-     * 
-     * @param realm user is for
-     * @param user to validate
-     * @return true if user object contains all mandatory values, false if some mandatory value is missing
-     */
-    public static boolean validateUserMandatoryFields(RealmModel realm, UpdateProfileContext user){
-        return!(isBlank(user.getFirstName()) || isBlank(user.getLastName()) || isBlank(user.getEmail()));        
     }
 
     /**

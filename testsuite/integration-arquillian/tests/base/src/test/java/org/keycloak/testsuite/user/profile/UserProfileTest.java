@@ -1046,6 +1046,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.EMAIL, "user@email.test");
 
         // client with default scopes for which is attribute NOT configured as required
         configureAuthenticationSession(session, "client-b", null);

@@ -134,8 +134,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         if (!isEnabled(session)) {
             if(!context.equals(UserProfileContext.USER_API) && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)) {
                 decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
-                        Messages.MISSING_FIRST_NAME))).setAttributeDisplayName("${firstName}");
-                decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME))).setAttributeDisplayName("${lastName}");
+                        Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
+                decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
                 return decoratedMetadata;
             }
             return decoratedMetadata;
