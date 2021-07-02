@@ -51,6 +51,7 @@ public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<C
             case REGISTERED:
             case UPDATED:
             case UNREGISTER:
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
                 return true;
             default :
                 return false;

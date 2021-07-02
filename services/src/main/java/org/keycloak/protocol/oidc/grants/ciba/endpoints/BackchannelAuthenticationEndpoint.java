@@ -38,6 +38,8 @@ import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthe
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.BackchannelAuthenticationRequestContext;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -184,6 +186,12 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         }
 
         extractAdditionalParams(endpointRequest, request);
+
+        try {
+            session.clientPolicy().triggerOnEvent(new BackchannelAuthenticationRequestContext(endpointRequest, params));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         return request;
     }
