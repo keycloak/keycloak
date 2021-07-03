@@ -60,8 +60,8 @@ class BackchannelAuthenticationEndpointSignedRequestParser extends BackchannelAu
         if (!signatureProvider.isAsymmetricAlgorithm()) {
             throw new RuntimeException("Signed algorithm is not allowed");
         }
-        if (requestedSignatureAlgorithm != null && requestedSignatureAlgorithm != headerAlgorithm) {
-            throw new RuntimeException("Signed with different algorithm than client requested algorithm");
+        if (requestedSignatureAlgorithm == null || requestedSignatureAlgorithm != headerAlgorithm) {
+            throw new RuntimeException("Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm");
         }
 
         this.requestParams = session.tokens().decodeClientJWT(signedAuthReq, client, JsonNode.class);
