@@ -1163,15 +1163,50 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequestParam() throws Exception {
-        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(false, Algorithm.HS256, "Signed algorithm is not allowed");
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(false, Algorithm.HS256, 400, "Signed algorithm is not allowed");
     }
 
     @Test
     public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequestUriParam() throws Exception {
-    	testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(true, "none", "None signed algorithm is not allowed");
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(true, "none", 400, "None signed algorithm is not allowed");
     }
 
-    private void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(boolean useRequestUri, String sigAlg, String errorDescription) throws Exception {
+    @Test
+    public void testBackchannelAuthenticationFlowRegisterDifferentSigAlgInAdvanceWithSignedAuthenticationRequestParam() throws Exception {
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(false, Algorithm.ES256, Algorithm.PS256, 400, OAuthErrorException.INVALID_REQUEST, "Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm", TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowRegisterDifferentSigAlgInAdvanceWithSignedAuthenticationRequestUriParam() throws Exception {
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(true, Algorithm.PS256, Algorithm.ES256, 400, OAuthErrorException.INVALID_REQUEST, "Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm", TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthenticationRequestParam() throws Exception {
+        testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication("valid-CIBA-CD-Ein", false, null, Algorithm.ES256, 400, "Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm");
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthenticationRequestUriParam() throws Exception {
+        testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication("valid-CIBA-CD-Zwei", true, null, Algorithm.PS256, 400, "Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm");
+    }
+
+    private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
+        String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
+            List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
+            grantTypes.add(OAuth2Constants.CIBA_GRANT_TYPE);
+            clientRep.setGrantTypes(grantTypes);
+        });
+        OIDCClientRepresentation rep = getClientDynamically(clientId);
+        String clientSecret = rep.getClientSecret();
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(useRequestUri, requestedSigAlg, sigAlg, statusCode, OAuthErrorException.INVALID_REQUEST, errorDescription, clientId, clientSecret);
+    }
+
+    private void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(boolean useRequestUri, String sigAlg, int statusCode, String errorDescription) throws Exception {
+        testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(useRequestUri, sigAlg, sigAlg, 400, OAuthErrorException.INVALID_REQUEST, errorDescription, TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+    }
+
+    private void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String error, String errorDescription, String clientId, String clientSecret) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -1179,19 +1214,19 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
             AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
             sharedAuthenticationRequest.setLoginHint(username);
             sharedAuthenticationRequest.setBindingMessage(bindingMessage);
-            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, useRequestUri, TEST_CLIENT_PASSWORD);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, null, null, null);
-            Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, null, null, null);
+            Assert.assertThat(response.getStatusCode(), is(equalTo(statusCode)));
+            Assert.assertThat(response.getError(), is(error));
             Assert.assertThat(response.getErrorDescription(), is(errorDescription));
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -1298,14 +1333,28 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
+        registerSharedAuthenticationRequest(requestObject, clientId, sigAlg, sigAlg, isUseRequestUri, clientSecret);
+    }
+
+    private boolean isSymmetricSigAlg(String sigAlg) {
+        if (Algorithm.HS256.equals(sigAlg)) return true;
+        if (Algorithm.HS384.equals(sigAlg)) return true;
+        if (Algorithm.HS512.equals(sigAlg)) return true;
+        return false;
+    }
+
+    protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String requestedSigAlg, String sigAlg, boolean isUseRequestUri, String clientSecret) throws URISyntaxException, IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Set required signature for request_uri
         // use and set jwks_url
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
-        Map<String, String> attr = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
-        attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, sigAlg);
+        if (requestedSigAlg != null) {
+            Map<String, String> attr = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, requestedSigAlg);
+            clientRep.setAttributes(attr);
+        }
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
         String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
@@ -1316,11 +1365,11 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         // register request object
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         String encodedRequestObject = Base64Url.encode(contentBytes);
-        if (clientSecret != null) {
+        if (isSymmetricSigAlg(sigAlg)) {
             oidcClientEndpointsResource.registerOIDCRequestSymmetricSig(encodedRequestObject, sigAlg, clientSecret);
         } else {
             // generate and register client keypair
-            oidcClientEndpointsResource.generateKeys(sigAlg);
+            if (!"none".equals(sigAlg)) oidcClientEndpointsResource.generateKeys(sigAlg);
 
             oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
         }
