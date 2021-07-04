@@ -30,6 +30,8 @@ import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.par.ParResponse;
+import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.utils.ProfileHelper;
 
@@ -134,6 +136,12 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkPKCEParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             ex.throwAsCorsErrorResponseException(cors);
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new PushedAuthorizationRequestContext(authorizationRequest, httpRequest.getDecodedFormParameters()));
+        } catch (ClientPolicyException cpe) {
+            throw throwErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         Map<String, String> params = new HashMap<>();

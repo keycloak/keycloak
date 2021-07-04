@@ -53,15 +53,23 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.AbstractClientPoliciesTest;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient.ParResponse;
 
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 @EnableFeature(value = Profile.Feature.PAR, skipRestart = true)
 @AuthServerContainerExclude({REMOTE, QUARKUS})
@@ -755,7 +763,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             assertEquals(Boolean.FALSE, oidcCRep.getRequirePushedAuthorizationRequests());
             assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
             assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
-            
+
             updateClientByAdmin(clientId, (ClientRepresentation cRep)->{
                 cRep.setOrigin(VALID_CORS_URL);
             });
@@ -809,6 +817,45 @@ public class ParTest extends AbstractClientPoliciesTest {
         } finally {
             oauth.origin(null);
         }
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForPar() throws Exception {
+        // create client dynamically
+        String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+            clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+        });
+        OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+        String clientSecret = oidcCRep.getClientSecret();
+        assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+        assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+        assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // Pushed Authorization Request
+        oauth.clientId(clientId);
+        oauth.redirectUri(CLIENT_REDIRECT_URI);
+        ParResponse response = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ClientPolicyEvent.PUSHED_AUTHORIZATION_REQUEST.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
     }
 
     private void doNormalAuthzProcess(String requestUri, String redirectUrl, String clientId, String clientSecret) {
