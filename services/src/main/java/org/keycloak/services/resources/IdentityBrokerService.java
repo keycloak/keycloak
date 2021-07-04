@@ -88,6 +88,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.ServicesUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -701,7 +702,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     target.importNewUser(session, realmModel, federatedUser, mapper, context);
                 });
 
-                if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(authSession.getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
+                if ((context.getIdpConfig().isTrustEmail() || ServicesUtils.isEmailVerifiedFromClaim(context)) && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(authSession.getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
                     logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
                     federatedUser.setEmailVerified(true);
                 }
