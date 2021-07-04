@@ -34,12 +34,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.BackchannelAuthenticationRequestContext;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;

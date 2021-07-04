@@ -32,8 +32,10 @@ import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChann
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.UNAUTHORIZED;
 import static org.keycloak.testsuite.Assert.assertExpiration;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
 import java.io.IOException;
 import java.net.URI;
@@ -44,20 +46,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import org.hamcrest.CoreMatchers;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.client.registration.Auth;
-import org.keycloak.client.registration.ClientRegistration;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
@@ -71,12 +69,13 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSessionEnforceExecutorFactory;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSignedAuthenticationRequestExecutor;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSignedAuthenticationRequestExecutorFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
-import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -84,7 +83,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.Urls;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -97,8 +96,11 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
 import org.keycloak.util.JsonSerialization;
 
@@ -110,13 +112,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @EnableFeature(value = Profile.Feature.CIBA, skipRestart = true)
 @AuthServerContainerExclude({REMOTE, QUARKUS})
-public class CIBATest extends AbstractTestRealmKeycloakTest {
+public class CIBATest extends AbstractClientPoliciesTest {
 
     private final String SECOND_TEST_CLIENT_NAME = "test-second-client";
     private final String SECOND_TEST_CLIENT_SECRET = "passwort-test-second-client";
     private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
-
-    private ClientRegistration reg;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -125,7 +125,8 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
 
         UserRepresentation user = UserBuilder.create()
                 .username("nutzername-schwarz")
@@ -134,7 +135,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
                 .password("passwort-schwarz")
                 .addRoles("user", "offline_access")
                 .build();
-        testRealm.getUsers().add(user);
+        realm.getUsers().add(user);
 
         user = UserBuilder.create()
                 .username("nutzername-rot")
@@ -143,7 +144,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
                 .password("passwort-rot")
                 .addRoles("user", "offline_access")
                 .build();
-        testRealm.getUsers().add(user);
+        realm.getUsers().add(user);
 
         user = UserBuilder.create()
                 .username("nutzername-gelb")
@@ -152,7 +153,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
                 .password("passwort-gelb")
                 .addRoles("user", "offline_access")
                 .build();
-        testRealm.getUsers().add(user);
+        realm.getUsers().add(user);
 
         user = UserBuilder.create()
                 .username("nutzername-deaktiviert")
@@ -161,24 +162,13 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
                 .password("passwort-deaktiviert")
                 .addRoles("user", "offline_access")
                 .build();
-        testRealm.getUsers().add(user);
+        realm.getUsers().add(user);
 
-        ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, SECOND_TEST_CLIENT_NAME);
+        ClientRepresentation confApp = KeycloakModelUtils.createClient(realm, SECOND_TEST_CLIENT_NAME);
         confApp.setSecret(SECOND_TEST_CLIENT_SECRET);
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
-    }
 
-    @Before
-    public void before() throws Exception {
-        // get initial access token for Dynamic Client Registration with authentication
-        reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", TEST_REALM_NAME).build();
-        ClientInitialAccessPresentation token = adminClient.realm(TEST_REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
-        reg.auth(Auth.token(token));
-    }
-
-    @After
-    public void after() throws Exception {
-        reg.close();
+        testRealms.add(realm);
     }
 
     private String cibaBackchannelTokenDeliveryMode;
@@ -683,6 +673,16 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testBackchannelAuthenticationFlowWithoutBindingMessage() throws Exception {
+        testBackchannelAuthenticationFlow(false, null);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowOfflineAccessWithoutBindingMessage() throws Exception {
+        testBackchannelAuthenticationFlow(true, null);
+    }
+
+    @Test
     public void testMultipleUsersBackchannelAuthenticationFlows() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -1132,13 +1132,10 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testCibaGrantSettingByDynamicClientRegistration() throws Exception {
-        String clientId = createClientDynamically("valid-CIBA-CD", (OIDCClientRepresentation clientRep) -> {
-        });
-
+        String clientId = createClientDynamically(generateSuffixedName("valid-CIBA-CD"), (OIDCClientRepresentation clientRep) -> {});
         OIDCClientRepresentation rep = getClientDynamically(clientId);
         Assert.assertFalse(rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
         Assert.assertNull(rep.getBackchannelAuthenticationRequestSigningAlg());
-
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
             List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
             grantTypes.add(OAuth2Constants.CIBA_GRANT_TYPE);
@@ -1169,6 +1166,215 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequestUriParam() throws Exception {
         testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest(true, "none", 400, "None signed algorithm is not allowed");
+    }
+
+    @Test
+    public void testSecureCibaSessionEnforceExecutor() throws Exception {
+        String clientId = createClientDynamically(generateSuffixedName("valid-CIBA-CD"), (OIDCClientRepresentation clientRep) -> {
+            List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
+            grantTypes.add(OAuth2Constants.CIBA_GRANT_TYPE);
+            clientRep.setGrantTypes(grantTypes);
+        });
+        OIDCClientRepresentation rep = getClientDynamically(clientId);
+        String clientSecret = rep.getClientSecret();
+
+        String username = "nutzername-rot";
+        Map<String, String> additionalParameters = new HashMap<>();
+        additionalParameters.put("user_device", "mobile");
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                    .addExecutor(SecureCibaSessionEnforceExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // user Backchannel Authentication Request
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, username, null, null, additionalParameters);
+        assertThat(response.getStatusCode(), is(equalTo(400)));
+        assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+        assertThat(response.getErrorDescription(), is("Missing parameter: binding_message"));
+    }
+
+    @Test
+    public void testSecureCibaSessionEnforceExecutorWithSignedAuthenticationRequestParam() throws Exception {
+        testSecureCibaSessionEnforceExecutor(false);
+    }
+
+    @Test
+    public void testSecureCibaSessionEnforceExecutorWithSignedAuthenticationRequestUriParam() throws Exception {
+        testSecureCibaSessionEnforceExecutor(true);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithInvalidSignedAuthenticationRequest() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            boolean useRequestUri = false;
+            String sigAlg = Algorithm.PS256;
+            final String username = "nutzername-rot";
+            String bindingMessage = "Flughafen-Frankfurt-am-Main";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            // register profiles
+            String json = (new ClientProfilesBuilder()).addProfile(
+                    (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureCibaSignedAuthenticationRequestExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+                    ).toString();
+            updateProfiles(json);
+
+            // register policies
+            json = (new ClientPoliciesBuilder()).addPolicy(
+                    (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                            createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+                    ).toString();
+            updatePolicies(json);
+
+            AuthorizationEndpointRequestObject requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.nbf(requestObject.getIat());
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: exp"));
+
+            useRequestUri = true;
+            bindingMessage = "Flughafen-Wien-Schwechat";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: nbf"));
+
+            useRequestUri = false;
+            bindingMessage = "Stuttgart-Hauptbahnhof";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + SecureCibaSignedAuthenticationRequestExecutor.DEFAULT_AVAILABLE_PERIOD + 10);
+            requestObject.nbf(requestObject.getIat());
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("signed authentication request's available period is long"));
+
+            useRequestUri = true;
+            bindingMessage = "Brno-hlavni-nadrazif";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
+
+            // user Authentication Channel Request
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
+            AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
+            assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
+            assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+
+            // user Authentication Channel completed
+            doAuthenticationChannelCallback(testRequest);
+
+            // user Token Request
+            doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
+    private AuthorizationEndpointRequestObject createPartialAuthorizationEndpointRequestObject(String username, String bindingMessage) throws Exception {
+        AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
+        requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        requestObject.iat(Long.valueOf(Time.currentTime()));
+        requestObject.setScope("openid");
+        requestObject.setMax_age(Integer.valueOf(600));
+        requestObject.setOtherClaims("custom_claim_zwei", "gelb");
+        requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), TEST_REALM_NAME), "https://example.com");
+        requestObject.setLoginHint(username);
+        requestObject.setBindingMessage(bindingMessage);
+        return requestObject;
+    }
+
+    private void testSecureCibaSessionEnforceExecutor(boolean useRequestUri) throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            String sigAlg = Algorithm.PS256;
+            final String username = "nutzername-rot";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            AuthorizationEndpointRequestObject sharedAuthenticationRequest = createValidSharedAuthenticationRequest();
+            sharedAuthenticationRequest.setLoginHint(username);
+            registerSharedAuthenticationRequest(sharedAuthenticationRequest, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // register profiles
+            String json = (new ClientProfilesBuilder()).addProfile(
+                    (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureCibaSessionEnforceExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+                    ).toString();
+            updateProfiles(json);
+
+            // register policies
+            json = (new ClientPoliciesBuilder()).addPolicy(
+                    (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                            createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+                    ).toString();
+            updatePolicies(json);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, null, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter: binding_message"));
+
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
+    private RealmResource testRealm() {
+        return adminClient.realm(REALM_NAME);
     }
 
     @Test
@@ -1381,31 +1587,6 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             oauth.requestUri(null);
             oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         }
-    }
-
-    private String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
-        OIDCClientRepresentation clientRep = new OIDCClientRepresentation();
-        clientRep.setClientName(clientName);
-        clientRep.setClientUri(ServerURLs.getAuthServerContextRoot());
-        clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
-        op.accept(clientRep);
-        OIDCClientRepresentation response = reg.oidc().create(clientRep);
-        reg.auth(Auth.token(response));
-        // registered components will be removed automatically when a test method finishes regardless of its success or failure.
-        String clientId = response.getClientId();
-        testContext.getOrCreateCleanup(TEST_REALM_NAME).addClientUuid(clientId);
-        return clientId;
-    }
-
-    private OIDCClientRepresentation getClientDynamically(String clientId) throws ClientRegistrationException {
-        return reg.oidc().get(clientId);
-    }
-
-    protected void updateClientDynamically(String clientId, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
-        OIDCClientRepresentation clientRep = reg.oidc().get(clientId);
-        op.accept(clientRep);
-        OIDCClientRepresentation response = reg.oidc().update(clientRep);
-        reg.auth(Auth.token(response));
     }
 
     private void testAuthenticationChannelErrorCase(Status statusCallback, Status statusTokenEndpont, AuthenticationChannelResponse.Status authStatus, String error, String errorEvent) throws Exception {
@@ -1650,11 +1831,14 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess) throws Exception {
+        testBackchannelAuthenticationFlow(isOfflineAccess, "BASTION");
+    }
+
+    private void testBackchannelAuthenticationFlow(boolean isOfflineAccess, String bindingMessage) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
             final String username = "nutzername-rot";
-            final String bindingMessage = "BASTION";
             Map<String, String> additionalParameters = new HashMap<>();
             additionalParameters.put("user_device", "mobile");
 
