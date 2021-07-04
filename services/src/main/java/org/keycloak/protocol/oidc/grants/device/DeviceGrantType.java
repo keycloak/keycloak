@@ -42,8 +42,10 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
+import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
@@ -257,6 +259,14 @@ public class DeviceGrantType {
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Session not active",
+                Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new DeviceTokenRequestContext(deviceCodeModel, formParams));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(),
                 Response.Status.BAD_REQUEST);
         }
 
