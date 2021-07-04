@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context;
 
 import javax.ws.rs.core.MultivaluedMap;
 

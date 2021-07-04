@@ -662,9 +662,13 @@ public class TestingOIDCEndpointsApplicationResource {
 
         // optional
         // for testing purpose
-        if (request.getBindingMessage() != null && request.getBindingMessage().equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
+        String bindingMessage = request.getBindingMessage();
+        if (bindingMessage != null && bindingMessage.equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
 
-        authenticationChannelRequests.put(request.getBindingMessage(), new TestAuthenticationChannelRequest(request, rawBearerToken));
+        // binding_message is optional so that it can be null .
+        // only one CIBA flow without binding_message can be accepted per test method by this test mechanism.
+        if (bindingMessage == null) bindingMessage = ChannelRequestDummyKey;
+        authenticationChannelRequests.put(bindingMessage, new TestAuthenticationChannelRequest(request, rawBearerToken));
 
         return Response.status(Status.CREATED).build();
     }
@@ -674,6 +678,9 @@ public class TestingOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public TestAuthenticationChannelRequest getAuthenticationChannel(@QueryParam("bindingMessage") String bindingMessage) {
+        if (bindingMessage == null) bindingMessage = ChannelRequestDummyKey;
         return authenticationChannelRequests.get(bindingMessage);
     }
+
+    private static final String ChannelRequestDummyKey = "channel_request_dummy_key";
 }
