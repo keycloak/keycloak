@@ -52,6 +52,8 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.DeviceAuthorizationRequestContext;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.SessionCodeChecks;
@@ -119,6 +121,12 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,
                 "Client not allowed for OAuth 2.0 Device Authorization Grant", Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new DeviceAuthorizationRequestContext(request, httpRequest.getDecodedFormParameters()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         int expiresIn = realm.getOAuth2DeviceConfig().getLifespan(client);

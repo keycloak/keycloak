@@ -22,6 +22,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -35,7 +36,6 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,6 +44,7 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -88,18 +89,22 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -138,6 +143,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigning
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -148,6 +154,19 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     private static final String CLIENT_NAME = "Zahlungs-App";
     private static final String TEST_USER_NAME = "test-user@localhost";
     private static final String TEST_USER_PASSWORD = "password";
+
+    public static final String DEVICE_APP = "test-device";
+    public static final String DEVICE_APP_PUBLIC = "test-device-public";
+    private static String userId;
+
+    @Page
+    protected OAuth2DeviceVerificationPage verificationPage;
+
+    @Page
+    protected OAuthGrantPage grantPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -179,6 +198,30 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         users.add(user);
 
         realm.setUsers(users);
+
+        List<ClientRepresentation> clients = realm.getClients();
+
+        ClientRepresentation app = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("test-device")
+                .secret("secret")
+                .attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+                .build();
+        clients.add(app);
+
+        ClientRepresentation appPublic = ClientBuilder.create().id(KeycloakModelUtils.generateId()).publicClient()
+                .clientId(DEVICE_APP_PUBLIC).attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+                .build();
+        clients.add(appPublic);
+
+        userId = KeycloakModelUtils.generateId();
+        UserRepresentation deviceUser = UserBuilder.create()
+                .id(userId)
+                .username("device-login")
+                .email("device-login@localhost")
+                .password("password")
+                .build();
+        users.add(deviceUser);
 
         testRealms.add(realm);
     }
@@ -2393,6 +2436,92 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException cpe) {
             fail();
         }
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForDeviceAuthorizationRequest() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForDeviceTokenRequest() throws Exception {
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+
+        // Verify user code from verification page using browser
+        openVerificationPage(response.getVerificationUri());
+        verificationPage.assertCurrent();
+        verificationPage.submit(response.getUserCode());
+
+        loginPage.assertCurrent();
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        verificationPage.assertApprovedPage();
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
+        assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
+    }
+
+    private void openVerificationPage(String verificationUri) {
+        driver.navigate().to(verificationUri);
     }
 
     private void checkMtlsFlow() throws IOException {
