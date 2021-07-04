@@ -60,6 +60,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
@@ -867,6 +868,21 @@ public class TokenEndpoint {
 
             tokenUser = authResult.getUser();
             tokenSession = authResult.getSession();
+
+            if (tokenSession == null) {
+                // a session is mandatory in case the subject is not a service account. service accounts can obtain tokens from
+                // the server using transient sessions
+                if (tokenUser.getServiceAccountClientLink() == null) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Token not bound to a session", Response.Status.BAD_REQUEST);
+                }
+
+                // creates a transient session for the subject associated with the token
+                tokenSession = session.sessions().createUserSession(KeycloakModelUtils
+                                .generateId(), realm, tokenUser, tokenUser.getUsername(),
+                        clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
+                        UserSessionModel.SessionPersistenceState.TRANSIENT);
+            }
+
             token = authResult.getToken();
         }
 
