@@ -44,12 +44,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.CibaRootEndpoint;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DefaultClientSessionContext;
@@ -188,6 +190,13 @@ public class CibaGrantType {
         UserModel user = userSession.getUser();
 
         store.removeDeviceCode(realm, request.getId());
+
+        try {
+            session.clientPolicy().triggerOnEvent(new BackchannelTokenRequestContext(request, formParams));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)

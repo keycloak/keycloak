@@ -83,6 +83,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -92,6 +93,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -113,6 +115,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @EnableFeature(value = Profile.Feature.CIBA, skipRestart = true)
 @AuthServerContainerExclude({REMOTE, QUARKUS})
 public class CIBATest extends AbstractClientPoliciesTest {
+
+    private static final String TEST_USER_NAME = "test-user@localhost";
 
     private final String SECOND_TEST_CLIENT_NAME = "test-second-client";
     private final String SECOND_TEST_CLIENT_SECRET = "passwort-test-second-client";
@@ -1395,6 +1399,99 @@ public class CIBATest extends AbstractClientPoliciesTest {
     @Test
     public void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthenticationRequestUriParam() throws Exception {
         testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication("valid-CIBA-CD-Zwei", true, null, Algorithm.PS256, 400, "Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm");
+    }
+
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForBackchannelAuthenticationRequest() throws Exception {
+        String clientId = generateSuffixedName("confidential-app");
+        String clientSecret = "app-secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, TEST_USER_NAME, "Pjb9eD8w", null, null);
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForBackchannelTokenRequest() throws Exception {
+        String clientId = generateSuffixedName("confidential-app");
+        String clientSecret = "app-secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+
+        final String bindingMessage = "BASTION";
+        Map<String, String> additionalParameters = new HashMap<>();
+        additionalParameters.put("user_device", "mobile");
+
+        // user Backchannel Authentication Request
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, TEST_USER_NAME, bindingMessage, null, additionalParameters);
+        assertThat(response.getStatusCode(), is(equalTo(200)));
+        Assert.assertNotNull(response.getAuthReqId());
+
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        TestAuthenticationChannelRequest authenticationChannelReq = oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
+        int statusCode = oauth.doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
+        assertThat(statusCode, is(equalTo(200)));
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, response.getAuthReqId());
+        assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+        assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
+        assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
     }
 
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
