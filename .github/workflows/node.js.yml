@@ -26,9 +26,10 @@ jobs:
         node-version: ${{ matrix.node-version }}
         check-latest: true
 
-    - run: yarn install
+    - run: yarn install --frozen-lockfile
     - run: yarn format-check
     - run: yarn check-types
     - run: yarn build
+    - run: yarn build-storybook
     - run: yarn lint
     - run: yarn test

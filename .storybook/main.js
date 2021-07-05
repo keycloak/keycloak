@@ -1,11 +1,19 @@
 module.exports = {
-  "stories": [
+  stories: [
     "../src/**/*.stories.mdx",
     "../src/**/*.stories.@(js|jsx|ts|tsx)"
   ],
-  "addons": [
+  addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials",
-    "@storybook/preset-create-react-app"
+    {
+      name: "@storybook/addon-postcss",
+      options: {
+        // Explicitly enable PostCSS 8+ (see: https://storybook.js.org/addons/@storybook/addon-postcss)
+        postcssLoaderOptions: {
+          implementation: require("postcss"),
+        },
+      },
+    },
   ]
 }
