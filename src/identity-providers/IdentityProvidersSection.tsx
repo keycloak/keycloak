@@ -52,9 +52,10 @@ export const IdentityProvidersSection = () => {
   const [providers, setProviders] = useState<IdentityProviderRepresentation[]>(
     []
   );
-  const [selectedProvider, setSelectedProvider] = useState<
-    IdentityProviderRepresentation
-  >();
+  const [
+    selectedProvider,
+    setSelectedProvider,
+  ] = useState<IdentityProviderRepresentation>();
 
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();

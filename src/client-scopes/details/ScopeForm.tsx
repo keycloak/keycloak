@@ -35,9 +35,15 @@ type ScopeFormProps = {
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation("client-scopes");
-  const { register, control, handleSubmit, errors, setValue } = useForm<
-    ClientScopeRepresentation
-  >({ defaultValues: { attributes: { "display-on-consent-screen": "true" } } });
+  const {
+    register,
+    control,
+    handleSubmit,
+    errors,
+    setValue,
+  } = useForm<ClientScopeRepresentation>({
+    defaultValues: { attributes: { "display-on-consent-screen": "true" } },
+  });
   const history = useHistory();
   const { realm } = useRealm();
 

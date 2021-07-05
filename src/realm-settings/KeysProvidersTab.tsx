@@ -88,9 +88,10 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
     ""
   );
 
-  const [selectedComponent, setSelectedComponent] = useState<
-    ComponentRepresentation
-  >();
+  const [
+    selectedComponent,
+    setSelectedComponent,
+  ] = useState<ComponentRepresentation>();
 
   const [liveText, setLiveText] = useState("");
 

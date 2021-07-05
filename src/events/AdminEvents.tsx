@@ -73,9 +73,10 @@ export const AdminEvents = () => {
   const refresh = () => setKey(new Date().getTime());
 
   const [authEvent, setAuthEvent] = useState<AdminEventRepresentation>();
-  const [representationEvent, setRepresentationEvent] = useState<
-    AdminEventRepresentation
-  >();
+  const [
+    representationEvent,
+    setRepresentationEvent,
+  ] = useState<AdminEventRepresentation>();
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params = {
