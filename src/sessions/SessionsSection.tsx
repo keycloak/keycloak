@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { PageSection, Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import {
+  PageSection,
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core";
 import moment from "moment";
 import type UserSessionRepresentation from "keycloak-admin/lib/defs/userSessionRepresentation";
 
@@ -55,7 +60,7 @@ export const SessionsSection = () => {
 
     return userSessions;
   };
-  
+
   const options = [
     <SelectOption
       key={1}
