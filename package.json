@@ -69,7 +69,7 @@
     "@types/react-router-dom": "^5.1.7",
     "@types/snowpack-env": "^2.3.3",
     "@typescript-eslint/eslint-plugin": "^4.28.1",
-    "@typescript-eslint/parser": "^4.28.1",
+    "@typescript-eslint/parser": "^4.28.2",
     "babel-loader": "^8.1.0",
     "cypress": "7.6.0",
     "decompress": "^4.2.1",
