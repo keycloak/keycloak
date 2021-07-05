@@ -24,6 +24,8 @@ import java.security.spec.KeySpec;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.util.JsonSerialization;
@@ -36,7 +38,7 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class JWE {
+public class JWE implements JOSE {
 
     static {
         BouncyIntegration.init();
@@ -55,13 +57,20 @@ public class JWE {
 
     private byte[] authenticationTag;
 
+    public JWE() {
+    }
+
+    public JWE(String jwt) {
+        setupJWEHeader(jwt);
+    }
+
     public JWE header(JWEHeader header) {
         this.header = header;
         this.base64Header = null;
         return this;
     }
 
-    JWEHeader getHeader() {
+    public JOSEHeader getHeader() {
         if (header == null && base64Header != null) {
             try {
                 byte[] decodedHeader = Base64Url.decode(base64Header);
@@ -181,7 +190,7 @@ public class JWE {
         this.encryptedContent = Base64Url.decode(parts[3]);
         this.authenticationTag = Base64Url.decode(parts[4]);
 
-        this.header = getHeader();
+        this.header = (JWEHeader) getHeader();
     }
 
     private JWE getProcessedJWE(JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws Exception {
@@ -206,7 +215,7 @@ public class JWE {
     public JWE verifyAndDecodeJwe(String jweStr) throws JWEException {
         try {
             setupJWEHeader(jweStr);
-            return getProcessedJWE(JWERegistry.getAlgProvider(header.getAlgorithm()), JWERegistry.getEncProvider(header.getEncryptionAlgorithm()));
+            return verifyAndDecodeJwe();
         } catch (Exception e) {
             throw new JWEException(e);
         }
@@ -216,6 +225,14 @@ public class JWE {
         try {
             setupJWEHeader(jweStr);
             return getProcessedJWE(algorithmProvider, encryptionProvider);
+        } catch (Exception e) {
+            throw new JWEException(e);
+        }
+    }
+
+    public JWE verifyAndDecodeJwe() throws JWEException {
+        try {
+            return getProcessedJWE(JWERegistry.getAlgProvider(header.getAlgorithm()), JWERegistry.getEncProvider(header.getEncryptionAlgorithm()));
         } catch (Exception e) {
             throw new JWEException(e);
         }
