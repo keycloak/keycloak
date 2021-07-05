@@ -63,29 +63,21 @@ export const SessionsSection = () => {
 
   const options = [
     <SelectOption
-      key={1}
       data-testid="all-sessions-option"
       value={t("sessions:All session types")}
       isPlaceholder
     />,
     <SelectOption
       data-testid="regular-sso-option"
-      key={2}
       value={t("sessions:Regular SSO")}
     />,
-    <SelectOption
-      data-testid="offline-option"
-      key={3}
-      value={t("sessions:Offline")}
-    />,
+    <SelectOption data-testid="offline-option" value={t("sessions:Offline")} />,
     <SelectOption
       data-testid="direct-grant-option"
-      key={4}
       value={t("sessions:Direct grant")}
     />,
     <SelectOption
       data-testid="service-account-option"
-      key={5}
       value={t("sessions:Service account")}
     />,
   ];
