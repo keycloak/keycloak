@@ -23,10 +23,6 @@ import { HelpContext } from "../components/help-enabler/HelpHeader";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { GroupPath } from "../components/group/GroupPath";
 
-type GroupTableData = GroupRepresentation & {
-  membersLength?: number;
-};
-
 export type UserFormProps = {
   username?: string;
   loader?: (
