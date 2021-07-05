@@ -49,7 +49,7 @@
     "@babel/preset-typescript": "^7.14.5",
     "@jest/types": "^27.0.6",
     "@snowpack/app-scripts-react": "^1.10.0",
-    "@snowpack/plugin-postcss": "1.4.0",
+    "@snowpack/plugin-postcss": "1.4.3",
     "@snowpack/plugin-webpack": "2.3.1",
     "@storybook/addon-actions": "^6.2.9",
     "@storybook/addon-essentials": "^6.1.7",

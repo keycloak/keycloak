@@ -3454,11 +3454,13 @@
     dotenv "^8.2.0"
     dotenv-expand "^5.1.0"
 
-"@snowpack/plugin-postcss@1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@snowpack/plugin-postcss/-/plugin-postcss-1.4.0.tgz#af95fca31ac9663ad41b89d58c7473776fb6c415"
-  integrity sha512-IKJefynh4Bnpy2bXFxGFdwu9uAHvcL2jmpuiR6qZADbd1Pi6dUnRI6Ip84nYoGUMeIaGrbbHPMeAKuSlVv2GTQ==
+"@snowpack/plugin-postcss@1.4.3":
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/@snowpack/plugin-postcss/-/plugin-postcss-1.4.3.tgz#09704923033bd710e50a466bfc0afc90c7cc59df"
+  integrity sha512-RJGYagse6Pi86Bqm8vPukhCwFVa92VIB81qP3PXPQ/ITQy5gVWDYi4oU+r1A6hsEZ9scUNZevfw6ISya+oiMNQ==
   dependencies:
+    minimatch "^3.0.4"
+    normalize-path "^3.0.0"
     postcss-load-config "^3.0.1"
     workerpool "^6.1.2"
 
