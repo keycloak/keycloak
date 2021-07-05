@@ -174,32 +174,30 @@ export const AssociatedRolesTab = ({
     },
   });
 
-  const [
-    toggleDeleteAssociatedRolesDialog,
-    DeleteAssociatedRolesConfirm,
-  ] = useConfirmDialog({
-    titleKey: t("roles:removeAssociatedRoles") + "?",
-    messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
-      name: parentRole?.name || t("createRole"),
-    }),
-    continueButtonLabel: "common:remove",
-    continueButtonVariant: ButtonVariant.danger,
-    onConfirm: async () => {
-      try {
-        if (selectedRows.length >= allRoles.length) {
+  const [toggleDeleteAssociatedRolesDialog, DeleteAssociatedRolesConfirm] =
+    useConfirmDialog({
+      titleKey: t("roles:removeAssociatedRoles") + "?",
+      messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
+        name: parentRole?.name || t("createRole"),
+      }),
+      continueButtonLabel: "common:remove",
+      continueButtonVariant: ButtonVariant.danger,
+      onConfirm: async () => {
+        try {
+          if (selectedRows.length >= allRoles.length) {
+            onRemove(selectedRows);
+            const loc = url.replace(/\/AssociatedRoles/g, "/details");
+            history.push(loc);
+          }
           onRemove(selectedRows);
-          const loc = url.replace(/\/AssociatedRoles/g, "/details");
-          history.push(loc);
+          await adminClient.roles.delCompositeRoles({ id }, selectedRows);
+          addAlert(t("associatedRolesRemoved"), AlertVariant.success);
+          refresh();
+        } catch (error) {
+          addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
         }
-        onRemove(selectedRows);
-        await adminClient.roles.delCompositeRoles({ id }, selectedRows);
-        addAlert(t("associatedRolesRemoved"), AlertVariant.success);
-        refresh();
-      } catch (error) {
-        addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
-      }
-    },
-  });
+      },
+    });
 
   const goToCreate = () => history.push(`${url}/add-role`);
   return (

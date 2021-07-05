@@ -44,9 +44,8 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
 
   const [mapperAction, setMapperAction] = useState(false);
   const mapperList = clientScope.protocolMappers!;
-  const mapperTypes = useServerInfo().protocolMapperTypes![
-    clientScope.protocol!
-  ];
+  const mapperTypes =
+    useServerInfo().protocolMapperTypes![clientScope.protocol!];
 
   const [key, setKey] = useState(0);
   useEffect(() => setKey(new Date().getTime()), [mapperList]);

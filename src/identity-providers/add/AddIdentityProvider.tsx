@@ -23,7 +23,7 @@ export const IdentityProviderCrumb = ({ match, location }: BreadcrumbData) => {
   const { t } = useTranslation();
   const {
     params: { id },
-  } = (match as unknown) as {
+  } = match as unknown as {
     params: { [id: string]: string };
   };
   return (

@@ -34,19 +34,15 @@ export const FineGrainOpenIdConnect = ({
   const signatureProviders = providers?.signature.providers;
   const [accessTokenOpen, setAccessTokenOpen] = useState(false);
   const [idTokenOpen, setIdTokenOpen] = useState(false);
-  const [idTokenKeyManagementOpen, setIdTokenKeyManagementOpen] = useState(
-    false
-  );
+  const [idTokenKeyManagementOpen, setIdTokenKeyManagementOpen] =
+    useState(false);
   const [idTokenContentOpen, setIdTokenContentOpen] = useState(false);
-  const [userInfoSignedResponseOpen, setUserInfoSignedResponseOpen] = useState(
-    false
-  );
-  const [requestObjectSignatureOpen, setRequestObjectSignatureOpen] = useState(
-    false
-  );
-  const [requestObjectRequiredOpen, setRequestObjectRequiredOpen] = useState(
-    false
-  );
+  const [userInfoSignedResponseOpen, setUserInfoSignedResponseOpen] =
+    useState(false);
+  const [requestObjectSignatureOpen, setRequestObjectSignatureOpen] =
+    useState(false);
+  const [requestObjectRequiredOpen, setRequestObjectRequiredOpen] =
+    useState(false);
 
   const keyOptions = [
     <SelectOption key="empty" value="">

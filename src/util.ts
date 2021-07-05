@@ -72,19 +72,17 @@ export const convertFormValuesToObject = (obj: any) => {
   return Object.assign({}, ...keyValues);
 };
 
-export const emptyFormatter = (): IFormatter => (
-  data?: IFormatterValueType
-) => {
-  return data ? data : "—";
-};
+export const emptyFormatter =
+  (): IFormatter => (data?: IFormatterValueType) => {
+    return data ? data : "—";
+  };
 
-export const upperCaseFormatter = (): IFormatter => (
-  data?: IFormatterValueType
-) => {
-  const value = data?.toString();
+export const upperCaseFormatter =
+  (): IFormatter => (data?: IFormatterValueType) => {
+    const value = data?.toString();
 
-  return (value ? toUpperCase(value) : undefined) as string;
-};
+    return (value ? toUpperCase(value) : undefined) as string;
+  };
 
 export const getBaseUrl = (adminClient: KeycloakAdminClient) => {
   return (
@@ -94,4 +92,5 @@ export const getBaseUrl = (adminClient: KeycloakAdminClient) => {
   );
 };
 
-export const emailRegexPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+export const emailRegexPattern =
+  /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

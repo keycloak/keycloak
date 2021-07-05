@@ -27,9 +27,8 @@ export const LdapSettingsSearching = ({
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
-  const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] = useState(
-    false
-  );
+  const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] =
+    useState(false);
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
 
   return (

@@ -47,9 +47,8 @@ export const MappingDetails = () => {
   const { register, errors, setValue, control, handleSubmit } = useForm();
   const [mapping, setMapping] = useState<ProtocolMapperRepresentation>();
   const [typeOpen, setTypeOpen] = useState(false);
-  const [configProperties, setConfigProperties] = useState<
-    ConfigPropertyRepresentation[]
-  >();
+  const [configProperties, setConfigProperties] =
+    useState<ConfigPropertyRepresentation[]>();
 
   const history = useHistory();
   const { realm } = useRealm();
@@ -79,9 +78,8 @@ export const MappingDetails = () => {
         };
       } else {
         const scope = await adminClient.clientScopes.findOne({ id });
-        const protocolMappers = serverInfo.protocolMapperTypes![
-          scope.protocol!
-        ];
+        const protocolMappers =
+          serverInfo.protocolMapperTypes![scope.protocol!];
         const mapping = protocolMappers.find(
           (mapper) => mapper.id === mapperId
         )!;

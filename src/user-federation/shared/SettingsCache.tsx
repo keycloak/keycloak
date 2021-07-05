@@ -27,27 +27,22 @@ export const SettingsCache = ({
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
-  const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] = useState(
-    false
-  );
+  const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] =
+    useState(false);
 
-  const [isEvictionHourDropdownOpen, setIsEvictionHourDropdownOpen] = useState(
-    false
-  );
+  const [isEvictionHourDropdownOpen, setIsEvictionHourDropdownOpen] =
+    useState(false);
 
   const cachePolicyType = useWatch({
     control: form.control,
     name: "config.cachePolicy",
   });
 
-  const [
-    isEvictionMinuteDropdownOpen,
-    setIsEvictionMinuteDropdownOpen,
-  ] = useState(false);
+  const [isEvictionMinuteDropdownOpen, setIsEvictionMinuteDropdownOpen] =
+    useState(false);
 
-  const [isEvictionDayDropdownOpen, setIsEvictionDayDropdownOpen] = useState(
-    false
-  );
+  const [isEvictionDayDropdownOpen, setIsEvictionDayDropdownOpen] =
+    useState(false);
 
   const hourOptions = [
     <SelectOption key={0} value={[`${0}`]} isPlaceholder>

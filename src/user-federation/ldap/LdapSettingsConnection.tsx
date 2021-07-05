@@ -69,10 +69,8 @@ export const LdapSettingsConnection = ({
     }
   };
 
-  const [
-    isTruststoreSpiDropdownOpen,
-    setIsTruststoreSpiDropdownOpen,
-  ] = useState(false);
+  const [isTruststoreSpiDropdownOpen, setIsTruststoreSpiDropdownOpen] =
+    useState(false);
 
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
 

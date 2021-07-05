@@ -62,7 +62,8 @@ export const AuthenticationSection = () => {
       .filter((entry) => realmFlows.includes(entry[0]))
       .map((entry) => entry[1]);
 
-    const flows = (await adminClient.authenticationManagement.getFlows()) as AuthenticationType[];
+    const flows =
+      (await adminClient.authenticationManagement.getFlows()) as AuthenticationType[];
     for (const flow of flows) {
       flow.usedBy = { values: [] };
       const client = clients.find(

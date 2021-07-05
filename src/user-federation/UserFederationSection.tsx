@@ -29,9 +29,8 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import "./user-federation.css";
 
 export const UserFederationSection = () => {
-  const [userFederations, setUserFederations] = useState<
-    ComponentRepresentation[]
-  >();
+  const [userFederations, setUserFederations] =
+    useState<ComponentRepresentation[]>();
   const { addAlert } = useAlerts();
   const { t } = useTranslation("user-federation");
   const { realm } = useContext(RealmContext);
@@ -73,8 +72,7 @@ export const UserFederationSection = () => {
 
   const learnMoreLinkProps = {
     title: t("common:learnMore"),
-    href:
-      "https://www.keycloak.org/docs/latest/server_admin/index.html#_user-storage-federation",
+    href: "https://www.keycloak.org/docs/latest/server_admin/index.html#_user-storage-federation",
   };
 
   let cards;

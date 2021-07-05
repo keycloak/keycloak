@@ -32,16 +32,16 @@ export const MockAdminClient = (props: {
   return (
     <HashRouter>
       <ServerInfoContext.Provider
-        value={(serverInfo as unknown) as ServerInfoRepresentation}
+        value={serverInfo as unknown as ServerInfoRepresentation}
       >
         <AdminClient.Provider
           value={
-            ({
+            {
               ...props.mock,
               keycloak: {},
               whoAmI: { find: () => Promise.resolve(whoamiMock) },
               setConfig: () => {},
-            } as unknown) as KeycloakAdminClient
+            } as unknown as KeycloakAdminClient
           }
         >
           <WhoAmIContextProvider>

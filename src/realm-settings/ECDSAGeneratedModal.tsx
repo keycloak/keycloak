@@ -43,10 +43,8 @@ ECDSAGeneratedModalProps) => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { handleSubmit, control } = useForm({});
-  const [
-    isEllipticCurveDropdownOpen,
-    setIsEllipticCurveDropdownOpen,
-  ] = useState(false);
+  const [isEllipticCurveDropdownOpen, setIsEllipticCurveDropdownOpen] =
+    useState(false);
   const [isRSAalgDropdownOpen, setIsRSAalgDropdownOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const realm = useRealm();
@@ -54,9 +52,8 @@ ECDSAGeneratedModalProps) => {
   const [keyFileName, setKeyFileName] = useState("");
   const [certificateFileName, setCertificateFileName] = useState("");
 
-  const allComponentTypes = serverInfo.componentTypes![
-    "org.keycloak.keys.KeyProvider"
-  ];
+  const allComponentTypes =
+    serverInfo.componentTypes!["org.keycloak.keys.KeyProvider"];
 
   const save = async (component: ComponentRepresentation) => {
     try {

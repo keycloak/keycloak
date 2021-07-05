@@ -65,9 +65,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   const [importedFile, setImportedFile] = useState<ImportedMultiRealm>([]);
   const [isRealmSelectOpen, setIsRealmSelectOpen] = useState(false);
   const [isCollisionSelectOpen, setIsCollisionSelectOpen] = useState(false);
-  const [collisionOption, setCollisionOption] = useState<CollisionOption>(
-    "FAIL"
-  );
+  const [collisionOption, setCollisionOption] =
+    useState<CollisionOption>("FAIL");
   const [targetRealm, setTargetRealm] = useState<ImportedRealm>({});
 
   const allResourcesUnChecked: Readonly<ResourceChecked> = {

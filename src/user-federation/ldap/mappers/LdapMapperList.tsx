@@ -26,10 +26,8 @@ export const LdapMapperList = () => {
 
   const { id } = useParams<{ id: string }>();
 
-  const [
-    selectedMapper,
-    setSelectedMapper,
-  ] = useState<ComponentRepresentation>();
+  const [selectedMapper, setSelectedMapper] =
+    useState<ComponentRepresentation>();
 
   const loader = async () => {
     const testParams: {

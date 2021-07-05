@@ -18,7 +18,7 @@ export default {
 
 export const RoleMappingFormExample = () => (
   <ServerInfoContext.Provider
-    value={(serverInfo as unknown) as ServerInfoRepresentation}
+    value={serverInfo as unknown as ServerInfoRepresentation}
   >
     <MockAdminClient
       mock={{

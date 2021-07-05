@@ -84,14 +84,11 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   const [itemOrder, setItemOrder] = useState<string[]>([]);
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
 
-  const [defaultConsoleDisplayName, setDefaultConsoleDisplayName] = useState(
-    ""
-  );
+  const [defaultConsoleDisplayName, setDefaultConsoleDisplayName] =
+    useState("");
 
-  const [
-    selectedComponent,
-    setSelectedComponent,
-  ] = useState<ComponentRepresentation>();
+  const [selectedComponent, setSelectedComponent] =
+    useState<ComponentRepresentation>();
 
   const [liveText, setLiveText] = useState("");
 

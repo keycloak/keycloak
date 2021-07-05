@@ -81,12 +81,13 @@ export const AddRoleMappingModal = ({
                 break;
 
               case "client-scope":
-                roles = await adminClient.clientScopes.listAvailableClientScopeMappings(
-                  {
-                    id,
-                    client: client.id!,
-                  }
-                );
+                roles =
+                  await adminClient.clientScopes.listAvailableClientScopeMappings(
+                    {
+                      id,
+                      client: client.id!,
+                    }
+                  );
                 break;
               case "user-fed":
                 roles = await adminClient.roles.find();
@@ -140,9 +141,10 @@ export const AddRoleMappingModal = ({
         );
         break;
       case "client-scope":
-        availableRoles = await adminClient.clientScopes.listAvailableRealmScopeMappings(
-          { id }
-        );
+        availableRoles =
+          await adminClient.clientScopes.listAvailableRealmScopeMappings({
+            id,
+          });
         break;
       case "user-fed":
         availableRoles = await adminClient.roles.find();
@@ -168,17 +170,17 @@ export const AddRoleMappingModal = ({
 
           switch (type) {
             case "service-account":
-              clientAvailableRoles = await adminClient.users.listAvailableClientRoleMappings(
-                {
+              clientAvailableRoles =
+                await adminClient.users.listAvailableClientRoleMappings({
                   id,
                   clientUniqueId: client.id!,
-                }
-              );
+                });
               break;
             case "client-scope":
-              clientAvailableRoles = await adminClient.clientScopes.listAvailableClientScopeMappings(
-                { id, client: client.id! }
-              );
+              clientAvailableRoles =
+                await adminClient.clientScopes.listAvailableClientScopeMappings(
+                  { id, client: client.id! }
+                );
               break;
             case "user-fed":
               clientAvailableRoles = await adminClient.clients.listRoles({

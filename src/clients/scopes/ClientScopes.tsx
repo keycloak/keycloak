@@ -40,7 +40,7 @@ type Row = ClientScopeRepresentation & {
 };
 
 const castAdminClient = (adminClient: KeycloakAdminClient) =>
-  (adminClient.clients as unknown) as {
+  adminClient.clients as unknown as {
     [index: string]: Function;
   };
 
@@ -101,12 +101,10 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const refresh = () => setKey(new Date().getTime());
 
   const loader = async () => {
-    const defaultClientScopes = await adminClient.clients.listDefaultClientScopes(
-      { id: clientId }
-    );
-    const optionalClientScopes = await adminClient.clients.listOptionalClientScopes(
-      { id: clientId }
-    );
+    const defaultClientScopes =
+      await adminClient.clients.listDefaultClientScopes({ id: clientId });
+    const optionalClientScopes =
+      await adminClient.clients.listOptionalClientScopes({ id: clientId });
     const clientScopes = await adminClient.clientScopes.find();
 
     const find = (id: string) =>

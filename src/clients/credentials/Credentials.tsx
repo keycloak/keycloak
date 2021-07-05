@@ -74,9 +74,10 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
 
   useFetch(
     async () => {
-      const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
-        { id: clientId }
-      );
+      const providers =
+        await adminClient.authenticationManagement.getClientAuthenticatorProviders(
+          { id: clientId }
+        );
 
       const secret = await adminClient.clients.getClientSecret({
         id: clientId,

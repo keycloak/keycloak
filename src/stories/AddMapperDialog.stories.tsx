@@ -19,7 +19,7 @@ const Template: Story<AddMapperDialogProps> = (args) => {
   const [open, setOpen] = useState(false);
   return (
     <ServerInfoContext.Provider
-      value={(serverInfo as unknown) as ServerInfoRepresentation}
+      value={serverInfo as unknown as ServerInfoRepresentation}
     >
       <AddMapperDialog
         {...args}

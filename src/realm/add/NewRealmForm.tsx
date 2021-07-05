@@ -29,13 +29,8 @@ export const NewRealmForm = () => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    errors,
-    setValue,
-  } = useForm<RealmRepresentation>({ mode: "onChange" });
+  const { register, handleSubmit, control, errors, setValue } =
+    useForm<RealmRepresentation>({ mode: "onChange" });
 
   const handleFileChange = (obj: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };

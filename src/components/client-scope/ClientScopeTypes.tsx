@@ -97,7 +97,7 @@ export const changeScope = async (
 };
 
 const castAdminClient = (adminClient: KeycloakAdminClient) =>
-  (adminClient.clientScopes as unknown) as {
+  adminClient.clientScopes as unknown as {
     [index: string]: Function;
   };
 

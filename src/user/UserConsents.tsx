@@ -20,10 +20,8 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 
 export const UserConsents = () => {
-  const [
-    selectedClient,
-    setSelectedClient,
-  ] = useState<UserConsentRepresentation>();
+  const [selectedClient, setSelectedClient] =
+    useState<UserConsentRepresentation>();
   const { t } = useTranslation("roles");
   const { addAlert } = useAlerts();
   const [key, setKey] = useState(0);

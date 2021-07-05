@@ -15,7 +15,7 @@ export default {
 
 export const MapperListExample = () => (
   <ServerInfoContext.Provider
-    value={(serverInfo as unknown) as ServerInfoRepresentation}
+    value={serverInfo as unknown as ServerInfoRepresentation}
   >
     <MockAdminClient>
       <MapperList clientScope={clientScopeMock} refresh={() => {}} />

@@ -135,15 +135,13 @@ export const RealmSettingsSection = () => {
   const [key, setKey] = useState(0);
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(0);
-  const [realmComponents, setRealmComponents] = useState<
-    ComponentRepresentation[]
-  >();
+  const [realmComponents, setRealmComponents] =
+    useState<ComponentRepresentation[]>();
   const [currentUser, setCurrentUser] = useState<UserRepresentation>();
   const { whoAmI } = useContext(WhoAmIContext);
 
-  const kpComponentTypes = useServerInfo().componentTypes![
-    "org.keycloak.keys.KeyProvider"
-  ];
+  const kpComponentTypes =
+    useServerInfo().componentTypes!["org.keycloak.keys.KeyProvider"];
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),

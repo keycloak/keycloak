@@ -49,9 +49,8 @@ export const RSAModal = ({
   const [keyFileName, setKeyFileName] = useState("");
   const [certificateFileName, setCertificateFileName] = useState("");
 
-  const allComponentTypes = serverInfo.componentTypes![
-    "org.keycloak.keys.KeyProvider"
-  ];
+  const allComponentTypes =
+    serverInfo.componentTypes!["org.keycloak.keys.KeyProvider"];
 
   const save = async (component: ComponentRepresentation) => {
     try {

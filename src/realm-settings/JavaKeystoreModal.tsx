@@ -42,16 +42,13 @@ JavaKeystoreModalProps) => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { handleSubmit, control } = useForm({});
-  const [
-    isEllipticCurveDropdownOpen,
-    setIsEllipticCurveDropdownOpen,
-  ] = useState(false);
+  const [isEllipticCurveDropdownOpen, setIsEllipticCurveDropdownOpen] =
+    useState(false);
   const [displayName, setDisplayName] = useState("");
   const realm = useRealm();
 
-  const allComponentTypes = serverInfo.componentTypes![
-    "org.keycloak.keys.KeyProvider"
-  ];
+  const allComponentTypes =
+    serverInfo.componentTypes!["org.keycloak.keys.KeyProvider"];
 
   const save = async (component: ComponentRepresentation) => {
     try {

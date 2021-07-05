@@ -36,8 +36,9 @@ export const TimeSelector = ({
   const times = units.map(
     (unit) => allTimes.find((time) => time.unit === unit)!
   );
-  const defaultMultiplier = allTimes.find((time) => time.unit === units[0])
-    ?.multiplier;
+  const defaultMultiplier = allTimes.find(
+    (time) => time.unit === units[0]
+  )?.multiplier;
 
   const [timeValue, setTimeValue] = useState<"" | number>("");
   const [multiplier, setMultiplier] = useState(defaultMultiplier);
