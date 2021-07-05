@@ -131,6 +131,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setIdTokenEncryptionEncValuesSupported(getSupportedEncryptionEnc(false));
         config.setUserInfoSigningAlgValuesSupported(getSupportedSigningAlgorithms(true));
         config.setRequestObjectSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(true));
+        config.setRequestObjectEncryptionAlgValuesSupported(getSupportedEncryptionAlgorithms());
+        config.setRequestObjectEncryptionEncValuesSupported(getSupportedContentEncryptionAlgorithms());
         config.setResponseTypesSupported(DEFAULT_RESPONSE_TYPES_SUPPORTED);
         config.setSubjectTypesSupported(DEFAULT_SUBJECT_TYPES_SUPPORTED);
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
@@ -230,6 +232,14 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     private List<String> getSupportedClientSigningAlgorithms(boolean includeNone) {
         return getSupportedAlgorithms(ClientSignatureVerifierProvider.class, includeNone);
+    }
+
+    private List<String> getSupportedContentEncryptionAlgorithms() {
+        return getSupportedAlgorithms(ContentEncryptionProvider.class, false);
+    }
+
+    private List<String> getSupportedEncryptionAlgorithms() {
+        return getSupportedAlgorithms(CekManagementProvider.class, false);
     }
 
     private List<String> getSupportedBackchannelAuthenticationRequestSigningAlgorithms() {

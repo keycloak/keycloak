@@ -20,10 +20,10 @@ package org.keycloak.keys;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -76,7 +76,9 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
                 certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             }
 
-            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias));
+            KeyUse keyUse = KeyUse.valueOf(model.get(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).toUpperCase());
+
+            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias), keyUse);
         } catch (KeyStoreException kse) {
             throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
         } catch (FileNotFoundException fnfe) {

@@ -19,11 +19,13 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.jose.JOSE;
+import org.keycloak.jose.JOSEParser;
+import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -41,7 +43,13 @@ class BackchannelAuthenticationEndpointSignedRequestParser extends BackchannelAu
     private final JsonNode requestParams;
 
     public BackchannelAuthenticationEndpointSignedRequestParser(KeycloakSession session, String signedAuthReq, ClientModel client, CibaConfig config) throws Exception {
-        JWSInput input = new JWSInput(signedAuthReq);
+        JOSE jwt = JOSEParser.parse(signedAuthReq);
+
+        if (jwt instanceof JWE) {
+            throw new RuntimeException("Encrypted request object is not allowed");
+        }
+
+        JWSInput input = (JWSInput) jwt;
         JWSHeader header = input.getHeader();
         Algorithm headerAlgorithm = header.getAlgorithm();
 
@@ -95,8 +103,5 @@ class BackchannelAuthenticationEndpointSignedRequestParser extends BackchannelAu
         HashSet<String> keys = new HashSet<>();
         requestParams.fieldNames().forEachRemaining(keys::add);
         return keys;
-    }
-
-    static class TypedHashMap extends HashMap<String, Object> {
     }
 }

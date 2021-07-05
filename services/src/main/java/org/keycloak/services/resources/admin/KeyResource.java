@@ -82,6 +82,7 @@ public class KeyResource {
         r.setAlgorithm(key.getAlgorithm());
         r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
         r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
+        r.setUse(key.getUse());
         return r;
     }
 }

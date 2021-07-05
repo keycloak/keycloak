@@ -227,14 +227,14 @@ public class OIDCLoginProtocolService {
         checkSsl();
 
         JWK[] jwks = session.keys().getKeysStream(realm)
-                .filter(k -> k.getStatus().isEnabled() && Objects.equals(k.getUse(), KeyUse.SIG) && k.getPublicKey() != null)
+                .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
                 .map(k -> {
                     JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
                     List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
                         .filter(certs -> !certs.isEmpty())
                         .orElseGet(() -> Collections.singletonList(k.getCertificate()));
                     if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), certificates);
+                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.EC)) {
                         return b.ec(k.getPublicKey());
                     }

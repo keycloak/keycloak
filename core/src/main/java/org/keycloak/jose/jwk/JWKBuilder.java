@@ -44,7 +44,7 @@ public class JWKBuilder {
     private String kid;
 
     private String algorithm;
-    
+
     private JWKBuilder() {
     }
 
@@ -68,14 +68,18 @@ public class JWKBuilder {
     }
 
     public JWK rsa(Key key) {
-        return rsa(key, (List<X509Certificate>) null);
+        return rsa(key, null, KeyUse.SIG);
     }
     
     public JWK rsa(Key key, X509Certificate certificate) {
-        return rsa(key, Collections.singletonList(certificate));
+        return rsa(key, Collections.singletonList(certificate), KeyUse.SIG);
     }
 
     public JWK rsa(Key key, List<X509Certificate> certificates) {
+        return rsa(key, certificates, null);
+    }
+
+    public JWK rsa(Key key, List<X509Certificate> certificates, KeyUse keyUse) {
         RSAPublicKey rsaKey = (RSAPublicKey) key;
 
         RSAPublicJWK k = new RSAPublicJWK();
@@ -84,7 +88,7 @@ public class JWKBuilder {
         k.setKeyId(kid);
         k.setKeyType(KeyType.RSA);
         k.setAlgorithm(algorithm);
-        k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
+        k.setPublicKeyUse(keyUse == null ? KeyUse.SIG.getSpecName() : keyUse.getSpecName());
         k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
 
