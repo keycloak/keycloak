@@ -14,7 +14,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { FilterIcon } from "@patternfly/react-icons";
-import "./SessionSection.css";
+import "./SessionsSection.css";
 
 const Clients = (row: UserSessionRepresentation) => {
   return (
@@ -32,7 +32,9 @@ export const SessionsSection = () => {
   const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [filterType, setFilterType] = useState("All session types");
+  const [filterType, setFilterType] = useState(
+    t("sessions:All session types").toString()
+  );
   const [key, setKey] = useState(0);
 
   const refresh = () => {
@@ -61,32 +63,12 @@ export const SessionsSection = () => {
     return userSessions;
   };
 
-  const options = [
-    <SelectOption
-      data-testid="all-sessions-option"
-      value={t("sessions:All session types")}
-      isPlaceholder
-    />,
-    <SelectOption
-      data-testid="regular-sso-option"
-      value={t("sessions:Regular SSO")}
-    />,
-    <SelectOption data-testid="offline-option" value={t("sessions:Offline")} />,
-    <SelectOption
-      data-testid="direct-grant-option"
-      value={t("sessions:Direct grant")}
-    />,
-    <SelectOption
-      data-testid="service-account-option"
-      value={t("sessions:Service account")}
-    />,
-  ];
-
   return (
     <>
       <ViewHeader titleKey="sessions:title" subKey="sessions:sessionExplain" />
       <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable
+          key={key}
           loader={loader}
           ariaLabelKey="session:title"
           searchPlaceholderKey="sessions:searchForSession"
@@ -97,16 +79,41 @@ export const SessionsSection = () => {
               isOpen={filterDropdownOpen}
               className="filter-session-type-select"
               variant={SelectVariant.single}
-              onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
               toggleIcon={<FilterIcon />}
               onSelect={(_, value) => {
-                setFilterType(value as string);
+                setFilterType(value.toString());
                 refresh();
                 setFilterDropdownOpen(false);
               }}
               selections={filterType}
             >
-              {options}
+              <SelectOption
+                key={0}
+                data-testid="all-sessions-option"
+                value={t("sessions:All session types")}
+                isPlaceholder
+              />
+              <SelectOption
+                key={1}
+                data-testid="regular-sso-option"
+                value={t("sessions:Regular SSO")}
+              />
+              <SelectOption
+                key={2}
+                data-testid="offline-option"
+                value={t("sessions:Offline")}
+              />
+              <SelectOption
+                key={3}
+                data-testid="direct-grant-option"
+                value={t("sessions:Direct grant")}
+              />
+              <SelectOption
+                key={4}
+                data-testid="service-account-option"
+                value={t("sessions:Service account")}
+              />
             </Select>
           }
           columns={[
