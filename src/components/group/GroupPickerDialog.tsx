@@ -20,11 +20,12 @@ import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentatio
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
+import { GroupPath } from "./GroupPath";
 
 export type GroupPickerDialogProps = {
   id?: string;
   type: "selectOne" | "selectMany";
-  filterGroups?: string[];
+  filterGroups?: GroupRepresentation[];
   text: { title: string; ok: string };
   onConfirm: (groups: GroupRepresentation[]) => void;
   onClose: () => void;
@@ -48,7 +49,6 @@ export const GroupPickerDialog = ({
 
   const [navigation, setNavigation] = useState<SelectableGroup[]>([]);
   const [groups, setGroups] = useState<SelectableGroup[]>([]);
-  const [filtered, setFiltered] = useState<GroupRepresentation[]>();
   const [filter, setFilter] = useState("");
   const [joinedGroups, setJoinedGroups] = useState<GroupRepresentation[]>([]);
   const [groupId, setGroupId] = useState<string>();
@@ -60,23 +60,27 @@ export const GroupPickerDialog = ({
 
   useFetch(
     async () => {
-      const allGroups = await adminClient.groups.find();
+      let group;
+      let groups;
+      let existingUserGroups;
+      if (!groupId) {
+        groups = await adminClient.groups.find({
+          first,
+          max: max + 1,
+          search: filter,
+        });
+      } else {
+        group = await adminClient.groups.findOne({ id: groupId });
+        groups = group.subGroups!;
+      }
 
-      if (groupId) {
-        const group = await adminClient.groups.findOne({ id: groupId });
-        return { group, groups: group.subGroups! };
-      } else if (id) {
-        const existingUserGroups = await adminClient.users.listGroups({
+      if (id) {
+        existingUserGroups = await adminClient.users.listGroups({
           id,
         });
-        return {
-          groups: allGroups,
-          existingUserGroups,
-        };
-      } else
-        return {
-          groups: allGroups,
-        };
+      }
+
+      return { group, groups, existingUserGroups };
     },
     async ({ group: selectedGroup, groups, existingUserGroups }) => {
       setJoinedGroups(existingUserGroups || []);
@@ -87,36 +91,42 @@ export const GroupPickerDialog = ({
       groups.forEach((group: SelectableGroup) => {
         group.checked = !!selectedRows.find((r) => r.id === group.id);
       });
-      setFiltered(undefined);
-      setFilter("");
-      setFirst(0);
-      setMax(10);
-      setGroups(
-        filterGroups
-          ? [
-              ...groups.filter(
-                (row) => filterGroups && !filterGroups.includes(row.name!)
-              ),
-            ]
-          : groups
-      );
+      setGroups(groups);
     },
-    [groupId]
+    [groupId, filter, first, max]
   );
 
   const isRowDisabled = (row?: GroupRepresentation) => {
-    return !!joinedGroups.find((group) => group.id === row?.id);
+    return !![...joinedGroups, ...(filterGroups || [])].find(
+      (group) => group.id === row?.id
+    );
   };
 
   const hasSubgroups = (group: GroupRepresentation) => {
     return group.subGroups!.length !== 0;
   };
 
+  const findSubGroup = (
+    group: GroupRepresentation,
+    name: string
+  ): GroupRepresentation => {
+    if (group.name?.includes(name)) {
+      return group;
+    }
+    if (group.subGroups) {
+      for (const g of group.subGroups) {
+        const found = findSubGroup(g, name);
+        return found;
+      }
+    }
+    return group;
+  };
+
   return (
     <Modal
       variant={ModalVariant.small}
       title={t(text.title, {
-        group1: filterGroups && filterGroups[0],
+        group1: filterGroups?.[0]?.name,
         group2: currentGroup() ? currentGroup().name : t("root"),
       })}
       isOpen
@@ -136,40 +146,8 @@ export const GroupPickerDialog = ({
         </Button>,
       ]}
     >
-      <Breadcrumb>
-        {navigation.length > 0 && (
-          <BreadcrumbItem key="home">
-            <Button
-              variant="link"
-              onClick={() => {
-                setGroupId(undefined);
-                setNavigation([]);
-              }}
-            >
-              {t("groups")}
-            </Button>
-          </BreadcrumbItem>
-        )}
-        {navigation.map((group, i) => (
-          <BreadcrumbItem key={i}>
-            {navigation.length - 1 !== i && (
-              <Button
-                variant="link"
-                onClick={() => {
-                  setGroupId(group.id);
-                  setNavigation([...navigation].slice(0, i));
-                }}
-              >
-                {group.name}
-              </Button>
-            )}
-            {navigation.length - 1 === i && <>{group.name}</>}
-          </BreadcrumbItem>
-        ))}
-      </Breadcrumb>
-
       <PaginatingTableToolbar
-        count={(filtered || groups).slice(first, first + max).length}
+        count={groups.length}
         first={first}
         max={max}
         onNextClick={setFirst}
@@ -183,89 +161,134 @@ export const GroupPickerDialog = ({
           setFilter(search);
           setFirst(0);
           setMax(10);
-          setFiltered(
-            groups.filter((group) =>
-              group.name?.toLowerCase().includes(search.toLowerCase())
-            )
-          );
+          setNavigation([]);
         }}
         inputGroupPlaceholder={t("users:searchForGroups")}
       >
-        <DataList aria-label={t("groups")} isCompact>
-          {(filtered || groups)
-            .slice(first, first + max)
-            .map((group: SelectableGroup) => (
-              <DataListItem
-                aria-labelledby={group.name}
-                key={group.id}
-                id={group.id}
-                onClick={(e) => {
-                  if (type === "selectOne") {
-                    setGroupId(group.id);
-                  } else if (
-                    hasSubgroups(group) &&
-                    (e.target as HTMLInputElement).type !== "checkbox"
-                  ) {
-                    setGroupId(group.id);
-                  }
+        <Breadcrumb>
+          {navigation.length > 0 && (
+            <BreadcrumbItem key="home">
+              <Button
+                variant="link"
+                onClick={() => {
+                  setGroupId(undefined);
+                  setNavigation([]);
                 }}
               >
-                <DataListItemRow
-                  className={`join-group-dialog-row-${
-                    isRowDisabled(group) ? "m-disabled" : ""
-                  }`}
-                  data-testid={group.name}
+                {t("groups")}
+              </Button>
+            </BreadcrumbItem>
+          )}
+          {navigation.map((group, i) => (
+            <BreadcrumbItem key={i}>
+              {navigation.length - 1 !== i && (
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setGroupId(group.id);
+                    setNavigation([...navigation].slice(0, i));
+                  }}
                 >
-                  {type === "selectMany" && (
-                    <DataListCheck
-                      className="join-group-modal-check"
-                      data-testid={`${group.name}-check`}
-                      checked={group.checked}
-                      isDisabled={isRowDisabled(group)}
-                      onChange={(checked) => {
-                        group.checked = checked;
-                        let newSelectedRows: SelectableGroup[] = [];
-                        if (!group.checked) {
-                          newSelectedRows = selectedRows.filter(
-                            (r) => r.id !== group.id
-                          );
-                        } else if (group.checked) {
-                          newSelectedRows = [...selectedRows, group];
-                        }
+                  {group.name}
+                </Button>
+              )}
+              {navigation.length - 1 === i && <>{group.name}</>}
+            </BreadcrumbItem>
+          ))}
+        </Breadcrumb>
+        <DataList aria-label={t("groups")} isCompact>
+          {groups.slice(0, max).map((group: SelectableGroup) => (
+            <DataListItem
+              className={`join-group-dialog-row-${
+                isRowDisabled(group) ? "disabled" : ""
+              }`}
+              aria-labelledby={group.name}
+              key={group.id}
+              id={group.id}
+              onClick={(e) => {
+                const g = filter !== "" ? findSubGroup(group, filter) : group;
+                if (isRowDisabled(g)) return;
+                if (type === "selectOne") {
+                  setGroupId(g.id);
+                } else if (
+                  hasSubgroups(group) &&
+                  filter === "" &&
+                  (e.target as HTMLInputElement).type !== "checkbox"
+                ) {
+                  setGroupId(group.id);
+                }
+              }}
+            >
+              <DataListItemRow
+                className={`join-group-dialog-row-${
+                  isRowDisabled(group) ? "m-disabled" : ""
+                }`}
+                data-testid={group.name}
+              >
+                {type === "selectMany" && (
+                  <DataListCheck
+                    className="join-group-modal-check"
+                    data-testid={`${group.name}-check`}
+                    checked={group.checked}
+                    isDisabled={isRowDisabled(group)}
+                    onChange={(checked) => {
+                      group.checked = checked;
+                      let newSelectedRows: SelectableGroup[] = [];
+                      if (!group.checked) {
+                        newSelectedRows = selectedRows.filter(
+                          (r) => r.id !== group.id
+                        );
+                      } else if (group.checked) {
+                        newSelectedRows = [
+                          ...selectedRows,
+                          filter === "" ? group : findSubGroup(group, filter),
+                        ];
+                      }
 
-                        setSelectedRows(newSelectedRows);
-                      }}
-                      aria-labelledby="data-list-check"
-                    />
-                  )}
-
-                  <DataListItemCells
-                    dataListCells={[
-                      <DataListCell key={`name-${group.id}`}>
-                        <>{group.name}</>
-                      </DataListCell>,
-                    ]}
+                      setSelectedRows(newSelectedRows);
+                    }}
+                    aria-labelledby="data-list-check"
                   />
-                  <DataListAction
-                    aria-labelledby={`select-${group.name}`}
-                    id={`select-${group.name}`}
-                    aria-label={t("groupName")}
-                    isPlainButtonAction
-                  >
-                    {(hasSubgroups(group) || type === "selectOne") && (
-                      <Button isDisabled variant="link">
-                        <AngleRightIcon />
-                      </Button>
-                    )}
-                  </DataListAction>
-                </DataListItemRow>
-              </DataListItem>
-            ))}
-          {(filtered || groups).length === 0 && filter === "" && (
+                )}
+
+                <DataListItemCells
+                  dataListCells={[
+                    <DataListCell key={`name-${group.id}`}>
+                      {filter === "" ? (
+                        <>{group.name}</>
+                      ) : (
+                        <GroupPath group={findSubGroup(group, filter)} />
+                      )}
+                    </DataListCell>,
+                  ]}
+                />
+                <DataListAction
+                  aria-labelledby={`select-${group.name}`}
+                  id={`select-${group.name}`}
+                  aria-label={t("groupName")}
+                  isPlainButtonAction
+                >
+                  {((hasSubgroups(group) && filter === "") ||
+                    type === "selectOne") && (
+                    <Button isDisabled variant="link">
+                      <AngleRightIcon />
+                    </Button>
+                  )}
+                </DataListAction>
+              </DataListItemRow>
+            </DataListItem>
+          ))}
+          {groups.length === 0 && filter === "" && (
             <ListEmptyState
               hasIcon={false}
               message={t("groups:moveGroupEmpty")}
               instructions={t("groups:moveGroupEmptyInstructions")}
+            />
+          )}
+          {groups.length === 0 && filter !== "" && (
+            <ListEmptyState
+              message={t("common:noSearchResults")}
+              instructions={t("common:noSearchResultsInstructions")}
             />
           )}
         </DataList>

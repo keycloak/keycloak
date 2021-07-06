@@ -152,7 +152,7 @@ export const UserForm = ({
             setOpen(false);
           }}
           onClose={() => setOpen(false)}
-          filterGroups={selectedGroups.map((g) => g.name!)}
+          filterGroups={selectedGroups}
         />
       )}
       {editMode && user ? (
