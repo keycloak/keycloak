@@ -14,6 +14,7 @@ export default class GroupModal {
 
       cy.get("#partial-import-file").type(text, {
         parseSpecialCharSequences: false,
+        delay: 0
       });
     });
   };
