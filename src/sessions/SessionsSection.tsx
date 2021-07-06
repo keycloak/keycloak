@@ -33,7 +33,7 @@ export const SessionsSection = () => {
   const adminClient = useAdminClient();
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState(
-    t("sessions:All session types").toString()
+    t("sessionsType.allSessions").toString()
   );
   const [key, setKey] = useState(0);
 
@@ -91,28 +91,28 @@ export const SessionsSection = () => {
               <SelectOption
                 key={0}
                 data-testid="all-sessions-option"
-                value={t("sessions:All session types")}
+                value={t("sessionsType.allSessions")}
                 isPlaceholder
               />
               <SelectOption
                 key={1}
                 data-testid="regular-sso-option"
-                value={t("sessions:Regular SSO")}
+                value={t("sessionsType.regularSSO")}
               />
               <SelectOption
                 key={2}
                 data-testid="offline-option"
-                value={t("sessions:Offline")}
+                value={t("sessionsType.offline")}
               />
               <SelectOption
                 key={3}
                 data-testid="direct-grant-option"
-                value={t("sessions:Direct grant")}
+                value={t("sessionsType.directGrant")}
               />
               <SelectOption
                 key={4}
                 data-testid="service-account-option"
-                value={t("sessions:Service account")}
+                value={t("sessionsType.serviceAccount")}
               />
             </Select>
           }
