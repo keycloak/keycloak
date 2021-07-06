@@ -25,7 +25,6 @@ describe("Confirmation dialog", () => {
 
     const simple = mount(<Test />);
     simple.find("#show").simulate("click");
-    expect(simple).toMatchSnapshot();
 
     const button = simple.find("#modal-confirm").find("button");
     expect(button).not.toBeNull();

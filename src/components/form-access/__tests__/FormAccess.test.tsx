@@ -59,10 +59,6 @@ describe("<FormAccess />", () => {
       </WhoAmIContext.Provider>
     );
   };
-  it("render normal form", () => {
-    const comp = mount(<Form realm="master" />);
-    expect(comp).toMatchSnapshot();
-  });
 
   it("render form disabled for test realm", () => {
     const container = mount(<Form realm="test" />);

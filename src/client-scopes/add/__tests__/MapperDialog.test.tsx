@@ -32,7 +32,6 @@ describe("<MapperDialog/>", () => {
     );
 
     container.find("button#open").simulate("click");
-    expect(container).toMatchSnapshot();
 
     const button = container.find("button#modal-confirm");
     expect(button.hasClass("pf-m-disabled")).toBe(true);
@@ -66,7 +65,6 @@ describe("<MapperDialog/>", () => {
     const container = mount(<Test protocol={protocol} onConfirm={onConfirm} />);
 
     container.find("button#open").simulate("click");
-    expect(container).toMatchSnapshot();
 
     container
       .find("div.pf-c-data-list__item-content")
