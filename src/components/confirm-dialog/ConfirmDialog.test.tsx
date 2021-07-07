@@ -1,9 +1,9 @@
+import { fireEvent, screen, render } from "@testing-library/react";
 import React from "react";
-import { mount } from "enzyme";
-import { useConfirmDialog } from "../ConfirmDialog";
+import { useConfirmDialog } from "./ConfirmDialog";
 
-describe("Confirmation dialog", () => {
-  it("renders simple confirm dialog", () => {
+describe("ConfirmDialog", () => {
+  it("renders a simple confirm dialog", () => {
     const onConfirm = jest.fn();
     const Test = () => {
       const [toggle, ConfirmDialog] = useConfirmDialog({
@@ -13,9 +13,10 @@ describe("Confirmation dialog", () => {
         continueButtonLabel: "Delete",
         onConfirm: onConfirm,
       });
+
       return (
         <>
-          <button id="show" onClick={toggle}>
+          <button data-testid="show" onClick={toggle}>
             Show
           </button>
           <ConfirmDialog />
@@ -23,13 +24,13 @@ describe("Confirmation dialog", () => {
       );
     };
 
-    const simple = mount(<Test />);
-    simple.find("#show").simulate("click");
+    render(<Test />);
+    fireEvent.click(screen.getByTestId("show"));
 
-    const button = simple.find("#modal-confirm").find("button");
-    expect(button).not.toBeNull();
+    const confirmButton = screen.getByTestId("modalConfirm");
+    expect(confirmButton).toBeInTheDocument();
 
-    button!.simulate("click");
+    fireEvent.click(confirmButton);
     expect(onConfirm).toBeCalled();
   });
 });
