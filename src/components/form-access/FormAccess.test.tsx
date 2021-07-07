@@ -1,17 +1,15 @@
-import React from "react";
-import { mount } from "enzyme";
-import { Controller, useForm } from "react-hook-form";
 import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
+import { render, screen } from "@testing-library/react";
 import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import React from "react";
+import { Controller, useForm } from "react-hook-form";
+import { AccessContextProvider } from "../../context/access/Access";
+import { RealmContext } from "../../context/realm-context/RealmContext";
+import { WhoAmI, WhoAmIContext } from "../../context/whoami/WhoAmI";
+import whoami from "../../context/whoami/__tests__/mock-whoami.json";
+import { FormAccess } from "./FormAccess";
 
-import { WhoAmI, WhoAmIContext } from "../../../context/whoami/WhoAmI";
-import whoami from "../../../context/whoami/__tests__/mock-whoami.json";
-import { RealmContext } from "../../../context/realm-context/RealmContext";
-import { AccessContextProvider } from "../../../context/access/Access";
-
-import { FormAccess } from "../FormAccess";
-
-describe("<FormAccess />", () => {
+describe("FormAccess", () => {
   const Form = ({ realm }: { realm: string }) => {
     const { register, control } = useForm();
     return (
@@ -35,6 +33,7 @@ describe("<FormAccess />", () => {
                 <TextInput
                   type="text"
                   id="field"
+                  data-testid="field"
                   name="fieldName"
                   ref={register()}
                 />
@@ -45,7 +44,7 @@ describe("<FormAccess />", () => {
                 control={control}
                 render={({ onChange, value }) => (
                   <Switch
-                    id="kc-consent"
+                    data-testid="kc-consent"
                     label={"on"}
                     labelOff="off"
                     isChecked={value}
@@ -60,12 +59,9 @@ describe("<FormAccess />", () => {
     );
   };
 
-  it("render form disabled for test realm", () => {
-    const container = mount(<Form realm="test" />);
-
-    const disabled = container.find("input#field").props().disabled;
-    expect(disabled).toBe(true);
-
-    expect(container.find("input#kc-consent").props().disabled).toBe(true);
+  it("renders disabled form for test realm", () => {
+    render(<Form realm="test" />);
+    expect(screen.getByTestId("field")).toBeDisabled();
+    expect(screen.getByTestId("kc-consent")).toBeDisabled();
   });
 });
