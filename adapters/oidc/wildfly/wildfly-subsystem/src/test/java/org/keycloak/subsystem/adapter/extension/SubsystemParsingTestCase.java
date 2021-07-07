@@ -21,9 +21,14 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Map;
 
 
 /**
@@ -105,5 +110,49 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         return new String[]{
                 "/subsystem-templates/keycloak-adapter.xml"
         };
+    }
+
+    /**
+     * Tests a subsystem configuration that contains a {@code redirect-rewrite-rule}, checking that the resulting JSON
+     * can be properly used to create an {@link AdapterConfig}.
+     *
+     * Added as part of the fix for {@code KEYCLOAK-18302}.
+     */
+    @Test
+    public void testJsonFromRedirectRewriteRuleConfiguration() {
+        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
+
+        // add a secure deployment with a redirect-rewrite-rule
+        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement("subsystem", "keycloak"), PathElement.pathElement("secure-deployment", "foo"));
+        ModelNode deploymentOp = new ModelNode();
+        deploymentOp.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
+        ModelNode deployment = new ModelNode();
+        deployment.get("realm").set("demo");
+        deployment.get("resource").set("customer-portal");
+        service.addSecureDeployment(deploymentOp, deployment, false);
+        this.addRedirectRewriteRule(addr, service, "^/wsmaster/api/(.*)$", "api/$1");
+
+        // get the subsystem config as JSON
+        String jsonConfig = service.getJSON("foo");
+
+        // attempt to create an adapter config instance from the subsystem JSON config
+        AdapterConfig config = KeycloakDeploymentBuilder.loadAdapterConfig(new ByteArrayInputStream(jsonConfig.getBytes()));
+        Assert.assertNotNull(config);
+
+        // assert that the config has the configured rule
+        Map<String, String> redirectRewriteRules = config.getRedirectRewriteRules();
+        Assert.assertNotNull(redirectRewriteRules);
+        Map.Entry<String, String> entry = redirectRewriteRules.entrySet().iterator().next();
+        Assert.assertEquals("^/wsmaster/api/(.*)$", entry.getKey());
+        Assert.assertEquals("api/$1", entry.getValue());
+    }
+
+    private void addRedirectRewriteRule(PathAddress parent, KeycloakAdapterConfigService service, String key, String value) {
+        PathAddress redirectRewriteAddr = PathAddress.pathAddress(parent, PathElement.pathElement("redirect-rewrite-rule", key));
+        ModelNode redirectRewriteOp = new ModelNode();
+        redirectRewriteOp.get(ModelDescriptionConstants.OP_ADDR).set(redirectRewriteAddr.toModelNode());
+        ModelNode rule = new ModelNode();
+        rule.get("value").set(value);
+        service.addRedirectRewriteRule(redirectRewriteOp, rule);
     }
 }
