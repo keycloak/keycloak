@@ -19,6 +19,9 @@ package org.keycloak.models.map.common;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +52,12 @@ public class Serialization {
     public static final ConcurrentHashMap<Class<?>, ObjectReader> READERS = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<Class<?>, ObjectWriter> WRITERS = new ConcurrentHashMap<>();
 
-    abstract class IgnoreUpdatedMixIn { @JsonIgnore public abstract boolean isUpdated(); }
+    abstract class IgnoreUpdatedMixIn {
+        @JsonIgnore public abstract boolean isUpdated();
+        
+        @JsonTypeInfo(use=Id.CLASS, include=As.WRAPPER_ARRAY)
+        abstract Object getId();
+    }
 
     static {
         JavaType type = TypeFactory.unknownType();

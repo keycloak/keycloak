@@ -31,6 +31,7 @@ public interface UserLoginFailureModel {
       public static final SearchableModelField<UserLoginFailureModel> USER_ID  = new SearchableModelField<>("userId", String.class);
    }
 
+   String getId();
    String getUserId();
    int getFailedLoginNotBefore();
    void setFailedLoginNotBefore(int notBefore);

@@ -68,7 +68,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"user\"},{\"id\":\"manage-albums\",\"required\":true}]"
+        "roles": "[{\"id\":\"user\"},{\"id\":\"resource-server-test/manage-albums\",\"required\":true}]"
       }
     },
     {
@@ -143,7 +143,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[{\"id\":\"admin\",\"required\":true}]"
+        "roles": "[{\"id\":\"resource-server-test/admin\",\"required\":true}]"
       }
     },
     {

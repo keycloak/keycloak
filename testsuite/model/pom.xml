@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -24,6 +24,9 @@
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
+        <jacoco.skip>true</jacoco.skip>
+        <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
+        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
     
     <dependencies>
@@ -95,9 +98,35 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.7</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                            <includes>
+                                <include>org/keycloak/**/*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <!-- keycloak.model.parameters lists parameter classes from 
                              org.keycloak.model.parameters package and determine enabled providers -->
@@ -108,6 +137,8 @@
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
+                        <keycloak.profile.feature.map_storage>${keycloak.profile.feature.map_storage}</keycloak.profile.feature.map_storage>
+                        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -150,6 +181,14 @@
         </profile>
 
         <profile>
+            <id>jpa+infinispan-sessions-preloading-disabled</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa-federation+infinispan</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,JpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
@@ -178,6 +217,20 @@
         </profile>
 
         <profile>
+            <id>jpa-federation-file-storage</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa-federation-file-storage+infinispan</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage,Infinispan</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa-federation+ldap</id>
             <properties>
                 <keycloak.model.parameters>JpaFederation,LdapUserStorage</keycloak.model.parameters>
@@ -194,6 +247,7 @@
         <profile>
             <id>map+infinispan</id>
             <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                 <keycloak.model.parameters>Infinispan,Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
@@ -201,6 +255,7 @@
         <profile>
             <id>map</id>
             <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                 <keycloak.model.parameters>Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
             </properties>
         </profile>

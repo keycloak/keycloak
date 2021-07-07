@@ -89,6 +89,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
         Assert.assertEquals("1", idToken.getAcr());
+        Long authTime = idToken.getAuth_time();
 
         appPage.open();
 
@@ -104,6 +105,8 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         // acr is 0 as we authenticated through SSO cookie
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
         Assert.assertEquals("0", idToken.getAcr());
+        // auth time hasn't changed as we authenticated through SSO cookie
+        Assert.assertEquals(authTime, idToken.getAuth_time());
 
         profilePage.open();
         assertTrue(profilePage.isCurrent());

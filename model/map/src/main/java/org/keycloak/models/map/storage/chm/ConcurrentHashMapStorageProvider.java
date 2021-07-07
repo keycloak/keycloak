@@ -16,25 +16,9 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.Config.Scope;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.Serialization;
-import com.fasterxml.jackson.databind.JavaType;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
-import java.util.UUID;
+import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
 /**
  *
@@ -42,104 +26,19 @@ import java.util.UUID;
  */
 public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
-    public static final String PROVIDER_ID = "concurrenthashmap";
+    private final ConcurrentHashMapStorageProviderFactory factory;
 
-    private static final Logger LOG = Logger.getLogger(ConcurrentHashMapStorageProvider.class);
-
-    private final ConcurrentHashMap<String, ConcurrentHashMapStorage<?,?,?>> storages = new ConcurrentHashMap<>();
-
-    private File storageDirectory;
-
-    @Override
-    public MapStorageProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Scope config) {
-        File f = new File(config.get("dir"));
-        try {
-            this.storageDirectory = f.exists()
-              ? f
-              : Files.createTempDirectory("storage-map-chm-").toFile();
-        } catch (IOException ex) {
-            this.storageDirectory = null;
-        }
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
+    public ConcurrentHashMapStorageProvider(ConcurrentHashMapStorageProviderFactory factory) {
+        this.factory = factory;
     }
 
     @Override
     public void close() {
-        storages.forEach(this::storeMap);
-    }
-
-    private void storeMap(String fileName, ConcurrentHashMapStorage<?, ?, ?> store) {
-        if (fileName != null) {
-            File f = getFile(fileName);
-            try {
-                if (storageDirectory != null && storageDirectory.exists()) {
-                    LOG.debugf("Storing contents to %s", f.getCanonicalPath());
-                    @SuppressWarnings("unchecked")
-                    final ModelCriteriaBuilder readAllCriteria = store.createCriteriaBuilder();
-                    Serialization.MAPPER.writeValue(f, store.read(readAllCriteria));
-                } else {
-                    LOG.debugf("Not storing contents of %s because directory %s does not exist", fileName, this.storageDirectory);
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
-
-    private <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> loadMap(String fileName,
-      Class<V> valueType, Class<M> modelType, EnumSet<Flag> flags) {
-        ConcurrentHashMapStorage<K, V, M> store;
-        if (modelType == UserSessionModel.class) {
-            ConcurrentHashMapStorage clientSessionStore =
-              getStorage("clientSessions", UUID.class, MapAuthenticatedClientSessionEntity.class, AuthenticatedClientSessionModel.class);
-            store = new UserSessionConcurrentHashMapStorage<>(clientSessionStore);
-        } else {
-            store = new ConcurrentHashMapStorage<>(modelType);
-        }
-
-        if (! flags.contains(Flag.INITIALIZE_EMPTY)) {
-            final File f = getFile(fileName);
-            if (f != null && f.exists()) {
-                try {
-                    LOG.debugf("Restoring contents from %s", f.getCanonicalPath());
-                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(List.class, valueType);
-
-                    List<V> values = Serialization.MAPPER.readValue(f, type);
-                    values.forEach((V mce) -> store.create(mce.getId(), mce));
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        }
-
-        return store;
     }
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> getStorage(
+      Class<V> valueType, Class<M> modelType, Flag... flags) {
+        return factory.getStorage(valueType, modelType, flags);
     }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> getStorage(String name,
-      Class<K> keyType, Class<V> valueType, Class<M> modelType, Flag... flags) {
-        EnumSet<Flag> f = flags == null || flags.length == 0 ? EnumSet.noneOf(Flag.class) : EnumSet.of(flags[0], flags);
-        return (ConcurrentHashMapStorage<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, valueType, modelType, f));
-    }
-
-    private File getFile(String fileName) {
-        return storageDirectory == null
-          ? null
-          : new File(storageDirectory, "map-" + fileName + ".json");
-    }
-
 }

@@ -46,6 +46,7 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -56,7 +57,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.ProviderEvent;
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
+import org.infinispan.commons.time.TimeService;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.factories.impl.BasicComponentRegistry;
+import org.infinispan.factories.impl.ComponentRef;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
+import org.infinispan.util.EmbeddedTimeService;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
 
@@ -191,6 +199,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", false);
+        boolean useKeycloakTimeService = config.getBoolean("useKeycloakTimeService", false);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, true);
 
@@ -209,6 +218,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         gcb.serialization().marshaller(new JBossUserMarshaller());
 
         cacheManager = new DefaultCacheManager(gcb.build());
+        if (useKeycloakTimeService) {
+            setTimeServiceToKeycloakTime(cacheManager);
+        }
         containerManaged = false;
 
         logger.debug("Started embedded Infinispan cache container");
@@ -354,6 +366,25 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
     }
 
+    /**
+     * Replaces the {@link TimeService} in infinispan with the one that respects Keycloak {@link Time}.
+     * @param cacheManager
+     * @return Runnable to revert replacement of the infinispan time service
+     */
+    public static Runnable setTimeServiceToKeycloakTime(EmbeddedCacheManager cacheManager) {
+        TimeService previousTimeService = replaceComponent(cacheManager, TimeService.class, KEYCLOAK_TIME_SERVICE, true);
+        AtomicReference<TimeService> ref = new AtomicReference<>(previousTimeService);
+        return () -> {
+            if (ref.get() == null) {
+                logger.warn("Calling revert of the TimeService when testing TimeService was already reverted");
+                return;
+            }
+
+            logger.info("Revert set KeycloakIspnTimeService to the infinispan cacheManager");
+
+            replaceComponent(cacheManager, TimeService.class, ref.getAndSet(null), true);
+        };
+    }
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
         ConfigurationBuilder cb = createCacheConfigurationBuilder();
@@ -545,4 +576,50 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         });
     }
 
+
+    /**
+     * Forked from org.infinispan.test.TestingUtil class
+     *
+     * Replaces a component in a running cache manager (global component registry).
+     *
+     * @param cacheMgr       cache in which to replace component
+     * @param componentType        component type of which to replace
+     * @param replacementComponent new instance
+     * @param rewire               if true, ComponentRegistry.rewire() is called after replacing.
+     *
+     * @return the original component that was replaced
+     */
+    private static <T> T replaceComponent(EmbeddedCacheManager cacheMgr, Class<T> componentType, T replacementComponent, boolean rewire) {
+        GlobalComponentRegistry cr = cacheMgr.getGlobalComponentRegistry();
+        BasicComponentRegistry bcr = cr.getComponent(BasicComponentRegistry.class);
+        ComponentRef<T> old = bcr.getComponent(componentType);
+        bcr.replaceComponent(componentType.getName(), replacementComponent, true);
+        if (rewire) {
+            cr.rewire();
+            cr.rewireNamedRegistries();
+        }
+        return old != null ? old.wired() : null;
+    }
+
+    public static final TimeService KEYCLOAK_TIME_SERVICE = new EmbeddedTimeService() {
+
+        private long getCurrentTimeMillis() {
+            return Time.currentTimeMillis();
+        }
+
+        @Override
+        public long wallClockTime() {
+            return getCurrentTimeMillis();
+        }
+
+        @Override
+        public long time() {
+            return TimeUnit.MILLISECONDS.toNanos(getCurrentTimeMillis());
+        }
+
+        @Override
+        public Instant instant() {
+            return Instant.ofEpochMilli(getCurrentTimeMillis());
+        }
+    };
 }

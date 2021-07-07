@@ -50,7 +50,7 @@ public class CustomChangeLogHistoryService extends StandardChangeLogHistoryServi
     @Override
     public List<RanChangeSet> getRanChangeSets() throws DatabaseException {
         Database database = getDatabase();
-        if (! (database instanceof MySQLDatabase) || database.getDatabaseMajorVersion() < 8) {
+        if (! (database instanceof MySQLDatabase)) {
             return super.getRanChangeSets();
         }
         if (this.ranChangeSetList == null) {

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -372,6 +372,7 @@
                                             <time>300000</time>
                                             <exec>
                                               <postStart>${docker.database.postStart}</postStart>
+                                              <breakOnError>true</breakOnError>
                                             </exec>
                                         </wait>
                                     </run>
@@ -1185,13 +1186,16 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                                <keycloak.mapStorage.provider>concurrenthashmap</keycloak.mapStorage.provider>
+                                <keycloak.dblock.provider>none</keycloak.dblock.provider>
                                 <keycloak.realm.provider>map</keycloak.realm.provider>
                                 <keycloak.client.provider>map</keycloak.client.provider>
                                 <keycloak.clientScope.provider>map</keycloak.clientScope.provider>
                                 <keycloak.group.provider>map</keycloak.group.provider>
                                 <keycloak.role.provider>map</keycloak.role.provider>
                                 <keycloak.user.provider>map</keycloak.user.provider>
-                                <keycloak.serverInfo.provider>map</keycloak.serverInfo.provider>
+                                <keycloak.deploymentState.provider>map</keycloak.deploymentState.provider>
                                 <keycloak.authSession.provider>map</keycloak.authSession.provider>
                                 <keycloak.userSession.provider>map</keycloak.userSession.provider>
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>

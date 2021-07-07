@@ -41,7 +41,14 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         public static final SearchableModelField<ClientModel> ID                 = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<ClientModel> REALM_ID           = new SearchableModelField<>("realmId", String.class);
         public static final SearchableModelField<ClientModel> CLIENT_ID          = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<ClientModel> ENABLED            = new SearchableModelField<>("enabled", Boolean.class);
         public static final SearchableModelField<ClientModel> SCOPE_MAPPING_ROLE = new SearchableModelField<>("scopeMappingRole", String.class);
+
+        /**
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * is always checked for equality, and the value is checked per the operator.
+         */
+        public static final SearchableModelField<ClientModel> ATTRIBUTE          = new SearchableModelField<>("attribute", String[].class);
     }
 
     interface ClientCreationEvent extends ProviderEvent {

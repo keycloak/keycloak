@@ -62,6 +62,8 @@ public class ProviderConfigProperty {
      */
     public static final String MAP_TYPE ="Map";
 
+    public static final String USER_PROFILE_ATTRIBUTE_LIST_TYPE="UserProfileAttributeList";
+
     protected String name;
     protected String label;
     protected String helpText;

@@ -22,6 +22,7 @@ import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatfor
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -132,7 +133,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             synchronized (this) {
                 if (emf == null) {
                     KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
-                        logger.debug("Initializing JPA connections");
+                        logger.debugf("Initializing JPA connections%s", StackUtil.getShortStackTrace());
 
                         Map<String, Object> properties = new HashMap<>();
 

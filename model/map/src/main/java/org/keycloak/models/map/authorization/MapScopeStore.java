@@ -27,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapScopeAdapter;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -36,36 +35,35 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
-public class MapScopeStore implements ScopeStore {
+public class MapScopeStore<K> implements ScopeStore {
 
     private static final Logger LOG = Logger.getLogger(MapScopeStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<UUID, MapScopeEntity, Scope> tx;
-    private final MapStorage<UUID, MapScopeEntity, Scope> scopeStore;
+    final MapKeycloakTransaction<K, MapScopeEntity<K>, Scope> tx;
+    private final MapStorage<K, MapScopeEntity<K>, Scope> scopeStore;
 
-    public MapScopeStore(KeycloakSession session, MapStorage<UUID, MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
+    public MapScopeStore(KeycloakSession session, MapStorage<K, MapScopeEntity<K>, Scope> scopeStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.scopeStore = scopeStore;
         this.tx = scopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private MapScopeEntity registerEntityForChanges(MapScopeEntity origEntity) {
-        final MapScopeEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapScopeEntity::isUpdated);
-        return res;
-    }
-
-    private Scope entityToAdapter(MapScopeEntity origEntity) {
+    private Scope entityToAdapter(MapScopeEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapScopeAdapter(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory());
+        return new MapScopeAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
+            @Override
+            public String getId() {
+                return scopeStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
     private ModelCriteriaBuilder<Scope> forResourceServer(String resourceServerId) {
@@ -90,13 +88,13 @@ public class MapScopeStore implements ScopeStore {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
         }
 
-        UUID uid = id == null ? UUID.randomUUID() : UUID.fromString(id);
-        MapScopeEntity entity = new MapScopeEntity(uid);
+        K uid = id == null ? scopeStore.getKeyConvertor().yieldNewUniqueKey(): scopeStore.getKeyConvertor().fromString(id);
+        MapScopeEntity<K> entity = new MapScopeEntity<>(uid);
 
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
 
-        tx.create(uid, entity);
+        tx.create(entity);
 
         return entityToAdapter(entity);
     }
@@ -104,14 +102,14 @@ public class MapScopeStore implements ScopeStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(UUID.fromString(id));
+        tx.delete(scopeStore.getKeyConvertor().fromString(id));
     }
 
     @Override
     public Scope findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(Scope.SearchableFields.ID, Operator.EQ, id))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -122,7 +120,7 @@ public class MapScopeStore implements ScopeStore {
     public Scope findByName(String name, String resourceServerId) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
+        return tx.read(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
                 Operator.EQ, name))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -133,7 +131,7 @@ public class MapScopeStore implements ScopeStore {
     public List<Scope> findByResourceServer(String id) {
         LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(id))
+        return tx.read(forResourceServer(id))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -157,7 +155,7 @@ public class MapScopeStore implements ScopeStore {
             }
         }
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb).map(this::entityToAdapter), firstResult, maxResult)
+        return paginatedStream(tx.read(mcb).map(this::entityToAdapter), firstResult, maxResult)
                 .collect(Collectors.toList());
     }
 }

@@ -17,23 +17,54 @@
 package org.keycloak.models.map.common;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.jboss.logging.Logger;
+import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  *
  * @author hmlnarik
  */
-public abstract class AbstractMapProviderFactory<T extends Provider> implements ProviderFactory<T> {
+public abstract class AbstractMapProviderFactory<T extends Provider, K, V extends AbstractEntity<K>, M> implements AmphibianProviderFactory<T>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "map";
 
+    public static final String CONFIG_STORAGE = "storage";
+
     protected final Logger LOG = Logger.getLogger(getClass());
 
+    protected final Class<M> modelType;
+
+    protected final Class<V> entityType;
+
+    private Scope storageConfigScope;
+
+    @SuppressWarnings("unchecked")
+    protected AbstractMapProviderFactory(Class<? extends AbstractEntity> entityType, Class<M> modelType) {
+        this.modelType = modelType;
+        this.entityType = (Class<V>) entityType;
+    }
+
     @Override
-    public void init(Scope config) {
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    protected MapStorage<K, V, M> getStorage(KeycloakSession session) {
+        ProviderFactory<MapStorageProvider> storageProviderFactory = getComponentFactory(session.getKeycloakSessionFactory(),
+          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
+        final MapStorageProvider factory = storageProviderFactory.create(session);
+
+        return factory.getStorage(entityType, modelType);
     }
 
     @Override
@@ -41,11 +72,13 @@ public abstract class AbstractMapProviderFactory<T extends Provider> implements 
     }
 
     @Override
-    public void close() {
+    public void init(Scope config) {
+        // Implementation of the map storage SPI
+        this.storageConfigScope = config.scope(CONFIG_STORAGE);
     }
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -37,15 +37,13 @@
         <eap71.version>7.1.5.GA-redhat-00002</eap71.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
 
-        <!-- cache server versions -->
-        <jdg.version>9.4.6.Final-redhat-00002</jdg.version><!-- JDG 7.3.0 -->
-
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
         <jboss.default.http.max-connections>500</jboss.default.http.max-connections>
 
         <cache.default.worker.io-threads>2</cache.default.worker.io-threads>
         <cache.default.worker.task-max-threads>4</cache.default.worker.task-max-threads>
+        <hotrod.sasl.mechanism>DIGEST-MD5</hotrod.sasl.mechanism>
 
         <jboss.cli.executable>jboss-cli.sh</jboss.cli.executable>
 

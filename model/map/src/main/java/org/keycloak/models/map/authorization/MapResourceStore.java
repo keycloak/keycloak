@@ -26,49 +26,47 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
-import org.keycloak.models.map.authorization.entity.AbstractResourceEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
-public class MapResourceStore implements ResourceStore {
+public class MapResourceStore<K extends Comparable<K>> implements ResourceStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<UUID, MapResourceEntity, Resource> tx;
-    private final MapStorage<UUID, MapResourceEntity, Resource> resourceStore;
+    final MapKeycloakTransaction<K, MapResourceEntity<K>, Resource> tx;
+    private final MapStorage<K, MapResourceEntity<K>, Resource> resourceStore;
 
-    public MapResourceStore(KeycloakSession session, MapStorage<UUID, MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
+    public MapResourceStore(KeycloakSession session, MapStorage<K, MapResourceEntity<K>, Resource> resourceStore, AuthorizationProvider provider) {
         this.resourceStore = resourceStore;
         this.tx = resourceStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
         authorizationProvider = provider;
     }
 
-    private MapResourceEntity registerEntityForChanges(MapResourceEntity origEntity) {
-        final MapResourceEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.updateIfChanged(origEntity.getId(), res, MapResourceEntity::isUpdated);
-        return res;
-    }
-    
-    private Resource entityToAdapter(MapResourceEntity origEntity) {
+    private Resource entityToAdapter(MapResourceEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceAdapter(registerEntityForChanges(origEntity), authorizationProvider.getStoreFactory());
+        return new MapResourceAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
+            @Override
+            public String getId() {
+                return resourceStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
     
     private ModelCriteriaBuilder<Resource> forResourceServer(String resourceServerId) {
@@ -92,14 +90,14 @@ public class MapResourceStore implements ResourceStore {
             throw new ModelDuplicateException("Resource with name '" + name + "' for " + resourceServer.getId() + " already exists for request owner " + owner);
         }
 
-        UUID uid = id == null ? UUID.randomUUID() : UUID.fromString(id);
-        MapResourceEntity entity = new MapResourceEntity(uid);
+        K uid = id == null ? resourceStore.getKeyConvertor().yieldNewUniqueKey(): resourceStore.getKeyConvertor().fromString(id);
+        MapResourceEntity<K> entity = new MapResourceEntity<>(uid);
 
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
         entity.setOwner(owner);
 
-        tx.create(uid, entity);
+        tx.create(entity);
 
         return entityToAdapter(entity);
     }
@@ -108,14 +106,14 @@ public class MapResourceStore implements ResourceStore {
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
 
-        tx.delete(UUID.fromString(id));
+        tx.delete(resourceStore.getKeyConvertor().fromString(id));
     }
 
     @Override
     public Resource findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.ID, Operator.EQ, id))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -129,9 +127,10 @@ public class MapResourceStore implements ResourceStore {
 
     private void findByOwnerFilter(String ownerId, String resourceServerId, Consumer<Resource> consumer, int firstResult, int maxResult) {
         LOG.tracef("findByOwnerFilter(%s, %s, %s, %d, %d)%s", ownerId, resourceServerId, consumer, firstResult, maxResult, getShortStackTrace());
-        paginatedStream(tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        Comparator<? super MapResourceEntity<K>> c = Comparator.comparing(MapResourceEntity::getId);
+        paginatedStream(tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.OWNER, Operator.EQ, ownerId))
-                    .sorted(MapResourceEntity.COMPARE_BY_ID), firstResult, maxResult)
+                    .sorted(c), firstResult, maxResult)
                 .map(this::entityToAdapter)
                 .forEach(consumer);
     }
@@ -149,7 +148,7 @@ public class MapResourceStore implements ResourceStore {
     public List<Resource> findByUri(String uri, String resourceServerId) {
         LOG.tracef("findByUri(%s, %s)%s", uri, resourceServerId, getShortStackTrace());
         
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.URI, Operator.EQ, uri))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
@@ -159,7 +158,7 @@ public class MapResourceStore implements ResourceStore {
     public List<Resource> findByResourceServer(String resourceServerId) {
         LOG.tracef("findByResourceServer(%s)%s", resourceServerId, getShortStackTrace());
 
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId))
+        return tx.read(forResourceServer(resourceServerId))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -173,8 +172,8 @@ public class MapResourceStore implements ResourceStore {
                         .toArray(ModelCriteriaBuilder[]::new)
         );
 
-        return paginatedStream(tx.getUpdatedNotRemoved(mcb)
-                .sorted(AbstractResourceEntity.COMPARE_BY_NAME), firstResult, maxResult)
+        return paginatedStream(tx.read(mcb)
+                .sorted(MapResourceEntity.COMPARE_BY_NAME), firstResult, maxResult)
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
@@ -211,7 +210,7 @@ public class MapResourceStore implements ResourceStore {
     public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByScope(%s, %s, %s)%s", scopes, resourceServerId, consumer, getShortStackTrace());
 
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes))
                 .map(this::entityToAdapter)
                 .forEach(consumer);
@@ -225,7 +224,7 @@ public class MapResourceStore implements ResourceStore {
     @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         LOG.tracef("findByName(%s, %s, %s)%s", name, ownerId, resourceServerId, getShortStackTrace());
-        return tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        return tx.read(forResourceServer(resourceServerId)
                     .compare(SearchableFields.OWNER, Operator.EQ, ownerId)
                     .compare(SearchableFields.NAME, Operator.EQ, name))
                 .findFirst()
@@ -236,7 +235,7 @@ public class MapResourceStore implements ResourceStore {
     @Override
     public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
             .compare(SearchableFields.TYPE, Operator.EQ, type))
             .map(this::entityToAdapter)
             .forEach(consumer);
@@ -253,7 +252,7 @@ public class MapResourceStore implements ResourceStore {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.EQ, owner);
         }
 
-        tx.getUpdatedNotRemoved(mcb)
+        tx.read(mcb)
                 .map(this::entityToAdapter)
                 .forEach(consumer);
     }
@@ -261,7 +260,7 @@ public class MapResourceStore implements ResourceStore {
     @Override
     public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByTypeInstance(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
-        tx.getUpdatedNotRemoved(forResourceServer(resourceServerId)
+        tx.read(forResourceServer(resourceServerId)
                 .compare(SearchableFields.OWNER, Operator.NE, resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type))
                 .map(this::entityToAdapter)

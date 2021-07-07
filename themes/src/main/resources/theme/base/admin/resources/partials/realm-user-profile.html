@@ -1,0 +1,244 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li ng-class="{active: isShowAttributes}"><a href="" data-ng-click="showAttributes()">{{:: 'attributes' | translate}}</a></li>
+        <li ng-class="{active: !isShowAttributes}"><a href=""
+                                                      data-ng-click="showJsonEditor()">{{:: 'client-profiles-json-editor' | translate}}</a>
+        </li>
+    </ul>
+
+    <div data-ng-show="showListing()">
+        <table class="datatable table table-striped table-bordered dataTable no-footer">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="4">
+                    <div class="form-inline">
+                        <div class="pull-right" data-ng-show="access.manageClients">
+                            <button class="btn btn-default" data-ng-click="create()">
+                                {{:: 'create' | translate}}
+                            </button>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <th width="25%">{{:: 'name' | translate}}</th>
+                <th width="65%">{{:: 'user.profile.attribute.displayName' | translate}}</th>
+                <th colspan="2">{{:: 'actions' | translate}}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="attribute in config.attributes">
+	            <td class="kc-sorter">
+	                <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="guiOrderUp($index)"><i class="fa fa-angle-up"></i></button>
+	                <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="guiOrderDown($index)"><i class="fa fa-angle-down"></i></button>
+	                <span><a href="" data-ng-click="edit(attribute)">{{attribute.name}}</a></span>
+	            </td>
+                <td>{{attribute.displayName}}</td>
+                <td class="kc-action-cell" data-ng-click="edit(attribute)">{{:: 'edit' | translate}}</td>
+                <td class="kc-action-cell" data-ng-click="removeAttribute(attribute)">{{:: 'delete' | translate}}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm"
+          data-ng-show="!isShowAttributes">
+        <filedset>
+            <div class="form-group">
+                <div class="col-md-10">
+                    <div>
+                        <textarea id="userProfileConfig" name="userProfileConfig" data-ng-model="rawConfig"
+                                  class="form-control ng-binding" rows="20"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-10">
+                    <button class="btn btn-primary" data-ng-click="save()">{{:: 'save' | translate}}</button>
+                    <button class="btn btn-default" data-ng-click="reset()">{{:: 'cancel' | translate}}</button>
+                </div>
+            </div>
+        </filedset>
+
+    </form>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm"
+          data-ng-show="currentAttribute != null">
+        <p/>
+        <legend expanded><span class="text">{{:: 'user.profile.attribute' | translate}} <b
+                data-ng-show="!isCreate">{{currentAttribute.name}}</b> {{:: 'configuration' | translate}}</span>
+        </legend>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="currentAttribute.name">{{:: 'user.profile.attribute.name' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.name.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-4">
+                <input name="currentAttribute.name" data-ng-model="currentAttribute.name" id="currentAttribute.name"
+                       type="text" class="form-control"
+                        data-ng-readonly="!isCreate"
+                       required/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="currentAttribute.displayName">{{:: 'user.profile.attribute.displayName' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.displayName.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-4">
+                <input name="currentAttribute.displayName" data-ng-model="currentAttribute.displayName" id="currentAttribute.displayName"
+                       type="text" class="form-control"/>
+            </div>
+        </div>
+        <div class="form-group" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
+            <label class="col-md-2 control-label" for="selectorByScopeSelect">{{:: 'user.profile.attribute.selector.scopes' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.selector.scopes.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-6">
+                <input type="hidden" ui-select2="selectorByScopeSelect" id="selectorByScopeSelect" data-ng-model="selectorByScope" data-placeholder="Select a scope..." multiple/>
+            </div>
+        </div>
+        <div class="form-group" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
+            <label class="col-md-2 control-label" for="isRequired">{{:: 'user.profile.attribute.required' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.required.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-6">
+                <input name="isRequired" data-ng-model="isRequired" id="isRequired" onoffswitch
+                       on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+            </div>
+        </div>
+        <div class="form-group" data-ng-show="isRequired">
+            <label class="col-md-2 control-label" for="isRequiredRoles">{{:: 'user.profile.attribute.required.roles' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.required.roles.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-6">
+                <input type="hidden" ui-select2="isRequiredRoles" id="isRequiredRoles" data-ng-model="requiredRoles" data-placeholder="Select a role..." multiple/>
+            </div>
+        </div>
+        <div class="form-group" data-ng-show="isRequired">
+            <label class="col-md-2 control-label" for="isRequiredScopes">{{:: 'user.profile.attribute.required.scopes' | translate}}</label>
+            <kc-tooltip>{{:: 'user.profile.attribute.required.scopes.tooltip' | translate}}</kc-tooltip>
+            <div class="col-md-6">
+                <input type="hidden" ui-select2="isRequiredScopes" id="isRequiredScopes" data-ng-model="requiredScopes" data-placeholder="Select a scope..." multiple/>
+            </div>
+        </div>
+        <fieldset class="border-top" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
+            <legend collapsed><span class="text">{{:: 'user.profile.attribute.permission' | translate}}</span></legend>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="canUserView">{{:: 'user.profile.attribute.canUserView' | translate}}</label>
+                <kc-tooltip>{{:: 'user.profile.attribute.canUserView.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-2">
+                    <input name="canUserView" data-ng-model="canUserView" id="canUserView" onoffswitch
+                           on-text="{{:: 'onText' | translate}}"
+                           off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="canAdminView">{{:: 'user.profile.attribute.canAdminView' | translate}}</label>
+                <kc-tooltip>{{:: 'user.profile.attribute.canAdminView.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input name="canAdminView" data-ng-model="canAdminView" id="canAdminView" onoffswitch
+                           on-text="{{:: 'onText' | translate}}"
+                           off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="canUserEdit">{{:: 'user.profile.attribute.canUserEdit' | translate}}</label>
+                <kc-tooltip>{{:: 'user.profile.attribute.canUserEdit.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input name="canUserEdit" data-ng-model="canUserEdit" id="canUserEdit" onoffswitch
+                           on-text="{{:: 'onText' | translate}}"
+                           off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="canAdminEdit">{{:: 'user.profile.attribute.canAdminEdit' | translate}}</label>
+                <kc-tooltip>{{:: 'user.profile.attribute.canAdminEdit.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input name="canAdminEdit" data-ng-model="canAdminEdit" id="canAdminEdit" onoffswitch
+                           on-text="{{:: 'onText' | translate}}"
+                           off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend collapsed><span class="text">{{:: 'user.profile.attribute.validation' | translate}}</span></legend>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="create-validator">{{:: 'user.profile.attribute.validation.add.validator' | translate}}</label>
+                <kc-tooltip>{{:: 'user.profile.attribute.validation.add.validator.tooltip' | translate}}</kc-tooltip>
+                <div class="col-sm-4">
+                    <select id="create-validator" class="form-control" ng-model="newValidator"
+                            ng-options="p.id for p in validatorProviders"
+                            data-ng-change="selectValidator(newValidator)">
+                        <option value="" disabled selected>{{:: 'user.profile.attribute.validation.add.validator' | translate}}...</option>
+                    </select>
+                </div>
+            </div>
+            <kc-component-config realm="realm" config="newValidator.config"
+                                 properties="newValidator.properties"></kc-component-config>
+            <p/>
+            <div class="form-group" data-ng-show="newValidator != null">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                    <button class="btn btn-primary" data-ng-click="addValidator(newValidator)">{{:: 'add' | translate}}</button>
+                    <button class="btn btn-primary" data-ng-click="cancelAddValidator()">{{:: 'cancel' | translate}}</button>
+                </div>
+            </div>
+            <div class="form-group col-sm-10">
+                <table class="datatable table table-striped table-bordered dataTable no-footer">
+                    <thead>
+                    <tr>
+                        <th width="20%">{{:: 'name' | translate}}</th>
+                        <th>{{:: 'config' | translate}}</th>
+                        <th colspan="2">{{:: 'actions' | translate}}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="(key, value) in currentAttribute.validations">
+                        <td>{{key}}</td>
+                        <td>{{value}}</td>
+                        <td class="kc-action-cell" data-ng-click="removeValidator(key)">{{:: 'delete' | translate}}</td>
+                    </tr>
+                    <tr data-ng-show="!currentAttribute.validations || currentAttribute.validations.length == 0">
+                        <td class="text-muted" colspan="3">{{:: 'user.profile.attribute.validation.no.validators' | translate}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend collapsed><span class="text">{{:: 'user.profile.attribute.annotation' | translate}}</span></legend>
+            <div class="form-group col-sm-10">
+            <table class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th>{{:: 'key' | translate}}</th>
+                    <th>{{:: 'value' | translate}}</th>
+                    <th>{{:: 'actions' | translate}}</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="(key, value) in currentAttribute.annotations | toOrderedMapSortedByKey">
+                    <td>{{key}}</td>
+                    <td><input ng-model="currentAttribute.annotations[key]" class="form-control" type="text" name="{{key}}"
+                               id="attribute-{{key}}"/></td>
+                    <td class="kc-action-cell" data-ng-click="removeAnnotation(key)">{{:: 'delete' | translate}}</td>
+                </tr>
+                <tr>
+                    <td><input ng-model="newAnnotation.key" class="form-control" type="text" id="newAnnotationKey"/></td>
+                    <td><input ng-model="newAnnotation.value" class="form-control" type="text" id="newAnnotationValue"/></td>
+                    <td class="kc-action-cell" data-ng-click="addAnnotation()"
+                        data-ng-disabled="!newAnnotation.key.length || !newAnnotation.value.length">{{:: 'add' | translate}}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            </div>
+        </fieldset>
+        <div class="form-group">
+            <p/>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-reset>{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+<kc-menu></kc-menu>

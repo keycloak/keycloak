@@ -22,10 +22,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorConfiguration;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
-public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     private static final Logger logger = Logger.getLogger(TestRaiseExeptionExecutor.class);
 
@@ -51,6 +51,7 @@ public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<C
             case REGISTERED:
             case UPDATED:
             case UNREGISTER:
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
                 return true;
             default :
                 return false;

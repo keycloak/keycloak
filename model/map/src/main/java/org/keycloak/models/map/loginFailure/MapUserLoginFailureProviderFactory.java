@@ -23,46 +23,58 @@ import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
-
-import java.util.UUID;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFactory<UserLoginFailureProvider>
-        implements UserLoginFailureProviderFactory {
+public class MapUserLoginFailureProviderFactory<K> extends AbstractMapProviderFactory<UserLoginFailureProvider, K, MapUserLoginFailureEntity<K>, UserLoginFailureModel>
+        implements UserLoginFailureProviderFactory, ProviderEventListener {
 
-    private MapStorage<UUID, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore;
+    private Runnable onClose;
+
+    public MapUserLoginFailureProviderFactory() {
+        super(MapUserLoginFailureEntity.class, UserLoginFailureModel.class);
+    }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        userLoginFailureStore = sp.getStorage("userLoginFailures", UUID.class, MapUserLoginFailureEntity.class, UserLoginFailureModel.class);
-
-        factory.register(event -> {
-            if (event instanceof UserModel.UserRemovedEvent) {
-                UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
-                MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(userRemovedEvent.getKeycloakSession());
-                provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
-            }
-        });
-
-        factory.register(event -> {
-            if (event instanceof RealmModel.RealmRemovedEvent) {
-                RealmModel.RealmRemovedEvent realmRemovedEvent = (RealmModel.RealmRemovedEvent) event;
-
-                MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(realmRemovedEvent.getKeycloakSession());
-                provider.removeAllUserLoginFailures(realmRemovedEvent.getRealm());
-            }
-        });
+        factory.register(this);
+        onClose = () -> factory.unregister(this);
     }
 
     @Override
-    public MapUserLoginFailureProvider create(KeycloakSession session) {
-        return new MapUserLoginFailureProvider(session, userLoginFailureStore);
+    public void close() {
+        super.close();
+        onClose.run();
     }
+
+    @Override
+    public MapUserLoginFailureProvider<K> create(KeycloakSession session) {
+        return new MapUserLoginFailureProvider<>(session, getStorage(session));
+    }
+
+    @Override
+    public String getHelpText() {
+        return "User login failure provider";
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof UserModel.UserRemovedEvent) {
+            UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
+
+            MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(userRemovedEvent.getKeycloakSession());
+            provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
+        } else if (event instanceof RealmModel.RealmRemovedEvent) {
+            RealmModel.RealmRemovedEvent realmRemovedEvent = (RealmModel.RealmRemovedEvent) event;
+
+            MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(realmRemovedEvent.getKeycloakSession());
+            provider.removeAllUserLoginFailures(realmRemovedEvent.getRealm());
+        }
+    }
+
 }

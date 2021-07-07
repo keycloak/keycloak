@@ -31,15 +31,10 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity> {
+public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity<K>> {
 
-    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity entity) {
+    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity<K> entity) {
         super(session, realm, entity);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -87,11 +82,14 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
         MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
 
+        int timestamp = Time.currentTime();
+        authSessionEntity.setTimestamp(timestamp);
+
         String tabId =  generateTabId();
         entity.getAuthenticationSessions().put(tabId, authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(Time.currentTime());
+        entity.setTimestamp(timestamp);
 
         MapAuthenticationSessionAdapter authSession = new MapAuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
         session.getContext().setAuthenticationSession(authSession);
@@ -102,9 +100,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     public void removeAuthenticationSessionByTabId(String tabId) {
         if (entity.removeAuthenticationSession(tabId) != null) {
             if (entity.getAuthenticationSessions().isEmpty()) {
-                MapRootAuthenticationSessionProvider authenticationSessionProvider =
-                        (MapRootAuthenticationSessionProvider) session.authenticationSessions();
-                authenticationSessionProvider.tx.delete(entity.getId());
+                session.authenticationSessions().removeRootAuthenticationSession(realm, this);
             } else {
                 entity.setTimestamp(Time.currentTime());
             }

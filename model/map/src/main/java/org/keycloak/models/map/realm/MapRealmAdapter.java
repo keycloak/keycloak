@@ -17,6 +17,7 @@
 package org.keycloak.models.map.realm;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import static java.util.Objects.nonNull;
@@ -42,6 +43,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -60,7 +62,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.utils.ComponentUtil;
 
-public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implements RealmModel {
+public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEntity<K>> implements RealmModel {
 
     private static final String ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN = "actionTokenGeneratedByUserLifespan";
     private static final String DEFAULT_SIGNATURE_ALGORITHM = "defaultSignatureAlgorithm";
@@ -75,13 +77,8 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     private PasswordPolicy passwordPolicy;
 
-    public MapRealmAdapter(KeycloakSession session, MapRealmEntity entity) {
+    public MapRealmAdapter(KeycloakSession session, MapRealmEntity<K> entity) {
         super(session, entity);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId();
     }
 
     @Override
@@ -186,7 +183,7 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public void setAttribute(String name, String value) {
-        entity.setAttribute(name, value);
+        entity.setAttribute(name, Collections.singletonList(value));
     }
 
     @Override
@@ -196,12 +193,19 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public String getAttribute(String name) {
-        return entity.getAttribute(name);
+        List<String> attribute = entity.getAttribute(name);
+        if (attribute.isEmpty()) return null;
+        return attribute.get(0);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        return entity.getAttributes();
+        return entity.getAttributes().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, 
+            entry -> {
+                if (entry.getValue().isEmpty()) return null;
+                return entry.getValue().get(0);
+            })
+        );
     }
 
     @Override
@@ -440,11 +444,11 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     public Map<String, Integer> getUserActionTokenLifespans() {
         Map<String, Integer> tokenLifespans = entity.getAttributes().entrySet().stream()
                 .filter(Objects::nonNull)
-                .filter(entry -> nonNull(entry.getValue()))
+                .filter(entry -> nonNull(entry.getValue()) && ! entry.getValue().isEmpty())
                 .filter(entry -> entry.getKey().startsWith(ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "."))
                 .collect(Collectors.toMap(
                         entry -> entry.getKey().substring(ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN.length() + 1),
-                        entry -> Integer.valueOf(entry.getValue())));
+                        entry -> Integer.valueOf(entry.getValue().get(0))));
 
         return Collections.unmodifiableMap(tokenLifespans);
     }
@@ -568,6 +572,11 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     @Override
     public Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults) {
         return session.clients().searchClientsByClientIdStream(this, clientId, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
     }
 
     @Override
@@ -1534,7 +1543,7 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
-        return entity.getClientInitialAccesses().map(MapClientInitialAccessEntity::toModel);
+        return entity.getClientInitialAccesses().stream().map(MapClientInitialAccessEntity::toModel);
     }
 
     @Override
@@ -1556,5 +1565,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     public CibaConfig getCibaPolicy() {
         return new CibaConfig(this);
+    }
+
+    public ParConfig getParPolicy() {
+        return new ParConfig(this);
     }
 }

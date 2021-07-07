@@ -21,23 +21,13 @@
     <parent>
         <artifactId>keycloak-adapters-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Adapter Overlay Distribution</name>
     <description/>
-
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>

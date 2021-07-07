@@ -152,7 +152,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 Assert.assertEquals(origSessions[0], userSession);
 
                 AuthenticatedClientSessionModel clientSession = session.sessions().getClientSession(userSession, realm.getClientByClientId("test-app"),
-                        UUID.fromString(origSessions[0].getAuthenticatedClientSessionByClient(realm.getClientByClientId("test-app").getId()).getId()),
+                        origSessions[0].getAuthenticatedClientSessionByClient(realm.getClientByClientId("test-app").getId()).getId(),
                         false);
                 Assert.assertEquals(origSessions[0].getAuthenticatedClientSessionByClient(realm.getClientByClientId("test-app").getId()).getId(), clientSession.getId());
 
@@ -192,7 +192,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
             if (timer != null && timerTaskCtx != null) {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
 
-                InfinispanTestUtil.revertTimeService(kcSession);
+                InfinispanTestUtil.revertTimeService();
             }
         }
     }

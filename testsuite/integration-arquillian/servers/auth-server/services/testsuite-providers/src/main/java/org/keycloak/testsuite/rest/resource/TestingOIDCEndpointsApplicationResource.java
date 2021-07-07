@@ -18,6 +18,9 @@
 package org.keycloak.testsuite.rest.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 
@@ -29,9 +32,11 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.MacSignatureSignerContext;
 import org.keycloak.crypto.ServerECDSASignatureSignerContext;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -67,6 +72,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -242,15 +248,28 @@ public class TestingOIDCEndpointsApplicationResource {
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     @NoCache
     public void registerOIDCRequest(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm) {
+        AuthorizationEndpointRequestObject oidcRequest = deserializeOidcRequest(encodedRequestObject);
+        setOidcRequest(oidcRequest, jwaAlgorithm);
+    }
+
+    @GET
+    @Path("/register-oidc-request-symmetric-sig")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    @NoCache
+    public void registerOIDCRequestSymmetricSig(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm, @QueryParam("clientSecret") String clientSecret) {
+        AuthorizationEndpointRequestObject oidcRequest = deserializeOidcRequest(encodedRequestObject);
+        setOidcRequest(oidcRequest, jwaAlgorithm, clientSecret);
+    }
+
+    private AuthorizationEndpointRequestObject deserializeOidcRequest(String encodedRequestObject) {
         byte[] serializedRequestObject = Base64Url.decode(encodedRequestObject);
         AuthorizationEndpointRequestObject oidcRequest = null;
         try {
-        	oidcRequest = JsonSerialization.readValue(serializedRequestObject, AuthorizationEndpointRequestObject.class);
+            oidcRequest = JsonSerialization.readValue(serializedRequestObject, AuthorizationEndpointRequestObject.class);
         } catch (IOException e) {
             throw new BadRequestException("deserialize request object failed : " + e.getMessage());
         }
-
-        setOidcRequest(oidcRequest, jwaAlgorithm);
+        return oidcRequest;
     }
 
     private void setOidcRequest(Object oidcRequest, String jwaAlgorithm) {
@@ -258,7 +277,7 @@ public class TestingOIDCEndpointsApplicationResource {
 
         if ("none".equals(jwaAlgorithm)) {
             clientData.setOidcRequest(new JWSBuilder().jsonContent(oidcRequest).none());
-        } else  if (clientData.getSigningKeyPair() == null) {
+        } else if (clientData.getSigningKeyPair() == null) {
             throw new BadRequestException("signing key not set");
         } else {
             PrivateKey privateKey = clientData.getSigningKeyPair().getPrivate();
@@ -281,6 +300,33 @@ public class TestingOIDCEndpointsApplicationResource {
         }
     }
 
+    private void setOidcRequest(Object oidcRequest, String jwaAlgorithm, String clientSecret) {
+        if (!isSupportedAlgorithm(jwaAlgorithm)) throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
+        if ("none".equals(jwaAlgorithm)) {
+            clientData.setOidcRequest(new JWSBuilder().jsonContent(oidcRequest).none());
+        } else {
+            SignatureSignerContext signer;
+            switch (jwaAlgorithm) {
+                case Algorithm.HS256:
+                case Algorithm.HS384:
+                case Algorithm.HS512:
+                    KeyWrapper keyWrapper = new KeyWrapper();
+                    SecretKey secretKey = new SecretKeySpec(clientSecret.getBytes(StandardCharsets.UTF_8), JavaAlgorithm.getJavaAlgorithm(jwaAlgorithm));
+                    keyWrapper.setSecretKey(secretKey);
+                    String kid = KeyUtils.createKeyId(secretKey);
+                    keyWrapper.setKid(kid);
+                    keyWrapper.setAlgorithm(jwaAlgorithm);
+                    keyWrapper.setUse(KeyUse.SIG);
+                    keyWrapper.setType(KeyType.OCT);
+                    signer = new MacSignatureSignerContext(keyWrapper);
+                    clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));
+                    break;
+                default:
+                    throw new BadRequestException("Unknown jwaAlgorithm: " + jwaAlgorithm);
+            }
+        }
+    }
+
     private boolean isSupportedAlgorithm(String signingAlgorithm) {
         if (signingAlgorithm == null) return false;
         boolean ret = false;
@@ -295,6 +341,9 @@ public class TestingOIDCEndpointsApplicationResource {
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:
+            case Algorithm.HS256:
+            case Algorithm.HS384:
+            case Algorithm.HS512:
             case JWEConstants.RSA1_5:
             case JWEConstants.RSA_OAEP:
             case JWEConstants.RSA_OAEP_256:
@@ -378,6 +427,25 @@ public class TestingOIDCEndpointsApplicationResource {
         @JsonProperty(Constants.KC_ACTION)
         String action;
 
+        // CIBA
+
+        @JsonProperty(CibaGrantType.CLIENT_NOTIFICATION_TOKEN)
+        String clientNotificationToken;
+
+        @JsonProperty(CibaGrantType.LOGIN_HINT_TOKEN)
+        String loginHintToken;
+
+        @JsonProperty(OIDCLoginProtocol.ID_TOKEN_HINT)
+        String idTokenHint;
+
+        @JsonProperty(CibaGrantType.USER_CODE)
+        String userCode;
+
+        @JsonProperty(CibaGrantType.BINDING_MESSAGE)
+        String bindingMessage;
+
+        Integer requested_expiry;
+
         public String getClientId() {
             return clientId;
         }
@@ -446,7 +514,7 @@ public class TestingOIDCEndpointsApplicationResource {
             return nonce;
         }
 
-        public void getNonce(String nonce) {
+        public void setNonce(String nonce) {
             this.nonce = nonce;
         }
 
@@ -513,6 +581,55 @@ public class TestingOIDCEndpointsApplicationResource {
         public void setAction(String action) {
             this.action = action;
         }
+
+        public String getClientNotificationToken() {
+            return clientNotificationToken;
+        }
+
+        public void setClientNotificationToken(String clientNotificationToken) {
+            this.clientNotificationToken = clientNotificationToken;
+        }
+
+        public String getLoginHintToken() {
+            return loginHintToken;
+        }
+
+        public void setLoginHintToken(String loginHintToken) {
+            this.loginHintToken = loginHintToken;
+        }
+
+        public String getIdTokenHint() {
+            return idTokenHint;
+        }
+
+        public void setIdTokenHint(String idTokenHint) {
+            this.idTokenHint = idTokenHint;
+        }
+
+        public String getBindingMessage() {
+            return bindingMessage;
+        }
+
+        public void setBindingMessage(String bindingMessage) {
+            this.bindingMessage = bindingMessage;
+        }
+
+        public String getUserCode() {
+            return userCode;
+        }
+
+        public void setUserCode(String userCode) {
+            this.userCode = userCode;
+        }
+
+        public Integer getRequested_expiry() {
+            return requested_expiry;
+        }
+
+        public void setRequested_expiry(Integer requested_expiry) {
+            this.requested_expiry = requested_expiry;
+        }
+
     }
 
     @POST

@@ -24,6 +24,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.util.JsonSerialization;
 
 public class RealmLocalizationResource {
@@ -130,7 +132,9 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<String> getRealmLocalizationLocales() {
-        this.auth.realm().requireViewRealm();
+        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
+            throw new ForbiddenException();
+        }
 
         return realm.getRealmLocalizationTexts().keySet().stream().sorted();
     }
@@ -139,7 +143,10 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale) {
-        this.auth.realm().requireViewRealm();
+        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
+            throw new ForbiddenException();
+        }
+
         return realm.getRealmLocalizationTextsByLocale(locale);
     }
 
@@ -147,7 +154,10 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key) {
-        this.auth.realm().requireViewRealm();
+        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
+            throw new ForbiddenException();
+        }
+
         String text = session.realms().getLocalizationTextsById(realm, locale, key);
         if (text != null) {
             return text;

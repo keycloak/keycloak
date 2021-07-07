@@ -38,6 +38,7 @@ import javax.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Map;
+import org.infinispan.commons.time.TimeService;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -197,7 +198,7 @@ public interface TestingResource {
     void removeExpired(@QueryParam("realm") final String realm);
 
     /**
-     * Will set {@link org.keycloak.testsuite.model.infinispan.KeycloakTestTimeService} to the infinispan CacheManager before the test.
+     * Will set Inifispan's {@link TimeService} that is aware of Keycloak time shifts to the infinispan {@code CacheManager} before the test.
      * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}
      */
     @POST

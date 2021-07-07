@@ -811,6 +811,21 @@
     "useTemplateScope" : false,
     "useTemplateMappers" : false
   }, {
+    "clientId": "migration-saml-client",
+    "enabled": true,
+    "fullScopeAllowed": true,
+    "protocol": "saml",
+    "baseUrl": "http://localhost:8080/sales-post",
+    "redirectUris": [
+      "http://localhost:8080/sales-post/*"
+    ],
+    "attributes": {
+      "saml_assertion_consumer_url_post": "http://localhost:8080/sales-post/saml",
+      "saml_single_logout_service_url_post": "http://localhost:8080/sales-post/saml",
+      "saml.authnstatement": "true",
+      "saml_idp_initiated_sso_url_name": "sales-post"
+    }
+  }, {
     "id" : "9a37d2c5-6a36-4a2c-b837-f2ea846fb0d5",
     "clientId" : "realm-management",
     "name" : "${client_realm-management}",
@@ -1630,7 +1645,8 @@
     "actionTokenGeneratedByAdminLifespan" : "43200",
     "bruteForceProtected" : "false",
     "_browser_header.contentSecurityPolicy" : "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
-    "waitIncrementSeconds" : "60"
+    "waitIncrementSeconds" : "60",
+    "custom_attribute": "custom_value"
   },
   "keycloakVersion" : "7.2.0.GA"
 }, {

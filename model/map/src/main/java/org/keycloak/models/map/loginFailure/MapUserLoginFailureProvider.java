@@ -21,27 +21,26 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
-import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 
-import java.util.UUID;
 import java.util.function.Function;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
+public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserLoginFailureProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<UUID, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureTx;
-    private final MapStorage<UUID, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore;
+    protected final MapKeycloakTransaction<K, MapUserLoginFailureEntity<K>, UserLoginFailureModel> userLoginFailureTx;
+    private final MapStorage<K, MapUserLoginFailureEntity<K>, UserLoginFailureModel> userLoginFailureStore;
 
-    public MapUserLoginFailureProvider(KeycloakSession session, MapStorage<UUID, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore) {
+    public MapUserLoginFailureProvider(KeycloakSession session, MapStorage<K, MapUserLoginFailureEntity<K>, UserLoginFailureModel> userLoginFailureStore) {
         this.session = session;
         this.userLoginFailureStore = userLoginFailureStore;
 
@@ -49,15 +48,14 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
         session.getTransactionManager().enlistAfterCompletion(userLoginFailureTx);
     }
 
-    private Function<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureEntityToAdapterFunc(RealmModel realm) {
+    private Function<MapUserLoginFailureEntity<K>, UserLoginFailureModel> userLoginFailureEntityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapUserLoginFailureAdapter(session, realm, registerEntityForChanges(origEntity));
-    }
-
-    private MapUserLoginFailureEntity registerEntityForChanges(MapUserLoginFailureEntity origEntity) {
-        MapUserLoginFailureEntity res = userLoginFailureTx.read(origEntity.getId(), id -> Serialization.from(origEntity));
-        userLoginFailureTx.updateIfChanged(origEntity.getId(), res, MapUserLoginFailureEntity::isUpdated);
-        return res;
+        return origEntity -> new MapUserLoginFailureAdapter<K>(session, realm, registerEntityForChanges(userLoginFailureTx, origEntity)) {
+            @Override
+            public String getId() {
+                return userLoginFailureStore.getKeyConvertor().keyToString(entity.getId());
+            }
+        };
     }
 
     @Override
@@ -68,7 +66,7 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
         LOG.tracef("getUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        return userLoginFailureTx.getUpdatedNotRemoved(mcb)
+        return userLoginFailureTx.read(mcb)
                 .findFirst()
                 .map(userLoginFailureEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -82,12 +80,12 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
         LOG.tracef("addUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        MapUserLoginFailureEntity userLoginFailureEntity = userLoginFailureTx.getUpdatedNotRemoved(mcb).findFirst().orElse(null);
+        MapUserLoginFailureEntity<K> userLoginFailureEntity = userLoginFailureTx.read(mcb).findFirst().orElse(null);
 
         if (userLoginFailureEntity == null) {
-            userLoginFailureEntity = new MapUserLoginFailureEntity(UUID.randomUUID(), realm.getId(), userId);
+            userLoginFailureEntity = new MapUserLoginFailureEntity<>(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), realm.getId(), userId);
 
-            userLoginFailureTx.create(userLoginFailureEntity.getId(), userLoginFailureEntity);
+            userLoginFailureTx.create(userLoginFailureEntity);
         }
 
         return userLoginFailureEntityToAdapterFunc(realm).apply(userLoginFailureEntity);
@@ -101,7 +99,7 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
         LOG.tracef("removeUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        userLoginFailureTx.delete(UUID.randomUUID(), mcb);
+        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), mcb);
     }
 
     @Override
@@ -111,7 +109,7 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
         LOG.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
-        userLoginFailureTx.delete(UUID.randomUUID(), mcb);
+        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), mcb);
     }
 
     @Override

@@ -18,26 +18,23 @@ package org.keycloak.models.map.realm;
 
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorage;
 
-public class MapRealmProviderFactory extends AbstractMapProviderFactory<RealmProvider> implements RealmProviderFactory {
+public class MapRealmProviderFactory<K> extends AbstractMapProviderFactory<RealmProvider, K, MapRealmEntity<K>, RealmModel> implements RealmProviderFactory {
 
-    //for now we have to support String ids
-    private MapStorage<String, MapRealmEntity, RealmModel> store;
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("realm", String.class, MapRealmEntity.class, RealmModel.class);
+    public MapRealmProviderFactory() {
+        super(MapRealmEntity.class, RealmModel.class);
     }
 
     @Override
     public RealmProvider create(KeycloakSession session) {
-        return new MapRealmProvider(session, store);
+        return new MapRealmProvider<>(session, getStorage(session));
     }
+
+    @Override
+    public String getHelpText() {
+        return "Realm provider";
+     }
 }

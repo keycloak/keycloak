@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -337,8 +338,19 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId) {
+        final RealmModel realm = getContext().getRealm();
+        if (realm == null) {
+            throw new IllegalArgumentException("Realm not set in the context.");
+        }
+
+        // Loads componentModel from the realm
+        return this.getComponentProvider(clazz, componentId, KeycloakModelUtils.componentModelGetter(realm.getId(), componentId));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter) {
         Integer hash = clazz.hashCode() + componentId.hashCode();
         T provider = (T) providers.get(hash);
         final RealmModel realm = getContext().getRealm();
@@ -351,7 +363,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
         if (provider == null) {
             final String realmId = realm.getId();
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, realmId, componentId, KeycloakModelUtils.componentModelGetter(realmId, componentId));
+            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, realmId, componentId, modelGetter);
             if (providerFactory != null) {
                 provider = providerFactory.create(this);
                 providers.put(hash, provider);
@@ -499,7 +511,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public ClientPolicyManager clientPolicy() {
         if (clientPolicyManager == null) {
-            clientPolicyManager = new DefaultClientPolicyManager(this);
+            clientPolicyManager = getProvider(ClientPolicyManager.class);
         }
         return clientPolicyManager;
     }

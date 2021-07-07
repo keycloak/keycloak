@@ -20,10 +20,10 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
 
-    <name>Feature Pack Builds</name>
+    <name>Galleon Feature Pack Builds</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,5 +32,6 @@
 
     <modules>
         <module>adapter-galleon-pack</module>
-    </modules>
+        <module>server-galleon-pack</module>
+   </modules>
 </project>

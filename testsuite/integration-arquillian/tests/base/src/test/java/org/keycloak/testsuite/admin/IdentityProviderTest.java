@@ -580,9 +580,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         expected.add("hardcoded-user-session-attribute-idp-mapper");
         expected.add("oidc-hardcoded-role-idp-mapper");
         expected.add("hardcoded-attribute-idp-mapper");
-        for (String id: mapperIds) {
-            expected.add(id);
-        }
+        expected.add("multi-valued-test-idp-mapper");
+        expected.addAll(Arrays.asList(mapperIds));
+
         Assert.assertEquals("mapperTypes", expected, mapperTypes.keySet());
     }
 

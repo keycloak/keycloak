@@ -105,10 +105,10 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
 
-        // try refresh with new token on DC2. It should pass.
+        // try refresh with new token on DC2. It should fail because client session not valid anymore
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken2, "password");
-        Assert.assertNotNull(tokenResponse.getAccessToken());
-        Assert.assertNull(tokenResponse.getError());
+        Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
+        Assert.assertNotNull(tokenResponse.getError());
 
         // Revert
         realmRep = testRealm().toRepresentation();

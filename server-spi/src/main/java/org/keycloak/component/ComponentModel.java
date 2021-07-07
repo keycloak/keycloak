@@ -132,6 +132,10 @@ public class ComponentModel implements Serializable {
         notes.put(key, object);
     }
 
+    public void removeNote(String key) {
+        notes.remove(key);
+    }
+
     public String getProviderId() {
         return providerId;
     }

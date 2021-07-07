@@ -16,29 +16,25 @@
  */
 package org.keycloak.models.map.role;
 
-import java.util.UUID;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.RoleProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorage;
 
-public class MapRoleProviderFactory extends AbstractMapProviderFactory<RoleProvider> implements RoleProviderFactory {
+public class MapRoleProviderFactory<K> extends AbstractMapProviderFactory<RoleProvider, K, MapRoleEntity<K>, RoleModel> implements RoleProviderFactory {
 
-    private MapStorage<UUID, MapRoleEntity, RoleModel> store;
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("roles", UUID.class, MapRoleEntity.class, RoleModel.class);
+    public MapRoleProviderFactory() {
+        super(MapRoleEntity.class, RoleModel.class);
     }
-
 
     @Override
     public RoleProvider create(KeycloakSession session) {
-        return new MapRoleProvider(session, store);
+        return new MapRoleProvider<>(session, getStorage(session));
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Role provider";
     }
 }

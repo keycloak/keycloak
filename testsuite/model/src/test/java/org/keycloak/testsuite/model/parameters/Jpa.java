@@ -30,7 +30,6 @@ import org.keycloak.models.session.UserSessionPersisterSpi;
 import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.migration.MigrationSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
-import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
 import org.keycloak.models.jpa.JpaClientScopeProviderFactory;
 import org.keycloak.models.jpa.JpaGroupProviderFactory;
@@ -53,7 +52,6 @@ public class Jpa extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       // jpa-specific
-      .add(DBLockSpi.class)
       .add(JpaConnectionSpi.class)
       .add(JpaUpdaterSpi.class)
       .add(LiquibaseConnectionSpi.class)
@@ -104,7 +102,8 @@ public class Jpa extends KeycloakModelParameters {
           .spi("role").defaultProvider("jpa")
           .spi("user").defaultProvider("jpa")
           .spi("realm").defaultProvider("jpa")
-          .spi("serverInfo").defaultProvider("jpa")
+          .spi("deploymentState").defaultProvider("jpa")
+          .spi("dblock").defaultProvider("jpa")
         ;
     }
 }

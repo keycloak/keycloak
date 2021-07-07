@@ -1078,4 +1078,41 @@ public class GroupTest extends AbstractGroupTest {
             user.remove();
         }
     }
+
+    /**
+     * Verifies that the group search works the same across group provider implementations for hierarchies
+     * @link https://issues.jboss.org/browse/KEYCLOAK-18390
+     */
+    @Test
+    public void searchGroupsOnGroupHierarchies() throws Exception {
+        final RealmResource realm = this.adminClient.realms().realm("test");
+
+        final String searchFor = UUID.randomUUID().toString();
+
+        final GroupRepresentation g1 = new GroupRepresentation();
+        g1.setName("g1");
+        final GroupRepresentation g1_1 = new GroupRepresentation();
+        g1_1.setName("g1.1-" + searchFor);
+
+        createGroup(realm, g1);
+        addSubGroup(realm, g1, g1_1);
+
+        final GroupRepresentation expectedRootGroup = realm.groups().group(g1.getId()).toRepresentation();
+        final GroupRepresentation expectedChildGroup = realm.groups().group(g1_1.getId()).toRepresentation();
+
+        final List<GroupRepresentation> searchResultGroups = realm.groups().groups(searchFor, 0, 10);
+
+        Assert.assertFalse(searchResultGroups.isEmpty());
+        Assert.assertEquals(expectedRootGroup.getId(), searchResultGroups.get(0).getId());
+        Assert.assertEquals(expectedRootGroup.getName(), searchResultGroups.get(0).getName());
+
+        List<GroupRepresentation> searchResultSubGroups = searchResultGroups.get(0).getSubGroups();
+        Assert.assertEquals(expectedChildGroup.getId(), searchResultSubGroups.get(0).getId());
+        Assert.assertEquals(expectedChildGroup.getName(), searchResultSubGroups.get(0).getName());
+
+        searchResultSubGroups.remove(0);
+        Assert.assertTrue(searchResultSubGroups.isEmpty());
+        searchResultGroups.remove(0);
+        Assert.assertTrue(searchResultGroups.isEmpty());
+    }
 }

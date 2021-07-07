@@ -321,6 +321,22 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="requestUriLifespan" class="two-lines">{{:: 'request-uri-lifespan' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" string-to-number data-ng-model="requestUriLifespan.time"
+                       id="requestUriLifespan" name="requestUriLifespan">
+                <select class="form-control" name="requestUriLifespan" data-ng-model="requestUriLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>
+                {{:: 'request-uri-lifespan.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="actionTokenAttributeSelect" class="two-lines">
                 {{:: 'action-token-generated-by-user.operation' | translate }} </label>
             <div class="form-inline col-md-6 time-selector">

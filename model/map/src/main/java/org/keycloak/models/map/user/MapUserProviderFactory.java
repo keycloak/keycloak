@@ -18,33 +18,29 @@
 package org.keycloak.models.map.user;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserProviderFactory;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
-
-import java.util.UUID;
 
 /**
  *
  * @author mhajas
  */
-public class MapUserProviderFactory extends AbstractMapProviderFactory<UserProvider> implements UserProviderFactory {
+public class MapUserProviderFactory<K> extends AbstractMapProviderFactory<UserProvider, K, MapUserEntity<K>, UserModel> implements UserProviderFactory {
 
-    private MapStorage<UUID, MapUserEntity, UserModel> store;
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("users", UUID.class, MapUserEntity.class, UserModel.class);
+    public MapUserProviderFactory() {
+        super(MapUserEntity.class, UserModel.class);
     }
-
 
     @Override
     public UserProvider create(KeycloakSession session) {
-        return new MapUserProvider(session, store);
+        return new MapUserProvider<>(session, getStorage(session));
     }
+
+    @Override
+    public String getHelpText() {
+        return "User provider";
+    }
+
 }

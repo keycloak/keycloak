@@ -195,7 +195,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/revert-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     public Response revertTestingInfinispanTimeService() {
-        InfinispanTestUtil.revertTimeService(session);
+        InfinispanTestUtil.revertTimeService();
         return Response.noContent().build();
     }
 

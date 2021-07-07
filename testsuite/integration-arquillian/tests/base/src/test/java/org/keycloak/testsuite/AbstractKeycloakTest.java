@@ -46,7 +46,6 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
@@ -689,5 +688,15 @@ public abstract class AbstractKeycloakTest {
             }
         }
         return in;
+    }
+
+    /**
+     * Get product/project name
+     *
+     * @return f.e. 'RH-SSO' or 'Keycloak'
+     */
+    protected String getProjectName() {
+        final boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
+        return isProduct ? Profile.PRODUCT_NAME : Profile.PROJECT_NAME;
     }
 }

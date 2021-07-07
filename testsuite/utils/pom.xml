@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -242,12 +242,12 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
+            <version>${postgresql.driver.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>${mariadb.version}</version>
+            <version>${mariadb.driver.version}</version>
         </dependency>
     </dependencies>
 
@@ -266,6 +266,34 @@
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${keycloak.additionalClasspathElement}</additionalClasspathElement>
                             </additionalClasspathElements>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>map-storage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <systemProperties>
+                                <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
+                                <systemProperty><key>keycloak.mapStorage.provider</key><value>concurrenthashmap</value></systemProperty>
+                                <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.group.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.role.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.user.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.serverInfo.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.authSession.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.userSession.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.loginFailure.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.authorization.provider</key><value>map</value></systemProperty>
+                            </systemProperties>
                         </configuration>
                     </plugin>
                 </plugins>

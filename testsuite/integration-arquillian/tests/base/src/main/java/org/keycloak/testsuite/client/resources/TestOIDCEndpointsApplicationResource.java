@@ -73,6 +73,11 @@ public interface TestOIDCEndpointsApplicationResource {
     void registerOIDCRequest(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
     @GET
+    @Path("/register-oidc-request-symmetric-sig")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    void registerOIDCRequestSymmetricSig(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm, @QueryParam("clientSecret") String clientSecret);
+
+    @GET
     @Path("/get-oidc-request")
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     String getOIDCRequest();

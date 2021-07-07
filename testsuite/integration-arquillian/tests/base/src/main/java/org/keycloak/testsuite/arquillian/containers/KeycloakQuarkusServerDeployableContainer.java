@@ -16,6 +16,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,6 +48,9 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     @Inject
     private Instance<SuiteContext> suiteContext;
+
+    private boolean forceReaugmentation;
+    private List<String> additionalArgs = Collections.emptyList();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -120,8 +125,12 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
         }
 
-        if (configuration.isReaugmentBeforeStart()) {
-            ProcessBuilder reaugment = new ProcessBuilder("./kc.sh", "config");
+        if (isReaugmentBeforeStart()) {
+            List<String> commands = new ArrayList<>(Arrays.asList("./kc.sh", "config", "-Dquarkus.http.root-path=/auth"));
+
+            addAdditionalCommands(commands);
+
+            ProcessBuilder reaugment = new ProcessBuilder(commands);
 
             reaugment.directory(wrkDir).inheritIO();
 
@@ -134,6 +143,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         }
 
         return builder.start();
+    }
+
+    private boolean isReaugmentBeforeStart() {
+        return configuration.isReaugmentBeforeStart() || forceReaugmentation;
     }
 
     private String[] getProcessCommands() {
@@ -158,7 +171,13 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
 
+        addAdditionalCommands(commands);
+
         return commands.toArray(new String[commands.size()]);
+    }
+
+    private void addAdditionalCommands(List<String> commands) {
+        commands.addAll(additionalArgs);
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {
@@ -251,5 +270,15 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     private long getStartTimeout() {
         return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
+    }
+
+    public void forceReAugmentation(String... args) {
+        forceReaugmentation = true;
+        additionalArgs = Arrays.asList(args);
+    }
+
+    public void resetConfiguration() {
+        additionalArgs = Collections.emptyList();
+        forceReAugmentation();
     }
 }

@@ -26,32 +26,51 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
-
-import java.util.UUID;
+import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  * @author mhajas
  */
-public class MapAuthorizationStoreFactory implements AuthorizationStoreFactory {
+public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
 
-    private MapStorage<UUID, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore;
-    private MapStorage<UUID, MapPolicyEntity, Policy> policyStore;
-    private MapStorage<String, MapResourceServerEntity, ResourceServer> resourceServerStore;
-    private MapStorage<UUID, MapResourceEntity, Resource> resourceStore;
-    private MapStorage<UUID, MapScopeEntity, Scope> scopeStore;
+    public static final String PROVIDER_ID = AbstractMapProviderFactory.PROVIDER_ID;
+
+    private Config.Scope storageConfigScope;
 
     @Override
     public StoreFactory create(KeycloakSession session) {
+        MapStorageProviderFactory storageProviderFactory = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
+          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
+        final MapStorageProvider mapStorageProvider = storageProviderFactory.create(session);
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+
+
+        MapStorage permissionTicketStore;
+        MapStorage policyStore;
+        MapStorage resourceServerStore;
+        MapStorage resourceStore;
+        MapStorage scopeStore;
+
+        permissionTicketStore = mapStorageProvider.getStorage(MapPermissionTicketEntity.class, PermissionTicket.class);
+        policyStore = mapStorageProvider.getStorage(MapPolicyEntity.class, Policy.class);
+        resourceServerStore = mapStorageProvider.getStorage(MapResourceServerEntity.class, ResourceServer.class);
+        resourceStore = mapStorageProvider.getStorage(MapResourceEntity.class, Resource.class);
+        scopeStore = mapStorageProvider.getStorage(MapScopeEntity.class, Scope.class);
+        
         return new MapAuthorizationStore(session,
                     permissionTicketStore,
                     policyStore,
@@ -63,21 +82,8 @@ public class MapAuthorizationStoreFactory implements AuthorizationStoreFactory {
     }
 
     @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        AuthorizationStoreFactory.super.postInit(factory);
-        
-        MapStorageProvider mapStorageProvider = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        permissionTicketStore = mapStorageProvider.getStorage("authzPermissionTickets", UUID.class, MapPermissionTicketEntity.class, PermissionTicket.class);
-        policyStore = mapStorageProvider.getStorage("authzPolicies", UUID.class, MapPolicyEntity.class, Policy.class);
-        resourceServerStore = mapStorageProvider.getStorage("authzResourceServers", String.class, MapResourceServerEntity.class, ResourceServer.class);
-        resourceStore = mapStorageProvider.getStorage("authzResources", UUID.class, MapResourceEntity.class, Resource.class);
-        scopeStore = mapStorageProvider.getStorage("authzScopes", UUID.class, MapScopeEntity.class, Scope.class);
-
+    public void init(org.keycloak.Config.Scope config) {
+        this.storageConfigScope = config.scope("storage");
     }
 
     @Override
@@ -87,6 +93,16 @@ public class MapAuthorizationStoreFactory implements AuthorizationStoreFactory {
 
     @Override
     public String getId() {
-        return "map";
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Authorization store provider";
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

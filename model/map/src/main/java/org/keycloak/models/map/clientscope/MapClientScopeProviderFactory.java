@@ -16,28 +16,25 @@
  */
 package org.keycloak.models.map.clientscope;
 
-import java.util.UUID;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.ClientScopeProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
 
-public class MapClientScopeProviderFactory extends AbstractMapProviderFactory<ClientScopeProvider> implements ClientScopeProviderFactory {
+public class MapClientScopeProviderFactory<K> extends AbstractMapProviderFactory<ClientScopeProvider, K, MapClientScopeEntity<K>, ClientScopeModel> implements ClientScopeProviderFactory {
 
-    private MapStorage<UUID, MapClientScopeEntity, ClientScopeModel> store;
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("clientscope", UUID.class, MapClientScopeEntity.class, ClientScopeModel.class);
+    public MapClientScopeProviderFactory() {
+        super(MapClientScopeEntity.class, ClientScopeModel.class);
     }
 
     @Override
     public ClientScopeProvider create(KeycloakSession session) {
-        return new MapClientScopeProvider(session, store);
+        return new MapClientScopeProvider<>(session, getStorage(session));
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Client scope provider";
     }
 }

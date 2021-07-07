@@ -92,6 +92,15 @@ public class ProtocolMapperUtil {
     }
 
     public static ProtocolMapperRepresentation createClaimMapper(String name,
+            String userAttribute, String userProfileAttribute,
+            String tokenClaimName, String claimType,
+            boolean accessToken, boolean idToken, boolean multivalued) {
+        return ModelToRepresentation.toRepresentation(UserAttributeMapper.createClaimMapper(name, userAttribute, userProfileAttribute, tokenClaimName,
+                claimType, accessToken, idToken, multivalued, false));
+
+    }
+
+    public static ProtocolMapperRepresentation createClaimMapper(String name,
                                                                  String userAttribute,
                                                                  String tokenClaimName, String claimType,
                                                                  boolean accessToken, boolean idToken,

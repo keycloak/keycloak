@@ -22,8 +22,10 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>Represents all identity information obtained from an {@link org.keycloak.broker.provider.IdentityProvider} after a
@@ -206,6 +208,39 @@ public class BrokeredIdentityContext {
 
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
+    }
+
+    /**
+     * Obtains the set of roles that were granted by mappers.
+     *
+     * @return a {@link Set} containing the roles.
+     */
+    private Set<String> getMapperGrantedRoles() {
+        Set<String> roles = (Set<String>) this.contextData.get(Constants.MAPPER_GRANTED_ROLES);
+        if (roles == null) {
+            roles = new HashSet<>();
+            this.contextData.put(Constants.MAPPER_GRANTED_ROLES, roles);
+        }
+        return roles;
+    }
+
+    /**
+     * Verifies if a mapper has already granted the specified role.
+     *
+     * @param roleName the name of the role.
+     * @return {@code true} if a mapper has already granted the role; {@code false} otherwise.
+     */
+    public boolean hasMapperGrantedRole(final String roleName) {
+        return this.getMapperGrantedRoles().contains(roleName);
+    }
+
+    /**
+     * Adds the specified role to the set of roles granted by mappers.
+     *
+     * @param roleName the name of the role.
+     */
+    public void addMapperGrantedRole(final String roleName) {
+        this.getMapperGrantedRoles().add(roleName);
     }
 
     /**

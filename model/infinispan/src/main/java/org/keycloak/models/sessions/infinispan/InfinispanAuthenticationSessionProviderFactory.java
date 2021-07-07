@@ -48,12 +48,19 @@ import org.jboss.logging.Logger;
 public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
+    public static final int PROVIDER_PRIORITY = 1;
 
     private InfinispanKeyGenerator keyGenerator;
 
     private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
+    private int authSessionsLimit;
+
     public static final String PROVIDER_ID = "infinispan";
+
+    public static final String AUTH_SESSIONS_LIMIT = "authSessionsLimit";
+
+    public static final int DEFAULT_AUTH_SESSIONS_LIMIT = 300;
 
     public static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 
@@ -63,7 +70,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public void init(Config.Scope config) {
-
+        // get auth sessions limit from config or use default if not provided
+        int configInt = config.getInt(AUTH_SESSIONS_LIMIT, DEFAULT_AUTH_SESSIONS_LIMIT);
+        // use default if provided value is not a positive number
+        authSessionsLimit = (configInt <= 0) ? DEFAULT_AUTH_SESSIONS_LIMIT : configInt;
     }
 
 
@@ -114,7 +124,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public AuthenticationSessionProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache);
+        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache, authSessionsLimit);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {
@@ -176,5 +186,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

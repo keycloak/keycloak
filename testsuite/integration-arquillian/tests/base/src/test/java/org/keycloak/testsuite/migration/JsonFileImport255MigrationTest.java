@@ -26,6 +26,8 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.ProfileAssume;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -44,6 +46,10 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         try {
             reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
             masterRep = reps.remove("master");
+
+            //the realm with special characters in its id is intended for db migration test, not json file test
+            reps.remove("test ' and ; and -- and \"");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -58,13 +64,13 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     public void migration2_5_5Test() throws Exception {
         checkRealmsImported();
         testMigrationTo3_x();
-        testMigrationTo4_x(true, false);
+        testMigrationTo4_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION), false);
         testMigrationTo5_x();
         testMigrationTo6_x();
-        testMigrationTo7_x(true);
+        testMigrationTo7_x(ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
         testMigrationTo8_x();
         testMigrationTo9_x();
-        testMigrationTo12_x();
+        testMigrationTo12_x(false);
     }
 
 }

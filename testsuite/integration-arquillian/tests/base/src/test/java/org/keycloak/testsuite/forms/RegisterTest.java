@@ -39,6 +39,10 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.*;
 import javax.mail.internet.MimeMessage;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -89,11 +93,11 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("firstName", registerPage.getFirstName());
         assertEquals("lastName", registerPage.getLastName());
         assertEquals("registerExistingUser@email", registerPage.getEmail());
-        assertEquals("", registerPage.getUsername());
+        assertEquals("roleRichUser", registerPage.getUsername());
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("roleRichUser", "registerExistingUser@email")
+        events.expectRegister("rolerichuser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
     }
@@ -112,12 +116,12 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         // assert form keeps form fields on error
         assertEquals("firstName", registerPage.getFirstName());
         assertEquals("lastName", registerPage.getLastName());
-        assertEquals("", registerPage.getEmail());
+        assertEquals("test-user@localhost", registerPage.getEmail());
         assertEquals("registerExistingUser", registerPage.getUsername());
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("registerExistingUser", "registerExistingUser@email")
+        events.expectRegister("registerexistinguser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("email_in_use").assertEvent();
     }
@@ -261,10 +265,20 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
-        assertEquals("Please specify first name.", registerPage.getInputAccountErrors().getFirstNameError());
-        assertEquals("Please specify last name.", registerPage.getInputAccountErrors().getLastNameError());
-        assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
-        assertEquals("Please specify password.", registerPage.getInputPasswordErrors().getPasswordError());
+        assertThat(registerPage.getInputAccountErrors().getFirstNameError(), anyOf(
+                containsString("Please specify first name"),
+                containsString("Please specify this field")
+        ));
+        assertThat(registerPage.getInputAccountErrors().getLastNameError(), anyOf(
+                containsString("Please specify last name"),
+                containsString("Please specify this field")
+        ));
+        assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify this field")
+        ));
+
+        assertThat(registerPage.getInputPasswordErrors().getPasswordError(), is("Please specify password."));
 
         events.expectRegister(null, "registerUserMissingUsername@email")
                 .removeDetail(Details.USERNAME)
@@ -281,7 +295,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password");
         registerPage.assertCurrent();
         assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
-        events.expectRegister("registerUserMissingEmail", null)
+        events.expectRegister("registerusermissingemail", null)
                 .removeDetail("email")
                 .error("invalid_registration").assertEvent();
     }
@@ -296,7 +310,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
         assertEquals("registerUserInvalidEmailemail", registerPage.getEmail());
         assertEquals("Invalid email address.", registerPage.getInputAccountErrors().getEmailError());
-        events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
+        events.expectRegister("registeruserinvalidemail", "registerUserInvalidEmailemail")
                 .error("invalid_registration").assertEvent();
     }
 

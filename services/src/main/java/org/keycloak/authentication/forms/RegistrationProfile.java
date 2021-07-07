@@ -17,8 +17,6 @@
 
 package org.keycloak.authentication.forms;
 
-import static org.keycloak.userprofile.profile.UserProfileContextFactory.forRegistrationProfile;
-
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -34,12 +32,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -67,33 +64,36 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
 
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
-        UserProfileValidationResult result = forRegistrationProfile(context.getSession(), formData).validate();
-        List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
+        UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_PROFILE, formData);
 
-        if (errors.size() > 0) {
-            if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
-                UserProfile updatedProfile = result.getProfile();
-                context.getEvent().detail(Details.EMAIL, updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL));
+        try {
+            profile.validate();
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+
+            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
             }
 
-            if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS)) {
+            if (pve.hasError(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);
-                formData.remove("email");
             } else
                 context.error(Errors.INVALID_REGISTRATION);
-            context.validationError(formData, errors);
-            return;
 
-        } else {
-            context.success();
+            context.validationError(formData, errors);
+
+            return;
         }
+
+        context.success();
     }
 
     @Override
     public void success(FormContext context) {
         UserModel user = context.getUser();
-        AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
-        UserUpdateHelper.updateRegistrationProfile(context.getRealm(), user, updatedProfile);
+        UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
+        provider.create(UserProfileContext.REGISTRATION_PROFILE, context.getHttpRequest().getDecodedFormParameters(), user).update();
     }
 
     @Override

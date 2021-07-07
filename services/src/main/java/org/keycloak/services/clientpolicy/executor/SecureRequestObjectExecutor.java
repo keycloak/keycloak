@@ -31,13 +31,12 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
-import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutor.Configuration;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -59,8 +58,20 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
     }
 
     @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
+    public void setupConfiguration(SecureRequestObjectExecutor.Configuration config) {
+        if (config == null) {
+            configuration = new Configuration();
+            configuration.setVerifyNbf(Boolean.TRUE);
+            configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
+        } else {
+            configuration = config;
+            if (config.isVerifyNbf() == null) {
+                configuration.setVerifyNbf(Boolean.TRUE);
+            }
+            if (config.getAvailablePeriod() == null) {
+                configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
+            }
+        }
     }
 
     @Override
@@ -68,10 +79,11 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyExecutorConfiguration {
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("available-period")
         protected Integer availablePeriod;
+        @JsonProperty("verify-nbf")
+        protected Boolean verifyNbf;
 
         public Integer getAvailablePeriod() {
             return availablePeriod;
@@ -79,6 +91,14 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         public void setAvailablePeriod(Integer availablePeriod) {
             this.availablePeriod = availablePeriod;
+        }
+
+        public Boolean isVerifyNbf() {
+            return verifyNbf;
+        }
+
+        public void setVerifyNbf(Boolean verifyNbf) {
+            this.verifyNbf = verifyNbf;
         }
     }
 
@@ -120,7 +140,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         // check whether whether request object exists
         if (requestParam == null && requestUriParam == null) {
             logger.trace("request object not exist.");
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: 'request' or 'request_uri'");
         }
 
         JsonNode requestObject = (JsonNode)session.getAttribute(AuthzEndpointRequestParser.AUTHZ_REQUEST_OBJECT);
@@ -128,19 +148,19 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         // check whether request object exists
         if (requestObject == null || requestObject.isEmpty()) {
             logger.trace("request object not exist.");
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: : 'request' or 'request_uri'");
         }
 
         // check whether scope exists in both query parameter and request object
         if (params.getFirst(OIDCLoginProtocol.SCOPE_PARAM) == null || requestObject.get(OIDCLoginProtocol.SCOPE_PARAM) == null) {
             logger.trace("scope object not exist.");
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter : scope");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Parameter 'scope' missing in the request parameters or in 'request' object");
         }
 
         // check whether "exp" claim exists
         if (requestObject.get("exp") == null) {
             logger.trace("exp claim not incuded.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter : exp");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter in the 'request' object: exp");
         }
 
         // check whether request object not expired
@@ -150,24 +170,28 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request Expired");
         }
 
-        // check whether "nbf" claim exists
-        if (requestObject.get("nbf") == null) {
-            logger.trace("nbf claim not incuded.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter : nbf");
-        }
+        // "nbf" check is not needed for FAPI-RW ID2 security profile
+        // while needed for FAPI 1.0 Advanced security profile
+        if (Optional.ofNullable(configuration.isVerifyNbf()).orElse(Boolean.FALSE).booleanValue()) {
+            // check whether "nbf" claim exists
+            if (requestObject.get("nbf") == null) {
+                logger.trace("nbf claim not incuded.");
+                throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter in the 'request' object: nbf");
+            }
 
-        // check whether request object not yet being processed
-        long nbf = requestObject.get("nbf").asLong();
-        if (Time.currentTime() < nbf) { // TODO: Time.currentTime() is int while nbf is long...
-            logger.trace("request object not yet being processed.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request not yet being processed");
-        }
+            // check whether request object not yet being processed
+            long nbf = requestObject.get("nbf").asLong();
+            if (Time.currentTime() < nbf) { // TODO: Time.currentTime() is int while nbf is long...
+                logger.trace("request object not yet being processed.");
+                throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request not yet being processed");
+            }
 
-        // check whether request object's available period is short
-        int availablePeriod = Optional.ofNullable(configuration.getAvailablePeriod()).orElse(DEFAULT_AVAILABLE_PERIOD).intValue();
-        if (exp - nbf > availablePeriod) {
-            logger.trace("request object's available period is long.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request's available period is long");
+            // check whether request object's available period is short
+            int availablePeriod = Optional.ofNullable(configuration.getAvailablePeriod()).orElse(DEFAULT_AVAILABLE_PERIOD).intValue();
+            if (exp - nbf > availablePeriod) {
+                logger.trace("request object's available period is long.");
+                throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request's available period is long");
+            }
         }
 
         // check whether "aud" claim exists
@@ -175,7 +199,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         JsonNode audience = requestObject.get("aud");
         if (audience == null) {
             logger.trace("aud claim not incuded.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter : aud");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter in the 'request' object: aud");
         }
         if (audience.isArray()) {
             for (JsonNode node : audience) aud.add(node.asText());
@@ -184,21 +208,25 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         }
         if (aud.isEmpty()) {
             logger.trace("aud claim not incuded.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter : aud");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Missing parameter value in the 'request' object: aud");
         }
 
         // check whether "aud" claim points to this keycloak as authz server
         String iss = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName());
         if (!aud.contains(iss)) {
             logger.trace("aud not points to the intended realm.");
-            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Invalid parameter : aud");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Invalid parameter in the 'request' object: aud");
         }
 
         // confirm whether all parameters in query string are included in the request object, and have the same values
         // argument "request" are parameters overridden by parameters in request object
-        if (AuthzEndpointRequestParser.KNOWN_REQ_PARAMS.stream().filter(s->params.containsKey(s)).anyMatch(s->!isSameParameterIncluded(s, params.getFirst(s), requestObject))) {
-            logger.trace("not all parameters in query string are included in the request object, and have the same values.");
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter");
+        Optional<String> incorrectParam = AuthzEndpointRequestParser.KNOWN_REQ_PARAMS.stream()
+                .filter(param -> params.containsKey(param))
+                .filter(param -> !isSameParameterIncluded(param, params.getFirst(param), requestObject))
+                .findFirst();
+        if (incorrectParam.isPresent()) {
+            logger.warnf("Parameter '%s' does not have same value in 'request' object and in request parameters", incorrectParam.get());
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter. Parameters in 'request' object not matching with request parameters");
         }
 
         logger.trace("Passed.");

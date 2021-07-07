@@ -125,14 +125,14 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         if ($scope.cutNode === null) return;
         if (selected.id === $scope.cutNode.id) return;
         if (selected.id === 'realm') {
-            Groups.save({realm: realm.realm}, {id:$scope.cutNode.id}, function() {
+            Groups.save({realm: realm.realm}, {id:$scope.cutNode.id, name: $scope.cutNode.name}, function() {
                 $route.reload();
                 Notifications.success($translate.instant('group.move.success'));
 
             });
 
         } else {
-            GroupChildren.save({realm: realm.realm, groupId: selected.id}, {id:$scope.cutNode.id}, function() {
+            GroupChildren.save({realm: realm.realm, groupId: selected.id}, {id:$scope.cutNode.id, name: $scope.cutNode.name}, function() {
                 $route.reload();
                 Notifications.success($translate.instant('group.move.success'));
 

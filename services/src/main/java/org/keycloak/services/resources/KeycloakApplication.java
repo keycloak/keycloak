@@ -29,6 +29,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -119,12 +121,27 @@ public class KeycloakApplication extends Application {
     }
 
     protected void startup() {
-        this.sessionFactory = createSessionFactory();
+        KeycloakApplication.sessionFactory = createSessionFactory();
 
-        ExportImportManager exportImportManager = bootstrap();
+        ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
-        if (exportImportManager.isRunExport()) {
-            exportImportManager.runExport();
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+            @Override
+            public void run(KeycloakSession session) {
+                DBLockManager dbLockManager = new DBLockManager(session);
+                dbLockManager.checkForcedUnlock();
+                DBLockProvider dbLock = dbLockManager.getDBLock();
+                dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
+                try {
+                    exportImportManager[0] = bootstrap();
+                } finally {
+                    dbLock.releaseLock();
+                }
+            }
+        });
+                
+        if (exportImportManager[0].isRunExport()) {
+            exportImportManager[0].runExport();
         }
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
@@ -171,8 +188,6 @@ public class KeycloakApplication extends Application {
                     }
                 }
                 // TODO up here ^^
-
-                session.clientPolicy().setupClientPoliciesOnKeycloakApp("/keycloak-default-client-profiles.json", "/keycloak-default-client-policies.json");
 
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
                 exportImportManager[0] = new ExportImportManager(session);

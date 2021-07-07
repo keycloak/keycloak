@@ -1117,19 +1117,20 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         final String REQUIRED_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/applications";
         final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
         final String CLIENT_ID = "account";
+        final String ACCOUNT_MANAGEMENT_TITLE = getProjectName() + " Account Management";
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
             driver.navigate().to(REQUIRED_URI);
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI, REQUIRED_URI);
-            assertThat(driver.getTitle(), Matchers.equalTo("Keycloak Account Management"));
+            assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
 
             oauth.openLogout();
 
             driver.navigate().to(REQUIRED_URI);
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI, REQUIRED_URI);
-            assertThat(driver.getTitle(), Matchers.equalTo("Keycloak Account Management"));
+            assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
         }
     }
 
@@ -1154,6 +1155,26 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
         }
+    }
+
+    // KEYCLOAK-15170
+    @Test
+    public void changeEmailAddressAfterSendingEmail() throws IOException {
+        initiateResetPasswordFromResetPasswordPage(defaultUser.getUsername());
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        UserResource user = testRealm().users().get(defaultUser.getId());
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEmail("vmuzikar@redhat.com");
+        user.update(userRep);
+
+        driver.navigate().to(changePasswordUrl.trim());
+        errorPage.assertCurrent();
+        assertEquals("Invalid email address.", errorPage.getError());
     }
 
     private void changePasswordOnUpdatePage(WebDriver driver) {

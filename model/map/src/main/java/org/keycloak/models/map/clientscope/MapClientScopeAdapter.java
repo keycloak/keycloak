@@ -16,9 +16,12 @@
  */
 package org.keycloak.models.map.clientscope;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,15 +31,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
-public class MapClientScopeAdapter extends AbstractClientScopeModel<MapClientScopeEntity> implements ClientScopeModel {
+public abstract class MapClientScopeAdapter<K> extends AbstractClientScopeModel<MapClientScopeEntity<K>> implements ClientScopeModel {
 
-    public MapClientScopeAdapter(KeycloakSession session, RealmModel realm, MapClientScopeEntity entity) {
+    public MapClientScopeAdapter(KeycloakSession session, RealmModel realm, MapClientScopeEntity<K> entity) {
         super(session, realm, entity);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId().toString();
     }
 
     @Override
@@ -71,7 +69,7 @@ public class MapClientScopeAdapter extends AbstractClientScopeModel<MapClientSco
 
     @Override
     public void setAttribute(String name, String value) {
-        entity.setAttribute(name, value);
+        entity.setAttribute(name, Collections.singletonList(value));
     }
 
     @Override
@@ -81,12 +79,19 @@ public class MapClientScopeAdapter extends AbstractClientScopeModel<MapClientSco
 
     @Override
     public String getAttribute(String name) {
-        return entity.getAttribute(name);
+        List<String> attribute = entity.getAttribute(name);
+        if (attribute.isEmpty()) return null;
+        return attribute.get(0);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        return entity.getAttributes();
+        return entity.getAttributes().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, 
+            entry -> {
+                if (entry.getValue().isEmpty()) return null;
+                return entry.getValue().get(0);
+            })
+        );
     }
 
     @Override

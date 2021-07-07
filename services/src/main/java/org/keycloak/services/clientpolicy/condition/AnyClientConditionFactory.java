@@ -30,7 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class AnyClientConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "anyclient-condition";
+    public static final String PROVIDER_ID = "any-client";
 
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session) {

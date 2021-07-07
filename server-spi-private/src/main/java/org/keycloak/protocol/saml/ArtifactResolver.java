@@ -2,9 +2,8 @@ package org.keycloak.protocol.saml;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
-
-import java.util.stream.Stream;
 
 
 /**
@@ -15,12 +14,12 @@ public interface ArtifactResolver extends Provider {
     /**
      * Returns client model that issued artifact
      *
+     * @param session KeycloakSession for searching for client corresponding client
      * @param artifact the artifact
-     * @param clients stream of clients, the stream will be searched for a client that issued the artifact
      * @return the client model that issued the artifact
      * @throws ArtifactResolverProcessingException When an error occurs during client search
      */
-    ClientModel selectSourceClient(String artifact, Stream<ClientModel> clients) throws ArtifactResolverProcessingException;
+    ClientModel selectSourceClient(KeycloakSession session, String artifact) throws ArtifactResolverProcessingException;
 
     /**
      * Creates and stores an artifact

@@ -23,15 +23,10 @@ import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
-public class MapResourceServerAdapter extends AbstractResourceServerModel<MapResourceServerEntity> {
+public abstract class MapResourceServerAdapter<K> extends AbstractResourceServerModel<MapResourceServerEntity<K>> {
 
-    public MapResourceServerAdapter(MapResourceServerEntity entity, StoreFactory storeFactory) {
+    public MapResourceServerAdapter(MapResourceServerEntity<K> entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId();
     }
 
     @Override

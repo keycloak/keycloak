@@ -17,14 +17,18 @@
 package org.keycloak.testsuite.adapter.example.authorization;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -32,6 +36,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -63,6 +68,13 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
               webArchive -> webArchive.addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/photoz/keycloak-cache-lifespan-authz-service.json"), "keycloak.json"));
     }
 
+    @Override
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
+        RealmRepresentation realm = loadRealm(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-realm.json"));
+        realm.setAccessTokenLifespan(70); // must increase lifespan of access token in order to use bigger offset in test cases
+        testRealms.add(realm);
+    }
+
     @Test
     public void testPathConfigInvalidation() throws Exception {
         loginToClientPage(aliceUser);
@@ -72,20 +84,14 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
         AuthorizationResource authorizationResource = getAuthorizationResource();
 
         authorizationResource.resources().resource(resource.getId()).remove();
+        assertThat(getAuthorizationResource().resources().findByName("Profile Resource").isEmpty(), Matchers.is(true));
 
         loginToClientPage(aliceUser);
 
         // should throw an error because the resource was removed and cache entry did not expire yet
-        clientPage.viewProfile(new ResponseValidator() {
-            @Override
-            public void validate(Map<String, Object> response) {
-                Object res = response.get("res");
-                assertThat(res, Matchers.notNullValue());
-                assertThat(res.toString(), Matchers.not(Matchers.containsString("userName")));
-            }
-        });
+        assertFailure();
 
-        setTimeOffsetOfAdapter(20);
+        setTimeOffsetOfAdapter(40);
 
         loginToClientPage(aliceUser);
         assertSuccess();
@@ -116,8 +122,8 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
 
             Map<String, String> config = new HashMap<>();
 
-            config.put("resources", JsonSerialization.writeValueAsString(Arrays.asList(resource.getId())));
-            config.put("applyPolicies", JsonSerialization.writeValueAsString(Arrays.asList("Only From @keycloak.org or Admin")));
+            config.put("resources", JsonSerialization.writeValueAsString(Collections.singletonList(resource.getId())));
+            config.put("applyPolicies", JsonSerialization.writeValueAsString(Collections.singletonList("Only From @keycloak.org or Admin")));
 
             resourceInstancePermission.setConfig(config);
             authorizationResource.policies().create(resourceInstancePermission);
@@ -127,14 +133,7 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
 
         loginToClientPage(aliceUser);
         // should throw an error because the resource was removed and cache entry did not expire yet
-        clientPage.viewProfile(new ResponseValidator() {
-            @Override
-            public void validate(Map<String, Object> response) {
-                Object res = response.get("res");
-                assertThat(res, Matchers.notNullValue());
-                assertThat(res.toString(), Matchers.not(Matchers.containsString("userName")));
-            }
-        });
+        assertFailure();
 
         userRepresentation.setEmail("alice@keycloak.org");
 
@@ -144,10 +143,19 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
     }
 
     private void assertSuccess() {
+        assertState(true);
+    }
+
+    private void assertFailure() {
+        assertState(false);
+    }
+
+    private void assertState(boolean state) {
         clientPage.viewProfile((ResponseValidator) response -> {
             Object res = response.get("res");
             assertThat(res, Matchers.notNullValue());
-            assertThat(res.toString(), Matchers.containsString("userName"));
+            Matcher<String> matcher = Matchers.containsString("userName");
+            assertThat(res.toString(), state ? matcher : Matchers.not(matcher));
         });
     }
 
@@ -155,11 +163,19 @@ public class LifespanAdapterTest extends AbstractPhotozExampleAdapterTest {
         clientPage.viewProfile((ResponseValidator) response -> {
             Object headers = response.get("responseHeaders");
             assertThat(headers, Matchers.notNullValue());
-            assertThat(headers.toString(), Matchers.containsString("WWW-Authenticate: UMA"));
+
+            List<String> headersList = Arrays.asList(headers.toString().split("\r\n"));
+            String wwwAuthenticate = headersList.stream()
+                    .filter(s -> s.toLowerCase().startsWith("www-authenticate:"))
+                    .findFirst()
+                    .orElse(null);
+
+            assertThat(wwwAuthenticate, Matchers.notNullValue());
+            assertThat(wwwAuthenticate, Matchers.containsString("UMA"));
         });
     }
 
     public void setTimeOffsetOfAdapter(int offset) {
-        this.driver.navigate().to(clientPage.getInjectedUrl() + "/timeOffset.jsp?offset=" + String.valueOf(offset));
+        this.driver.navigate().to(clientPage.getInjectedUrl() + "timeOffset.jsp?offset=" + offset);
     }
 }

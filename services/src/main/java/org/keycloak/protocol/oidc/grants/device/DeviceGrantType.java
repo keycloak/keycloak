@@ -121,7 +121,7 @@ public class DeviceGrantType {
         String verifiedUserCode = authSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
         String userSessionId = clientSession.getUserSession().getId();
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        if (!store.approve(realm, verifiedUserCode, userSessionId)) {
+        if (!store.approve(realm, verifiedUserCode, userSessionId, null)) {
             // Already expired and removed in the store
             return Response.status(302).location(
                     uriBuilder.queryParam(OAuth2Constants.ERROR, OAuthErrorException.EXPIRED_TOKEN)

@@ -19,7 +19,7 @@ if "%OS%" == "Windows_NT" (
   set DIRNAME=.\
 )
 
-set "SERVER_OPTS=-Dkc.home.dir=%DIRNAME%.. -Djboss.server.config.dir=%DIRNAME%..\conf -Dkeycloak.theme.dir=%DIRNAME%..\themes -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+set "SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
@@ -105,6 +105,6 @@ if "x%JAVA_HOME%" == "x" (
 
 set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar;%DIRNAME%..\lib\lib\main\*.*"
 
-"%JAVA%" %JAVA_OPTS% %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
+"%JAVA%" %JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp "%CLASSPATH_OPTS%" io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
 
 :END

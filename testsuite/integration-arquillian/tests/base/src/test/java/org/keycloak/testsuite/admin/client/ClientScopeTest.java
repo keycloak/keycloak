@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.client;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -39,7 +40,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.Matchers;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -55,7 +55,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -104,7 +106,7 @@ public class ClientScopeTest extends AbstractClientTest {
         String scope1Id = createClientScope(scopeRep);
 
         List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
-        Assert.assertTrue(getClientScopeNames(clientScopes).contains("scope1"));
+        assertTrue(getClientScopeNames(clientScopes).contains("scope1"));
 
         // Create scope2
         scopeRep = new ClientScopeRepresentation();
@@ -112,14 +114,14 @@ public class ClientScopeTest extends AbstractClientTest {
         String scope2Id = createClientScope(scopeRep);
 
         clientScopes = clientScopes().findAll();
-        Assert.assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
+        assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
 
         // Remove scope1
         removeClientScope(scope1Id);
 
         clientScopes = clientScopes().findAll();
         Assert.assertFalse(getClientScopeNames(clientScopes).contains("scope1"));
-        Assert.assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
+        assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
 
 
         // Remove scope2
@@ -150,7 +152,7 @@ public class ClientScopeTest extends AbstractClientTest {
         Assert.assertEquals("scope1", scopeRep.getName());
         Assert.assertEquals("scope1-desc", scopeRep.getDescription());
         Assert.assertEquals("someAttrValue", scopeRep.getAttributes().get("someAttr"));
-        Assert.assertTrue(ObjectUtil.isBlank(scopeRep.getAttributes().get("emptyAttr")));
+        assertTrue(ObjectUtil.isBlank(scopeRep.getAttributes().get("emptyAttr")));
         Assert.assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, scopeRep.getProtocol());
 
 
@@ -270,7 +272,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     private void assertRolesPresent(List<RoleRepresentation> roles, String... expectedRoleNames) {
-        List<String> expectedList = Arrays.asList(expectedRoleNames);
+        String[] expectedList = expectedRoleNames;
 
         Set<String> presentRoles = new HashSet<>();
         for (RoleRepresentation roleRep : roles) {
@@ -335,7 +337,6 @@ public class ClientScopeTest extends AbstractClientTest {
         return testRealmResource().roles().get(roleName).toRepresentation();
     }
 
-    // KEYCLOAK-2844
     @Test
     public void testRemoveClientScopeInUse() {
         // Add client scope
@@ -352,21 +353,8 @@ public class ClientScopeTest extends AbstractClientTest {
         clientRep.setDefaultClientScopes(Collections.singletonList("foo-scope"));
         String clientDbId = createClient(clientRep);
 
-        // Can't remove clientScope
-        try {
-            clientScopes().get(scopeId).remove();
-            Assert.fail("Not expected to successfully remove clientScope in use");
-        } catch (BadRequestException bre) {
-            ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("Cannot remove client scope, it is currently in use", error.getErrorMessage());
-            assertAdminEvents.assertEmpty();
-        }
-
-        // Remove client
-        removeClient(clientDbId);
-
-        // Can remove clientScope now
         removeClientScope(scopeId);
+        removeClient(clientDbId);
     }
 
 
@@ -394,10 +382,10 @@ public class ClientScopeTest extends AbstractClientTest {
         // Ensure defaults and optional scopes are here
         List<String> realmDefaultScopes = getClientScopeNames(testRealmResource().getDefaultDefaultClientScopes());
         List<String> realmOptionalScopes = getClientScopeNames(testRealmResource().getDefaultOptionalClientScopes());
-        Assert.assertTrue(realmDefaultScopes.contains("scope-def"));
+        assertTrue(realmDefaultScopes.contains("scope-def"));
         Assert.assertFalse(realmOptionalScopes .contains("scope-def"));
         Assert.assertFalse(realmDefaultScopes.contains("scope-opt"));
-        Assert.assertTrue(realmOptionalScopes .contains("scope-opt"));
+        assertTrue(realmOptionalScopes .contains("scope-opt"));
 
         // create client. Ensure that it has scope-def and scope-opt scopes assigned
         ClientRepresentation clientRep = new ClientRepresentation();
@@ -408,10 +396,10 @@ public class ClientScopeTest extends AbstractClientTest {
 
         List<String> clientDefaultScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getDefaultClientScopes());
         List<String> clientOptionalScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getOptionalClientScopes());
-        Assert.assertTrue(clientDefaultScopes.contains("scope-def"));
+        assertTrue(clientDefaultScopes.contains("scope-def"));
         Assert.assertFalse(clientOptionalScopes .contains("scope-def"));
         Assert.assertFalse(clientDefaultScopes.contains("scope-opt"));
-        Assert.assertTrue(clientOptionalScopes .contains("scope-opt"));
+        assertTrue(clientOptionalScopes .contains("scope-opt"));
 
         // Unassign scope-def and scope-opt from realm
         testRealmResource().removeDefaultDefaultClientScope(scopeDefId);
@@ -457,7 +445,7 @@ public class ClientScopeTest extends AbstractClientTest {
 
         // Ensure that scope is optional
         List<String> realmOptionalScopes = getClientScopeNames(testRealmResource().getDefaultOptionalClientScopes());
-        Assert.assertTrue(realmOptionalScopes.contains("optional-client-scope"));
+        assertTrue(realmOptionalScopes.contains("optional-client-scope"));
 
         // Create client
         ClientRepresentation client = new ClientRepresentation();
@@ -468,15 +456,65 @@ public class ClientScopeTest extends AbstractClientTest {
 
         // Ensure that default optional client scope is a default scope of the client
         List<String> clientDefaultScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getDefaultClientScopes());
-        Assert.assertTrue(clientDefaultScopes.contains("optional-client-scope"));
+        assertTrue(clientDefaultScopes.contains("optional-client-scope"));
 
         // Ensure that no optional scopes are assigned to the client, even if there are default optional scopes!
         List<String> clientOptionalScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getOptionalClientScopes());
-        Assert.assertTrue(clientOptionalScopes.isEmpty());
+        assertTrue(clientOptionalScopes.isEmpty());
 
         // Unassign optional client scope from realm for cleanup
         testRealmResource().removeDefaultOptionalClientScope(optionalClientScopeId);
         assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.defaultOptionalClientScopePath(optionalClientScopeId), ResourceType.CLIENT_SCOPE);
+    }
+
+    // KEYCLOAK-18332
+    @Test
+    public void scopesRemainAfterClientUpdate() {
+        // Create a bunch of scopes
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-opt");
+        scopeRep.setProtocol("openid-connect");
+        String scopeOptId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeOptId);
+
+        // Add scope-def as default and scope-opt as optional client scope
+        testRealmResource().addDefaultDefaultClientScope(scopeDefId);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.defaultDefaultClientScopePath(scopeDefId), ResourceType.CLIENT_SCOPE);
+        testRealmResource().addDefaultOptionalClientScope(scopeOptId);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.defaultOptionalClientScopePath(scopeOptId), ResourceType.CLIENT_SCOPE);
+
+        // Create a client
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        ClientResource client = testRealmResource().clients().get(clientUuid);
+        getCleanup().addClientUuid(clientUuid);
+        assertTrue(getClientScopeNames(client.getDefaultClientScopes()).contains("scope-def"));
+        assertTrue(getClientScopeNames(client.getOptionalClientScopes()).contains("scope-opt"));
+
+        // Remove the scopes from client
+        client.removeDefaultClientScope(scopeDefId);
+        client.removeOptionalClientScope(scopeOptId);
+        List<String> expectedDefScopes = getClientScopeNames(client.getDefaultClientScopes());
+        List<String> expectedOptScopes = getClientScopeNames(client.getOptionalClientScopes());
+        assertFalse(expectedDefScopes.contains("scope-def"));
+        assertFalse(expectedOptScopes.contains("scope-opt"));
+
+        // Update the client
+        clientRep = client.toRepresentation();
+        clientRep.setDescription("desc"); // Make a small change
+        client.update(clientRep);
+
+        // Assert scopes are intact
+        assertEquals(expectedDefScopes, getClientScopeNames(client.getDefaultClientScopes()));
+        assertEquals(expectedOptScopes, getClientScopeNames(client.getOptionalClientScopes()));
     }
 
     // KEYCLOAK-5863
@@ -521,6 +559,42 @@ public class ClientScopeTest extends AbstractClientTest {
         clientScopes().get(scopeId).remove();
     }
 
+    @Test
+    public void updateClientWithDefaultScopeAssignedAsOptionalAndOpposite() {
+        // create client
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        getCleanup().addClientUuid(clientUuid);
+
+        // Create 2 client scopes
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-opt");
+        scopeRep.setProtocol("openid-connect");
+        String scopeOptId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeOptId);
+
+        // assign "scope-def" as optional client scope to client
+        testRealmResource().clients().get(clientUuid).addOptionalClientScope(scopeDefId);
+
+        // assign "scope-opt" as default client scope to client
+        testRealmResource().clients().get(clientUuid).addDefaultClientScope(scopeOptId);
+
+        // Add scope-def as default and scope-opt as optional client scope within the realm
+        testRealmResource().addDefaultDefaultClientScope(scopeDefId);
+        testRealmResource().addDefaultOptionalClientScope(scopeOptId);
+
+        //update client - check it passes (it used to throw ModelDuplicateException before)
+        clientRep.setDescription("new_description");
+        testRealmResource().clients().get(clientUuid).update(clientRep);
+    }
 
     private ClientScopesResource clientScopes() {
         return testRealmResource().clientScopes();

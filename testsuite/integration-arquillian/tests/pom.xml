@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -125,14 +125,33 @@
         <app.server.jvm.args.extra/>
         <tomcat.javax.net.ssl.properties/>
 
-        <cache.server>undefined</cache.server>
-        <cache.server.container>cache-server-${cache.server}</cache.server.container>
-        <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
+        <cache.server.legacy>false</cache.server.legacy>
+        <cache.server.home>${containers.home}/cache-server-${cache.server}</cache.server.home>
         <cache.server.1.port.offset>1010</cache.server.1.port.offset>
         <cache.server.management.port>11000</cache.server.management.port>
         <cache.server.2.port.offset>2010</cache.server.2.port.offset>
         <cache.server.2.management.port>12000</cache.server.2.management.port>
         <cache.server.console.output>true</cache.server.console.output>
+        <cache.server.auth>false</cache.server.auth>
+
+        <!--
+        ~ Definition of default JVM parameters for all modular JDKs. See:
+        ~
+        ~   https://github.com/wildfly/wildfly-core/blob/master/core-feature-pack/common/src/main/resources/content/bin/common.sh#L19 and
+        ~   https://github.com/wildfly/wildfly-core/blob/master/launcher/src/main/java/org/wildfly/core/launcher/AbstractCommandBuilder.java#L58
+        ~
+        ~ for details. The explanation / purpose of adding a particular modular option is as follows:
+        ~ * add-exports=java.desktop/sun.awt=ALL-UNNAMED                Needed by the iiop-openjdk subsystem
+        ~ * add-opens=java.base/java.lang=ALL-UNNAMED                   Needed if Hibernate applications use Javassist
+        ~ * add-opens=java.base/java.lang.invoke=ALL-UNNAMED            Needed by the MicroProfile REST Client subsystem
+        ~ * add-opens=java.base/java.io=ALL-UNNAMED                     Needed by JBoss Marshalling
+        ~ * add-opens=java.base/java.security=ALL-UNNAMED               Needed by WildFly Security Manager
+        ~ * add-opens=java.base/java.util=ALL-UNNAMED                   Needed for marshalling of enum maps
+        ~ * add-opens=java.management/javax.management=ALL-UNNAMED      EE integration with sar mbeans requires deep reflection in javax.management
+        ~ * add-opens=java.naming/javax.naming=ALL-UNNAMED              InitialContext proxy generation requires deep reflection in javax.naming
+        ~ * add-modules=java.se                                         Needed for backward compatibility with jboss-modules older than jboss-modules 1.9.1.Final
+        -->
+        <default.modular.jvm.options>--add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED --add-modules=java.se</default.modular.jvm.options>
 
         <dependency.keystore.root>${project.build.directory}/dependency/keystore</dependency.keystore.root>
         <dependency.truststore>${dependency.keystore.root}/keycloak.truststore</dependency.truststore>
@@ -561,6 +580,8 @@
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
+                            <default.modular.jvm.options>${default.modular.jvm.options}</default.modular.jvm.options>
+
                             <dependency.keystore.root>${dependency.keystore.root}</dependency.keystore.root>
                             <dependency.truststore>${dependency.truststore}</dependency.truststore>
                             <dependency.truststore.password>${dependency.truststore.password}</dependency.truststore.password>
@@ -630,13 +651,15 @@
                             <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
 
                             <cache.server>${cache.server}</cache.server>
+                            <cache.server.legacy>${cache.server.legacy}</cache.server.legacy>
                             <cache.server.1.port.offset>${cache.server.1.port.offset}</cache.server.1.port.offset>
-                            <cache.server.container>${cache.server.container}</cache.server.container>
                             <cache.server.home>${cache.server.home}</cache.server.home>
                             <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
                             <cache.server.management.port>${cache.server.management.port}</cache.server.management.port>
                             <cache.server.2.port.offset>${cache.server.2.port.offset}</cache.server.2.port.offset>
                             <cache.server.2.management.port>${cache.server.2.management.port}</cache.server.2.management.port>
+                            <cache.server.java.home>${cache.server.java.home}</cache.server.java.home>
+                            <cache.server.auth>${cache.server.auth}</cache.server.auth>
 
                             <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
                             <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
@@ -864,9 +887,8 @@
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>cache.server.jboss</property>
-                                            <message>Profile "auth-servers-crossdc-undertow" requires activation of another profile: either "cache-server-infinispan" or "cache-server-jdg".</message>
-                                            <regex>true</regex>
+                                            <property>cache.server</property>
+                                            <message>Profile "auth-servers-crossdc-undertow" requires activation of one of the following profiles: "cache-server-infinispan", "cache-server-datagrid", "cache-server-legacy-infinispan", "cache-server-legacy-datagrid".</message>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -973,9 +995,8 @@
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>cache.server.jboss</property>
-                                            <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "cache-server-infinispan" or "cache-server-jdg".</message>
-                                            <regex>true</regex>
+                                            <property>cache.server</property>
+                                            <message>Profile "auth-servers-crossdc-jboss" requires activation of one of the following profiles: "cache-server-infinispan", "cache-server-datagrid", "cache-server-legacy-infinispan", "cache-server-legacy-datagrid".</message>
                                         </requireProperty>
                                         <requireProperty>
                                             <property>auth.server.jboss</property>
@@ -1048,11 +1069,11 @@
         </profile>
 
         <profile>
-            <id>cache-server-infinispan</id>
+            <id>cache-server-legacy-infinispan</id>
             <properties>
-                <cache.server>infinispan</cache.server>
+                <cache.server>legacy-infinispan</cache.server>
+                <cache.server.legacy>true</cache.server.legacy>
                 <auth.server.crossdc>true</auth.server.crossdc>
-                <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
@@ -1065,6 +1086,142 @@
                 </dependency>
             </dependencies>
 
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profile-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>auth.servers.crossdc</property>
+                                            <message>Profile "cache-server-legacy-infinispan" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-cache-server-infinispan</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-cache-server-legacy-infinispan</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
+            <id>cache-server-legacy-datagrid</id>
+            <properties>
+                <cache.server>legacy-datagrid</cache.server>
+                <auth.server.crossdc>true</auth.server.crossdc>
+                <cache.server.legacy>true</cache.server.legacy>
+                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profile-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>auth.servers.crossdc</property>
+                                            <message>Profile "cache-server-legacy-datagrid" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-cache-server-jdg</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-cache-server-legacy-datagrid</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+
+
+        <profile>
+            <id>cache-server-infinispan</id>
+            <properties>
+                <cache.server>infinispan</cache.server>
+                <auth.server.crossdc>true</auth.server.crossdc>
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
+                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <skip.clean.second.cache>true</skip.clean.second.cache>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -1093,7 +1250,7 @@
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>unpack-cache-server-infinispan</id>
+                                    <id>unpack-cache-server-standalone-infinispan</id>
                                     <phase>generate-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
@@ -1102,7 +1259,7 @@
                                         <artifactItems>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-servers-cache-server-infinispan</artifactId>
+                                                <artifactId>integration-arquillian-servers-cache-server-infinispan-infinispan</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <outputDirectory>${containers.home}</outputDirectory>
@@ -1113,29 +1270,55 @@
                                 </execution>
                             </executions>
                         </plugin>
+                        <plugin>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-cache-server-standalone-infinispan-nodes</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip>${skip.copy.cache.crossdc.nodes}</skip>
+                                        <target>
+                                            <move todir="${cache.server.home}-dc1">
+                                                <fileset dir="${cache.server.home}"/>
+                                            </move>
+                                            <copy todir="${cache.server.home}-dc2">
+                                                <fileset dir="${cache.server.home}-dc1"/>
+                                            </copy>
+                                            
+                                            <chmod dir="${cache.server.home}-dc1/bin" perm="ugo+rx" includes="**/*.sh"/>
+                                            <chmod dir="${cache.server.home}-dc2/bin" perm="ugo+rx" includes="**/*.sh"/>
+                                            
+                                            <move file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml" 
+                                                  tofile="${cache.server.home}-dc1/server/conf/infinispan-xsite.xml" />
+                                            <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-2.xml"/>
+                                            
+                                            <move file="${cache.server.home}-dc2/server/conf/infinispan-xsite-2.xml" 
+                                                  tofile="${cache.server.home}-dc2/server/conf/infinispan-xsite.xml" />
+                                            <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml"/>
+                                        </target>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
         </profile>
 
         <profile>
-            <id>cache-server-jdg</id>
+            <id>cache-server-datagrid</id>
             <properties>
-                <cache.server>jdg</cache.server>
+                <cache.server>datagrid</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
-                <cache.server.jboss>true</cache.server.jboss>
-                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
                 <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly.arquillian</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
-                </dependency>
-            </dependencies>
-
             <build>
                 <plugins>
                     <plugin>
@@ -1150,7 +1333,7 @@
                                     <rules>
                                         <requireProperty>
                                             <property>auth.servers.crossdc</property>
-                                            <message>Profile "cache-server-jdg" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
+                                            <message>Profile "cache-server-datagrid" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -1164,7 +1347,7 @@
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>unpack-cache-server-jdg</id>
+                                    <id>unpack-cache-server-standalone-jdg</id>
                                     <phase>generate-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
@@ -1173,7 +1356,7 @@
                                         <artifactItems>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-servers-cache-server-jdg</artifactId>
+                                                <artifactId>integration-arquillian-servers-cache-server-infinispan-datagrid</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <outputDirectory>${containers.home}</outputDirectory>
@@ -1184,10 +1367,45 @@
                                 </execution>
                             </executions>
                         </plugin>
+                        <plugin>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-cache-server-standalone-infinispan-nodes</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip>${skip.copy.cache.crossdc.nodes}</skip>
+                                        <target>
+                                            <move todir="${cache.server.home}-dc1">
+                                                <fileset dir="${cache.server.home}"/>
+                                            </move>
+                                            <copy todir="${cache.server.home}-dc2">
+                                                <fileset dir="${cache.server.home}-dc1"/>
+                                            </copy>
+                                            
+                                            <chmod dir="${cache.server.home}-dc1/bin" perm="ugo+rx" includes="**/*.sh"/>
+                                            <chmod dir="${cache.server.home}-dc2/bin" perm="ugo+rx" includes="**/*.sh"/>
+                                            
+                                            <move file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml" 
+                                                  tofile="${cache.server.home}-dc1/server/conf/infinispan-xsite.xml" />
+                                            <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-2.xml"/>
+                                            
+                                            <move file="${cache.server.home}-dc2/server/conf/infinispan-xsite-2.xml" 
+                                                  tofile="${cache.server.home}-dc2/server/conf/infinispan-xsite.xml" />
+                                            <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml"/>
+                                        </target>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
         </profile>
+
 
         <profile>
             <id>auth-server-profile</id>
@@ -1341,7 +1559,7 @@
                                 <systemPropertyVariables>
                                     <run.h2>true</run.h2>
                                     <docker.database.skip>${docker.database.skip}</docker.database.skip>
-                                    
+
                                     <auth.server.jboss>false</auth.server.jboss>
 
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
@@ -1615,10 +1833,10 @@
                     <version>${appium.client.version}</version>
                 </dependency>
 
-                <!-- 
+                <!--
                     httpclient and httpcore are here to ensure we use the same version
-                    as in keycloak/pom.xml and to prevent the other versions beeing present 
-                    on classpath during tests (as a transitive dependencies e.g.). 
+                    as in keycloak/pom.xml and to prevent the other versions beeing present
+                    on classpath during tests (as a transitive dependencies e.g.).
                     There has beeen issues due to this.
                 -->
                 <dependency>
@@ -1670,7 +1888,7 @@
                 <dependency>
                     <groupId>org.apache.ant</groupId>
                     <artifactId>ant</artifactId>
-                    <version>1.8.4</version>
+                    <version>1.9.15</version>
                     <type>jar</type>
                 </dependency>
 
@@ -1876,16 +2094,16 @@
         </profile>
 
         <profile>
-            <id>java11-auth-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <id>java11-auth-server</id>
             <properties>
-                <auth.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</auth.server.jvm.args.extra>
+                <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
             </properties>
         </profile>
 
         <profile>
-            <id>java11-app-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <id>java11-app-server</id>
             <properties>
-                <app.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</app.server.jvm.args.extra>
+                <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
             </properties>
         </profile>
 
@@ -2017,6 +2235,14 @@
                 <tomcat.javax.net.ssl.properties>-Djavax.net.ssl.trustStore=${app.server.home}/lib/keycloak.truststore -Djavax.net.ssl.trustStorePassword=secret</tomcat.javax.net.ssl.properties>
             </properties>
         </profile>
+        
+        <profile>
+            <id>cache-auth</id>
+            <properties>
+                <cache.server.auth>true</cache.server.auth>
+            </properties>
+        </profile>
+        
     </profiles>
 
 </project>

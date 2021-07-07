@@ -130,7 +130,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     @Override
     public void init(Config.Scope config) {
-        indexCreationThreshold = config.getInt("indexCreationThreshold", 100000);
+        indexCreationThreshold = config.getInt("indexCreationThreshold", 300000);
         logger.debugf("indexCreationThreshold is %d", indexCreationThreshold);
     }
 

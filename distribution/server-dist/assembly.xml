@@ -1,131 +1,19 @@
-<!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-
-<assembly>
-    <id>server-dist</id>
-
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>thin-server</id>
     <formats>
-        <format>zip</format>
+       <format>zip</format>
         <format>tar.gz</format>
     </formats>
-
-    <includeBaseDirectory>true</includeBaseDirectory>
-
+    <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>
-            <filtered>true</filtered>
-            <includes>
-                <include>**/module.xml</include>
-            </includes>
-            <!-- unused resteasy providers eat up memory, can't remove them as it my effect RH-SSO patching
-            <excludes>
-                <exclude>**/jose-jwt/**</exclude>
-                <exclude>**/resteasy-atom-provider/**</exclude>
-                <exclude>**/resteasy-crypto/**</exclude>
-                <exclude>**/resteasy-jettison-provider/**</exclude>
-                <exclude>**/resteasy-json-p-provider/**</exclude>
-                <exclude>**/resteasy-jsapi/**</exclude>
-                <exclude>**/resteasy-spring/**</exclude>
-                <exclude>**/resteasy-yaml-provider/**</exclude>
-                <exclude>**/jettison/**</exclude>
-            </excludes>
-            -->
-        </fileSet>
-        <fileSet>
-            <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>
-            <filtered>false</filtered>
-            <excludes>
-                <exclude>.installation</exclude>
-                <exclude>bin/*.sh</exclude>
-                <!-- jboss-client.jar unused  Unfortunately, this may screw up our patch process so it can't be removed.
-                <exclude>bin/client/README-EJB-JMS.txt</exclude>
-                <exclude>bin/client/jboss-client.jar</exclude>
-                 -->
-                <exclude>module.xml</exclude>
-                <exclude>welcome-content/**</exclude>
-                <exclude>appclient/**</exclude>
-                <exclude>bin/appclient.*</exclude>
-                <exclude>copyright.txt</exclude>
-                <exclude>README.txt</exclude>
-                <exclude>version.txt</exclude>
-                <exclude>${profileExcludes}</exclude>
-                <exclude>docs/licenses-${product.slot}/**</exclude>
-                <!-- unused resteasy providers eat up memory can't remove them as it my effect RH-SSO patching
-                <exclude>**/jose-jwt/**</exclude>
-                <exclude>**/resteasy-atom-provider/**</exclude>
-                <exclude>**/resteasy-crypto/**</exclude>
-                <exclude>**/resteasy-jettison-provider/**</exclude>
-                <exclude>**/resteasy-json-p-provider/**</exclude>
-                <exclude>**/resteasy-jsapi/**</exclude>
-                <exclude>**/resteasy-spring/**</exclude>
-                <exclude>**/resteasy-yaml-provider/**</exclude>
-                <exclude>**/jettison/**</exclude>
-                 -->
-            </excludes>
-        </fileSet>
-
-        <fileSet>
-            <directory>target/${project.build.finalName}</directory>
+            <directory>target</directory>
             <outputDirectory/>
             <includes>
-                <include>bin/*.sh</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>
-            <includes>
-                <include>.installation</include>
-            </includes>
-            <directoryMode>0700</directoryMode>
-        </fileSet>
-        <fileSet>
-            <directory>src/main/welcome-content</directory>
-            <outputDirectory>welcome-content</outputDirectory>
-            <includes>
-                <include>*.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>src/main/modules</directory>
-            <outputDirectory>modules</outputDirectory>
-            <includes>
-                <include>layers.conf</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>target/licenses/content/docs</directory>
-            <outputDirectory>docs</outputDirectory>
-            <includes>
-                <include>licenses-${product.slot}/**</include>
+                <include>${server.output.dir.prefix}-${server.output.dir.version}/**</include>
             </includes>
         </fileSet>
     </fileSets>
-
-    <files>
-        <file>
-            <source>src/main/version.txt</source>
-            <outputDirectory/>
-            <filtered>true</filtered>
-        </file>
-    </files>
-
 </assembly>

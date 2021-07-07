@@ -16,12 +16,12 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.common.util.Time;
+
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
@@ -58,6 +58,13 @@ public class OAuth2DeviceCodeModel {
 
     public OAuth2DeviceCodeModel approve(String userSessionId) {
         return new OAuth2DeviceCodeModel(realm, clientId, deviceCode, scope, nonce, expiration,  pollingInterval, userSessionId, false, additionalParams);
+    }
+
+    public OAuth2DeviceCodeModel approve(String userSessionId, Map<String, String> additionalParams) {
+        if (additionalParams != null) {
+            this.additionalParams.putAll(additionalParams);
+        }
+        return new OAuth2DeviceCodeModel(realm, clientId, deviceCode, scope, nonce, expiration, pollingInterval, userSessionId, false, this.additionalParams);
     }
 
     public OAuth2DeviceCodeModel deny() {
@@ -189,6 +196,10 @@ public class OAuth2DeviceCodeModel {
         }
         this.additionalParams.forEach(params::putSingle);
         return params;
+    }
+
+    public Map<String, String> getAdditionalParams() {
+        return additionalParams;
     }
 
     public boolean isExpired() {

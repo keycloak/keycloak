@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="standalone-ha" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <origin name="org.wildfly:wildfly-ee-galleon-pack">
+        <feature-group name="standalone-ha">
+            <exclude spec="subsystem.sar"/>
+            <exclude spec="subsystem.jdr"/>
+            <exclude spec="subsystem.jsf"/>
+            <exclude spec="subsystem.pojo"/>
+            <exclude spec="subsystem.webservices"/>
+            <exclude spec="subsystem.batch-jberet"/>
+            <exclude spec="subsystem.distributable-web"/>
+            <exclude spec="subsystem.discovery"/>
+            <exclude spec="subsystem.ee-security"/>
+            <exclude spec="subsystem.resource-adapters"/>
+            <exclude spec="subsystem.infinispan"/>
+            <exclude spec="subsystem.singleton"/>
+        </feature-group>
+        <feature-group name="deployment-scanner"/>
+        <feature-group name="ee">
+            <feature spec="subsystem.ee">
+                <feature spec="subsystem.ee.context-service">
+                    <param name="context-service" value="default"/>
+                    <param name="jndi-name" value="java:jboss/ee/concurrency/context/default"/>
+                    <param name="use-transaction-setup-provider" value="true"/>
+                </feature>
+            </feature>
+        </feature-group>
+        <feature-group name="ejb3">
+            <feature spec="subsystem.ejb3">
+                <param name="default-sfsb-cache" value="distributable"/>
+            </feature>
+        </feature-group>
+        <feature-group name="health"/>
+        <feature-group name="io"/>
+        <feature-group name="jaxrs"/>
+        <feature-group name="jca"/>
+        <feature-group name="logging"/>
+        <feature-group name="jgroups"/>
+    </origin>
+    <feature-group name="keycloak-server-subsystem"/>
+    <feature-group name="datasources">
+        <feature-group name="keycloak-datasource"/>
+    </feature-group>
+    <feature-group name="infinispan-dist"/>
+
+</feature-group-spec>

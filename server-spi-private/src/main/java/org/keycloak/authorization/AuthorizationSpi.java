@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization;
 
+import org.keycloak.common.Profile;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -44,5 +45,10 @@ public class AuthorizationSpi implements Spi {
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
         return AuthorizationProviderFactory.class;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION);
     }
 }

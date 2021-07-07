@@ -1,0 +1,30 @@
+{
+	"attributes": [
+		{
+			"name": "username",
+			"displayName": "${username}"
+		},
+		{
+			"name": "email",
+			"displayName": "${email}"
+		},
+		{
+			"name": "firstName",
+			"displayName": "${firstName}",
+	        "required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			}
+		},
+		{
+			"name": "lastName",
+			"displayName": "${lastName}",
+	        "required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			}
+		}
+	]
+}

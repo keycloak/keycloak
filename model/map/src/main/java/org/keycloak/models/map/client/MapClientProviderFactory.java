@@ -26,45 +26,45 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  *
  * @author hmlnarik
  */
-public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientProvider> implements ClientProviderFactory, ProviderEventListener {
+public class MapClientProviderFactory<K> extends AbstractMapProviderFactory<ClientProvider, K, MapClientEntity<K>, ClientModel> implements ClientProviderFactory, ProviderEventListener {
 
-    private final ConcurrentHashMap<UUID, ConcurrentMap<String, Integer>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
-
-    private MapStorage<UUID, MapClientEntity, ClientModel> store;
+    private final ConcurrentHashMap<K, ConcurrentMap<String, Integer>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
 
     private Runnable onClose;
 
+    public MapClientProviderFactory() {
+        super(MapClientEntity.class, ClientModel.class);
+    }
+
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("clients", UUID.class, MapClientEntity.class, ClientModel.class);
-
         factory.register(this);
         onClose = () -> factory.unregister(this);
     }
 
-
     @Override
     public MapClientProvider create(KeycloakSession session) {
-        return new MapClientProvider(session, store, REGISTERED_NODES_STORE);
+        return new MapClientProvider<>(session, getStorage(session), REGISTERED_NODES_STORE);
     }
 
     @Override
     public void close() {
         super.close();
         onClose.run();
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Client provider";
     }
 
     @Override

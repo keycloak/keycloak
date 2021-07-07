@@ -17,54 +17,24 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.Optional;
-
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class AnyClientCondition implements ClientPolicyConditionProvider<AnyClientCondition.Configuration> {
-
-    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-    private Configuration configuration = new Configuration();
+public class AnyClientCondition extends AbstractClientPolicyConditionProvider<ClientPolicyConditionConfigurationRepresentation> {
 
     public AnyClientCondition(KeycloakSession session) {
+        super(session);
     }
 
     @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
-    }
-
-    @Override
-    public Class<Configuration> getConditionConfigurationClass() {
-        return Configuration.class;
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyConditionConfiguration {
-        @JsonProperty("is-negative-logic")
-        protected Boolean negativeLogic;
-
-        public Boolean isNegativeLogic() {
-            return negativeLogic;
-        }
-
-        public void setNegativeLogic(Boolean negativeLogic) {
-            this.negativeLogic = negativeLogic;
-        }
-    }
-
-    @Override
-    public boolean isNegativeLogic() {
-        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
+    public Class<ClientPolicyConditionConfigurationRepresentation> getConditionConfigurationClass() {
+        return ClientPolicyConditionConfigurationRepresentation.class;
     }
 
     @Override

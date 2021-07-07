@@ -44,6 +44,7 @@ public class JWKSUtilsTest {
 
         String kidRsa1 = "key1";
         String kidRsa2 = "key2";
+        String kidInvalidKey = "ignored";
         String kidEC1 = "key3";
         String kidEC2 = "key4";
         String jwksJson = "{" +
@@ -60,6 +61,12 @@ public class JWKSUtilsTest {
                 "   \"kty\": \"RSA\"," +
                 "   \"use\": \"sig\"," +
                 "   \"kid\": \"" + kidRsa2 + "\"," +
+                "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
+                "   \"e\": \"AQAB\"" +
+                "  }," +
+                "  {" +
+                "   \"kty\": \"RSA\"," +
+                "   \"kid\": \"" + kidInvalidKey + "\"," +
                 "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
                 "   \"e\": \"AQAB\"" +
                 "  }," +

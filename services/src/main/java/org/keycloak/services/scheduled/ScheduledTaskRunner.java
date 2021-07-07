@@ -20,6 +20,7 @@ package org.keycloak.services.scheduled;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.timer.ScheduledTask;
 
@@ -32,22 +33,34 @@ public class ScheduledTaskRunner implements Runnable {
 
     protected final KeycloakSessionFactory sessionFactory;
     protected final ScheduledTask task;
+    private int transactionLimit;
 
     public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task) {
         this.sessionFactory = sessionFactory;
         this.task = task;
     }
 
+    public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task, int transactionLimit) {
+        this(sessionFactory, task);
+        this.transactionLimit = transactionLimit;
+    }
+
     @Override
     public void run() {
         KeycloakSession session = sessionFactory.create();
         try {
+            if (transactionLimit != 0) {
+                KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
+            }
             runTask(session);
         } catch (Throwable t) {
             ServicesLogger.LOGGER.failedToRunScheduledTask(t, task.getClass().getSimpleName());
 
             session.getTransactionManager().rollback();
         } finally {
+            if (transactionLimit != 0) {
+                KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+            }
             try {
                 session.close();
             } catch (Throwable t) {

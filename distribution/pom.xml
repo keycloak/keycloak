@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -56,9 +56,27 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>jboss</id>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <profiles>
+        <profile>
+            <id>legacy-dist</id>
+            <activation>
+                <property>
+                    <name>legacy-dist</name>
+                </property>
+            </activation>
+            <modules>
+                <module>server-legacy-dist</module>
+            </modules>
+        </profile>
         <profile>
             <id>community</id>
             <activation>

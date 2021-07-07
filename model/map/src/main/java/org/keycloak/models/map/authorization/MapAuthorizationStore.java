@@ -37,7 +37,6 @@ import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.storage.MapStorage;
 
-import java.util.UUID;
 
 /**
  * @author mhajas 
@@ -51,7 +50,7 @@ public class MapAuthorizationStore implements StoreFactory {
     private final PermissionTicketStore permissionTicketStore;
     private boolean readOnly;
 
-    public MapAuthorizationStore(KeycloakSession session, MapStorage<UUID, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore, MapStorage<UUID, MapPolicyEntity, Policy> policyStore, MapStorage<String, MapResourceServerEntity, ResourceServer> resourceServerStore, MapStorage<UUID, MapResourceEntity, Resource> resourceStore, MapStorage<UUID, MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
+    public MapAuthorizationStore(KeycloakSession session, MapStorage permissionTicketStore, MapStorage policyStore, MapStorage resourceServerStore, MapStorage resourceStore, MapStorage scopeStore, AuthorizationProvider provider) {
         this.permissionTicketStore = new MapPermissionTicketStore(session, permissionTicketStore, provider);
         this.policyStore = new MapPolicyStore(session, policyStore, provider);
         this.resourceServerStore = new MapResourceServerStore(session, resourceServerStore, provider);

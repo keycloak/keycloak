@@ -99,9 +99,9 @@ public interface ModelCriteriaBuilder<M> {
          * can be an array (via an implicit conversion of the vararg), a {@link Collection} or a {@link Stream}.
          */
         IN,
-        /** Is not null */
+        /** Is not null and, in addition, in case of collection not empty */
         EXISTS,
-        /** Is null */
+        /** Is null or, in addition, in case of collection empty */
         NOT_EXISTS,
     }
 
@@ -142,7 +142,7 @@ public interface ModelCriteriaBuilder<M> {
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
      * combines the given builders with the Boolean OR operator.
      * <p>
-     * Predicate coming out of {@code and} on an empty array of {@code builders}
+     * Predicate coming out of {@code or} on an empty array of {@code builders}
      * (i.e. empty disjunction) is always {@code false}.
      *
      * <pre>

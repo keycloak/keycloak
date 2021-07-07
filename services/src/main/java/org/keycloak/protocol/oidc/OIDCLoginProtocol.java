@@ -57,6 +57,7 @@ import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -201,7 +202,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         setupResponseTypeAndMode(responseTypeParam, responseModeParam);
 
         String redirect = authSession.getRedirectUri();
-        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
+        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode, session, clientSession);
         String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
         logger.debugv("redirectAccessCode: state: {0}", state);
         if (state != null)
@@ -243,7 +244,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
 
-                responseBuilder.generateIDToken();
+                responseBuilder.generateIDToken(isIdTokenAsDetachedSignature(clientSession.getClient()));
 
                 if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                     responseBuilder.generateAccessTokenHash();
@@ -275,19 +276,25 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return redirectUri.build();
     }
 
+    // For FAPI 1.0 Advanced
+    private boolean isIdTokenAsDetachedSignature(ClientModel client) {
+        if (client == null) return false;
+        return Boolean.valueOf(Optional.ofNullable(client.getAttribute(OIDCConfigAttributes.ID_TOKEN_AS_DETACHED_SIGNATURE)).orElse(Boolean.FALSE.toString())).booleanValue();
+    }
+
     @Override
     public Response sendError(AuthenticationSessionModel authSession, Error error) {
         if (isOAuth2DeviceVerificationFlow(authSession)) {
             return denyOAuth2DeviceAuthorization(authSession, error, session);
         }
-
         String responseTypeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         String responseModeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
         setupResponseTypeAndMode(responseTypeParam, responseModeParam);
 
         String redirect = authSession.getRedirectUri();
         String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
-        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
+
+        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode, session, null);
 
         if (error != Error.CANCELLED_AIA_SILENT) {
             redirectUri.addParam(OAuth2Constants.ERROR, translateError(error));
@@ -307,7 +314,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
         switch (error) {
             case CANCELLED_BY_USER:
             case CANCELLED_AIA:
-                return OAuthErrorException.INTERACTION_REQUIRED;
             case CONSENT_DENIED:
                 return OAuthErrorException.ACCESS_DENIED;
             case PASSIVE_INTERACTION_REQUIRED:

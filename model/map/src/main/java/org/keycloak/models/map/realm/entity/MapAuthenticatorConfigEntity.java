@@ -40,7 +40,7 @@ public class MapAuthenticatorConfigEntity implements UpdatableEntity {
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAlias(model.getAlias());
-        entity.setConfig(model.getConfig());
+        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
         return entity;
     }
 
@@ -49,7 +49,7 @@ public class MapAuthenticatorConfigEntity implements UpdatableEntity {
         AuthenticatorConfigModel model = new AuthenticatorConfigModel();
         model.setId(entity.getId());
         model.setAlias(entity.getAlias());
-        model.setConfig(entity.getConfig());
+        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
         return model;
     }
 

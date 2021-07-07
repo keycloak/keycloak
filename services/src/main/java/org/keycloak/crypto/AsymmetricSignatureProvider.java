@@ -39,4 +39,8 @@ public class AsymmetricSignatureProvider implements SignatureProvider {
         return new ServerAsymmetricSignatureVerifierContext(session, kid, algorithm);
     }
 
+    @Override
+    public boolean isAsymmetricAlgorithm() {
+        return true;
+    }
 }

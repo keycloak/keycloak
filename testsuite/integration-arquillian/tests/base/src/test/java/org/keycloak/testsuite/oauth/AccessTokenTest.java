@@ -16,8 +16,11 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -110,6 +113,7 @@ import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
 import static org.keycloak.testsuite.Assert.assertExpiration;
 
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 
 /**
@@ -220,6 +224,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNotEquals("test-user@localhost", token.getSubject());
 
         assertEquals(sessionId, token.getSessionState());
+
+        JWSInput idToken = new JWSInput(response.getIdToken());
+        ObjectMapper mapper = JsonSerialization.mapper;
+        JsonParser parser = mapper.getFactory().createParser(idToken.readContentAsString());
+        TreeNode treeNode = mapper.readTree(parser);
+        String sid = ((TextNode) treeNode.get("sid")).asText();
+        assertEquals(sessionId, sid);
 
         assertNull(token.getNbf());
         assertEquals(0, token.getNotBefore());

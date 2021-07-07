@@ -18,13 +18,10 @@ package org.keycloak.testsuite.adapter.example.authorization;
 
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
-import java.io.IOException;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**

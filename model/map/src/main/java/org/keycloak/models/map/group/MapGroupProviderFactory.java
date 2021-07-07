@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.models.map.group;
 
 import org.keycloak.models.ClientModel;
@@ -27,43 +26,43 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
 
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
-import java.util.UUID;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
 
 /**
  *
  * @author mhajas
  */
-public class MapGroupProviderFactory extends AbstractMapProviderFactory<GroupProvider> implements GroupProviderFactory, ProviderEventListener {
-
-    private MapStorage<UUID, MapGroupEntity, GroupModel> store;
+public class MapGroupProviderFactory<K> extends AbstractMapProviderFactory<GroupProvider, K, MapGroupEntity<K>, GroupModel> implements GroupProviderFactory, ProviderEventListener {
 
     private Runnable onClose;
 
+    public MapGroupProviderFactory() {
+        super(MapGroupEntity.class, GroupModel.class);
+    }
+
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("groups", UUID.class, MapGroupEntity.class, GroupModel.class);
-
         factory.register(this);
         onClose = () -> factory.unregister(this);
     }
 
-
     @Override
     public MapGroupProvider create(KeycloakSession session) {
-        return new MapGroupProvider(session, store);
+        return new MapGroupProvider<>(session, getStorage(session));
     }
 
     @Override
     public void close() {
         super.close();
         onClose.run();
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Group provider";
     }
 
     @Override

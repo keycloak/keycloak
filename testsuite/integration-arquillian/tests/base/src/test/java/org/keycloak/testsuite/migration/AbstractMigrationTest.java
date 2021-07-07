@@ -44,6 +44,8 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -76,6 +78,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -84,6 +87,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -123,7 +127,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "default-roles-migration", "migration-test-realm-role");
-        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
+        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "migration-saml-client", "realm-management", "security-admin-console"));
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
@@ -292,11 +296,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testDeleteAccount(migrationRealm);
     }
 
-    protected void testMigrationTo13_0_0() {
+    protected void testMigrationTo13_0_0(boolean testRealmAttributesMigration) {
         testDefaultRoles(masterRealm);
         testDefaultRoles(migrationRealm);
 
         testDefaultRolesNameWhenTaken();
+        if (testRealmAttributesMigration) {
+            testRealmAttributesMigration();
+        }
+    }
+
+    protected void testMigrationTo14_0_0() {
+        testSamlAttributes(migrationRealm);
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -912,9 +923,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo9_x() {
         testMigrationTo9_0_0();
     }
-    protected void testMigrationTo12_x() {
+
+    // Realm attributes supported since Keycloak 3
+    protected void testMigrationTo12_x(boolean testRealmAttributesMigration) {
         testMigrationTo12_0_0();
-        testMigrationTo13_0_0();
+        testMigrationTo13_0_0(testRealmAttributesMigration);
+        testMigrationTo14_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
@@ -954,5 +968,22 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testDefaultRolesNameWhenTaken() {
         // 'default-roles-migration2' name is used, we test that 'default-roles-migration2-1' is created instead
         assertThat(migrationRealm2.toRepresentation().getDefaultRole().getName(), equalTo("default-roles-migration2-1"));
+    }
+
+    protected void testSamlAttributes(RealmResource realm) {
+        log.info("Testing SAML ARTIFACT BINDING IDENTIFIER");
+
+        realm.clients().findAll().stream()
+                .filter(clientRepresentation -> Objects.equals("saml", clientRepresentation.getProtocol()))
+                .forEach(clientRepresentation -> {
+                    String clientId = clientRepresentation.getClientId();
+                    assertThat(clientRepresentation.getAttributes(), hasEntry(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, ArtifactBindingUtils.computeArtifactBindingIdentifierString(clientId)));
+                });
+    }
+
+    protected void testRealmAttributesMigration() {
+        log.info("testing realm attributes migration");
+        Map<String, String> realmAttributes = migrationRealm.toRepresentation().getAttributes();
+        assertEquals("custom_value", realmAttributes.get("custom_attribute"));
     }
 }

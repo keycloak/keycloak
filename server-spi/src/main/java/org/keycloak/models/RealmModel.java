@@ -253,6 +253,8 @@ public interface RealmModel extends RoleContainerModel {
 
     CibaConfig getCibaPolicy();
 
+    ParConfig getParPolicy();
+
     /**
      * This method will return a map with all the lifespans available
      * or an empty map, but never null.
@@ -411,7 +413,9 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link ClientModel}. Never returns {@code null}.
      */
     Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
-    
+
+    Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();

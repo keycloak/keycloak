@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 
+import java.util.Map;
+
 
 /**
  * Provides cache for OAuth2 Device Authorization Grant tokens.
@@ -70,7 +72,7 @@ public interface OAuth2DeviceTokenStoreProvider extends Provider {
      * @param userSessionId
      * @return Return true if approving successful. If the code is already expired and cleared, it returns false.
      */
-    boolean approve(RealmModel realm, String userCode, String userSessionId);
+    boolean approve(RealmModel realm, String userCode, String userSessionId, Map<String, String> additionalParams);
 
     /**
      * Deny the given user code

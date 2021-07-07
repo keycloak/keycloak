@@ -17,8 +17,6 @@
 
 package org.keycloak.authentication.forms;
 
-import static org.keycloak.userprofile.profile.UserProfileContextFactory.forRegistrationUserCreation;
-
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -37,12 +35,11 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -70,35 +67,35 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
+        KeycloakSession session = context.getSession();
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, formData);
+        String email = profile.getAttributes().getFirstValue(UserModel.EMAIL);
 
-        UserProfileValidationResult result = forRegistrationUserCreation(context.getSession(), formData).validate();
-        UserProfile newProfile = result.getProfile();
-        String email = newProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
-
-        String username = newProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
-        String firstName = newProfile.getAttributes().getFirstAttribute(UserModel.FIRST_NAME);
-        String lastName = newProfile.getAttributes().getFirstAttribute(UserModel.LAST_NAME);
+        String username = profile.getAttributes().getFirstValue(UserModel.USERNAME);
+        String firstName = profile.getAttributes().getFirstValue(UserModel.FIRST_NAME);
+        String lastName = profile.getAttributes().getFirstValue(UserModel.LAST_NAME);
         context.getEvent().detail(Details.EMAIL, email);
 
         context.getEvent().detail(Details.USERNAME, username);
         context.getEvent().detail(Details.FIRST_NAME, firstName);
         context.getEvent().detail(Details.LAST_NAME, lastName);
 
-        List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
         if (context.getRealm().isRegistrationEmailAsUsername()) {
             context.getEvent().detail(Details.USERNAME, email);
         }
-        if (errors.size() > 0) {
-            if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS)) {
+
+        try {
+            profile.validate();
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+
+            if (pve.hasError(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);
-                formData.remove(RegistrationPage.FIELD_EMAIL);
-            } else if (result.hasFailureOfErrorType(Messages.MISSING_EMAIL, Messages.MISSING_USERNAME, Messages.INVALID_EMAIL)) {
-                if (result.hasFailureOfErrorType(Messages.INVALID_EMAIL))
-                    formData.remove(Validation.FIELD_EMAIL);
+            } else if (pve.hasError(Messages.MISSING_EMAIL, Messages.MISSING_USERNAME, Messages.INVALID_EMAIL)) {
                 context.error(Errors.INVALID_REGISTRATION);
-            } else if (result.hasFailureOfErrorType(Messages.USERNAME_EXISTS)) {
+            } else if (pve.hasError(Messages.USERNAME_EXISTS)) {
                 context.error(Errors.USERNAME_IN_USE);
-                formData.remove(Validation.FIELD_USERNAME);
             }
 
             context.validationError(formData, errors);
@@ -114,24 +111,31 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public void success(FormContext context) {
-        AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
 
-        String email = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
-        String username = updatedProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
+        String email = formData.getFirst(UserModel.EMAIL);
+        String username = formData.getFirst(UserModel.USERNAME);
+
         if (context.getRealm().isRegistrationEmailAsUsername()) {
             username = email;
         }
+
         context.getEvent().detail(Details.USERNAME, username)
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.EMAIL, email);
 
-        UserModel user = context.getSession().users().addUser(context.getRealm(), username);
+        KeycloakSession session = context.getSession();
+
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, formData);
+        UserModel user = profile.create();
+
         user.setEnabled(true);
-        UserUpdateHelper.updateRegistrationUserCreation(context.getRealm(), user, updatedProfile);
+
+        context.setUser(user);
 
         context.getAuthenticationSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
 
-        context.setUser(user);
         context.getEvent().user(user);
         context.getEvent().success();
         context.newEvent().event(EventType.LOGIN);

@@ -139,6 +139,8 @@ public class DefaultTokenManager implements TokenManager {
                 return getSignatureAlgorithm(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
             case USERINFO:
                 return getSignatureAlgorithm(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
+            case AUTHORIZATION_RESPONSE:
+                return getSignatureAlgorithm(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG);
             default:
                 throw new RuntimeException("Unknown token type");
         }
@@ -211,6 +213,8 @@ public class DefaultTokenManager implements TokenManager {
             case ID:
             case LOGOUT:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
+            case AUTHORIZATION_RESPONSE:
+                return getCekManagementAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG);
             default:
                 return null;
         }
@@ -232,6 +236,8 @@ public class DefaultTokenManager implements TokenManager {
             case ID:
             case LOGOUT:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
+            case AUTHORIZATION_RESPONSE:
+                return getEncryptAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC);
             default:
                 return null;
         }

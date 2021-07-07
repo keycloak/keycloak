@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,8 +31,8 @@
     <description/>
 
     <properties>
-        <spring.version>3.2.7.RELEASE</spring.version>
-        <spring-security.version>3.2.7.RELEASE</spring-security.version>
+        <spring.version>5.2.9.RELEASE</spring.version>
+        <spring-security.version>5.2.9.RELEASE</spring-security.version>
         <mockito.version>1.9.5</mockito.version>
         <apache-httpcomponents.version>4.3.6</apache-httpcomponents.version>
     </properties>
@@ -52,7 +52,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <artifactId>jboss-servlet-api_4.0_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

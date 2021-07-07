@@ -17,8 +17,6 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import static org.keycloak.userprofile.profile.UserProfileContextFactory.forIdpReview;
-
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -36,9 +34,10 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -102,23 +101,13 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         EventBuilder event = context.getEvent();
         event.event(EventType.UPDATE_PROFILE);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        UserProfileValidationResult result = forIdpReview(userCtx, formData, context.getSession()).validate();
+        UserModelDelegate updatedProfile = new UserModelDelegate(null) {
 
-        List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
+            @Override
+            public String getId() {
+                return userCtx.getId();
+            }
 
-        if (errors != null && !errors.isEmpty()) {
-            Response challenge = context.form()
-                    .setErrors(errors)
-                    .setAttribute(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR, userCtx)
-                    .setFormData(formData)
-                    .createUpdateProfilePage();
-            context.challenge(challenge);
-            return;
-        }
-
-        UserProfile updatedProfile = result.getProfile();
-
-        UserUpdateHelper.updateIdpReview(context.getRealm(), new UserModelDelegate(null) {
             @Override
             public Map<String, List<String>> getAttributes() {
                 return userCtx.getAttributes();
@@ -138,19 +127,50 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             public void removeAttribute(String name) {
                 userCtx.getAttributes().remove(name);
             }
-        }, updatedProfile);
+
+            @Override
+            public String getFirstAttribute(String name) {
+                return userCtx.getFirstAttribute(name);
+            }
+
+            @Override
+            public String getUsername() {
+                return userCtx.getUsername();
+            }
+        };
+
+        UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, formData, updatedProfile);
+
+        try {
+            String oldEmail = userCtx.getEmail();
+
+            profile.update((attributeName, userModel) -> {
+                if (attributeName.equals(UserModel.EMAIL)) {
+                    context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
+                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL)).success();
+                }
+            });
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+
+            Response challenge = context.form()
+                    .setErrors(errors)
+                    .setAttribute(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR, userCtx)
+                    .setFormData(formData)
+                    .createUpdateProfilePage();
+
+            context.challenge(challenge);
+
+            return;
+        }
 
         userCtx.saveToAuthenticationSession(context.getAuthenticationSession(), BROKERED_CONTEXT_NOTE);
 
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 
-        String oldEmail = userCtx.getEmail();
-        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
+        String newEmail = profile.getAttributes().getFirstValue(UserModel.EMAIL);
 
-        if (result.hasAttributeChanged(UserModel.EMAIL)) {
-            context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
-            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail).success();
-        }
         event.detail(Details.UPDATED_EMAIL, newEmail);
 
         // Ensure page is always shown when user later returns to it - for example with form "back" button

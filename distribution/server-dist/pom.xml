@@ -1,48 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2021, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
   ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
   ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-dist</artifactId>
-    <packaging>pom</packaging>
-    <name>Keycloak Server Distribution</name>
+
+    <name>Keycloak Server Galleon Based Distribution</name>
     <description/>
 
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+    <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-feature-pack</artifactId>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-galleon-pack</artifactId>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-galleon-pack</artifactId>
             <type>zip</type>
             <exclusions>
                 <exclusion>
@@ -51,46 +58,186 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-galleon-pack</artifactId>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-galleon-pack</artifactId>
+            <type>zip</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>
+        <finalName>${server.output.dir.prefix}-${server.output.dir.version}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                <version>${wildfly.build-tools.version}</version>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
                         <goals>
-                            <goal>build</goal>
+                            <goal>provision</goal>
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <config-file>../${keycloak.provisioning.xml}</config-file>
+                            <install-dir>${basedir}/target/${project.build.finalName}</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>${galleon.offline}</offline>
+                            <plugin-options>
+                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                            </plugin-options>
+                            <feature-packs>
+                                <feature-pack>
+                                    <transitive>true</transitive>
+                                    <groupId>${ee.maven.groupId}</groupId>
+                                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                                    <version>${ee.maven.version}</version>
+                                    <included-packages>
+                                        <name>welcome-content</name>
+                                    </included-packages>
+                                    <excluded-packages>
+                                        <name>product.conf</name>
+                                        <name>appclient</name>
+                                        <name>bin.appclient</name>
+                                    </excluded-packages>
+                                </feature-pack>
+                                <feature-pack>
+                                    <transitive>true</transitive>
+                                    <groupId>org.wildfly</groupId>
+                                    <artifactId>wildfly-galleon-pack</artifactId>
+                                    <version>${wildfly.version}</version>
+                                    <included-packages>
+                                        <name>bin</name>
+                                        <name>bin.domain</name>
+                                        <name>docs.examples.configs</name>
+                                    </included-packages>
+                                    <excluded-packages>
+                                        <name>product.conf</name>
+                                        <name>appclient</name>
+                                        <name>bin.appclient</name>
+                                    </excluded-packages>
+                                </feature-pack>
+                                <feature-pack>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-server-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <included-packages>
+                                        <name>identity</name>
+                                        <name>client-cli</name>
+                                        <name>core-tools</name>
+                                        <name>themes</name>
+                                        <name>welcome-content-keycloak</name>
+                                    </included-packages>
+                                    <excluded-packages>
+                                    </excluded-packages>
+                                </feature-pack>
+                            </feature-packs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin> <!-- TODO: remove this in favour of proper Galleon Licenses Generation -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-and-inject-keycloak-server-feature-pack-licenses</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-server-feature-pack</artifactId>
+                                    <type>zip</type>
+                                    <outputDirectory>${basedir}/target/${project.build.finalName}/docs</outputDirectory>
+                                    <includes>content/docs/licenses-${product.slot}/**</includes>
+                                    <fileMappers>
+                                        <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                            <pattern>^\Qcontent/docs/\E</pattern>
+                                            <replacement>./</replacement>
+                                        </org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                    </fileMappers>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-clean-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>unpack-server-feature-pack-licenses</id>
-                        <phase>prepare-package</phase>
+                        <!-- remove unwanted files from wildfly distribution (too complicated/not possible via galleon packages) -->
+                        <id>post-provision-cleanup</id>
+                        <phase>process-classes</phase>
                         <goals>
-                            <goal>unpack-dependencies</goal>
+                            <goal>clean</goal>
                         </goals>
                         <configuration>
-                            <includeGroupIds>org.keycloak</includeGroupIds>
-                            <includeArtifactIds>keycloak-server-feature-pack</includeArtifactIds>
-                            <includeTypes>zip</includeTypes>
-                            <includes>content/docs/licenses-${product.slot}/**</includes>
-                            <outputDirectory>${project.build.directory}/licenses</outputDirectory>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>${basedir}/target/${project.build.finalName}</directory>
+                                    <includes>
+                                        <include>README.txt</include>
+                                        <include>copyright.txt</include>
+                                    </includes>
+                                </fileset>
+                                <fileset>
+                                    <directory>${basedir}/target/${project.build.finalName}/welcome-content</directory>
+                                    <excludes>
+                                        <exclude>robots.txt</exclude>
+                                        <exclude>index.html</exclude>
+                                    </excludes>
+                                </fileset>
+                            </filesets>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>verifications-configuration</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${basedir}/target/verifier</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/verifier</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-verifier-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -104,51 +251,18 @@
                         </goals>
                         <configuration>
                             <descriptors>
-                                <descriptor>${assemblyFile}</descriptor>
+                                <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
                             <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <properties>
-                <assemblyFile>assembly.xml</assemblyFile>
-            </properties>
-            <build>
-                <finalName>keycloak-${project.version}</finalName>
-            </build>
-        </profile>
-
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <properties>
-                <assemblyFile>assembly.xml</assemblyFile>
-                <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
-            </properties>
-            <build>
-                <finalName>${product.name}-${product.filename.version}</finalName>
-            </build>
-        </profile>
-    </profiles>
-
 </project>

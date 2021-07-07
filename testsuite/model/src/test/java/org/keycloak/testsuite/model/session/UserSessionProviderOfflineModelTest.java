@@ -218,7 +218,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
             }
 
-            InfinispanTestUtil.revertTimeService(kcSession);
+            InfinispanTestUtil.revertTimeService();
         }
     }
 

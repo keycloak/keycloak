@@ -20,6 +20,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.storage.client.ClientLookupProvider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -167,4 +168,13 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
      * @param clientScope to be unassigned
      */
     void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope);
+
+    /**
+     * Returns a map of (rootUrl, {validRedirectUris}) for all enabled clients.
+     * @param realm
+     * @return
+     * @deprecated Do not use, this is only to support a deprecated logout endpoint and will vanish with it's removal
+     */
+    @Deprecated
+    Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm);
 }

@@ -4,6 +4,8 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
@@ -87,6 +89,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA256");
         attributes.put(SAML_FORCE_NAME_ID_FORMAT, "false");
         attributes.put(SAML_NAME_ID_FORMAT, "username");
+        attributes.put(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, ArtifactBindingUtils.computeArtifactBindingIdentifierString("saml"));
         return attributes;
     }
 
