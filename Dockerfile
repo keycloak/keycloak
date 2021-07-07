@@ -5,19 +5,17 @@ FROM node:16 as builder
 ARG DEFAULT_KEYCLOAK_ENDPOINT
 ARG KEYCLOAK_ENDPOINT
 
-# install updated yarn
-RUN rm -fr /usr/local/bin/yarn* &&\
-    npm install -g yarn
-
 WORKDIR /app
 COPY . .
 
 # replace Keycloak endpoints
 RUN sed -i "s/${DEFAULT_KEYCLOAK_ENDPOINT}/${KEYCLOAK_ENDPOINT}/g" import.js &&\
     sed -i "s/${DEFAULT_KEYCLOAK_ENDPOINT}/${KEYCLOAK_ENDPOINT}/g" src/context/auth/keycloak.ts &&\
-    sed -i "s/adminv2//g" snowpack.config.js &&\
-    yarn &&\
-    yarn build
+    sed -i "s/adminv2//g" snowpack.config.js
+
+# install dependencies and build application
+RUN npm ci
+RUN npm run build
 
 FROM nginx:stable
 ARG DEFAULT_KEYCLOAK_ENDPOINT

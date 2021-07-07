@@ -23,9 +23,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         check-latest: true
 
-    - run: npm install -g yarn
-    - run: yarn install
-    - run: yarn build
+    - run: npm ci
+    - run: npm run build
 
     - name: Run Keycloak
       run: ./start.js & sleep 40
@@ -39,7 +38,7 @@ jobs:
       run: ./import.js
 
     - name: Cypress run
-      run: yarn start:cypress-tests --headless --browser chrome
+      run: npm run start:cypress-tests --headless --browser chrome
 
     - name: Add Cypress videos artifacts
       uses: actions/upload-artifact@v2

@@ -3,14 +3,14 @@ This project is the next generation of the Keycloak Administration Console.  It 
 
 ### Development Instructions
 
-For development on this project you will need a running Keycloak server listening on port 8180.  You will also need [yarn installed on your local machine.][2]
+For development on this project you will need a running Keycloak server listening on port 8180.
 
 1. Start keycloak
     * Download and run with one command
         ```bash
         $> ./start.js
         ```
-    * or download Keycloak server from [keycloak downloads page][3] unpack and run it like:
+    * or download Keycloak server from [keycloak downloads page][2] unpack and run it like:
         ```bash
         $> cd <unpacked download folder>/bin
         $> standalone -Djboss.socket.binding.port-offset=100
@@ -23,8 +23,8 @@ For development on this project you will need a running Keycloak server listenin
 
 1. Install dependencies and run:
     ```bash
-    $> yarn
-    $> yarn start
+    $> npm install
+    $> npm run start
     ```
 
 ### Build and run through Docker
@@ -42,9 +42,9 @@ If your Keycloak instance is not on `localhost:8180`, create a file `.env` with 
 ### Additionally there are some nice scripts to format and lint
 
 ```bash
-$> yarn format
-$> yarn check-types
-$> yarn lint
+$> npm run format
+$> npm run check-types
+$> npm run lint
 ```
 
 To switch to a RH-SSO themed version of this console you can run:
@@ -130,5 +130,4 @@ cypress run --spec "cypress/integration/example-test.spec.js" --browser chrome
 
 
 [1]: https://www.patternfly.org/v4/
-[2]: (https://classic.yarnpkg.com)
-[3]: https://www.keycloak.org/downloads
+[2]: https://www.keycloak.org/downloads
