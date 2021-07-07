@@ -81,6 +81,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           ? [
               <Button
                 id="modal-confirm"
+                data-testid="modalConfirm"
                 key="confirm"
                 isDisabled={rows.length === 0 || selectedRows.length === 0}
                 onClick={() => {
@@ -119,7 +120,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
         >
           {protocolMappers.map((mapper) => (
             <DataListItem
-              aria-labelledby={mapper.name}
+              aria-label={mapper.name}
               key={mapper.id}
               id={mapper.id}
             >
