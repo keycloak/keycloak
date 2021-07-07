@@ -19,6 +19,14 @@
 
 package org.keycloak.userprofile;
 
+import org.keycloak.attributeprocessing.UserAttributeProcessorProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.UserModel;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +35,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.UserModel;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -47,6 +51,7 @@ public final class DefaultUserProfile implements UserProfile {
     private final KeycloakSession session;
     private boolean validated;
     private UserModel user;
+    private final List<BiConsumer<String, UserModel>> globalListeners;
 
     public DefaultUserProfile(Attributes attributes, Function<Attributes, UserModel> userCreator, UserModel user,
             KeycloakSession session) {
@@ -54,6 +59,11 @@ public final class DefaultUserProfile implements UserProfile {
         this.attributes = attributes;
         this.user = user;
         this.session = session;
+
+        globalListeners = this.session.getKeycloakSessionFactory().getProviderFactoriesStream(UserAttributeProcessorProvider.class)
+                .map(UserAttributeProcessorProvider.class::cast)
+                .map(provider -> provider.createListener(this.attributes))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -83,7 +93,7 @@ public final class DefaultUserProfile implements UserProfile {
 
         user = userSupplier.apply(this.attributes);
 
-        return updateInternal(user, false);
+        return updateInternal(user, false, Collections.emptyList());
     }
 
     @Override
@@ -92,10 +102,12 @@ public final class DefaultUserProfile implements UserProfile {
             validate();
         }
 
-        updateInternal(user, removeAttributes, changeListener);
+        List<BiConsumer<String, UserModel>> listeners = new ArrayList<>(globalListeners);
+        listeners.addAll(Arrays.asList(changeListener));
+        updateInternal(user, removeAttributes, listeners);
     }
 
-    private UserModel updateInternal(UserModel user, boolean removeAttributes, BiConsumer<String, UserModel>... changeListener) {
+    private UserModel updateInternal(UserModel user, boolean removeAttributes, List<BiConsumer<String, UserModel>> changeListener) {
         if (user == null) {
             throw new RuntimeException("No user model provided for persisting changes");
         }
