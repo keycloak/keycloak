@@ -9,7 +9,7 @@ module.exports = function (grunt) {
       main: {
         cwd: "./node_modules/@patternfly/patternfly/assets/",
         src: ["**/*", '!**/fontawesome/**'],
-        dest: "public/web_modules/@patternfly/patternfly/assets/",
+        dest: "public/assets/",
         expand: true,
       },
       sso: {
