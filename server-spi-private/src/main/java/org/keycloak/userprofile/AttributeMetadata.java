@@ -124,6 +124,10 @@ public final class AttributeMetadata {
         return readAllowed.test(context);
     }
 
+    public boolean canEdit(AttributeContext context) {
+        return writeAllowed.test(context);
+    }
+
     /**
      * Check if attribute is required based on it's predicate, it is handled as required if predicate is null
      * @param context to evaluate requirement of the attribute from

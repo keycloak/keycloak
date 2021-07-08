@@ -43,6 +43,6 @@ public class DeclarativeAttributes extends DefaultAttributes {
 
     @Override
     protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
-        return !metadata.canView(createAttributeContext(metadata));
+        return !metadata.canEdit(createAttributeContext(metadata));
     }
 }
