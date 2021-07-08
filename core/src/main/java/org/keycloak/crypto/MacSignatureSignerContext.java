@@ -53,4 +53,9 @@ public class MacSignatureSignerContext implements SignatureSignerContext {
         }
     }
 
+    @Override
+    public byte[] getSHA1Thumbprint() {
+        return key.getSHA1Thumbprint();
+    }
+
 }

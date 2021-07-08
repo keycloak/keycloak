@@ -58,6 +58,8 @@ public class KeysMetadataRepresentation {
 
         private String publicKey;
         private String certificate;
+        private String thumbprint;
+        private Long notAfter;
 
         public String getProviderId() {
             return providerId;
@@ -121,6 +123,22 @@ public class KeysMetadataRepresentation {
 
         public void setCertificate(String certificate) {
             this.certificate = certificate;
+        }
+
+        public String getThumbprint() {
+            return thumbprint;
+        }
+
+        public void setThumbprint(String thumbprint) {
+            this.thumbprint = thumbprint;
+        }
+
+        public Long getNotAfter() {
+            return notAfter;
+        }
+
+        public void setNotAfter(Long notAfter) {
+            this.notAfter = notAfter;
         }
     }
 }

@@ -15,4 +15,27 @@
   ~ limitations under the License.
   -->
 
-<div style="padding: 20px 20px 20px 20px; word-wrap: break-word;">{{key}}</div>
+<div style="padding: 0px 20px 0 20px">
+    <table class="table table-striped table-bordered credential-data-table">
+        <tr data-ng-show="key.thumbprint">
+            <td class="key">SHA1 Thumbprint</td>
+            <td class="value">{{key.thumbprint}}</td>
+        </tr>
+        <tr data-ng-show="key.notAfter">
+            <td class="key">{{:: 'expires' | translate}}</td>
+            <td class="value">{{key.notAfter|date:('dateFormat' | translate)}}&nbsp;{{key.notAfter|date:('timeFormat' | translate)}}</td>
+        </tr>
+        <tr data-ng-show="key.publicKey">
+            <td class="key">{{:: 'publicKey' | translate}}</td>
+            <td class="value">
+                <div style="word-wrap: break-word;">{{key.publicKey}}</div>
+            </td>
+        </tr>
+        <tr data-ng-show="key.certificate">
+            <td class="key">X509 {{:: 'certificate' | translate}}</td>
+            <td class="value">
+                <div style="word-wrap: break-word;">{{key.certificate}}</div>
+            </td>
+        </tr>
+    </table>
+</div>

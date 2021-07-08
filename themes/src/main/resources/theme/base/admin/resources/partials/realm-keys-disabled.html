@@ -47,7 +47,7 @@
             <th>{{:: 'kid' | translate}}</th>
             <th>{{:: 'priority' | translate}}</th>
             <th>{{:: 'provider' | translate}}</th>
-            <th colspan="2">{{:: 'publicKeys' | translate}}</th>
+            <th>{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -57,10 +57,7 @@
             <td>{{key.kid}}</td>
             <td>{{key.providerPriority}}</td>
             <td><a href="#/realms/{{realm.realm}}/keys/providers/{{key.provider.providerId}}/{{key.provider.id}}">{{key.provider.name}}</a></td>
-
-            <td data-ng-show="!key.publicKey" colspan="2"></td>
-            <td class="kc-action-cell" data-ng-show="key.publicKey" class="kc-action-cell" data-ng-click="viewKey(key.publicKey)" colspan="{{key.certificate ? 1 : 2}}">{{:: 'publicKey' | translate}}</td>
-            <td data-ng-show="key.certificate" class="kc-action-cell" data-ng-click="viewKey(key.certificate)">{{:: 'certificate' | translate}}</td>
+            <td data-ng-show="key.publicKey || key.certificate" class="kc-action-cell" data-ng-click="viewKey(key)">{{:: 'key' | translate}}</td>
         </tr>
         </tbody>
     </table>

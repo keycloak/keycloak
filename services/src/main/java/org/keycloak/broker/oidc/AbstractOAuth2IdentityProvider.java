@@ -82,6 +82,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Pedro Igor
@@ -497,9 +498,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
 
                 if (authorizationCode != null) {
-                    String response = generateTokenRequest(authorizationCode).asString();
-
-                    BrokeredIdentityContext federatedIdentity = getFederatedIdentity(response);
+                    final SimpleHttp request = generateTokenRequest(authorizationCode);
+                    String response = null;
+                    BrokeredIdentityContext federatedIdentity;
+                    try {
+                        response = request.asString();
+                        federatedIdentity = getFederatedIdentity(response);
+                    } catch (Exception ex) {
+                        logger.debug(String.format("Token request failed to yield an authenticated identity. Request{%s %s [%s]} -> Response{%s}",
+                            request.method(), request.url(),
+                            request.params().entrySet().stream().map(e -> String.format("%s: %s", e.getKey(), e.getValue())).collect(Collectors.joining(", ")),
+                            response
+                        ));
+                        throw ex;
+                    }
 
                     if (getConfig().isStoreToken()) {
                         // make sure that token wasn't already set by getFederatedIdentity();
