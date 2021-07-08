@@ -36,7 +36,7 @@ jobs:
       run: ./import.js
 
     - name: Cypress run
-      run: npm run start:cypress-tests --headless --browser chrome
+      run: npm run start:cypress-tests
 
     - name: Add Cypress videos artifacts
       uses: actions/upload-artifact@v2
