@@ -47,7 +47,7 @@ export const ListEmptyState = ({
         ) : (
           hasIcon && <EmptyStateIcon icon={icon ? icon : PlusCircleIcon} />
         )}
-        <Title headingLevel="h4" size="lg">
+        <Title headingLevel="h1" size="lg">
           {message}
         </Title>
         <EmptyStateBody>{instructions}</EmptyStateBody>
