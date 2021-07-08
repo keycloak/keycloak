@@ -215,7 +215,7 @@ public class PersonalInfoTest extends BaseAccountPageTest {
     public void updateProfileWithAttributePresent() {
 
         RealmResource testRealm = adminClient.realm("test");
-        assertEquals("keycloak.v2", testRealm.toRepresentation().getAccountTheme());
+        assertEquals(getAccountThemeName(), testRealm.toRepresentation().getAccountTheme());
 
         // Add a user and set a test attribute
         addUser("keycloak-15634","keycloak-15634@test.local");
