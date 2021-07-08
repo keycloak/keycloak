@@ -273,6 +273,33 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
     }
+
+    @Test
+    public void testRequiredReadOnlyExistingAttribute() {
+        updateUserByUsername(USERNAME1, "first", "last", "foo");
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login(USERNAME1, PASSWORD);
+
+        updateProfilePage.assertCurrent();
+        Assert.assertEquals("last", updateProfilePage.getLastName());
+        Assert.assertFalse(updateProfilePage.isDepartmentEnabled());
+
+        //update of the other attributes must be successful in this case
+        updateProfilePage.update("First", "Last", USERNAME1, USERNAME1);
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        UserRepresentation user = getUserByUsername(USERNAME1);
+        assertEquals("First", user.getFirstName());
+        assertEquals("Last", user.getLastName());
+    }
     
     @Test
     public void testAttributeNotVisible() {
