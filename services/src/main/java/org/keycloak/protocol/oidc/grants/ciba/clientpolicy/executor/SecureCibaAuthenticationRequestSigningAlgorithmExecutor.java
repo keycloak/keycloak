@@ -15,22 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.executor;
+package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import org.jboss.logging.Logger;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -39,41 +35,36 @@ import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.clientpolicy.executor.FapiConstant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureSigningAlgorithmExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmExecutor.Configuration> {
+public class SecureCibaAuthenticationRequestSigningAlgorithmExecutor implements ClientPolicyExecutorProvider<SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(SecureSigningAlgorithmExecutor.class);
+    private static final Logger logger = Logger.getLogger(SecureCibaAuthenticationRequestSigningAlgorithmExecutor.class);
 
     private final KeycloakSession session;
     private Configuration configuration;
 
-    private static final List<String> sigTargets = Arrays.asList(
-            OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG,
-            OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG,
-            OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG,
-            OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
-
-    private static final List<String> sigTargetsAdminRestApiOnly = Arrays.asList(
-            OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
+    private static final String sigTarget = CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG;
 
     private static final String DEFAULT_ALGORITHM_VALUE = Algorithm.PS256;
 
-    public SecureSigningAlgorithmExecutor(KeycloakSession session) {
+    public SecureCibaAuthenticationRequestSigningAlgorithmExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
     public String getProviderId() {
-        return SecureSigningAlgorithmExecutorFactory.PROVIDER_ID;
+        return SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory.PROVIDER_ID;
     }
 
     @Override
-    public void setupConfiguration(SecureSigningAlgorithmExecutor.Configuration config) {
+    public void setupConfiguration(SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration config) {
         this.configuration = Optional.ofNullable(config).orElse(createDefaultConfiguration());
         if (config.getDefaultAlgorithm() == null || !isSecureAlgorithm(config.getDefaultAlgorithm())) config.setDefaultAlgorithm(DEFAULT_ALGORITHM_VALUE);
     }
@@ -106,18 +97,18 @@ public class SecureSigningAlgorithmExecutor implements ClientPolicyExecutorProvi
         switch (context.getEvent()) {
         case REGISTER:
             if (context instanceof AdminClientRegisterContext) {
-                verifyAndEnforceSecureSigningAlgorithm(((AdminClientRegisterContext)context).getProposedClientRepresentation(), true, false);
+                verifyAndEnforceSecureSigningAlgorithm(((AdminClientRegisterContext)context).getProposedClientRepresentation());
             } else if (context instanceof DynamicClientRegisterContext) {
-                verifyAndEnforceSecureSigningAlgorithm(((DynamicClientRegisterContext)context).getProposedClientRepresentation(), false, false);
+                verifyAndEnforceSecureSigningAlgorithm(((DynamicClientRegisterContext)context).getProposedClientRepresentation());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
             }
             break;
         case UPDATE:
             if (context instanceof AdminClientUpdateContext) {
-                verifyAndEnforceSecureSigningAlgorithm(((AdminClientUpdateContext)context).getProposedClientRepresentation(), true, true);
+                verifyAndEnforceSecureSigningAlgorithm(((AdminClientUpdateContext)context).getProposedClientRepresentation());
             } else if (context instanceof DynamicClientUpdateContext) {
-                verifyAndEnforceSecureSigningAlgorithm(((DynamicClientUpdateContext)context).getProposedClientRepresentation(), false, true);
+                verifyAndEnforceSecureSigningAlgorithm(((DynamicClientUpdateContext)context).getProposedClientRepresentation());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
             }
@@ -133,20 +124,7 @@ public class SecureSigningAlgorithmExecutor implements ClientPolicyExecutorProvi
         return conf;
     }
 
-    private void verifyAndEnforceSecureSigningAlgorithm(ClientRepresentation clientRep, boolean byAdminRestApi, boolean isUpdate) throws ClientPolicyException {
-        for (String sigTarget : sigTargets) {
-            verifyAndEnforceSecureSigningAlgorithm(sigTarget, clientRep);
-        }
-
-        // no client metadata found in RFC 7591 OAuth Dynamic Client Registration Metadata
-        if (byAdminRestApi) {
-            for (String sigTarget : sigTargetsAdminRestApiOnly) {
-                verifyAndEnforceSecureSigningAlgorithm(sigTarget, clientRep);
-            }
-        }
-    }
-
-    private void verifyAndEnforceSecureSigningAlgorithm(String sigTarget, ClientRepresentation clientRep) throws ClientPolicyException {
+    private void verifyAndEnforceSecureSigningAlgorithm(ClientRepresentation clientRep) throws ClientPolicyException {
         Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
         String sigAlg = attributes.get(sigTarget);
         if (sigAlg == null) {

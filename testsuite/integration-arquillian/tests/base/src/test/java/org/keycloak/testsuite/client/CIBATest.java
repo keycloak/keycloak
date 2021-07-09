@@ -36,11 +36,14 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -66,9 +69,12 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSessionEnforceExecutorFactory;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSignedAuthenticationRequestExecutor;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSignedAuthenticationRequestExecutorFactory;
@@ -84,7 +90,11 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPoliciesUtil;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -1401,7 +1411,6 @@ public class CIBATest extends AbstractClientPoliciesTest {
         testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication("valid-CIBA-CD-Zwei", true, null, Algorithm.PS256, 400, "Client requested algorithm not registered in advance or request signed with different algorithm other than client requested algorithm");
     }
 
-
     @Test
     public void testExtendedClientPolicyIntefacesForBackchannelAuthenticationRequest() throws Exception {
         String clientId = generateSuffixedName("confidential-app");
@@ -1492,6 +1501,161 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
         assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
+    }
+
+    @Test
+    public void testSecureCibaAuthenticationRequestSigningAlgorithmEnforceExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen")
+                    .addExecutor(SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forsta Policyn", Boolean.TRUE)
+                    .addCondition(ClientUpdaterContextConditionFactory.PROVIDER_ID,
+                        createClientUpdateContextConditionConfig(Arrays.asList(
+                                ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER,
+                                ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN,
+                                ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN)))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // create by Admin REST API - fail
+        try {
+            createClientByAdmin(generateSuffixedName("App-by-Admin"), (ClientRepresentation clientRep) -> {
+                    clientRep.setSecret("secret");
+                    clientRep.setAttributes(new HashMap<>());
+                    clientRep.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, "none");
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_REQUEST, e.getMessage());
+        }
+
+        // create by Admin REST API - success
+        String cAppAdminId = createClientByAdmin(generateSuffixedName("App-by-Admin"), (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, org.keycloak.crypto.Algorithm.ES256);
+            });
+        ClientRepresentation cRep = getClientByAdmin(cAppAdminId);
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG));
+
+        // create by Admin REST API - success, PS256 enforced
+        String cAppAdmin2Id = createClientByAdmin(generateSuffixedName("App-by-Admin2"), (ClientRepresentation client2Rep) -> {
+            });
+        ClientRepresentation cRep2 = getClientByAdmin(cAppAdmin2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cRep2.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG));
+
+        // update by Admin REST API - fail
+        try {
+            updateClientByAdmin(cAppAdminId, (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, org.keycloak.crypto.Algorithm.RS512);
+            });
+        } catch (ClientPolicyException cpe) {
+            assertEquals(Errors.INVALID_REQUEST, cpe.getError());
+        }
+        cRep = getClientByAdmin(cAppAdminId);
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG));
+
+        // update by Admin REST API - success
+        updateClientByAdmin(cAppAdminId, (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, org.keycloak.crypto.Algorithm.PS384);
+        });
+        cRep = getClientByAdmin(cAppAdminId);
+        assertEquals(org.keycloak.crypto.Algorithm.PS384, cRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG));
+
+        // update profiles, ES256 enforced
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen")
+                    .addExecutor(SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory.PROVIDER_ID,
+                            createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig(org.keycloak.crypto.Algorithm.ES256))
+                    .toRepresentation()
+                ).toString();
+
+        updateProfiles(json);
+
+        // update by Admin REST API - success
+        updateClientByAdmin(cAppAdmin2Id, (ClientRepresentation client2Rep) -> {
+                client2Rep.getAttributes().remove(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
+        });
+        cRep2 = getClientByAdmin(cAppAdmin2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cRep2.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG));
+
+        // update profiles, fall back to PS256
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen")
+                    .addExecutor(SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory.PROVIDER_ID,
+                            createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig(org.keycloak.crypto.Algorithm.RS512))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // create dynamically - fail
+        try {
+            createClientByAdmin(generateSuffixedName("App-in-Dynamic"), (ClientRepresentation clientRep) -> {
+                    clientRep.setSecret("secret");
+                    clientRep.setAttributes(new HashMap<>());
+                    clientRep.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, org.keycloak.crypto.Algorithm.RS384);
+                });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_REQUEST, e.getMessage());
+        }
+
+        // create dynamically - success
+        String cAppDynamicClientId = createClientDynamically(generateSuffixedName("App-in-Dynamic"), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setBackchannelAuthenticationRequestSigningAlg(org.keycloak.crypto.Algorithm.ES256);
+            });
+        events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicClientId).user(org.hamcrest.Matchers.isEmptyOrNullString()).assertEvent();
+
+        // update dynamically - fail
+        try {
+            updateClientDynamically(cAppDynamicClientId, (OIDCClientRepresentation clientRep) -> {
+                     clientRep.setBackchannelAuthenticationRequestSigningAlg(org.keycloak.crypto.Algorithm.RS256);
+                 });
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
+        }
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, getClientDynamically(cAppDynamicClientId).getBackchannelAuthenticationRequestSigningAlg());
+
+        // update dynamically - success
+        updateClientDynamically(cAppDynamicClientId, (OIDCClientRepresentation clientRep) -> {
+                clientRep.setBackchannelAuthenticationRequestSigningAlg(org.keycloak.crypto.Algorithm.ES384);
+            });
+        assertEquals(org.keycloak.crypto.Algorithm.ES384, getClientDynamically(cAppDynamicClientId).getBackchannelAuthenticationRequestSigningAlg());
+
+        // create dynamically - success, PS256 enforced
+        restartAuthenticatedClientRegistrationSetting();
+        String cAppDynamicClient2Id = createClientDynamically(generateSuffixedName("App-in-Dynamic"), (OIDCClientRepresentation client2Rep) -> {
+            });
+        OIDCClientRepresentation cAppDynamicClient2Rep = getClientDynamically(cAppDynamicClient2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.PS256, cAppDynamicClient2Rep.getBackchannelAuthenticationRequestSigningAlg());
+
+        // update profiles, enforce ES256
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forsta Profilen")
+                    .addExecutor(SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory.PROVIDER_ID,
+                            createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig(org.keycloak.crypto.Algorithm.ES256))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // update dynamically - success, ES256 enforced
+        updateClientDynamically(cAppDynamicClient2Id, (OIDCClientRepresentation client2Rep) -> {
+                client2Rep.setBackchannelAuthenticationRequestSigningAlg(null);
+            });
+        cAppDynamicClient2Rep = getClientDynamically(cAppDynamicClient2Id);
+        assertEquals(org.keycloak.crypto.Algorithm.ES256, cAppDynamicClient2Rep.getBackchannelAuthenticationRequestSigningAlg());
     }
 
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.executor;
+package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,13 +27,16 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
+import org.keycloak.services.clientpolicy.executor.FapiConstant;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureSigningAlgorithmExecutorFactory implements ClientPolicyExecutorProviderFactory {
+public class SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-signature-algorithm";
+    public static final String PROVIDER_ID = "secure-ciba-req-sig-algorithm";
 
     public static final String DEFAULT_ALGORITHM = "default-algorithm";
 
@@ -43,7 +46,7 @@ public class SecureSigningAlgorithmExecutorFactory implements ClientPolicyExecut
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
-        return new SecureSigningAlgorithmExecutor(session);
+        return new SecureCibaAuthenticationRequestSigningAlgorithmExecutor(session);
     }
 
     @Override
@@ -65,7 +68,7 @@ public class SecureSigningAlgorithmExecutorFactory implements ClientPolicyExecut
 
     @Override
     public String getHelpText() {
-        return "It refuses the client whose signature algorithms are considered not to be secure. This is applied by server for signing ID Token, UserInfo and Access Token. Also it is used by client for Token Endpoint Authentication signature algorithm (for JWT client authenticators) and OIDC Request object. It accepts ES256, ES384, ES512, PS256, PS384 and PS512.";
+        return "It refuses the client whose signature algorithms are considered not to be secure. This is applied by server for CIBA backchannel signed authentication request. It accepts ES256, ES384, ES512, PS256, PS384 and PS512.";
     }
 
     @Override
