@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
-import org.junit.Assert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -26,7 +26,6 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -46,13 +45,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -90,7 +89,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         // Remove this client after test
         getCleanup().addClientUuid(createdClient.getId());
 
-        return client;
+        return createdClient;
     }
 
     @Test
@@ -172,6 +171,24 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     	
     	ClientRepresentation createdClient = registerClient(client);
     	assertEquals(name, createdClient.getName());
+    }
+
+    @Test
+    public void clientWithDefaultRoles() throws ClientRegistrationException {
+        authCreateClients();
+        ClientRepresentation client = buildClient();
+        client.setDefaultRoles(new String[]{"test-default-role"});
+
+        ClientRepresentation createdClient = registerClient(client);
+        assertThat(createdClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+
+        authManageClients();
+        ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
+        assertThat(obtainedClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+
+        client.setDefaultRoles(new String[]{"test-default-role1","test-default-role2"});
+        ClientRepresentation updatedClient = reg.update(client);
+        assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContainingInAnyOrder("test-default-role1","test-default-role2"));
     }
 
     @Test
