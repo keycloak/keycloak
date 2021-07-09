@@ -20,6 +20,8 @@ package org.keycloak.testsuite.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -187,6 +189,12 @@ public final class ClientPoliciesUtil {
 
     public static SecureSigningAlgorithmExecutor.Configuration createSecureSigningAlgorithmEnforceExecutorConfig(String defaultAlgorithm) {
         SecureSigningAlgorithmExecutor.Configuration config = new SecureSigningAlgorithmExecutor.Configuration();
+        config.setDefaultAlgorithm(defaultAlgorithm);
+        return config;
+    }
+
+    public static SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig(String defaultAlgorithm) {
+        SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration config = new SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration();
         config.setDefaultAlgorithm(defaultAlgorithm);
         return config;
     }
