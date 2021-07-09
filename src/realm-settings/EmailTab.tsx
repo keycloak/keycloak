@@ -62,7 +62,7 @@ export const RealmSettingsEmailTab = ({
   const authenticationEnabled = useWatch({
     control,
     name: "smtpServer.authentication",
-    defaultValue: realm?.smtpServer!.authentication,
+    defaultValue: {},
   });
 
   useEffect(() => {

@@ -31,7 +31,20 @@
     "keyAlias": "Alias for the private key",
     "keyPassword": "Password for the private key",
     "privateRSAKey": "Private RSA Key encoded in PEM format",
-    "x509Certificate": "X509 Certificate encoded in PEM format"
-
+    "x509Certificate": "X509 Certificate encoded in PEM format",
+    "xFrameOptions": "Default value prevents pages from being included by non-origin iframes <1>Learn more</1>",
+    "contentSecurityPolicy": "Default value prevents pages from being included by non-origin iframes <1>Learn more</1>",
+    "contentSecurityPolicyReportOnly": "For testing Content Security Policies <1>Learn more</1>",
+    "xContentTypeOptions": "Default value prevents Internet Explorer and Google Chrome from MIME-sniffing a response away from the declared content-type <1>Learn more</1>",
+    "xRobotsTag": "Prevent pages from appearing in search engines <1>Learn more</1>",
+    "xXSSProtection": "Prevent pages from appearing in search engines <1>Learn more</1>",
+    "strictTransportSecurity": "The Strict-Transport-Security HTTP header tells browsers to always use HTTPS. Once a browser sees this header, it will only visit the site over HTTPS for the time specified (1 year) at max-age, including the subdomains. <1>Learn more</1>",
+    "failureFactor": "How many failures before wait is triggered.",
+    "permanentLockout": "Lock the user permanently when the user exceeds the maximum login failures.",
+    "waitIncrement": "When failure threshold has been met, how much time should the user be locked out?",
+    "maxFailureWait": "Max time a user will be locked out.",
+    "maxDeltaTime": "When will failure count be reset?",
+    "quickLoginCheckMilliSeconds": "If a failure happens concurrently too quickly, lock out the user.",
+    "minimumQuickLoginWait": "How long to wait after a quick login failure."
   }
 }

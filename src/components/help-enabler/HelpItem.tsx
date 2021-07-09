@@ -1,11 +1,11 @@
-import React, { useContext } from "react";
+import React, { isValidElement, ReactNode, useContext } from "react";
 import { Popover } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { HelpContext } from "./HelpHeader";
 
 type HelpItemProps = {
-  helpText: string;
+  helpText: string | ReactNode;
   forLabel: string;
   forID: string;
   noVerticalAlign?: boolean;
@@ -26,7 +26,11 @@ export const HelpItem = ({
   return (
     <>
       {enabled && (
-        <Popover bodyContent={t(helpText)}>
+        <Popover
+          bodyContent={
+            isValidElement(helpText) ? helpText : t(helpText as string)
+          }
+        >
           <>
             {!unWrap && (
               <button

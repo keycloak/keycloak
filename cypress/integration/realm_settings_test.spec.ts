@@ -31,24 +31,25 @@ describe("Realm settings", () => {
   });
 
   const goToKeys = () => {
-    const keysUrl = "/auth/admin/realms/master/keys";
+    const keysUrl = `/auth/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
     cy.getId("rs-keys-tab").click();
-    cy.wait(10000);
     cy.getId("rs-keys-list-tab").click();
+    cy.wait(["@keysFetch"]);
 
     return this;
   };
 
   const addBundle = () => {
-    const localizationUrl =
-      "/auth/admin/realms/master/realm-settings/localization";
+    const localizationUrl = `/auth/admin/realms/${realmName}/localization/en`;
     cy.intercept(localizationUrl).as("localizationFetch");
 
     realmSettingsPage.addKeyValuePair(
       "key_" + (Math.random() + 1).toString(36).substring(7),
       "value_" + (Math.random() + 1).toString(36).substring(7)
     );
+
+    cy.wait(["@localizationFetch"]);
 
     return this;
   };
@@ -57,8 +58,10 @@ describe("Realm settings", () => {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.toggleSwitch(realmSettingsPage.managedAccessSwitch);
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
+    masthead.checkNotificationMessage("Realm successfully updated");
     realmSettingsPage.toggleSwitch(realmSettingsPage.managedAccessSwitch);
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
+    masthead.checkNotificationMessage("Realm successfully updated");
   });
 
   it("Go to login tab", () => {
@@ -96,9 +99,12 @@ describe("Realm settings", () => {
   });
 
   it("Go to themes tab", () => {
-    cy.wait(5000);
     sidebarPage.goToRealmSettings();
+    cy.intercept(`/auth/admin/realms/${realmName}/keys`).as("load");
+
     cy.getId("rs-themes-tab").click();
+    cy.wait(["@load"]);
+
     realmSettingsPage.selectLoginThemeType("keycloak");
     realmSettingsPage.selectAccountThemeType("keycloak");
     realmSettingsPage.selectAdminThemeType("base");
@@ -111,10 +117,11 @@ describe("Realm settings", () => {
     const listingPage = new ListingPage();
 
     it("Enable user events", () => {
+      cy.intercept("GET", `/auth/admin/realms/${realmName}/keys`).as("load");
       sidebarPage.goToRealmSettings();
       cy.getId("rs-realm-events-tab").click();
+      cy.wait(["@load"]);
 
-      cy.wait(5000);
       realmSettingsPage
         .toggleSwitch(realmSettingsPage.enableEvents)
         .save(realmSettingsPage.eventsUserSave);
@@ -147,8 +154,6 @@ describe("Realm settings", () => {
   });
 
   it("Go to keys tab", () => {
-    cy.wait(5000);
-
     sidebarPage.goToRealmSettings();
 
     cy.getId("rs-keys-tab").click();
@@ -203,5 +208,14 @@ describe("Realm settings", () => {
     masthead.checkNotificationMessage(
       "Success! The localization text has been created."
     );
+  });
+
+  it("Realm header settings", () => {
+    sidebarPage.goToRealmSettings();
+    cy.get("#pf-tab-securityDefences-securityDefences").click();
+    cy.getId("headers-form-tab-save").should("be.disabled");
+    cy.get("#xFrameOptions").clear().type("DENY");
+    cy.getId("headers-form-tab-save").should("be.enabled").click();
+    masthead.checkNotificationMessage("Realm successfully updated");
   });
 });

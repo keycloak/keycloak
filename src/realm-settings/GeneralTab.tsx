@@ -36,7 +36,12 @@ export const RealmSettingsGeneralTab = ({
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
-  const { register, control, handleSubmit } = useFormContext();
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { isDirty },
+  } = useFormContext();
   const [open, setOpen] = useState(false);
 
   const baseUrl = getBaseUrl(adminClient);
@@ -193,6 +198,7 @@ export const RealmSettingsGeneralTab = ({
               variant="primary"
               type="submit"
               data-testid="general-tab-save"
+              isDisabled={!isDirty}
             >
               {t("common:save")}
             </Button>

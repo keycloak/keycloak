@@ -45,9 +45,6 @@ export default class RealmSettingsPage {
   valueInput = "value-input";
 
   selectLoginThemeType(themeType: string) {
-    const themesUrl = "/auth/admin/realms/master/themes";
-    cy.intercept(themesUrl).as("themesFetch");
-
     cy.get(this.selectLoginTheme).click();
     cy.get(this.loginThemeList).contains(themeType).click();
 
