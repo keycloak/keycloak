@@ -114,7 +114,9 @@ const Dashboard = () => {
                     <DescriptionListTerm>
                       {t("enabledFeatures")}{" "}
                       <HelpItem
-                        forID="enabledFeatures"
+                        forID={t(`common:helpLabel`, {
+                          label: t("enabledFeatures"),
+                        })}
                         forLabel={t("enabledFeatures")}
                         helpText="dashboard:infoEnabledFeatures"
                       />
@@ -143,7 +145,9 @@ const Dashboard = () => {
                     <DescriptionListTerm>
                       {t("disabledFeatures")}{" "}
                       <HelpItem
-                        forID="disabledFeatures"
+                        forID={t(`common:helpLabel`, {
+                          label: t("disabledFeatures"),
+                        })}
                         forLabel={t("disabledFeatures")}
                         helpText="dashboard:infoDisabledFeatures"
                       />
