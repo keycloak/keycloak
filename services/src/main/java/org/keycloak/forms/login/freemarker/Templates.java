@@ -75,8 +75,9 @@ public class Templates {
             case SAML_POST_FORM:
                 return "saml-post-form.ftl";
             case UPDATE_USER_PROFILE:
-            case IDP_REVIEW_USER_PROFILE:
                 return "update-user-profile.ftl";
+            case IDP_REVIEW_USER_PROFILE:
+                return "idp-review-user-profile.ftl";
             default:
                 throw new IllegalArgumentException();
         }

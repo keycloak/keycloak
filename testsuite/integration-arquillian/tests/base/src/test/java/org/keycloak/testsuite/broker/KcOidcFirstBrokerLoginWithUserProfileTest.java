@@ -92,7 +92,7 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         updateAccountInformationPage.assertCurrent();
         
         //assert fields location in form
-        String htmlFormId = "kc-update-profile-form";
+        String htmlFormId = "kc-idp-review-profile-form";
         Assert.assertTrue(
             driver.findElement(
                 By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
