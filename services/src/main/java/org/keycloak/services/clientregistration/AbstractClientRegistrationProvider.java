@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.stream.Stream;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -65,6 +66,12 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
+            if (client.getDefaultRoles() != null) {
+                for (String name : client.getDefaultRoles()) {
+                    clientModel.addDefaultRole(name);
+                }
+            }
+
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
             }
@@ -90,6 +97,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             client.setDirectAccessGrantsEnabled(false);
 
+            Stream<String> defaultRolesNames = clientModel.getDefaultRolesStream();
+            if (defaultRolesNames != null) {
+                client.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
+            }
+
             event.client(client.getClientId()).success();
             return client;
         } catch (ModelDuplicateException e) {
@@ -114,6 +126,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
+        Stream<String> defaultRolesNames = client.getDefaultRolesStream();
+        if (defaultRolesNames != null) {
+            rep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
+        }
+
         event.client(client.getClientId()).success();
         return rep;
     }
@@ -133,7 +150,16 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RepresentationToModel.updateClient(rep, client);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
 
+        if (rep.getDefaultRoles() != null) {
+            client.updateDefaultRoles(rep.getDefaultRoles());
+        }
+
         rep = ModelToRepresentation.toRepresentation(client, session);
+
+        Stream<String> defaultRolesNames = client.getDefaultRolesStream();
+        if (defaultRolesNames != null) {
+            rep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
+        }
 
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
