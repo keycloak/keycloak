@@ -49,7 +49,7 @@ export const CapabilityConfig = ({
                 <HelpItem
                   helpText="clients-help:authentication"
                   forLabel={t("authentication")}
-                  forID={t(`common:helpLabel`, { label: t("authentication") })}
+                  forID="kc-authentication"
                 />
               }
             >
@@ -60,7 +60,7 @@ export const CapabilityConfig = ({
                 render={({ onChange, value }) => (
                   <Switch
                     data-testid="authentication"
-                    id="kc-authentication-switch"
+                    id="kc-authentication"
                     name="publicClient"
                     label={t("common:on")}
                     labelOff={t("common:off")}
@@ -84,7 +84,7 @@ export const CapabilityConfig = ({
                 <HelpItem
                   helpText="clients-help:authorization"
                   forLabel={t("authorization")}
-                  forID={t(`common:helpLabel`, { label: t("authorization") })}
+                  forID="kc-authorization"
                 />
               }
             >
@@ -95,7 +95,7 @@ export const CapabilityConfig = ({
                 render={({ onChange, value }) => (
                   <Switch
                     data-testid="authorization"
-                    id="kc-authorization-switch"
+                    id="kc-authorization"
                     name="authorizationServicesEnabled"
                     label={t("common:on")}
                     labelOff={t("common:off")}
@@ -135,9 +135,7 @@ export const CapabilityConfig = ({
                         <HelpItem
                           helpText="clients-help:standardFlow"
                           forLabel={t("standardFlow")}
-                          forID={t(`common:helpLabel`, {
-                            label: t("standardFlow"),
-                          })}
+                          forID="kc-flow-standard"
                         />
                       </InputGroup>
                     )}
@@ -161,9 +159,7 @@ export const CapabilityConfig = ({
                         <HelpItem
                           helpText="clients-help:directAccess"
                           forLabel={t("directAccess")}
-                          forID={t(`common:helpLabel`, {
-                            label: t("directAccess"),
-                          })}
+                          forID="kc-flow-direct"
                         />
                       </InputGroup>
                     )}
@@ -187,9 +183,7 @@ export const CapabilityConfig = ({
                         <HelpItem
                           helpText="clients-help:implicitFlow"
                           forLabel={t("implicitFlow")}
-                          forID={t(`common:helpLabel`, {
-                            label: t("implicitFlow"),
-                          })}
+                          forID="kc-flow-implicit"
                         />
                       </InputGroup>
                     )}
@@ -219,9 +213,7 @@ export const CapabilityConfig = ({
                         <HelpItem
                           helpText="clients-help:serviceAccount"
                           forLabel={t("serviceAccount")}
-                          forID={t(`common:helpLabel`, {
-                            label: t("serviceAccount"),
-                          })}
+                          forID="kc-flow-service-account"
                         />
                       </InputGroup>
                     )}
@@ -240,9 +232,7 @@ export const CapabilityConfig = ({
                 <HelpItem
                   helpText="clients-help:encryptAssertions"
                   forLabel={t("encryptAssertions")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("encryptAssertions"),
-                  })}
+                  forID="kc-encrypt"
                 />
               }
               label={t("encryptAssertions")}
@@ -270,7 +260,7 @@ export const CapabilityConfig = ({
                 <HelpItem
                   helpText="clients-help:clientSignature"
                   forLabel={t("clientSignature")}
-                  forID={t(`common:helpLabel`, { label: t("clientSignature") })}
+                  forID="kc-client-signature"
                 />
               }
               label={t("clientSignature")}

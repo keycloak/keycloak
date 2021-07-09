@@ -14,7 +14,7 @@ export const ScrollPanel = (props: ScrollPanelProps) => {
   return (
     <section {...rest} className="kc-form-panel__panel">
       <Title
-        headingLevel="h1"
+        headingLevel="h4"
         size="xl"
         className="kc-form-panel__title"
         id={scrollId}
