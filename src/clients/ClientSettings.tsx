@@ -78,12 +78,13 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
               <HelpItem
                 helpText="clients-help:validRedirectURIs"
                 forLabel={t("validRedirectUri")}
-                forID="kc-redirect"
+                forID={t(`common:helpLabel`, { label: t("validRedirectUri") })}
               />
             }
           >
             <MultiLineInput
               name="redirectUris"
+              aria-label={t("validRedirectUri")}
               addButtonLabel="clients:addRedirectUri"
             />
           </FormGroup>
@@ -94,7 +95,7 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
               <HelpItem
                 helpText="clients-help:homeURL"
                 forLabel={t("homeURL")}
-                forID="kc-home-url"
+                forID={t(`common:helpLabel`, { label: t("homeURL") })}
               />
             }
           >
@@ -112,12 +113,13 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
               <HelpItem
                 helpText="clients-help:webOrigins"
                 forLabel={t("webOrigins")}
-                forID="kc-web-origins"
+                forID={t(`common:helpLabel`, { label: t("webOrigins") })}
               />
             }
           >
             <MultiLineInput
               name="webOrigins"
+              aria-label={t("webOrigins")}
               addButtonLabel="clients:addWebOrigins"
             />
           </FormGroup>
@@ -197,7 +199,7 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
               control={control}
               render={({ onChange, value }) => (
                 <Switch
-                  id="kc-consent"
+                  id="kc-consent-switch"
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
@@ -217,7 +219,7 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
               control={control}
               render={({ onChange, value }) => (
                 <Switch
-                  id="kc-display-on-client"
+                  id="kc-display-on-client-switch"
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value === "true"}

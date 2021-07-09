@@ -64,6 +64,7 @@ export const MultiLineInput = ({
               variant={ButtonVariant.link}
               onClick={() => remove(index)}
               tabIndex={-1}
+              aria-label={t("common:remove")}
               isDisabled={index === fields.length - 1}
             >
               <MinusCircleIcon />
@@ -74,6 +75,7 @@ export const MultiLineInput = ({
               variant={ButtonVariant.link}
               onClick={() => append({})}
               tabIndex={-1}
+              aria-label={t("common:add")}
               isDisabled={
                 rest.isDisabled ||
                 !(currentValues && currentValues[index]?.value)

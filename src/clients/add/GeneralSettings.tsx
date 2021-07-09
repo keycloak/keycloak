@@ -30,7 +30,7 @@ export const GeneralSettings = () => {
           <HelpItem
             helpText="clients-help:clientType"
             forLabel={t("clientType")}
-            forID="kc-type"
+            forID={t(`common:helpLabel`, { label: t("clientType") })}
           />
         }
       >
