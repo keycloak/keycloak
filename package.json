@@ -52,7 +52,7 @@
     "@snowpack/plugin-postcss": "1.4.3",
     "@snowpack/plugin-webpack": "3.0.0",
     "@storybook/addon-actions": "^6.3.4",
-    "@storybook/addon-essentials": "^6.3.2",
+    "@storybook/addon-essentials": "^6.3.4",
     "@storybook/addon-links": "^6.3.4",
     "@storybook/addon-postcss": "^2.0.0",
     "@storybook/builder-webpack5": "^6.3.2",
