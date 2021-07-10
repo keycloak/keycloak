@@ -85,7 +85,7 @@
     "postcss-import": "^14.0.2",
     "prettier": "^2.3.2",
     "snowpack": "2.18.5",
-    "ts-node": "^10.0.0",
+    "ts-node": "^10.1.0",
     "typescript": "4.2.4"
   }
 }
