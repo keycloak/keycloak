@@ -67,7 +67,9 @@ export const AdvancedSettings = ({
               <HelpItem
                 helpText="clients-help:accessTokenLifespan"
                 forLabel={t("accessTokenLifespan")}
-                forID={t(`common:helpLabel`, { label: t("accessTokenLifespan") })}
+                forID={t(`common:helpLabel`, {
+                  label: t("accessTokenLifespan"),
+                })}
               />
             }
           >
@@ -120,7 +122,9 @@ export const AdvancedSettings = ({
               <HelpItem
                 helpText="clients-help:keyForCodeExchange"
                 forLabel={t("keyForCodeExchange")}
-                forID={t(`common:helpLabel`, { label: t("keyForCodeExchange") })}
+                forID={t(`common:helpLabel`, {
+                  label: t("keyForCodeExchange"),
+                })}
               />
             }
           >

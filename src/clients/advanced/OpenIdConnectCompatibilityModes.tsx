@@ -27,7 +27,9 @@ export const OpenIdConnectCompatibilityModes = ({
           <HelpItem
             helpText="clients-help:excludeSessionStateFromAuthenticationResponse"
             forLabel={t("excludeSessionStateFromAuthenticationResponse")}
-            forID={t(`common:helpLabel`, { label: t("excludeSessionStateFromAuthenticationResponse") })}
+            forID={t(`common:helpLabel`, {
+              label: t("excludeSessionStateFromAuthenticationResponse"),
+            })}
           />
         }
       >

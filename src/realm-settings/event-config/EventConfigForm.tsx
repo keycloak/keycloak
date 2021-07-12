@@ -94,7 +94,9 @@ export const EventConfigForm = ({
                 <HelpItem
                   helpText="realm-settings-help:includeRepresentation"
                   forLabel={t("includeRepresentation")}
-                  forID={t(`common:helpLabel`, { label: t("includeRepresentation") })}
+                  forID={t(`common:helpLabel`, {
+                    label: t("includeRepresentation"),
+                  })}
                 />
               }
             >

@@ -217,7 +217,9 @@ export const RealmSettingsEmailTab = ({
                 <HelpItem
                   helpText="realm-settings-help:replyToDisplayName"
                   forLabel={t("replyToDisplayName")}
-                  forID={t(`common:helpLabel`, { label: t("replyToDisplayName") })}
+                  forID={t(`common:helpLabel`, {
+                    label: t("replyToDisplayName"),
+                  })}
                 />
               }
             >

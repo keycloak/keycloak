@@ -244,7 +244,9 @@ export const AdvancedTab = ({
                 <HelpItem
                   helpText="clients-help:nodeReRegistrationTimeout"
                   forLabel={t("nodeReRegistrationTimeout")}
-                  forID={t(`common:helpLabel`, { label: t("nodeReRegistrationTimeout") })}
+                  forID={t(`common:helpLabel`, {
+                    label: t("nodeReRegistrationTimeout"),
+                  })}
                 />
               }
             >

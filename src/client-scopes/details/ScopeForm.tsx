@@ -200,7 +200,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <HelpItem
             helpText="client-scopes-help:displayOnConsentScreen"
             forLabel={t("displayOnConsentScreen")}
-            forID={t(`common:helpLabel`, { label: t("displayOnConsentScreen") })}
+            forID={t(`common:helpLabel`, {
+              label: t("displayOnConsentScreen"),
+            })}
           />
         }
         fieldId="kc-display.on.consent.screen"

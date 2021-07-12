@@ -32,7 +32,9 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("userRegistrationHelpText")}
                   forLabel={t("userRegistration")}
-                  forID={t(`common:helpLabel`, { label: t("userRegistration") })}
+                  forID={t(`common:helpLabel`, {
+                    label: t("userRegistration"),
+                  })}
                 />
               }
               hasNoPaddingTop
