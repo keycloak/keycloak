@@ -37,7 +37,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { Link, useRouteMatch } from "react-router-dom";
-import { AESGeneratedModal } from "./AESGeneratedModal";
+import { AESGeneratedModal } from "./key-providers/aes-generated/AESGeneratedModal";
 import { JavaKeystoreModal } from "./JavaKeystoreModal";
 import { HMACGeneratedModal } from "./HMACGeneratedModal";
 import { ECDSAGeneratedModal } from "./ECDSAGeneratedModal";
@@ -369,6 +369,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
                         isOpen={actionListOpen[idx]}
                         toggle={
                           <KebabToggle
+                            data-testid="provider-action"
                             onToggle={() => {
                               toggleActionList(idx);
                             }}
@@ -378,13 +379,14 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
                           <DropdownItem
                             key="action"
                             component="button"
+                            data-testid="delete-action"
                             onClick={() => {
                               setSelectedComponent(component);
                               toggleDeleteDialog();
                               toggleActionList(idx);
                             }}
                           >
-                            Delete
+                            {t("common:delete")}
                           </DropdownItem>,
                         ]}
                       />
@@ -409,7 +411,7 @@ type KeysProps = {
   refresh: () => void;
 };
 
-export const KeysProviderTab = ({
+export const KeysProvidersTab = ({
   keyProviderComponentTypes,
   realmComponents,
   refresh,

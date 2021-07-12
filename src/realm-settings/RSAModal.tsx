@@ -22,12 +22,12 @@ import { useAlerts } from "../components/alert/Alerts";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { useParams } from "react-router-dom";
 
 type RSAModalProps = {
-  providerType?: string;
-  handleModalToggle?: () => void;
-  refresh?: () => void;
+  providerType: string;
+  handleModalToggle: () => void;
+  refresh: () => void;
   open: boolean;
 };
 
@@ -37,37 +37,50 @@ export const RSAModal = ({
   open,
   refresh,
 }: RSAModalProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation("realm-settings");
   const serverInfo = useServerInfo();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const { handleSubmit, control } = useForm({});
   const [isRSAalgDropdownOpen, setIsRSAalgDropdownOpen] = useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const realm = useRealm();
+
+  const { id } = useParams<{ id: string }>();
 
   const [keyFileName, setKeyFileName] = useState("");
   const [certificateFileName, setCertificateFileName] = useState("");
 
   const allComponentTypes =
-    serverInfo.componentTypes!["org.keycloak.keys.KeyProvider"];
+    serverInfo.componentTypes?.["org.keycloak.keys.KeyProvider"] ?? [];
 
   const save = async (component: ComponentRepresentation) => {
     try {
-      await adminClient.components.create({
-        parentId: realm.realm,
-        name: displayName !== "" ? displayName : providerType,
-        providerId: providerType,
-        providerType: "org.keycloak.keys.KeyProvider",
-        ...component,
-      });
-      refresh!();
-      addAlert(t("realm-settings:saveProviderSuccess"), AlertVariant.success);
-      handleModalToggle!();
+      if (id) {
+        await adminClient.components.update(
+          { id },
+          {
+            ...component,
+            parentId: component.parentId,
+            providerId: providerType,
+            providerType: "org.keycloak.keys.KeyProvider",
+          }
+        );
+        addAlert(t("saveProviderSuccess"), AlertVariant.success);
+      } else {
+        await adminClient.components.create({
+          ...component,
+          parentId: component.parentId,
+          providerId: providerType,
+          providerType: "org.keycloak.keys.KeyProvider",
+        });
+        handleModalToggle();
+        addAlert(t("saveProviderSuccess"), AlertVariant.success);
+        refresh();
+      }
     } catch (error) {
       addAlert(
-        t("realm-settings:saveProviderError") +
-          error.response?.data?.errorMessage || error,
+        t("saveProviderError", {
+          error: error.response?.data?.errorMessage || error,
+        }),
         AlertVariant.danger
       );
     }
@@ -77,7 +90,7 @@ export const RSAModal = ({
     <Modal
       className="add-provider-modal"
       variant={ModalVariant.medium}
-      title={t("realm-settings:addProvider")}
+      title={t("addProvider")}
       isOpen={open}
       onClose={handleModalToggle}
       actions={[
@@ -109,7 +122,7 @@ export const RSAModal = ({
         onSubmit={handleSubmit(save!)}
       >
         <FormGroup
-          label={t("realm-settings:consoleDisplayName")}
+          label={t("consoleDisplayName")}
           fieldId="kc-console-display-name"
           labelIcon={
             <HelpItem
@@ -129,7 +142,6 @@ export const RSAModal = ({
                 defaultValue={providerType}
                 onChange={(value) => {
                   onChange(value);
-                  setDisplayName(value);
                 }}
                 data-testid="display-name-input"
               ></TextInput>
@@ -170,7 +182,7 @@ export const RSAModal = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("realm-settings:active")}
+          label={t("active")}
           fieldId="kc-active"
           labelIcon={
             <HelpItem
@@ -205,7 +217,7 @@ export const RSAModal = ({
         {providerType === "rsa" && (
           <>
             <FormGroup
-              label={t("realm-settings:algorithm")}
+              label={t("algorithm")}
               fieldId="kc-algorithm"
               labelIcon={
                 <HelpItem
@@ -248,7 +260,7 @@ export const RSAModal = ({
               />
             </FormGroup>
             <FormGroup
-              label={t("realm-settings:privateRSAKey")}
+              label={t("privateRSAKey")}
               fieldId="kc-private-rsa-key"
               labelIcon={
                 <HelpItem
@@ -278,7 +290,7 @@ export const RSAModal = ({
               />
             </FormGroup>
             <FormGroup
-              label={t("realm-settings:x509Certificate")}
+              label={t("x509Certificate")}
               fieldId="kc-aes-keysize"
               labelIcon={
                 <HelpItem

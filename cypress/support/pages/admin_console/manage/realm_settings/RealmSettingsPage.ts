@@ -43,6 +43,8 @@ export default class RealmSettingsPage {
   confirmAddBundle = "add-bundle-confirm-button";
   keyInput = "key-input";
   valueInput = "value-input";
+  deleteAction = "delete-action";
+  modalConfirm = "modalConfirm";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -75,7 +77,7 @@ export default class RealmSettingsPage {
   }
 
   fillHostField(host: string) {
-    cy.get(this.hostInput).type(host);
+    cy.get(this.hostInput).clear().type(host);
     return this;
   }
 
@@ -149,6 +151,17 @@ export default class RealmSettingsPage {
     cy.getId(this.confirmAddBundle).click();
 
     return this;
+  }
+
+  deleteProvider(providerName: string) {
+    cy.getId("provider-name-link")
+      .contains(providerName)
+      .parent()
+      .siblings(".pf-c-data-list__item-action")
+      .click()
+      .getId(this.deleteAction)
+      .click();
+    cy.wait(500).getId(this.modalConfirm).click();
   }
 
   enterConsoleDisplayName(name: string) {

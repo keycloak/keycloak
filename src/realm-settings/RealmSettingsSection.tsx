@@ -29,7 +29,7 @@ import { RealmSettingsEmailTab } from "./EmailTab";
 import { KeysListTab } from "./KeysListTab";
 import { EventsTab } from "./event-config/EventsTab";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { KeysProviderTab } from "./KeysProvidersTab";
+import { KeysProvidersTab } from "./KeysProvidersTab";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { LocalizationTab } from "./LocalizationTab";
 import { WhoAmIContext } from "../context/whoami/WhoAmI";
@@ -266,7 +266,7 @@ export const RealmSettingsSection = () => {
                     eventKey={1}
                     title={<TabTitleText>{t("providers")}</TabTitleText>}
                   >
-                    <KeysProviderTab
+                    <KeysProvidersTab
                       realmComponents={realmComponents}
                       keyProviderComponentTypes={kpComponentTypes}
                       refresh={refresh}

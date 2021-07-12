@@ -21,12 +21,11 @@ import { useAlerts } from "../components/alert/Alerts";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { useRealm } from "../context/realm-context/RealmContext";
 
 type JavaKeystoreModalProps = {
-  providerType?: string;
-  handleModalToggle?: () => void;
-  refresh?: () => void;
+  providerType: string;
+  handleModalToggle: () => void;
+  refresh: () => void;
   open: boolean;
 };
 
@@ -44,28 +43,26 @@ JavaKeystoreModalProps) => {
   const { handleSubmit, control } = useForm({});
   const [isEllipticCurveDropdownOpen, setIsEllipticCurveDropdownOpen] =
     useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const realm = useRealm();
 
   const allComponentTypes =
-    serverInfo.componentTypes!["org.keycloak.keys.KeyProvider"];
+    serverInfo.componentTypes?.["org.keycloak.keys.KeyProvider"] ?? [];
 
   const save = async (component: ComponentRepresentation) => {
     try {
       await adminClient.components.create({
-        parentId: realm.realm,
-        name: displayName !== "" ? displayName : providerType,
+        ...component,
+        parentId: component.parentId,
         providerId: providerType,
         providerType: "org.keycloak.keys.KeyProvider",
-        ...component,
       });
-      refresh!();
-      addAlert(t("realm-settings:saveProviderSuccess"), AlertVariant.success);
-      handleModalToggle!();
+      handleModalToggle();
+      addAlert(t("saveProviderSuccess"), AlertVariant.success);
+      refresh();
     } catch (error) {
       addAlert(
-        t("realm-settings:saveProviderError") +
-          error.response?.data?.errorMessage || error,
+        t("saveProviderError", {
+          error: error.response?.data?.errorMessage || error,
+        }),
         AlertVariant.danger
       );
     }
@@ -75,7 +72,7 @@ JavaKeystoreModalProps) => {
     <Modal
       className="add-provider-modal"
       variant={ModalVariant.medium}
-      title={t("realm-settings:addProvider")}
+      title={t("addProvider")}
       isOpen={open}
       onClose={handleModalToggle}
       actions={[
@@ -107,7 +104,7 @@ JavaKeystoreModalProps) => {
         onSubmit={handleSubmit(save!)}
       >
         <FormGroup
-          label={t("realm-settings:consoleDisplayName")}
+          label={t("consoleDisplayName")}
           fieldId="kc-console-display-name"
           labelIcon={
             <HelpItem
@@ -127,7 +124,6 @@ JavaKeystoreModalProps) => {
                 defaultValue={providerType}
                 onChange={(value) => {
                   onChange(value);
-                  setDisplayName(value);
                 }}
                 data-testid="display-name-input"
               ></TextInput>
@@ -168,7 +164,7 @@ JavaKeystoreModalProps) => {
           />
         </FormGroup>
         <FormGroup
-          label={t("realm-settings:active")}
+          label={t("active")}
           fieldId="kc-active"
           labelIcon={
             <HelpItem
@@ -203,7 +199,7 @@ JavaKeystoreModalProps) => {
         {providerType === "java-keystore" && (
           <>
             <FormGroup
-              label={t("realm-settings:algorithm")}
+              label={t("algorithm")}
               fieldId="kc-algorithm"
               labelIcon={
                 <HelpItem
@@ -250,7 +246,7 @@ JavaKeystoreModalProps) => {
               />
             </FormGroup>
             <FormGroup
-              label={t("realm-settings:keystore")}
+              label={t("keystore")}
               fieldId="kc-login-theme"
               labelIcon={
                 <HelpItem
@@ -276,7 +272,7 @@ JavaKeystoreModalProps) => {
               />
             </FormGroup>
             <FormGroup
-              label={t("realm-settings:keystorePassword")}
+              label={t("keystorePassword")}
               fieldId="kc-login-theme"
               labelIcon={
                 <HelpItem
@@ -295,7 +291,6 @@ JavaKeystoreModalProps) => {
                     aria-label={t("consoleDisplayName")}
                     onChange={(value) => {
                       onChange([value + ""]);
-                      setDisplayName(value);
                     }}
                     data-testid="select-display-name"
                   ></TextInput>
@@ -303,7 +298,7 @@ JavaKeystoreModalProps) => {
               />
             </FormGroup>
             <FormGroup
-              label={t("realm-settings:keyAlias")}
+              label={t("keyAlias")}
               fieldId="kc-login-theme"
               labelIcon={
                 <HelpItem
@@ -329,7 +324,7 @@ JavaKeystoreModalProps) => {
               />
             </FormGroup>
             <FormGroup
-              label={t("realm-settings:keyPassword")}
+              label={t("keyPassword")}
               fieldId="kc-login-theme"
               labelIcon={
                 <HelpItem
@@ -348,7 +343,6 @@ JavaKeystoreModalProps) => {
                     aria-label={t("consoleDisplayName")}
                     onChange={(value) => {
                       onChange([value + ""]);
-                      setDisplayName(value);
                     }}
                     data-testid="select-display-name"
                   ></TextInput>
