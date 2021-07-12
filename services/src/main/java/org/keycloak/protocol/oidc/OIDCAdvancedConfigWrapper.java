@@ -74,7 +74,23 @@ public class OIDCAdvancedConfigWrapper {
         String algStr = alg==null ? null : alg.toString();
         setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algStr);
     }
-    
+
+    public void setRequestObjectEncryptionAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ALG, algorithm);
+    }
+
+    public String getRequestObjectEncryptionAlg() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ALG);
+    }
+
+    public String getRequestObjectEncryptionEnc() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ENC);
+    }
+
+    public void setRequestObjectEncryptionEnc(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_ENCRYPTION_ENC, algorithm);
+    }
+
     public String getRequestObjectRequired() {
         return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED);
     }

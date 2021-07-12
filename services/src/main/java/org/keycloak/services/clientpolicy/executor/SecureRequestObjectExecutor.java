@@ -63,6 +63,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             configuration = new Configuration();
             configuration.setVerifyNbf(Boolean.TRUE);
             configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
+            configuration.setEncryptionRequired(Boolean.FALSE);
         } else {
             configuration = config;
             if (config.isVerifyNbf() == null) {
@@ -70,6 +71,9 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             }
             if (config.getAvailablePeriod() == null) {
                 configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
+            }
+            if (config.isEncryptionRequired() == null) {
+                configuration.setEncryptionRequired(Boolean.FALSE);
             }
         }
     }
@@ -84,6 +88,8 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         protected Integer availablePeriod;
         @JsonProperty("verify-nbf")
         protected Boolean verifyNbf;
+        @JsonProperty(SecureRequestObjectExecutorFactory.ENCRYPTION_REQUIRED)
+        private Boolean encryptionRequired;
 
         public Integer getAvailablePeriod() {
             return availablePeriod;
@@ -99,6 +105,14 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         public void setVerifyNbf(Boolean verifyNbf) {
             this.verifyNbf = verifyNbf;
+        }
+
+        public void setEncryptionRequired(Boolean encryptionRequired) {
+            this.encryptionRequired = encryptionRequired;
+        }
+
+        public Boolean isEncryptionRequired() {
+            return encryptionRequired;
         }
     }
 
@@ -227,6 +241,12 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         if (incorrectParam.isPresent()) {
             logger.warnf("Parameter '%s' does not have same value in 'request' object and in request parameters", incorrectParam.get());
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter. Parameters in 'request' object not matching with request parameters");
+        }
+
+        Boolean encryptionRequired = Optional.ofNullable(configuration.isEncryptionRequired()).orElse(Boolean.FALSE);
+        if (encryptionRequired && session.getAttribute(AuthzEndpointRequestParser.AUTHZ_REQUEST_OBJECT_ENCRYPTED) == null) {
+            logger.trace("request object's not encrypted.");
+            throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request object not encrypted");
         }
 
         logger.trace("Passed.");

@@ -19,10 +19,13 @@ package org.keycloak.protocol.oidc.endpoints.request;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.JOSE;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
@@ -36,28 +39,10 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
  */
 public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
 
-    private static void validateAlgorithm(JOSE jwt, ClientModel clientModel) {
-        if (jwt instanceof JWSInput) {
-            JOSEHeader header = jwt.getHeader();
-            String headerAlgorithm = header.getRawAlgorithm();
-
-            if (headerAlgorithm == null) {
-                throw new RuntimeException("Request object signed algorithm not specified");
-            }
-
-            Algorithm requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(clientModel)
-                    .getRequestObjectSignatureAlg();
-
-            if (requestedSignatureAlgorithm != null && !requestedSignatureAlgorithm.name().equals(headerAlgorithm)) {
-                throw new RuntimeException("Request object signed with different algorithm than client requested algorithm");
-            }
-        }
-    }
-
     private final JsonNode requestParams;
 
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) {
-        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, AuthzEndpointRequestObjectParser::validateAlgorithm, JsonNode.class);
+        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class);
 
         if (this.requestParams == null) {
             throw new RuntimeException("Failed to verify signature on 'request' object");
@@ -99,6 +84,48 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
         HashSet<String> keys = new HashSet<>();
         requestParams.fieldNames().forEachRemaining(keys::add);
         return keys;
+    }
+
+    private BiConsumer<JOSE, ClientModel> createRequestObjectValidator(KeycloakSession session) {
+        return (jwt, clientModel) -> {
+            if (jwt instanceof JWSInput) {
+                JOSEHeader header = jwt.getHeader();
+                String headerAlgorithm = header.getRawAlgorithm();
+
+                if (headerAlgorithm == null) {
+                    throw new RuntimeException("Request object signed algorithm not specified");
+                }
+
+                Algorithm requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(clientModel)
+                        .getRequestObjectSignatureAlg();
+
+                if (requestedSignatureAlgorithm != null && !requestedSignatureAlgorithm.name().equals(headerAlgorithm)) {
+                    throw new RuntimeException(
+                            "Request object signed with different algorithm than client requested algorithm");
+                }
+            } else {
+                String encryptionAlg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel).getRequestObjectEncryptionAlg();
+
+                if (encryptionAlg != null) {
+                    if (!encryptionAlg.equals(jwt.getHeader().getRawAlgorithm())) {
+                        throw new RuntimeException("Request object encrypted with different algorithm than client requested algorithm");
+                    }
+                }
+
+                String encryptionEncAlg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel).getRequestObjectEncryptionEnc();
+
+                if (encryptionEncAlg != null) {
+                    JWE jwe = (JWE) jwt;
+                    JWEHeader header = (JWEHeader) jwe.getHeader();
+
+                    if (!encryptionEncAlg.equals(header.getEncryptionAlgorithm())) {
+                        throw new RuntimeException("Request object content encrypted with different algorithm than client requested algorithm");
+                    }
+                }
+
+                session.setAttribute(AuthzEndpointRequestParser.AUTHZ_REQUEST_OBJECT_ENCRYPTED, jwt);
+            }
+        };
     }
 
     @Override

@@ -21,6 +21,8 @@ public final class OIDCConfigAttributes {
     public static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
 
     public static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
+    public static final String REQUEST_OBJECT_ENCRYPTION_ALG = "request.object.encryption.alg";
+    public static final String REQUEST_OBJECT_ENCRYPTION_ENC = "request.object.encryption.enc";
 
     public static final String REQUEST_OBJECT_REQUIRED = "request.object.required";
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI = "request or request_uri";

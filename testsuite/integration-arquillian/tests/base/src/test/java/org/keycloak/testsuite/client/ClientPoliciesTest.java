@@ -1168,7 +1168,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testSecureRequestObjectExecutor() throws Exception, URISyntaxException, IOException {
+    public void testSecureRequestObjectExecutor() throws Exception {
         Integer availablePeriod = Integer.valueOf(SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 400);
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -1362,6 +1362,19 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         successfulLoginAndLogout(clientId, clientSecret);
 
+        // update profile : force request object encryption
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Prvy Profil")
+                        .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID, createSecureRequestObjectExecutorConfig(null, null, true))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
+        oauth.openLoginForm();
+        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Request object not encrypted", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
     @Test

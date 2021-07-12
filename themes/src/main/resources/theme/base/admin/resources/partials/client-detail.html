@@ -560,6 +560,34 @@
                 <kc-tooltip>{{:: 'request-object-signature-alg.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectEncryptionAlg">{{:: 'request-object-encryption-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectEncryptionAlg"
+                                ng-change="changeRequestObjectEncryptionAlg()"
+                                ng-model="requestObjectEncryptionAlg">
+                            <option value="any">any</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-encryption-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectEncryptionEnc">{{:: 'request-object-encryption-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectEncryptionEnc"
+                                ng-change="changeRequestObjectEncryptionEnc()"
+                                ng-model="requestObjectEncryptionEnc">
+                            <option value="any">any</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-encryption-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="changeRequestObjectRequired">{{:: 'request-object-required' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
