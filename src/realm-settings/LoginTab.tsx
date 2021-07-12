@@ -32,13 +32,15 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("userRegistrationHelpText")}
                   forLabel={t("userRegistration")}
-                  forID="kc-user-reg"
+                  forID={t(`common:helpLabel`, {
+                    label: t("userRegistration"),
+                  })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-user-reg"
+                id="kc-user-reg-switch"
                 data-testid="user-reg-switch"
                 name="registrationAllowed"
                 label={t("common:on")}
@@ -56,13 +58,13 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("forgotPasswordHelpText")}
                   forLabel={t("forgotPassword")}
-                  forID="kc-forgot-pw"
+                  forID={t(`common:helpLabel`, { label: t("forgotPassword") })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-forgot-pw"
+                id="kc-forgot-pw-switch"
                 data-testid="forgot-pw-switch"
                 name="resetPasswordAllowed"
                 label={t("common:on")}
@@ -80,13 +82,13 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("rememberMeHelpText")}
                   forLabel={t("rememberMe")}
-                  forID="kc-remember-me"
+                  forID={t(`common:helpLabel`, { label: t("rememberMe") })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-remember-me"
+                id="kc-remember-me-switch"
                 data-testid="remember-me-switch"
                 name="rememberMe"
                 label={t("common:on")}
@@ -108,13 +110,13 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("emailAsUsernameHelpText")}
                   forLabel={t("emailAsUsername")}
-                  forID="kc-email-as-username"
+                  forID={t(`common:helpLabel`, { label: t("emailAsUsername") })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-email-as-username"
+                id="kc-email-as-username-switch"
                 data-testid="email-as-username-switch"
                 name="registrationEmailAsUsername"
                 label={t("common:on")}
@@ -132,13 +134,13 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("loginWithEmailHelpText")}
                   forLabel={t("loginWithEmail")}
-                  forID="kc-login-with-email"
+                  forID={t(`common:helpLabel`, { label: t("loginWithEmail") })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-login-with-email"
+                id="kc-login-with-email-switch"
                 data-testid="login-with-email-switch"
                 name="loginWithEmailAllowed"
                 label={t("common:on")}
@@ -156,13 +158,13 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("duplicateEmailsHelpText")}
                   forLabel={t("duplicateEmails")}
-                  forID="kc-duplicate-emails"
+                  forID={t(`common:helpLabel`, { label: t("duplicateEmails") })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-duplicate-emails"
+                id="kc-duplicate-emails-switch"
                 data-testid="duplicate-emails-switch"
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -188,13 +190,13 @@ export const RealmSettingsLoginTab = ({
                 <HelpItem
                   helpText={t("verifyEmailHelpText")}
                   forLabel={t("verifyEmail")}
-                  forID="kc-verify-email"
+                  forID={t(`common:helpLabel`, { label: t("verifyEmail") })}
                 />
               }
               hasNoPaddingTop
             >
               <Switch
-                id="kc-verify-email"
+                id="kc-verify-email-switch"
                 data-testid="verify-email-switch"
                 name="verifyEmail"
                 label={t("common:on")}

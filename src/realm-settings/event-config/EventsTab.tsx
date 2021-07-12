@@ -138,7 +138,7 @@ export const EventsTab = () => {
           data-testid="rs-events-tab"
         >
           <PageSection>
-            <Title headingLevel="h4" size="xl">
+            <Title headingLevel="h1" size="xl">
               {t("userEventsConfig")}
             </Title>
           </PageSection>

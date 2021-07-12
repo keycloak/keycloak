@@ -143,7 +143,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
                 <HelpItem
                   helpText="clients-help:useJwksUrl"
                   forLabel={t("useJwksUrl")}
-                  forID="useJwksUrl"
+                  forID={t(`common:helpLabel`, { label: t("useJwksUrl") })}
                 />
               }
             >
@@ -154,7 +154,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
                 render={({ onChange, value }) => (
                   <Switch
                     data-testid="useJwksUrl"
-                    id="useJwksUrl"
+                    id="useJwksUrl-switch"
                     label={t("common:on")}
                     labelOff={t("common:off")}
                     isChecked={value === "true"}

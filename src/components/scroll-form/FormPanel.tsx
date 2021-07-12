@@ -27,7 +27,7 @@ export const FormPanel = ({
       <CardHeader className="kc-form-panel__header">
         <CardTitle tabIndex={0}>
           <Title
-            headingLevel="h4"
+            headingLevel="h1"
             size="xl"
             className="kc-form-panel__title"
             id={scrollId}

@@ -59,6 +59,7 @@ export const RealmRoleForm = ({
       >
         <TextArea
           name="description"
+          aria-label="description"
           isDisabled={getValues().name?.includes("default-roles")}
           ref={register({
             maxLength: {

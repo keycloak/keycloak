@@ -214,7 +214,7 @@ export const UserForm = ({
           <HelpItem
             helpText="users-help:emailVerified"
             forLabel={t("emailVerified")}
-            forID="email-verified"
+            forID={t(`common:helpLabel`, { label: t("emailVerified") })}
           />
         }
       >
@@ -270,7 +270,7 @@ export const UserForm = ({
           <HelpItem
             helpText="users-help:disabled"
             forLabel={t("enabled")}
-            forID="enabled-label"
+            forID={t(`common:helpLabel`, { label: t("enabled") })}
           />
         }
       >
@@ -299,7 +299,7 @@ export const UserForm = ({
           <HelpItem
             helpText="users-help:requiredUserActions"
             forLabel={t("requiredUserActions")}
-            forID="required-user-actions-label"
+            forID={t(`common:helpLabel`, { label: t("requiredUserActions") })}
           />
         }
       >
@@ -346,7 +346,7 @@ export const UserForm = ({
             <HelpItem
               helpText="users-help:groups"
               forLabel={t("common:groups")}
-              forID="kc-join-groups-button"
+              forID={t(`common:helpLabel`, { label: t("common:groups") })}
             />
           }
         >

@@ -86,7 +86,7 @@ export const RealmSettingsGeneralTab = ({
               <HelpItem
                 helpText="realm-settings-help:frontendUrl"
                 forLabel={t("frontendUrl")}
-                forID="kc-frontend-url"
+                forID={t(`common:helpLabel`, { label: t("frontendUrl") })}
               />
             }
           >
@@ -104,7 +104,7 @@ export const RealmSettingsGeneralTab = ({
               <HelpItem
                 helpText="realm-settings-help:requireSsl"
                 forLabel={t("requireSsl")}
-                forID="kc-require-ssl"
+                forID={t(`common:helpLabel`, { label: t("requireSsl") })}
               />
             }
           >
@@ -145,7 +145,7 @@ export const RealmSettingsGeneralTab = ({
               <HelpItem
                 helpText="realm-settings-help:userManagedAccess"
                 forLabel={t("userManagedAccess")}
-                forID="kc-user-manged-access"
+                forID={t(`common:helpLabel`, { label: t("userManagedAccess") })}
               />
             }
             fieldId="kc-user-manged-access"
@@ -172,7 +172,7 @@ export const RealmSettingsGeneralTab = ({
               <HelpItem
                 helpText="realm-settings-help:endpoints"
                 forLabel={t("endpoints")}
-                forID="kc-endpoints"
+                forID={t(`common:helpLabel`, { label: t("endpoints") })}
               />
             }
             fieldId="kc-endpoints"

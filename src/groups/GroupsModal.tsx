@@ -99,6 +99,7 @@ export const GroupsModal = ({
         >
           <TextInput
             data-testid="groupNameInput"
+            aria-label="group name input"
             ref={register({ required: true })}
             autoFocus
             type="text"

@@ -198,7 +198,7 @@ export const AdvancedTab = ({
                 <HelpItem
                   helpText="clients-help:notBefore"
                   forLabel={t("notBefore")}
-                  forID="kc-not-before"
+                  forID={t(`common:helpLabel`, { label: t("notBefore") })}
                 />
               }
             >
@@ -244,7 +244,9 @@ export const AdvancedTab = ({
                 <HelpItem
                   helpText="clients-help:nodeReRegistrationTimeout"
                   forLabel={t("nodeReRegistrationTimeout")}
-                  forID="nodeReRegistrationTimeout"
+                  forID={t(`common:helpLabel`, {
+                    label: t("nodeReRegistrationTimeout"),
+                  })}
                 />
               }
             >

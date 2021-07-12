@@ -180,7 +180,7 @@ export const RealmSettingsEmailTab = ({
                 <HelpItem
                   helpText="realm-settings-help:fromDisplayName"
                   forLabel={t("authentication")}
-                  forID="kc-user-manged-access"
+                  forID={t(`common:helpLabel`, { label: t("authentication") })}
                 />
               }
             >
@@ -217,7 +217,9 @@ export const RealmSettingsEmailTab = ({
                 <HelpItem
                   helpText="realm-settings-help:replyToDisplayName"
                   forLabel={t("replyToDisplayName")}
-                  forID="kc-user-manged-access"
+                  forID={t(`common:helpLabel`, {
+                    label: t("replyToDisplayName"),
+                  })}
                 />
               }
             >
@@ -236,7 +238,7 @@ export const RealmSettingsEmailTab = ({
                 <HelpItem
                   helpText="realm-settings-help:envelopeFrom"
                   forLabel={t("envelopeFrom")}
-                  forID="kc-envelope-from"
+                  forID={t(`common:helpLabel`, { label: t("envelopeFrom") })}
                 />
               }
             >
@@ -328,7 +330,7 @@ export const RealmSettingsEmailTab = ({
                 defaultValue={authenticationEnabled}
                 render={({ onChange, value }) => (
                   <Switch
-                    id="kc-authentication"
+                    id="kc-authentication-switch"
                     data-testid="email-authentication-switch"
                     label={t("common:enabled")}
                     labelOff={t("common:disabled")}
@@ -369,7 +371,7 @@ export const RealmSettingsEmailTab = ({
                     <HelpItem
                       helpText="realm-settings-help:password"
                       forLabel={t("password")}
-                      forID="kc-password"
+                      forID={t(`common:helpLabel`, { label: t("password") })}
                     />
                   }
                 >

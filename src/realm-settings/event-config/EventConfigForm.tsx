@@ -57,7 +57,7 @@ export const EventConfigForm = ({
           <HelpItem
             helpText={`realm-settings-help:save-${type}-events`}
             forLabel={t("saveEvents")}
-            forID={eventKey}
+            forID={t(`common:helpLabel`, { label: t("saveEvents") })}
           />
         }
       >
@@ -68,7 +68,7 @@ export const EventConfigForm = ({
           render={({ onChange, value }) => (
             <Switch
               data-testid={eventKey}
-              id={eventKey}
+              id={`${eventKey}-switch`}
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={value}
@@ -94,7 +94,9 @@ export const EventConfigForm = ({
                 <HelpItem
                   helpText="realm-settings-help:includeRepresentation"
                   forLabel={t("includeRepresentation")}
-                  forID="includeRepresentation"
+                  forID={t(`common:helpLabel`, {
+                    label: t("includeRepresentation"),
+                  })}
                 />
               }
             >
@@ -123,7 +125,7 @@ export const EventConfigForm = ({
                 <HelpItem
                   helpText="realm-settings-help:expiration"
                   forLabel={t("expiration")}
-                  forID="expiration"
+                  forID={t(`common:helpLabel`, { label: t("expiration") })}
                 />
               }
             >

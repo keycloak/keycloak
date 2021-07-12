@@ -40,7 +40,7 @@ export const AdvancedSettings = ({
             <HelpItem
               helpText="clients-help:assertionLifespan"
               forLabel={t("assertionLifespan")}
-              forID="assertionLifespan"
+              forID={t(`common:helpLabel`, { label: t("assertionLifespan") })}
             />
           }
         >
@@ -67,7 +67,9 @@ export const AdvancedSettings = ({
               <HelpItem
                 helpText="clients-help:accessTokenLifespan"
                 forLabel={t("accessTokenLifespan")}
-                forID="accessTokenLifespan"
+                forID={t(`common:helpLabel`, {
+                  label: t("accessTokenLifespan"),
+                })}
               />
             }
           >
@@ -93,7 +95,7 @@ export const AdvancedSettings = ({
               <HelpItem
                 helpText="clients-help:oAuthMutual"
                 forLabel={t("oAuthMutual")}
-                forID="oAuthMutual"
+                forID={t(`common:helpLabel`, { label: t("oAuthMutual") })}
               />
             }
           >
@@ -103,7 +105,7 @@ export const AdvancedSettings = ({
               control={control}
               render={({ onChange, value }) => (
                 <Switch
-                  id="oAuthMutual"
+                  id="oAuthMutual-switch"
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value === "true"}
@@ -120,7 +122,9 @@ export const AdvancedSettings = ({
               <HelpItem
                 helpText="clients-help:keyForCodeExchange"
                 forLabel={t("keyForCodeExchange")}
-                forID="keyForCodeExchange"
+                forID={t(`common:helpLabel`, {
+                  label: t("keyForCodeExchange"),
+                })}
               />
             }
           >

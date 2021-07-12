@@ -27,7 +27,9 @@ export const OpenIdConnectCompatibilityModes = ({
           <HelpItem
             helpText="clients-help:excludeSessionStateFromAuthenticationResponse"
             forLabel={t("excludeSessionStateFromAuthenticationResponse")}
-            forID="excludeSessionStateFromAuthenticationResponse"
+            forID={t(`common:helpLabel`, {
+              label: t("excludeSessionStateFromAuthenticationResponse"),
+            })}
           />
         }
       >
@@ -37,7 +39,7 @@ export const OpenIdConnectCompatibilityModes = ({
           control={control}
           render={({ onChange, value }) => (
             <Switch
-              id="excludeSessionStateFromAuthenticationResponse"
+              id="excludeSessionStateFromAuthenticationResponse-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={value === "true"}

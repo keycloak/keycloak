@@ -70,7 +70,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             id="name-help-icon"
             helpText="client-scopes-help:name"
             forLabel={t("common:name")}
-            forID="kc-name"
+            forID={t(`common:helpLabel`, { label: t("common:name") })}
           />
         }
         fieldId="kc-name"
@@ -96,7 +96,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <HelpItem
             helpText="client-scopes-help:description"
             forLabel={t("common:description")}
-            forID="kc-description"
+            forID={t(`common:helpLabel`, { label: t("common:description") })}
           />
         }
         fieldId="kc-description"
@@ -125,7 +125,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <HelpItem
             helpText="client-scopes-help:type"
             forLabel={t("type")}
-            forID="type"
+            forID={t(`common:helpLabel`, { label: t("type") })}
           />
         }
         fieldId="type"
@@ -158,7 +158,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             <HelpItem
               helpText="client-scopes-help:protocol"
               forLabel="protocol"
-              forID="kc-protocol"
+              forID={t(`common:helpLabel`, { label: t("protocol") })}
             />
           }
           fieldId="kc-protocol"
@@ -200,7 +200,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <HelpItem
             helpText="client-scopes-help:displayOnConsentScreen"
             forLabel={t("displayOnConsentScreen")}
-            forID="kc-display.on.consent.screen"
+            forID={t(`common:helpLabel`, {
+              label: t("displayOnConsentScreen"),
+            })}
           />
         }
         fieldId="kc-display.on.consent.screen"
@@ -211,7 +213,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           defaultValue="true"
           render={({ onChange, value }) => (
             <Switch
-              id="kc-display.on.consent.screen"
+              id="kc-display.on.consent.screen-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={value === "true"}
@@ -227,7 +229,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             <HelpItem
               helpText="client-scopes-help:consentScreenText"
               forLabel={t("consentScreenText")}
-              forID="kc-consent-screen-text"
+              forID={t(`common:helpLabel`, { label: t("consentScreenText") })}
             />
           }
           fieldId="kc-consent-screen-text"
@@ -247,7 +249,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <HelpItem
             helpText="client-scopes-help:includeInTokenScope"
             forLabel={t("includeInTokenScope")}
-            forID="includeInTokenScope"
+            forID={t(`common:helpLabel`, { label: t("includeInTokenScope") })}
           />
         }
         fieldId="includeInTokenScope"
@@ -258,7 +260,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           defaultValue="true"
           render={({ onChange, value }) => (
             <Switch
-              id="includeInTokenScope"
+              id="includeInTokenScope-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={value === "true"}
@@ -273,7 +275,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <HelpItem
             helpText="client-scopes-help:guiOrder"
             forLabel={t("guiOrder")}
-            forID="kc-gui-order"
+            forID={t(`common:helpLabel`, { label: t("guiOrder") })}
           />
         }
         fieldId="kc-gui-order"
