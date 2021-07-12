@@ -64,7 +64,7 @@ export const AuthenticationOverrides = ({
           <HelpItem
             helpText="clients-help:browserFlow"
             forLabel={t("browserFlow")}
-            forID="browserFlow"
+            forID={t(`common:helpLabel`, { label: t("browserFlow") })}
           />
         }
       >
@@ -97,7 +97,7 @@ export const AuthenticationOverrides = ({
             <HelpItem
               helpText="clients-help:directGrant"
               forLabel={t("directGrant")}
-              forID="directGrant"
+              forID={t(`common:helpLabel`, { label: t("directGrant") })}
             />
           }
         >
