@@ -168,9 +168,14 @@ public final class ClientPoliciesUtil {
     }
 
     public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf) {
+        return createSecureRequestObjectExecutorConfig(availablePeriod, verifyNbf, false);
+    }
+
+    public static SecureRequestObjectExecutor.Configuration createSecureRequestObjectExecutorConfig(Integer availablePeriod, Boolean verifyNbf, Boolean encryptionRequired) {
         SecureRequestObjectExecutor.Configuration config = new SecureRequestObjectExecutor.Configuration();
         if (availablePeriod != null) config.setAvailablePeriod(availablePeriod);
         if (verifyNbf != null) config.setVerifyNbf(verifyNbf);
+        if (encryptionRequired != null) config.setEncryptionRequired(encryptionRequired);
         return config;
     }
 
