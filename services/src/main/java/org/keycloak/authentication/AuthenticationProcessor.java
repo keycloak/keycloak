@@ -788,6 +788,11 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CREDENTIAL_SETUP_REQUIRED);
+            } else if (e.getError() == AuthenticationFlowError.SESSION_LIMIT_EXCEEDED) {
+                ServicesLogger.LOGGER.failedAuthentication(e);
+                event.error(Errors.SESSION_LIMIT_EXCEEDED);
+                if (e.getResponse() != null) return e.getResponse();
+                return ErrorPage.error(session, authenticationSession, Response.Status.FORBIDDEN, Messages.SESSION_LIMIT_EXCEEDED);
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
