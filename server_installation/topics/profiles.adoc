@@ -70,7 +70,7 @@ The features that can be enabled and disabled are:
 |Preview
 
 |upload_scripts
-|Upload scripts through the {project_name} REST API
+|Upload scripts
 |No
 |Deprecated
 
