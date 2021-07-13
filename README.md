@@ -42,9 +42,8 @@ If your Keycloak instance is not on `localhost:8180`, create a file `.env` with 
 ### Additionally there are some nice scripts to format and lint
 
 ```bash
-$> npm run format
-$> npm run check-types
 $> npm run lint
+$> npm run check-types
 ```
 
 To switch to a RH-SSO themed version of this console you can run:

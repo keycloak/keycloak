@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
 import {
   AlertVariant,
-  ButtonVariant,
   Dropdown,
   DropdownItem,
   DropdownToggle,

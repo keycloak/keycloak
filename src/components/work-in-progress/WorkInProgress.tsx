@@ -8,7 +8,8 @@ type WorkInProgressProps = {
 
 export const WorkInProgress = ({ marvelLink }: WorkInProgressProps) => (
   <div>
-    This page is not completed yet, but this is what it's going to look like:
+    This page is not completed yet, but this is what it&apos;s going to look
+    like:
     <div className="container">
       <iframe className="responsive-iframe" src={marvelLink}></iframe>
     </div>

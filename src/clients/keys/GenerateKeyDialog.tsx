@@ -13,12 +13,10 @@ import {
   SelectVariant,
   Text,
   TextContent,
-  TextInput,
 } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "keycloak-admin/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { StoreSettings } from "./StoreSettings";
 
 type GenerateKeyDialogProps = {
