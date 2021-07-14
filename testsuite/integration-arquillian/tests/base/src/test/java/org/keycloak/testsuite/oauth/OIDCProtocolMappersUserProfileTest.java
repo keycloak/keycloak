@@ -33,6 +33,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
@@ -82,6 +83,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
 import org.keycloak.testsuite.util.ClientManager;
@@ -101,6 +103,25 @@ public class OIDCProtocolMappersUserProfileTest extends OIDCProtocolMappersTest 
             testRealm.setAttributes(new HashMap<>());
         }
         testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
+    }
+
+    @Before
+    public void onBefore() {
+        VerifyProfileTest.setUserProfileConfiguration(adminClient.realm("test"), "{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"group-value\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"street\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"departments\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"locality\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"region_some\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"postal_code\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"country\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"formatted\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"phone\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"json-attribute\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"json-attribute-multi\"," + PERMISSIONS_ALL + "}"
+                + "]}");
     }
 
     @Test

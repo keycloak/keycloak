@@ -510,6 +510,16 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("LastCC", user.getLastName());
     }
 
+    @Test
+    public void updateProfileWithoutRemoveCustomAttributes() {
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"custom\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+        super.updateProfileWithoutRemoveCustomAttributes();
+    }
+
     protected void setUserProfileConfiguration(String configuration) {
         VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
     }

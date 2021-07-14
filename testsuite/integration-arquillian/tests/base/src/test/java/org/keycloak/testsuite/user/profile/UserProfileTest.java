@@ -45,6 +45,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -77,6 +78,8 @@ import org.keycloak.validate.validators.LengthValidator;
  */
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileTest extends AbstractUserProfileTest {
+
+    protected static final String ATT_ADDRESS = "address";
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -351,8 +354,26 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testCreateAndUpdateUser);
     }
 
-    private static void testCreateAndUpdateUser(KeycloakSession session) {
+    private static void testCreateAndUpdateUser(KeycloakSession session) throws IOException {
         UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+        UPAttribute attribute = new UPAttribute();
+        attribute.setName("address");
+        UPAttributePermissions permissions = new UPAttributePermissions();
+        permissions.setEdit(new HashSet<>(Arrays.asList("admin", "user")));
+        attribute.setPermissions(permissions);
+        config.addAttribute(attribute);
+
+        attribute = new UPAttribute();
+        attribute.setName("business.address");
+        permissions = new UPAttributePermissions();
+        permissions.setEdit(new HashSet<>(Arrays.asList("admin", "user")));
+        attribute.setPermissions(permissions);
+        config.addAttribute(attribute);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
         Map<String, Object> attributes = new HashMap<>();
         String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
 
@@ -441,7 +462,80 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertTrue(profile.getAttributes().isReadOnly("department"));
     }
 
-    protected static final String ATT_ADDRESS = "address";
+    @Test
+    public void testDoNotUpdateUndefinedAttributes() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDoNotUpdateUndefinedAttributes);
+    }
+
+    private static void testDoNotUpdateUndefinedAttributes(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put("address", Arrays.asList("fixed-address"));
+        attributes.put("department", Arrays.asList("sales"));
+        attributes.put("phone", Arrays.asList("fixed-phone"));
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"department\", \"permissions\": {\"edit\": [\"admin\"]}},"
+                + "{\"name\": \"phone\", \"permissions\": {\"edit\": [\"admin\"]}},"
+                + "{\"name\": \"address\", \"permissions\": {\"edit\": [\"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, "address", "department", "phone"));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        assertThat(attributesUpdated, containsInAnyOrder("department", "address", "phone"));
+
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"department\", \"permissions\": {\"edit\": [\"admin\"]}},"
+                + "{\"name\": \"phone\", \"permissions\": {\"edit\": [\"admin\"]}}]}");
+        attributesUpdated.clear();
+        attributes.remove("address");
+        attributes.put("department", "foo");
+        attributes.put("phone", "foo");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        assertThat(attributesUpdated, containsInAnyOrder("department", "phone"));
+        assertTrue(user.getAttributes().containsKey("address"));
+
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"department\", \"permissions\": {\"edit\": [\"admin\"]}},"
+                + "{\"name\": \"phone\", \"permissions\": {\"edit\": [\"admin\"]}},"
+                + "{\"name\": \"address\", \"permissions\": {\"edit\": [\"admin\"]}}]}");
+        attributes.put("department", "foo");
+        attributes.put("phone", "foo");
+        attributes.put("address", "bar");
+        attributesUpdated.clear();
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        assertThat(attributesUpdated, containsInAnyOrder("address"));
+        assertEquals("bar", user.getFirstAttribute("address"));
+        assertEquals("foo", user.getFirstAttribute("phone"));
+        assertEquals("foo", user.getFirstAttribute("department"));
+
+        attributes.remove("address");
+        attributesUpdated.clear();
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        assertThat(attributesUpdated, containsInAnyOrder("address"));
+        assertFalse(user.getAttributes().containsKey("address"));
+        assertTrue(user.getAttributes().containsKey("phone"));
+        assertTrue(user.getAttributes().containsKey("department"));
+
+        String prefixedAttributeName = Constants.USER_ATTRIBUTES_PREFIX.concat("prefixed");
+        attributes.put(prefixedAttributeName, "foo");
+        attributesUpdated.clear();
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        assertTrue(attributesUpdated.isEmpty());
+        assertFalse(user.getAttributes().containsKey("prefixedAttributeName"));
+    }
 
     @Test
     public void testInvalidConfiguration() {
