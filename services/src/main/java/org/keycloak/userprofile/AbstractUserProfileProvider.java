@@ -247,7 +247,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         };
     }
 
-    private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
+    protected UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
         UserProfileMetadata metadata = configureUserProfile(contextualMetadataRegistry.get(context), session);
         Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
         return new DefaultUserProfile(profileAttributes, createUserFactory(), user, session);

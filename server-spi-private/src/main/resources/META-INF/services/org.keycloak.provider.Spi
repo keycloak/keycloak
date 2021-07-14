@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-org.keycloak.attributeprocessing.UserAttributeProcessorSpi
 org.keycloak.component.ComponentFactorySpi
 org.keycloak.provider.ExceptionConverterSpi
 org.keycloak.storage.UserStorageProviderSpi
