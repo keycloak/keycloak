@@ -4,12 +4,10 @@ import i18n from "../../i18n";
 import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
+import { homeRealm } from "../../util";
 
 export class WhoAmI {
-  constructor(
-    private homeRealm?: string | undefined,
-    private me?: WhoAmIRepresentation | undefined
-  ) {
+  constructor(private me?: WhoAmIRepresentation) {
     if (this.me !== undefined && this.me.locale) {
       i18n.changeLanguage(this.me.locale, (error) => {
         if (error) console.error("Unable to set locale to", this.me?.locale);
@@ -33,11 +31,7 @@ export class WhoAmI {
    * Return the realm I am signed in to.
    */
   public getHomeRealm(): string {
-    let realm: string | undefined = this.homeRealm;
-    if (realm === undefined) realm = this.me?.realm;
-    if (realm === undefined) realm = "master"; // this really can't happen in the real world
-
-    return realm;
+    return homeRealm();
   }
 
   public canCreateRealm(): boolean {
@@ -72,7 +66,7 @@ export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
   useFetch(
     () => adminClient.whoAmI.find(),
     (me) => {
-      const whoAmI = new WhoAmI(adminClient.keycloak?.realm, me);
+      const whoAmI = new WhoAmI(me);
       setWhoAmI(whoAmI);
     },
     [key]

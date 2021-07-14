@@ -9,7 +9,10 @@ module.exports = {
     "@snowpack/plugin-typescript",
   ],
   buildOptions: {
-    baseUrl: "/adminv2",
+    baseUrl: "./",
     clean: true,
+  },
+  devOptions: {
+    out: "build/src/main/resources/admin/resources", // For snowpack 3, "out" goes under buildOptions.
   },
 };

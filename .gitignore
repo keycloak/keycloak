@@ -128,8 +128,9 @@ sketch
 
 # snowpack
 web_modules/
-build/
-.build/
+build/src
+build/target
+.build/target
 public/assets/
 
 # server-install

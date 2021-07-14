@@ -1,6 +1,5 @@
 import {
   Brand,
-  Button,
   Card,
   CardBody,
   CardTitle,
@@ -29,17 +28,17 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 import "./dashboard.css";
-import { toUpperCase } from "../util";
+import { toUpperCase, resourceUri } from "../util";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
-  const { realm, setRealm } = useRealm();
+  const { realm } = useRealm();
   return (
     <PageSection variant="light">
       <EmptyState variant="large">
         <Brand
-          src="./icon.svg"
+          src={resourceUri + "/icon.svg"}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />
@@ -50,9 +49,6 @@ const EmptyDashboard = () => {
           {realm}
         </Title>
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
-        <Button variant="link" onClick={() => setRealm("master")}>
-          {t("common:realmInfo")}
-        </Button>
       </EmptyState>
     </PageSection>
   );

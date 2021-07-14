@@ -16,7 +16,7 @@ describe("FormAccess", () => {
       <WhoAmIContext.Provider
         value={{
           refresh: () => {},
-          whoAmI: new WhoAmI("master", whoami as WhoAmIRepresentation),
+          whoAmI: new WhoAmI(whoami as WhoAmIRepresentation),
         }}
       >
         <RealmContext.Provider

@@ -30,7 +30,7 @@ jobs:
       run: ./start.js & sleep 40
 
     - name: Run Admin Console
-      run: npx http-server ./build -P http://localhost:8180/ & sleep 30
+      run: npx http-server ./build/src/main/resources/admin/resources -P http://localhost:8180/ & sleep 30
 
     - name: Admin Console client
       run: ./import.js

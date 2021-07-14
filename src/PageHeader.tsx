@@ -18,6 +18,7 @@ import { WhoAmIContext } from "./context/whoami/WhoAmI";
 import { HelpContext, HelpHeader } from "./components/help-enabler/HelpHeader";
 import { Link, useHistory } from "react-router-dom";
 import { useAdminClient } from "./context/auth/AdminClient";
+import { resourceUri } from "./util";
 
 export const Header = () => {
   const adminClient = useAdminClient();
@@ -126,7 +127,7 @@ export const Header = () => {
             <UserDropdown />
           </PageHeaderToolsItem>
         </PageHeaderToolsGroup>
-        <Avatar src="./img_avatar.svg" alt="Avatar image" />
+        <Avatar src={resourceUri + "/img_avatar.svg"} alt="Avatar image" />
       </PageHeaderTools>
     );
   };
@@ -180,7 +181,7 @@ export const Header = () => {
       logo={
         <Link to="/">
           <Brand
-            src="./logo.svg"
+            src={resourceUri + "/logo.svg"}
             id="masthead-logo"
             alt="Logo"
             className="keycloak__pageheader_brand"
