@@ -120,10 +120,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     @Override
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
-        if (!isEnabled(session)) {
+        if (isEnabled(session)) {
             return new DefaultAttributes(context, attributes, user, metadata, session);
         }
-        return new DeclarativeAttributes(context, attributes, user, metadata, session);
+        return new LegacyAttributes(context, attributes, user, metadata, session);
     }
 
     @Override
