@@ -26,7 +26,6 @@ new functionality can follow them, such as QE or documentation.
 - [ ] axe report has been run and resulting a11y issues have been resolved
 - [ ] Unit tests have been created/updated
 - [ ] Formatting has been performed via prettier/eslint
-- [ ] Type checking has been performed via 'npm run check-types'
 
 ## Additional Notes
 <!-- 
