@@ -111,6 +111,9 @@ import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
@@ -789,6 +792,54 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testParEndpointAsAudience() throws Exception {
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+
+        KeyPair keyPair = setupJwks(Algorithm.PS256, clientRepresentation, clientResource);
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+        JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
+
+        assertion.audience(oauth.getParEndpointUrl());
+
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, assertion)));
+
+        try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+            assertNotNull(response.getAccessToken());
+        }
+    }
+
+    @Test
+    public void testInvalidAudience() throws Exception {
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+
+        KeyPair keyPair = setupJwks(Algorithm.PS256, clientRepresentation, clientResource);
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+        JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
+
+        assertion.audience("https://as.other.org");
+
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, assertion)));
+
+        try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+            assertNull(response.getAccessToken());
+        }
+    }
+
+    @Test
     public void testAssertionInvalidNotBefore() throws Exception {
         String invalidJwt = getClient1SignedJWT();
 
@@ -1243,7 +1294,10 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private String createSignedRequestToken(String clientId, String realmInfoUrl, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
-        JsonWebToken jwt = createRequestToken(clientId, realmInfoUrl);
+        return createSignledRequestToken(privateKey, publicKey, algorithm, createRequestToken(clientId, realmInfoUrl));
+    }
+
+    private String createSignledRequestToken(PrivateKey privateKey, PublicKey publicKey, String algorithm, JsonWebToken jwt) {
         String kid = KeyUtils.createKeyId(publicKey);
         SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm);
         String ret = new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
