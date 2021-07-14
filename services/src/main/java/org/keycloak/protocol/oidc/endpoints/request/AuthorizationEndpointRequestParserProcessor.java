@@ -81,7 +81,7 @@ public class AuthorizationEndpointRequestParserProcessor {
                 // Define, if the request is `PAR` or usual `Request Object`.
                 RequestUriType requestUriType = getRequestUriType(requestUriParam);
                 if (requestUriType == RequestUriType.PAR) {
-                    new AuthzEndpointParParser(session, requestUriParam).parseRequest(request);
+                    new AuthzEndpointParParser(session, client, requestUriParam).parseRequest(request);
                 } else {
                     // Validate "requestUriParam" with allowed requestUris
                     List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();

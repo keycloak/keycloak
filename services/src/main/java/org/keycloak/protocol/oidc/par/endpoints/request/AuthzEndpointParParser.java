@@ -23,9 +23,13 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PushedAuthzRequestStoreProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
@@ -39,11 +43,14 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
     private static final Logger logger = Logger.getLogger(AuthzEndpointParParser.class);
 
+    private final KeycloakSession session;
+    private final ClientModel client;
     private Map<String, String> requestParams;
-
     private String invalidRequestMessage = null;
 
-    public AuthzEndpointParParser(KeycloakSession session, String requestUri) {
+    public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
+        this.session = session;
+        this.client = client;
         PushedAuthzRequestStoreProvider parStore = session.getProvider(PushedAuthzRequestStoreProvider.class);
         UUID key;
         try {
@@ -64,6 +71,19 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
             requestParams = retrievedRequest;
         } else {
             throw new RuntimeException("PAR expired.");
+        }
+    }
+
+    @Override
+    public void parseRequest(AuthorizationEndpointRequest request) {
+        String requestParam = requestParams.get(OIDCLoginProtocol.REQUEST_PARAM);
+
+        if (requestParam != null) {
+            // parses the request object if PAR was registered using JAR
+            // parameters from requets object have precedence over those sent directly in the request
+            new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
+        } else {
+            super.parseRequest(request);
         }
     }
 

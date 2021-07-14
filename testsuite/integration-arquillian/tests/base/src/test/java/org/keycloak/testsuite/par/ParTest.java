@@ -19,6 +19,8 @@ package org.keycloak.testsuite.par;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
@@ -39,14 +41,19 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ParConfig;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -55,9 +62,13 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.AbstractClientPoliciesTest;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -66,6 +77,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient.ParResponse;
+import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
@@ -198,6 +210,249 @@ public class ParTest extends AbstractClientPoliciesTest {
             refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), clientSecret);
             assertEquals(400, refreshResponse.getStatusCode());
 
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+    @Test
+    public void testSuccessfulUsingRequestParameter() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+
+            oauth.clientId(clientId);
+
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
+            requestObject.id(KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.setClientId(oauth.getClientId());
+            requestObject.setResponseType("code");
+            requestObject.setRedirectUriParam(CLIENT_REDIRECT_URI);
+            requestObject.setScope("openid");
+            requestObject.setNonce(KeycloakModelUtils.generateId());
+
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+            String encodedRequestObject = Base64Url.encode(contentBytes);
+            TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
+
+            // use and set jwks_url
+            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
+            clientResource.update(clientRep);
+            client.generateKeys(org.keycloak.crypto.Algorithm.RS256);
+            client.registerOIDCRequest(encodedRequestObject, org.keycloak.crypto.Algorithm.RS256);
+
+            // do not send any other parameter but the request request parameter
+            oauth.request(client.getOIDCRequest());
+            oauth.responseType(null);
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            oauth.request(null);
+            oauth.requestUri(requestUri);
+            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+            // Token Request
+            oauth.redirectUri(CLIENT_REDIRECT_URI); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+            OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(loginResponse.getCode(), clientSecret);
+            assertEquals(200, res.getStatusCode());
+
+            oauth.verifyToken(res.getAccessToken());
+            IDToken idToken = oauth.verifyIDToken(res.getIdToken());
+            assertEquals(requestObject.getNonce(), idToken.getNonce());
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+    @Test
+    public void testRequestParameterPrecedenceOverOtherParameters() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+
+            oauth.clientId(clientId);
+
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
+            requestObject.id(KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.setClientId(oauth.getClientId());
+            requestObject.setResponseType("code");
+            requestObject.setRedirectUriParam(CLIENT_REDIRECT_URI);
+            requestObject.setScope("openid");
+            requestObject.setNonce(KeycloakModelUtils.generateId());
+            requestObject.setState(oauth.stateParamRandom().getState());
+
+
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+            String encodedRequestObject = Base64Url.encode(contentBytes);
+            TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
+
+            // use and set jwks_url
+            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
+            clientResource.update(clientRep);
+            client.generateKeys(org.keycloak.crypto.Algorithm.RS256);
+            client.registerOIDCRequest(encodedRequestObject, org.keycloak.crypto.Algorithm.RS256);
+
+            // do not send any other parameter but the request request parameter
+            oauth.request(client.getOIDCRequest());
+            oauth.responseType("code id_token");
+            oauth.redirectUri("http://invalid");
+            oauth.scope(null);
+            oauth.nonce("12345");
+            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            oauth.scope("invalid");
+            oauth.redirectUri("http://invalid");
+            oauth.responseType("invalid");
+            oauth.redirectUri(null);
+            oauth.nonce("12345");
+            oauth.request(null);
+            oauth.requestUri(requestUri);
+            String wrongState = oauth.stateParamRandom().getState();
+            oauth.stateParamHardcoded(wrongState);
+            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            assertEquals(requestObject.getState(), loginResponse.getState());
+            assertNotEquals(requestObject.getState(), wrongState);
+
+            // Token Request
+            oauth.redirectUri(CLIENT_REDIRECT_URI); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+            OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(loginResponse.getCode(), clientSecret);
+            assertEquals(200, res.getStatusCode());
+
+            oauth.verifyToken(res.getAccessToken());
+            IDToken idToken = oauth.verifyIDToken(res.getIdToken());
+            assertEquals(requestObject.getNonce(), idToken.getNonce());
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+    @Test
+    public void testIgnoreParameterIfNotSetinRequestObject() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+
+            oauth.clientId(clientId);
+
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
+            requestObject.id(KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.setClientId(oauth.getClientId());
+            requestObject.setResponseType("code");
+            requestObject.setRedirectUriParam(CLIENT_REDIRECT_URI);
+            requestObject.setScope("openid");
+            requestObject.setNonce(KeycloakModelUtils.generateId());
+
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+            String encodedRequestObject = Base64Url.encode(contentBytes);
+            TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
+
+            // use and set jwks_url
+            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
+            clientResource.update(clientRep);
+            client.generateKeys(org.keycloak.crypto.Algorithm.RS256);
+            client.registerOIDCRequest(encodedRequestObject, org.keycloak.crypto.Algorithm.RS256);
+
+            // do not send any other parameter but the request request parameter
+            oauth.request(client.getOIDCRequest());
+            oauth.responseType("code id_token");
+            oauth.redirectUri("http://invalid");
+            oauth.scope(null);
+            oauth.nonce("12345");
+            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            oauth.scope("invalid");
+            oauth.redirectUri("http://invalid");
+            oauth.responseType("invalid");
+            oauth.redirectUri(null);
+            oauth.nonce("12345");
+            oauth.request(null);
+            oauth.requestUri(requestUri);
+            String wrongState = oauth.stateParamRandom().getState();
+            oauth.stateParamHardcoded(wrongState);
+            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            assertNull(loginResponse.getState());
+            assertNotEquals(requestObject.getState(), wrongState);
+
+            // Token Request
+            oauth.redirectUri(CLIENT_REDIRECT_URI); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+            OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(loginResponse.getCode(), clientSecret);
+            assertEquals(200, res.getStatusCode());
+
+            oauth.verifyToken(res.getAccessToken());
+            IDToken idToken = oauth.verifyIDToken(res.getIdToken());
+            assertEquals(requestObject.getNonce(), idToken.getNonce());
         } finally {
             restoreParRealmSettings();
         }

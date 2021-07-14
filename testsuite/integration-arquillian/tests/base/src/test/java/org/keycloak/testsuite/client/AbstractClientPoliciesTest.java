@@ -543,12 +543,13 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         requestObject.setResponseType("code");
         requestObject.setRedirectUriParam(oauth.getRedirectUri());
         requestObject.setScope("openid");
-        String scope = KeycloakModelUtils.generateId();
-        oauth.stateParamHardcoded(scope);
-        requestObject.setState(scope);
+        String state = KeycloakModelUtils.generateId();
+        oauth.stateParamHardcoded(state);
+        requestObject.setState(state);
         requestObject.setMax_age(Integer.valueOf(600));
         requestObject.setOtherClaims("custom_claim_ein", "rot");
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+        requestObject.setNonce(KeycloakModelUtils.generateId());
         return requestObject;
     }
 

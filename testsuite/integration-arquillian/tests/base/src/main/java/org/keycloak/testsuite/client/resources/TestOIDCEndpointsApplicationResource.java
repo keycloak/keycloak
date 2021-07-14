@@ -65,7 +65,15 @@ public interface TestOIDCEndpointsApplicationResource {
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     void setOIDCRequest(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId,
                         @QueryParam("redirectUri") String redirectUri, @QueryParam("maxAge") String maxAge,
+                        @QueryParam("state") String state,
                         @QueryParam("jwaAlgorithm") String jwaAlgorithm);
+
+    @GET
+    @Path("/set-oidc-request")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    void setOIDCRequest(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId,
+            @QueryParam("redirectUri") String redirectUri, @QueryParam("maxAge") String maxAge,
+            @QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
     @GET
     @Path("/register-oidc-request")

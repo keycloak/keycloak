@@ -547,7 +547,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Set up a request object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", Algorithm.none.toString());
         
         // Send request object in "request" param
         oauth.request(oidcClientEndpointsResource.getOIDCRequest());
@@ -569,7 +569,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Set up a request object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", Algorithm.none.toString());
         
         // Send request object reference in "request_uri" param
         oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
@@ -611,7 +611,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Set up a request object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", Algorithm.none.toString());
         
         // Send request object in "request" param
         oauth.request(oidcClientEndpointsResource.getOIDCRequest());
@@ -637,7 +637,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Set up a request object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", Algorithm.none.toString());
         
         // Send request object reference in "request_uri" param
         oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
@@ -683,7 +683,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Set up a request object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", Algorithm.none.toString());
         
         // Send request object in "request" param
         oauth.request(oidcClientEndpointsResource.getOIDCRequest());
@@ -779,7 +779,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Set up a request object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", Algorithm.none.toString());
         
         // Send request object reference in "request_uri" param
         oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
@@ -812,7 +812,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert the value from request object has bigger priority then from the query parameter.
         oauth.redirectUri("http://invalid");
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate2", Algorithm.none.toString());
         requestStr = oidcClientEndpointsResource.getOIDCRequest();
 
         oauth.request(requestStr);
@@ -824,13 +824,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void requestUriParamUnsigned() throws Exception {
-        oauth.stateParamHardcoded("mystate1");
-
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Send request object with invalid redirect uri.
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", "http://invalid", null, Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", "http://invalid", null, "mystate1", Algorithm.none.toString());
 
         oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
         oauth.openLoginForm();
@@ -839,7 +837,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert the value from request object has bigger priority then from the query parameter.
         oauth.redirectUri("http://invalid");
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate1", Algorithm.none.toString());
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
@@ -849,10 +847,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void requestUriParamWithAllowedRequestUris() throws Exception {
-        oauth.stateParamHardcoded("mystate1");
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate1", Algorithm.none.toString());
         ClientManager.ClientManagerBuilder clientMgrBuilder = ClientManager.realm(adminClient.realm("test")).clientId("test-app");
 
         oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
@@ -915,8 +912,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void requestUriParamSigned() throws Exception {
-        oauth.stateParamHardcoded("mystate3");
-
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -937,7 +932,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys("RS256").get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
 
         // Verify signed request_uri will fail due to failed signature validation
-        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.RS256.toString());
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate3", Algorithm.RS256.toString());
         oauth.openLoginForm();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
@@ -968,8 +963,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            oauth.stateParamHardcoded("mystate3");
-
             String validRedirectUri = oauth.getRedirectUri();
             TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -983,7 +976,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             if (Algorithm.none != actualAlgorithm) oidcClientEndpointsResource.generateKeys(actualAlgorithm.name());
 
             // register request object
-            oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", actualAlgorithm.name());
+            oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate3", actualAlgorithm.name());
 
             // use and set jwks_url
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -1214,6 +1207,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
             oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
             oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+            oidcRequest.put(OIDCLoginProtocol.SCOPE_PARAM, "openid");
             String request = new JWSBuilder().jsonContent(oidcRequest).none();
 
             oauth = oauth.request(request);
@@ -1261,6 +1255,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
             oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
             oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+            oidcRequest.put(OIDCLoginProtocol.SCOPE_PARAM, "openid");
             request = new JWSBuilder().jsonContent(oidcRequest).none();
 
             oauth = oauth.request(request);
