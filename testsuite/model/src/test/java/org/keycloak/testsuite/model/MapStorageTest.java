@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.map.client.MapClientEntity;
+import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
@@ -114,9 +115,9 @@ public class MapStorageTest extends KeycloakModelTest {
             assertClientDoesNotExist(storage2, idMain, kcMain, kc2);
             assertClientDoesNotExist(storage2, id1, kc1, kc2);
 
-            MapClientEntity<K> clientMain = new MapClientEntity<>(idMain, realmId);
-            MapClientEntity<K1> client1 = new MapClientEntity<>(id1, realmId);
-            MapClientEntity<K2> client2 = new MapClientEntity<>(id2, realmId);
+            MapClientEntity<K> clientMain = new MapClientEntityImpl<>(idMain, realmId);
+            MapClientEntity<K1> client1 = new MapClientEntityImpl<>(id1, realmId);
+            MapClientEntity<K2> client2 = new MapClientEntityImpl<>(id2, realmId);
 
             storageMain.create(clientMain);
             storage1.create(client1);

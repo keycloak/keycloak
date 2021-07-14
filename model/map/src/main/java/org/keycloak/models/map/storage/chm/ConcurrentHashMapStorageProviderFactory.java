@@ -35,8 +35,21 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
+import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.client.MapClientEntity;
+import org.keycloak.models.map.client.MapClientEntityImpl;
+import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
+import org.keycloak.models.map.realm.MapRealmEntity;
+import org.keycloak.models.map.role.MapRoleEntity;
 import com.fasterxml.jackson.databind.JavaType;
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +63,8 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.storage.StringKeyConvertor;
+import org.keycloak.models.map.user.MapUserEntity;
+import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -98,6 +113,27 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         MODEL_TO_NAME.put(ResourceServer.class, "authz-resource-servers");
         MODEL_TO_NAME.put(Resource.class, "authz-resources");
         MODEL_TO_NAME.put(org.keycloak.authorization.model.Scope.class, "authz-scopes");
+    }
+
+    public static final Map<Class<?>, Class<?>> INTERFACE_TO_IMPL = new HashMap<>();
+    static {
+        INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapClientScopeEntity.class, MapClientScopeEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapGroupEntity.class, MapGroupEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapRealmEntity.class, MapRealmEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapRoleEntity.class, MapRoleEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapRootAuthenticationSessionEntity.class, MapRootAuthenticationSessionEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapUserLoginFailureEntity.class, MapUserLoginFailureEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapUserEntity.class, MapUserEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapUserSessionEntity.class, MapUserSessionEntityImpl.class);
+//
+//        // authz
+//        INTERFACE_TO_IMPL.put(MapPermissionTicketEntity.class, MapPermissionTicketEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapPolicyEntity.class, MapPolicyEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapResourceServerEntity.class, MapResourceServerEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapResourceEntity.class, MapResourceEntityImpl.class);
+//        INTERFACE_TO_IMPL.put(MapScopeEntity.class, MapScopeEntityImpl.class);
     }
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
@@ -213,7 +249,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
             if (f != null && f.exists()) {
                 try {
                     LOG.debugf("Restoring contents from %s", f.getCanonicalPath());
-                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(List.class, valueType);
+                    Class<?> valueImplType = INTERFACE_TO_IMPL.getOrDefault(valueType, valueType);
+                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(List.class, valueImplType);
 
                     List<V> values = Serialization.MAPPER.readValue(f, type);
                     values.forEach((V mce) -> store.create(mce));
