@@ -81,10 +81,10 @@ public class MapClientProvider<K> implements ClientProvider {
         };
     }
 
-    private Function<MapClientEntity<K>, ClientModel> entityToAdapterFunc(RealmModel realm) {
+    private <T extends MapClientEntity<K>> Function<T, ClientModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapClientAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
+        return (T origEntity) -> new MapClientAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
             @Override
             public String getId() {
                 return clientStore.getKeyConvertor().keyToString(entity.getId());
@@ -152,7 +152,7 @@ public class MapClientProvider<K> implements ClientProvider {
 
         LOG.tracef("addClient(%s, %s, %s)%s", realm, id, clientId, getShortStackTrace());
 
-        MapClientEntity<K> entity = new MapClientEntity<>(entityId, realm.getId());
+        MapClientEntity<K> entity = new MapClientEntityImpl<>(entityId, realm.getId());
         entity.setClientId(clientId);
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
