@@ -1,7 +1,7 @@
 {
   "extends": "@snowpack/app-scripts-react/tsconfig.base.json",
   "compilerOptions": {
-    "types": ["jest", "cypress"],
+    "types": ["jest", "cypress", "snowpack-env"],
     "esModuleInterop": true
   }
 }

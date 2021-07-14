@@ -48,6 +48,7 @@
     "@jest/types": "^27.0.6",
     "@snowpack/app-scripts-react": "^1.12.6",
     "@snowpack/plugin-postcss": "1.4.3",
+    "@snowpack/plugin-react-refresh": "^2.5.0",
     "@snowpack/plugin-typescript": "^1.2.1",
     "@snowpack/plugin-webpack": "3.0.0",
     "@storybook/addon-actions": "^6.3.4",
