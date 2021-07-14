@@ -152,7 +152,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         }
 
         // check whether scope exists in both query parameter and request object
-        if (params.getFirst(OIDCLoginProtocol.SCOPE_PARAM) == null || requestObject.get(OIDCLoginProtocol.SCOPE_PARAM) == null) {
+        if (params.getFirst(OIDCLoginProtocol.SCOPE_PARAM) == null && requestObject.get(OIDCLoginProtocol.SCOPE_PARAM) == null) {
             logger.trace("scope object not exist.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Parameter 'scope' missing in the request parameters or in 'request' object");
         }

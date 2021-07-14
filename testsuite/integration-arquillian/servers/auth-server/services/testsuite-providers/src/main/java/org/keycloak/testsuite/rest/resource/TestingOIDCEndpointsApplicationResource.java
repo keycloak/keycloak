@@ -230,12 +230,18 @@ public class TestingOIDCEndpointsApplicationResource {
     @NoCache
     public void setOIDCRequest(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId,
                                @QueryParam("redirectUri") String redirectUri, @QueryParam("maxAge") String maxAge,
+                                @QueryParam("state") String state,
                                @QueryParam("jwaAlgorithm") String jwaAlgorithm) {
 
         Map<String, Object> oidcRequest = new HashMap<>();
         oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, clientId);
         oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
         oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
+
+        if (state != null) {
+            oidcRequest.put(OIDCLoginProtocol.STATE_PARAM, state);
+        }
+
         if (maxAge != null) {
             oidcRequest.put(OIDCLoginProtocol.MAX_AGE_PARAM, Integer.parseInt(maxAge));
         }
