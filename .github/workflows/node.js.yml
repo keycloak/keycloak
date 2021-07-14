@@ -27,9 +27,8 @@ jobs:
         check-latest: true
 
     - run: npm ci
-    - run: npm run format-check
+    - run: npm run lint
+    - run: npm run test
     - run: npm run check-types
     - run: npm run build
     - run: npm run build-storybook
-    - run: npm run lint
-    - run: npm run test

@@ -1,22 +1,5 @@
-import React, { ReactElement, useContext, useState } from "react";
-import {
-  Text,
-  PageSection,
-  TextContent,
-  Divider,
-  Level,
-  LevelItem,
-  Switch,
-  Toolbar,
-  ToolbarContent,
-  ToolbarItem,
-  Badge,
-  ButtonProps,
-  Dropdown,
-  DropdownToggle,
-  DropdownPosition,
-  Title,
-} from "@patternfly/react-core";
+import { Text, TextContent, Title } from "@patternfly/react-core";
+import React from "react";
 import "./wizard-section-header.css";
 
 export type WizardSectionHeaderProps = {

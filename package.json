@@ -15,16 +15,15 @@
   "scripts": {
     "build": "snowpack build",
     "check-types": "tsc -p ./",
-    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
-    "format-check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
-    "lint": "eslint ./src/**/*.ts*",
+    "lint": "eslint \"./src/**/*.{js,jsx,ts,tsx}\"",
     "postinstall": "grunt",
     "start": "snowpack dev",
     "test": "jest",
     "start:cypress": "cypress open",
     "start:cypress-tests": "cypress run",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.115.2",
@@ -75,10 +74,14 @@
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "eslint": "^7.30.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.24.0",
     "grunt": "^1.4.1",
     "grunt-contrib-copy": "^1.0.0",
+    "husky": "^7.0.1",
     "jest": "^26.6.3",
+    "lint-staged": "^11.0.1",
     "mutationobserver-shim": "^0.3.7",
     "postcss": "^8.3.5",
     "postcss-cli": "^8.3.1",
@@ -87,5 +90,8 @@
     "snowpack": "2.18.5",
     "ts-node": "^10.1.0",
     "typescript": "4.2.4"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": "eslint --cache --fix"
   }
 }

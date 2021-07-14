@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useErrorHandler } from "react-error-boundary";
 import {
   ActionGroup,
   AlertVariant,
@@ -33,11 +32,6 @@ import { X509 } from "./X509";
 type ClientAuthenticatorProviders = {
   id: string;
   displayName: string;
-};
-
-type Secret = {
-  type: string;
-  value: string;
 };
 
 type AccessToken = {

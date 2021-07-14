@@ -23,11 +23,6 @@ import { RecentUsed } from "./recent-used";
 
 import "./realm-selector.css";
 
-type RecentUsedRealm = {
-  name: string;
-  used: boolean;
-};
-
 export const RealmSelector = () => {
   const { realm, setRealm, realms } = useRealm();
   const { whoAmI } = useContext(WhoAmIContext);
