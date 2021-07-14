@@ -25,7 +25,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.115.2",
+    "@patternfly/patternfly": "^4.122.2",
     "@patternfly/react-core": "4.135.0",
     "@patternfly/react-icons": "4.11.0",
     "@patternfly/react-table": "4.29.0",

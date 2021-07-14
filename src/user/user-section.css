@@ -28,11 +28,6 @@ button#kc-join-groups-button {
   margin-left: var(--pf-global--spacer--md);
 }
 
-
-.pf-c-toolbar__content-section {
-  margin-bottom: calc(var(--pf-global--spacer--lg) * -1);
-}
-
 .pf-c-chip.kc-consents-chip::before {
   padding: 0px;
   border: 0;
