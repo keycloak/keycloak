@@ -514,7 +514,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         requestObject.nbf(null);
         registerRequestObject(requestObject, "foo", org.keycloak.jose.jws.Algorithm.PS256, true);
         oauth.openLoginForm();
-        assertRedirectedToClientWithError(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT,false, "Missing parameter in the 'request' object: nbf");
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST_URI,false, "Missing parameter in the 'request' object: nbf");
 
         // Create valid request object - more extensive testing of 'request' object is in ClientPoliciesTest.testSecureRequestObjectExecutor()
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");

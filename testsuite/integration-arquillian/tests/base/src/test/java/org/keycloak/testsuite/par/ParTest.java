@@ -44,6 +44,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ParConfig;
@@ -204,6 +205,68 @@ public class ParTest extends AbstractClientPoliciesTest {
             refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), clientSecret);
             assertEquals(400, refreshResponse.getStatusCode());
 
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+    @Test
+    public void testWrongSigningAlgorithmForRequestObject() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME),
+                    (OIDCClientRepresentation clientRep) -> {
+                        clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                        clientRep.setRedirectUris(new ArrayList<>(Arrays.asList(CLIENT_REDIRECT_URI)));
+                        clientRep.setRequestObjectSigningAlg(Algorithm.PS256);
+                    });
+
+            oauth.clientId(clientId);
+
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
+            requestObject.id(KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.setClientId(oauth.getClientId());
+            requestObject.setResponseType("code");
+            requestObject.setRedirectUriParam(CLIENT_REDIRECT_URI);
+            requestObject.setScope("openid");
+            requestObject.setNonce(KeycloakModelUtils.generateId());
+
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+            String encodedRequestObject = Base64Url.encode(contentBytes);
+            TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
+
+            // use and set jwks_url
+            ClientResource clientResource = ApiUtil
+                    .findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
+                    .setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
+            clientResource.update(clientRep);
+            client.generateKeys(org.keycloak.crypto.Algorithm.RS256);
+            client.registerOIDCRequest(encodedRequestObject, org.keycloak.crypto.Algorithm.RS256);
+
+            // do not send any other parameter but the request request parameter
+            oauth.request(client.getOIDCRequest());
+            oauth.responseType(null);
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            assertEquals(400, pResp.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
         } finally {
             restoreParRealmSettings();
         }
@@ -903,7 +966,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
         assertEquals(400, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
     }
 
     // PAR including invalid redirect_uri

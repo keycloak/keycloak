@@ -35,6 +35,8 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -85,6 +87,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
@@ -108,16 +111,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
@@ -1237,7 +1235,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.exp(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Missing parameter in the 'request' object: exp", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether request object not expired
@@ -1245,7 +1243,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.exp(Long.valueOf(0));
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request Expired", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether "nbf" claim exists
@@ -1253,7 +1251,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.nbf(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Missing parameter in the 'request' object: nbf", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether request object not yet being processed
@@ -1261,7 +1259,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.nbf(requestObject.getNbf() + 600);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request not yet being processed", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether request object's available period is short
@@ -1269,7 +1267,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.exp(requestObject.getNbf() + availablePeriod.intValue() + 1);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request's available period is long", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether "aud" claim exists
@@ -1277,7 +1275,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.audience((String)null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Missing parameter in the 'request' object: aud", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether "aud" claim points to this keycloak as authz server
@@ -1285,7 +1283,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.audience(suiteContext.getAuthServerInfo().getContextRoot().toString());
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Invalid parameter in the 'request' object: aud", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // confirm whether all parameters in query string are included in the request object, and have the same values
@@ -1316,7 +1314,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.nbf(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Missing parameter in the 'request' object: nbf", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether request object not yet being processed
@@ -1324,7 +1322,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.nbf(requestObject.getNbf() + 600);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request not yet being processed", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // check whether request object's available period is short
@@ -1332,7 +1330,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject.exp(requestObject.getNbf() + SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 1);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request's available period is long", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
 
         // update profile : not check "nbf"
@@ -1373,8 +1371,116 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
         oauth.openLoginForm();
-        assertEquals(SecureRequestObjectExecutor.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("Request object not encrypted", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    @Test
+    public void testParSecureRequestObjectExecutor() throws Exception {
+        Integer availablePeriod = Integer.valueOf(SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 400);
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Prvy Profil")
+                        .addExecutor(SecureRequestObjectExecutorFactory.PROVIDER_ID,
+                                createSecureRequestObjectExecutorConfig(availablePeriod, true))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Prva Politika", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestUris(Arrays.asList(TestApplicationResourceUrls.clientRequestUri()));
+        });
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId(clientId);
+
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+
+        oauth.request(signRequestObject(requestObject));
+        OAuthClient.ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        oauth.scope(null);
+        oauth.responseType(null);
+        oauth.request(null);
+        oauth.requestUri(requestUri);
+        OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertNotNull(loginResponse.getCode());
+        oauth.openLogout();
+
+        requestObject.exp(null);
+        oauth.requestUri(null);
+        oauth.request(signRequestObject(requestObject));
+        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        requestUri = pResp.getRequestUri();
+        oauth.request(null);
+        oauth.requestUri(requestUri);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.nbf(null);
+        oauth.requestUri(null);
+        oauth.request(signRequestObject(requestObject));
+        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        requestUri = pResp.getRequestUri();
+        oauth.request(null);
+        oauth.requestUri(requestUri);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.audience("https://www.other1.example.com/");
+        oauth.request(signRequestObject(requestObject));
+        oauth.requestUri(null);
+        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        requestUri = pResp.getRequestUri();
+        oauth.request(null);
+        oauth.requestUri(requestUri);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+
+        requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
+        requestObject.setOtherClaims(OIDCLoginProtocol.REQUEST_URI_PARAM, "foo");
+        oauth.request(signRequestObject(requestObject));
+        oauth.requestUri(null);
+        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
+    }
+
+    private String signRequestObject(AuthorizationEndpointRequestObject requestObject) throws IOException {
+        byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+        String encodedRequestObject = Base64Url.encode(contentBytes);
+        TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
+
+        // use and set jwks_url
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
+        clientResource.update(clientRep);
+        client.generateKeys(org.keycloak.crypto.Algorithm.PS256);
+        client.registerOIDCRequest(encodedRequestObject, org.keycloak.crypto.Algorithm.PS256);
+
+        // do not send any other parameter but the request request parameter
+        String oidcRequest = client.getOIDCRequest();
+        return oidcRequest;
     }
 
     @Test

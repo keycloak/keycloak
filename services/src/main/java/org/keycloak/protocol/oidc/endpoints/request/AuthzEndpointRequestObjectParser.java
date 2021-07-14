@@ -31,6 +31,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * Parse the parameters from OIDC "request" object
@@ -56,6 +57,10 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
 
         if (!client.getClientId().equals(clientId.asText())) {
             throw new RuntimeException("The client_id in the request object is not the same as the authorizing client");
+        }
+
+        if (requestParams.has(OIDCLoginProtocol.REQUEST_URI_PARAM)) {
+            throw new RuntimeException("The request_uri claim should not be set in the request object");
         }
 
         session.setAttribute(AuthzEndpointRequestParser.AUTHZ_REQUEST_OBJECT, requestParams);

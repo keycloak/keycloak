@@ -96,7 +96,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         try {
             authorizationRequest = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, httpRequest.getDecodedFormParameters());
         } catch (Exception e) {
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
