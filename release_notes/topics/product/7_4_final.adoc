@@ -148,9 +148,11 @@ The following features continue to be in a Technology Preview status:
 
 * Fine-grained authorization permissions
 
-== Removed or deprecated features
+= Removed or deprecated features
 
-Two features have a change in status:
+These features have a change in status:
+
+* Support for Red Hat Single Sign-On (RH-SSO) on Red Hat Enterprise Linux 6 (RHEL 6) is deprecated and the 7.5 release of RH-SSO will not be supported on RHEL 6. RHEL 6 entered the ELS phase of its lifecycle on November 30, 2020 and the Red Hat JBoss Enterprise Application Platform (EAP) that RH-SSO depends upon will drop support for RHEL 6 with the EAP 7.4 release. Customers should deploy their RH-SSO 7.5 upgrades on RHEL 7 or 8 versions.
 
 * Installation from an RPM is deprecated. Red Hat Single Sign-On will continue to deliver RPMs for the life of the 7.x product, but will not deliver RPMs with the next major version. The product will continue to support installation from a ZIP file and installation on OpenShift.
 
