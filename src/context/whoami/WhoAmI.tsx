@@ -4,7 +4,6 @@ import i18n from "../../i18n";
 import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
-import { homeRealm } from "../../util";
 
 export class WhoAmI {
   constructor(private me?: WhoAmIRepresentation) {
@@ -25,13 +24,6 @@ export class WhoAmI {
     if (this.me === undefined) return "";
 
     return this.me.userId;
-  }
-
-  /**
-   * Return the realm I am signed in to.
-   */
-  public getHomeRealm(): string {
-    return homeRealm();
   }
 
   public canCreateRealm(): boolean {

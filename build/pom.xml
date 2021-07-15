@@ -68,18 +68,23 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
-                            <token>&lt;head&gt;</token>
-                            <value>
-&lt;head&gt;
-  &lt;script type="text/javascript"&gt;
-    var loginRealm = "${loginRealm}";
-    var authServerUrl = "${authServerUrl}";
-    var authUrl = "${authUrl}";
-    var consoleBaseUrl = "${consoleBaseUrl}";
-    var resourceUrl = "${resourceUrl}";
-    var masterRealm = "${masterRealm}";
-    var resourceVersion = "${resourceVersion}";
-  &lt;/script&gt;
+                            <token><![CDATA[</body>]]></token>
+                            <value xml:space="preserve">
+<![CDATA[
+  <script id="environment" type="application/json">
+    {
+      "loginRealm": "${loginRealm}",
+      "authServerUrl": "${authServerUrl}",
+      "authUrl": "${authUrl}",
+      "consoleBaseUrl": "${consoleBaseUrl}",
+      "resourceUrl": "${resourceUrl}",
+      "masterRealm": "${masterRealm}",
+      "resourceVersion": "${resourceVersion}",
+      "isRunningAsTheme": true
+    }
+  </script>
+</body>
+]]>
 </value>
                         </replacement>
                     </replacements>

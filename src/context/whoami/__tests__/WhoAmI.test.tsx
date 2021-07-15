@@ -7,11 +7,6 @@ test("returns display name", () => {
   expect(whoami.getDisplayName()).toEqual("Stan Silvert");
 });
 
-test("returns correct home realm in dev mode", () => {
-  const whoami = new WhoAmI(whoamiMock as WhoAmIRepresentation);
-  expect(whoami.getHomeRealm()).toEqual("master");
-});
-
 test("can not create realm", () => {
   const whoami = new WhoAmI(whoamiMock as WhoAmIRepresentation);
   expect(whoami.canCreateRealm()).toEqual(false);

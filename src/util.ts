@@ -5,27 +5,6 @@ import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentat
 import type { ProviderRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 import type KeycloakAdminClient from "keycloak-admin";
 
-// if we are running on Keycloak server, resourceUrl will be passed from index.ftl
-declare const resourceUrl: string;
-export const isDevMode = typeof resourceUrl === "undefined";
-export const resourceUri = isDevMode ? "." : resourceUrl;
-
-// if we are running on Keycloak server, loginRealm will be passed from index.ftl
-declare const loginRealm: string;
-export const homeRealm = () => {
-  if (typeof loginRealm !== "undefined") return loginRealm;
-
-  return new URLSearchParams(window.location.search).get("realm") || "master";
-};
-
-// if we are running on Keycloak server, authUrl will be passed from index.ftl
-declare const authUrl: string;
-export const authUri = () => {
-  if (typeof authUrl !== "undefined") return authUrl;
-
-  return "http://localhost:8180/auth";
-};
-
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;
 }) => {

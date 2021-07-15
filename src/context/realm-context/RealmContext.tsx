@@ -4,7 +4,7 @@ import _ from "lodash";
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
-import { WhoAmIContext } from "../whoami/WhoAmI";
+import environment from "../../environment";
 
 type RealmContextType = {
   realm: string;
@@ -25,8 +25,7 @@ type RealmContextProviderProps = { children: React.ReactNode };
 export const RealmContextProvider = ({
   children,
 }: RealmContextProviderProps) => {
-  const { whoAmI } = useContext(WhoAmIContext);
-  const [realm, setRealm] = useState(whoAmI.getHomeRealm());
+  const [realm, setRealm] = useState(environment.loginRealm);
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const adminClient = useAdminClient();
   const recentUsed = new RecentUsed();

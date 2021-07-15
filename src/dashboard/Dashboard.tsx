@@ -28,8 +28,9 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 import "./dashboard.css";
-import { toUpperCase, resourceUri } from "../util";
+import { toUpperCase } from "../util";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import environment from "../environment";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
@@ -38,7 +39,7 @@ const EmptyDashboard = () => {
     <PageSection variant="light">
       <EmptyState variant="large">
         <Brand
-          src={resourceUri + "/icon.svg"}
+          src={environment.resourceUrl + "/icon.svg"}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />

@@ -1,5 +1,5 @@
 import KcAdminClient from "keycloak-admin";
-import { homeRealm, isDevMode, authUri } from "../../util";
+import environment from "../../environment";
 
 export default async function (): Promise<KcAdminClient> {
   const kcAdminClient = new KcAdminClient();
@@ -7,16 +7,16 @@ export default async function (): Promise<KcAdminClient> {
     await kcAdminClient.init(
       { onLoad: "check-sso", pkceMethod: "S256" },
       {
-        url: authUri(),
-        realm: homeRealm(),
-        clientId: isDevMode
-          ? "security-admin-console-v2"
-          : "security-admin-console",
+        url: environment.authUrl,
+        realm: environment.loginRealm,
+        clientId: environment.isRunningAsTheme
+          ? "security-admin-console"
+          : "security-admin-console-v2",
       }
     );
-    kcAdminClient.setConfig({ realmName: homeRealm() });
+    kcAdminClient.setConfig({ realmName: environment.loginRealm });
 
-    kcAdminClient.baseUrl = authUri();
+    kcAdminClient.baseUrl = environment.authUrl;
   } catch (error) {
     alert("failed to initialize keycloak");
   }
