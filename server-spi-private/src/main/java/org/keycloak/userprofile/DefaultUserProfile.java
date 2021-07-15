@@ -42,14 +42,16 @@ import org.keycloak.models.UserModel;
  */
 public final class DefaultUserProfile implements UserProfile {
 
+    protected final UserProfileMetadata metadata;
     private final Function<Attributes, UserModel> userSupplier;
     private final Attributes attributes;
     private final KeycloakSession session;
     private boolean validated;
     private UserModel user;
 
-    public DefaultUserProfile(Attributes attributes, Function<Attributes, UserModel> userCreator, UserModel user,
+    public DefaultUserProfile(UserProfileMetadata metadata, Attributes attributes, Function<Attributes, UserModel> userCreator, UserModel user,
             KeycloakSession session) {
+        this.metadata = metadata;
         this.userSupplier = userCreator;
         this.attributes = attributes;
         this.user = user;
@@ -113,6 +115,11 @@ public final class DefaultUserProfile implements UserProfile {
 
                 if (currentValue.size() != updatedValue.size() || !currentValue.containsAll(updatedValue)) {
                     user.setAttribute(name, updatedValue);
+                    
+                    if(UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
+                        user.setEmailVerified(false);
+                    }
+                    
                     for (BiConsumer<String, UserModel> listener : changeListener) {
                         listener.accept(name, user);
                     }

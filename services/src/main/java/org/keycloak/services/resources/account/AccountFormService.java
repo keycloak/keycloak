@@ -377,7 +377,6 @@ public class AccountFormService extends AbstractSecuredLocalService {
             // backward compatibility with old account console where attributes are not removed if missing
             profile.update(false, (attributeName, userModel) -> {
                 if (attributeName.equals(UserModel.EMAIL)) {
-                    user.setEmailVerified(false);
                     event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, user.getEmail()).success();
                 }
                 if (attributeName.equals(UserModel.FIRST_NAME)) {

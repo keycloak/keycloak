@@ -788,6 +788,32 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
     
     @Test
+    public void testEmailChangeSetsEmailVerified() {
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, true, "", "ExistingLast");
+
+        setUserProfileConfiguration("{\"attributes\": [" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+
+        //submit OK
+        verifyProfilePage.updateEmail("newemail@test.org","FirstCC", "LastCC");
+        
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        
+        UserRepresentation user = getUser(user5Id);
+        assertEquals("newemail@test.org", user.getEmail());
+        assertEquals(false, user.isEmailVerified());
+    }
+    
+    @Test
     public void testNoActionIfSuccessfulValidationForCustomAttribute() {
         
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
@@ -812,6 +838,14 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     protected void updateUser(String userId, String firstName, String lastName, String department) {
         updateUser(testRealm(), userId, firstName, lastName, department);
+    }
+    
+    protected void updateUser(String userId, boolean emailVerified, String firstName, String lastName) {
+        UserRepresentation ur = getUser(testRealm(), userId);
+        ur.setFirstName(firstName);
+        ur.setLastName(lastName);
+        ur.setEmailVerified(emailVerified);
+        testRealm().users().get(userId).update(ur);
     }
     
     protected void setUserProfileConfiguration(String configuration) {

@@ -82,6 +82,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
+                .emailVerified(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
         ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
@@ -91,6 +92,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 .email("john-doh@localhost")
                 .firstName("John")
                 .lastName("Doh")
+                .emailVerified(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
         ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
@@ -121,6 +123,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
+        // email changed so verify that emailVerified flag is reset
+        Assert.assertEquals(false, user.isEmailVerified());
     }
 
     @Test
@@ -150,6 +154,8 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("john-doh@localhost", user.getEmail());
         Assert.assertEquals("new", user.getUsername());
+        // email not changed so verify that emailVerified flag is NOT reset
+        Assert.assertEquals(true, user.isEmailVerified());
         getCleanup().addUserId(user.getId());
     }
 

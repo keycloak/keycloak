@@ -89,7 +89,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testGetProfile() throws IOException {
 
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = getUser();
         assertEquals("Tom", user.getFirstName());
         assertEquals("Brady", user.getLastName());
         assertEquals("test-user@localhost", user.getEmail());
@@ -99,7 +99,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testUpdateSingleField() throws IOException {
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
@@ -139,10 +139,58 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
 
     }
+    
+    /**
+     * Reproducer for bugs KEYCLOAK-17424 and KEYCLOAK-17582
+     */
+    @Test
+    public void testUpdateProfileEmailChangeSetsEmailVerified() throws IOException {
+        UserRepresentation user = getUser();
+        String originalEmail = user.getEmail();
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+
+            realmRep.setRegistrationEmailAsUsername(false);
+            adminClient.realm("test").update(realmRep);
+            
+            //set flag over adminClient to initial value
+            UserResource userResource = adminClient.realm("test").users().get(user.getId());
+            org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+            ur.setEmailVerified(true);
+            userResource.update(ur);
+            //make sure flag is correct before the test 
+            user = getUser();
+            assertEquals(true, user.isEmailVerified());
+
+            // Update without email change - flag not reset to false
+            user.setEmail(originalEmail);
+            user = updateAndGet(user);
+            assertEquals(originalEmail, user.getEmail());
+            assertEquals(true, user.isEmailVerified());
+
+            
+            // Update email - flag must be reset to false
+            user.setEmail("bobby@localhost");
+            user = updateAndGet(user);
+            assertEquals("bobby@localhost", user.getEmail());
+            assertEquals(false, user.isEmailVerified());
+
+        } finally {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            adminClient.realm("test").update(realmRep);
+
+            user.setEmail(originalEmail);
+            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            System.out.println(response.asString());
+            assertEquals(204, response.getStatus());
+        }
+
+    }
 
     @Test
     public void testUpdateProfile() throws IOException {
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
@@ -240,7 +288,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testUpdateProfileCannotChangeThroughAttributes() throws IOException {
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
         Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
 
@@ -271,7 +319,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         realmRep.setRegistrationEmailAsUsername(true);
         adminClient.realm("test").update(realmRep);
 
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = getUser();
         String originalFirstname = user.getFirstName();
 
         try {
@@ -287,10 +335,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
+    private UserRepresentation getUser() throws IOException {
+        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+    }
+    
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
         int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
         assertEquals(204, status);
-        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        return getUser();
     }
 
 
