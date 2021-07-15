@@ -9,7 +9,7 @@ WORKDIR /app
 COPY . .
 
 # replace Keycloak endpoints
-RUN sed -i "s/${DEFAULT_KEYCLOAK_ENDPOINT}/${KEYCLOAK_ENDPOINT}/g" import.js &&\
+RUN sed -i "s/${DEFAULT_KEYCLOAK_ENDPOINT}/${KEYCLOAK_ENDPOINT}/g" import.mjs &&\
     sed -i "s/${DEFAULT_KEYCLOAK_ENDPOINT}/${KEYCLOAK_ENDPOINT}/g" src/context/auth/keycloak.ts &&\
     sed -i "s/adminv2//g" snowpack.config.js
 

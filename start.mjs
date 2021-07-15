@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-const http = require("https");
-const fs = require("fs");
-const path = require("path");
-const { spawn } = require("child_process");
+import http from "node:https";
+import fs from "node:fs";
+import path from "node:path";
+import { spawn } from "node:child_process";
 
-const decompress = require("decompress");
-const decompressTargz = require("decompress-targz");
+import decompress from "decompress";
+import decompressTargz from "decompress-targz";
 
 const args = process.argv.slice(2);
 const version = args[0] || "12.0.1";
@@ -19,19 +19,24 @@ if (!fs.existsSync(folder)) {
   fs.mkdirSync(folder);
 }
 
-const decompressKeycloak = () =>
-  decompress(fileName, folder, {
-    plugins: [decompressTargz()],
-  })
-    .then(() => {
-      console.log("Files decompressed");
-    })
-    .catch((e) => console.error(e));
+async function decompressKeycloak() {
+  try {
+    await decompress(fileName, folder, {
+      plugins: [decompressTargz()],
+    });
+
+    console.log("Files decompressed");
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 const run = () => {
-  const addProc = spawn(path.join(serverPath, "bin", `add-user-keycloak${extension}`), [
-    "--user", "admin",
-    "--password", "admin"
-  ]);
+  const addProc = spawn(
+    path.join(serverPath, "bin", `add-user-keycloak${extension}`),
+    ["--user", "admin", "--password", "admin"]
+  );
+
   addProc.on("exit", () => {
     const proc = spawn(path.join(serverPath, "bin", `standalone${extension}`), [
       "-Djboss.socket.binding.port-offset=100",

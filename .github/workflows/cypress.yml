@@ -27,13 +27,13 @@ jobs:
     - run: npm run build
 
     - name: Run Keycloak
-      run: ./start.js & sleep 40
+      run: ./start.mjs & sleep 40
 
     - name: Run Admin Console
       run: npx http-server ./build -P http://localhost:8180/ & sleep 30
 
     - name: Admin Console client
-      run: ./import.js
+      run: ./import.mjs
 
     - name: Cypress run
       run: npm run start:cypress-tests

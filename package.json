@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "snowpack build",
-    "lint": "eslint \"./src/**/*.{js,jsx,ts,tsx}\"",
+    "lint": "eslint \"./src/**/*.{js,jsx,mjs,ts,tsx}\"",
     "postinstall": "grunt",
     "start": "snowpack dev",
     "test": "jest",
@@ -93,6 +93,6 @@
     "typescript": "4.2.4"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": "eslint --cache --fix"
+    "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
   }
 }
