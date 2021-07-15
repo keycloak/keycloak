@@ -14,6 +14,5 @@ module.exports = {
   },
   devOptions: {
     hmrErrorOverlay: false,
-    out: "build/src/main/resources/admin/resources", // For snowpack 3, "out" goes under buildOptions.
   },
 };

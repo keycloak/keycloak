@@ -53,6 +53,10 @@ $> npx grunt switch-rh-sso
 
 To switch back just do a `git checkout public`
 
+## Building as a Keycloak theme
+
+If you want to build the application using Maven and produce a JAR that can be installed directly into Keycloak, check out the [Keycloak theme documentation](./keycloak-theme/README.md).
+
 # Keycloak UI Test Suite in Cypress
 
 This repository contains the UI tests for Keycloak developed with Cypress framework
