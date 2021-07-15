@@ -12,8 +12,40 @@ export default class RealmSettingsPage {
   selectEmailTheme = "#kc-email-theme";
   emailThemeList = "#kc-email-theme + ul";
   hostInput = "#kc-host";
+  ssoSessionIdleSelectMenu = "#kc-sso-session-idle-select-menu";
+  ssoSessionIdleSelectMenuList = "#kc-sso-session-idle-select-menu > div > ul";
+  ssoSessionMaxSelectMenu = "#kc-sso-session-max-select-menu";
+  ssoSessionMaxSelectMenuList = "#kc-sso-session-max-select-menu > div > ul";
+
+  ssoSessionMaxRememberMeSelectMenu =
+    "#kc-sso-session-max-remember-me-select-menu";
+  ssoSessionMaxRememberMeSelectMenuList =
+    "#kc-sso-session-max-remember-me-select-menu > div > ul";
+
+  ssoSessionIdleRememberMeSelectMenu =
+    "#kc-sso-session-idle-remember-me-select-menu";
+  ssoSessionIdleRememberMeSelectMenuList =
+    "#kc-sso-session-idle-remember-me-select-menu > div > ul";
+
+  clientSessionIdleSelectMenu = "#kc-client-session-idle-select-menu";
+  clientSessionIdleSelectMenuList =
+    "#kc-client-session-idle-select-menu > div > ul";
+
+  clientSessionMaxSelectMenu = "#kc-client-session-max-select-menu";
+  clientSessionMaxSelectMenuList =
+    "#kc-client-session-max-select-menu > div > ul";
+
+  offlineSessionIdleSelectMenu = "#kc-offline-session-idle-select-menu";
+
+  loginTimeoutSelectMenu = "#kc-login-timeout-select-menu";
+  loginTimeoutSelectMenuList = "#kc-login-timeout-select-menu > div > ul";
+
+  loginActionTimeoutSelectMenu = "#kc-login-action-timeout-select-menu";
+  loginActionTimeoutSelectMenuList =
+    "#kc-login-action-timeout-select-menu > div > ul";
+
   selectDefaultLocale = "select-default-locale";
-  defaultLocaleList = "select-default-locale + ul";
+  defaultLocaleList = "select-default-locale > div > ul";
   emailSaveBtn = "email-tab-save";
   managedAccessSwitch = "user-managed-access-switch";
   userRegSwitch = "user-reg-switch";
@@ -45,6 +77,16 @@ export default class RealmSettingsPage {
   valueInput = "value-input";
   deleteAction = "delete-action";
   modalConfirm = "modalConfirm";
+  ssoSessionIdleInput = "sso-session-idle-input";
+  ssoSessionMaxInput = "sso-session-max-input";
+  ssoSessionIdleRememberMeInput = "sso-session-idle-remember-me-input";
+  ssoSessionMaxRememberMeInput = "sso-session-max-remember-me-input";
+  clientSessionIdleInput = "client-session-idle-input";
+  clientSessionMaxInput = "client-session-max-input";
+  offlineSessionIdleInput = "offline-session-idle-input";
+  offlineSessionMaxSwitch = "offline-session-max-switch";
+  loginTimeoutInput = "login-timeout-input";
+  loginActionTimeoutInput = "login-action-timeout-input";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -190,6 +232,86 @@ export default class RealmSettingsPage {
         .click();
     }
     return this;
+  }
+
+  changeTimeUnit(
+    unit: "Minutes" | "Hours" | "Days",
+    inputType: string,
+    listType: string
+  ) {
+    switch (unit) {
+      case "Minutes":
+        cy.get(inputType).click();
+        cy.get(listType).contains(unit).click();
+        break;
+      case "Hours":
+        cy.get(inputType).click();
+        cy.get(listType).contains(unit).click();
+        break;
+      case "Days":
+        cy.get(inputType).click();
+        cy.get(listType).contains(unit).click();
+        break;
+      default:
+        throw "Invalid unit, must be 'minutes', 'hours', or 'days'.";
+    }
+    return this;
+  }
+
+  populateSessionsPage() {
+    cy.getId(this.ssoSessionIdleInput).clear().type("1");
+    this.changeTimeUnit(
+      "Minutes",
+      this.ssoSessionIdleSelectMenu,
+      this.ssoSessionIdleSelectMenuList
+    );
+    cy.getId(this.ssoSessionMaxInput).clear().type("2");
+    this.changeTimeUnit(
+      "Hours",
+      this.ssoSessionMaxSelectMenu,
+      this.ssoSessionMaxSelectMenuList
+    );
+    cy.getId(this.ssoSessionIdleRememberMeInput).clear().type("3");
+    this.changeTimeUnit(
+      "Days",
+      this.ssoSessionIdleRememberMeSelectMenu,
+      this.ssoSessionIdleRememberMeSelectMenuList
+    );
+    cy.getId(this.ssoSessionMaxRememberMeInput).clear().type("4");
+    this.changeTimeUnit(
+      "Minutes",
+      this.ssoSessionMaxRememberMeSelectMenu,
+      this.ssoSessionMaxRememberMeSelectMenuList
+    );
+
+    cy.getId(this.clientSessionIdleInput).clear().type("5");
+    this.changeTimeUnit(
+      "Hours",
+      this.clientSessionIdleSelectMenu,
+      this.clientSessionIdleSelectMenuList
+    );
+    cy.getId(this.clientSessionMaxInput).clear().type("6");
+    this.changeTimeUnit(
+      "Days",
+      this.clientSessionMaxSelectMenu,
+      this.clientSessionMaxSelectMenuList
+    );
+
+    cy.getId(this.offlineSessionIdleInput).clear().type("7");
+    this.toggleSwitch(this.offlineSessionMaxSwitch);
+
+    cy.getId(this.loginTimeoutInput).clear().type("9");
+    this.changeTimeUnit(
+      "Minutes",
+      this.loginTimeoutSelectMenu,
+      this.loginTimeoutSelectMenuList
+    );
+    cy.getId(this.loginActionTimeoutInput).clear().type("10");
+    this.changeTimeUnit(
+      "Days",
+      this.loginActionTimeoutSelectMenu,
+      this.loginActionTimeoutSelectMenuList
+    );
   }
 
   checkUserEvents(events: string[]) {

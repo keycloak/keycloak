@@ -2,7 +2,11 @@
 .pf-c-card.pf-m-flat.kc-email-settings,
 .pf-c-card.pf-m-flat.kc-email-template,
 .pf-c-card.pf-m-flat.kc-email-connection,
-.pf-c-card.pf-m-flat.kc-message-bundles {
+.pf-c-card.pf-m-flat.kc-message-bundles,
+.pf-c-card.pf-m-flat.kc-sso-session-template,
+.pf-c-card.pf-m-flat.kc-client-session-template,
+.pf-c-card.pf-m-flat.kc-offline-session-template,
+.pf-c-card.pf-m-flat.kc-login-settings-template {
   border: none;
   margin-top: 0px;
   margin-bottom: 0px;
@@ -73,9 +77,13 @@ button.pf-c-button.pf-m-link.add-provider {
   padding-left: var(--pf-c-toolbar__content--PaddingLeft);
 }
 
-.pf-c-form__group-label {
-  display: flex;
-  align-items: start;
+div#login-action-timeout-label > .pf-c-form__group-label,
+div#offline-session-max-label > .pf-c-form__group-label {
+  width: 90%;
+}
+
+div#offline-session-max-label > .pf-c-form__group-label {
+  width: 85%;
 }
 
 .add-provider-modal > div.pf-c-modal-box__body {
@@ -100,4 +108,52 @@ button.pf-c-button.pf-m-link.add-provider {
 
 .pf-c-content.kc-provide-email-text {
   padding-bottom: var(--pf-global--spacer--md);
+}
+
+.kc-sso-session-idle-input,
+.kc-sso-session-max-input,
+.kc-sso-session-max-input,
+.kc-sso-session-idle-remember-me-input,
+.kc-sso-session-max-remember-me-input,
+.kc-offline-session-idle-input,
+.kc-offline-session-max-input,
+.kc-client-session-idle-input,
+.kc-client-session-max-input,
+.kc-login-timeout-input,
+.kc-login-action-timeout-input {
+  width: 170px;
+  margin-right: 12px;
+}
+
+.kc-sso-session-idle-select,
+.kc-sso-session-max-select,
+.kc-sso-session-idle-remember-me-select,
+.kc-sso-session-max-remember-me-select,
+.kc-client-session-idle-select,
+.kc-client-session-max-select,
+.kc-offline-session-idle-select,
+.kc-offline-session-max-select,
+.kc-login-action-timeout-select,
+.kc-sso-session-idle-select.pf-m-expanded,
+.kc-sso-session-max-select.pf-m-expanded {
+  width: 170px;
+}
+
+article.pf-c-card.pf-m-flat.kc-sso-session-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-sso-session-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-client-session-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-client-session-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-offline-session-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-offline-session-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-login-settings-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-login-settings-template
+  > .pf-c-card__body.kc-form-panel__body {
+  padding: 0px;
 }

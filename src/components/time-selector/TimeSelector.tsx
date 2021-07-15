@@ -16,12 +16,14 @@ export type TimeSelectorProps = TextInputProps & {
   value: number;
   units?: Unit[];
   onChange: (time: number | string) => void;
+  className?: string;
 };
 
 export const TimeSelector = ({
   value,
   units = ["seconds", "minutes", "hours", "days"],
   onChange,
+  className,
   ...rest
 }: TimeSelectorProps) => {
   const { t } = useTranslation("common");
@@ -75,7 +77,7 @@ export const TimeSelector = ({
   };
 
   return (
-    <Split hasGutter>
+    <Split hasGutter className={className}>
       <SplitItem>
         <TextInput
           {...rest}
@@ -84,15 +86,17 @@ export const TimeSelector = ({
           aria-label="kc-time"
           min="0"
           value={timeValue}
+          className={`${className}-input`}
           onChange={(value) => {
             updateTimeout("" === value ? value : parseInt(value));
           }}
         />
       </SplitItem>
-      <SplitItem>
+      <SplitItem id={`${className}-select-menu`}>
         <Select
           variant={SelectVariant.single}
           aria-label={t("unitLabel")}
+          className={`${className}-select`}
           onSelect={(_, value) => {
             setMultiplier(value as number);
             updateTimeout(timeValue, value as number);
@@ -105,7 +109,11 @@ export const TimeSelector = ({
           isOpen={open}
         >
           {times.map((time) => (
-            <SelectOption key={time.label} value={time.multiplier}>
+            <SelectOption
+              id={time.label}
+              key={time.label}
+              value={time.multiplier}
+            >
               {time.label}
             </SelectOption>
           ))}

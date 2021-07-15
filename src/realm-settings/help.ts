@@ -67,5 +67,26 @@ export default {
     quickLoginCheckMilliSeconds:
       "If a failure happens concurrently too quickly, lock out the user.",
     minimumQuickLoginWait: "How long to wait after a quick login failure.",
+    ssoSessionIdle:
+      "Time a session is allowed to be idle before it expires. Tokens and browser sessions are invalidated when a session is expired.",
+    ssoSessionMax:
+      "Max time before a session is expired. Tokens and browser sessions are invalidated when a session is expired.",
+    ssoSessionIdleRememberMe:
+      "Time a remember me session is allowed to be idle before it expires. Tokens and browser sessions are invalidated when a session is expired. If not set it uses the standard SSO Session Idle value.",
+    ssoSessionMaxRememberMe:
+      "Max time before a session is expired when a user has set the remember me option. Tokens and browser sessions are invalidated when a session is expired. If not set it uses the standard SSO Session Max value.",
+    clientSessionIdle:
+      "Time a client session is allowed to be idle before it expires. Tokens are invalidated when a client session is expired. If not set it uses the standard SSO Session Idle value.",
+    clientSessionMax:
+      "Max time before a client session is expired. Tokens are invalidated when a session is expired. If not set it uses the standard SSO Session Max value.",
+    offlineSessionIdle:
+      "Time an offline session is allowed to be idle before it expires. You need to use offline token to refresh at least once within this period; otherwise offline session will expire.",
+    offlineSessionMaxLimited: "Enable offline session max",
+    offlineSessionMax:
+      "Max time before an offline session is expired regardless of activity.",
+    loginTimeout:
+      "Max time a user has to complete a login. This is recommended to be relatively long, such as 30 minutes or more",
+    loginActionTimeout:
+      "Max time a user has to complete login related actions like update password or configure totp. This is recommended to be relatively long, such as 5 minutes or more",
   },
 };

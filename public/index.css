@@ -10,19 +10,10 @@
   margin-bottom: 52px;
 }
 
-input[type='checkbox'] {
+input[type="checkbox"] {
   height: 20px;
   width: 20px;
   vertical-align: baseline;
-}
-
-label.pf-c-form__label {
-  display: inline-flex;
-}
-
-.pf-c-form__group-label {
-  display: flex;
-  align-items: end;
 }
 
 .pf-c-select__toggle:before {
@@ -52,7 +43,7 @@ label.pf-c-form__label {
   cursor: pointer;
 }
 
-td.pf-c-table__check > input[type='checkbox'] {
+td.pf-c-table__check > input[type="checkbox"] {
   vertical-align: text-bottom;
 }
 
@@ -63,4 +54,8 @@ td.pf-c-table__check > input[type='checkbox'] {
 
 .pf-c-pagination.pf-m-bottom.pf-m-compact {
   padding: 0px;
+}
+
+.kc-time-select-dropdown {
+  min-width: 170px;
 }

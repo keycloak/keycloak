@@ -35,6 +35,7 @@ import { LocalizationTab } from "./LocalizationTab";
 import { WhoAmIContext } from "../context/whoami/WhoAmI";
 import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { SecurityDefences } from "./security-defences/SecurityDefences";
+import { RealmSettingsSessionsTab } from "./SessionsTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -209,6 +210,7 @@ export const RealmSettingsSection = () => {
               eventKey="general"
               title={<TabTitleText>{t("general")}</TabTitleText>}
               data-testid="rs-general-tab"
+              aria-label="general-tab"
             >
               <RealmSettingsGeneralTab
                 save={save}
@@ -219,6 +221,7 @@ export const RealmSettingsSection = () => {
               eventKey="login"
               title={<TabTitleText>{t("login")}</TabTitleText>}
               data-testid="rs-login-tab"
+              aria-label="login-tab"
             >
               <RealmSettingsLoginTab save={save} realm={realm!} />
             </Tab>
@@ -226,6 +229,7 @@ export const RealmSettingsSection = () => {
               eventKey="email"
               title={<TabTitleText>{t("email")}</TabTitleText>}
               data-testid="rs-email-tab"
+              aria-label="email-tab"
             >
               {realm && (
                 <RealmSettingsEmailTab user={currentUser!} realm={realm} />
@@ -235,6 +239,7 @@ export const RealmSettingsSection = () => {
               eventKey="themes"
               title={<TabTitleText>{t("themes")}</TabTitleText>}
               data-testid="rs-themes-tab"
+              aria-label="themes-tab"
             >
               <RealmSettingsThemesTab
                 save={save}
@@ -246,6 +251,7 @@ export const RealmSettingsSection = () => {
               eventKey="keys"
               title={<TabTitleText>{t("realm-settings:keys")}</TabTitleText>}
               data-testid="rs-keys-tab"
+              aria-label="keys-tab"
             >
               {realmComponents && (
                 <Tabs
@@ -256,6 +262,7 @@ export const RealmSettingsSection = () => {
                     id="keysList"
                     eventKey={0}
                     data-testid="rs-keys-list-tab"
+                    aria-label="keys-list-subtab"
                     title={<TabTitleText>{t("keysList")}</TabTitleText>}
                   >
                     <KeysListTab realmComponents={realmComponents} />
@@ -263,6 +270,7 @@ export const RealmSettingsSection = () => {
                   <Tab
                     id="providers"
                     data-testid="rs-providers-tab"
+                    aria-label="rs-providers-tab"
                     eventKey={1}
                     title={<TabTitleText>{t("providers")}</TabTitleText>}
                   >
@@ -279,6 +287,7 @@ export const RealmSettingsSection = () => {
               eventKey="events"
               title={<TabTitleText>{t("events")}</TabTitleText>}
               data-testid="rs-realm-events-tab"
+              aria-label="realm-events-tab"
             >
               <EventsTab />
             </Tab>
@@ -307,6 +316,17 @@ export const RealmSettingsSection = () => {
               {realm && (
                 <SecurityDefences save={save} reset={() => resetForm(realm)} />
               )}
+            </Tab>
+            <Tab
+              id="sessions"
+              eventKey="sessions"
+              data-testid="rs-sessions-tab"
+              aria-label="sessions-tab"
+              title={
+                <TabTitleText>{t("realm-settings:sessions")}</TabTitleText>
+              }
+            >
+              <RealmSettingsSessionsTab key={key} realm={realm} />
             </Tab>
           </KeycloakTabs>
         </FormProvider>
