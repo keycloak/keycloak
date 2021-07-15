@@ -153,3 +153,4 @@ However, Client Registration Policies also still co-exist. This means that for e
 client registration policies are applied.
 
 The current plans are for the Client Registration Policies feature to be removed and the existing client registration policies will be migrated into new client policies automatically.
+
