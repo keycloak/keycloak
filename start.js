@@ -8,7 +8,7 @@ const decompress = require("decompress");
 const decompressTargz = require("decompress-targz");
 
 const args = process.argv.slice(2);
-const version = args[0] || "12.0.1";
+const version = args[0] || "14.0.0";
 
 const folder = "server";
 const fileName = path.join(folder, `keycloak-${version}.tar.gz`);
@@ -27,14 +27,16 @@ const decompressKeycloak = () =>
       console.log("Files decompressed");
     })
     .catch((e) => console.error(e));
+
 const run = () => {
-  const addProc = spawn(path.join(serverPath, "bin", `add-user-keycloak${extension}`), [
-    "--user", "admin",
-    "--password", "admin"
-  ]);
+  const addProc = spawn(
+    path.join(serverPath, "bin", `add-user-keycloak${extension}`),
+    ["--user", "admin", "--password", "admin"]
+  );
   addProc.on("exit", () => {
     const proc = spawn(path.join(serverPath, "bin", `standalone${extension}`), [
       "-Djboss.socket.binding.port-offset=100",
+      "-Dprofile.feature.newadmin=enabled",
     ]);
     proc.stdout.on("data", (data) => {
       console.log(data.toString());
