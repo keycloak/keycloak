@@ -226,7 +226,7 @@ public class ExportUtils {
 
         // Finally users if needed
         if (options.isUsersIncluded()) {
-            List<UserRepresentation> users = session.users().getUsersStream(realm, true)
+            List<UserRepresentation> users = session.users().searchForUserStream(realm, Collections.emptyMap())
                     .map(user -> exportUser(session, realm, user, options, internal))
                     .collect(Collectors.toList());
 

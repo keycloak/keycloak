@@ -304,7 +304,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+            session.userLocalStorage().searchForUserStream(ctx.getRealm(), Collections.emptyMap())
                     .collect(Collectors.toList())
                     .forEach(user -> session.userLocalStorage().removeUser(ctx.getRealm(), user));
 
@@ -353,16 +353,11 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
-                    .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
-                    .collect(Collectors.toList())
-                    .forEach(user -> {
-                        UserCache userCache = session.userCache();
-                        if (userCache != null) {
-                            userCache.evict(ctx.getRealm(), user);
-                        }
-                        session.userLocalStorage().removeUser(ctx.getRealm(), user);
-                    });
+            long c = session.userLocalStorage().searchForUserStream(ctx.getRealm(), Collections.emptyMap())
+                    .peek(user -> System.out.println("Model contains user: " + user.getUsername()))
+                    .count();
+            
+            Assert.assertEquals("There should be no user returned, as it should be removed during import validation", 0, c);
 
             // Add street mapper and add some user including street
             ComponentModel streetMapper = LDAPTestUtils.addUserAttributeMapper(ctx.getRealm(), ctx.getLdapModel(), "streetMapper", "street", LDAPConstants.STREET);

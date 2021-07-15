@@ -575,32 +575,11 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
-        LOG.tracef("getUsersStream(%s, %d, %d, %s)%s", realm, firstResult, maxResults, includeServiceAccounts, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
-
-        if (! includeServiceAccounts) {
-            mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
-        }
-
-        return paginatedStream(tx.read(mcb)
-          .sorted(MapUserEntity.COMPARE_BY_USERNAME), firstResult, maxResults)
-          .map(entityToAdapterFunc(realm));
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        LOG.tracef("getUsersStream(%s, %d, %d)%s", realm, firstResult, maxResults, getShortStackTrace());
-        return getUsersStream(realm, firstResult, maxResults, false);
-    }
-
-    @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, search, firstResult, maxResults, getShortStackTrace());
         Map<String, String> attributes = new HashMap<>();
         attributes.put(UserModel.SEARCH, search);
-        session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, false);
+        attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString());
         return searchForUserStream(realm, attributes, firstResult, maxResults);
     }
 
@@ -610,10 +589,6 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
 
         ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
-
-        if (! session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
-            mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
-        }
 
         final boolean exactSearch = Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()));
 
@@ -675,6 +650,13 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
                     mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS), value);
                     break;
                 }
+                case UserModel.INCLUDE_SERVICE_ACCOUNT: {
+                    if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
+                            || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
+                        mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
+                    }
+                    break;
+                }
             }
         }
 
@@ -703,9 +685,10 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
 
         Stream<MapUserEntity<K>> usersStream = tx.read(mcb)
                 .sorted(MapUserEntity.COMPARE_BY_USERNAME); // Sort before paginating
-        
+
+        UserProvider userProvider = session.users();
         return paginatedStream(usersStream, firstResult, maxResults) // paginate if necessary
-                .map(entityToAdapterFunc(realm))
+                .map(userEntity -> userProvider.getUserById(realm, userEntity.getId().toString()))
                 .filter(Objects::nonNull);
     }
 
