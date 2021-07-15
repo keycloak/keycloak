@@ -135,6 +135,7 @@ public class AccountRestService {
         UserModel user = auth.getUser();
 
         UserRepresentation rep = new UserRepresentation();
+        rep.setId(user.getId());
         rep.setUsername(user.getUsername());
         rep.setFirstName(user.getFirstName());
         rep.setLastName(user.getLastName());

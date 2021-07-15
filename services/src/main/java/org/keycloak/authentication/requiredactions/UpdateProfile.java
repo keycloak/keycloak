@@ -84,7 +84,6 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
                     event.detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, user.getLastName());
                 }
                 if (attributeName.equals(UserModel.EMAIL)) {
-                    user.setEmailVerified(false);
                     event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, user.getEmail());
                 }
             });
