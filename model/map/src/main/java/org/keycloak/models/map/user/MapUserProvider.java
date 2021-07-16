@@ -336,7 +336,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
         entity.setUsername(username.toLowerCase());
         entity.setCreatedTimestamp(Time.currentTimeMillis());
 
-        tx.create(entity);
+        entity = tx.create(entity);
         final UserModel userModel = entityToAdapterFunc(realm).apply(entity);
 
         if (addDefaultRoles) {

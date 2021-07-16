@@ -159,7 +159,7 @@ public class MapClientProvider<K> implements ClientProvider {
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Client exists: " + id);
         }
-        tx.create(entity);
+        entity = tx.create(entity);
         final ClientModel resource = entityToAdapterFunc(realm).apply(entity);
 
         // TODO: Sending an event should be extracted to store layer

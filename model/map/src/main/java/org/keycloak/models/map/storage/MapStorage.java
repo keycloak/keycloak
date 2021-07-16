@@ -131,7 +131,7 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      *
      * @return See description. Never returns {@code null}
      */
-    public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session);
+    MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session);
 
     /**
      * Returns a {@link StringKeyConvertor} that is used to convert primary keys
@@ -139,6 +139,6 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * 
      * @return See above. Never returns {@code null}.
      */
-    public StringKeyConvertor<K> getKeyConvertor();
+    StringKeyConvertor<K> getKeyConvertor();
 
 }

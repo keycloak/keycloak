@@ -183,19 +183,21 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     @Override
-    public void update(V value) {
+    public V update(V value) {
         K key = value.getId();
         addTask(key, new UpdateOperation(value));
+        return value;
     }
 
     @Override
-    public void create(V value) {
+    public V create(V value) {
         K key = value.getId();
         addTask(key, new CreateOperation(value));
+        return value;
     }
 
     @Override
-    public void updateIfChanged(V value, Predicate<V> shouldPut) {
+    public V updateIfChanged(V value, Predicate<V> shouldPut) {
         K key = value.getId();
         log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
 
@@ -209,12 +211,13 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
             }
             @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
         };
-        tasks.merge(taskKey, op, this::merge);
+        return tasks.merge(taskKey, op, this::merge).getValue();
     }
 
     @Override
-    public void delete(K key) {
+    public boolean delete(K key) {
         addTask(key, new DeleteOperation(key));
+        return true;
     }
 
 

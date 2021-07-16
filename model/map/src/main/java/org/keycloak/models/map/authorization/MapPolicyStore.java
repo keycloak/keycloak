@@ -96,7 +96,7 @@ public class MapPolicyStore<K> implements PolicyStore {
         entity.setName(representation.getName());
         entity.setResourceServerId(resourceServer.getId());
         
-        tx.create(entity);
+        entity = tx.create(entity);
 
         return entityToAdapter(entity);
     }

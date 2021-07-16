@@ -102,7 +102,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Client scope exists: " + id);
         }
-        tx.create(entity);
+        entity = tx.create(entity);
         return entityToAdapterFunc(realm).apply(entity);
     }
 

@@ -161,7 +161,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("createClientSession(%s, %s, %s)%s", realm, client, userSession, getShortStackTrace());
 
-        clientSessionTx.create(entity);
+        entity = clientSessionTx.create(entity);
 
         MapUserSessionEntity<UK> userSessionEntity = getUserSessionById(userSessionStore.getKeyConvertor().fromString(userSession.getId()));
 
@@ -226,7 +226,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 throw new ModelDuplicateException("User session exists: " + entity.getId());
             }
 
-            userSessionTx.create(entity);
+            entity = userSessionTx.create(entity);
         }
 
         UserSessionModel userSession = userEntityToAdapterFunc(realm).apply(entity);
@@ -441,7 +441,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
         offlineUserSession.setLastSessionRefresh(currentTime);
         setUserSessionExpiration(offlineUserSession, userSession.getRealm());
 
-        userSessionTx.create(offlineUserSession);
+        offlineUserSession = userSessionTx.create(offlineUserSession);
 
         return userEntityToAdapterFunc(userSession.getRealm()).apply(offlineUserSession);
     }
@@ -490,7 +490,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
             userSessionEntity.get().addAuthenticatedClientSession(clientSession.getClient().getId(), clientSessionStore.getKeyConvertor().keyToString(clientSessionEntity.getId()));
         }
 
-        clientSessionTx.create(clientSessionEntity);
+        clientSessionEntity = clientSessionTx.create(clientSessionEntity);
 
         return clientEntityToAdapterFunc(clientSession.getRealm(),
                 clientSession.getClient(), offlineUserSession).apply(clientSessionEntity);
@@ -577,7 +577,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
                     userSessionEntity.addAuthenticatedClientSession(entry.getKey(), clientSessionStore.getKeyConvertor().keyToString(clientSession.getId()));
 
-                    clientSessionTx.create(clientSession);
+                    clientSession = clientSessionTx.create(clientSession);
                 }
 
                 return userSessionEntity;
