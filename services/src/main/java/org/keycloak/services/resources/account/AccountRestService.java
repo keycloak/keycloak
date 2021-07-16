@@ -16,6 +16,36 @@
  */
 package org.keycloak.services.resources.account;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -33,9 +63,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
+import org.keycloak.representations.account.UserProfileAttributeMetadata;
+import org.keycloak.representations.account.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -47,40 +80,14 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
 import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.keycloak.validate.Validators;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -129,7 +136,7 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public UserRepresentation account() {
+    public UserRepresentation account(final @PathParam("userProfileMetadata") Boolean userProfileMetadata) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
         UserModel user = auth.getUser();
@@ -147,9 +154,43 @@ public class AccountRestService {
 
         rep.setAttributes(profile.getAttributes().getReadable(false));
 
+        if(userProfileMetadata == null || userProfileMetadata.booleanValue())
+            rep.setUserProfileMetadata(createUserProfileMetadata(profile));
+        
         return rep;
     }
+    
+    private UserProfileMetadata createUserProfileMetadata(final UserProfile profile) {
+        Map<String, List<String>> am = profile.getAttributes().getReadable();
+        
+        if(am == null)
+            return null;
+        
+        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
+                                                          .map(name -> profile.getAttributes().getMetadata(name))
+                                                          .filter(Objects::nonNull)
+                                                          .sorted((a,b) -> Integer.compare(a.getGuiOrder(), b.getGuiOrder()))
+                                                          .map(sam -> toRestMetadata(sam, profile))
+                                                          .collect(Collectors.toList());  
+        return new UserProfileMetadata(attributes);
+    }
 
+    private UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, UserProfile profile) {
+        return new UserProfileAttributeMetadata(am.getName(), 
+                                                am.getAttributeDisplayName(), 
+                                                profile.getAttributes().isRequired(am.getName()), 
+                                                profile.getAttributes().isReadOnly(am.getName()), 
+                                                am.getAnnotations(), 
+                                                toValidatorMetadata(am));
+    }
+    
+    private Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am){
+        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
+        return am.getValidators() == null ? null : am.getValidators().stream()
+                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
+                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
+    }
+    
     @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

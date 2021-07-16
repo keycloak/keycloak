@@ -40,6 +40,7 @@ import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
+import org.keycloak.representations.account.UserProfileAttributeMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -62,6 +63,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.validate.validators.EmailValidator;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -85,6 +87,65 @@ import static org.junit.Assert.assertTrue;
 @AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
+    
+    @Test
+    public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
+        
+        UserRepresentation user = getUser();
+        assertNotNull(user.getUserProfileMetadata());
+        assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
+        assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+        assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
+        assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+    }
+    
+    @Test
+    public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
+        
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(false);
+            adminClient.realm("test").update(realmRep);
+            
+            UserRepresentation user = getUser();
+            assertNotNull(user.getUserProfileMetadata());
+            UserProfileAttributeMetadata upm = assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+            //makes sure internal validators are not exposed
+            Assert.assertEquals(0,  upm.getValidators().size());
+            
+            upm = assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+            Assert.assertEquals(1,  upm.getValidators().size());
+            Assert.assertTrue(upm.getValidators().containsKey(EmailValidator.ID));
+            
+            assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
+            assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+        } finally {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            testRealm().update(realmRep);
+        }
+    }
+    
+    protected UserProfileAttributeMetadata getUserProfileAttributeMetadata(UserRepresentation user, String attName) {
+        if(user.getUserProfileMetadata() == null)
+            return null;
+        for(UserProfileAttributeMetadata uam : user.getUserProfileMetadata().getAttributes()) {
+            if(attName.equals(uam.getName())) {
+                return uam;
+            }
+        }
+        return null;
+    }
+    
+    protected UserProfileAttributeMetadata assertUserProfileAttributeMetadata(UserRepresentation user, String attName, String displayName, boolean required, boolean readOnly) {
+        UserProfileAttributeMetadata uam = getUserProfileAttributeMetadata(user, attName);
+        assertNotNull(uam);
+        assertEquals("Unexpected display name for attribute " + uam.getName(), displayName, uam.getDisplayName());
+        assertEquals("Unexpected required flag for attribute " + uam.getName(), required, uam.isRequired());
+        assertEquals("Unexpected readonly flag for attribute " + uam.getName(), readOnly, uam.isReadOnly());
+        return uam;
+    }
+
 
     @Test
     public void testGetProfile() throws IOException {
@@ -335,18 +396,29 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
-    private UserRepresentation getUser() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+    protected UserRepresentation getUser() throws IOException {
+        SimpleHttp a = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken());
+        try {
+            return a.asJson(UserRepresentation.class);
+        } catch (IOException e) {
+            System.err.println("Error during user reading: " + a.asString());
+            throw e;
+        }    
     }
     
-    private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
-        int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
-        assertEquals(204, status);
+    protected UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
+        SimpleHttp a = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
+        try {
+            assertEquals(204, a.asStatus());
+        } catch (AssertionError e) {
+            System.err.println("Error during user update: " + a.asString());
+            throw e;
+        }
         return getUser();
     }
 
 
-    private void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
+    protected void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
         SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
