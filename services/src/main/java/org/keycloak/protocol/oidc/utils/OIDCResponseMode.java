@@ -23,6 +23,7 @@ package org.keycloak.protocol.oidc.utils;
 public enum OIDCResponseMode {
 
     QUERY("query"),
+    JWT("jwt"),
     FRAGMENT("fragment"),
     FORM_POST("form_post"),
     QUERY_JWT("query.jwt"),
