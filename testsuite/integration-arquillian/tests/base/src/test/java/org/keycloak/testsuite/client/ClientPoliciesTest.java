@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -38,6 +39,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -46,6 +48,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -1041,6 +1044,32 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         oauth.doLogout(res.getRefreshToken(), clientSecret);
         events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+
+        // shall allow code using response_mode jwt
+        oauth.responseType(OIDCResponseType.CODE);
+        oauth.responseMode("jwt");
+        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String jwsResponse = authzResponse.getResponse();
+        AuthorizationResponseToken responseObject = oauth.verifyAuthorizationResponseToken(jwsResponse);
+        code = (String) responseObject.getOtherClaims().get(OAuth2Constants.CODE);
+        res = oauth.doAccessTokenRequest(code, clientSecret);
+        assertEquals(200, res.getStatusCode());
+
+        // update profiles
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "O Primeiro Perfil")
+                        .addExecutor(SecureResponseTypeExecutorFactory.PROVIDER_ID, createSecureResponseTypeExecutor(Boolean.FALSE, Boolean.FALSE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        oauth.openLogout();
+        oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " "  + OIDCResponseType.TOKEN); // token response type allowed
+        oauth.responseMode("jwt");
+        oauth.openLoginForm();
+        final JWSInput errorJws = new JWSInput(new OAuthClient.AuthorizationEndpointResponse(oauth).getResponse());
+        JsonNode errorClaims = JsonSerialization.readValue(errorJws.getContent(), JsonNode.class);
+        assertEquals(OAuthErrorException.INVALID_REQUEST, errorClaims.get("error").asText());
     }
 
     @Test
