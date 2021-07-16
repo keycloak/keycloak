@@ -84,6 +84,22 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 return false;
         }
     }
+    
+    private static boolean readUsernameCondition(AttributeContext c) {
+        KeycloakSession session = c.getSession();
+        KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+
+        switch (c.getContext()) {
+            case REGISTRATION_PROFILE:
+            case IDP_REVIEW:
+                return !realm.isRegistrationEmailAsUsername();
+            case UPDATE_PROFILE:
+                return realm.isEditUsernameAllowed();
+            default:
+                return true;
+        }
+    }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
         if (builtinReadOnlyAttributes != null) {
@@ -279,8 +295,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createDefaultProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata metadata = new UserProfileMetadata(context);
 
-        metadata.addAttribute(UserModel.USERNAME, -2, AbstractUserProfileProvider::editUsernameCondition,
+        metadata.addAttribute(UserModel.USERNAME, -2, 
                 AbstractUserProfileProvider::editUsernameCondition,
+                AbstractUserProfileProvider::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
@@ -307,7 +324,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
         metadata.addAttribute(UserModel.USERNAME, -2, AbstractUserProfileProvider::editUsernameCondition,
-                AbstractUserProfileProvider::editUsernameCondition, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
+                AbstractUserProfileProvider::readUsernameCondition, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, true)),
         		new AttributeValidatorMetadata(EmailValidator.ID)).setAttributeDisplayName("${email}");
