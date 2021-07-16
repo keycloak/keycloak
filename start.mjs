@@ -8,7 +8,7 @@ import decompress from "decompress";
 import decompressTargz from "decompress-targz";
 
 const args = process.argv.slice(2);
-const version = args[0] || "12.0.1";
+const version = args[0] || "14.0.0";
 
 const folder = "server";
 const fileName = path.join(folder, `keycloak-${version}.tar.gz`);
@@ -40,6 +40,7 @@ const run = () => {
   addProc.on("exit", () => {
     const proc = spawn(path.join(serverPath, "bin", `standalone${extension}`), [
       "-Djboss.socket.binding.port-offset=100",
+      "-Dprofile.feature.newadmin=enabled",
     ]);
     proc.stdout.on("data", (data) => {
       console.log(data.toString());
