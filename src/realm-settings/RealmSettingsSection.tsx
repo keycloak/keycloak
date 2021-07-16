@@ -31,7 +31,7 @@ import { EventsTab } from "./event-config/EventsTab";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { KeysProvidersTab } from "./KeysProvidersTab";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { LocalizationTab } from "./LocalizationTab";
+//import { LocalizationTab } from "./LocalizationTab";
 import { WhoAmIContext } from "../context/whoami/WhoAmI";
 import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 import { SecurityDefences } from "./security-defences/SecurityDefences";
@@ -292,7 +292,7 @@ export const RealmSettingsSection = () => {
               <EventsTab />
             </Tab>
 
-            <Tab
+            {/*     <Tab
               id="localization"
               eventKey="localization"
               data-testid="rs-localization-tab"
@@ -307,7 +307,7 @@ export const RealmSettingsSection = () => {
                   realm={realm}
                 />
               )}
-            </Tab>
+              </Tab> */}
             <Tab
               id="securityDefences"
               eventKey="securityDefences"
