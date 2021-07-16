@@ -89,7 +89,7 @@ public class MapRealmProvider<K> implements RealmProvider {
         MapRealmEntity<K> entity = new MapRealmEntity<>(kId);
         entity.setName(name);
 
-        tx.create(entity);
+        entity = tx.create(entity);
         return entityToAdapter(entity);
     }
 

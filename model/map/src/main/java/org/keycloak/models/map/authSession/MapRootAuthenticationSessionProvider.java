@@ -103,7 +103,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
             throw new ModelDuplicateException("Root authentication session exists: " + entity.getId());
         }
 
-        tx.create(entity);
+        entity = tx.create(entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }

@@ -29,8 +29,9 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * Instructs this transaction to add a new value into the underlying store on commit.
      *
      * @param value the value
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
      */
-    void create(V value);
+    V create(V value);
 
     /**
      * Provides possibility to lookup for values by a {@code key} in the underlying store with respect to changes done
@@ -77,8 +78,9 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * underlying store on commit.
      *
      * @param value updated version of the value
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
      */
-    void update(V value);
+    V update(V value);
 
     /**
      * Returns an updated version of the {@code orig} object as updated in this transaction.
@@ -98,17 +100,19 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      *
      * @param value new version of the value. Must not alter the {@code id} of the entity
      * @param shouldPut predicate to check in commit phase
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
      * @see AbstractEntity#getId()
      */
-    void updateIfChanged(V value, Predicate<V> shouldPut);
+    V updateIfChanged(V value, Predicate<V> shouldPut);
 
     /**
      * Instructs this transaction to delete a value associated with the identifier {@code key} from the underlying store
      * on commit.
      *
+     * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
      * @param key identifier of a value
      */
-    void delete(K key);
+    boolean delete(K key);
 
     /**
      * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store on commit.

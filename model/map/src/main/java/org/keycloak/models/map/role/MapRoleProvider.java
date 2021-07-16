@@ -81,7 +81,7 @@ public class MapRoleProvider<K> implements RoleProvider {
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
-        tx.create(entity);
+        entity = tx.create(entity);
         return entityToAdapterFunc(realm).apply(entity);
     }
 
@@ -122,7 +122,7 @@ public class MapRoleProvider<K> implements RoleProvider {
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
-        tx.create(entity);
+        entity = tx.create(entity);
         return entityToAdapterFunc(client.getRealm()).apply(entity);
     }
 

@@ -86,7 +86,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
         if (userLoginFailureEntity == null) {
             userLoginFailureEntity = new MapUserLoginFailureEntity<>(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), realm.getId(), userId);
 
-            userLoginFailureTx.create(userLoginFailureEntity);
+            userLoginFailureEntity = userLoginFailureTx.create(userLoginFailureEntity);
         }
 
         return userLoginFailureEntityToAdapterFunc(realm).apply(userLoginFailureEntity);

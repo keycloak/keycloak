@@ -220,7 +220,7 @@ public class MapGroupProvider<K> implements GroupProvider {
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Group exists: " + entityId);
         }
-        tx.create(entity);
+        entity = tx.create(entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
