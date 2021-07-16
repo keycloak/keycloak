@@ -47,6 +47,13 @@ describe("Realm settings", () => {
     cy.getId("rs-keys-tab").click();
     cy.getId("rs-providers-tab").click();
     cy.getId("provider-name-link").contains("test_aes-generated").click();
+
+    sidebarPage.goToRealmSettings();
+
+    cy.getId("rs-keys-tab").click();
+    cy.getId("rs-providers-tab").click();
+    cy.getId("provider-name-link").contains("test_hmac-generated").click();
+
     cy.wait(["@keysFetch"]);
 
     return this;

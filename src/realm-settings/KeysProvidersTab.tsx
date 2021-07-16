@@ -39,7 +39,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { Link, useRouteMatch } from "react-router-dom";
 import { AESGeneratedModal } from "./key-providers/aes-generated/AESGeneratedModal";
 import { JavaKeystoreModal } from "./JavaKeystoreModal";
-import { HMACGeneratedModal } from "./HMACGeneratedModal";
+import { HMACGeneratedModal } from "./key-providers/hmac-generated/HMACGeneratedModal";
 import { ECDSAGeneratedModal } from "./ECDSAGeneratedModal";
 import { RSAModal } from "./RSAModal";
 import { RSAGeneratedModal } from "./RSAGeneratedModal";
