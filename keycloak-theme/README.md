@@ -5,9 +5,7 @@ The Maven build prepares the admin console to be deployed as a theme on the Keyc
 # Build Instructions
 
 ```bash
-$> npm run build
-$> cd build
-$> mvn install
+mvn install
 ```
 
 # Deployment
