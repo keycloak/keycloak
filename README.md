@@ -1,7 +1,7 @@
 # Keycloak Admin Console V2
 This project is the next generation of the Keycloak Administration Console.  It is written with React and [PatternFly 4][1].
 
-### Development Instructions
+## Development Instructions
 
 For development on this project you will need a running Keycloak server listening on port 8180.
 
@@ -27,7 +27,7 @@ For development on this project you will need a running Keycloak server listenin
     $> npm run start
     ```
 
-### Build and run through Docker
+## Build and run through Docker
     git checkout git@github.com:keycloak/keycloak-admin-ui.git
     cd keycloak-admin-ui
     docker-compose build
@@ -39,29 +39,51 @@ If your Keycloak instance is not on `localhost:8180`, create a file `.env` with 
 
     KEYCLOAK_ENDPOINT=https:\/\/remoteinstance.keycloak.com
 
-### Additionally there are some nice scripts to format and lint
-
-```bash
-$> npm run lint
-```
-
-To switch to a RH-SSO themed version of this console you can run:
-
-```bash
-$> npx grunt switch-rh-sso
-```
-
-To switch back just do a `git checkout public`
-
 ## Building as a Keycloak theme
 
 If you want to build the application using Maven and produce a JAR that can be installed directly into Keycloak, check out the [Keycloak theme documentation](./keycloak-theme/README.md).
 
-# Keycloak UI Test Suite in Cypress
+## Linting
+
+Every time you create a commit it should be automatically linted and formatted for you. It is also possible to trigger the linting manually:
+
+```bash
+npm run lint
+```
+
+## Theming
+
+It's possible to theme the Admin UI interface, this is useful if you want to apply your own branding so that the product looks familiar to your users. The Admin UI comes with two built-in themes called `keycloak` and `rh-sso`, by default the `keycloak` theme will be used when building the application.
+
+This behavior can be changed by passing in a `THEME_NAME` environment variable, for example if wanted to build the application using the `rh-sso` theme we can do the following:
+
+```bash
+THEME_NAME=rh-sso npm run build
+```
+
+And likewise if we wanted to start a development server with this theme:
+
+```
+THEME_NAME=rh-sso npm run start
+```
+
+To make it simpler to build the `rh-sso` theme there are some shorthand NPM scripts available that you can run instead:
+
+```bash
+# Run a production build with the 'rh-sso' theme
+npm run build:rh-sso
+
+# Or for development
+npm run start:rh-sso 
+```
+
+### Creating your own theme
+
+All themes are located in the `themes/` directory of the project, if you want to create a new theme you can create a new directory here and name it the same as your theme. Copy the files from the default theme here and customize them to your liking.
+
+## Keycloak UI Test Suite in Cypress
 
 This repository contains the UI tests for Keycloak developed with Cypress framework
-
-## Run the test suite
 ### Prerequisites
 * `Keycloak distribution` has to be [downloaded](https://www.keycloak.org/downloads) and started on 8081 port.  
 **note**: the port in at the test suite side in [cypress.json](cypress.json) or at the Keycloak side, see [Keycloak Getting Started Guide](https://www.keycloak.org/docs/latest/getting_started/#starting-the-keycloak-server),

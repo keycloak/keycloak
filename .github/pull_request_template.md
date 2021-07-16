@@ -25,7 +25,6 @@ new functionality can follow them, such as QE or documentation.
 - [ ] Help has been implemented
 - [ ] axe report has been run and resulting a11y issues have been resolved
 - [ ] Unit tests have been created/updated
-- [ ] Formatting has been performed via prettier/eslint
 
 ## Additional Notes
 <!-- 

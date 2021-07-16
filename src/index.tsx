@@ -1,3 +1,4 @@
+import "./index.css";
 import React, { StrictMode } from "react";
 import ReactDOM from "react-dom";
 import i18n from "./i18n";

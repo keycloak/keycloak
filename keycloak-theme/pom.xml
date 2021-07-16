@@ -124,11 +124,11 @@
                     <regex>false</regex>
                     <replacements>
                         <replacement>
-                            <token>src="/_dist_</token>
-                            <value>src="${resourceUrl}/_dist_</value>
+                            <token>src="/</token>
+                            <value>src="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
-                            <token>href="./</token>
+                            <token>href="/</token>
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
