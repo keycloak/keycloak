@@ -26,23 +26,56 @@
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "${keycloak.realm.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.realm.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "client": {
-        "provider": "${keycloak.client.provider:jpa}"
+        "provider": "${keycloak.client.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.client.map.storage.provider:concurrenthashmap}",
+                "jpa-client-map-storage": {
+                    "url": "${keycloak.client.map.storage.connectionsJpa.url:}",
+                    "driver": "org.postgresql.Driver",
+                    "driverDialect": "org.keycloak.models.map.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
+                    "user": "${keycloak.client.map.storage.connectionsJpa.user:}",
+                    "password": "${keycloak.client.map.storage.connectionsJpa.password:}",
+                    "showSql": "${keycloak.client.map.storage.connectionsJpa,showSql:false}"
+                }
+            }
+        }
     },
 
     "clientScope": {
-        "provider": "${keycloak.clientScope.provider:jpa}"
+        "provider": "${keycloak.clientScope.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.clientScope.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "group": {
-        "provider": "${keycloak.group.provider:jpa}"
+        "provider": "${keycloak.group.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.group.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "role": {
-        "provider": "${keycloak.role.provider:jpa}"
+        "provider": "${keycloak.role.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.role.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "authenticationSessions": {
@@ -70,7 +103,12 @@
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "${keycloak.user.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.user.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "userFederatedStorage": {

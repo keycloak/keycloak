@@ -363,7 +363,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public void close() {
-        
+
     }
 
 }
