@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.chm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
@@ -42,7 +43,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K>, M> implements MapStorage<K, V, M> {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K> & UpdatableEntity, M> implements MapStorage<K, V, M> {
 
     private final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 

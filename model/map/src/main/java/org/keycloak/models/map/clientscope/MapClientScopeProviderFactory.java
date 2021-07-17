@@ -25,7 +25,7 @@ import org.keycloak.models.map.common.AbstractMapProviderFactory;
 public class MapClientScopeProviderFactory<K> extends AbstractMapProviderFactory<ClientScopeProvider, K, MapClientScopeEntity<K>, ClientScopeModel> implements ClientScopeProviderFactory {
 
     public MapClientScopeProviderFactory() {
-        super(MapClientScopeEntity.class, ClientScopeModel.class);
+        super(ClientScopeModel.class);
     }
 
     @Override

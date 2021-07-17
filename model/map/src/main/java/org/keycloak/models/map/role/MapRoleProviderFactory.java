@@ -25,7 +25,7 @@ import org.keycloak.models.RoleProviderFactory;
 public class MapRoleProviderFactory<K> extends AbstractMapProviderFactory<RoleProvider, K, MapRoleEntity<K>, RoleModel> implements RoleProviderFactory {
 
     public MapRoleProviderFactory() {
-        super(MapRoleEntity.class, RoleModel.class);
+        super(RoleModel.class);
     }
 
     @Override

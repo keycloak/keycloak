@@ -82,9 +82,9 @@ public class MapStorageTest extends KeycloakModelTest {
         String component2Id = createMapStorageComponent("component2", "keyType", "string");
 
         Object[] ids = withRealm(realmId, (session, realm) -> {
-            MapStorage<K, MapClientEntity<K>, ClientModel> storageMain = (MapStorage<K, MapClientEntity<K>, ClientModel>) session.getProvider(MapStorageProvider.class).getStorage(MapClientEntity.class, ClientModel.class);
-            MapStorage<K1, MapClientEntity<K1>, ClientModel> storage1 = (MapStorage<K1, MapClientEntity<K1>, ClientModel>) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(MapClientEntity.class, ClientModel.class);
-            MapStorage<K2, MapClientEntity<K2>, ClientModel> storage2 = (MapStorage<K2, MapClientEntity<K2>, ClientModel>) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(MapClientEntity.class, ClientModel.class);
+            MapStorage<K, MapClientEntity<K>, ClientModel> storageMain = (MapStorage) session.getProvider(MapStorageProvider.class).getStorage(ClientModel.class);
+            MapStorage<K1, MapClientEntity<K1>, ClientModel> storage1 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(ClientModel.class);
+            MapStorage<K2, MapClientEntity<K2>, ClientModel> storage2 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
 
             // Assert that the map storage can be used both as a standalone store and a component
             assertThat(storageMain, notNullValue());
@@ -161,11 +161,11 @@ public class MapStorageTest extends KeycloakModelTest {
         // Check that in the next transaction, the objects are still there
         withRealm(realmId, (session, realm) -> {
             @SuppressWarnings("unchecked")
-            MapStorage<K, MapClientEntity<K>, ClientModel> storageMain = (MapStorage<K, MapClientEntity<K>, ClientModel>) session.getProvider(MapStorageProvider.class).getStorage(MapClientEntity.class, ClientModel.class);
+            MapStorage<K, MapClientEntity<K>, ClientModel> storageMain = (MapStorage) session.getProvider(MapStorageProvider.class).getStorage(ClientModel.class);
             @SuppressWarnings("unchecked")
-            MapStorage<K1, MapClientEntity<K1>, ClientModel> storage1 = (MapStorage<K1, MapClientEntity<K1>, ClientModel>) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(MapClientEntity.class, ClientModel.class);
+            MapStorage<K1, MapClientEntity<K1>, ClientModel> storage1 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(ClientModel.class);
             @SuppressWarnings("unchecked")
-            MapStorage<K2, MapClientEntity<K2>, ClientModel> storage2 = (MapStorage<K2, MapClientEntity<K2>, ClientModel>) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(MapClientEntity.class, ClientModel.class);
+            MapStorage<K2, MapClientEntity<K2>, ClientModel> storage2 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
 
             final StringKeyConvertor<K> kcMain = storageMain.getKeyConvertor();
             final StringKeyConvertor<K1> kc1 = storage1.getKeyConvertor();

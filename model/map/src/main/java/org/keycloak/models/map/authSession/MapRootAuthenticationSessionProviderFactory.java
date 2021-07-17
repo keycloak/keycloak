@@ -30,7 +30,7 @@ public class MapRootAuthenticationSessionProviderFactory<K> extends AbstractMapP
         implements AuthenticationSessionProviderFactory {
 
     public MapRootAuthenticationSessionProviderFactory() {
-        super(MapRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class);
+        super(RootAuthenticationSessionModel.class);
     }
 
     @Override

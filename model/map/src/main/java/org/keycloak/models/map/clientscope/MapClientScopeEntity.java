@@ -29,8 +29,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapClientScopeEntity<K> implements AbstractEntity<K> {
+public class MapClientScopeEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private final K id;
     private final String realmId;

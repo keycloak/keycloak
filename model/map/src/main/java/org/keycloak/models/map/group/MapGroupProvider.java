@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
@@ -59,7 +58,7 @@ public class MapGroupProvider<K> implements GroupProvider {
 
     private Function<MapGroupEntity<K>, GroupModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapGroupAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
+        return origEntity -> new MapGroupAdapter<K>(session, realm, origEntity) {
             @Override
             public String getId() {
                 return groupStore.getKeyConvertor().keyToString(entity.getId());

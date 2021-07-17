@@ -46,6 +46,7 @@ import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -114,7 +115,28 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         MODEL_TO_NAME.put(Resource.class, "authz-resources");
         MODEL_TO_NAME.put(org.keycloak.authorization.model.Scope.class, "authz-scopes");
     }
+    
+    public static final Map<Class<?>, Class<? extends AbstractEntity>> MODEL_TO_VALUE_TYPE = new HashMap<>();
+    static {
+        MODEL_TO_VALUE_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
+        MODEL_TO_VALUE_TYPE.put(ClientScopeModel.class, MapClientScopeEntity.class);
+        MODEL_TO_VALUE_TYPE.put(ClientModel.class, MapClientEntity.class);
+        MODEL_TO_VALUE_TYPE.put(GroupModel.class, MapGroupEntity.class);
+        MODEL_TO_VALUE_TYPE.put(RealmModel.class, MapRealmEntity.class);
+        MODEL_TO_VALUE_TYPE.put(RoleModel.class, MapRoleEntity.class);
+        MODEL_TO_VALUE_TYPE.put(RootAuthenticationSessionModel.class, MapRootAuthenticationSessionEntity.class);
+        MODEL_TO_VALUE_TYPE.put(UserLoginFailureModel.class, MapUserLoginFailureEntity.class);
+        MODEL_TO_VALUE_TYPE.put(UserModel.class, MapUserEntity.class);
+        MODEL_TO_VALUE_TYPE.put(UserSessionModel.class, MapUserSessionEntity.class);
 
+        // authz
+        MODEL_TO_VALUE_TYPE.put(PermissionTicket.class, MapPermissionTicketEntity.class);
+        MODEL_TO_VALUE_TYPE.put(Policy.class, MapPolicyEntity.class);
+        MODEL_TO_VALUE_TYPE.put(ResourceServer.class, MapResourceServerEntity.class);
+        MODEL_TO_VALUE_TYPE.put(Resource.class, MapResourceEntity.class);
+        MODEL_TO_VALUE_TYPE.put(org.keycloak.authorization.model.Scope.class, MapScopeEntity.class);
+    }
+    
     public static final Map<Class<?>, Class<?>> INTERFACE_TO_IMPL = new HashMap<>();
     static {
         INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
@@ -219,16 +241,16 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     }
 
-    private <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
-      Class<V> valueType, Class<M> modelType, EnumSet<Flag> flags) {
+    private <K, V extends AbstractEntity<K> & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
+      Class<M> modelType, EnumSet<Flag> flags) {
         final StringKeyConvertor kc = keyConvertors.getOrDefault(mapName, defaultKeyConvertor);
-
+        Class<?> valueType = MODEL_TO_VALUE_TYPE.get(modelType);
         LOG.debugf("Initializing new map storage: %s", mapName);
 
         @SuppressWarnings("unchecked")
         ConcurrentHashMapStorage<K, V, M> store;
         if (modelType == UserSessionModel.class) {
-            ConcurrentHashMapStorage clientSessionStore = getStorage(MapAuthenticatedClientSessionEntity.class, AuthenticatedClientSessionModel.class);
+            ConcurrentHashMapStorage clientSessionStore = getStorage(AuthenticatedClientSessionModel.class);
             store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc) {
                 @Override
                 public String toString() {
@@ -269,8 +291,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    public <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> getStorage(
-      Class<V> valueType, Class<M> modelType, Flag... flags) {
+    public <K, V extends AbstractEntity<K> & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> getStorage(
+      Class<M> modelType, Flag... flags) {
         EnumSet<Flag> f = flags == null || flags.length == 0 ? EnumSet.noneOf(Flag.class) : EnumSet.of(flags[0], flags);
         String name = MODEL_TO_NAME.getOrDefault(modelType, modelType.getSimpleName());
         /* From ConcurrentHashMapStorage.computeIfAbsent javadoc:
@@ -282,9 +304,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
          * to prepare clientSessionStore outside computeIfAbsent, otherwise deadlock occurs.
          */
         if (modelType == UserSessionModel.class) {
-            getStorage(MapAuthenticatedClientSessionEntity.class, AuthenticatedClientSessionModel.class);
+            getStorage(AuthenticatedClientSessionModel.class, flags);
         }
-        return (ConcurrentHashMapStorage<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, valueType, modelType, f));
+        return (ConcurrentHashMapStorage<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
     }
 
     private File getFile(String fileName) {

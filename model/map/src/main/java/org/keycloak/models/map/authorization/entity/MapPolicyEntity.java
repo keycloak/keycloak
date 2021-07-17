@@ -18,17 +18,17 @@
 package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.Objects;
 
-public class MapPolicyEntity<K> implements AbstractEntity<K> {
+public class MapPolicyEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     
     private final K id;
     private String name;

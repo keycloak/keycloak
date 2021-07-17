@@ -19,6 +19,7 @@ package org.keycloak.models.map.group;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.Set;
  *
  * @author mhajas
  */
-public class MapGroupEntity<K> implements AbstractEntity<K> {
+public class MapGroupEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private final K id;
     private final String realmId;

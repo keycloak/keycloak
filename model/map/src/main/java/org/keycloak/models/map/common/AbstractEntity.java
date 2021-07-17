@@ -20,7 +20,7 @@ package org.keycloak.models.map.common;
  *
  * @author hmlnarik
  */
-public interface AbstractEntity<K> extends UpdatableEntity {
+public interface AbstractEntity<K> {
 
     K getId();
 

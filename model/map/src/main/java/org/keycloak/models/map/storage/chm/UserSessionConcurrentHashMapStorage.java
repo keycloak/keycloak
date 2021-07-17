@@ -52,19 +52,19 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
         }
 
         @Override
-        public long delete(K artificialKey, QueryParameters<UserSessionModel> queryParameters) {
+        public long delete(QueryParameters<UserSessionModel> queryParameters) {
             ModelCriteriaBuilder<UserSessionModel> mcb = queryParameters.getModelCriteriaBuilder();
 
             Set<K> ids = read(queryParameters).map(AbstractEntity::getId).collect(Collectors.toSet());
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.IN, ids);
-            clientSessionTr.delete(artificialKey, withCriteria(csMcb));
-            return super.delete(artificialKey, queryParameters);
+            clientSessionTr.delete(withCriteria(csMcb));
+            return super.delete(queryParameters);
         }
 
         @Override
         public boolean delete(K key) {
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, key);
-            clientSessionTr.delete(key, withCriteria(csMcb));
+            clientSessionTr.delete(withCriteria(csMcb));
             return super.delete(key);
         }
 

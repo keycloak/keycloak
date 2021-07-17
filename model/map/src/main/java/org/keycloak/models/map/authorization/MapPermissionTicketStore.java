@@ -43,7 +43,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
@@ -66,7 +65,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     private PermissionTicket entityToAdapter(MapPermissionTicketEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPermissionTicketAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapPermissionTicketAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return permissionTicketStore.getKeyConvertor().keyToString(entity.getId());

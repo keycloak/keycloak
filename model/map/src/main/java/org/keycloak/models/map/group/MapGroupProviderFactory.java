@@ -40,7 +40,7 @@ public class MapGroupProviderFactory<K> extends AbstractMapProviderFactory<Group
     private Runnable onClose;
 
     public MapGroupProviderFactory() {
-        super(MapGroupEntity.class, GroupModel.class);
+        super(GroupModel.class);
     }
 
     @Override

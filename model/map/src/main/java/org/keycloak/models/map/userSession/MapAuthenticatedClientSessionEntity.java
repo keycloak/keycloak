@@ -19,6 +19,7 @@ package org.keycloak.models.map.userSession;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapAuthenticatedClientSessionEntity<K> implements AbstractEntity<K> {
+public class MapAuthenticatedClientSessionEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private K id;
     private String userSessionId;

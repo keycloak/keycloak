@@ -30,6 +30,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntity;
@@ -42,7 +43,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 
-public class MapRealmEntity<K> implements AbstractEntity<K> {
+public class MapRealmEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private final K id;
     private String name;

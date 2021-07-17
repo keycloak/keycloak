@@ -18,6 +18,7 @@ package org.keycloak.models.map.authSession;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K> {
+public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private K id;
     private String realmId;
