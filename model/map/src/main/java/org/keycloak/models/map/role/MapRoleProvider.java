@@ -31,7 +31,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
@@ -57,7 +56,7 @@ public class MapRoleProvider<K> implements RoleProvider {
 
     private Function<MapRoleEntity<K>, RoleModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapRoleAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
+        return origEntity -> new MapRoleAdapter<K>(session, realm, origEntity) {
             @Override
             public String getId() {
                 return roleStore.getKeyConvertor().keyToString(entity.getId());

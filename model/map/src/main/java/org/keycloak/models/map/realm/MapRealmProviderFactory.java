@@ -25,7 +25,7 @@ import org.keycloak.models.RealmProviderFactory;
 public class MapRealmProviderFactory<K> extends AbstractMapProviderFactory<RealmProvider, K, MapRealmEntity<K>, RealmModel> implements RealmProviderFactory {
 
     public MapRealmProviderFactory() {
-        super(MapRealmEntity.class, RealmModel.class);
+        super(RealmModel.class);
     }
 
     @Override

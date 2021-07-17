@@ -37,7 +37,6 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
@@ -56,7 +55,7 @@ public class MapRealmProvider<K> implements RealmProvider {
     }
 
     private RealmModel entityToAdapter(MapRealmEntity<K> entity) {
-        return new MapRealmAdapter<K>(session, registerEntityForChanges(tx, entity)) {
+        return new MapRealmAdapter<K>(session, entity) {
             @Override
             public String getId() {
                 return realmStore.getKeyConvertor().keyToString(entity.getId());
@@ -176,7 +175,6 @@ public class MapRealmProvider<K> implements RealmProvider {
                 .compare(SearchableFields.CLIENT_INITIAL_ACCESS, Operator.EXISTS);
 
         tx.read(withCriteria(mcb))
-                .map(e -> registerEntityForChanges(tx, e))
                 .forEach(MapRealmEntity<K>::removeExpiredClientInitialAccesses);
     }
 

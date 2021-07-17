@@ -39,7 +39,6 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.storage.StorageId;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 
 public class MapResourceServerStore<K> implements ResourceServerStore {
 
@@ -58,7 +57,7 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
     private ResourceServer entityToAdapter(MapResourceServerEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceServerAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapResourceServerAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return resourceServerStore.getKeyConvertor().keyToString(entity.getId());

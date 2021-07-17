@@ -37,7 +37,7 @@ public class MapUserLoginFailureProviderFactory<K> extends AbstractMapProviderFa
     private Runnable onClose;
 
     public MapUserLoginFailureProviderFactory() {
-        super(MapUserLoginFailureEntity.class, UserLoginFailureModel.class);
+        super(UserLoginFailureModel.class);
     }
 
     @Override

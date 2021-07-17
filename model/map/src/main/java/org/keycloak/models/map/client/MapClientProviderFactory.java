@@ -42,7 +42,7 @@ public class MapClientProviderFactory<K> extends AbstractMapProviderFactory<Clie
     private Runnable onClose;
 
     public MapClientProviderFactory() {
-        super(MapClientEntity.class, ClientModel.class);
+        super(ClientModel.class);
     }
 
     @Override

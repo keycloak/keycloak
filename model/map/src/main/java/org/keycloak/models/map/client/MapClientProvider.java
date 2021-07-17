@@ -44,7 +44,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.ClientScopeModel;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
@@ -84,7 +83,7 @@ public class MapClientProvider<K> implements ClientProvider {
     private <T extends MapClientEntity<K>> Function<T, ClientModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return (T origEntity) -> new MapClientAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
+        return origEntity -> new MapClientAdapter<K>(session, realm, origEntity) {
             @Override
             public String getId() {
                 return clientStore.getKeyConvertor().keyToString(entity.getId());

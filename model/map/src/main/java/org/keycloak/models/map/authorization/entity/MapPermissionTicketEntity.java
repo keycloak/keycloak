@@ -19,10 +19,10 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
-import java.util.Comparator;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
-public class MapPermissionTicketEntity<K> implements AbstractEntity<K> {
+public class MapPermissionTicketEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private final K id;
     private String owner;

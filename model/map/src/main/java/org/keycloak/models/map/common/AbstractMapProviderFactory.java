@@ -44,14 +44,11 @@ public abstract class AbstractMapProviderFactory<T extends Provider, K, V extend
 
     protected final Class<M> modelType;
 
-    protected final Class<V> entityType;
-
     private Scope storageConfigScope;
 
     @SuppressWarnings("unchecked")
-    protected AbstractMapProviderFactory(Class<? extends AbstractEntity> entityType, Class<M> modelType) {
+    protected AbstractMapProviderFactory(Class<M> modelType) {
         this.modelType = modelType;
-        this.entityType = (Class<V>) entityType;
     }
 
     @Override
@@ -64,7 +61,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, K, V extend
           MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
         final MapStorageProvider factory = storageProviderFactory.create(session);
 
-        return factory.getStorage(entityType, modelType);
+        return factory.getStorage(modelType);
     }
 
     @Override

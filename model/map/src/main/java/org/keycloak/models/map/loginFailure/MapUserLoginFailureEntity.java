@@ -18,12 +18,13 @@ package org.keycloak.models.map.loginFailure;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureEntity<K> implements AbstractEntity<K> {
+public class MapUserLoginFailureEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     private K id;
     private String realmId;
     private String userId;

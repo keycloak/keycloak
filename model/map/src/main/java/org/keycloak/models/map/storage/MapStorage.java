@@ -20,8 +20,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
-
 /**
  * Implementation of this interface interacts with a persistence storage storing various entities, e.g. users, realms.
  * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
@@ -41,10 +39,10 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 public interface MapStorage<K, V extends AbstractEntity<K>, M> {
 
     /**
-     * Creates an object in the store identified. The ID of the {@code value} should be non-{@code null}.
-     * If the ID is {@code null}, then the {@code value}'s ID will be returned
+     * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
+     * If the id is {@code null}, then the {@code value}'s ID will be generated and returned in the id of the return value.
      * @param value Entity to create in the store
-     * @throws NullPointerException if object or its {@code key} is {@code null}
+     * @throws NullPointerException if {@code value} is {@code null}
      * @see AbstractEntity#getId()
      * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
      */

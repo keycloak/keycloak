@@ -16,8 +16,6 @@
  */
 package org.keycloak.storage;
 
-import java.util.Objects;
-
 /**
  *
  * @author hmlnarik

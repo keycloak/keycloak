@@ -40,7 +40,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 public class MapResourceStore<K extends Comparable<K>> implements ResourceStore {
@@ -60,7 +59,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     private Resource entityToAdapter(MapResourceEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapResourceAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return resourceStore.getKeyConvertor().keyToString(entity.getId());

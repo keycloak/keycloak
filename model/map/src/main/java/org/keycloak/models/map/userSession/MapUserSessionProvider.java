@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.models.UserSessionModel.SessionPersistenceState.TRANSIENT;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.userSession.SessionExpiration.setClientSessionExpiration;
 import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessionExpiration;
@@ -90,8 +89,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 userSessionTx.delete(origEntity.getId());
                 return null;
             } else {
-                return new MapUserSessionAdapter<UK>(session, realm,
-                        Objects.equals(origEntity.getPersistenceState(), TRANSIENT) ? origEntity : registerEntityForChanges(userSessionTx, origEntity)) {
+                return new MapUserSessionAdapter<UK>(session, realm, origEntity) {
                     @Override
                     public String getId() {
                         return userSessionStore.getKeyConvertor().keyToString(entity.getId());
@@ -123,7 +121,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
                 clientSessionTx.delete(origEntity.getId());
                 return null;
             } else {
-                return new MapAuthenticatedClientSessionAdapter<CK>(session, realm, client, userSession, registerEntityForChanges(clientSessionTx, origEntity)) {
+                return new MapAuthenticatedClientSessionAdapter<CK>(session, realm, client, userSession, origEntity) {
                     @Override
                     public String getId() {
                         return clientSessionStore.getKeyConvertor().keyToString(entity.getId());
@@ -382,7 +380,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("removeUserSession(%s, %s)%s", realm, session, getShortStackTrace());
 
-        userSessionTx.delete(userSessionStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+        userSessionTx.delete(withCriteria(mcb));
     }
 
     @Override
@@ -393,7 +391,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("removeUserSessions(%s, %s)%s", realm, user, getShortStackTrace());
 
-        userSessionTx.delete(userSessionStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+        userSessionTx.delete(withCriteria(mcb));
     }
 
     @Override
@@ -412,7 +410,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         LOG.tracef("removeUserSessions(%s)%s", realm, getShortStackTrace());
 
-        userSessionTx.delete(userSessionStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+        userSessionTx.delete(withCriteria(mcb));
     }
 
     @Override
@@ -469,7 +467,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
             UK uk = userSessionStore.getKeyConvertor().fromString(userSession.getNote(CORRESPONDING_SESSION_ID));
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
                     .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, uk);
-            userSessionTx.delete(userSessionStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+            userSessionTx.delete(withCriteria(mcb));
             userSession.removeNote(CORRESPONDING_SESSION_ID);
         }
     }
@@ -637,7 +635,7 @@ public class MapUserSessionProvider<UK, CK> implements UserSessionProvider {
 
         if (userSessionEntity == null) {
             MapUserSessionEntity<UK> userSession = userSessionTx.read(id);
-            return userSession != null ? registerEntityForChanges(userSessionTx, userSession) : null;
+            return userSession;
         }
         return userSessionEntity;
     }

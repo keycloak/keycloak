@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 public class MapScopeStore<K> implements ScopeStore {
@@ -58,7 +57,7 @@ public class MapScopeStore<K> implements ScopeStore {
     private Scope entityToAdapter(MapScopeEntity<K> origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapScopeAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
+        return new MapScopeAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
             @Override
             public String getId() {
                 return scopeStore.getKeyConvertor().keyToString(entity.getId());

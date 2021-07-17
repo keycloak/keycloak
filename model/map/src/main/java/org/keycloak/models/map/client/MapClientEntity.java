@@ -18,6 +18,7 @@ package org.keycloak.models.map.client;
 
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public interface MapClientEntity<K> extends AbstractEntity<K> {
+public interface MapClientEntity<K> extends AbstractEntity<K>, UpdatableEntity {
 
     void addClientScope(String id, Boolean defaultScope);
 

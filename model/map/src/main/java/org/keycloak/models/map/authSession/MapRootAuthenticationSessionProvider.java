@@ -39,7 +39,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 /**
@@ -65,7 +64,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
     private Function<MapRootAuthenticationSessionEntity<K>, RootAuthenticationSessionModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapRootAuthenticationSessionAdapter<K>(session, realm, registerEntityForChanges(tx, origEntity)) {
+        return origEntity -> new MapRootAuthenticationSessionAdapter<K>(session, realm, origEntity) {
             @Override
             public String getId() {
                 return sessionStore.getKeyConvertor().keyToString(entity.getId());
@@ -145,7 +144,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.TIMESTAMP, Operator.LT, expired);
 
-        long deletedCount = tx.delete(sessionStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+        long deletedCount = tx.delete(withCriteria(mcb));
 
         LOG.debugf("Removed %d expired authentication sessions for realm '%s'", deletedCount, realm.getName());
     }

@@ -19,6 +19,7 @@ package org.keycloak.models.map.user;
 
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collection;
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
  *
  * @author mhajas
  */
-public class MapUserEntity<K> implements AbstractEntity<K> {
+public class MapUserEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private final K id;
     private final String realmId;

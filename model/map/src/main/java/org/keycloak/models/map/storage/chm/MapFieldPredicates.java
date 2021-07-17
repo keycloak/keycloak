@@ -66,6 +66,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
+import java.util.IdentityHashMap;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 
 /**
@@ -92,7 +93,7 @@ public class MapFieldPredicates {
 
     @SuppressWarnings("unchecked")
     private static final Map<Class<?>, Map> PREDICATES = new HashMap<>();
-    private static final Map<SearchableModelField<?>, Comparator<?>> COMPARATORS = new HashMap<>();
+    private static final Map<SearchableModelField<?>, Comparator<?>> COMPARATORS = new IdentityHashMap<>();
 
     static {
         put(REALM_PREDICATES, RealmModel.SearchableFields.NAME,                   MapRealmEntity::getName);

@@ -19,9 +19,10 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
-public class MapScopeEntity<K> implements AbstractEntity<K> {
+public class MapScopeEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private final K id;
     private String name;

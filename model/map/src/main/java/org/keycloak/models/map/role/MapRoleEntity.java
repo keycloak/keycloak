@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapRoleEntity<K> implements AbstractEntity<K> {
+public class MapRoleEntity<K> implements AbstractEntity<K>, UpdatableEntity {
 
     private K id;
     private String realmId;

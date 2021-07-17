@@ -28,7 +28,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import java.util.function.Function;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
 /**
@@ -51,7 +50,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
     private Function<MapUserLoginFailureEntity<K>, UserLoginFailureModel> userLoginFailureEntityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapUserLoginFailureAdapter<K>(session, realm, registerEntityForChanges(userLoginFailureTx, origEntity)) {
+        return origEntity -> new MapUserLoginFailureAdapter<K>(session, realm, origEntity) {
             @Override
             public String getId() {
                 return userLoginFailureStore.getKeyConvertor().keyToString(entity.getId());
@@ -100,7 +99,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
         LOG.tracef("removeUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
-        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+        userLoginFailureTx.delete(withCriteria(mcb));
     }
 
     @Override
@@ -110,7 +109,7 @@ public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider 
 
         LOG.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
-        userLoginFailureTx.delete(userLoginFailureStore.getKeyConvertor().yieldNewUniqueKey(), withCriteria(mcb));
+        userLoginFailureTx.delete(withCriteria(mcb));
     }
 
     @Override

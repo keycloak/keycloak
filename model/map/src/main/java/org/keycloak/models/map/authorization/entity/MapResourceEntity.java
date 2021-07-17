@@ -19,7 +19,7 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
-import java.util.Comparator;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity<K> implements AbstractEntity<K> {
+public class MapResourceEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     
     private final K id;
     private String name;
