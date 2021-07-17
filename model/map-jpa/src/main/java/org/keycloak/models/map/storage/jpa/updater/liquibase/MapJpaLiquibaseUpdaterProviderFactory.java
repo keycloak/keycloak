@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,24 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater.liquibase;
+package org.keycloak.models.map.storage.jpa.updater.liquibase;
 
 import org.keycloak.Config;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
+import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProviderFactory;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class LiquibaseJpaUpdaterProviderFactory implements JpaUpdaterProviderFactory {
+public class MapJpaLiquibaseUpdaterProviderFactory implements MapJpaUpdaterProviderFactory {
 
-    public static final String PROVIDER_ID = "liquibase";
+    public static final String PROVIDER_ID = "map-liquibase-updater";
 
     @Override
-    public JpaUpdaterProvider create(KeycloakSession session) {
-        return new LiquibaseJpaUpdaterProvider(session);
+    public MapJpaUpdaterProvider create(KeycloakSession session) {
+        return new MapJpaLiquibaseUpdaterProvider(session);
     }
 
     @Override
