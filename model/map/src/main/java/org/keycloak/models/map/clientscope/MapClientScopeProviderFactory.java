@@ -22,7 +22,7 @@ import org.keycloak.models.ClientScopeProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 
-public class MapClientScopeProviderFactory<K> extends AbstractMapProviderFactory<ClientScopeProvider, K, MapClientScopeEntity, ClientScopeModel> implements ClientScopeProviderFactory {
+public class MapClientScopeProviderFactory extends AbstractMapProviderFactory<ClientScopeProvider, MapClientScopeEntity, ClientScopeModel> implements ClientScopeProviderFactory {
 
     public MapClientScopeProviderFactory() {
         super(ClientScopeModel.class);
@@ -30,7 +30,7 @@ public class MapClientScopeProviderFactory<K> extends AbstractMapProviderFactory
 
     @Override
     public ClientScopeProvider create(KeycloakSession session) {
-        return new MapClientScopeProvider<>(session, getStorage(session));
+        return new MapClientScopeProvider(session, getStorage(session));
     }
 
     @Override

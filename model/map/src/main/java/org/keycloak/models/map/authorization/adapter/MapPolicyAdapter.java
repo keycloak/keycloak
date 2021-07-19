@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MapPolicyAdapter<K> extends AbstractPolicyModel<MapPolicyEntity> {
+public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     
     public MapPolicyAdapter(MapPolicyEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);

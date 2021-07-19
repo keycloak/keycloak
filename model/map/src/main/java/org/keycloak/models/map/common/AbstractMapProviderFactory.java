@@ -34,7 +34,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
  *
  * @author hmlnarik
  */
-public abstract class AbstractMapProviderFactory<T extends Provider, K, V extends AbstractEntity, M> implements AmphibianProviderFactory<T>, EnvironmentDependentProviderFactory {
+public abstract class AbstractMapProviderFactory<T extends Provider, V extends AbstractEntity, M> implements AmphibianProviderFactory<T>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "map";
 
@@ -56,7 +56,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, K, V extend
         return PROVIDER_ID;
     }
 
-    protected MapStorage<K, V, M> getStorage(KeycloakSession session) {
+    protected MapStorage<V, M> getStorage(KeycloakSession session) {
         ProviderFactory<MapStorageProvider> storageProviderFactory = getComponentFactory(session.getKeycloakSessionFactory(),
           MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
         final MapStorageProvider factory = storageProviderFactory.create(session);

@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author hmlnarik
  */
-public class MapClientProviderFactory<K> extends AbstractMapProviderFactory<ClientProvider, K, MapClientEntity, ClientModel> implements ClientProviderFactory, ProviderEventListener {
+public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientProvider, MapClientEntity, ClientModel> implements ClientProviderFactory, ProviderEventListener {
 
     private final ConcurrentHashMap<String, ConcurrentMap<String, Integer>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
 
@@ -53,7 +53,7 @@ public class MapClientProviderFactory<K> extends AbstractMapProviderFactory<Clie
 
     @Override
     public MapClientProvider create(KeycloakSession session) {
-        return new MapClientProvider<>(session, getStorage(session), REGISTERED_NODES_STORE);
+        return new MapClientProvider(session, getStorage(session), REGISTERED_NODES_STORE);
     }
 
     @Override

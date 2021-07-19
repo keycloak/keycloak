@@ -33,14 +33,14 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureProvider<K> implements UserLoginFailureProvider {
+public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserLoginFailureProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<K, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureTx;
-    private final MapStorage<K, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore;
+    protected final MapKeycloakTransaction<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureTx;
+    private final MapStorage<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore;
 
-    public MapUserLoginFailureProvider(KeycloakSession session, MapStorage<K, MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore) {
+    public MapUserLoginFailureProvider(KeycloakSession session, MapStorage<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore) {
         this.session = session;
         this.userLoginFailureStore = userLoginFailureStore;
 

@@ -35,7 +35,7 @@ import org.keycloak.models.map.common.AbstractMapProviderFactory;
  *
  * @author mhajas
  */
-public class MapGroupProviderFactory<K> extends AbstractMapProviderFactory<GroupProvider, K, MapGroupEntity, GroupModel> implements GroupProviderFactory, ProviderEventListener {
+public class MapGroupProviderFactory extends AbstractMapProviderFactory<GroupProvider, MapGroupEntity, GroupModel> implements GroupProviderFactory, ProviderEventListener {
 
     private Runnable onClose;
 
@@ -51,7 +51,7 @@ public class MapGroupProviderFactory<K> extends AbstractMapProviderFactory<Group
 
     @Override
     public MapGroupProvider create(KeycloakSession session) {
-        return new MapGroupProvider<>(session, getStorage(session));
+        return new MapGroupProvider(session, getStorage(session));
     }
 
     @Override

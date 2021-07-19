@@ -31,7 +31,7 @@ import org.keycloak.provider.ProviderEventListener;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureProviderFactory<K> extends AbstractMapProviderFactory<UserLoginFailureProvider, K, MapUserLoginFailureEntity, UserLoginFailureModel>
+public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFactory<UserLoginFailureProvider, MapUserLoginFailureEntity, UserLoginFailureModel>
         implements UserLoginFailureProviderFactory, ProviderEventListener {
 
     private Runnable onClose;
@@ -53,8 +53,8 @@ public class MapUserLoginFailureProviderFactory<K> extends AbstractMapProviderFa
     }
 
     @Override
-    public MapUserLoginFailureProvider<K> create(KeycloakSession session) {
-        return new MapUserLoginFailureProvider<>(session, getStorage(session));
+    public MapUserLoginFailureProvider create(KeycloakSession session) {
+        return new MapUserLoginFailureProvider(session, getStorage(session));
     }
 
     @Override

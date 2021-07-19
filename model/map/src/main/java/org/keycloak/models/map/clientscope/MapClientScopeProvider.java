@@ -39,14 +39,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
-public class MapClientScopeProvider<K> implements ClientScopeProvider {
+public class MapClientScopeProvider implements ClientScopeProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientScopeProvider.class);
     private final KeycloakSession session;
-    private final MapKeycloakTransaction<K, MapClientScopeEntity, ClientScopeModel> tx;
-    private final MapStorage<K, MapClientScopeEntity, ClientScopeModel> clientScopeStore;
+    private final MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> tx;
+    private final MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore;
 
-    public MapClientScopeProvider(KeycloakSession session, MapStorage<K, MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
+    public MapClientScopeProvider(KeycloakSession session, MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
         this.session = session;
         this.clientScopeStore = clientScopeStore;
         this.tx = clientScopeStore.createTransaction(session);
@@ -91,7 +91,7 @@ public class MapClientScopeProvider<K> implements ClientScopeProvider {
 
         MapClientScopeEntity entity = new MapClientScopeEntity(id, realm.getId());
         entity.setName(KeycloakModelUtils.convertClientScopeName(name));
-        if (tx.read(id) != null) {
+        if (id != null && tx.read(id) != null) {
             throw new ModelDuplicateException("Client scope exists: " + id);
         }
         entity = tx.create(entity);
