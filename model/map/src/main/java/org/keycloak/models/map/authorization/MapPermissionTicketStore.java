@@ -48,14 +48,14 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
-public class MapPermissionTicketStore<K extends Comparable<K>> implements PermissionTicketStore {
+public class MapPermissionTicketStore implements PermissionTicketStore {
 
     private static final Logger LOG = Logger.getLogger(MapPermissionTicketStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapPermissionTicketEntity, PermissionTicket> tx;
-    private final MapStorage<K, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore;
+    final MapKeycloakTransaction<MapPermissionTicketEntity, PermissionTicket> tx;
+    private final MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore;
 
-    public MapPermissionTicketStore(KeycloakSession session, MapStorage<K, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore, AuthorizationProvider provider) {
+    public MapPermissionTicketStore(KeycloakSession session, MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.permissionTicketStore = permissionTicketStore;
         this.tx = permissionTicketStore.createTransaction(session);

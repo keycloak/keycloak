@@ -43,14 +43,14 @@ import java.util.stream.Collectors;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
-public class MapPolicyStore<K> implements PolicyStore {
+public class MapPolicyStore implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapPolicyEntity, Policy> tx;
-    private final MapStorage<K, MapPolicyEntity, Policy> policyStore;
+    final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
+    private final MapStorage<MapPolicyEntity, Policy> policyStore;
 
-    public MapPolicyStore(KeycloakSession session, MapStorage<K, MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.policyStore = policyStore;
         this.tx = policyStore.createTransaction(session);
@@ -134,7 +134,7 @@ public class MapPolicyStore<K> implements PolicyStore {
 
     @Override
     public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
-        LOG.tracef("findByResource(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
+        LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
 
         ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()

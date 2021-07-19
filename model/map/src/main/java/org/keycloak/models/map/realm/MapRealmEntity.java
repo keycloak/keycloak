@@ -45,7 +45,7 @@ import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 
 public class MapRealmEntity implements AbstractEntity, UpdatableEntity {
 
-    private final String id;
+    private String id;
     private String name;
 
     private Boolean enabled = false;

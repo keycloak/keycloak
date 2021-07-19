@@ -70,7 +70,7 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId().toString(), entity.getCompositeRoles().size(), getShortStackTrace());
+        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId(), entity.getCompositeRoles().size(), getShortStackTrace());
         return entity.getCompositeRoles().stream()
                 .map(uuid -> session.roles().getRoleById(realm, uuid))
                 .filter(Objects::nonNull);
@@ -78,13 +78,13 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        LOG.tracef("%s(%s).addCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("%s(%s).addCompositeRole(%s(%s))%s", entity.getName(), entity.getId(), role.getName(), role.getId(), getShortStackTrace());
         entity.addCompositeRole(role.getId());
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        LOG.tracef("%s(%s).removeCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("%s(%s).removeCompositeRole(%s(%s))%s", entity.getName(), entity.getId(), role.getName(), role.getId(), getShortStackTrace());
         entity.removeCompositeRole(role.getId());
     }
 

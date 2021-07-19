@@ -40,14 +40,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
-public class MapRealmProvider<K> implements RealmProvider {
+public class MapRealmProvider implements RealmProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRealmProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapRealmEntity, RealmModel> tx;
-    private final MapStorage<K, MapRealmEntity, RealmModel> realmStore;
+    final MapKeycloakTransaction<MapRealmEntity, RealmModel> tx;
+    private final MapStorage<MapRealmEntity, RealmModel> realmStore;
 
-    public MapRealmProvider(KeycloakSession session, MapStorage<K, MapRealmEntity, RealmModel> realmStore) {
+    public MapRealmProvider(KeycloakSession session, MapStorage<MapRealmEntity, RealmModel> realmStore) {
         this.session = session;
         this.realmStore = realmStore;
         this.tx = realmStore.createTransaction(session);

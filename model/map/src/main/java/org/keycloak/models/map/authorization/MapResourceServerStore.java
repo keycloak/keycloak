@@ -40,14 +40,14 @@ import org.keycloak.storage.StorageId;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
-public class MapResourceServerStore<K> implements ResourceServerStore {
+public class MapResourceServerStore implements ResourceServerStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapResourceServerEntity, ResourceServer> tx;
-    private final MapStorage<K, MapResourceServerEntity, ResourceServer> resourceServerStore;
+    final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
+    private final MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore;
 
-    public MapResourceServerStore(KeycloakSession session, MapStorage<K, MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
+    public MapResourceServerStore(KeycloakSession session, MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.resourceServerStore = resourceServerStore;
         this.tx = resourceServerStore.createTransaction(session);
         this.authorizationProvider = provider;

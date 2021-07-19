@@ -44,16 +44,16 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSessionProvider {
+public class MapRootAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<K, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
-    private final MapStorage<K, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore;
+    protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
+    private final MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore;
 
     private static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 
-    public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<K, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
+    public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
         this.session = session;
         this.sessionStore = sessionStore;
         this.tx = sessionStore.createTransaction(session);
@@ -87,7 +87,7 @@ public class MapRootAuthenticationSessionProvider<K> implements AuthenticationSe
         LOG.tracef("createRootAuthenticationSession(%s)%s", realm.getName(), getShortStackTrace());
 
         // create map authentication session entity
-        MapRootAuthenticationSessionEntity entity = new MapRootAuthenticationSessionEntity(null, realm.getId());
+        MapRootAuthenticationSessionEntity entity = new MapRootAuthenticationSessionEntity(id, realm.getId());
         entity.setTimestamp(Time.currentTime());
 
         if (id != null && tx.read(id) != null) {

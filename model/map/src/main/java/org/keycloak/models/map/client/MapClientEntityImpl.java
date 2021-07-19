@@ -17,7 +17,6 @@
 package org.keycloak.models.map.client;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.map.common.AbstractEntity;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +35,7 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public class MapClientEntityImpl<K> implements MapClientEntity {
+public class MapClientEntityImpl implements MapClientEntity {
 
     private String id;
     private String realmId;

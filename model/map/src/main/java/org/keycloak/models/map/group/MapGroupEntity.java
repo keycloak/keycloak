@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
 
-    private final String id;
+    private String id;
     private final String realmId;
 
     private String name;

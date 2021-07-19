@@ -79,7 +79,7 @@ public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderF
     }
 
     @Override
-    public MapUserSessionProvider<UK, CK> create(KeycloakSession session) {
+    public MapUserSessionProvider create(KeycloakSession session) {
         MapStorageProviderFactory storageProviderFactoryUs = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
           MapStorageProvider.class, storageConfigScopeUserSessions, MapStorageSpi.NAME);
         final MapStorageProvider factoryUs = storageProviderFactoryUs.create(session);
@@ -90,7 +90,7 @@ public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderF
         final MapStorageProvider factoryCs = storageProviderFactoryCs.create(session);
         MapStorage clientSessionStore = factoryCs.getStorage(AuthenticatedClientSessionModel.class);
 
-        return new MapUserSessionProvider<>(session, userSessionStore, clientSessionStore);
+        return new MapUserSessionProvider(session, userSessionStore, clientSessionStore);
     }
 
     @Override

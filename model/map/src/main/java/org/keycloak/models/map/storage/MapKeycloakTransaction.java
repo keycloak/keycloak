@@ -19,11 +19,9 @@ package org.keycloak.models.map.storage;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public interface MapKeycloakTransaction<K, V extends AbstractEntity, M> extends KeycloakTransaction {
+public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends KeycloakTransaction {
 
     /**
      * Instructs this transaction to add a new value into the underlying store on commit.

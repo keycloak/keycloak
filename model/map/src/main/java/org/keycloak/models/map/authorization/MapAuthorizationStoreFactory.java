@@ -45,7 +45,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 /**
  * @author mhajas
  */
-public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
+public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = AbstractMapProviderFactory.PROVIDER_ID;
 

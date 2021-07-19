@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public class MapClientEntityLazyDelegate<K> implements MapClientEntity {
+public class MapClientEntityLazyDelegate implements MapClientEntity {
 
     private final Supplier<MapClientEntity> delegateSupplier;
 

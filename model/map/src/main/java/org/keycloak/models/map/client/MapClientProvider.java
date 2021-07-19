@@ -50,15 +50,15 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import java.util.HashSet;
 
-public class MapClientProvider<K> implements ClientProvider {
+public class MapClientProvider implements ClientProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapClientEntity, ClientModel> tx;
-    private final MapStorage<K, MapClientEntity, ClientModel> clientStore;
+    final MapKeycloakTransaction<MapClientEntity, ClientModel> tx;
+    private final MapStorage<MapClientEntity, ClientModel> clientStore;
     private final ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore;
 
-    public MapClientProvider(KeycloakSession session, MapStorage<K, MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
+    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
@@ -140,10 +140,8 @@ public class MapClientProvider<K> implements ClientProvider {
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
         LOG.tracef("addClient(%s, %s, %s)%s", realm, id, clientId, getShortStackTrace());
 
-        MapClientEntity entity = new MapClientEntityImpl<>(null, realm.getId());
-        if (clientId != null) {
-            entity.setClientId(clientId);
-        }
+        MapClientEntity entity = new MapClientEntityImpl(id, realm.getId());
+        entity.setClientId(clientId);
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
         if (id != null && tx.read(id) != null) {
@@ -352,7 +350,7 @@ public class MapClientProvider<K> implements ClientProvider {
           .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
         try (Stream<MapClientEntity> toRemove = tx.read(withCriteria(mcb))) {
             toRemove
-                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))
+                .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId()))
                 .filter(Objects::nonNull)
                 .forEach(clientModel -> clientModel.deleteScopeMapping(role));
         }

@@ -27,7 +27,7 @@ import org.keycloak.models.map.common.AbstractMapProviderFactory;
  *
  * @author mhajas
  */
-public class MapUserProviderFactory<K> extends AbstractMapProviderFactory<UserProvider, K, MapUserEntity, UserModel> implements UserProviderFactory {
+public class MapUserProviderFactory extends AbstractMapProviderFactory<UserProvider, MapUserEntity, UserModel> implements UserProviderFactory {
 
     public MapUserProviderFactory() {
         super(UserModel.class);
@@ -35,7 +35,7 @@ public class MapUserProviderFactory<K> extends AbstractMapProviderFactory<UserPr
 
     @Override
     public UserProvider create(KeycloakSession session) {
-        return new MapUserProvider<>(session, getStorage(session));
+        return new MapUserProvider(session, getStorage(session));
     }
 
     @Override

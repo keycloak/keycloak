@@ -113,6 +113,11 @@ public interface StringKeyConvertor<K> {
         }
 
         @Override
+        public String keyToString(Long key) {
+            return Long.toUnsignedString(key);
+        }
+
+        @Override
         public Long fromString(String key) {
             return key == null ? null : Long.parseUnsignedLong(key);
         }

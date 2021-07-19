@@ -72,14 +72,14 @@ import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 
-public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialStore.Streams {
+public class MapUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapUserEntity, UserModel> tx;
-    private final MapStorage<K, MapUserEntity, UserModel> userStore;
+    final MapKeycloakTransaction<MapUserEntity, UserModel> tx;
+    private final MapStorage<MapUserEntity, UserModel> userStore;
 
-    public MapUserProvider(KeycloakSession session, MapStorage<K, MapUserEntity, UserModel> store) {
+    public MapUserProvider(KeycloakSession session, MapStorage<MapUserEntity, UserModel> store) {
         this.session = session;
         this.userStore = store;
         this.tx = userStore.createTransaction(session);
@@ -129,10 +129,6 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
     private MapUserEntity getEntityByIdOrThrow(RealmModel realm, String id) {
         return getEntityById(realm, id)
                 .orElseThrow(this::userDoesntExistException);
-    }
-
-    private Optional<MapUserEntity> getRegisteredEntityById(RealmModel realm, String id) {
-        return getEntityById(realm, id);
     }
 
     @Override
@@ -314,7 +310,7 @@ public class MapUserProvider<K> implements UserProvider.Streams, UserCredentialS
             throw new ModelDuplicateException("User with username '" + username + "' in realm " + realm.getName() + " already exists" );
         }
         
-        if (tx.read(id) != null) {
+        if (id != null && tx.read(id) != null) {
             throw new ModelDuplicateException("User exists: " + id);
         }
 

@@ -22,7 +22,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.RoleProviderFactory;
 
-public class MapRoleProviderFactory<K> extends AbstractMapProviderFactory<RoleProvider, K, MapRoleEntity, RoleModel> implements RoleProviderFactory {
+public class MapRoleProviderFactory extends AbstractMapProviderFactory<RoleProvider, MapRoleEntity, RoleModel> implements RoleProviderFactory {
 
     public MapRoleProviderFactory() {
         super(RoleModel.class);
@@ -30,7 +30,7 @@ public class MapRoleProviderFactory<K> extends AbstractMapProviderFactory<RolePr
 
     @Override
     public RoleProvider create(KeycloakSession session) {
-        return new MapRoleProvider<>(session, getStorage(session));
+        return new MapRoleProvider(session, getStorage(session));
     }
 
     @Override

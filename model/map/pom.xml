@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-model-map</artifactId>
-    <name>Keycloak Model Naive Map</name>
+    <name>Keycloak Model Map</name>
     <description/>
 
     <dependencies>

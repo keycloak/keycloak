@@ -22,7 +22,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
 
-public class MapRealmProviderFactory<K> extends AbstractMapProviderFactory<RealmProvider, K, MapRealmEntity, RealmModel> implements RealmProviderFactory {
+public class MapRealmProviderFactory extends AbstractMapProviderFactory<RealmProvider, MapRealmEntity, RealmModel> implements RealmProviderFactory {
 
     public MapRealmProviderFactory() {
         super(RealmModel.class);
@@ -30,7 +30,7 @@ public class MapRealmProviderFactory<K> extends AbstractMapProviderFactory<Realm
 
     @Override
     public RealmProvider create(KeycloakSession session) {
-        return new MapRealmProvider<>(session, getStorage(session));
+        return new MapRealmProvider(session, getStorage(session));
     }
 
     @Override
