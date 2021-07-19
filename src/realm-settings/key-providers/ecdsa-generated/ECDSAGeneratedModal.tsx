@@ -1,21 +1,21 @@
 import React from "react";
 import { Modal, ModalVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { AESGeneratedForm } from "./AESGeneratedForm";
+import { ECDSAGeneratedForm } from "./ECDSAGeneratedForm";
 
-type AESGeneratedModalProps = {
+type ECDSAGeneratedModalProps = {
   providerType: string;
   handleModalToggle: () => void;
   refresh: () => void;
   open: boolean;
 };
 
-export const AESGeneratedModal = ({
+export const ECDSAGeneratedModal = ({
   providerType,
   handleModalToggle,
   open,
   refresh,
-}: AESGeneratedModalProps) => {
+}: ECDSAGeneratedModalProps) => {
   const { t } = useTranslation("realm-settings");
 
   return (
@@ -26,7 +26,7 @@ export const AESGeneratedModal = ({
       isOpen={open}
       onClose={handleModalToggle}
     >
-      <AESGeneratedForm
+      <ECDSAGeneratedForm
         providerType={providerType}
         handleModalToggle={handleModalToggle}
         refresh={refresh}
