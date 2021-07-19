@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.3">
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.4">
     <secure-deployment name="my-app.war">
         <SP entityID="http://localhost:8080/sales-post-enc/"
             sslPolicy="EXTERNAL"
@@ -76,13 +76,15 @@
                     </Key>
                 </Keys>
                 <HttpClient allowAnyHostname="false"
-                        clientKeystore="/tmp/keystore.jks"
-                        clientKeystorePassword="testpwd1!@"
-                        connectionPoolSize="20"
-                        disableTrustManager="false"
-                        proxyUrl="http://localhost:9090/proxy"
-                        truststore="/tmp/truststore.jks"
-                        truststorePassword="trustpwd#*"/>
+                            clientKeystore="/tmp/keystore.jks"
+                            clientKeystorePassword="testpwd1!@"
+                            connectionPoolSize="20"
+                            disableTrustManager="false"
+                            proxyUrl="http://localhost:9090/proxy"
+                            truststore="/tmp/truststore.jks"
+                            truststorePassword="trustpwd#*"
+                            socketTimeout="6000"
+                />
             </IDP>
         </SP>
     </secure-deployment>

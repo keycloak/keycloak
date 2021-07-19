@@ -76,7 +76,7 @@ public class SubsystemParsingAllowedClockSkewTestCase extends AbstractSubsystemB
 
     private void setSubsystemXml(String value, String unit) throws IOException {
         try {
-            String template = readResource("keycloak-saml-1.3.xml");
+            String template = readResource("keycloak-saml-1.4.xml");
             if (value != null) {
                 // assign the AllowedClockSkew element using DOM
                 DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();

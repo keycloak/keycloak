@@ -77,7 +77,7 @@ public class SubsystemParsingAllowedClockSkewTestCase extends AbstractSubsystemB
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-keycloak-saml_1_3.xsd";
+        return "schema/wildfly-keycloak-saml_1_4.xsd";
     }
 
     @Override
@@ -94,7 +94,7 @@ public class SubsystemParsingAllowedClockSkewTestCase extends AbstractSubsystemB
 
     private void setSubsystemXml(String value, String unit) throws IOException {
         try {
-            String template = readResource("keycloak-saml-1.3.xml");
+            String template = readResource("keycloak-saml-1.4.xml");
             if (value != null) {
                 // assign the AllowedClockSkew element using DOM
                 DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();

@@ -48,6 +48,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -114,6 +115,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -210,99 +212,104 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Rule
     public AssertEvents assertEvents = new AssertEvents(this);
 
+    private static final Consumer<AdapterConfig> GLOBAL_HTTP_CLIENT_CONFIG = (config) -> {
+        config.setSocketTimeout(15_000);
+        config.setConnectionTimeout(15_000);
+    };
+
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
-        return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
+        return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = CustomerCookiePortal.DEPLOYMENT_NAME)
     protected static WebArchive customerCookiePortal() {
-        return servletDeployment(CustomerCookiePortal.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
+        return servletDeployment(CustomerCookiePortal.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
     protected static WebArchive customerPortalNoConf() {
-        return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class, ServletTestUtils.class);
+        return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CustomerServletNoConf.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CallAuthenticatedServlet.class);
     }
     @Deployment(name = SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME)
     protected static WebArchive securePortalRewriteRedirectUri() {
-        return servletDeployment(SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CallAuthenticatedServlet.class);
     }
 
 
     @Deployment(name = SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME)
     protected static WebArchive securePortalWithCustomSessionConfig() {
-        return servletDeployment(SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
-        return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
+        return servletDeployment(CustomerDb.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CustomerDbAudienceRequired.DEPLOYMENT_NAME)
     protected static WebArchive customerDbAudienceRequired() {
-        return servletDeployment(CustomerDbAudienceRequired.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
+        return servletDeployment(CustomerDbAudienceRequired.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CustomerDbErrorPage.DEPLOYMENT_NAME)
     protected static WebArchive customerDbErrorPage() {
-        return servletDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, CustomerDatabaseServlet.class, ErrorServlet.class);
+        return servletDeployment(CustomerDbErrorPage.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CustomerDatabaseServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = ProductPortal.DEPLOYMENT_NAME)
     protected static WebArchive productPortal() {
-        return servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
+        return servletDeployment(ProductPortal.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, ProductServlet.class);
     }
 
     @Deployment(name = ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME)
     protected static WebArchive productPortalAutodetectBearerOnly() {
-        return servletDeployment(ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME, ProductServlet.class);
+        return servletDeployment(ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, ProductServlet.class);
     }
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
-        return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
+        return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", GLOBAL_HTTP_CLIENT_CONFIG, InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = InputPortalNoAccessToken.DEPLOYMENT_NAME)
     protected static WebArchive inputPortalNoAccessToken() {
-        return servletDeployment(InputPortalNoAccessToken.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
+        return servletDeployment(InputPortalNoAccessToken.DEPLOYMENT_NAME, "keycloak.json", GLOBAL_HTTP_CLIENT_CONFIG, InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
     protected static WebArchive tokenMinTTLPage() {
-        return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+        return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = TokenRefreshPage.DEPLOYMENT_NAME)
     protected static WebArchive tokenRefresh() {
-        return servletDeployment(TokenRefreshPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+        return servletDeployment(TokenRefreshPage.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = BasicAuth.DEPLOYMENT_NAME)
     protected static WebArchive basicAuth() {
-        return servletDeployment(BasicAuth.DEPLOYMENT_NAME, BasicAuthServlet.class);
+        return servletDeployment(BasicAuth.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, BasicAuthServlet.class);
     }
 
     @Deployment(name = ClientSecretJwtSecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive clientSecretSecurePortal() {
-        return servletDeployment(ClientSecretJwtSecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(ClientSecretJwtSecurePortal.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME)
     protected static WebArchive clientSecretSecurePortalValidAlg() {
-        return servletDeployment(ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerCookiePortalRoot.DEPLOYMENT_NAME)
     protected static WebArchive customerCookiePortalRoot() {
-        return servletDeployment(CustomerCookiePortalRoot.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
+        return servletDeployment(CustomerCookiePortalRoot.DEPLOYMENT_NAME, GLOBAL_HTTP_CLIENT_CONFIG, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Override

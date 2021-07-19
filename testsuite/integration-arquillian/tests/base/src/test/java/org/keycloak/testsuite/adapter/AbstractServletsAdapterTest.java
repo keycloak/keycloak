@@ -17,22 +17,27 @@
 
 package org.keycloak.testsuite.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.asset.UrlAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
+import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
 import javax.ws.rs.core.UriBuilder;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.jboss.shrinkwrap.api.asset.UrlAsset;
+import java.util.function.Consumer;
 
 import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
@@ -40,8 +45,11 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
+    protected static final String DEFAULT_ADAPTER_CONFIG = "keycloak.json";
+    private static final ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
+
     protected static WebArchive servletDeploymentMultiTenant(String name, Class... servletClasses) {
-        WebArchive servletDeployment = servletDeployment(name, null, servletClasses);
+        WebArchive servletDeployment = servletDeployment(name, servletClasses);
 
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
         String config1 = "tenant1-keycloak.json";
@@ -65,14 +73,24 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {
-        return servletDeployment(name, "keycloak.json", servletClasses);
+        return servletDeployment(name, DEFAULT_ADAPTER_CONFIG, servletClasses);
     }
 
-    protected static WebArchive servletDeployment(String name, String adapterConfig, Class... servletClasses) {
+    protected static WebArchive servletDeployment(String name, Consumer<AdapterConfig> adapterConfig, Class... servletClasses) {
+        return servletDeployment(name, DEFAULT_ADAPTER_CONFIG, adapterConfig, servletClasses);
+    }
+
+    protected static WebArchive servletDeployment(String name, String adapterConfigName, Class... servletClasses) {
+        return servletDeployment(name, adapterConfigName, null, servletClasses);
+    }
+
+    protected static WebArchive servletDeployment(String name, String adapterConfigName, Consumer<AdapterConfig> adapterConfig, Class... servletClasses) {
         String webInfPath = "/adapter-test/" + name + "/WEB-INF/";
 
-        URL keycloakJSON = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfig);
+        URL keycloakJSON = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfigName);
         URL webXML = AbstractServletsAdapterTest.class.getResource(webInfPath + "web.xml");
+
+        File configFile = updateJsonConfigFile(keycloakJSON, adapterConfig);
 
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
@@ -85,8 +103,8 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
             deployment.addAsWebInfResource(keystore, "classes/keystore.jks");
         }
 
-        if (keycloakJSON != null) {
-            deployment.addAsWebInfResource(keycloakJSON, "keycloak.json");
+        if (configFile != null) {
+            deployment.addAsWebInfResource(configFile, DEFAULT_ADAPTER_CONFIG);
         }
 
         addContextXml(deployment, name);
@@ -129,12 +147,12 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         String webXMLContent;
         try {
-            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
+            webXMLContent = IOUtils.toString(webXML.openStream(), StandardCharsets.UTF_8)
                     .replace("%CONTEXT_PATH%", name);
 
             if (clockSkewSec != null) {
-                String keycloakSamlXMLContent = IOUtils.toString(keycloakSAMLConfig.openStream(), Charset.forName("UTF-8"))
-                    .replace("%CLOCK_SKEW%", "${allowed.clock.skew:" + String.valueOf(clockSkewSec) + "}");
+                String keycloakSamlXMLContent = IOUtils.toString(keycloakSAMLConfig.openStream(), StandardCharsets.UTF_8)
+                        .replace("%CLOCK_SKEW%", "${allowed.clock.skew:" + clockSkewSec + "}");
                 deployment.addAsWebInfResource(new StringAsset(keycloakSamlXMLContent), "keycloak-saml.xml");
             } else {
                 deployment.addAsWebInfResource(keycloakSAMLConfig, "keycloak-saml.xml");
@@ -171,7 +189,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         String webXMLContent;
         try {
-            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
+            webXMLContent = IOUtils.toString(webXML.openStream(), StandardCharsets.UTF_8)
                     .replace("%CONTEXT_PATH%", name);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -229,4 +247,45 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         log.info(pageSource);
     }
 
+    /**
+     * Get adapter configuration from file
+     *
+     * @param configJSON URL of configuration file
+     * @return adapter configuration
+     */
+    protected static AdapterConfig getConfig(URL configJSON) {
+        if (configJSON == null) return null;
+
+        try {
+            return mapper.readValue(configJSON, AdapterConfig.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Update configuration file for servlet
+     *
+     * @param configFile    URL of configuration file
+     * @param adapterConfig consumer with required changes in configuration file
+     * @return updated configuration file
+     */
+    protected static File updateJsonConfigFile(URL configFile, Consumer<AdapterConfig> adapterConfig) {
+        if (configFile == null) return null;
+
+        File file = new File(configFile.getFile());
+        AdapterConfig config = getConfig(configFile);
+
+        if (config != null && adapterConfig != null) {
+            adapterConfig.accept(config);
+
+            try {
+                mapper.writeValue(file, config);
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot write adapter configuration", e);
+            }
+        }
+        return file;
+    }
 }
