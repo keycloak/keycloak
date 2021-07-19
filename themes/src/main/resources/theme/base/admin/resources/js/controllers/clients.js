@@ -619,8 +619,26 @@ module.controller('ClientOidcKeyCtrl', function($scope, $location, realm, client
         }
     }
 
-    $scope.switchChange = function() {
+    if ($scope.client.attributes["use.jwks.string"]) {
+        if ($scope.client.attributes["use.jwks.string"] == "true") {
+            $scope.useJwksString = true;
+        } else {
+            $scope.useJwksString = false;
+        }
+    }
+
+    $scope.jwksUrlSwitchChange = function() {
         $scope.changed = true;
+        if ($scope.useJwksUrl == false) {
+            $scope.useJwksString = false;
+        }
+    }
+
+    $scope.jwksStringSwitchChange = function() {
+        $scope.changed = true;
+        if ($scope.useJwksString == false) {
+            $scope.useJwksUrl = false;
+        }
     }
 
     $scope.save = function() {
@@ -629,6 +647,12 @@ module.controller('ClientOidcKeyCtrl', function($scope, $location, realm, client
             $scope.client.attributes["use.jwks.url"] = "true";
         } else {
             $scope.client.attributes["use.jwks.url"] = "false";
+        }
+
+        if ($scope.useJwksString == true) {
+            $scope.client.attributes["use.jwks.string"] = "true";
+        } else {
+            $scope.client.attributes["use.jwks.string"] = "false";
         }
 
         Client.update({

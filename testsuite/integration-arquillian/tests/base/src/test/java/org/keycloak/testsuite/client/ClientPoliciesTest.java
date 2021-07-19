@@ -1808,7 +1808,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
-        KeyPair keyPair = setupJwks(org.keycloak.crypto.Algorithm.ES256, clientRep, clientResource);
+        KeyPair keyPair = setupJwksUrl(org.keycloak.crypto.Algorithm.ES256, clientRep, clientResource);
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
@@ -1898,7 +1898,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
-        KeyPair keyPair = setupJwks(org.keycloak.crypto.Algorithm.RS256, clientRep, clientResource);
+        KeyPair keyPair = setupJwksUrl(org.keycloak.crypto.Algorithm.RS256, clientRep, clientResource);
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 

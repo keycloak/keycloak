@@ -248,12 +248,16 @@ public class DescriptionConverter {
     }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
-        if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
+        if (clientOIDC.getJwksUri() == null && clientOIDC.getJwksString() == null && clientOIDC.getJwks() == null) {
             return false;
         }
 
         if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
             throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
+        } else if (clientOIDC.getJwksUri() != null && clientOIDC.getJwksString() != null) {
+            throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks_string");
+        } else if (clientOIDC.getJwksString() != null && clientOIDC.getJwks() != null) {
+            throw new ClientRegistrationException("Illegal to use both jwks_string and jwks");
         }
 
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
@@ -272,12 +276,19 @@ public class DescriptionConverter {
                 CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
 
                 configWrapper.setUseJwksUrl(false);
+                configWrapper.setUseJwksString(false);
 
                 return true;
             }
-        } else {
+        } else if (clientOIDC.getJwksUri() != null) {
             configWrapper.setUseJwksUrl(true);
             configWrapper.setJwksUrl(clientOIDC.getJwksUri());
+            configWrapper.setUseJwksString(false);
+            return true;
+        } else {
+            configWrapper.setUseJwksString(true);
+            configWrapper.setJwksString(clientOIDC.getJwksString());
+            configWrapper.setUseJwksUrl(false);
             return true;
         }
     }
