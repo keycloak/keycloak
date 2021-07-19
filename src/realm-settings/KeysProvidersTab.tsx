@@ -42,7 +42,7 @@ import { JavaKeystoreModal } from "./JavaKeystoreModal";
 import { HMACGeneratedModal } from "./key-providers/hmac-generated/HMACGeneratedModal";
 import { ECDSAGeneratedModal } from "./key-providers/ecdsa-generated/ECDSAGeneratedModal";
 import { RSAModal } from "./RSAModal";
-import { RSAGeneratedModal } from "./RSAGeneratedModal";
+import { RSAGeneratedModal } from "./key-providers/rsa-generated/RSAGeneratedModal";
 
 type ComponentData = KeyMetadataRepresentation & {
   id?: string;

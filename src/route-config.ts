@@ -38,6 +38,7 @@ import { AddOpenIdConnect } from "./identity-providers/add/AddOpenIdConnect";
 import { DetailSettings } from "./identity-providers/add/DetailSettings";
 import { AESGeneratedSettings } from "./realm-settings/key-providers/aes-generated/AESGeneratedForm";
 import { HMACGeneratedSettings } from "./realm-settings/key-providers/hmac-generated/HMACGeneratedForm";
+import { RSAGeneratedSettings } from "./realm-settings/key-providers/rsa-generated/RSAGeneratedForm";
 import { ECDSAGeneratedSettings } from "./realm-settings/key-providers/ecdsa-generated/ECDSAGeneratedForm";
 
 export type RouteDef = BreadcrumbsRoute & {
@@ -201,6 +202,12 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/realm-settings/keys/:id?/hmac-generated/settings",
     component: HMACGeneratedSettings,
+    breadcrumb: t("realm-settings:editProvider"),
+    access: "view-realm",
+  },
+  {
+    path: "/:realm/realm-settings/keys/:id?/rsa-generated/settings",
+    component: RSAGeneratedSettings,
     breadcrumb: t("realm-settings:editProvider"),
     access: "view-realm",
   },
