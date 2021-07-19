@@ -46,10 +46,10 @@ public class MapGroupProvider<K> implements GroupProvider {
 
     private static final Logger LOG = Logger.getLogger(MapGroupProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapGroupEntity, GroupModel> tx;
-    private final MapStorage<K, MapGroupEntity, GroupModel> groupStore;
+    final MapKeycloakTransaction<MapGroupEntity, GroupModel> tx;
+    private final MapStorage<MapGroupEntity, GroupModel> groupStore;
 
-    public MapGroupProvider(KeycloakSession session, MapStorage<K, MapGroupEntity, GroupModel> groupStore) {
+    public MapGroupProvider(KeycloakSession session, MapStorage<MapGroupEntity, GroupModel> groupStore) {
         this.session = session;
         this.groupStore = groupStore;
         this.tx = groupStore.createTransaction(session);

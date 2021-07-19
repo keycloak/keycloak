@@ -44,9 +44,9 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
     private class Transaction extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> {
 
-        private final MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr;
+        private final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr;
 
-        public Transaction(MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr, StringKeyConvertor<K> keyConvertor) {
+        public Transaction(MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr, StringKeyConvertor<K> keyConvertor) {
             super(UserSessionConcurrentHashMapStorage.this, keyConvertor);
             this.clientSessionTr = clientSessionTr;
         }
@@ -77,8 +77,8 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
     @Override
     @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+    public MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> createTransaction(KeycloakSession session) {
+        MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
         return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConvertor()) : sessionTransaction;
     }
 }

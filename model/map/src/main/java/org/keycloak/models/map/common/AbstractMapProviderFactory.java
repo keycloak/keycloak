@@ -56,7 +56,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, K, V extend
         return PROVIDER_ID;
     }
 
-    protected MapStorage<K, V, M> getStorage(KeycloakSession session) {
+    protected MapStorage<V, M> getStorage(KeycloakSession session) {
         ProviderFactory<MapStorageProvider> storageProviderFactory = getComponentFactory(session.getKeycloakSessionFactory(),
           MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
         final MapStorageProvider factory = storageProviderFactory.create(session);

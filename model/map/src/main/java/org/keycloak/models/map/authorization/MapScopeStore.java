@@ -44,10 +44,10 @@ public class MapScopeStore<K> implements ScopeStore {
 
     private static final Logger LOG = Logger.getLogger(MapScopeStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapScopeEntity, Scope> tx;
-    private final MapStorage<K, MapScopeEntity, Scope> scopeStore;
+    final MapKeycloakTransaction<MapScopeEntity, Scope> tx;
+    private final MapStorage<MapScopeEntity, Scope> scopeStore;
 
-    public MapScopeStore(KeycloakSession session, MapStorage<K, MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
+    public MapScopeStore(KeycloakSession session, MapStorage<MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.scopeStore = scopeStore;
         this.tx = scopeStore.createTransaction(session);

@@ -46,10 +46,10 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
 
     private static final Logger LOG = Logger.getLogger(MapResourceStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapResourceEntity, Resource> tx;
-    private final MapStorage<K, MapResourceEntity, Resource> resourceStore;
+    final MapKeycloakTransaction<MapResourceEntity, Resource> tx;
+    private final MapStorage<MapResourceEntity, Resource> resourceStore;
 
-    public MapResourceStore(KeycloakSession session, MapStorage<K, MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
+    public MapResourceStore(KeycloakSession session, MapStorage<MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
         this.resourceStore = resourceStore;
         this.tx = resourceStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);

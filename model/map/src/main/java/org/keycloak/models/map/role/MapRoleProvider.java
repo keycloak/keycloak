@@ -44,10 +44,10 @@ public class MapRoleProvider<K> implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapRoleEntity, RoleModel> tx;
-    private final MapStorage<K, MapRoleEntity, RoleModel> roleStore;
+    final MapKeycloakTransaction<MapRoleEntity, RoleModel> tx;
+    private final MapStorage<MapRoleEntity, RoleModel> roleStore;
 
-    public MapRoleProvider(KeycloakSession session, MapStorage<K, MapRoleEntity, RoleModel> roleStore) {
+    public MapRoleProvider(KeycloakSession session, MapStorage<MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
         this.roleStore = roleStore;
         this.tx = roleStore.createTransaction(session);

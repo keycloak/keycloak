@@ -36,21 +36,21 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.utils.StreamsUtil;
 
-public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<K, V, M> {
+public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<V, M> {
 
     private final static Logger log = Logger.getLogger(ConcurrentHashMapKeycloakTransaction.class);
 
     private boolean active;
     private boolean rollback;
     private final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    private final MapStorage<K, V, M> map;
+    private final MapStorage<V, M> map;
     private final StringKeyConvertor<K> keyConvertor;
 
     enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(MapStorage<K, V, M> map, StringKeyConvertor<K> keyConvertor) {
+    public ConcurrentHashMapKeycloakTransaction(MapStorage<V, M> map, StringKeyConvertor<K> keyConvertor) {
         this.map = map;
         this.keyConvertor = keyConvertor;
     }

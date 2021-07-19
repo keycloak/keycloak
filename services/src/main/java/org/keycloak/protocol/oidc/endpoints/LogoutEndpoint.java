@@ -142,7 +142,7 @@ public class LogoutEndpoint {
 
         if (redirect != null) {
             String validatedUri;
-            ClientModel client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientById(idToken.getIssuedFor());
+            ClientModel client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientByClientId(idToken.getIssuedFor());
             if (client != null) {
                 validatedUri = RedirectUtils.verifyRedirectUri(session, redirect, client);
             } else {

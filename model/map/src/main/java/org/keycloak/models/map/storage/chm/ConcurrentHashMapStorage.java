@@ -44,7 +44,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<K, V, M> {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M> {
 
     private final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
@@ -71,7 +71,8 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     @Override
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
-        return store.get(keyConvertor.fromString(key));
+        K k = keyConvertor.fromStringSafe(key);
+        return store.get(k);
     }
 
     @Override
@@ -126,8 +127,8 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
 
     @Override
     @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<K, V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
+        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
         return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor) : sessionTransaction;
     }
 

@@ -30,6 +30,8 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.hamcrest.Matchers;
@@ -47,7 +49,7 @@ import static org.hamcrest.Matchers.nullValue;
  */
 @RequireProvider(value = ClientProvider.class, only = {MapClientProviderFactory.PROVIDER_ID})
 @RequireProvider(RealmProvider.class)
-@RequireProvider(MapStorageProvider.class)
+@RequireProvider(value = MapStorageProvider.class, only = {ConcurrentHashMapStorageProviderFactory.PROVIDER_ID})
 public class MapStorageTest extends KeycloakModelTest {
 
     private static final Logger LOG = Logger.getLogger(MapStorageTest.class.getName());
@@ -82,9 +84,9 @@ public class MapStorageTest extends KeycloakModelTest {
         String component2Id = createMapStorageComponent("component2", "keyType", "string");
 
         String[] ids = withRealm(realmId, (session, realm) -> {
-            MapStorage<K, MapClientEntity, ClientModel> storageMain = (MapStorage) session.getProvider(MapStorageProvider.class).getStorage(ClientModel.class);
-            MapStorage<K1, MapClientEntity, ClientModel> storage1 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(ClientModel.class);
-            MapStorage<K2, MapClientEntity, ClientModel> storage2 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
+            ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storageMain = (ConcurrentHashMapStorage<K, MapClientEntity, ClientModel>) (MapStorage) session.getProvider(MapStorageProvider.class).getStorage(ClientModel.class);
+            ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel> storage1 = (ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(ClientModel.class);
+            ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
 
             // Assert that the map storage can be used both as a standalone store and a component
             assertThat(storageMain, notNullValue());
@@ -115,9 +117,9 @@ public class MapStorageTest extends KeycloakModelTest {
             assertClientDoesNotExist(storage2, idMain, kcMain, kc2);
             assertClientDoesNotExist(storage2, id1, kc1, kc2);
 
-            MapClientEntity clientMain = new MapClientEntityImpl<>(idMain, realmId);
-            MapClientEntity client1 = new MapClientEntityImpl<>(id1, realmId);
-            MapClientEntity client2 = new MapClientEntityImpl<>(id2, realmId);
+            MapClientEntity clientMain = new MapClientEntityImpl(idMain, realmId);
+            MapClientEntity client1 = new MapClientEntityImpl(id1, realmId);
+            MapClientEntity client2 = new MapClientEntityImpl(id2, realmId);
 
             clientMain = storageMain.create(clientMain);
             client1 = storage1.create(client1);
@@ -147,7 +149,7 @@ public class MapStorageTest extends KeycloakModelTest {
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
     }
 
-    private <K,K1> void assertClientDoesNotExist(MapStorage<K, MapClientEntity, ClientModel> storage, String id, final StringKeyConvertor<K1> kc, final StringKeyConvertor<K> kcStorage) {
+    private <K,K1> void assertClientDoesNotExist(MapStorage<MapClientEntity, ClientModel> storage, String id, final StringKeyConvertor<K1> kc, final StringKeyConvertor<K> kcStorage) {
         // Assert that the other stores do not contain the to-be-created clients (if they use compatible key format)
         try {
             assertThat(storage.read(id), nullValue());
@@ -160,11 +162,11 @@ public class MapStorageTest extends KeycloakModelTest {
         // Check that in the next transaction, the objects are still there
         withRealm(realmId, (session, realm) -> {
             @SuppressWarnings("unchecked")
-            MapStorage<K, MapClientEntity, ClientModel> storageMain = (MapStorage) session.getProvider(MapStorageProvider.class).getStorage(ClientModel.class);
+            ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storageMain = (ConcurrentHashMapStorage<K, MapClientEntity, ClientModel>) (MapStorage) session.getProvider(MapStorageProvider.class).getStorage(ClientModel.class);
             @SuppressWarnings("unchecked")
-            MapStorage<K1, MapClientEntity, ClientModel> storage1 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(ClientModel.class);
+            ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel> storage1 = (ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getStorage(ClientModel.class);
             @SuppressWarnings("unchecked")
-            MapStorage<K2, MapClientEntity, ClientModel> storage2 = (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
+            ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getStorage(ClientModel.class);
 
             final StringKeyConvertor<K> kcMain = storageMain.getKeyConvertor();
             final StringKeyConvertor<K1> kc1 = storage1.getKeyConvertor();
