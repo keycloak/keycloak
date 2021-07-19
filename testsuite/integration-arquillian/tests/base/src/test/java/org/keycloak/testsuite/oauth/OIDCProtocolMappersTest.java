@@ -1218,7 +1218,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         return rep;
     }
 
-    protected OAuthClient.AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
+    private OAuthClient.AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
         OAuthClient.AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
         return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
     }
