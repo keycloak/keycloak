@@ -693,7 +693,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             fail("Should fail validation");
         } catch (ValidationException ve) {
             assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
-            assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
+            assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH_TOO_SHORT));
         }
 
         attributes.put(UserModel.USERNAME, "user");
@@ -704,7 +704,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         provider.setConfiguration(null);
 
-        attributes.put(UserModel.USERNAME, "us");
+        attributes.put(UserModel.USERNAME, "user");
         attributes.put(UserModel.FIRST_NAME, "Joe");
         attributes.put(UserModel.LAST_NAME, "Doe");
 

@@ -45,6 +45,8 @@ public class LengthValidator extends AbstractStringValidator implements Configur
     public static final String ID = "length";
 
     public static final String MESSAGE_INVALID_LENGTH = "error-invalid-length";
+    public static final String MESSAGE_INVALID_LENGTH_TOO_SHORT = "error-invalid-length-too-short";
+    public static final String MESSAGE_INVALID_LENGTH_TOO_LONG = "error-invalid-length-too-long";
 
     public static final String KEY_MIN = "min";
     public static final String KEY_MAX = "max";
@@ -85,15 +87,28 @@ public class LengthValidator extends AbstractStringValidator implements Configur
         int length = value.length();
 
         if (config.containsKey(KEY_MIN) && length < min.intValue()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, min, max));
+            context.addError(new ValidationError(ID, inputHint, selectErrorMessage(config), min, max));
             return;
         }
 
         if (config.containsKey(KEY_MAX) && length > max.intValue()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_LENGTH, min, max));
+            context.addError(new ValidationError(ID, inputHint, selectErrorMessage(config), min, max));
             return;
         }
 
+    }
+    
+    /**
+     * Select error message depending on the allowed length interval bound configuration.
+     */
+    protected String selectErrorMessage(ValidatorConfig config) {
+        if (!config.containsKey(KEY_MAX)) {
+            return MESSAGE_INVALID_LENGTH_TOO_SHORT;
+        } else if (!config.containsKey(KEY_MIN)) {
+            return MESSAGE_INVALID_LENGTH_TOO_LONG;
+        } else {
+            return MESSAGE_INVALID_LENGTH;
+        }
     }
 
     @Override
