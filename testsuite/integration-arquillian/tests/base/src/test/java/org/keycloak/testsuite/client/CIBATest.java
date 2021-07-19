@@ -27,6 +27,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
@@ -1947,6 +1948,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             prepareCIBASettings(clientResource, clientRep);
             if (isOfflineAccess) oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
 
+            long startTime = Time.currentTime();
+
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, additionalParameters);
 
@@ -1966,6 +1969,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+            IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
+            long currentTime = Time.currentTime();
+            long authTime = idToken.getAuth_time().longValue();
+            assertTrue(startTime -5 <= authTime);
+            assertTrue(authTime <= currentTime + 5);
 
             // token introspection
             String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);

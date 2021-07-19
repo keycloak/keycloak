@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -211,6 +212,9 @@ public class CibaGrantType {
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
                 .fromClientSessionAndClientScopes(userSession.getAuthenticatedClientSessionByClient(client.getId()), TokenManager.getRequestedClientScopes(scopeParam, client), session);
+
+        int authTime = Time.currentTime();
+        userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
 
         return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);
 
