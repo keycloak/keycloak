@@ -2,11 +2,18 @@
 	"attributes": [
 		{
 			"name": "username",
-			"displayName": "${username}"
+			"displayName": "${username}",
+			"validations": {
+				"length": { "min": 3, "max": 255 },
+				"pattern": {"pattern": "^[^<>&\"'\\s\\v\\h$%!#?,;:*~/\\\\|^=\\[\\]{}`\\p{Cntrl}]+$"}
+			}
 		},
 		{
 			"name": "email",
-			"displayName": "${email}"
+			"displayName": "${email}",
+			"validations": {
+				"length": { "min": 1, "max": 255 }
+			}
 		},
 		{
 			"name": "firstName",
@@ -15,6 +22,10 @@
 			"permissions": {
 				"view": ["admin", "user"],
 				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "min": 1, "max": 255 },
+				"pattern": {"pattern": "^[^<>&\"\\s\\v\\h$%!#?,;:*~/\\\\|^=\\[\\]{}`\\p{Cntrl}]+$"}
 			}
 		},
 		{
@@ -24,6 +35,10 @@
 			"permissions": {
 				"view": ["admin", "user"],
 				"edit": ["admin", "user"]
+			},
+			"validations": {
+				"length": { "min": 1, "max": 255 },
+				"pattern": {"pattern": "^[^<>&\"\\s\\v\\h$%!#?,;:*~/\\\\|^=\\[\\]{}`\\p{Cntrl}]+$"}
 			}
 		}
 	]
