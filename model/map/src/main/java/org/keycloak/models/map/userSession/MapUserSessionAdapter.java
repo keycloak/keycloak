@@ -30,16 +30,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapUserSessionAdapter<K> extends AbstractUserSessionModel<K> {
+public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
-    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity<K> entity) {
+    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

@@ -34,7 +34,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
  *
  * @author hmlnarik
  */
-public abstract class AbstractMapProviderFactory<T extends Provider, K, V extends AbstractEntity<K>, M> implements AmphibianProviderFactory<T>, EnvironmentDependentProviderFactory {
+public abstract class AbstractMapProviderFactory<T extends Provider, K, V extends AbstractEntity, M> implements AmphibianProviderFactory<T>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "map";
 

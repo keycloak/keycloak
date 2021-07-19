@@ -39,7 +39,7 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <K, V extends AbstractEntity<K>, M> MapStorage<K, V, M> getStorage(Class<M> modelType, Flag... flags) {
+    public <K, V extends AbstractEntity, M> MapStorage<K, V, M> getStorage(Class<M> modelType, Flag... flags) {
         ConcurrentHashMapStorage storage = factory.getStorage(modelType, flags);
         return (MapStorage<K, V, M>) storage;
     }

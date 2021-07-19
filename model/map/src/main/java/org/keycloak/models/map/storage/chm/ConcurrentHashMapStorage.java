@@ -16,9 +16,11 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -32,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
-import org.keycloak.models.map.storage.StringKeyConvertor;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -43,7 +44,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K> & UpdatableEntity, M> implements MapStorage<K, V, M> {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<K, V, M> {
 
     private final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
@@ -58,25 +59,31 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K> & Updatable
 
     @Override
     public V create(V value) {
-        K key = value.getId();
-        return store.putIfAbsent(key, value);
+        K key = keyConvertor.fromStringSafe(value.getId());
+        if (key == null) {
+            key = keyConvertor.yieldNewUniqueKey();
+            value = Serialization.from(value, keyConvertor.keyToString(key));
+        }
+        store.putIfAbsent(key, value);
+        return value;
     }
 
     @Override
-    public V read(K key) {
+    public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
-        return store.get(key);
+        return store.get(keyConvertor.fromString(key));
     }
 
     @Override
     public V update(V value) {
-        K key = value.getId();
+        K key = getKeyConvertor().fromStringSafe(value.getId());
         return store.replace(key, value);
     }
 
     @Override
-    public boolean delete(K key) {
-        return store.remove(key) != null;
+    public boolean delete(String key) {
+        K k = getKeyConvertor().fromStringSafe(key);
+        return store.remove(k) != null;
     }
 
     @Override
@@ -114,17 +121,16 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity<K> & Updatable
 
     @Override
     public ModelCriteriaBuilder<M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<>(fieldPredicates);
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<K, V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this) : sessionTransaction;
+        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor) : sessionTransaction;
     }
 
-    @Override
     public StringKeyConvertor<K> getKeyConvertor() {
         return keyConvertor;
     }

@@ -20,8 +20,8 @@ package org.keycloak.models.map.common;
  *
  * @author hmlnarik
  */
-public interface AbstractEntity<K> {
+public interface AbstractEntity {
 
-    K getId();
+    String getId();
 
 }

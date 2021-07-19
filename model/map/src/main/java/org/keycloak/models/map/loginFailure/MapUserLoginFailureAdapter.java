@@ -22,9 +22,14 @@ import org.keycloak.models.RealmModel;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapUserLoginFailureAdapter<K> extends AbstractUserLoginFailureModel<MapUserLoginFailureEntity<K>> {
-    public MapUserLoginFailureAdapter(KeycloakSession session, RealmModel realm, MapUserLoginFailureEntity<K> entity) {
+public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<MapUserLoginFailureEntity> {
+    public MapUserLoginFailureAdapter(KeycloakSession session, RealmModel realm, MapUserLoginFailureEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

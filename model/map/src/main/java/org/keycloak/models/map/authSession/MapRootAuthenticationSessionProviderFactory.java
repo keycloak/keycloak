@@ -26,7 +26,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionProviderFactory<K> extends AbstractMapProviderFactory<AuthenticationSessionProvider, K, MapRootAuthenticationSessionEntity<K>, RootAuthenticationSessionModel>
+public class MapRootAuthenticationSessionProviderFactory<K> extends AbstractMapProviderFactory<AuthenticationSessionProvider, K, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel>
         implements AuthenticationSessionProviderFactory {
 
     public MapRootAuthenticationSessionProviderFactory() {

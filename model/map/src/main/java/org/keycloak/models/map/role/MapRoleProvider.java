@@ -44,24 +44,19 @@ public class MapRoleProvider<K> implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapRoleEntity<K>, RoleModel> tx;
-    private final MapStorage<K, MapRoleEntity<K>, RoleModel> roleStore;
+    final MapKeycloakTransaction<K, MapRoleEntity, RoleModel> tx;
+    private final MapStorage<K, MapRoleEntity, RoleModel> roleStore;
 
-    public MapRoleProvider(KeycloakSession session, MapStorage<K, MapRoleEntity<K>, RoleModel> roleStore) {
+    public MapRoleProvider(KeycloakSession session, MapStorage<K, MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
         this.roleStore = roleStore;
         this.tx = roleStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private Function<MapRoleEntity<K>, RoleModel> entityToAdapterFunc(RealmModel realm) {
+    private Function<MapRoleEntity, RoleModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapRoleAdapter<K>(session, realm, origEntity) {
-            @Override
-            public String getId() {
-                return roleStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return origEntity -> new MapRoleAdapter(session, realm, origEntity);
     }
 
     @Override
@@ -70,11 +65,9 @@ public class MapRoleProvider<K> implements RoleProvider {
             throw new ModelDuplicateException("Role exists: " + id);
         }
 
-        final K entityId = id == null ? roleStore.getKeyConvertor().yieldNewUniqueKey() : roleStore.getKeyConvertor().fromString(id);
-
         LOG.tracef("addRealmRole(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapRoleEntity<K> entity = new MapRoleEntity<K>(entityId, realm.getId());
+        MapRoleEntity entity = new MapRoleEntity(id, realm.getId());
         entity.setName(name);
         entity.setRealmId(realm.getId());
         if (tx.read(entity.getId()) != null) {
@@ -110,11 +103,9 @@ public class MapRoleProvider<K> implements RoleProvider {
             throw new ModelDuplicateException("Role exists: " + id);
         }
 
-        final K entityId = id == null ? roleStore.getKeyConvertor().yieldNewUniqueKey() : roleStore.getKeyConvertor().fromString(id);
-
         LOG.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
 
-        MapRoleEntity<K> entity = new MapRoleEntity<K>(entityId, client.getRealm().getId());
+        MapRoleEntity entity = new MapRoleEntity(id, client.getRealm().getId());
         entity.setName(name);
         entity.setClientRole(true);
         entity.setClientId(client.getId());
@@ -166,7 +157,7 @@ public class MapRoleProvider<K> implements RoleProvider {
         });
         // TODO: ^^^^^^^ Up to here
 
-        tx.delete(roleStore.getKeyConvertor().fromString(role.getId()));
+        tx.delete(role.getId());
 
         return true;
     }
@@ -230,7 +221,7 @@ public class MapRoleProvider<K> implements RoleProvider {
 
         LOG.tracef("getRoleById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapRoleEntity<K> entity = tx.read(roleStore.getKeyConvertor().fromStringSafe(id));
+        MapRoleEntity entity = tx.read(id);
         String realmId = realm.getId();
         return (entity == null || ! Objects.equals(realmId, entity.getRealmId()))
           ? null

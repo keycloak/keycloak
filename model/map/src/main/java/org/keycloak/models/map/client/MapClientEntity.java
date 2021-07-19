@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public interface MapClientEntity<K> extends AbstractEntity<K>, UpdatableEntity {
+public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     void addClientScope(String id, Boolean defaultScope);
 

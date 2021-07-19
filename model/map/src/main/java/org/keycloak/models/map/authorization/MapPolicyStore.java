@@ -47,25 +47,20 @@ public class MapPolicyStore<K> implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapPolicyEntity<K>, Policy> tx;
-    private final MapStorage<K, MapPolicyEntity<K>, Policy> policyStore;
+    final MapKeycloakTransaction<K, MapPolicyEntity, Policy> tx;
+    private final MapStorage<K, MapPolicyEntity, Policy> policyStore;
 
-    public MapPolicyStore(KeycloakSession session, MapStorage<K, MapPolicyEntity<K>, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(KeycloakSession session, MapStorage<K, MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.policyStore = policyStore;
         this.tx = policyStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private Policy entityToAdapter(MapPolicyEntity<K> origEntity) {
+    private Policy entityToAdapter(MapPolicyEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPolicyAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return policyStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapPolicyAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
     private ModelCriteriaBuilder<Policy> forResourceServer(String resourceServerId) {
@@ -89,8 +84,8 @@ public class MapPolicyStore<K> implements PolicyStore {
             throw new ModelDuplicateException("Policy with name '" + representation.getName() + "' for " + resourceServer.getId() + " already exists");
         }
 
-        K uid = representation.getId() == null ? policyStore.getKeyConvertor().yieldNewUniqueKey() : policyStore.getKeyConvertor().fromString(representation.getId());
-        MapPolicyEntity<K> entity = new MapPolicyEntity<>(uid);
+        String uid = representation.getId();
+        MapPolicyEntity entity = new MapPolicyEntity(uid);
         entity.setType(representation.getType());
         entity.setName(representation.getName());
         entity.setResourceServerId(resourceServer.getId());
@@ -103,7 +98,7 @@ public class MapPolicyStore<K> implements PolicyStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(policyStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override
@@ -153,8 +148,7 @@ public class MapPolicyStore<K> implements PolicyStore {
         }
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
-            .map(MapPolicyEntity<K>::getId)
-            .map(policyStore.getKeyConvertor()::keyToString)
+            .map(MapPolicyEntity::getId)
             // We need to go through cache
             .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId))
             .collect(Collectors.toList());

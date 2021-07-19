@@ -29,21 +29,21 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public class MapClientEntityLazyDelegate<K> implements MapClientEntity<K> {
+public class MapClientEntityLazyDelegate<K> implements MapClientEntity {
 
-    private final Supplier<MapClientEntity<K>> delegateSupplier;
+    private final Supplier<MapClientEntity> delegateSupplier;
 
-    private final AtomicMarkableReference<MapClientEntity<K>> delegate = new AtomicMarkableReference<>(null, false);
+    private final AtomicMarkableReference<MapClientEntity> delegate = new AtomicMarkableReference<>(null, false);
 
-    public MapClientEntityLazyDelegate(Supplier<MapClientEntity<K>> delegateSupplier) {
+    public MapClientEntityLazyDelegate(Supplier<MapClientEntity> delegateSupplier) {
         this.delegateSupplier = delegateSupplier;
     }
 
-    protected MapClientEntity<K> getDelegate() {
+    protected MapClientEntity getDelegate() {
         if (! delegate.isMarked()) {
             delegate.compareAndSet(null, delegateSupplier == null ? null : delegateSupplier.get(), false, true);
         }
-        MapClientEntity<K> ref = delegate.getReference();
+        MapClientEntity ref = delegate.getReference();
         if (ref == null) {
             throw new IllegalStateException("Invalid delegate obtained");
         }
@@ -456,7 +456,7 @@ public class MapClientEntityLazyDelegate<K> implements MapClientEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return getDelegate().getId();
     }
 

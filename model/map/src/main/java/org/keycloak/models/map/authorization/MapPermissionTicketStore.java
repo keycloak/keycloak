@@ -52,25 +52,20 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
 
     private static final Logger LOG = Logger.getLogger(MapPermissionTicketStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapPermissionTicketEntity<K>, PermissionTicket> tx;
-    private final MapStorage<K, MapPermissionTicketEntity<K>, PermissionTicket> permissionTicketStore;
+    final MapKeycloakTransaction<K, MapPermissionTicketEntity, PermissionTicket> tx;
+    private final MapStorage<K, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore;
 
-    public MapPermissionTicketStore(KeycloakSession session, MapStorage<K, MapPermissionTicketEntity<K>, PermissionTicket> permissionTicketStore, AuthorizationProvider provider) {
+    public MapPermissionTicketStore(KeycloakSession session, MapStorage<K, MapPermissionTicketEntity, PermissionTicket> permissionTicketStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.permissionTicketStore = permissionTicketStore;
         this.tx = permissionTicketStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private PermissionTicket entityToAdapter(MapPermissionTicketEntity<K> origEntity) {
+    private PermissionTicket entityToAdapter(MapPermissionTicketEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPermissionTicketAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return permissionTicketStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapPermissionTicketAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
     private ModelCriteriaBuilder<PermissionTicket> forResourceServer(String resourceServerId) {
@@ -114,8 +109,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
                     + ", Resource: " + resourceId + ", owner: " + owner + ", scopeId: " + scopeId + " already exists.");
         }
 
-        final K newId = permissionTicketStore.getKeyConvertor().yieldNewUniqueKey();
-        MapPermissionTicketEntity<K> entity = new MapPermissionTicketEntity<>(newId);
+        MapPermissionTicketEntity entity = new MapPermissionTicketEntity(null);
         entity.setResourceId(resourceId);
         entity.setRequester(requester);
         entity.setCreatedTimestamp(System.currentTimeMillis());
@@ -135,7 +129,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(permissionTicketStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override
@@ -276,7 +270,7 @@ public class MapPermissionTicketStore<K extends Comparable<K>> implements Permis
                 .compare(SearchableFields.REQUESTER, Operator.EQ, requester)
                 .compare(SearchableFields.GRANTED_TIMESTAMP, Operator.EXISTS);
 
-        Function<MapPermissionTicketEntity<K>, Resource> ticketResourceMapper;
+        Function<MapPermissionTicketEntity, Resource> ticketResourceMapper;
 
         ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
         if (name != null) {

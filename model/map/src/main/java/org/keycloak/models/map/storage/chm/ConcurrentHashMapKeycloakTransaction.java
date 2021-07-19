@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -35,21 +36,23 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.utils.StreamsUtil;
 
-public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K> & UpdatableEntity, M> implements MapKeycloakTransaction<K, V, M> {
+public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<K, V, M> {
 
     private final static Logger log = Logger.getLogger(ConcurrentHashMapKeycloakTransaction.class);
 
     private boolean active;
     private boolean rollback;
-    private final Map<K, MapTaskWithValue> tasks = new LinkedHashMap<>();
+    private final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
     private final MapStorage<K, V, M> map;
+    private final StringKeyConvertor<K> keyConvertor;
 
     enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(MapStorage<K, V, M> map) {
+    public ConcurrentHashMapKeycloakTransaction(MapStorage<K, V, M> map, StringKeyConvertor<K> keyConvertor) {
         this.map = map;
+        this.keyConvertor = keyConvertor;
     }
 
     @Override
@@ -93,11 +96,10 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     /**
      * Adds a given task if not exists for the given key
      */
-    protected void addTask(K key, MapTaskWithValue task) {
+    protected void addTask(String key, MapTaskWithValue task) {
         log.tracef("Adding operation %s for %s @ %08x", task.getOperation(), key, System.identityHashCode(task.getValue()));
 
-        K taskKey = key;
-        tasks.merge(taskKey, task, MapTaskCompose::new);
+        tasks.merge(key, task, MapTaskCompose::new);
     }
 
     /**
@@ -109,7 +111,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
      * @return
      */
     public V registerEntityForChanges(V origEntity) {
-        final K key = origEntity.getId();
+        final String key = origEntity.getId();
         // If the entity is listed in the transaction already, return it directly
         if (tasks.containsKey(key)) {
             MapTaskWithValue current = tasks.get(key);
@@ -121,17 +123,17 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     @Override
-    public V read(K key) {
+    public V read(String sKey) {
         try { 
             // TODO: Consider using Optional rather than handling NPE
-            final V entity = read(key, map::read);
+            final V entity = read(sKey, map::read);
             return registerEntityForChanges(entity);
         } catch (NullPointerException ex) {
             return null;
         }
     }
 
-    public V read(K key, Function<K, V> defaultValueFunc) {
+    public V read(String key, Function<String, V> defaultValueFunc) {
         MapTaskWithValue current = tasks.get(key);
         // If the key exists, then it has entered the "tasks" after bulk delete that could have 
         // removed it, so looking through bulk deletes is irrelevant
@@ -207,16 +209,21 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
 
     @Override
     public V create(V value) {
-        K key = value.getId();
+        String key = value.getId();
+        if (key == null) {
+            K newKey = keyConvertor.yieldNewUniqueKey();
+            key = keyConvertor.keyToString(newKey);
+            value = Serialization.from(value, key);
+        }
         addTask(key, new CreateOperation(value));
         return value;
     }
 
     public V updateIfChanged(V value, Predicate<V> shouldPut) {
-        K key = value.getId();
+        String key = value.getId();
         log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
 
-        K taskKey = key;
+        String taskKey = key;
         MapTaskWithValue op = new MapTaskWithValue(value) {
             @Override
             public void execute() {
@@ -230,7 +237,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     @Override
-    public boolean delete(K key) {
+    public boolean delete(String key) {
         addTask(key, new DeleteOperation(key));
         return true;
     }
@@ -240,14 +247,14 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     public long delete(QueryParameters<M> queryParameters) {
         log.tracef("Adding operation DELETE_BULK");
 
-        K artificialKey = map.getKeyConvertor().yieldNewUniqueKey();
+        K artificialKey = keyConvertor.yieldNewUniqueKey();
 
         // Remove all tasks that create / update / delete objects deleted by the bulk removal.
         final BulkDeleteOperation bdo = new BulkDeleteOperation(queryParameters);
         Predicate<V> filterForNonDeletedObjects = bdo.getFilterForNonDeletedObjects();
         long res = 0;
-        for (Iterator<Entry<K, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
-            Entry<K, MapTaskWithValue> me = it.next();
+        for (Iterator<Entry<String, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
+            Entry<String, MapTaskWithValue> me = it.next();
             if (! filterForNonDeletedObjects.test(me.getValue().getValue())) {
                 log.tracef(" [DELETE_BULK] removing %s", me.getKey());
                 it.remove();
@@ -255,14 +262,14 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
             }
         }
 
-        tasks.put(artificialKey, bdo);
+        tasks.put(keyConvertor.keyToString(artificialKey), bdo);
 
         return res + bdo.getCount();
     }
 
     private Stream<V> createdValuesStream(Predicate<? super K> keyFilter, Predicate<? super V> entityFilter) {
         return this.tasks.entrySet().stream()
-          .filter(me -> keyFilter.test(me.getKey()))
+          .filter(me -> keyFilter.test(keyConvertor.fromStringSafe(me.getKey())))
           .map(Map.Entry::getValue)
           .filter(v -> v.containsCreate() && ! v.isReplace())
           .map(MapTaskWithValue::getValue)
@@ -362,9 +369,9 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     private class DeleteOperation extends MapTaskWithValue {
-        private final K key;
+        private final String key;
 
-        public DeleteOperation(K key) {
+        public DeleteOperation(String key) {
             super(null);
             this.key = key;
         }
@@ -398,7 +405,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
             Predicate<? super K> keyFilter = mmcb.getKeyFilter();
-            return v -> v == null || ! (keyFilter.test(v.getId()) && entityFilter.test(v));
+            return v -> v == null || ! (keyFilter.test(keyConvertor.fromStringSafe(v.getId())) && entityFilter.test(v));
         }
 
         @Override

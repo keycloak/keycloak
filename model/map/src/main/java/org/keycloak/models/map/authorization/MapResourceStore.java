@@ -46,25 +46,20 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
 
     private static final Logger LOG = Logger.getLogger(MapResourceStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapResourceEntity<K>, Resource> tx;
-    private final MapStorage<K, MapResourceEntity<K>, Resource> resourceStore;
+    final MapKeycloakTransaction<K, MapResourceEntity, Resource> tx;
+    private final MapStorage<K, MapResourceEntity, Resource> resourceStore;
 
-    public MapResourceStore(KeycloakSession session, MapStorage<K, MapResourceEntity<K>, Resource> resourceStore, AuthorizationProvider provider) {
+    public MapResourceStore(KeycloakSession session, MapStorage<K, MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
         this.resourceStore = resourceStore;
         this.tx = resourceStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
         authorizationProvider = provider;
     }
 
-    private Resource entityToAdapter(MapResourceEntity<K> origEntity) {
+    private Resource entityToAdapter(MapResourceEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return resourceStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapResourceAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
     
     private ModelCriteriaBuilder<Resource> forResourceServer(String resourceServerId) {
@@ -88,8 +83,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
             throw new ModelDuplicateException("Resource with name '" + name + "' for " + resourceServer.getId() + " already exists for request owner " + owner);
         }
 
-        K uid = id == null ? resourceStore.getKeyConvertor().yieldNewUniqueKey(): resourceStore.getKeyConvertor().fromString(id);
-        MapResourceEntity<K> entity = new MapResourceEntity<>(uid);
+        MapResourceEntity entity = new MapResourceEntity(id);
 
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
@@ -104,7 +98,7 @@ public class MapResourceStore<K extends Comparable<K>> implements ResourceStore 
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
 
-        tx.delete(resourceStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override

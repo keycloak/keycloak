@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
@@ -24,7 +25,6 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.StringKeyConvertor;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import java.util.Set;
@@ -38,31 +38,29 @@ import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
  *
  * @author hmlnarik
  */
-public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapStorage<K, MapUserSessionEntity<K>, UserSessionModel> {
+public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapStorage<K, MapUserSessionEntity, UserSessionModel> {
 
-    private final ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity<K>, AuthenticatedClientSessionModel> clientSessionStore;
+    private final ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore;
 
-    private class Transaction extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> {
+    private class Transaction extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> {
 
-        private final MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity<K>, AuthenticatedClientSessionModel> clientSessionTr;
+        private final MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr;
 
-        public Transaction(MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity<K>, AuthenticatedClientSessionModel> clientSessionTr) {
-            super(UserSessionConcurrentHashMapStorage.this);
+        public Transaction(MapKeycloakTransaction<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr, StringKeyConvertor<K> keyConvertor) {
+            super(UserSessionConcurrentHashMapStorage.this, keyConvertor);
             this.clientSessionTr = clientSessionTr;
         }
 
         @Override
         public long delete(QueryParameters<UserSessionModel> queryParameters) {
-            ModelCriteriaBuilder<UserSessionModel> mcb = queryParameters.getModelCriteriaBuilder();
-
-            Set<K> ids = read(queryParameters).map(AbstractEntity::getId).collect(Collectors.toSet());
+            Set<String> ids = read(queryParameters).map(AbstractEntity::getId).collect(Collectors.toSet());
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.IN, ids);
             clientSessionTr.delete(withCriteria(csMcb));
             return super.delete(queryParameters);
         }
 
         @Override
-        public boolean delete(K key) {
+        public boolean delete(String key) {
             ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = clientSessionStore.createCriteriaBuilder().compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, key);
             clientSessionTr.delete(withCriteria(csMcb));
             return super.delete(key);
@@ -71,7 +69,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
     }
 
     @SuppressWarnings("unchecked")
-    public UserSessionConcurrentHashMapStorage(ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity<K>, AuthenticatedClientSessionModel> clientSessionStore,
+    public UserSessionConcurrentHashMapStorage(ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore,
       StringKeyConvertor<K> keyConvertor) {
         super(UserSessionModel.class, keyConvertor);
         this.clientSessionStore = clientSessionStore;
@@ -79,8 +77,8 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
     @Override
     @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<K, MapUserSessionEntity<K>, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session)) : sessionTransaction;
+    public MapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> createTransaction(KeycloakSession session) {
+        MapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConvertor()) : sessionTransaction;
     }
 }

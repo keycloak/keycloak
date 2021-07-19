@@ -28,11 +28,11 @@ import java.util.stream.Collectors;
 
 public class AbstractUserEntityCredentialsOrderTest {
 
-    private MapUserEntity<Integer> user;
+    private MapUserEntity user;
     
     @Before
     public void init() {
-        user = new MapUserEntity<Integer>(1, "realmId") {};
+        user = new MapUserEntity("1", "realmId");
         
         for (int i = 1; i <= 5; i++) {
             UserCredentialEntity credentialModel = new UserCredentialEntity();
