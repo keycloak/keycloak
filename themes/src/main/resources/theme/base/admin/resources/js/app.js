@@ -3048,9 +3048,8 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     })
 });
 
-module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, ComponentUtils, Client, UserProfile, Current) {
+module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, ComponentUtils, Client) {
     clientSelectControl($scope, $route.current.params.realm, Client);
-    userProfileAttributeSelectControl($scope, $route.current.params.realm, UserProfile);
     $scope.fileNames = {};
     $scope.newMapEntries = {};
     var cachedMaps = {};
@@ -3072,38 +3071,6 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, Compon
                 }
             });
         }   
-    }
-
-    $scope.initSelectedUserProfileAttributes = function(configName, config) {
-        $scope.selectedUserAttribute = {};
-        if(config[configName]) {
-            UserProfile.get({realm: $route.current.params.realm}, function(data) {
-                if (!data.attributes) {
-                    $scope.userProfileDisabled = true;
-                    return;
-                }
-                for (var i = 0; i < data.attributes.length; i++) {
-                    if (data.attributes[i].name == config[configName]) {
-                        $scope.selectedUserAttribute = data.attributes[i];
-                        $scope.selectedUserAttribute.text = data.attributes[i].name;
-                    }
-                }
-            });
-        }
-    }
-
-    $scope.isPropertyDisabled = function(configName) {
-        var userProfileEnabled = Current.realm.attributes['userProfileEnabled'] == 'true';
-
-        if (configName == 'user.profile.attribute' && !userProfileEnabled) {
-            return true;
-        }
-
-        if (configName == 'user.attribute' && userProfileEnabled) {
-            return true;
-        }
-
-        return false;
     }
 
     $scope.openRoleSelector = function (configName, config) {
@@ -3135,18 +3102,6 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, Compon
             config[configName][0] = client.clientId;
         } else {
             config[configName] = client.clientId;
-        }
-    };
-
-    $scope.changeUserAttribute = function(configName, config, userAttribute, multivalued) {
-        if (!$scope.selectedUserAttribute) {
-            return;
-        }
-        $scope.selectedUserAttribute = userAttribute;
-        if (multivalued) {
-            config[configName][0] = userAttribute.name;
-        } else {
-            config[configName] = userAttribute.name;
         }
     };
 
