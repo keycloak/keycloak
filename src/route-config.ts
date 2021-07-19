@@ -40,6 +40,7 @@ import { AESGeneratedSettings } from "./realm-settings/key-providers/aes-generat
 import { HMACGeneratedSettings } from "./realm-settings/key-providers/hmac-generated/HMACGeneratedForm";
 import { RSAGeneratedSettings } from "./realm-settings/key-providers/rsa-generated/RSAGeneratedForm";
 import { ECDSAGeneratedSettings } from "./realm-settings/key-providers/ecdsa-generated/ECDSAGeneratedForm";
+import { RSASettings } from "./realm-settings/key-providers/rsa/RSAForm";
 
 export type RouteDef = BreadcrumbsRoute & {
   access: AccessType;
@@ -208,6 +209,12 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/realm-settings/keys/:id?/rsa-generated/settings",
     component: RSAGeneratedSettings,
+    breadcrumb: t("realm-settings:editProvider"),
+    access: "view-realm",
+  },
+  {
+    path: "/:realm/realm-settings/keys/:id?/rsa/settings",
+    component: RSASettings,
     breadcrumb: t("realm-settings:editProvider"),
     access: "view-realm",
   },
