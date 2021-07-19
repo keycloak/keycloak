@@ -62,7 +62,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.utils.ComponentUtil;
 
-public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEntity<K>> implements RealmModel {
+public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implements RealmModel {
 
     private static final String ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN = "actionTokenGeneratedByUserLifespan";
     private static final String DEFAULT_SIGNATURE_ALGORITHM = "defaultSignatureAlgorithm";
@@ -77,8 +77,13 @@ public abstract class MapRealmAdapter<K> extends AbstractRealmModel<MapRealmEnti
 
     private PasswordPolicy passwordPolicy;
 
-    public MapRealmAdapter(KeycloakSession session, MapRealmEntity<K> entity) {
+    public MapRealmAdapter(KeycloakSession session, MapRealmEntity entity) {
         super(session, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

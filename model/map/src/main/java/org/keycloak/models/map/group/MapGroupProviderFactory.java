@@ -35,7 +35,7 @@ import org.keycloak.models.map.common.AbstractMapProviderFactory;
  *
  * @author mhajas
  */
-public class MapGroupProviderFactory<K> extends AbstractMapProviderFactory<GroupProvider, K, MapGroupEntity<K>, GroupModel> implements GroupProviderFactory, ProviderEventListener {
+public class MapGroupProviderFactory<K> extends AbstractMapProviderFactory<GroupProvider, K, MapGroupEntity, GroupModel> implements GroupProviderFactory, ProviderEventListener {
 
     private Runnable onClose;
 

@@ -54,11 +54,11 @@ public class MapClientProvider<K> implements ClientProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<K, MapClientEntity<K>, ClientModel> tx;
-    private final MapStorage<K, MapClientEntity<K>, ClientModel> clientStore;
-    private final ConcurrentMap<K, ConcurrentMap<String, Integer>> clientRegisteredNodesStore;
+    final MapKeycloakTransaction<K, MapClientEntity, ClientModel> tx;
+    private final MapStorage<K, MapClientEntity, ClientModel> clientStore;
+    private final ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore;
 
-    public MapClientProvider(KeycloakSession session, MapStorage<K, MapClientEntity<K>, ClientModel> clientStore, ConcurrentMap<K, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
+    public MapClientProvider(KeycloakSession session, MapStorage<K, MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
@@ -80,15 +80,10 @@ public class MapClientProvider<K> implements ClientProvider {
         };
     }
 
-    private <T extends MapClientEntity<K>> Function<T, ClientModel> entityToAdapterFunc(RealmModel realm) {
+    private <T extends MapClientEntity> Function<T, ClientModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
 
-        return origEntity -> new MapClientAdapter<K>(session, realm, origEntity) {
-            @Override
-            public String getId() {
-                return clientStore.getKeyConvertor().keyToString(entity.getId());
-            }
-
+        return origEntity -> new MapClientAdapter(session, realm, origEntity) {
             @Override
             public void updateClient() {
                 LOG.tracef("updateClient(%s)%s", realm, origEntity.getId(), getShortStackTrace());
@@ -115,7 +110,7 @@ public class MapClientProvider<K> implements ClientProvider {
         };
     }
 
-    private Predicate<MapClientEntity<K>> entityRealmFilter(RealmModel realm) {
+    private Predicate<MapClientEntity> entityRealmFilter(RealmModel realm) {
         if (realm == null || realm.getId() == null) {
             return c -> false;
         }
@@ -143,22 +138,22 @@ public class MapClientProvider<K> implements ClientProvider {
 
     @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
-        final K entityId = id == null ? clientStore.getKeyConvertor().yieldNewUniqueKey() : clientStore.getKeyConvertor().fromString(id);
-
-        if (clientId == null) {
-            clientId = entityId.toString();
-        }
-
         LOG.tracef("addClient(%s, %s, %s)%s", realm, id, clientId, getShortStackTrace());
 
-        MapClientEntity<K> entity = new MapClientEntityImpl<>(entityId, realm.getId());
-        entity.setClientId(clientId);
+        MapClientEntity entity = new MapClientEntityImpl<>(null, realm.getId());
+        if (clientId != null) {
+            entity.setClientId(clientId);
+        }
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
-        if (tx.read(entity.getId()) != null) {
+        if (id != null && tx.read(id) != null) {
             throw new ModelDuplicateException("Client exists: " + id);
         }
         entity = tx.create(entity);
+        if (clientId == null) {
+            clientId = entity.getId();
+            entity.setClientId(clientId);
+        }
         final ClientModel resource = entityToAdapterFunc(realm).apply(entity);
 
         // TODO: Sending an event should be extracted to store layer
@@ -211,7 +206,7 @@ public class MapClientProvider<K> implements ClientProvider {
         });
         // TODO: ^^^^^^^ Up to here
 
-        tx.delete(clientStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
 
         return true;
     }
@@ -232,7 +227,7 @@ public class MapClientProvider<K> implements ClientProvider {
 
         LOG.tracef("getClientById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapClientEntity<K> entity = tx.read(clientStore.getKeyConvertor().fromStringSafe(id));
+        MapClientEntity entity = tx.read(id);
         return (entity == null || ! entityRealmFilter(realm).test(entity))
           ? null
           : entityToAdapterFunc(realm).apply(entity);
@@ -286,7 +281,7 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         final String id = client.getId();
-        MapClientEntity<K> entity = tx.read(clientStore.getKeyConvertor().fromString(id));
+        MapClientEntity entity = tx.read(id);
 
         if (entity == null) return;
 
@@ -307,7 +302,7 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope) {
         final String id = client.getId();
-        MapClientEntity<K> entity = tx.read(clientStore.getKeyConvertor().fromString(id));
+        MapClientEntity entity = tx.read(id);
 
         if (entity == null) return;
 
@@ -319,7 +314,7 @@ public class MapClientProvider<K> implements ClientProvider {
     @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
         final String id = client.getId();
-        MapClientEntity<K> entity = tx.read(clientStore.getKeyConvertor().fromString(id));
+        MapClientEntity entity = tx.read(id);
 
         if (entity == null) return null;
 
@@ -341,7 +336,7 @@ public class MapClientProvider<K> implements ClientProvider {
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
 
-        try (Stream<MapClientEntity<K>> st = tx.read(withCriteria(mcb))) {
+        try (Stream<MapClientEntity> st = tx.read(withCriteria(mcb))) {
             return st
               .filter(mce -> mce.getRedirectUris() != null && ! mce.getRedirectUris().isEmpty())
               .collect(Collectors.toMap(
@@ -355,7 +350,7 @@ public class MapClientProvider<K> implements ClientProvider {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
-        try (Stream<MapClientEntity<K>> toRemove = tx.read(withCriteria(mcb))) {
+        try (Stream<MapClientEntity> toRemove = tx.read(withCriteria(mcb))) {
             toRemove
                 .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId().toString()))
                 .filter(Objects::nonNull)

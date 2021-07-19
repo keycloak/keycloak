@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity<K> implements AbstractEntity<K>, UpdatableEntity {
+public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
     
-    private final K id;
+    private final String id;
     private String name;
     private String displayName;
     private final Set<String> uris = new HashSet<>();
@@ -43,7 +43,7 @@ public class MapResourceEntity<K> implements AbstractEntity<K>, UpdatableEntity 
     private final Map<String, List<String>> attributes = new HashMap<>();
     private boolean updated = false;
 
-    public MapResourceEntity(K id) {
+    public MapResourceEntity(String id) {
         this.id = id;
     }
 
@@ -52,7 +52,7 @@ public class MapResourceEntity<K> implements AbstractEntity<K>, UpdatableEntity 
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return id;
     }
 

@@ -31,9 +31,9 @@ import java.util.Set;
  *
  * @author mhajas
  */
-public class MapGroupEntity<K> implements AbstractEntity<K>, UpdatableEntity {
+public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
 
-    private final K id;
+    private final String id;
     private final String realmId;
 
     private String name;
@@ -51,8 +51,7 @@ public class MapGroupEntity<K> implements AbstractEntity<K>, UpdatableEntity {
         this.realmId = null;
     }
 
-    public MapGroupEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
+    public MapGroupEntity(String id, String realmId) {
         Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
@@ -60,7 +59,7 @@ public class MapGroupEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

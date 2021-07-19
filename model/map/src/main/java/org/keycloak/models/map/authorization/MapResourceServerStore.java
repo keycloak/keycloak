@@ -44,25 +44,20 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapResourceServerEntity<K>, ResourceServer> tx;
-    private final MapStorage<K, MapResourceServerEntity<K>, ResourceServer> resourceServerStore;
+    final MapKeycloakTransaction<K, MapResourceServerEntity, ResourceServer> tx;
+    private final MapStorage<K, MapResourceServerEntity, ResourceServer> resourceServerStore;
 
-    public MapResourceServerStore(KeycloakSession session, MapStorage<K, MapResourceServerEntity<K>, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
+    public MapResourceServerStore(KeycloakSession session, MapStorage<K, MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.resourceServerStore = resourceServerStore;
         this.tx = resourceServerStore.createTransaction(session);
         this.authorizationProvider = provider;
         session.getTransactionManager().enlist(tx);
     }
 
-    private ResourceServer entityToAdapter(MapResourceServerEntity<K> origEntity) {
+    private ResourceServer entityToAdapter(MapResourceServerEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceServerAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return resourceServerStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapResourceServerAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
     @Override
@@ -75,15 +70,13 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
             throw new ModelException("Creating resource server from federated ClientModel not supported");
         }
 
-        if (tx.read(resourceServerStore.getKeyConvertor().fromString(clientId)) != null) {
+        if (tx.read(clientId) != null) {
             throw new ModelDuplicateException("Resource server already exists: " + clientId);
         }
 
-        MapResourceServerEntity<K> entity = new MapResourceServerEntity<>(resourceServerStore.getKeyConvertor().fromString(clientId));
+        MapResourceServerEntity entity = new MapResourceServerEntity(clientId);
 
-        entity = tx.create(entity);
-
-        return entityToAdapter(entity);
+        return entityToAdapter(tx.create(entity));
     }
 
     @Override
@@ -91,6 +84,7 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
         LOG.tracef("delete(%s, %s)%s", id, getShortStackTrace());
         if (id == null) return;
 
+        // TODO: Simplify the following, ideally by leveraging triggers, stored procedures or ref integrity
         PolicyStore policyStore = authorizationProvider.getStoreFactory().getPolicyStore();
         policyStore.findByResourceServer(id).stream()
             .map(Policy::getId)
@@ -111,7 +105,7 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
                 .map(Scope::getId)
                 .forEach(scopeStore::delete);
 
-        tx.delete(resourceServerStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override
@@ -122,8 +116,7 @@ public class MapResourceServerStore<K> implements ResourceServerStore {
             return null;
         }
 
-
-        MapResourceServerEntity<K> entity = tx.read(resourceServerStore.getKeyConvertor().fromStringSafe(id));
+        MapResourceServerEntity entity = tx.read(id);
         return entityToAdapter(entity);
     }
 }
