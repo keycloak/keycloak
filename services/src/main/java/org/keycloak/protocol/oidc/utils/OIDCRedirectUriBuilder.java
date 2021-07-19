@@ -17,14 +17,19 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -183,10 +188,10 @@ public abstract class OIDCRedirectUriBuilder {
     // https://openid.net/specs/openid-financial-api-jarm-ID1.html
     private static class JWTRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
-        private OIDCResponseMode responseMode;
-        private AuthorizationResponseToken responseJWT;
-        private KeycloakSession session;
-        private AuthenticatedClientSessionModel clientSession;
+        private final OIDCResponseMode responseMode;
+        private final AuthorizationResponseToken responseJWT;
+        private final KeycloakSession session;
+        private final AuthenticatedClientSessionModel clientSession;
 
         public JWTRedirectUriBuilder(KeycloakUriBuilder uriBuilder, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
             super(uriBuilder);
@@ -204,12 +209,23 @@ public abstract class OIDCRedirectUriBuilder {
 
         @Override
         public Response build() {
+            KeycloakContext context = session.getContext();
+            ClientModel client = context.getClient();
+            RealmModel realm = client.getRealm();
+
+            responseJWT.issuer(Urls.realmIssuer(context.getUri().getBaseUri(), realm.getName()));
+            responseJWT.audience(client.getClientId());
+            responseJWT.exp((long) (Time.currentTime() + realm.getAccessCodeLifespan()));
+
             if(clientSession != null) {
                 responseJWT.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
-                responseJWT.audience(clientSession.getClient().getClientId());
-                responseJWT.setOtherClaims("scope", clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM));
-                responseJWT.exp((long) (Time.currentTime() + clientSession.getRealm().getAccessCodeLifespan()));
+                String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+
+                if (OAuth2Constants.TOKEN.equals(responseType)) {
+                    responseJWT.setOtherClaims(OAuth2Constants.SCOPE, clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM));
+                }
             }
+
             switch (responseMode) {
                 case QUERY_JWT:
                     return buildQueryResponse();

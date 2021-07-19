@@ -24,6 +24,8 @@ public interface OAuth2Constants {
 
     String CODE = "code";
 
+    String TOKEN = "token";
+
     String CLIENT_ID = "client_id";
 
     String CLIENT_SECRET = "client_secret";
