@@ -31,7 +31,7 @@ import org.keycloak.provider.ProviderEventListener;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureProviderFactory<K> extends AbstractMapProviderFactory<UserLoginFailureProvider, K, MapUserLoginFailureEntity<K>, UserLoginFailureModel>
+public class MapUserLoginFailureProviderFactory<K> extends AbstractMapProviderFactory<UserLoginFailureProvider, K, MapUserLoginFailureEntity, UserLoginFailureModel>
         implements UserLoginFailureProviderFactory, ProviderEventListener {
 
     private Runnable onClose;

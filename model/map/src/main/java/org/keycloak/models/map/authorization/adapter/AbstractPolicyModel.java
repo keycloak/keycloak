@@ -24,7 +24,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 
 import java.util.Objects;
 
-public abstract class AbstractPolicyModel<E extends AbstractEntity<?>> extends AbstractAuthorizationModel implements Policy {
+public abstract class AbstractPolicyModel<E extends AbstractEntity> extends AbstractAuthorizationModel implements Policy {
 
     protected final E entity;
 

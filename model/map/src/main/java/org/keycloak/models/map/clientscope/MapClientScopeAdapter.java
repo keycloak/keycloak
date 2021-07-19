@@ -31,10 +31,15 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
-public abstract class MapClientScopeAdapter<K> extends AbstractClientScopeModel<MapClientScopeEntity<K>> implements ClientScopeModel {
+public class MapClientScopeAdapter extends AbstractClientScopeModel<MapClientScopeEntity> implements ClientScopeModel {
 
-    public MapClientScopeAdapter(KeycloakSession session, RealmModel realm, MapClientScopeEntity<K> entity) {
+    public MapClientScopeAdapter(KeycloakSession session, RealmModel realm, MapClientScopeEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

@@ -26,11 +26,16 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapAuthenticatedClientSessionAdapter<K> extends AbstractAuthenticatedClientSessionModel<K> {
+public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthenticatedClientSessionModel {
 
     public MapAuthenticatedClientSessionAdapter(KeycloakSession session, RealmModel realm, ClientModel client,
-                                                UserSessionModel userSession, MapAuthenticatedClientSessionEntity<K> entity) {
+                                                UserSessionModel userSession, MapAuthenticatedClientSessionEntity entity) {
         super(session, realm, client, userSession, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

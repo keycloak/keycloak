@@ -28,10 +28,15 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
 
-public abstract class MapPermissionTicketAdapter<K extends Comparable<K>> extends AbstractPermissionTicketModel<MapPermissionTicketEntity<K>> {
+public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<MapPermissionTicketEntity> {
     
-    public MapPermissionTicketAdapter(MapPermissionTicketEntity<K> entity, StoreFactory storeFactory) {
+    public MapPermissionTicketAdapter(MapPermissionTicketEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

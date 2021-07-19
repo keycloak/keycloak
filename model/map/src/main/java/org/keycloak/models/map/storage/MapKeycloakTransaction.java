@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> extends KeycloakTransaction {
+public interface MapKeycloakTransaction<K, V extends AbstractEntity, M> extends KeycloakTransaction {
 
     /**
      * Instructs this transaction to add a new value into the underlying store on commit.
@@ -44,7 +44,7 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * @param key identifier of a value
      * @return a value associated with the given {@code key}
      */
-    V read(K key);
+    V read(String key);
 
     /**
      * Returns a stream of values from underlying storage that are updated based on the current transaction changes;
@@ -76,7 +76,7 @@ public interface MapKeycloakTransaction<K, V extends AbstractEntity<K>, M> exten
      * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
      * @param key identifier of a value
      */
-    boolean delete(K key);
+    boolean delete(String key);
 
     /**
      * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store on commit.

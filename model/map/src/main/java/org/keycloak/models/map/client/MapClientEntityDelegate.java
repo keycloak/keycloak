@@ -22,15 +22,15 @@ package org.keycloak.models.map.client;
  */
 public class MapClientEntityDelegate<K> extends MapClientEntityLazyDelegate<K> {
 
-    private final MapClientEntity<K> delegate;
+    private final MapClientEntity delegate;
 
-    public MapClientEntityDelegate(MapClientEntity<K> delegate) {
+    public MapClientEntityDelegate(MapClientEntity delegate) {
         super(null);
         this.delegate = delegate;
     }
 
     @Override
-    protected MapClientEntity<K> getDelegate() {
+    protected MapClientEntity getDelegate() {
         return delegate;
     }
 }

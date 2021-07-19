@@ -40,9 +40,9 @@ import java.util.stream.Stream;
  *
  * @author mhajas
  */
-public class MapUserEntity<K> implements AbstractEntity<K>, UpdatableEntity {
+public class MapUserEntity implements AbstractEntity, UpdatableEntity {
 
-    private final K id;
+    private final String id;
     private final String realmId;
 
     private String username;
@@ -76,8 +76,7 @@ public class MapUserEntity<K> implements AbstractEntity<K>, UpdatableEntity {
         this.realmId = null;
     }
 
-    public MapUserEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
+    public MapUserEntity(String id, String realmId) {
         Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
@@ -85,7 +84,7 @@ public class MapUserEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

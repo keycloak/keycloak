@@ -44,25 +44,20 @@ public class MapScopeStore<K> implements ScopeStore {
 
     private static final Logger LOG = Logger.getLogger(MapScopeStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapScopeEntity<K>, Scope> tx;
-    private final MapStorage<K, MapScopeEntity<K>, Scope> scopeStore;
+    final MapKeycloakTransaction<K, MapScopeEntity, Scope> tx;
+    private final MapStorage<K, MapScopeEntity, Scope> scopeStore;
 
-    public MapScopeStore(KeycloakSession session, MapStorage<K, MapScopeEntity<K>, Scope> scopeStore, AuthorizationProvider provider) {
+    public MapScopeStore(KeycloakSession session, MapStorage<K, MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.scopeStore = scopeStore;
         this.tx = scopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private Scope entityToAdapter(MapScopeEntity<K> origEntity) {
+    private Scope entityToAdapter(MapScopeEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapScopeAdapter<K>(origEntity, authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return scopeStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapScopeAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
     private ModelCriteriaBuilder<Scope> forResourceServer(String resourceServerId) {
@@ -87,8 +82,7 @@ public class MapScopeStore<K> implements ScopeStore {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
         }
 
-        K uid = id == null ? scopeStore.getKeyConvertor().yieldNewUniqueKey(): scopeStore.getKeyConvertor().fromString(id);
-        MapScopeEntity<K> entity = new MapScopeEntity<>(uid);
+        MapScopeEntity entity = new MapScopeEntity(id);
 
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
@@ -101,7 +95,7 @@ public class MapScopeStore<K> implements ScopeStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(scopeStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override
