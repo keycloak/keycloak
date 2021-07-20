@@ -42,7 +42,6 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AdminRoles;
@@ -63,8 +62,6 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -80,12 +77,8 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 
-@EnableFeature(value = Profile.Feature.PAR, skipRestart = true)
-@AuthServerContainerExclude({REMOTE, QUARKUS})
 public class ParTest extends AbstractClientPoliciesTest {
 
     // defined in testrealm.json

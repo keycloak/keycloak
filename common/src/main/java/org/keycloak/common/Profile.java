@@ -60,9 +60,9 @@ public class Profile {
         UPLOAD_SCRIPTS(DEPRECATED),
         WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
         CLIENT_POLICIES(Type.DEFAULT),
-        CIBA(Type.PREVIEW),
+        CIBA(Type.DEFAULT),
         MAP_STORAGE(Type.EXPERIMENTAL),
-        PAR(Type.PREVIEW);
+        PAR(Type.DEFAULT);
 
         private final Type typeProject;
         private final Type typeProduct;
