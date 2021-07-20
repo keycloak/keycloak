@@ -213,6 +213,10 @@ public class Profile {
         return !getInstance().disabledFeatures.contains(feature);
     }
 
+    public static boolean isProduct() {
+        return getInstance().profile.equals(ProfileValue.PRODUCT);
+    }
+
     private class Config {
 
         private Properties properties;
