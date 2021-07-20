@@ -89,9 +89,6 @@ lib/
 # https://create-react-app.dev/docs/using-the-public-folder/#docsNav
 # public
 
-# Storybook build outputs
-storybook-static/
-
 # vuepress build output
 .vuepress/dist
 

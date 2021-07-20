@@ -21,8 +21,6 @@
     "test": "jest",
     "start:cypress": "cypress open",
     "start:cypress-tests": "cypress run",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -49,13 +47,6 @@
     "@snowpack/plugin-postcss": "^1.4.3",
     "@snowpack/plugin-react-refresh": "^2.5.0",
     "@snowpack/plugin-typescript": "^1.2.1",
-    "@storybook/addon-actions": "^6.3.4",
-    "@storybook/addon-essentials": "^6.3.4",
-    "@storybook/addon-links": "^6.3.4",
-    "@storybook/addon-postcss": "^2.0.0",
-    "@storybook/builder-webpack5": "^6.3.2",
-    "@storybook/manager-webpack5": "^6.3.2",
-    "@storybook/react": "^6.3.4",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",
     "@types/file-saver": "^2.0.3",
