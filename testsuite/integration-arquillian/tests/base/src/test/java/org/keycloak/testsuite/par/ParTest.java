@@ -61,7 +61,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
-import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -72,6 +72,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
@@ -81,7 +82,7 @@ import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 
 @EnableFeature(value = Profile.Feature.PAR, skipRestart = true)
 @AuthServerContainerExclude({REMOTE, QUARKUS})
@@ -1095,14 +1096,20 @@ public class ParTest extends AbstractClientPoliciesTest {
                 ).toString();
         updateProfiles(json);
 
-        // register policies
+        // register role policy
+        String roleName = "sample-client-role-alpha";
         json = (new ClientPoliciesBuilder()).addPolicy(
-                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
-                    .addProfile(PROFILE_NAME)
-                    .toRepresentation()
-                ).toString();
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(roleName)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
         updatePolicies(json);
+
+        // Add role to the client
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
         // Pushed Authorization Request
         oauth.clientId(clientId);
