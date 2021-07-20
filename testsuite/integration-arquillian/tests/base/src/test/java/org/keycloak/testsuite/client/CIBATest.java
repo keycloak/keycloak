@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.containsString;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -52,6 +53,7 @@ import java.util.Optional;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -91,6 +93,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
@@ -101,9 +105,12 @@ import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionEx
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
@@ -1663,6 +1670,94 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertEquals(org.keycloak.crypto.Algorithm.ES256, cAppDynamicClient2Rep.getBackchannelAuthenticationRequestSigningAlg());
     }
 
+    @Test
+    public void testHolderOfKeyEnforceExecutor() throws Exception {
+        Assume.assumeTrue("This test must be executed with enabled TLS.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Az Elso Profil")
+                    .addExecutor(HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID,
+                        ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig(Boolean.FALSE))
+                    .addExecutor(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID,
+                        ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.FALSE))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Az Elso Politika", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+
+        try {
+            String username = "nutzername-rot";
+            String bindingMessage = "ThisIsBindingMessage";
+            Map<String, String> additionalParameters = new HashMap<>();
+            additionalParameters.put("user_device", "mobile");
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
+            clientResource.update(clientRep);
+            prepareCIBASettings(clientResource, clientRep);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, additionalParameters);
+
+            // user Authentication Channel Request
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
+            AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
+            assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
+            assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+            assertThat(authenticationChannelReq.getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
+
+            // user Authentication Channel completed
+            doAuthenticationChannelCallback(testRequest);
+
+            // Token Request without MTLS
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
+            assertThat(tokenRes.getErrorDescription(), is(equalTo("Client Certification missing for MTLS HoK Token Binding")));
+            events.expect(EventType.AUTHREQID_TO_TOKEN_ERROR).clearDetails().user((String)null).client(TEST_CLIENT_NAME).error(OAuthErrorException.INVALID_REQUEST).assertEvent();
+
+            // Check token obtaining.
+            OAuthClient.AccessTokenResponse accessTokenResponse;
+            try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+                accessTokenResponse = doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, response.getAuthReqId(), client);
+                AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
+                assertThat(accessTokenResponse.getStatusCode(), is(equalTo(200)));
+                assertThat(accessToken.getCertConf().getCertThumbprint(), notNullValue());
+            }
+
+            // Check logout.
+            CloseableHttpResponse logoutResponse;
+            try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+                logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET, client);
+            }  catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+            assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+        } finally {
+            updatePolicies("{}");
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(false);
+            clientResource.update(clientRep);
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
         String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
             List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
@@ -1971,6 +2066,17 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
     private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String username, String authReqId) throws Exception {
         OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, authReqId);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+        return tokenRes;
+    }
+
+    private OAuthClient.AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String username, String authReqId, CloseableHttpClient httpClient) throws Exception {
+        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientId, clientSecret, authReqId, httpClient);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+        return tokenRes;
+    }
+
+    private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
         EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
 
@@ -1985,8 +2091,6 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getPreferredUsername(), is(equalTo(username)));
         assertThat(idToken.getIssuedFor(), is(equalTo(clientId)));
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
-
-        return tokenRes;
     }
 
     private String doIntrospectAccessTokenWithClientCredential(OAuthClient.AccessTokenResponse tokenRes, String username) throws IOException {
