@@ -1046,12 +1046,12 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
     @Test
     public void testAuthenticationChannelUnauthorized() throws Exception {
-        testAuthenticationChannelErrorCase(Status.OK, Status.FORBIDDEN, UNAUTHORIZED, OAuthErrorException.ACCESS_DENIED, Errors.CONSENT_DENIED);
+        testAuthenticationChannelErrorCase(Status.OK, Status.BAD_REQUEST, UNAUTHORIZED, OAuthErrorException.ACCESS_DENIED, Errors.CONSENT_DENIED);
     }
 
     @Test
     public void testAuthenticationChannelCancelled() throws Exception {
-        testAuthenticationChannelErrorCase(Status.OK, Status.FORBIDDEN, CANCELLED, OAuthErrorException.ACCESS_DENIED, Errors.NOT_ALLOWED);
+        testAuthenticationChannelErrorCase(Status.OK, Status.BAD_REQUEST, CANCELLED, OAuthErrorException.ACCESS_DENIED, Errors.NOT_ALLOWED);
     }
 
     @Test
