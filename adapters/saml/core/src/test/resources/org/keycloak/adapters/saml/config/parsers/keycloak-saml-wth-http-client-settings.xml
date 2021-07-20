@@ -79,7 +79,7 @@
                         truststore="ts" truststorePassword="tsp"
                         socketTimeout="6000"
                         connectionTimeout="7000"
-                        connectionTTL="200"
+                        connectionTtl="200"
                         />
         </IDP>
     </SP>

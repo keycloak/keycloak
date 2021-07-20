@@ -6,7 +6,7 @@
   "allow-any-hostname": "${allow.any.hostname}",
   "cors-max-age": 100,
   "connection-pool-size": "${con.pool.size}",
-  "socket-timeout": "${socket.timeout.millis}",
-  "connection-timeout": "${connection.timeout.millis}",
-  "connection-ttl": "${connection.ttl.millis}"
+  "socket-timeout-millis": "${socket.timeout.millis}",
+  "connection-timeout-millis": "${connection.timeout.millis}",
+  "connection-ttl-millis": "${connection.ttl.millis}"
 }

@@ -26,9 +26,9 @@
         <allow-any-hostname>false</allow-any-hostname>
         <disable-trust-manager>true</disable-trust-manager>
         <connection-pool-size>20</connection-pool-size>
-        <socket-timeout>2000</socket-timeout>
-        <connection-ttl>5000</connection-ttl>
-        <connection-timeout>3000</connection-timeout>
+        <socket-timeout-millis>2000</socket-timeout-millis>
+        <connection-ttl-millis>5000</connection-ttl-millis>
+        <connection-timeout-millis>3000</connection-timeout-millis>
         <enable-cors>true</enable-cors>
         <client-keystore>keys.jks</client-keystore>
         <client-keystore-password>secret</client-keystore-password>
@@ -88,9 +88,9 @@
         <resource>wildfly-management</resource>
         <bearer-only>true</bearer-only>
         <ssl-required>EXTERNAL</ssl-required>
-        <socket-timeout>10000</socket-timeout>
-        <connection-ttl>40000</connection-ttl>
-        <connection-timeout>50000</connection-timeout>
+        <socket-timeout-millis>10000</socket-timeout-millis>
+        <connection-ttl-millis>40000</connection-ttl-millis>
+        <connection-timeout-millis>50000</connection-timeout-millis>
         <principal-attribute>preferred_username</principal-attribute>
     </secure-deployment>
     <secure-server name="wildfly-console">

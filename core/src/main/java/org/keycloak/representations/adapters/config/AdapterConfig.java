@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
         "expose-token", "bearer-only", "autodetect-bearer-only",
-        "connection-pool-size", "socket-timeout", "connection-ttl", "connection-timeout",
+        "connection-pool-size", "socket-timeout-millis", "connection-ttl-millis", "connection-timeout-millis",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
@@ -90,11 +90,11 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     @JsonProperty("verify-token-audience")
     protected boolean verifyTokenAudience = false;
 
-    @JsonProperty("socket-timeout")
+    @JsonProperty("socket-timeout-millis")
     protected long socketTimeout = -1L;
-    @JsonProperty("connection-timeout")
+    @JsonProperty("connection-timeout-millis")
     protected long connectionTimeout = -1L;
-    @JsonProperty("connection-ttl")
+    @JsonProperty("connection-ttl-millis")
     protected long connectionTTL = -1L;
 
     /**
