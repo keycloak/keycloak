@@ -19,6 +19,7 @@ package org.keycloak.authentication.authenticators.client;
 
 
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
@@ -46,6 +48,7 @@ import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
@@ -274,6 +277,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
         String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        return Arrays.asList(issuerUrl, tokenUrl, parEndpointUrl);
+        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, parEndpointUrl));
+        if (Profile.isFeatureEnabled(Profile.Feature.CIBA)) {
+            String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+            expectedAudiences.add(backchannelAuthenticationUrl);
+        }
+        return expectedAudiences;
     }
 }

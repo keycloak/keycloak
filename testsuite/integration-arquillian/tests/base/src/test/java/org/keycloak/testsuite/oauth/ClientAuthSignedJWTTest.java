@@ -43,6 +43,7 @@ import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.*;
 import org.keycloak.constants.ServiceUrlConstants;
@@ -53,7 +54,6 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -72,6 +72,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -87,7 +88,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.security.KeyFactory;
@@ -113,6 +113,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -793,6 +795,17 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testParEndpointAsAudience() throws Exception {
+        testEndpointAsAudience(oauth.getParEndpointUrl());
+    }
+
+    @EnableFeature(value = Profile.Feature.CIBA, skipRestart = true)
+    @AuthServerContainerExclude({REMOTE, QUARKUS})
+    @Test
+    public void testBackchannelAuthenticationEndpointAsAudience() throws Exception {
+        testEndpointAsAudience(oauth.getBackchannelAuthenticationUrl());
+    }
+
+    private void testEndpointAsAudience(String endpointUrl) throws Exception {
         ClientRepresentation clientRepresentation = app2;
         ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
         clientRepresentation = clientResource.toRepresentation();
@@ -802,7 +815,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         PrivateKey privateKey = keyPair.getPrivate();
         JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
 
-        assertion.audience(oauth.getParEndpointUrl());
+        assertion.audience(endpointUrl);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
