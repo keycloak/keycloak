@@ -74,10 +74,9 @@ export const SessionsSection = () => {
           searchPlaceholderKey="sessions:searchForSession"
           searchTypeComponent={
             <Select
-              width={200}
               data-testid="filter-session-type-select"
               isOpen={filterDropdownOpen}
-              className="filter-session-type-select"
+              className="kc-filter-session-type-select"
               variant={SelectVariant.single}
               onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
               toggleIcon={<FilterIcon />}
