@@ -86,7 +86,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
         private String oidcRequest;
         private List<String> sectorIdentifierRedirectUris;
         private String keyType = KeyType.RSA;
-        private String keyAlgorithm = Algorithm.RS256;
+        private String keyAlgorithm;
         private KeyUse keyUse = KeyUse.SIG;
 
         public KeyPair getSigningKeyPair() {

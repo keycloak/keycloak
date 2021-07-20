@@ -229,7 +229,7 @@ public class OIDCLoginProtocolService {
         JWK[] jwks = session.keys().getKeysStream(realm)
                 .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
                 .map(k -> {
-                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
+                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
                     List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
                         .filter(certs -> !certs.isEmpty())
                         .orElseGet(() -> Collections.singletonList(k.getCertificate()));

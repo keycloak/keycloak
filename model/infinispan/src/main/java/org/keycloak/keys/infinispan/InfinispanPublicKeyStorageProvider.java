@@ -203,7 +203,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     private KeyWrapper getPublicKeyByAlg(Map<String, KeyWrapper> publicKeys, String algorithm) {
         if (algorithm == null) return null;
         for(KeyWrapper keyWrapper : publicKeys.values())
-            if (algorithm.equals(keyWrapper.getAlgorithm())) return keyWrapper;
+            if (algorithm.equals(keyWrapper.getAlgorithmOrDefault())) return keyWrapper;
         return null;
     }
 

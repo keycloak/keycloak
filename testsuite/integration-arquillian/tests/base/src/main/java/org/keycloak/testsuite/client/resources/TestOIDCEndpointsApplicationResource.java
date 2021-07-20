@@ -46,6 +46,12 @@ public interface TestOIDCEndpointsApplicationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/generate-keys")
+    Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
+            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/get-keys-as-pem")
     Map<String, String> getKeysAsPem();
 
