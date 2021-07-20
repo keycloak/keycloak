@@ -84,7 +84,7 @@
                             truststore="/tmp/truststore.jks"
                             truststorePassword="trustpwd#*"
                             socketTimeout="6000"
-                            connectionTTL="130"
+                            connectionTtl="130"
                             connectionTimeout="7000"
                 />
             </IDP>

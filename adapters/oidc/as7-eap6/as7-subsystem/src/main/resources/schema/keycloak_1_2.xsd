@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright 2021 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +38,6 @@
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="realm" maxOccurs="unbounded" minOccurs="0" type="realm-type"/>
             <xs:element name="secure-deployment" maxOccurs="unbounded" minOccurs="0" type="secure-deployment-type"/>
-            <xs:element name="secure-server" maxOccurs="unbounded" minOccurs="0" type="secure-deployment-type"/>
         </xs:choice>
     </xs:complexType>
 
@@ -61,9 +60,7 @@
             <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
-            <xs:element name="confidential-port" type="xs:integer" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="cors-exposed-headers" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="auth-server-url-for-backend-requests" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="always-refresh-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
@@ -71,8 +68,6 @@
             <xs:element name="register-node-period" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="token-store" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="principal-attribute" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="autodetect-bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="ignore-oauth-query-parameter" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="proxy-url" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="verify-token-audience" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
         </xs:all>
@@ -91,13 +86,12 @@
             <xs:element name="allow-any-hostname" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="use-resource-role-mappings" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-max-age" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="auth-server-url" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="auth-server-url" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="realm" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-allowed-methods" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="cors-allowed-headers" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="cors-exposed-headers" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="resource" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="truststore" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="truststore-password" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -109,10 +103,8 @@
             <xs:element name="connection-timeout-millis" type="xs:long" minOccurs="0" maxOccurs="1"/>
             <xs:element name="expose-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
-            <xs:element name="confidential-port" type="xs:integer" minOccurs="0" maxOccurs="1" />
-            <xs:element name="realm-public-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="credential" type="credential-type" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="redirect-rewrite-rule" type="redirect-rewrite-rule-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="credential" type="credential-type" minOccurs="1" maxOccurs="1"/>
             <xs:element name="auth-server-url-for-backend-requests" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="always-refresh-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="register-node-at-startup" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
@@ -124,11 +116,8 @@
             <xs:element name="token-minimum-time-to-live" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="min-time-between-jwks-requests" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="public-key-cache-ttl" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="autodetect-bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="ignore-oauth-query-parameter" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="proxy-url" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="verify-token-audience" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="adapter-state-cookie-path" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -136,14 +125,8 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    
+
     <xs:complexType name="credential-type" mixed="true">
-        <xs:sequence maxOccurs="unbounded" minOccurs="0">
-            <xs:any processContents="lax"></xs:any>
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required" />
-    </xs:complexType>
-     <xs:complexType name="redirect-rewrite-rule-type" mixed="true">
         <xs:sequence maxOccurs="unbounded" minOccurs="0">
             <xs:any processContents="lax"></xs:any>
         </xs:sequence>

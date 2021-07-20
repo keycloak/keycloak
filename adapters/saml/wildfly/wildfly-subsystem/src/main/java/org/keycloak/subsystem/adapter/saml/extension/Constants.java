@@ -95,7 +95,7 @@ public class Constants {
         static final String TRUSTSTORE_PASSWORD = "truststorePassword";
         static final String SOCKET_TIMEOUT = "socketTimeout";
         static final String CONNECTION_TIMEOUT = "connectionTimeout";
-        static final String CONNECTION_TTL = "connectionTTL";
+        static final String CONNECTION_TTL = "connectionTtl";
     }
 
     static class XML {
@@ -177,7 +177,7 @@ public class Constants {
         static final String TRUSTSTORE_PASSWORD = "truststorePassword";
         static final String SOCKET_TIMEOUT = "socketTimeout";
         static final String CONNECTION_TIMEOUT = "connectionTimeout";
-        static final String CONNECTION_TTL = "connectionTTL";
+        static final String CONNECTION_TTL = "connectionTtl";
     }
 }
 

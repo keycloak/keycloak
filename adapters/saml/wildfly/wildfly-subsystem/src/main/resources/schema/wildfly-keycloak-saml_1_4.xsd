@@ -552,9 +552,9 @@
                 <xs:documentation>Defines timeout for establishing the connection with the remote host in milliseconds.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="connectionTTL" type="xs:long" default="-1">
+        <xs:attribute name="connectionTtl" type="xs:long" default="-1">
             <xs:annotation>
-                <xs:documentation>Defines the connection time to live.</xs:documentation>
+                <xs:documentation>Defines the connection time to live in milliseconds.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>

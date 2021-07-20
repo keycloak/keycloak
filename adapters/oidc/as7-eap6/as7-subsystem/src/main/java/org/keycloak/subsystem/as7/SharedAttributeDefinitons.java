@@ -83,20 +83,20 @@ class SharedAttributeDefinitons {
                     .setValidator(new IntRangeValidator(0, true))
                     .build();
     protected static final SimpleAttributeDefinition SOCKET_TIMEOUT =
-            new SimpleAttributeDefinitionBuilder("socket-timeout", ModelType.LONG, true)
-                    .setXmlName("socket-timeout")
+            new SimpleAttributeDefinitionBuilder("socket-timeout-millis", ModelType.LONG, true)
+                    .setXmlName("socket-timeout-millis")
                     .setAllowExpression(true)
                     .setValidator(new LongRangeValidator(-1L, true))
                     .build();
     protected static final SimpleAttributeDefinition CONNECTION_TTL =
-            new SimpleAttributeDefinitionBuilder("connection-ttl", ModelType.LONG, true)
-                    .setXmlName("connection-ttl")
+            new SimpleAttributeDefinitionBuilder("connection-ttl-millis", ModelType.LONG, true)
+                    .setXmlName("connection-ttl-millis")
                     .setAllowExpression(true)
                     .setValidator(new LongRangeValidator(-1L, true))
                     .build();
     protected static final SimpleAttributeDefinition CONNECTION_TIMEOUT =
-            new SimpleAttributeDefinitionBuilder("connection-timeout", ModelType.LONG, true)
-                    .setXmlName("connection-timeout")
+            new SimpleAttributeDefinitionBuilder("connection-timeout-millis", ModelType.LONG, true)
+                    .setXmlName("connection-timeout-millis")
                     .setAllowExpression(true)
                     .setValidator(new LongRangeValidator(-1L, true))
                     .build();
