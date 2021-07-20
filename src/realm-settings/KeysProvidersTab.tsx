@@ -38,7 +38,7 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { Link, useRouteMatch } from "react-router-dom";
 import { AESGeneratedModal } from "./key-providers/aes-generated/AESGeneratedModal";
-import { JavaKeystoreModal } from "./JavaKeystoreModal";
+import { JavaKeystoreModal } from "./key-providers/java-keystore/JavaKeystoreModal";
 import { HMACGeneratedModal } from "./key-providers/hmac-generated/HMACGeneratedModal";
 import { ECDSAGeneratedModal } from "./key-providers/ecdsa-generated/ECDSAGeneratedModal";
 import { RSAModal } from "./RSAModal";
