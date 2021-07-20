@@ -278,10 +278,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, parEndpointUrl));
-        if (Profile.isFeatureEnabled(Profile.Feature.CIBA)) {
-            String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            expectedAudiences.add(backchannelAuthenticationUrl);
-        }
+        String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        expectedAudiences.add(backchannelAuthenticationUrl);
+
         return expectedAudiences;
     }
 }
