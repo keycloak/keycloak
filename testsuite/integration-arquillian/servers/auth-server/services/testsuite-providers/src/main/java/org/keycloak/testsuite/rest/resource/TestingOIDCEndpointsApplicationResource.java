@@ -111,7 +111,8 @@ public class TestingOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/generate-keys")
     @NoCache
-    public Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm) {
+    public Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
+            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm) {
         try {
             KeyPair keyPair = null;
             KeyUse keyUse = KeyUse.SIG;
@@ -154,7 +155,11 @@ public class TestingOIDCEndpointsApplicationResource {
 
             clientData.setKeyPair(keyPair);
             clientData.setKeyType(keyType);
-            clientData.setKeyAlgorithm(jwaAlgorithm);
+            if (advertiseJWKAlgorithm == null || Boolean.TRUE.equals(advertiseJWKAlgorithm)) {
+                clientData.setKeyAlgorithm(jwaAlgorithm);
+            } else {
+                clientData.setKeyAlgorithm(null);
+            }
             clientData.setKeyUse(keyUse);
         } catch (Exception e) {
             throw new BadRequestException("Error generating signing keypair", e);
@@ -209,7 +214,7 @@ public class TestingOIDCEndpointsApplicationResource {
         String keyType = clientData.getKeyType();
         KeyUse keyUse = clientData.getKeyUse();
 
-        if (keyPair == null || !isSupportedAlgorithm(keyAlgorithm)) {
+        if (keyPair == null) {
             keySet.setKeys(new JWK[] {});
         } else if (KeyType.RSA.equals(keyType)) {
             keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).rsa(keyPair.getPublic(), keyUse) });

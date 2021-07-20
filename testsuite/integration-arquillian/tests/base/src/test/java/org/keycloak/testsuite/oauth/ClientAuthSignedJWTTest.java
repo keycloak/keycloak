@@ -431,6 +431,65 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testSuccessWhenNoAlgSetInJWK() throws Exception {
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+        try {
+            // setup Jwks
+            String signingAlgorithm = Algorithm.PS256;
+            KeyPair keyPair = setupJwks(signingAlgorithm, false, clientRepresentation, clientResource);
+            PublicKey publicKey = keyPair.getPublic();
+            PrivateKey privateKey = keyPair.getPrivate();
+
+            // test
+            oauth.clientId("client2");
+            OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
+
+            assertEquals(200, response.getStatusCode());
+        } finally {
+            // Revert jwks_url settings
+            revertJwksSettings(clientRepresentation, clientResource);
+        }
+    }
+
+    @Test
+    public void testSuccessDefaultAlgWhenNoAlgSetInJWK() throws Exception {
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+        try {
+            // send a JWS using the default algorithm
+            String signingAlgorithm = Algorithm.RS256;
+            KeyPair keyPair = setupJwks(signingAlgorithm, false, clientRepresentation, clientResource);
+            PublicKey publicKey = keyPair.getPublic();
+            PrivateKey privateKey = keyPair.getPrivate();
+            oauth.clientId("client2");
+            OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
+            assertEquals(200, response.getStatusCode());
+
+            // send a JWS using a algorithm other than the default (RS256)
+            publicKey = keyPair.getPublic();
+            privateKey = keyPair.getPrivate();
+            oauth.clientId("client2");
+            response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("Client authentication with signed JWT failed: Signature on JWT token failed validation", response.getErrorDescription());
+
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
+            clientResource.update(clientRepresentation);
+            response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid signature algorithm", response.getErrorDescription());
+        } finally {
+            // Revert jwks_url settings
+            revertJwksSettings(clientRepresentation, clientResource);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRepresentation);
+        }
+    }
+
+    @Test
     public void testDirectGrantRequestSuccessES256() throws Exception {
         testDirectGrantRequestSuccess(Algorithm.ES256);
     }
@@ -1261,9 +1320,13 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private KeyPair setupJwks(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
+        return setupJwks(algorithm, true, clientRepresentation, clientResource);
+    }
+
+    private KeyPair setupJwks(String algorithm, boolean advertiseJWKAlgorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
         // generate and register client keypair
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        oidcClientEndpointsResource.generateKeys(algorithm);
+        oidcClientEndpointsResource.generateKeys(algorithm, advertiseJWKAlgorithm);
         Map<String, String> generatedKeys = oidcClientEndpointsResource.getKeysAsBase64();
         KeyPair keyPair = getKeyPairFromGeneratedBase64(generatedKeys, algorithm);
 
