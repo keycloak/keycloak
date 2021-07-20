@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
   AlertVariant,
+  Breadcrumb,
+  BreadcrumbItem,
   ButtonVariant,
   DropdownItem,
   DropdownSeparator,
@@ -42,6 +44,23 @@ type RealmSettingsHeaderProps = {
   value: boolean;
   save: () => void;
   realmName: string;
+};
+
+export const EditProviderCrumb = () => {
+  const { t } = useTranslation("realm-settings");
+  const { realm } = useRealm();
+
+  return (
+    <>
+      <Breadcrumb>
+        <BreadcrumbItem to={`#/${realm}/realm-settings/keys`}>
+          {t("keys")}
+        </BreadcrumbItem>
+        <BreadcrumbItem>{t("providers")}</BreadcrumbItem>
+        <BreadcrumbItem isActive>{t("editProvider")}</BreadcrumbItem>
+      </Breadcrumb>
+    </>
+  );
 };
 
 const RealmSettingsHeader = ({

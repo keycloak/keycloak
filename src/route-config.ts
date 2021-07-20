@@ -14,7 +14,10 @@ import { GroupsSection } from "./groups/GroupsSection";
 import { IdentityProvidersSection } from "./identity-providers/IdentityProvidersSection";
 import { PageNotFoundSection } from "./PageNotFoundSection";
 import { RealmRolesSection } from "./realm-roles/RealmRolesSection";
-import { RealmSettingsSection } from "./realm-settings/RealmSettingsSection";
+import {
+  EditProviderCrumb,
+  RealmSettingsSection,
+} from "./realm-settings/RealmSettingsSection";
 import { NewRealmForm } from "./realm/add/NewRealmForm";
 import { SessionsSection } from "./sessions/SessionsSection";
 import { UserFederationSection } from "./user-federation/UserFederationSection";
@@ -192,37 +195,37 @@ export const routes: RoutesFn = (t: TFunction) => [
   {
     path: "/:realm/realm-settings/keys/:id?/aes-generated/settings",
     component: AESGeneratedSettings,
-    breadcrumb: t("realm-settings:editProvider"),
+    breadcrumb: EditProviderCrumb,
     access: "view-realm",
   },
   {
     path: "/:realm/realm-settings/keys/:id?/ecdsa-generated/settings",
     component: ECDSAGeneratedSettings,
-    breadcrumb: t("realm-settings:editProvider"),
+    breadcrumb: EditProviderCrumb,
     access: "view-realm",
   },
   {
     path: "/:realm/realm-settings/keys/:id?/hmac-generated/settings",
     component: HMACGeneratedSettings,
-    breadcrumb: t("realm-settings:editProvider"),
+    breadcrumb: EditProviderCrumb,
     access: "view-realm",
   },
   {
     path: "/:realm/realm-settings/keys/:id?/java-keystore/settings",
     component: JavaKeystoreSettings,
-    breadcrumb: t("realm-settings:editProvider"),
+    breadcrumb: EditProviderCrumb,
     access: "view-realm",
   },
   {
     path: "/:realm/realm-settings/keys/:id?/rsa-generated/settings",
     component: RSAGeneratedSettings,
-    breadcrumb: t("realm-settings:editProvider"),
+    breadcrumb: EditProviderCrumb,
     access: "view-realm",
   },
   {
     path: "/:realm/realm-settings/keys/:id?/rsa/settings",
     component: RSASettings,
-    breadcrumb: t("realm-settings:editProvider"),
+    breadcrumb: EditProviderCrumb,
     access: "view-realm",
   },
   {
