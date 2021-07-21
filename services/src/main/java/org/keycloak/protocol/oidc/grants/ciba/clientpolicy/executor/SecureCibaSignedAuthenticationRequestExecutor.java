@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -24,12 +26,14 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequestParser;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
+import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
@@ -161,6 +165,55 @@ public class SecureCibaSignedAuthenticationRequestExecutor implements ClientPoli
         if (exp - nbf > availablePeriod) {
             logger.trace("signed authentication request's available period is long.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "signed authentication request's available period is long");
+        }
+
+        // check whether "aud" claim exists
+        List<String> aud = new ArrayList<String>();
+        JsonNode audience = signedAuthReq.get("aud");
+        if (audience == null) {
+            logger.trace("aud claim not incuded.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter in the 'request' object: aud");
+        }
+        if (audience.isArray()) {
+            for (JsonNode node : audience) aud.add(node.asText());
+        } else {
+            aud.add(audience.asText());
+        }
+        if (aud.isEmpty()) {
+            logger.trace("aud claim not incuded.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter value in the 'request' object: aud");
+        }
+
+        // check whether "aud" claim points to this keycloak as authz server
+        String authzServerIss = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName());
+        if (!aud.contains(authzServerIss)) {
+            logger.trace("aud not points to the intended realm.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter in the 'request' object: aud");
+        }
+
+        // check whether "iss" claim exists
+        if (signedAuthReq.get("iss") == null) {
+            logger.trace("iss claim not incuded.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter in the 'request' object: iss");
+        }
+
+        ClientModel client = session.getContext().getClient();
+        String iss = signedAuthReq.get("iss").asText();
+        if (!iss.equals(client.getClientId())) {
+            logger.trace("iss claim not match client's identity.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter in the 'request' object: iss");
+        }
+
+        // check whether "iat" claim exists
+        if (signedAuthReq.get("iat") == null) {
+            logger.trace("iat claim not incuded.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter in the signed authentication request: iat");
+        }
+
+        // check whether "jti" claim exists
+        if (signedAuthReq.get("jti") == null) {
+            logger.trace("jti claim not incuded.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter in the signed authentication request: jti");
         }
 
         logger.trace("Passed.");
