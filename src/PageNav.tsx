@@ -35,7 +35,7 @@ export const PageNav: React.FunctionComponent = () => {
 
   type LeftNavProps = { title: string; path: string };
   const LeftNav = ({ title, path }: LeftNavProps) => {
-    const route = routes(() => {}).find(
+    const route = routes.find(
       (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
     );
     if (!route || !hasAccess(route.access)) return <></>;
