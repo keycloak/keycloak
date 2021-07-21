@@ -47,6 +47,12 @@
                             <input class="form-control" type="text" id="user" name="user" data-ng-model="query.user">
                         </div>
                     </div>
+                    <div class="form-group" data-ng-show="filter">
+                        <label class="col-md-2 control-label" for="sessionId">{{:: 'session-id' | translate}}</label>
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" id="sessionId" name="sessionId" data-ng-model="query.sessionId">
+                        </div>
+                    </div>
 
                     <div class="form-group" data-ng-show="filter">
                         <label class="col-md-2 control-label" for="dateFrom">{{:: 'date-(from)' | translate}}</label>
@@ -88,6 +94,7 @@
                         <tr><td width="100px">{{:: 'client' | translate}}</td><td>{{event.clientId}}</td></tr>
                         <tr><td>{{:: 'user' | translate}}</td><td>{{event.userId}}</td></tr>
                         <tr><td>{{:: 'ip-address' | translate}}</td><td>{{event.ipAddress}}</td></tr>
+                        <tr><td>{{:: 'session-id' | translate}}</td><td>{{event.sessionId}}</td></tr>
                         <tr data-ng-show="event.error"><td>{{:: 'error' | translate}}</td><td>{{event.error}}</td></tr>
                         <tr>
                             <td>{{:: 'details' | translate}}</td>

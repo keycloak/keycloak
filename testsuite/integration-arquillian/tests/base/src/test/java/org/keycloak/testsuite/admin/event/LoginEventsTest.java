@@ -129,10 +129,10 @@ public class LoginEventsTest extends AbstractEventTest {
         badLogin();
         assertEquals(2, events().size());
 
-        List<EventRepresentation> filteredEvents = testRealmResource().getEvents(Arrays.asList("REVOKE_GRANT"), null, null, null, null, null, null, null);
+        List<EventRepresentation> filteredEvents = testRealmResource().getEvents(Arrays.asList("REVOKE_GRANT"), null, null, null, null, null, null, null, null);
         assertEquals(0, filteredEvents.size());
 
-        filteredEvents = testRealmResource().getEvents(Arrays.asList("LOGIN_ERROR"), null, null, null, null, null, null, null);
+        filteredEvents = testRealmResource().getEvents(Arrays.asList("LOGIN_ERROR"), null, null, null, null, null, null, null, null);
         assertEquals(2, filteredEvents.size());
     }
 
@@ -147,9 +147,9 @@ public class LoginEventsTest extends AbstractEventTest {
             testingClient.testing("test").onEvent(event);
         }
 
-        assertEquals(100, realm.getEvents(null, null, null, null, null, null, null, null).size());
-        assertEquals(105, realm.getEvents(null, null, null, null, null, null, 0, 105).size());
-        assertTrue(realm.getEvents(null, null, null, null, null, null, 0, 1000).size() >= 110);
+        assertEquals(100, realm.getEvents(null, null, null, null, null, null, null, null, null).size());
+        assertEquals(105, realm.getEvents(null, null, null, null, null, null, null, 0, 105).size());
+        assertTrue(realm.getEvents(null, null, null, null, null, null, null, 0, 1000).size() >= 110);
     }
 
     /*
