@@ -1093,7 +1093,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "gilwekDe3", "acr2");
-            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getStatusCode(), is(equalTo(401)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_GRANT));
             assertThat(response.getErrorDescription(), is("Client not allowed OIDC CIBA Grant"));
 
