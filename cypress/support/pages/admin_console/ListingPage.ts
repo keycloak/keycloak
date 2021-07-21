@@ -7,9 +7,9 @@ export default class ListingPage {
   private searchBtn =
     ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
   private createBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-primary:visible";
+    ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-primary:visible";
   private importBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-link";
+    ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-link";
 
   goToCreateItem() {
     cy.get(this.createBtn).click();

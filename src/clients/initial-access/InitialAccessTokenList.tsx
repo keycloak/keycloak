@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
-import moment from "moment";
-import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { wrappable } from "@patternfly/react-table";
-
 import type ClientInitialAccessPresentation from "keycloak-admin/lib/defs/clientInitialAccessPresentation";
+import moment from "moment";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useHistory } from "react-router-dom";
+import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../../components/alert/Alerts";
+import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
 
 export const InitialAccessTokenList = () => {
   const { t } = useTranslation("clients");
@@ -21,7 +21,6 @@ export const InitialAccessTokenList = () => {
   const { realm } = useRealm();
 
   const history = useHistory();
-  const { url } = useRouteMatch();
 
   const [token, setToken] = useState<ClientInitialAccessPresentation>();
 
@@ -57,7 +56,8 @@ export const InitialAccessTokenList = () => {
         loader={loader}
         toolbarItem={
           <>
-            <Button onClick={() => history.push(`${url}/create`)}>
+            {/* @ts-ignore */}
+            <Button component={Link} to={toCreateInitialAccessToken({ realm })}>
               {t("common:create")}
             </Button>
           </>
@@ -104,7 +104,9 @@ export const InitialAccessTokenList = () => {
             message={t("noTokens")}
             instructions={t("noTokensInstructions")}
             primaryActionText={t("common:create")}
-            onPrimaryAction={() => history.push(`${url}/create`)}
+            onPrimaryAction={() =>
+              history.push(toCreateInitialAccessToken({ realm }))
+            }
           />
         }
       />

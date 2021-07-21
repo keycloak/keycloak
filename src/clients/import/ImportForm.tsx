@@ -1,26 +1,27 @@
-import React from "react";
-import { useHistory } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
-  PageSection,
-  FormGroup,
-  TextInput,
   ActionGroup,
-  Button,
   AlertVariant,
+  Button,
+  FormGroup,
+  PageSection,
+  TextInput,
 } from "@patternfly/react-core";
-import { FormProvider, useForm } from "react-hook-form";
-
-import { ClientDescription } from "../ClientDescription";
-import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { useAlerts } from "../../components/alert/Alerts";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import React from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Link, useHistory } from "react-router-dom";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { CapabilityConfig } from "../add/CapabilityConfig";
+import { ClientDescription } from "../ClientDescription";
+import { toClient } from "../routes/Client";
+import { toClients } from "../routes/Clients";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
@@ -56,7 +57,9 @@ export const ImportForm = () => {
         attributes: convertFormValuesToObject(client.attributes || {}),
       });
       addAlert(t("clientImportSuccess"), AlertVariant.success);
-      history.push(`/${realm}/clients/${newClient.id}`);
+      history.push(
+        toClient({ realm, clientId: newClient.id, tab: "settings" })
+      );
     } catch (error) {
       addAlert(t("clientImportError", { error }), AlertVariant.danger);
     }
@@ -91,10 +94,8 @@ export const ImportForm = () => {
               <Button variant="primary" type="submit">
                 {t("common:save")}
               </Button>
-              <Button
-                variant="link"
-                onClick={() => history.push(`/${realm}/clients`)}
-              >
+              {/* @ts-ignore */}
+              <Button variant="link" component={Link} to={toClients({ realm })}>
                 {t("common:cancel")}
               </Button>
             </ActionGroup>

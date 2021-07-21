@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   Alert,
   AlertVariant,
@@ -11,40 +10,42 @@ import {
   Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
-import { useHistory, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import _ from "lodash";
-
-import { ClientSettings } from "./ClientSettings";
+import React, { useState } from "react";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useHistory, useParams } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { Credentials } from "./credentials/Credentials";
-import {
-  convertFormValuesToObject,
-  convertToFormValues,
-  exportClient,
-} from "../util";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import {
   convertToMultiline,
   MultiLine,
   toValue,
 } from "../components/multi-line-input/MultiLineInput";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { RolesList } from "../realm-roles/RolesList";
+import {
+  convertFormValuesToObject,
+  convertToFormValues,
+  exportClient,
+} from "../util";
+import { AdvancedTab } from "./AdvancedTab";
+import { ClientSettings } from "./ClientSettings";
+import { Credentials } from "./credentials/Credentials";
+import { Keys } from "./keys/Keys";
+import type { ClientParams } from "./routes/Client";
+import { toClients } from "./routes/Clients";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
-import { RolesList } from "../realm-roles/RolesList";
 import { ServiceAccount } from "./service-account/ServiceAccount";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { AdvancedTab } from "./AdvancedTab";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { Keys } from "./keys/Keys";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -137,7 +138,7 @@ export const ClientDetails = () => {
   const [activeTab2, setActiveTab2] = useState(30);
 
   const form = useForm<ClientForm>();
-  const { clientId } = useParams<{ clientId: string }>();
+  const { clientId } = useParams<ClientParams>();
 
   const clientAuthenticatorType = useWatch({
     control: form.control,
@@ -161,7 +162,7 @@ export const ClientDetails = () => {
       try {
         await adminClient.clients.del({ id: clientId });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
-        history.push(`/${realm}/clients`);
+        history.push(toClients({ realm }));
       } catch (error) {
         addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
       }

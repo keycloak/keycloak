@@ -1,34 +1,35 @@
-import React, { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Badge,
   Button,
   ButtonVariant,
   PageSection,
-  ToolbarItem,
   Tab,
   TabTitleText,
+  ToolbarItem,
 } from "@patternfly/react-core";
-
+import { cellWidth, TableText } from "@patternfly/react-table";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { emptyFormatter, exportClient, getBaseUrl } from "../util";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAlerts } from "../components/alert/Alerts";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { emptyFormatter, exportClient, getBaseUrl } from "../util";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
-import { cellWidth, TableText } from "@patternfly/react-table";
+import { toAddClient } from "./routes/AddClient";
+import { toClient } from "./routes/Client";
+import { toImportClient } from "./routes/ImportClient";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
   const { addAlert } = useAlerts();
-  const history = useHistory();
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -70,7 +71,10 @@ export const ClientsSection = () => {
 
   const ClientDetailLink = (client: ClientRepresentation) => (
     <>
-      <Link key={client.id} to={`/${realm}/clients/${client.id}/settings`}>
+      <Link
+        key={client.id}
+        to={toClient({ realm, clientId: client.id!, tab: "settings" })}
+      >
         {client.clientId}
         {!client.enabled && (
           <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
@@ -114,19 +118,16 @@ export const ClientsSection = () => {
               toolbarItem={
                 <>
                   <ToolbarItem>
-                    <Button
-                      onClick={() =>
-                        history.push(`/${realm}/clients/add-client`)
-                      }
-                    >
+                    {/* @ts-ignore */}
+                    <Button component={Link} to={toAddClient({ realm })}>
                       {t("createClient")}
                     </Button>
                   </ToolbarItem>
                   <ToolbarItem>
                     <Button
-                      onClick={() =>
-                        history.push(`/${realm}/clients/import-client`)
-                      }
+                      component={Link}
+                      // @ts-ignore
+                      to={toImportClient({ realm })}
                       variant="link"
                     >
                       {t("importClient")}

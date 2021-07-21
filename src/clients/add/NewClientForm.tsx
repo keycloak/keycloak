@@ -1,23 +1,24 @@
-import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
 import {
+  AlertVariant,
+  Button,
   PageSection,
   Wizard,
-  AlertVariant,
-  WizardFooter,
   WizardContextConsumer,
-  Button,
+  WizardFooter,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-
-import { GeneralSettings } from "./GeneralSettings";
-import { CapabilityConfig } from "./CapabilityConfig";
+import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { toClient } from "../routes/Client";
+import { toClients } from "../routes/Clients";
+import { CapabilityConfig } from "./CapabilityConfig";
+import { GeneralSettings } from "./GeneralSettings";
 
 export const NewClientForm = () => {
   const { t } = useTranslation("clients");
@@ -45,7 +46,9 @@ export const NewClientForm = () => {
     try {
       const newClient = await adminClient.clients.create({ ...client });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(`/${realm}/clients/${newClient.id}/settings`);
+      history.push(
+        toClient({ realm, clientId: newClient.id, tab: "settings" })
+      );
     } catch (error) {
       addAlert(t("createError", { error }), AlertVariant.danger);
     }
@@ -119,7 +122,7 @@ export const NewClientForm = () => {
       <PageSection variant="light">
         <FormProvider {...methods}>
           <Wizard
-            onClose={() => history.push(`/${realm}/clients`)}
+            onClose={() => history.push(toClients({ realm }))}
             navAriaLabel={`${title} steps`}
             mainAriaLabel={`${title} content`}
             steps={[

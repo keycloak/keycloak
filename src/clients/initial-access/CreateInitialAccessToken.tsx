@@ -15,11 +15,12 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { AccessTokenDialog } from "./AccessTokenDialog";
+import { toClients } from "../routes/Clients";
 
 export const CreateInitialAccessToken = () => {
   const { t } = useTranslation("clients");
@@ -52,7 +53,7 @@ export const CreateInitialAccessToken = () => {
           toggleDialog={() => {
             setToken("");
             addAlert(t("tokenSaveSuccess"), AlertVariant.success);
-            history.push(`/${realm}/clients/initialAccessToken`);
+            history.push(toClients({ realm, tab: "initialAccessToken" }));
           }}
         />
       )}
@@ -129,9 +130,9 @@ export const CreateInitialAccessToken = () => {
             <Button
               data-testid="cancel"
               variant="link"
-              onClick={() =>
-                history.push(`/${realm}/clients/initialAccessToken`)
-              }
+              component={Link}
+              // @ts-ignore
+              to={toClients({ realm, tab: "initialAccessToken" })}
             >
               {t("common:cancel")}
             </Button>

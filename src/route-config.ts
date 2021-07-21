@@ -7,11 +7,7 @@ import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
 import { ClientScopeForm } from "./client-scopes/form/ClientScopeForm";
-import { NewClientForm } from "./clients/add/NewClientForm";
-import { ClientDetails } from "./clients/ClientDetails";
-import { ClientsSection } from "./clients/ClientsSection";
-import { ImportForm } from "./clients/import/ImportForm";
-import { CreateInitialAccessToken } from "./clients/initial-access/CreateInitialAccessToken";
+import clientRoutes from "./clients/routes";
 import { DashboardSection } from "./dashboard/Dashboard";
 import { EventsSection } from "./events/EventsSection";
 import { GroupsSection } from "./groups/GroupsSection";
@@ -55,35 +51,12 @@ export type RouteDef = {
 };
 
 export const routes: RouteDef[] = [
+  ...clientRoutes,
   {
     path: "/:realm/add-realm",
     component: NewRealmForm,
     breadcrumb: (t) => t("realm:createRealm"),
     access: "manage-realm",
-  },
-  {
-    path: "/:realm/clients/add-client",
-    component: NewClientForm,
-    breadcrumb: (t) => t("clients:createClient"),
-    access: "manage-clients",
-  },
-  {
-    path: "/:realm/clients/import-client",
-    component: ImportForm,
-    breadcrumb: (t) => t("clients:importClient"),
-    access: "manage-clients",
-  },
-  {
-    path: "/:realm/clients/:tab?",
-    component: ClientsSection,
-    breadcrumb: (t) => t("clients:clientList"),
-    access: "query-clients",
-  },
-  {
-    path: "/:realm/clients/initialAccessToken/create",
-    component: CreateInitialAccessToken,
-    breadcrumb: (t) => t("clients:createToken"),
-    access: "manage-clients",
   },
   {
     path: "/:realm/clients/:clientId/roles/add-role",
@@ -96,12 +69,6 @@ export const routes: RouteDef[] = [
     component: RealmRoleTabs,
     breadcrumb: (t) => t("roles:roleDetails"),
     access: "view-realm",
-  },
-  {
-    path: "/:realm/clients/:clientId/:tab",
-    component: ClientDetails,
-    breadcrumb: (t) => t("clients:clientSettings"),
-    access: "view-clients",
   },
   {
     path: "/:realm/client-scopes/new",

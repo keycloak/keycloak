@@ -1,8 +1,3 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
-import moment from "moment";
 import {
   ActionGroup,
   AlertVariant,
@@ -17,27 +12,32 @@ import {
   TextInput,
   ToolbarItem,
 } from "@patternfly/react-core";
-
-import type GlobalRequestResult from "keycloak-admin/lib/defs/globalRequestResult";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { convertToFormValues, toUpperCase } from "../util";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
-import { HelpItem } from "../components/help-enabler/HelpItem";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
-import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
-import { AdvancedSettings } from "./advanced/AdvancedSettings";
-import { TimeSelector } from "../components/time-selector/TimeSelector";
-import { useAdminClient } from "../context/auth/AdminClient";
+import type GlobalRequestResult from "keycloak-admin/lib/defs/globalRequestResult";
+import moment from "moment";
+import React, { useEffect, useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { AddHostDialog } from "./advanced/AddHostDialog";
-import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
-import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
-import { useRealm } from "../context/realm-context/RealmContext";
-import type { SaveOptions } from "./ClientDetails";
+import { FormAccess } from "../components/form-access/FormAccess";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { ScrollForm } from "../components/scroll-form/ScrollForm";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { TimeSelector } from "../components/time-selector/TimeSelector";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { convertToFormValues, toUpperCase } from "../util";
+import { AddHostDialog } from "./advanced/AddHostDialog";
+import { AdvancedSettings } from "./advanced/AdvancedSettings";
+import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
+import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
+import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
+import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
+import type { SaveOptions } from "./ClientDetails";
+import { toClient } from "./routes/Client";
 
 type AdvancedProps = {
   save: (options?: SaveOptions) => void;
@@ -184,7 +184,7 @@ export const AdvancedTab = ({
           <Text className="pf-u-pb-lg">
             <Trans i18nKey="clients-help:notBeforeIntro">
               In order to successfully push setup url on
-              <Link to={`/${realm}/clients/${id}/settings`}>
+              <Link to={toClient({ realm, clientId: id!, tab: "settings" })}>
                 {t("settings")}
               </Link>
               tab
