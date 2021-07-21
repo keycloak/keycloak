@@ -1,10 +1,10 @@
-import React, { useContext, useState } from "react";
-import _ from "lodash";
-
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import _ from "lodash";
+import React, { useState } from "react";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
-import { useAdminClient, useFetch } from "../auth/AdminClient";
 import environment from "../../environment";
+import useRequiredContext from "../../utils/useRequiredContext";
+import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 type RealmContextType = {
   realm: string;
@@ -13,12 +13,9 @@ type RealmContextType = {
   refresh: () => Promise<void>;
 };
 
-export const RealmContext = React.createContext<RealmContextType>({
-  realm: "",
-  setRealm: () => {},
-  realms: [],
-  refresh: () => Promise.resolve(),
-});
+export const RealmContext = React.createContext<RealmContextType | undefined>(
+  undefined
+);
 
 type RealmContextProviderProps = { children: React.ReactNode };
 
@@ -70,4 +67,4 @@ export const RealmContextProvider = ({
   );
 };
 
-export const useRealm = () => useContext(RealmContext);
+export const useRealm = () => useRequiredContext(RealmContext);

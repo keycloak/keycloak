@@ -1,30 +1,29 @@
-import React, { useContext } from "react";
-import { useHistory } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
-  PageSection,
-  FormGroup,
-  TextInput,
-  Switch,
   ActionGroup,
-  Button,
   AlertVariant,
+  Button,
+  FormGroup,
+  PageSection,
+  Switch,
+  TextInput,
 } from "@patternfly/react-core";
-
-import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { useAlerts } from "../../components/alert/Alerts";
-import { useForm, Controller } from "react-hook-form";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import { useAdminClient } from "../../context/auth/AdminClient";
-import { WhoAmIContext } from "../../context/whoami/WhoAmI";
+import React from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
+import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useWhoAmI } from "../../context/whoami/WhoAmI";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
   const history = useHistory();
-  const { refresh } = useContext(WhoAmIContext);
+  const { refresh } = useWhoAmI();
   const { refresh: realmRefresh } = useRealm();
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();

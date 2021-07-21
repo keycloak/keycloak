@@ -1,5 +1,3 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   ClipboardCopy,
   EmptyState,
@@ -25,19 +23,19 @@ import {
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
-
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { RealmContext } from "../../context/realm-context/RealmContext";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useHelp } from "../../components/help-enabler/HelpHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import "./evaluate.css";
-import { HelpContext } from "../../components/help-enabler/HelpHeader";
 
 export type EvaluateScopesProps = {
   clientId: string;
@@ -114,9 +112,9 @@ const EffectiveRoles = ({
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const prefix = "openid";
   const { t } = useTranslation("clients");
-  const { enabled } = useContext(HelpContext);
+  const { enabled } = useHelp();
   const adminClient = useAdminClient();
-  const { realm } = useContext(RealmContext);
+  const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
 
   const [selectableScopes, setSelectableScopes] = useState<

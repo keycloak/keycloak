@@ -1,31 +1,30 @@
-import React, { useState, useContext, ReactElement, useMemo } from "react";
-import { useHistory } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-
 import {
-  Dropdown,
-  DropdownToggle,
-  DropdownItem,
   Button,
-  Divider,
-  SplitItem,
-  Split,
   ContextSelector,
   ContextSelectorItem,
+  Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
   Label,
+  Split,
+  SplitItem,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
+import React, { ReactElement, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
 
-import { toUpperCase } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { WhoAmIContext } from "../../context/whoami/WhoAmI";
+import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import { toUpperCase } from "../../util";
 import { RecentUsed } from "./recent-used";
 
 import "./realm-selector.css";
 
 export const RealmSelector = () => {
   const { realm, setRealm, realms } = useRealm();
-  const { whoAmI } = useContext(WhoAmIContext);
+  const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const history = useHistory();

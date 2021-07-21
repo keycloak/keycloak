@@ -1,36 +1,34 @@
-import React, { useContext, useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
 import {
+  ActionGroup,
+  Button,
+  Divider,
   FormGroup,
   PageSection,
   Select,
-  SelectVariant,
-  TextInput,
-  SelectOption,
-  ActionGroup,
-  Button,
   SelectGroup,
+  SelectOption,
+  SelectVariant,
   Split,
   SplitItem,
-  Divider,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
-
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useHistory, useParams } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
-import { RealmContext } from "../../context/realm-context/RealmContext";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 export const RoleMappingForm = () => {
-  const { realm } = useContext(RealmContext);
+  const { realm } = useRealm();
   const adminClient = useAdminClient();
   const history = useHistory();
   const { addAlert } = useAlerts();

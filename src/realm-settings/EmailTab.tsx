@@ -1,6 +1,3 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -11,20 +8,21 @@ import {
   Switch,
   TextInput,
 } from "@patternfly/react-core";
-
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import React, { useEffect, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { emailRegexPattern } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
-
-import "./RealmSettingsSection.css";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
-import { WhoAmIContext } from "../context/whoami/WhoAmI";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
+import { emailRegexPattern } from "../util";
 import { AddUserEmailModal } from "./AddUserEmailModal";
+import "./RealmSettingsSection.css";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
@@ -39,7 +37,7 @@ export const RealmSettingsEmailTab = ({
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert } = useAlerts();
-  const { whoAmI } = useContext(WhoAmIContext);
+  const { whoAmI } = useWhoAmI();
 
   const [realm, setRealm] = useState(initialRealm);
   const [userEmailModalOpen, setUserEmailModalOpen] = useState(false);

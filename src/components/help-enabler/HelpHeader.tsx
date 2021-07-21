@@ -1,4 +1,3 @@
-import React, { useState, useContext, ReactNode, createContext } from "react";
 import {
   Divider,
   Dropdown,
@@ -9,9 +8,10 @@ import {
   Switch,
   TextContent,
 } from "@patternfly/react-core";
+import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
+import React, { createContext, ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpIcon, ExternalLinkAltIcon } from "@patternfly/react-icons";
-
+import useRequiredContext from "../../utils/useRequiredContext";
 import "./help-header.css";
 
 type HelpProps = {
@@ -23,10 +23,11 @@ type HelpContextProps = {
   toggleHelp: () => void;
 };
 
-export const HelpContext = createContext<HelpContextProps>({
-  enabled: true,
-  toggleHelp: () => {},
-});
+export const HelpContext = createContext<HelpContextProps | undefined>(
+  undefined
+);
+
+export const useHelp = () => useRequiredContext(HelpContext);
 
 export const Help = ({ children }: HelpProps) => {
   const [enabled, setHelp] = useState(true);
@@ -43,7 +44,7 @@ export const Help = ({ children }: HelpProps) => {
 
 export const HelpHeader = () => {
   const [open, setOpen] = useState(false);
-  const help = useContext(HelpContext);
+  const help = useHelp();
   const { t } = useTranslation();
 
   const dropdownItems = [

@@ -1,4 +1,3 @@
-import React, { useState, useContext } from "react";
 import {
   Alert,
   AlertVariant,
@@ -13,13 +12,13 @@ import {
   TextArea,
 } from "@patternfly/react-core";
 import FileSaver from "file-saver";
-
-import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { HelpItem } from "../help-enabler/HelpItem";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { HelpContext } from "../help-enabler/HelpHeader";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
+import { useHelp } from "../help-enabler/HelpHeader";
+import { HelpItem } from "../help-enabler/HelpItem";
 
 type DownloadDialogProps = {
   id: string;
@@ -36,7 +35,7 @@ export const DownloadDialog = ({
 }: DownloadDialogProps) => {
   const adminClient = useAdminClient();
   const { t } = useTranslation("common");
-  const { enabled } = useContext(HelpContext);
+  const { enabled } = useHelp();
   const serverInfo = useServerInfo();
 
   const configFormats = serverInfo.clientInstallations![protocol];

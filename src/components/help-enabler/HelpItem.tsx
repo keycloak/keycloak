@@ -1,8 +1,8 @@
-import React, { isValidElement, ReactNode, useContext } from "react";
 import { Popover } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
+import React, { isValidElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpContext } from "./HelpHeader";
+import { useHelp } from "./HelpHeader";
 
 type HelpItemProps = {
   helpText: string | ReactNode;
@@ -22,7 +22,7 @@ export const HelpItem = ({
   unWrap = false,
 }: HelpItemProps) => {
   const { t } = useTranslation();
-  const { enabled } = useContext(HelpContext);
+  const { enabled } = useHelp();
   return (
     <>
       {enabled && (

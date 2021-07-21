@@ -1,15 +1,15 @@
-import React, { createContext, ReactNode, useContext } from "react";
 import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
-
-import { sortProviders } from "../../util";
+import React, { createContext, ReactNode } from "react";
 import { DataLoader } from "../../components/data-loader/DataLoader";
+import { sortProviders } from "../../util";
+import useRequiredContext from "../../utils/useRequiredContext";
 import { useAdminClient } from "../auth/AdminClient";
 
-export const ServerInfoContext = createContext<ServerInfoRepresentation>(
-  {} as ServerInfoRepresentation
-);
+export const ServerInfoContext = createContext<
+  ServerInfoRepresentation | undefined
+>(undefined);
 
-export const useServerInfo = () => useContext(ServerInfoContext);
+export const useServerInfo = () => useRequiredContext(ServerInfoContext);
 
 export const useLoginProviders = () => {
   return sortProviders(useServerInfo().providers!["login-protocol"].providers);

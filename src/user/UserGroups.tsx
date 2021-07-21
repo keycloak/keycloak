@@ -1,6 +1,3 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Button,
@@ -8,20 +5,23 @@ import {
   Checkbox,
   Popover,
 } from "@patternfly/react-core";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { QuestionCircleIcon } from "@patternfly/react-icons";
+import { cellWidth } from "@patternfly/react-table";
+import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import _ from "lodash";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter } from "../util";
-import { useFetch, useAdminClient } from "../context/auth/AdminClient";
-import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
-import { cellWidth } from "@patternfly/react-table";
-import _ from "lodash";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
-import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { HelpContext } from "../components/help-enabler/HelpHeader";
-import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { GroupPath } from "../components/group/GroupPath";
+import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
+import { useHelp } from "../components/help-enabler/HelpHeader";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { emptyFormatter } from "../util";
 
 export type UserFormProps = {
   username?: string;
@@ -52,7 +52,7 @@ export const UserGroups = () => {
   >([]);
   const [open, setOpen] = useState(false);
 
-  const { enabled } = useContext(HelpContext);
+  const { enabled } = useHelp();
 
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
@@ -295,7 +295,6 @@ export const UserGroups = () => {
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey="groups:searchGroup"
         canSelectAll
-        onSelect={() => {}}
         toolbarItem={
           <>
             <Button

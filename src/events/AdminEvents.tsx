@@ -1,6 +1,3 @@
-import React, { ReactNode, useContext, useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   Button,
   Modal,
@@ -8,11 +5,6 @@ import {
   ToolbarItem,
   Tooltip,
 } from "@patternfly/react-core";
-import moment from "moment";
-
-import { useAdminClient } from "../context/auth/AdminClient";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { RealmContext } from "../context/realm-context/RealmContext";
 import {
   cellWidth,
   Table,
@@ -21,7 +13,14 @@ import {
   TableVariant,
 } from "@patternfly/react-table";
 import type AdminEventRepresentation from "keycloak-admin/lib/defs/adminEventRepresentation";
+import moment from "moment";
+import React, { ReactNode, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type DisplayDialogProps = {
   titleKey: string;
@@ -67,7 +66,7 @@ const Truncate = ({
 export const AdminEvents = () => {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
-  const { realm } = useContext(RealmContext);
+  const { realm } = useRealm();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());

@@ -1,5 +1,3 @@
-import React, { useContext, useState } from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
 import {
   AlertVariant,
   ButtonVariant,
@@ -15,17 +13,17 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
-import { useAlerts } from "../components/alert/Alerts";
-import { ViewHeader } from "../components/view-header/ViewHeader";
 import { DatabaseIcon } from "@patternfly/react-icons";
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RealmContext } from "../context/realm-context/RealmContext";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useHistory, useRouteMatch } from "react-router-dom";
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-
+import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
 import "./user-federation.css";
 
 export const UserFederationSection = () => {
@@ -33,7 +31,7 @@ export const UserFederationSection = () => {
     useState<ComponentRepresentation[]>();
   const { addAlert } = useAlerts();
   const { t } = useTranslation("user-federation");
-  const { realm } = useContext(RealmContext);
+  const { realm } = useRealm();
   const adminClient = useAdminClient();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());

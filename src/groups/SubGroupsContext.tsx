@@ -1,5 +1,6 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
 import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import React, { createContext, ReactNode, useState } from "react";
+import useRequiredContext from "../utils/useRequiredContext";
 
 type SubGroupsProps = {
   subGroups: GroupRepresentation[];
@@ -9,15 +10,7 @@ type SubGroupsProps = {
   currentGroup: () => GroupRepresentation;
 };
 
-const SubGroupContext = createContext<SubGroupsProps>({
-  subGroups: [],
-  setSubGroups: () => {},
-  clear: () => {},
-  remove: () => {},
-  currentGroup: () => {
-    return {};
-  },
-});
+const SubGroupContext = createContext<SubGroupsProps | undefined>(undefined);
 
 export const SubGroups = ({ children }: { children: ReactNode }) => {
   const [subGroups, setSubGroups] = useState<GroupRepresentation[]>([]);
@@ -37,4 +30,4 @@ export const SubGroups = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useSubGroups = () => useContext(SubGroupContext);
+export const useSubGroups = () => useRequiredContext(SubGroupContext);

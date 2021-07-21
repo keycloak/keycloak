@@ -1,7 +1,3 @@
-import React, { useContext, useState } from "react";
-import { Link } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
-import moment from "moment";
 import {
   Button,
   DescriptionList,
@@ -14,24 +10,26 @@ import {
   ToolbarItem,
   Tooltip,
 } from "@patternfly/react-core";
-import { cellWidth, expandable } from "@patternfly/react-table";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
+import { cellWidth, expandable } from "@patternfly/react-table";
 import type EventRepresentation from "keycloak-admin/lib/defs/eventRepresentation";
-
-import { useAdminClient } from "../context/auth/AdminClient";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { RealmContext } from "../context/realm-context/RealmContext";
-import { AdminEvents } from "./AdminEvents";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import moment from "moment";
+import React, { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { AdminEvents } from "./AdminEvents";
 import "./events-section.css";
 
 export const EventsSection = () => {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
-  const { realm } = useContext(RealmContext);
+  const { realm } = useRealm();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());

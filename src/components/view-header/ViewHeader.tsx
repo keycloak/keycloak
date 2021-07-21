@@ -1,26 +1,26 @@
-import React, { ReactElement, ReactNode, useContext, useState } from "react";
 import {
-  Text,
-  PageSection,
-  TextContent,
+  Badge,
   Divider,
+  Dropdown,
+  DropdownPosition,
+  DropdownToggle,
   Level,
   LevelItem,
+  PageSection,
   Switch,
+  Text,
+  TextContent,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
-  Badge,
-  Dropdown,
-  DropdownToggle,
-  DropdownPosition,
 } from "@patternfly/react-core";
-import { HelpContext } from "../help-enabler/HelpHeader";
+import React, { ReactElement, ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FormattedLink,
   FormattedLinkProps,
 } from "../external-link/FormattedLink";
+import { useHelp } from "../help-enabler/HelpHeader";
 import { HelpItem } from "../help-enabler/HelpItem";
 
 export type ViewHeaderProps = {
@@ -56,7 +56,7 @@ export const ViewHeader = ({
   helpTextKey,
 }: ViewHeaderProps) => {
   const { t } = useTranslation();
-  const { enabled } = useContext(HelpContext);
+  const { enabled } = useHelp();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isLowerDropdownOpen, setIsLowerDropdownOpen] = useState(false);
 

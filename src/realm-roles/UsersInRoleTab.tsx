@@ -1,14 +1,14 @@
-import React, { useContext } from "react";
-import { useHistory, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Button, PageSection, Popover } from "@patternfly/react-core";
+import { QuestionCircleIcon } from "@patternfly/react-icons";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useHistory, useParams } from "react-router-dom";
+import { useHelp } from "../components/help-enabler/HelpHeader";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { upperCaseFormatter, emptyFormatter } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { HelpContext } from "../components/help-enabler/HelpHeader";
+import { emptyFormatter, upperCaseFormatter } from "../util";
 
 export const UsersInRoleTab = () => {
   const history = useHistory();
@@ -30,7 +30,7 @@ export const UsersInRoleTab = () => {
     return usersWithRole || [];
   };
 
-  const { enabled } = useContext(HelpContext);
+  const { enabled } = useHelp();
 
   return (
     <>

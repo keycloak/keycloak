@@ -1,6 +1,7 @@
-import React, { useState, createContext, ReactNode, useContext } from "react";
-import { AlertType, AlertPanel } from "./AlertPanel";
 import { AlertVariant } from "@patternfly/react-core";
+import React, { createContext, ReactNode, useState } from "react";
+import useRequiredContext from "../../utils/useRequiredContext";
+import { AlertPanel, AlertType } from "./AlertPanel";
 
 type AlertProps = {
   addAlert: (
@@ -10,11 +11,9 @@ type AlertProps = {
   ) => void;
 };
 
-export const AlertContext = createContext<AlertProps>({
-  addAlert: () => {},
-});
+export const AlertContext = createContext<AlertProps | undefined>(undefined);
 
-export const useAlerts = () => useContext(AlertContext);
+export const useAlerts = () => useRequiredContext(AlertContext);
 
 export const AlertProvider = ({ children }: { children: ReactNode }) => {
   const [alerts, setAlerts] = useState<AlertType[]>([]);

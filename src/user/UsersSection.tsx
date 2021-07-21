@@ -1,6 +1,3 @@
-import React, { useContext, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import {
   AlertVariant,
   Button,
@@ -16,17 +13,18 @@ import {
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
 import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
-
-import { useFetch, useAdminClient } from "../context/auth/AdminClient";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
-import { RealmContext } from "../context/realm-context/RealmContext";
-import { SearchUser } from "./SearchUser";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { emptyFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { emptyFormatter } from "../util";
+import { SearchUser } from "./SearchUser";
 import "./user-section.css";
 
 type BruteUser = UserRepresentation & {
@@ -37,7 +35,7 @@ export const UsersSection = () => {
   const { t } = useTranslation("users");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
-  const { realm: realmName } = useContext(RealmContext);
+  const { realm: realmName } = useRealm();
   const history = useHistory();
   const { url } = useRouteMatch();
   const [listUsers, setListUsers] = useState(false);

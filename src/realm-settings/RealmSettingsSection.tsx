@@ -1,7 +1,3 @@
-import React, { useEffect, useState, useContext } from "react";
-import { useHistory } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
   AlertVariant,
   Breadcrumb,
@@ -14,30 +10,33 @@ import {
   Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
-
+import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import { toUpperCase } from "../util";
+import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import React, { useEffect, useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useHistory } from "react-router-dom";
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { RealmSettingsLoginTab } from "./LoginTab";
-import { RealmSettingsGeneralTab } from "./GeneralTab";
-import { PartialImportDialog } from "./PartialImport";
-import { RealmSettingsThemesTab } from "./ThemesTab";
-import { RealmSettingsEmailTab } from "./EmailTab";
-import { KeysListTab } from "./KeysListTab";
-import { EventsTab } from "./event-config/EventsTab";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { KeysProvidersTab } from "./KeysProvidersTab";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 //import { LocalizationTab } from "./LocalizationTab";
-import { WhoAmIContext } from "../context/whoami/WhoAmI";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
+import { toUpperCase } from "../util";
+import { RealmSettingsEmailTab } from "./EmailTab";
+import { EventsTab } from "./event-config/EventsTab";
+import { RealmSettingsGeneralTab } from "./GeneralTab";
+import { KeysListTab } from "./KeysListTab";
+import { KeysProvidersTab } from "./KeysProvidersTab";
+import { RealmSettingsLoginTab } from "./LoginTab";
+import { PartialImportDialog } from "./PartialImport";
 import { SecurityDefences } from "./security-defences/SecurityDefences";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
+import { RealmSettingsThemesTab } from "./ThemesTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -124,9 +123,7 @@ const RealmSettingsHeader = ({
           >
             {t("partialImport")}
           </DropdownItem>,
-          <DropdownItem key="export" onClick={() => {}}>
-            {t("partialExport")}
-          </DropdownItem>,
+          <DropdownItem key="export">{t("partialExport")}</DropdownItem>,
           <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteDialog}>
             {t("common:delete")}
@@ -159,7 +156,7 @@ export const RealmSettingsSection = () => {
   const [realmComponents, setRealmComponents] =
     useState<ComponentRepresentation[]>();
   const [currentUser, setCurrentUser] = useState<UserRepresentation>();
-  const { whoAmI } = useContext(WhoAmIContext);
+  const { whoAmI } = useWhoAmI();
 
   const kpComponentTypes =
     useServerInfo().componentTypes!["org.keycloak.keys.KeyProvider"];

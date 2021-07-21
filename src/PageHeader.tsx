@@ -1,5 +1,3 @@
-import React, { useContext, useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Avatar,
   Brand,
@@ -10,14 +8,16 @@ import {
   KebabToggle,
   PageHeader,
   PageHeaderTools,
-  PageHeaderToolsItem,
   PageHeaderToolsGroup,
+  PageHeaderToolsItem,
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import { WhoAmIContext } from "./context/whoami/WhoAmI";
-import { HelpContext, HelpHeader } from "./components/help-enabler/HelpHeader";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
+import { HelpHeader, useHelp } from "./components/help-enabler/HelpHeader";
 import { useAdminClient } from "./context/auth/AdminClient";
+import { useWhoAmI } from "./context/whoami/WhoAmI";
 import environment from "./environment";
 
 export const Header = () => {
@@ -73,7 +73,7 @@ export const Header = () => {
 
   const HelpDropdownItem = () => {
     const { t } = useTranslation();
-    const { enabled, toggleHelp } = useContext(HelpContext);
+    const { enabled, toggleHelp } = useHelp();
     return (
       <DropdownItem icon={<HelpIcon />} onClick={toggleHelp}>
         {enabled ? t("helpEnabled") : t("helpDisabled")}
@@ -155,7 +155,7 @@ export const Header = () => {
   };
 
   const UserDropdown = () => {
-    const { whoAmI } = useContext(WhoAmIContext);
+    const { whoAmI } = useWhoAmI();
     const [isDropdownOpen, setDropdownOpen] = useState(false);
 
     const onDropdownToggle = () => {
