@@ -1296,10 +1296,111 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getErrorDescription(), is("signed authentication request's available period is long"));
 
             useRequestUri = true;
+            bindingMessage = "Flughafen-Wien-Schwechat";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.audience(null);
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: aud"));
+
+            useRequestUri = false;
+            bindingMessage = "Stuttgart-Hauptbahnhof";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.audience("https://example.com");
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: aud"));
+
+            useRequestUri = true;
+            bindingMessage = "Flughafen-Wien-Schwechat";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: iss"));
+
+            useRequestUri = false;
+            bindingMessage = "Stuttgart-Hauptbahnhof";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+            requestObject.issuer(TEST_CLIENT_NAME + TEST_CLIENT_NAME);
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: iss"));
+
+            useRequestUri = true;
+            bindingMessage = "Flughafen-Wien-Schwechat";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+            requestObject.issuer(TEST_CLIENT_NAME);
+            requestObject.iat(null);
+            requestObject.id(null);
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: iat"));
+
+            useRequestUri = false;
+            bindingMessage = "Stuttgart-Hauptbahnhof";
+            requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+            requestObject.issuer(TEST_CLIENT_NAME);
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.id(null);
+
+            registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
+
+            // user Backchannel Authentication Request
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: jti"));
+
+            useRequestUri = true;
             bindingMessage = "Brno-hlavni-nadrazif";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
             requestObject.exp(requestObject.getIat() + Long.valueOf(300));
             requestObject.nbf(requestObject.getIat());
+            requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+            requestObject.issuer(TEST_CLIENT_NAME);
+            requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
 
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
