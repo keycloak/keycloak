@@ -126,6 +126,7 @@
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.31</freemarker.version>
+        <awssecretsmanager.version>1.12.23</awssecretsmanager.version>
 
         <jetty9.version>${jetty92.version}</jetty9.version>
         <liquibase.version>3.5.5</liquibase.version>
@@ -1702,6 +1703,18 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- Amazon AWS Secrets Manager for vault -->
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-secretsmanager</artifactId>
+                <version>${awssecretsmanager.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${awssecretsmanager.version}</version>
             </dependency>
 
         </dependencies>

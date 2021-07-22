@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="com.amazonaws.aws-java-sdk-core">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <artifact name="${com.amazonaws:aws-java-sdk-core}"/>
+    </resources>
+
+    <dependencies>
+        <module name="javax.api"/>
+        <module name="javax.xml.stream.api"/>
+        <module name="javax.xml.bind.api"/>
+        <module name="org.joda.time"/>
+        <module name="org.apache.commons.logging"/>
+        <module name="org.apache.httpcomponents.core.httpclient"/>
+        <module name="org.apache.httpcomponents.core.httpcore"/>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+    </dependencies>
+
+</module>

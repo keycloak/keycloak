@@ -185,7 +185,17 @@
             <groupId>com.webauthn4j</groupId>
             <artifactId>webauthn4j-core</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-secretsmanager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+        </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>

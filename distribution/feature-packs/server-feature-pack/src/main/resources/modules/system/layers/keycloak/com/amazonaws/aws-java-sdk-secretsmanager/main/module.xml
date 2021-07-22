@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="com.amazonaws.aws-java-sdk-secretsmanager">
+    <resources>
+        <artifact name="${com.amazonaws:aws-java-sdk-secretsmanager}"/>
+    </resources>
+
+    <dependencies>
+        <module name="com.amazonaws.aws-java-sdk-core" />
+        <module name="javax.xml.stream.api"/>
+    </dependencies></module>
