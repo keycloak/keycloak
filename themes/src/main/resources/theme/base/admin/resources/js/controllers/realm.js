@@ -2984,8 +2984,8 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 });
 
 module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredRequiredActions,
-                                                  $modal, $route,
-                                                  RegisterRequiredAction, RequiredActions, RequiredActionRaisePriority, RequiredActionLowerPriority, Notifications) {
+                                                  $modal, $route, Dialog,
+                                                  RegisterRequiredAction, RequiredActions, RequiredActionRaisePriority, RequiredActionLowerPriority, RequiredActionReset, Notifications) {
     console.log('RequiredActionsCtrl');
     $scope.realm = realm;
     $scope.unregisteredRequiredActions = unregisteredRequiredActions;
@@ -3006,6 +3006,27 @@ module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredReq
             setupRequiredActionsForm();
         });
     }
+
+
+    $scope.resetRequiredActionEvery = function(action) {
+        var title = (action.config.reset_every==null || action.config.reset_every=="0") ? "Disable" : "Set";
+        var message = (action.config.reset_every==null || action.config.reset_every=="0") ? "Disable reset interval?" : "Set reset interval?";
+        Dialog.confirm(
+            title,
+            message,
+            function() {
+                 RequiredActions.update({realm: realm.realm, alias: action.alias}, action, function() {
+                     if(parseInt(action.config.reset_every)>0)
+                         Notifications.success(action.name + " will reset at the specified interval");
+                     else
+                         Notifications.success(action.name + " interval reset is disabled");
+                     setupRequiredActionsForm();
+                 });
+             },
+             function(){}
+         );
+    }
+
 
     $scope.raisePriority = function(action) {
         RequiredActionRaisePriority.save({realm: realm.realm, alias: action.alias}, function() {

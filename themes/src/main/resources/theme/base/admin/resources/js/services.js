@@ -485,6 +485,14 @@ module.factory('RegisterRequiredAction', function($resource) {
     });
 });
 
+module.factory('RequiredActionReset', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/required-actions/:alias/reset', {
+        realm : '@realm',
+        alias : '@alias'
+    });
+});
+
+
 module.factory('RealmLDAPConnectionTester', function($resource, $httpParamSerializer) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection', {
         realm : '@realm'
