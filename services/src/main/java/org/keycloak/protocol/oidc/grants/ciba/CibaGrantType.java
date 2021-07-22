@@ -152,6 +152,7 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid Auth Req ID", Response.Status.BAD_REQUEST);
         }
 
+        request.setClient(client);
         try {
             session.clientPolicy().triggerOnEvent(new BackchannelTokenRequestContext(request, formParams));
         } catch (ClientPolicyException cpe) {

@@ -28,12 +28,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  */
 public class BackchannelTokenRequestContext implements ClientPolicyContext {
 
-    private final CIBAAuthenticationRequest request;
+    private final CIBAAuthenticationRequest parsedRequest;
     private final MultivaluedMap<String, String> requestParameters;
 
-    public BackchannelTokenRequestContext(CIBAAuthenticationRequest request,
+    public BackchannelTokenRequestContext(CIBAAuthenticationRequest parsedRequest,
             MultivaluedMap<String, String> requestParameters) {
-        this.request = request;
+        this.parsedRequest = parsedRequest;
         this.requestParameters = requestParameters;
     }
 
@@ -42,8 +42,8 @@ public class BackchannelTokenRequestContext implements ClientPolicyContext {
         return ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST;
     }
 
-    public CIBAAuthenticationRequest getRequest() {
-        return request;
+    public CIBAAuthenticationRequest getParsedRequest() {
+        return parsedRequest;
     }
 
     public MultivaluedMap<String, String> getRequestParameters() {

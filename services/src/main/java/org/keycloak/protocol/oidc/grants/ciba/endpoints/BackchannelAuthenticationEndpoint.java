@@ -196,7 +196,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         extractAdditionalParams(endpointRequest, request);
 
         try {
-            session.clientPolicy().triggerOnEvent(new BackchannelAuthenticationRequestContext(endpointRequest, params));
+            session.clientPolicy().triggerOnEvent(new BackchannelAuthenticationRequestContext(endpointRequest, request, params));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

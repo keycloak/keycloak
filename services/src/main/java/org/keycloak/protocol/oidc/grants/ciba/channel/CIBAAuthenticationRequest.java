@@ -19,11 +19,7 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import javax.crypto.SecretKey;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.crypto.Algorithm;

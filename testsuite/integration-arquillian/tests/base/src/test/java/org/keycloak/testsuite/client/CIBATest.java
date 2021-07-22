@@ -38,6 +38,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
 
@@ -93,6 +94,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
@@ -1933,6 +1935,102 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
         assertThat(tokenRes.getErrorDescription(), is("invalid client access type"));
+    }
+
+    @Test
+    public void testClientScopesCondition() throws Exception {
+        String username = "nutzername-rot";
+        String bindingMessage = "ThisIsBindingMessage";
+        Map<String, String> additionalParameters = new HashMap<>();
+        additionalParameters.put("user_device", "mobile");
+
+        String clientConfidentialId = generateSuffixedName("confidential-app");
+        String clientConfidentialSecret = "app-secret";
+        String cidConfidential = createClientByAdmin(clientConfidentialId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientConfidentialSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+
+        oauth.clientId(clientConfidentialId);
+        oauth.scope("microprofile-jwt");
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                    .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
+                        createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // user Backchannel Authentication Request
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, additionalParameters);
+        assertThat(response.getStatusCode(), is(equalTo(400)));
+        assertThat(response.getError(), is(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST.name()));
+        assertThat(response.getErrorDescription(), is("Exception thrown intentionally"));
+
+        updatePolicies("{}");
+
+        response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, additionalParameters);
+        assertThat(response.getStatusCode(), is(equalTo(200)));
+        Assert.assertNotNull(response.getAuthReqId());
+
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                    .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
+                        createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientConfidentialId, clientConfidentialSecret, response.getAuthReqId());
+        assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+        assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
+        assertThat(tokenRes.getErrorDescription(), is("Exception thrown intentionally"));
+
+        updatePolicies("{}");
+
+        // user Authentication Channel Request
+        TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
+        AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
+        assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
+        assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+        assertThat(authenticationChannelReq.getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
+
+        // user Authentication Channel completed
+        doAuthenticationChannelCallback(testRequest);
+
+        tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientConfidentialId, clientConfidentialSecret, response.getAuthReqId());
+        assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
+        AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
+        assertThat(accessToken.getIssuedFor(), is(equalTo(clientConfidentialId)));
+
+        RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
+        assertThat(refreshToken.getIssuedFor(), is(equalTo(clientConfidentialId)));
+        assertThat(refreshToken.getAudience()[0], is(equalTo(refreshToken.getIssuer())));
+
+        IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
+        assertThat(idToken.getPreferredUsername(), is(equalTo(username)));
+        assertThat(idToken.getIssuedFor(), is(equalTo(clientConfidentialId)));
+        assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
+
     }
 
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
