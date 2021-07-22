@@ -24,6 +24,7 @@ import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -64,6 +65,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
+    private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
 
     @Context
     HttpRequest request;
@@ -73,7 +75,8 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
             BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction,
             TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
-            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests) {
+            ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests,
+            ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.backChannelLogoutTokens = backChannelLogoutTokens;
@@ -81,6 +84,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         this.adminTestAvailabilityAction = adminTestAvailabilityAction;
         this.oidcClientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
+        this.cibaClientNotifications = cibaClientNotifications;
     }
 
     @POST
@@ -233,7 +237,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     @Path("/oidc-client-endpoints")
     public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
-        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests);
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData, authenticationChannelRequests, cibaClientNotifications);
     }
 
     @Override

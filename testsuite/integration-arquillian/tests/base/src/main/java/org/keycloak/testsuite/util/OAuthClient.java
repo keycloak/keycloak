@@ -715,10 +715,10 @@ public class OAuthClient {
     }
 
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
-        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, acrValues, null);
+        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, acrValues, null, null);
     }
 
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues, Map<String, String> additionalParams) throws Exception {
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues, String clientNotificationToken, Map<String, String> additionalParams) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
 
@@ -729,6 +729,7 @@ public class OAuthClient {
             if (userid != null) parameters.add(new BasicNameValuePair(LOGIN_HINT_PARAM, userid));
             if (bindingMessage != null) parameters.add(new BasicNameValuePair(BINDING_MESSAGE, bindingMessage));
             if (acrValues != null) parameters.add(new BasicNameValuePair(OAuth2Constants.ACR_VALUES, acrValues));
+            if (clientNotificationToken != null) parameters.add(new BasicNameValuePair(CibaGrantType.CLIENT_NOTIFICATION_TOKEN, clientNotificationToken));
             if (scope != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID + " " + scope));
             } else {

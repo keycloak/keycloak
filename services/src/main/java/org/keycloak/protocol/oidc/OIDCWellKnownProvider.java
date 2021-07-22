@@ -87,8 +87,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
 
-    public static final List<String> DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED= list(CibaConfig.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE);
-
     private KeycloakSession session;
 
     public OIDCWellKnownProvider(KeycloakSession session) {
@@ -181,7 +179,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setBackchannelLogoutSupported(true);
         config.setBackchannelLogoutSessionSupported(true);
 
-        config.setBackchannelTokenDeliveryModesSupported(DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED);
+        config.setBackchannelTokenDeliveryModesSupported(CibaConfig.CIBA_SUPPORTED_MODES);
         config.setBackchannelAuthenticationEndpoint(CibaGrantType.authorizationUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
         config.setBackchannelAuthenticationRequestSigningAlgValuesSupported(getSupportedBackchannelAuthenticationRequestSigningAlgorithms());
 
