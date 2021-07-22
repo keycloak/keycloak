@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.admin.authentication;
 
+import static org.hamcrest.Matchers.is;
+
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
-import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,11 +36,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
-import static org.hamcrest.Matchers.is;
+import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -221,6 +222,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Access will be always denied. Useful for example in the conditional flows to be used after satisfying the previous conditions");
         addProviderInfo(result, "allow-access-authenticator", "Allow access",
                 "Authenticator will always successfully authenticate. Useful for example in the conditional flows to be used after satisfying the previous conditions");
+
+        addProviderInfo(result, "user-session-limit-authenticator", "User session limit",
+                "Limits the sessions and/or offline sessions a user could have.");
 
         return result;
     }
