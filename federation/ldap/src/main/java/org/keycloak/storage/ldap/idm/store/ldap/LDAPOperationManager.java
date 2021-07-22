@@ -392,6 +392,8 @@ public class LDAPOperationManager {
             } catch (NamingException ne) {
                 filter = null;
             }
+        } else if (this.config.isEdirectoryGUID()) {
+            filter = "(&(objectClass=*)(" + getUuidAttributeName().toUpperCase() + LDAPConstants.EQUAL + LDAPUtil.convertGUIDToEdirectoryHexString(id) + "))";
         }
 
         if (filter == null) {
