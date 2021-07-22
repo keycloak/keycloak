@@ -155,6 +155,24 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     }
 
     @Test
+    public void updateClientWithRegistrationTokenAndRotationDisabled() throws ClientRegistrationException {
+        setClientRegistrationAccessTokenRotationEnabled(false);
+        try {
+            client.setRootUrl("http://newroot");
+
+            ClientRepresentation rep = reg.update(client);
+
+            assertEquals("http://newroot", getClient(client.getId()).getRootUrl());
+
+            // check registration access token is not updated
+            assertEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+            assertRead(client.getClientId(), client.getRegistrationAccessToken(), true);
+        } finally {
+            setClientRegistrationAccessTokenRotationEnabled(true);
+        }
+    }
+
+    @Test
     public void deleteClientWithRegistrationToken() throws ClientRegistrationException {
         reg.delete(client);
         assertNull(getClient(client.getId()));

@@ -162,8 +162,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
-            rep.setRegistrationAccessToken(registrationAccessToken);
+            RealmModel realm = session.getContext().getRealm();
+            if (realm.isClientRegistrationAccessTokenRotationEnabled()) {
+                String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+                rep.setRegistrationAccessToken(registrationAccessToken);
+            } else {
+                String registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
+                rep.setRegistrationAccessToken(registrationAccessToken);
+            }
         }
 
         try {

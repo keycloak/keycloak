@@ -80,6 +80,7 @@ public class MapRealmEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     private Integer clientSessionMaxLifespan = 0;
     private Integer clientOfflineSessionIdleTimeout = 0;
     private Integer clientOfflineSessionMaxLifespan = 0;
+    private Boolean clientRegistrationAccessTokenRotationEnabled = true;
     private Integer actionTokenGeneratedByAdminLifespan = 0;
     private Integer offlineSessionMaxLifespan = 0;
     private Long eventsExpiration = 0l;
@@ -476,6 +477,15 @@ public class MapRealmEntity<K> implements AbstractEntity<K>, UpdatableEntity {
     public void setClientOfflineSessionMaxLifespan(Integer clientOfflineSessionMaxLifespan) {
         this.updated |= ! Objects.equals(this.clientOfflineSessionMaxLifespan, clientOfflineSessionMaxLifespan);
         this.clientOfflineSessionMaxLifespan = clientOfflineSessionMaxLifespan;
+    }
+
+    public Boolean isClientRegistrationAccessTokenRotationEnabled() {
+        return clientRegistrationAccessTokenRotationEnabled;
+    }
+
+    public void setClientRegistrationAccessTokenRotationEnabled(Boolean clientRegistrationAccessTokenRotationEnabled) {
+        this.updated |= ! Objects.equals(this.clientRegistrationAccessTokenRotationEnabled, clientRegistrationAccessTokenRotationEnabled);
+        this.clientRegistrationAccessTokenRotationEnabled = clientRegistrationAccessTokenRotationEnabled;
     }
 
     public Integer getActionTokenGeneratedByAdminLifespan() {

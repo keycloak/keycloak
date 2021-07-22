@@ -537,6 +537,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isClientRegistrationAccessTokenRotationEnabled() {
+        if (isUpdated()) return updated.isClientRegistrationAccessTokenRotationEnabled();
+        return cached.isClientRegistrationAccessTokenRotationEnabled();
+    }
+
+    @Override
+    public void setClientRegistrationAccessTokenRotationEnabled(boolean clientRegistrationAccessTokenRotationEnabled) {
+        getDelegateForUpdate();
+        updated.setClientRegistrationAccessTokenRotationEnabled(clientRegistrationAccessTokenRotationEnabled);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         if (isUpdated()) return updated.getAccessTokenLifespan();
         return cached.getAccessTokenLifespan();
