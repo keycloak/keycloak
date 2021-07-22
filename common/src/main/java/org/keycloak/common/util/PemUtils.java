@@ -152,8 +152,8 @@ public final class PemUtils {
     }
 
     public static String removeBeginEnd(String pem) {
-        pem = pem.replaceAll("-----BEGIN (.*)-----", "");
-        pem = pem.replaceAll("-----END (.*)----", "");
+        pem = pem.replaceAll("-----BEGIN [A-Z]+-----", "");
+        pem = pem.replaceAll("-----END [A-Z]+-----", "");
         pem = pem.replaceAll("\r\n", "");
         pem = pem.replaceAll("\n", "");
         return pem.trim();
