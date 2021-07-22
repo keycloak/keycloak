@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -29,11 +30,14 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 public class BackchannelAuthenticationRequestContext implements ClientPolicyContext {
 
     private final BackchannelAuthenticationEndpointRequest request;
+    private final CIBAAuthenticationRequest parsedRequest;
     private final MultivaluedMap<String, String> requestParameters;
 
     public BackchannelAuthenticationRequestContext(BackchannelAuthenticationEndpointRequest request,
+            CIBAAuthenticationRequest parsedRequest,
             MultivaluedMap<String, String> requestParameters) {
         this.request = request;
+        this.parsedRequest = parsedRequest;
         this.requestParameters = requestParameters;
     }
 
@@ -44,6 +48,10 @@ public class BackchannelAuthenticationRequestContext implements ClientPolicyCont
 
     public BackchannelAuthenticationEndpointRequest getRequest() {
         return request;
+    }
+
+    public CIBAAuthenticationRequest getParsedRequest() {
+        return parsedRequest;
     }
 
     public MultivaluedMap<String, String> getRequestParameters() {
