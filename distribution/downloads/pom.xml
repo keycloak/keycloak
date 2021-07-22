@@ -67,6 +67,44 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <plugin>
+                        <groupId>net.nicoulaj.maven.plugins</groupId>
+                        <artifactId>checksum-maven-plugin</artifactId>
+                        <version>1.10</version>
+                        <executions>
+                            <execution>
+                                <id>extra-checksums</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>files</goal>
+                                </goals>
+                                <configuration>
+                                    <fileSets>
+                                        <fileSet>
+                                            <directory>${project.build.directory}/${project.version}</directory>
+                                            <excludes>
+                                                <exclude>*.md5</exclude>
+                                                <exclude>*.sha1</exclude>
+                                            </excludes>
+                                        </fileSet>
+                                    </fileSets>
+                                    <individualFiles>false</individualFiles>
+                                    <csvSummary>true</csvSummary>
+                                    <csvSummaryFile>${project.version}/checksums.csv</csvSummaryFile>
+                                    <xmlSummary>true</xmlSummary>
+                                    <xmlSummaryFile>${project.version}/checksums.xml</xmlSummaryFile>
+                                    <algorithms>
+                                        <algorithm>MD5</algorithm>
+                                        <algorithm>SHA-1</algorithm>
+                                        <algorithm>SHA-256</algorithm>
+                                        <algorithm>SHA-512</algorithm>
+                                        <algorithm>SHA3-256</algorithm>
+                                        <algorithm>SHA3-512</algorithm>
+                                    </algorithms>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
