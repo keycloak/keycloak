@@ -320,13 +320,16 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerUserSuccess@email", "registerUserSuccess", "password", "password");
+        //contains few special characters we want to be sure they are allowed in username
+        String username = "register.U-se@rS_uccess";
+        
+        registerPage.register("firstName", "lastName", "registerUserSuccess@email", username, "password", "password");
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister("registerUserSuccess", "registerUserSuccess@email").assertEvent().getUserId();
-        assertUserRegistered(userId, "registerusersuccess", "registerusersuccess@email");
+        String userId = events.expectRegister(username, "registerUserSuccess@email").assertEvent().getUserId();
+        assertUserRegistered(userId, username.toLowerCase(), "registerusersuccess@email");
     }
 
     private void assertUserRegistered(String userId, String username, String email) {

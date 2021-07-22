@@ -42,18 +42,27 @@ public class PatternValidator extends AbstractStringValidator implements Configu
 
     public static final PatternValidator INSTANCE = new PatternValidator();
 
-    public static final String KEY_PATTERN = "pattern";
+    public static final String CFG_PATTERN = "pattern";
 
     public static final String MESSAGE_NO_MATCH = "error-pattern-no-match";
+    
+    public static final String CFG_ERROR_MESSAGE = "error-message";
     
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
-        property.setName(KEY_PATTERN);
+        property.setName(CFG_PATTERN);
         property.setLabel("RegExp pattern");
         property.setHelpText("RegExp pattern the value must match. Java Pattern syntax is used.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
+        property.setName(CFG_ERROR_MESSAGE);
+        property.setLabel("Error message key");
+        property.setHelpText("Key of the error message in i18n bundle. Dafault message key is " + MESSAGE_NO_MATCH);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
@@ -65,10 +74,10 @@ public class PatternValidator extends AbstractStringValidator implements Configu
 
     @Override
     protected void doValidate(String value, String inputHint, ValidationContext context, ValidatorConfig config) {
-        Pattern pattern = config.getPattern(KEY_PATTERN);
+        Pattern pattern = config.getPattern(CFG_PATTERN);
 
         if (!pattern.matcher(value).matches()) {
-            context.addError(new ValidationError(ID, inputHint, MESSAGE_NO_MATCH, config.getString(KEY_PATTERN)));
+            context.addError(new ValidationError(ID, inputHint, config.getStringOrDefault(CFG_ERROR_MESSAGE, MESSAGE_NO_MATCH), config.getString(CFG_PATTERN)));
         }
     }
 
@@ -76,17 +85,17 @@ public class PatternValidator extends AbstractStringValidator implements Configu
     public ValidationResult validateConfig(KeycloakSession session, ValidatorConfig config) {
         Set<ValidationError> errors = new LinkedHashSet<>();
 
-        if (config == null || config == ValidatorConfig.EMPTY || !config.containsKey(KEY_PATTERN)) {
-            errors.add(new ValidationError(ID, KEY_PATTERN, ValidatorConfigValidator.MESSAGE_CONFIG_MISSING_VALUE));
+        if (config == null || config == ValidatorConfig.EMPTY || !config.containsKey(CFG_PATTERN)) {
+            errors.add(new ValidationError(ID, CFG_PATTERN, ValidatorConfigValidator.MESSAGE_CONFIG_MISSING_VALUE));
         } else {
-            Object maybePattern = config.get(KEY_PATTERN);
+            Object maybePattern = config.get(CFG_PATTERN);
             try {
-                Pattern pattern = config.getPattern(KEY_PATTERN);
+                Pattern pattern = config.getPattern(CFG_PATTERN);
                 if (pattern == null) {
-                    errors.add(new ValidationError(ID, KEY_PATTERN, ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_VALUE, maybePattern));
+                    errors.add(new ValidationError(ID, CFG_PATTERN, ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_VALUE, maybePattern));
                 }
             } catch (PatternSyntaxException pse) {
-                errors.add(new ValidationError(ID, KEY_PATTERN, ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_VALUE, maybePattern));
+                errors.add(new ValidationError(ID, CFG_PATTERN, ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_VALUE, maybePattern, pse.getMessage()));
             }
         }
         return new ValidationResult(errors);

@@ -58,6 +58,7 @@ import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * {@link UserProfileProvider} loading configuration from the changeable JSON file stored in component config. Parsed
@@ -136,6 +137,13 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
                         Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
                 decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
+                
+                //add email format validator to legacy profile
+                List<AttributeMetadata> em = decoratedMetadata.getAttribute(UserModel.EMAIL);
+                for(AttributeMetadata e: em) {
+                    e.addValidator(new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
+                }
+                
                 return decoratedMetadata;
             }
             return decoratedMetadata;
