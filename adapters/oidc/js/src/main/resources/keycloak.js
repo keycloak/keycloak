@@ -561,6 +561,7 @@
             req.open('GET', url, true);
             req.setRequestHeader('Accept', 'application/json');
             req.setRequestHeader('Authorization', 'bearer ' + kc.token);
+            req.withCredentials = true;
 
             var promise = createPromise();
 
@@ -586,6 +587,7 @@
             req.open('GET', url, true);
             req.setRequestHeader('Accept', 'application/json');
             req.setRequestHeader('Authorization', 'bearer ' + kc.token);
+            req.withCredentials = true;
 
             var promise = createPromise();
 
