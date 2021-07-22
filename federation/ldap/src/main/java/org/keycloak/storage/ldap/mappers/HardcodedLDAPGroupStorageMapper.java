@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -63,7 +64,8 @@ public class HardcodedLDAPGroupStorageMapper extends AbstractLDAPStorageMapper {
 
             @Override
             public boolean isMemberOf(GroupModel group) {
-                return super.isMemberOf(group) || group.equals(getGroup(realm));
+                GroupModel hardcodedGroup = getGroup(realm);
+                return super.isMemberOf(group) || (hardcodedGroup != null && RoleUtils.isMember(Stream.of(hardcodedGroup), group));
             }
 
             @Override
@@ -73,6 +75,12 @@ public class HardcodedLDAPGroupStorageMapper extends AbstractLDAPStorageMapper {
                 } else {
                     super.leaveGroup(group);
                 }
+            }
+
+            @Override
+            public boolean hasRole(RoleModel role) {
+                GroupModel group = getGroup(realm);
+                return super.hasRole(role) || (group != null && group.hasRole(role));
             }
         };
     }
