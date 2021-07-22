@@ -177,7 +177,6 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         return getRoleMappings().stream().filter(r -> RoleUtils.isClientRole(r, app)).collect(Collectors.toSet());
     }
 
-
     @Override
     public boolean hasRole(RoleModel role) {
         return RoleUtils.hasRole(getRoleMappings().stream(), role)

@@ -155,7 +155,7 @@ public class ScopeMappedResource {
         }
 
         return realm.getRolesStream()
-                .filter(((Predicate<RoleModel>) scopeContainer::hasScope).negate())
+                .filter(((Predicate<RoleModel>) scopeContainer::hasDirectScope).negate())
                 .filter(auth.roles()::canMapClientScope)
                 .map(ModelToRepresentation::toBriefRepresentation);
     }

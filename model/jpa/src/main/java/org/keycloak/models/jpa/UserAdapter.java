@@ -446,7 +446,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
-        if (hasRole(role)) return;
+        if (hasDirectRole(role)) return;
         grantRoleImpl(role);
     }
 

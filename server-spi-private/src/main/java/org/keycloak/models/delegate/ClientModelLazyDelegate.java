@@ -539,6 +539,11 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
+    public boolean hasDirectScope(RoleModel role) {
+        return getDelegate().hasDirectScope(role);
+    }
+
+    @Override
     public boolean hasScope(RoleModel role) {
         return getDelegate().hasScope(role);
     }

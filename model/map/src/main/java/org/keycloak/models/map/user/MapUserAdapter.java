@@ -288,8 +288,13 @@ public abstract class MapUserAdapter<K> extends AbstractUserModel<MapUserEntity<
     }
 
     @Override
-    public boolean hasRole(RoleModel role) {
+    public boolean hasDirectRole(RoleModel role) {
         return entity.getRolesMembership().contains(role.getId());
+    }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+        return hasDirectRole(role);
     }
 
     @Override
