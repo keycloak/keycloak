@@ -6,6 +6,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -432,7 +433,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
             OAuth2ErrorRepresentation error = simple.asJson(OAuth2ErrorRepresentation.class);
             assertThat(error, notNullValue());
-            assertThat(error.getError(), is("Identity Provider [" + notExistingIdP + "] not found."));
+            assertThat(error.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(error.getErrorDescription(), is("Identity Provider [" + notExistingIdP + "] not found."));
         } catch (IOException ex) {
             Assert.fail("Cannot create HTTP client. Details: " + ex.getMessage());
         }
