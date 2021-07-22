@@ -309,6 +309,13 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.saml.attribute-consuming-service-index.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="attributeConsumingServiceName">{{:: 'identity-provider.saml.attribute-consuming-service-name' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" ng-model="identityProvider.config.attributeConsumingServiceName" id="attributeConsumingServiceName"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.saml.attribute-consuming-service-name.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset>
             <legend collapsed><span class="text">{{:: 'identity-provider.saml.requested-authncontext' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml.requested-authncontext.tooltip' | translate}}</kc-tooltip></legend>

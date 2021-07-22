@@ -61,6 +61,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String SIGN_SP_METADATA = "signSpMetadata";
     public static final String ALLOW_CREATE = "allowCreate";
     public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -368,6 +369,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         } else {
             getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_INDEX, String.valueOf(attributeConsumingServiceIndex));
         }
+    }
+
+    public void setAttributeConsumingServiceName(String attributeConsumingServiceName) {
+        getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_NAME, attributeConsumingServiceName);
+    }
+
+    public String getAttributeConsumingServiceName() {
+        return getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_NAME);
     }
 
     @Override
