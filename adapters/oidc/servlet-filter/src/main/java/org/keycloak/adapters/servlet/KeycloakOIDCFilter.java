@@ -43,6 +43,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,6 +60,8 @@ public class KeycloakOIDCFilter implements Filter {
     private final static Logger log = Logger.getLogger("" + KeycloakOIDCFilter.class);
 
     public static final String SKIP_PATTERN_PARAM = "keycloak.config.skipPattern";
+
+    public static final String ID_MAPPER_PARAM = "keycloak.config.idMapper";
 
     public static final String CONFIG_RESOLVER_PARAM = "keycloak.config.resolver";
 
@@ -92,6 +97,28 @@ public class KeycloakOIDCFilter implements Filter {
         String skipPatternDefinition = filterConfig.getInitParameter(SKIP_PATTERN_PARAM);
         if (skipPatternDefinition != null) {
             skipPattern = Pattern.compile(skipPatternDefinition, Pattern.DOTALL);
+        }
+
+        String idMapperClassName = filterConfig.getInitParameter(ID_MAPPER_PARAM);
+        if (idMapperClassName != null) {
+            try {
+                final Class<?> idMapperClass = getClass().getClassLoader().loadClass(idMapperClassName);
+                final Constructor<?> idMapperConstructor = idMapperClass.getDeclaredConstructor();
+                Object idMapperInstance = null;
+                // for KEYCLOAK-13745 test
+                if (idMapperConstructor.getModifiers() == Modifier.PRIVATE) {
+                    idMapperInstance = idMapperClass.getMethod("getInstance").invoke(null);
+                } else {
+                    idMapperInstance = idMapperConstructor.newInstance();
+                }
+                if(idMapperInstance instanceof SessionIdMapper) {
+                    this.idMapper = (SessionIdMapper) idMapperInstance;
+                } else {
+                    log.log(Level.WARNING, "SessionIdMapper class {0} is not instance of org.keycloak.adapters.spi.SessionIdMapper", idMapperClassName);
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                log.log(Level.WARNING, "SessionIdMapper class could not be instanced", e);
+            }
         }
 
         if (definedconfigResolver != null) {
@@ -160,25 +187,7 @@ public class KeycloakOIDCFilter implements Filter {
             return;
         }
 
-        PreAuthActionsHandler preActions = new PreAuthActionsHandler(new UserSessionManagement() {
-            @Override
-            public void logoutAll() {
-                if (idMapper != null) {
-                    idMapper.clear();
-                }
-            }
-
-            @Override
-            public void logoutHttpSessions(List<String> ids) {
-                log.fine("**************** logoutHttpSessions");
-                //System.err.println("**************** logoutHttpSessions");
-                for (String id : ids) {
-                    log.finest("removed idMapper: " + id);
-                    idMapper.removeSession(id);
-                }
-
-            }
-        }, deploymentContext, facade);
+        PreAuthActionsHandler preActions = new PreAuthActionsHandler(new IdMapperUserSessionManagement(), deploymentContext, facade);
 
         if (preActions.handleRequest()) {
             //System.err.println("**************** preActions.handleRequest happened!");
@@ -240,5 +249,25 @@ public class KeycloakOIDCFilter implements Filter {
     @Override
     public void destroy() {
 
+    }
+
+    private class IdMapperUserSessionManagement implements UserSessionManagement {
+        @Override
+        public void logoutAll() {
+            if (idMapper != null) {
+                idMapper.clear();
+            }
+        }
+
+        @Override
+        public void logoutHttpSessions(List<String> ids) {
+            log.fine("**************** logoutHttpSessions");
+            //System.err.println("**************** logoutHttpSessions");
+            for (String id : ids) {
+                log.finest("removed idMapper: " + id);
+                idMapper.removeSession(id);
+            }
+
+        }
     }
 }
