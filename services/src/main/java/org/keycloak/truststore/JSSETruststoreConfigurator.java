@@ -19,23 +19,34 @@ package org.keycloak.truststore;
 
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class JSSETruststoreConfigurator {
 
+    private static final Logger log = Logger.getLogger(JSSETruststoreConfigurator.class);
+
     private TruststoreProvider provider;
     private volatile javax.net.ssl.SSLSocketFactory sslFactory;
     private volatile TrustManager[] tm;
+    private volatile KeyManager[] km;
+
 
     public JSSETruststoreConfigurator(KeycloakSession session) {
         KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
@@ -61,7 +72,7 @@ public class JSSETruststoreConfigurator {
                 if (sslFactory == null) {
                     try {
                         SSLContext sslctx = SSLContext.getInstance("TLS");
-                        sslctx.init(null, getTrustManagers(), null);
+                        sslctx.init(getKeyManagers(), getTrustManagers(), null);
                         sslFactory = sslctx.getSocketFactory();
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to initialize SSLContext: ", e);
@@ -92,6 +103,33 @@ public class JSSETruststoreConfigurator {
             }
         }
         return tm;
+    }
+
+    private KeyManager[] getKeyManagers() throws Exception {
+        String keyStorePath = System.getProperty("keycloak.tls.keystore.path");
+
+        if (keyStorePath == null) {
+            return null;
+        }
+
+        log.infof("Loading keystore from file: %s", keyStorePath);
+
+        InputStream stream = Files.newInputStream(Paths.get(keyStorePath));
+
+        if (stream == null) {
+            throw new RuntimeException("Could not load keystore");
+        }
+
+        try (InputStream is = stream) {
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            char[] keyStorePassword = System.getProperty("keycloak.tls.keystore.password", "password").toCharArray();
+            keyStore.load(is, keyStorePassword);
+
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, keyStorePassword);
+
+            return keyManagerFactory.getKeyManagers();
+        }
     }
 
     public HostnameVerifier getHostnameVerifier() {
