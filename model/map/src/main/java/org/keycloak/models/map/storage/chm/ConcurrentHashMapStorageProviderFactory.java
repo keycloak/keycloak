@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -63,7 +64,6 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
-import org.keycloak.models.map.storage.StringKeyConvertor;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -241,7 +241,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     }
 
-    private <K, V extends AbstractEntity<K> & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
+    private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
       Class<M> modelType, EnumSet<Flag> flags) {
         final StringKeyConvertor kc = keyConvertors.getOrDefault(mapName, defaultKeyConvertor);
         Class<?> valueType = MODEL_TO_VALUE_TYPE.get(modelType);
@@ -291,7 +291,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    public <K, V extends AbstractEntity<K> & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> getStorage(
+    public <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> getStorage(
       Class<M> modelType, Flag... flags) {
         EnumSet<Flag> f = flags == null || flags.length == 0 ? EnumSet.noneOf(Flag.class) : EnumSet.of(flags[0], flags);
         String name = MODEL_TO_NAME.getOrDefault(modelType, modelType.getSimpleName());

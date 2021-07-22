@@ -36,9 +36,14 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 
-public abstract class MapUserAdapter<K> extends AbstractUserModel<MapUserEntity<K>> {
-    public MapUserAdapter(KeycloakSession session, RealmModel realm, MapUserEntity<K> entity) {
+public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
+    public MapUserAdapter(KeycloakSession session, RealmModel realm, MapUserEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

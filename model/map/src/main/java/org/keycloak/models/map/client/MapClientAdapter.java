@@ -36,10 +36,15 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public abstract class MapClientAdapter<K> extends AbstractClientModel<MapClientEntity<K>> implements ClientModel {
+public abstract class MapClientAdapter extends AbstractClientModel<MapClientEntity> implements ClientModel {
 
-    public MapClientAdapter(KeycloakSession session, RealmModel realm, MapClientEntity<K> entity) {
+    public MapClientAdapter(KeycloakSession session, RealmModel realm, MapClientEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

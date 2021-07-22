@@ -27,9 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapAuthenticatedClientSessionEntity<K> implements AbstractEntity<K>, UpdatableEntity {
+public class MapAuthenticatedClientSessionEntity implements AbstractEntity, UpdatableEntity {
 
-    private K id;
+    private String id;
     private String userSessionId;
     private String realmId;
     private String clientId;
@@ -57,8 +57,7 @@ public class MapAuthenticatedClientSessionEntity<K> implements AbstractEntity<K>
         this.realmId = null;
     }
 
-    public MapAuthenticatedClientSessionEntity(K id, String userSessionId, String realmId, String clientId, boolean offline) {
-        Objects.requireNonNull(id, "id");
+    public MapAuthenticatedClientSessionEntity(String id, String userSessionId, String realmId, String clientId, boolean offline) {
         Objects.requireNonNull(userSessionId, "userSessionId");
         Objects.requireNonNull(realmId, "realmId");
         Objects.requireNonNull(clientId, "clientId");
@@ -72,7 +71,7 @@ public class MapAuthenticatedClientSessionEntity<K> implements AbstractEntity<K>
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

@@ -29,9 +29,9 @@ import java.util.Objects;
 public abstract class AbstractUserSessionModel<K> implements UserSessionModel {
     protected final KeycloakSession session;
     protected final RealmModel realm;
-    protected final MapUserSessionEntity<K> entity;
+    protected final MapUserSessionEntity entity;
 
-    public AbstractUserSessionModel(KeycloakSession session, RealmModel realm, MapUserSessionEntity<K> entity) {
+    public AbstractUserSessionModel(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
         Objects.requireNonNull(entity, "entity");
         Objects.requireNonNull(realm, "realm");
 

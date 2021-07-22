@@ -30,12 +30,17 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public abstract class MapRoleAdapter<K> extends AbstractRoleModel<MapRoleEntity<K>> implements RoleModel {
+public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements RoleModel {
 
     private static final Logger LOG = Logger.getLogger(MapRoleAdapter.class);
 
-    public MapRoleAdapter(KeycloakSession session, RealmModel realm, MapRoleEntity<K> entity) {
+    public MapRoleAdapter(KeycloakSession session, RealmModel realm, MapRoleEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override
@@ -65,7 +70,7 @@ public abstract class MapRoleAdapter<K> extends AbstractRoleModel<MapRoleEntity<
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId().toString(), entity.getCompositeRoles().size(), getShortStackTrace());
+        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId(), entity.getCompositeRoles().size(), getShortStackTrace());
         return entity.getCompositeRoles().stream()
                 .map(uuid -> session.roles().getRoleById(realm, uuid))
                 .filter(Objects::nonNull);
@@ -73,13 +78,13 @@ public abstract class MapRoleAdapter<K> extends AbstractRoleModel<MapRoleEntity<
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        LOG.tracef("%s(%s).addCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("%s(%s).addCompositeRole(%s(%s))%s", entity.getName(), entity.getId(), role.getName(), role.getId(), getShortStackTrace());
         entity.addCompositeRole(role.getId());
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        LOG.tracef("%s(%s).removeCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("%s(%s).removeCompositeRole(%s(%s))%s", entity.getName(), entity.getId(), role.getName(), role.getId(), getShortStackTrace());
         entity.removeCompositeRole(role.getId());
     }
 

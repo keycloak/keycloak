@@ -28,7 +28,6 @@ import java.util.stream.Stream;
  * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
  *
  * @author hmlnarik
- * @param <K> Type of the primary key. Various storages can
  * @param <V> Type of the stored values that contains all the data stripped of session state. In other words, in the entities
  *            there are only IDs and mostly primitive types / {@code String}, never references to {@code *Model} instances.
  *            See the {@code Abstract*Entity} classes in this module.
@@ -36,11 +35,12 @@ import java.util.stream.Stream;
  *            filtering via model fields in {@link ModelCriteriaBuilder} which is necessary to abstract from physical
  *            layout and thus to support no-downtime upgrade.
  */
-public interface MapStorage<K, V extends AbstractEntity<K>, M> {
+public interface MapStorage<V extends AbstractEntity, M> {
 
     /**
      * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
-     * If the id is {@code null}, then the {@code value}'s ID will be generated and returned in the id of the return value.
+     * If the id is {@code null} or its format is not matching the store internal format for ID, then
+     * the {@code value}'s ID will be generated and returned in the id of the return value.
      * @param value Entity to create in the store
      * @throws NullPointerException if {@code value} is {@code null}
      * @see AbstractEntity#getId()
@@ -56,7 +56,7 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @return See description
      * @throws NullPointerException if the {@code key} is {@code null}
      */
-    V read(K key);
+    V read(String key);
 
     /**
      * Returns stream of objects satisfying given {@code criteria} from the storage.
@@ -94,7 +94,7 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @param key
      * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
      */
-    boolean delete(K key);
+    boolean delete(String key);
 
     /**
      * Deletes objects that match the given criteria.
@@ -129,14 +129,6 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      *
      * @return See description. Never returns {@code null}
      */
-    MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session);
-
-    /**
-     * Returns a {@link StringKeyConvertor} that is used to convert primary keys
-     * from {@link String} to internal representation and vice versa.
-     * 
-     * @return See above. Never returns {@code null}.
-     */
-    StringKeyConvertor<K> getKeyConvertor();
+    MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session);
 
 }

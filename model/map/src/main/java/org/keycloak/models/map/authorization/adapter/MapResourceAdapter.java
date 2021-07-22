@@ -28,10 +28,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class MapResourceAdapter<K> extends AbstractResourceModel<MapResourceEntity<K>> {
+public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity> {
 
-    public MapResourceAdapter(MapResourceEntity<K> entity, StoreFactory storeFactory) {
+    public MapResourceAdapter(MapResourceEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

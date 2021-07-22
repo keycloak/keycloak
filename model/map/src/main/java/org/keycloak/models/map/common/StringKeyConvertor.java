@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage;
+package org.keycloak.models.map.common;
 
 import java.security.SecureRandom;
 import java.util.UUID;
@@ -110,6 +110,11 @@ public interface StringKeyConvertor<K> {
          */
         private static class Holder {
             static final SecureRandom numberGenerator = new SecureRandom();
+        }
+
+        @Override
+        public String keyToString(Long key) {
+            return Long.toUnsignedString(key);
         }
 
         @Override
