@@ -32,7 +32,7 @@ import {
   EditProviderCrumb,
   RealmSettingsSection,
 } from "./realm-settings/RealmSettingsSection";
-import { NewRealmForm } from "./realm/add/NewRealmForm";
+import realmRoutes from "./realm/routes";
 import { SessionsSection } from "./sessions/SessionsSection";
 import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
 import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
@@ -52,12 +52,7 @@ export type RouteDef = {
 
 export const routes: RouteDef[] = [
   ...clientRoutes,
-  {
-    path: "/:realm/add-realm",
-    component: NewRealmForm,
-    breadcrumb: (t) => t("realm:createRealm"),
-    access: "manage-realm",
-  },
+  ...realmRoutes,
   {
     path: "/:realm/clients/:clientId/roles/add-role",
     component: RealmRoleTabs,

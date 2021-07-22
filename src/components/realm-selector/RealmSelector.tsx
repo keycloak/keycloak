@@ -17,6 +17,7 @@ import { useHistory } from "react-router-dom";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import { toAddRealm } from "../../realm/routes/AddRealm";
 import { toUpperCase } from "../../util";
 import { RecentUsed } from "./recent-used";
 
@@ -66,7 +67,7 @@ export const RealmSelector = () => {
       component="div"
       isBlock
       onClick={() => {
-        history.push(`/${realm}/add-realm`);
+        history.push(toAddRealm({ realm }));
         setOpen(!open);
       }}
     >

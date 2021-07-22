@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Nav,
@@ -13,6 +13,7 @@ import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useAccess } from "./context/access/Access";
 import { routes } from "./route-config";
+import { AddRealmRoute } from "./realm/routes/AddRealm";
 
 export const PageNav: React.FunctionComponent = () => {
   const { t } = useTranslation("common");
@@ -68,8 +69,7 @@ export const PageNav: React.FunctionComponent = () => {
     "view-identity-providers"
   );
 
-  const { pathname } = useLocation();
-  const isOnAddRealm = () => pathname.indexOf("add-realm") === -1;
+  const isOnAddRealm = !!useRouteMatch(AddRealmRoute.path);
 
   return (
     <PageSidebar
@@ -80,12 +80,12 @@ export const PageNav: React.FunctionComponent = () => {
               <RealmSelector />
             </NavItem>
           </NavList>
-          {isOnAddRealm() && (
+          {!isOnAddRealm && (
             <NavGroup title="">
               <LeftNav title="home" path="/" />
             </NavGroup>
           )}
-          {showManage && isOnAddRealm() && (
+          {showManage && !isOnAddRealm && (
             <NavGroup title={t("manage")}>
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
@@ -97,7 +97,7 @@ export const PageNav: React.FunctionComponent = () => {
             </NavGroup>
           )}
 
-          {showConfigure && isOnAddRealm() && (
+          {showConfigure && !isOnAddRealm && (
             <NavGroup title={t("configure")}>
               <LeftNav title="realmSettings" path="/realm-settings" />
               <LeftNav title="authentication" path="/authentication" />
