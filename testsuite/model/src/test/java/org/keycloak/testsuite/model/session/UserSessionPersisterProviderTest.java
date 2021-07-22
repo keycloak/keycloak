@@ -157,7 +157,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             // Assert offline sessions
             RealmModel realm = session.realms().getRealm(realmId);
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 2, 2, 3);
-            assertSessions(loadedSessions, new String[] { origSessions[0].getId(), origSessions[1].getId(), origSessions[2].getId() });
 
             assertSessionLoaded(loadedSessions, origSessions[0].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
             assertSessionLoaded(loadedSessions, origSessions[1].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
@@ -608,14 +607,5 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         }
 
         assertThat(actualClients, Matchers.arrayContainingInAnyOrder(clients));
-    }
-
-    public static void assertSessions(List<UserSessionModel> actualSessions, String[] expectedSessionIds) {
-        String[] actual = new String[actualSessions.size()];
-        for (int i = 0; i < actual.length; i++) {
-            actual[i] = actualSessions.get(i).getId();
-        }
-
-        assertThat(actual, Matchers.arrayContainingInAnyOrder(expectedSessionIds));
     }
 }
