@@ -118,7 +118,7 @@
     <body>
 
         <script>
-            const keycloak = Keycloak({
+            var keycloak = Keycloak({
                 authServerUrl: authUrl,
                 realm: realm,
                 clientId: 'account-console'
