@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmLocalizationResource;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ public class RealmRealmLocalizationResourceTest extends AbstractAdminTest {
 
         getCleanup().addLocalization("en");
         getCleanup().addLocalization("de");
+        getCleanup().addLocalization("es");
 
         resource = adminClient.realm(REALM_NAME).localization();
     }
@@ -126,5 +128,32 @@ public class RealmRealmLocalizationResourceTest extends AbstractAdminTest {
         assertEquals(1, localizations.size());
 
         assertThat(localizations, CoreMatchers.hasItems("de"));
+    }
+
+    @Test
+    public void patchRealmLocalizationWhenLocaleDoesNotYetExist() {
+        final Map<String, String> newLocalizationTexts = new HashMap<>();
+        newLocalizationTexts.put("key-a", "text-a_es");
+        newLocalizationTexts.put("key-b", "text-b_es");
+
+        resource.patchRealmLocalizationTexts("es", newLocalizationTexts);
+
+        final Map<String, String> persistedLocalizationTexts = resource.getRealmLocalizationTexts("es");
+        assertEquals(newLocalizationTexts, persistedLocalizationTexts);
+    }
+
+    @Test
+    public void patchRealmLocalizationWhenLocaleAlreadyExists() {
+        final Map<String, String> newLocalizationTexts = new HashMap<>();
+        newLocalizationTexts.put("key-b", "text-b_changed_en");
+        newLocalizationTexts.put("key-c", "text-c_en");
+
+        resource.patchRealmLocalizationTexts("en", newLocalizationTexts);
+
+        final Map<String, String> expectedLocalizationTexts = new HashMap<>();
+        expectedLocalizationTexts.put("key-a", "text-a_en");
+        expectedLocalizationTexts.putAll(newLocalizationTexts);
+        final Map<String, String> persistedLocalizationTexts = resource.getRealmLocalizationTexts("en");
+        assertEquals(expectedLocalizationTexts, persistedLocalizationTexts);
     }
 }
