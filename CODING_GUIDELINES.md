@@ -12,51 +12,14 @@ If you submit a pull request that changes the dependencies, make sure that you a
 
 ## Typescript
 
-
 The Keycloak UI projects uses best practices based off the official [React TypeScript Cheat sheet](https://react-typescript-cheatsheet.netlify.app/), with modifications for this project. The React TypeScript Cheat sheet is maintained and used by developers through out the world, and is a place where developers can bring together lessons learned using TypeScript and React.
 
-### Imports
+### Non-null assertion operator
 
-Since we are using TypeScript 4.x + for this project, default imports should conform to the new standard set forth in TypeScript 2.7:
+In the project you will sometimes see the [non-null assertion operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator) (`!`) used to tell the TypeScript compiler that you guarantee that a value is not `null` or `undefined`. Because this might possibly introduce errors at run-time if you have not checked this value yourself it should be used sparingly.
 
-```javascript
-import React from "react";
-import ReactDOM from "react-dom";
-```
+The only place where it is valid to use the non-null assertion operator is on the types that are provided by the [Admin API client](https://github.com/keycloak/keycloak-nodejs-admin-client). The reason for this is that the types are generated from Java code, which does not explicitly provide information about the nullability of fields (more on that [here](https://github.com/keycloak/keycloak-nodejs-admin-client/issues/187)). 
 
-For imports that are not the default import use the following syntax:
-
-```javascript
-import { X1, X2, ... Xn } from "package-x";
-```
-
-### Props
-
-For props we are using **type** instead of **interfaces**. The reason to use types instead of interfaces is for consistency between the views and because it"s more constrained (See [Types or Interfaces](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/types_or_interfaces) for more clarification). By using types we are ensuring that we will not deviate from the agreed upon [contract](https://dev.to/reyronald/typescript-types-or-interfaces-for-react-component-props-1408).
-
-The following is an example of using a type for props:
-
-```javascript
-import React, { ReactNode } from "react"
-
-...
-
-export type ExampleComponentProps = {
-    message: string;
-    children: ReactNode;
-}
-```
-
-### State objects should be types
-
-When maintaining state for a component that requires it's state to be defined by an object, it is recommended that you use a [type instead of an interface](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/types_or_interfaces).  For example if you need to maintain the currentApiId and isExpanded in a single object you can do the following:
-
-```javascript
-type ApiDrawerState = {
-  currentApiId: string,
-  isExpanded: boolean,
-};
-```
 
 ### State management
 
@@ -71,10 +34,6 @@ The way this plays out in our application is that we first prefer state to remai
 4. If #3, is not sufficient, use a [global context](https://reactjs.org/docs/context.html).
  
 A good tutorial on this approach is found in [Kent Dodds’ blog](https://kentcdodds.com/blog/application-state-management-with-react).
-
-### Interfaces
-
-Interfaces should be used for all public facing API definitions. A table describing when to use interfaces vs. types can be found [here](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/types_or_interfaces).
 
 ### Function Components
 
@@ -138,22 +97,6 @@ When using reducers make sure you specify the [return type and not use inference
 #### useEffect
 
 For useEffect only [return the function or undefined](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#useeffect).
-
-#### useRef
-
-When using useRef there are two options with Typescript. The first one is when creating a [read-only ref](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#useref).
-
-```javascript
-const refExample = useRef<HTMLElement>(null!);
-```
-
-By passing in null! it will prevent Typescript from returning an error saying refExample maybe null.
-
-The second option is for creating [mutable refs](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/hooks#useref) that you will manage.
-
-```javascript
-const refExampleMutable = (useRef < HTMLElement) | (null > null);
-```
 
 ### Additional Typescript Pointers
 
