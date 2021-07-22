@@ -22,6 +22,7 @@ import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToke
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -125,5 +126,9 @@ public class RealmBean {
      */
     public int getIdpVerifyAccountLinkActionTokenLifespanMinutes() {
         return (int)TimeUnit.SECONDS.toMinutes(realm.getActionTokenGeneratedByUserLifespan(IdpVerifyAccountLinkActionToken.TOKEN_TYPE));
+    }
+
+    public Map<String, String> getAttributes() {
+        return realm.getAttributes();
     }
 }
