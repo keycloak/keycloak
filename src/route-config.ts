@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import type { ComponentType } from "react";
 import type { MatchOptions } from "use-react-router-breadcrumbs";
-import { AuthenticationSection } from "./authentication/AuthenticationSection";
+import authenticationRoutes from "./authentication/routes";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
@@ -51,6 +51,7 @@ export type RouteDef = {
 };
 
 export const routes: RouteDef[] = [
+  ...authenticationRoutes,
   ...clientRoutes,
   ...realmRoutes,
   {
@@ -189,12 +190,6 @@ export const routes: RouteDef[] = [
     path: "/:realm/realm-settings/keys/:id?/rsa/settings",
     component: RSASettings,
     breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/authentication",
-    component: AuthenticationSection,
-    breadcrumb: (t) => t("authentication"),
     access: "view-realm",
   },
   {
