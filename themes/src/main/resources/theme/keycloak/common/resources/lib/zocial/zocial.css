@@ -132,6 +132,7 @@ a.zocial {
 .zocial.gmail,
 .zocial.instapaper,
 .zocial.itunes,
+.zocial.apple,
 .zocial.ninetyninedesigns,
 .zocial.openid,
 .zocial.plancast,
@@ -173,6 +174,8 @@ a.zocial {
 .zocial.instapaper:hover,
 .zocial.itunes:focus,
 .zocial.itunes:hover,
+.zocial.apple:focus,
+.zocial.apple:hover,
 .zocial.ninetyninedesigns:focus,
 .zocial.ninetyninedesigns:hover,
 .zocial.openid:focus,
@@ -215,6 +218,7 @@ a.zocial {
 .zocial.gmail:active,
 .zocial.instapaper:active,
 .zocial.itunes:active,
+.zocial.apple:active,
 .zocial.ninetyninedesigns:active,
 .zocial.openid:active,
 .zocial.plancast:active,
@@ -281,6 +285,7 @@ a.zocial {
 .zocial.html5:before { content: "\f12c"; }
 .zocial.ie:before { content: "\f12d"; }
 .zocial.instagram:before { content: "\f12e"; }
+.zocial.apple:before { content: "\f106"; }
 .zocial.instapaper:before { content: "\f12f"; }
 .zocial.intensedebate:before { content: "\f130"; }
 .zocial.itunes:before { content: "\f131"; }
@@ -348,6 +353,7 @@ a.zocial {
 .zocial.forrst:before {color: #50894f;}
 .zocial.gmail:before {color: #f00;}
 .zocial.itunes:before {color: #1a6dd2;}
+.zocial.apple:before {color: #000000;}
 .zocial.lego:before {color:#fff900;}
 .zocial.ninetyninedesigns:before {color: #f50;}
 .zocial.openid:before {color: #ff921d;}
@@ -412,6 +418,7 @@ a.zocial {
 .zocial.intensedebate {background-color: #0099e1;}
 .zocial.klout {background-color: #e34a25;}
 .zocial.itunes {background-color: #efefeb; color: #312c2a;}
+.zocial.apple {background-color: #000000; color: #efefeb;}
 .zocial.lanyrd {background-color: #2e6ac2;}
 .zocial.lastfm {background-color: #dc1a23;}
 .zocial.lego {background-color: #fb0000;}
