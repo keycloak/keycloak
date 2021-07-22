@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useRouteMatch } from "react-router-dom";
 import {
   AlertVariant,
   Button,
@@ -18,6 +18,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useRealm } from "../context/realm-context/RealmContext";
 import { upperCaseFormatter, emptyFormatter } from "../util";
 import {
   CellDropdown,
@@ -28,12 +29,13 @@ import {
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { ChangeTypeDialog } from "./ChangeTypeDialog";
+import { toNewClientScope } from "./routes/NewClientScope";
 
 import "./client-scope.css";
 
 export const ClientScopesSection = () => {
+  const { realm } = useRealm();
   const { t } = useTranslation("client-scopes");
-  const history = useHistory();
   const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
@@ -175,7 +177,8 @@ export const ClientScopesSection = () => {
           toolbarItem={
             <>
               <ToolbarItem>
-                <Button onClick={() => history.push(`${url}/new`)}>
+                {/* @ts-ignore */}
+                <Button component={Link} to={toNewClientScope({ realm })}>
                   {t("createClientScope")}
                 </Button>
               </ToolbarItem>

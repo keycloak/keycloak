@@ -3,10 +3,7 @@ import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import type { ComponentType } from "react";
 import type { MatchOptions } from "use-react-router-breadcrumbs";
 import authenticationRoutes from "./authentication/routes";
-import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
-import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
-import { MappingDetails } from "./client-scopes/details/MappingDetails";
-import { ClientScopeForm } from "./client-scopes/form/ClientScopeForm";
+import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
 import { DashboardSection } from "./dashboard/Dashboard";
 import { EventsSection } from "./events/EventsSection";
@@ -53,6 +50,7 @@ export type RouteDef = {
 export const routes: RouteDef[] = [
   ...authenticationRoutes,
   ...clientRoutes,
+  ...clientScopesRoutes,
   ...realmRoutes,
   {
     path: "/:realm/clients/:clientId/roles/add-role",
@@ -65,36 +63,6 @@ export const routes: RouteDef[] = [
     component: RealmRoleTabs,
     breadcrumb: (t) => t("roles:roleDetails"),
     access: "view-realm",
-  },
-  {
-    path: "/:realm/client-scopes/new",
-    component: ClientScopeForm,
-    breadcrumb: (t) => t("client-scopes:createClientScope"),
-    access: "manage-clients",
-  },
-  {
-    path: "/:realm/client-scopes/:id/mappers/oidc-role-name-mapper",
-    component: RoleMappingForm,
-    breadcrumb: (t) => t("common:mappingDetails"),
-    access: "view-clients",
-  },
-  {
-    path: "/:realm/client-scopes/:id/mappers/:mapperId",
-    component: MappingDetails,
-    breadcrumb: (t) => t("common:mappingDetails"),
-    access: "view-clients",
-  },
-  {
-    path: "/:realm/client-scopes/:id/:type/:tab",
-    component: ClientScopeForm,
-    breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
-    access: "view-clients",
-  },
-  {
-    path: "/:realm/client-scopes",
-    component: ClientScopesSection,
-    breadcrumb: (t) => t("client-scopes:clientScopeList"),
-    access: "view-clients",
   },
   {
     path: "/:realm/roles",
