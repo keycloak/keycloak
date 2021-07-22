@@ -1044,28 +1044,41 @@
             }
         }
 
-        function decodeToken(str) {
-            str = str.split('.')[1];
-
-            str = str.replace(/-/g, '+');
-            str = str.replace(/_/g, '/');
-            switch (str.length % 4) {
-                case 0:
-                    break;
-                case 2:
-                    str += '==';
-                    break;
-                case 3:
-                    str += '=';
-                    break;
-                default:
-                    throw 'Invalid token';
+        function decodeToken(token) {
+            var base64TokenPayload = token.split('.')[1];
+            if (!base64TokenPayload) throw new Error('Invalid Token');
+            try {
+                var base64Corrected = base64TokenPayload.replace(/-/g, "+").replace(/_/g, "/");
+                switch (base64Corrected.length % 4) {
+                    case 0:
+                        break;
+                    case 2:
+                        base64Corrected += "==";
+                        break;
+                    case 3:
+                        base64Corrected += "=";
+                        break;
+                    default:
+                        throw "Illegal base64url string!";
+                }
+                return JSON.parse(
+                    decodeURIComponent(
+                        atob(base64Corrected)
+                        .replace(/(.)/g, function(m, p) {
+                            var code = p.charCodeAt(0).toString(16).toUpperCase();
+                            // For single character string like p == \n
+                            // the p.charCodeAt(0).toString(16) returns a, forcing a to be represented as 0a
+                            // Prepending 0 for single character strings.
+                            if (code.length < 2) {
+                                code = "0" + code;
+                            }
+                            return "%" + code;
+                        })
+                    )
+                );
+            } catch (ex) {
+                throw new Error('Invalid Token');
             }
-
-            str = decodeURIComponent(escape(atob(str)));
-
-            str = JSON.parse(str);
-            return str;
         }
 
         function createUUID() {
