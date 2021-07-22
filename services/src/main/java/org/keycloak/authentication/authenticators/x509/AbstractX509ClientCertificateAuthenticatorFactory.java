@@ -177,6 +177,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         oCspCheckingEnabled.setHelpText("Enable Certificate Revocation Checking using OCSP");
         oCspCheckingEnabled.setLabel("OCSP Checking Enabled");
 
+        ProviderConfigProperty ocspFailOpen = new ProviderConfigProperty();
+        ocspFailOpen.setType(BOOLEAN_TYPE);
+        ocspFailOpen.setName(OCSP_FAIL_OPEN);
+        ocspFailOpen.setDefaultValue(Boolean.toString(false));
+        ocspFailOpen.setHelpText("Whether to allow or deny authentication for client certificates that have missing/invalid/inconclusive OCSP endpoints. By default a successful OCSP response is required.");
+        ocspFailOpen.setLabel("OCSP Fail-Open Behavior");
+
         ProviderConfigProperty ocspResponderUri = new ProviderConfigProperty();
         ocspResponderUri.setType(STRING_TYPE);
         ocspResponderUri.setName(OCSPRESPONDER_URI);
@@ -218,6 +225,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 crlDPEnabled,
                 cRLRelativePath,
                 oCspCheckingEnabled,
+                ocspFailOpen,
                 ocspResponderUri,
                 ocspResponderCert,
                 keyUsage,
