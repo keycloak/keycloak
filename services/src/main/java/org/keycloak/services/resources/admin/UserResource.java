@@ -285,11 +285,10 @@ public class UserResource {
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(USER_API, user);
+        Map<String, List<String>> readableAttributes = profile.getAttributes().getReadable(false);
 
-        Map<String, List<String>> attributes = profile.getAttributes().getReadable(false);
-
-        if (!attributes.isEmpty()) {
-            rep.setAttributes(attributes);
+        if (rep.getAttributes() != null) {
+            rep.setAttributes(readableAttributes);
         }
 
         return rep;
