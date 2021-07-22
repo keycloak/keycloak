@@ -25,6 +25,7 @@ export const PageBreadCrumbs = () => {
 
   const crumbs = _.uniqBy(
     useBreadcrumbs(routesWithCrumbs, {
+      disableDefaults: true,
       excludePaths: ["/", `/${realm}`],
     }),
     elementText
