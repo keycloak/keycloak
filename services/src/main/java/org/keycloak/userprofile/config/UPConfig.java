@@ -17,6 +17,7 @@
 package org.keycloak.userprofile.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,6 +29,7 @@ import java.util.List;
 public class UPConfig {
 
     private List<UPAttribute> attributes;
+    private List<UPGroup> groups;
 
     public List<UPAttribute> getAttributes() {
         return attributes;
@@ -47,8 +49,29 @@ public class UPConfig {
         return this;
     }
 
+    public List<UPGroup> getGroups() {
+        if (groups == null) {
+            return Collections.emptyList();
+        }
+        return groups;
+    }
+
+    public void setGroups(List<UPGroup> groups) {
+        this.groups = groups;
+    }
+
+    public UPConfig addGroup(UPGroup group) {
+        if (groups == null) {
+            groups = new ArrayList<>();
+        }
+
+        groups.add(group);
+
+        return this;
+    }
+
     @Override
     public String toString() {
-        return "UPConfig [attributes=" + attributes + "]";
+        return "UPConfig [attributes=" + attributes + ", groups=" + groups + "]";
     }
 }

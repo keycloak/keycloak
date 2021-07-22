@@ -295,6 +295,79 @@ public class RegisterWithUserProfileTest extends RegisterTest {
     }
 
     @Test
+    public void testAttributeGrouping() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"group\": \"company\"},"
+                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"group\": \"contact\"}"
+                + "], \"groups\": ["
+                + "{\"name\": \"company\", \"displayDescription\": \"Company field desc\" },"
+                + "{\"name\": \"contact\" }"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+
+        registerPage.assertCurrent();
+        String htmlFormId="kc-register-form";
+        
+        //assert fields and groups location in form
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#kc-register-form > div:nth-child(3) > div:nth-child(2) > input#password")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > input#password-confirm")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#firstName")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-company")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(2) > label#description-company")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#department")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(8) > div:nth-child(1) > label#header-contact")
+                ).isDisplayed()
+        );
+        Assert.assertTrue(
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(9) > div:nth-child(2) > input#email")
+                ).isDisplayed()
+        );
+    }
+
+    @Test
     public void testRegisterUserSuccess_requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration() {
 
         setUserProfileConfiguration("{\"attributes\": [" 

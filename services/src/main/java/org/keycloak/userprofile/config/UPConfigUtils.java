@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.StreamUtil;
@@ -62,7 +64,7 @@ public class UPConfigUtils {
     /**
      * Load configuration from JSON file.
      * <p>
-     * Configuration is not validated, use {@link #validate(UPConfig)} to validate it and get list of errors.
+     * Configuration is not validated, use {@link #validate(KeycloakSession, UPConfig)} to validate it and get list of errors.
      *
      * @param is JSON file to be loaded
      * @return object representation of the configuration
@@ -75,10 +77,12 @@ public class UPConfigUtils {
     /**
      * Validate object representation of the configuration. Validations:
      * <ul>
-     * <li>defaultProfile is defined and exists in profiles
-     * <li>parent exists for type
-     * <li>type exists for attribute
-     * <li>validator (from Validator SPI) exists for validation and it's config is correct
+     * <li>defaultProfile is defined and exists in profiles</li>
+     * <li>parent exists for type</li>
+     * <li>type exists for attribute</li>
+     * <li>validator (from Validator SPI) exists for validation and it's config is correct</li>
+     * <li>if an attribute group is configured it is verified that this group exists</li>
+     * <li>all groups have a name != null</li>
      * </ul>
      *
      * @param session to be used for Validator SPI integration
@@ -86,11 +90,28 @@ public class UPConfigUtils {
      * @return list of errors, empty if no error found
      */
     public static List<String> validate(KeycloakSession session, UPConfig config) {
-        List<String> errors = new ArrayList<>();
+        List<String> errors = validateAttributes(session, config);
+        errors.addAll(validateAttributeGroups(config));
+        return errors;
+    }
+    
+    private static List<String> validateAttributeGroups(UPConfig config) {
+        long groupsWithoutName = config.getGroups().stream().filter(g -> g.getName() == null).collect(Collectors.counting());
+        
+        if (groupsWithoutName > 0) {
+            String errorMessage = "Name is mandatory for groups, found " + groupsWithoutName + " group(s) without name.";
+            return Collections.singletonList(errorMessage);            
+        }
+        return Collections.emptyList();
+    }
 
+    private static List<String> validateAttributes(KeycloakSession session, UPConfig config) {
+        List<String> errors = new ArrayList<>();
+        Set<String> groups = config.getGroups().stream().map(g -> g.getName()).collect(Collectors.toSet()); 
+        
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
-            config.getAttributes().forEach((attribute) -> validate(session, attribute, errors, attNamesCache));
+            config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
         } else {
             errors.add("UserProfile configuration without 'attributes' section is not allowed");
         }
@@ -103,10 +124,11 @@ public class UPConfigUtils {
      *
      * @param session to be used for Validator SPI integration
      * @param attributeConfig config to be validated
+     * @param groups set of groups that are configured
      * @param errors to add error message in if something is invalid
      * @param attNamesCache cache of already existing attribute names so we can check uniqueness
      */
-    private static void validate(KeycloakSession session, UPAttribute attributeConfig, List<String> errors, Set<String> attNamesCache) {
+    private static void validateAttribute(KeycloakSession session, UPAttribute attributeConfig, Set<String> groups, List<String> errors, Set<String> attNamesCache) {
         String attributeName = attributeConfig.getName();
         if (isBlank(attributeName)) {
             errors.add("Attribute configuration without 'name' is not allowed");
@@ -137,6 +159,12 @@ public class UPConfigUtils {
         }
         if (attributeConfig.getSelector() != null) {
             validateScopes(attributeConfig.getSelector().getScopes(), "selector.scopes", attributeName, errors, session);
+        }
+        
+        if (attributeConfig.getGroup() != null) {
+            if (!groups.contains(attributeConfig.getGroup())) {
+                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");                
+            }
         }
     }
 

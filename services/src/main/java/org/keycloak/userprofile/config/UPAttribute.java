@@ -38,6 +38,7 @@ public class UPAttribute {
     private UPAttributePermissions permissions;
     /** null means it is always selected */
     private UPAttributeSelector selector;
+    private String group;
 
     public String getName() {
         return name;
@@ -102,8 +103,16 @@ public class UPAttribute {
         this.displayName = displayName;
     }
 
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group != null ? group.trim() : null;
+    }
+
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + "]";
+        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + "]";
     }
 }

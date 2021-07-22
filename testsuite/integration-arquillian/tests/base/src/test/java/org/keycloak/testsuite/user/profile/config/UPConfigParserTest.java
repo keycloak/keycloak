@@ -42,9 +42,10 @@ import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
 import org.keycloak.userprofile.config.UPConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.userprofile.config.UPGroup;
 
 /**
- * Unit test for {@link UPConfigParser} functionality
+ * Unit test for {@link UPConfigUtils} functionality
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  *
@@ -134,6 +135,19 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         //displayName
         att = config.getAttributes().get(4);
         Assert.assertEquals("${profile.phone}", att.getDisplayName());
+
+        // group
+        Assert.assertEquals("contact", att.getGroup());
+
+        // assert *** groups ***
+        Assert.assertEquals(1, config.getGroups().size());
+
+        UPGroup group = config.getGroups().get(0);
+        Assert.assertEquals("contact", group.getName());
+        Assert.assertEquals("Contact information", group.getDisplayHeader());
+        Assert.assertEquals("Required to contact you in case of emergency", group.getDisplayDescription());
+        Assert.assertEquals(1, group.getAnnotations().size());
+        Assert.assertEquals("value1", group.getAnnotations().get("contactanno1"));
     }
 
     /**
@@ -309,4 +323,37 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
     }
+
+    @Test
+    public void validateConfiguration_attributeGroupConfigurationErrors() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeGroupConfigurationErrors);
+    }
+
+    private static void validateConfiguration_attributeGroupConfigurationErrors(KeycloakSession session) throws IOException {
+        UPConfig config = loadValidConfig();
+        
+        // add a group without name
+        UPGroup groupWithoutName = new UPGroup();
+        config.addGroup(groupWithoutName);
+        List<String> errors = validate(session, config);
+        Assert.assertEquals(1, errors.size());
+        Assert.assertEquals("Name is mandatory for groups, found 1 group(s) without name.", errors.get(0));
+    }
+
+    @Test
+    public void validateConfiguration_attributeGroupReferenceErrors() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeGroupReferenceErrors);
+    }
+
+    private static void validateConfiguration_attributeGroupReferenceErrors(KeycloakSession session) throws IOException {
+        UPConfig config = loadValidConfig();
+
+        // attribute references group that is not configured
+        UPAttribute firstAttribute = config.getAttributes().get(0);
+        firstAttribute.setGroup("non-existing-group");
+        List<String> errors = validate(session, config);
+        Assert.assertEquals(1, errors.size());
+        Assert.assertEquals("Attribute 'username' references unknown group 'non-existing-group'", errors.get(0));
+    }
+
 }
