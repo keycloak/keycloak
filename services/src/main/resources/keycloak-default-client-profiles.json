@@ -110,6 +110,74 @@
           }
         }
       ]
+    },
+    {
+      "name" : "fapi-ciba-id1",
+      "description" : "Client profile, which enforce clients to conform 'Financial-grade API: Client Initiated Backchannel Authentication Profile' specification (Implementer's Draft ver1').",
+      "executors" : [
+        {
+          "executor": "secure-ciba-req-sig-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor" : "secure-ciba-session",
+          "configuration" : {}
+        },
+        {
+          "executor" : "secure-ciba-signed-authn-req",
+          "configuration" : {
+            "available-period" : "3600"
+          }
+        },
+        {
+          "executor": "confidential-client",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-client-authenticator",
+          "configuration": {
+            "allowed-client-authenticators": [
+              "client-jwt",
+              "client-x509"
+            ],
+            "default-client-authenticator": "client-jwt"
+          }
+        },
+        {
+          "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-signature-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor": "secure-signature-algorithm-signed-jwt",
+          "configuration": {
+            "require-client-assertion": false
+          }
+        },
+        {
+          "executor": "consent-required",
+          "configuration": {}
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "holder-of-key-enforcer",
+          "configuration": {
+            "auto-configure": true
+          }
+        }
+      ]
     }
   ]
 }
