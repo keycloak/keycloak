@@ -57,6 +57,16 @@
                 </div>
                 <kc-tooltip>{{:: 'strict-transport-security-tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="referrerPolicy"><a
+                        href="https://owasp.org/www-project-secure-headers/#referrer-policy" target="_blank">{{:: 'referrer-policy'
+                        | translate}}</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="referrerPolicy" type="text"
+                        ng-model="realm.browserSecurityHeaders.referrerPolicy">
+                </div>
+                <kc-tooltip>{{:: 'referrer-policy-tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
