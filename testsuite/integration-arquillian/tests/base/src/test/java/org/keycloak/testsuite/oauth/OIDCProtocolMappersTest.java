@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -1188,6 +1189,212 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             adminClient.realm("test").groups().group(group1.getId()).remove();
             userResource.leaveGroup(group2.getId());
             adminClient.realm("test").groups().group(group2.getId()).remove();
+            deleteMappers(protocolMappers);
+        }
+    }
+
+    // KEYCLOAK-17252 -- Test the scenario where:
+    // - one group is a subgroup of another
+    // - only the parent group has values for the 'group-value' attribute
+    // - a user is a member of the subgroup
+    // - the 'single value' attribute 'group-value' should not be aggregated
+    @Test
+    public void testGroupAttributeTwoGroupHierarchyNoMultivalueNoAggregateFromParent() throws Exception {
+        // get the user
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        // create two groups with two values (one is the same value)
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        adminClient.realm("test").groups().add(group1);
+        group1 = adminClient.realm("test").getGroupByPath("/group1");
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        adminClient.realm("test").groups().add(group2);
+        group2 = adminClient.realm("test").getGroupByPath("/group2");
+        // make group2 a subgroup of group1 and make user join group2
+        adminClient.realm("test").groups().group(group1.getId()).subGroup(group2);
+        userResource.joinGroup(group2.getId());
+
+        // create the attribute mapper
+        ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+
+        try {
+            // test it
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNotNull(idToken.getOtherClaims());
+            assertNotNull(idToken.getOtherClaims().get("group-value"));
+            assertTrue(idToken.getOtherClaims().get("group-value") instanceof String);
+            assertTrue("value1".equals(idToken.getOtherClaims().get("group-value"))
+                    || "value2".equals(idToken.getOtherClaims().get("group-value")));
+        } finally {
+            // revert
+            userResource.leaveGroup(group2.getId());
+            adminClient.realm("test").groups().group(group2.getId()).remove();
+            adminClient.realm("test").groups().group(group1.getId()).remove();
+            deleteMappers(protocolMappers);
+        }
+    }
+
+    // KEYCLOAK-17252 -- Test the scenario where:
+    // - one group is a subgroup of another
+    // - both groups have values for the 'group-value' attribute
+    // - a user is a member of the subgroup
+    // - the 'single value' attribute 'group-value' should not be aggregated
+    @Test
+    public void testGroupAttributeTwoGroupHierarchyNoMultivalueNoAggregateFromChild() throws Exception {
+        // get the user
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        // create two groups with two values (one is the same value)
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        adminClient.realm("test").groups().add(group1);
+        group1 = adminClient.realm("test").getGroupByPath("/group1");
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value3", "value4"));
+        adminClient.realm("test").groups().add(group2);
+        group2 = adminClient.realm("test").getGroupByPath("/group2");
+        // make group2 a subgroup of group1 and make user join group2
+        adminClient.realm("test").groups().group(group1.getId()).subGroup(group2);
+        userResource.joinGroup(group2.getId());
+
+        // create the attribute mapper
+        ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, false, false)).close();
+
+        try {
+            // test it
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNotNull(idToken.getOtherClaims());
+            assertNotNull(idToken.getOtherClaims().get("group-value"));
+            assertTrue(idToken.getOtherClaims().get("group-value") instanceof String);
+            assertTrue("value3".equals(idToken.getOtherClaims().get("group-value"))
+                    || "value4".equals(idToken.getOtherClaims().get("group-value")));
+        } finally {
+            // revert
+            userResource.leaveGroup(group2.getId());
+            adminClient.realm("test").groups().group(group2.getId()).remove();
+            adminClient.realm("test").groups().group(group1.getId()).remove();
+            deleteMappers(protocolMappers);
+        }
+    }
+
+    // KEYCLOAK-17252 -- Test the scenario where:
+    // - one group is a subgroup of another
+    // - both groups have values for the 'group-value' attribute
+    // - a user is a member of the subgroup
+    // - the multivalue attribute 'group-value' should not be aggregated
+    @Test
+    public void testGroupAttributeTwoGroupHierarchyMultiValueNoAggregate() throws Exception {
+        // get the user
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        // create two groups with two values (one is the same value)
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        adminClient.realm("test").groups().add(group1);
+        group1 = adminClient.realm("test").getGroupByPath("/group1");
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
+        adminClient.realm("test").groups().add(group2);
+        group2 = adminClient.realm("test").getGroupByPath("/group2");
+        // make group2 a subgroup of group1 and make user join group2
+        adminClient.realm("test").groups().group(group1.getId()).subGroup(group2);
+        userResource.joinGroup(group2.getId());
+
+        // create the attribute mapper
+        ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, false)).close();
+
+        try {
+            // test it
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNotNull(idToken.getOtherClaims());
+            assertNotNull(idToken.getOtherClaims().get("group-value"));
+            assertTrue(idToken.getOtherClaims().get("group-value") instanceof List);
+            assertEquals(2, ((List) idToken.getOtherClaims().get("group-value")).size());
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("value2"));
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("value3"));
+        } finally {
+            // revert
+            userResource.leaveGroup(group2.getId());
+            adminClient.realm("test").groups().group(group2.getId()).remove();
+            adminClient.realm("test").groups().group(group1.getId()).remove();
+            deleteMappers(protocolMappers);
+        }
+    }
+
+    // KEYCLOAK-17252 -- Test the scenario where:
+    // - one group is a subgroup of another
+    // - both groups have values for the 'group-value' attribute
+    // - a user is a member of the subgroup
+    // - the multivalue attribute 'group-value' should be aggregated
+    @Test
+    public void testGroupAttributeTwoGroupHierarchyMultiValueAggregate() throws Exception {
+        // get the user
+        UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("group-value", Arrays.asList("user-value1", "user-value2"));
+        userResource.update(user);
+        // create two groups with two values (one is the same value)
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        adminClient.realm("test").groups().add(group1);
+        group1 = adminClient.realm("test").getGroupByPath("/group1");
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
+        adminClient.realm("test").groups().add(group2);
+        group2 = adminClient.realm("test").getGroupByPath("/group2");
+        // make group2 a subgroup of group1 and make user join group2
+        adminClient.realm("test").groups().group(group1.getId()).subGroup(group2);
+        userResource.joinGroup(group2.getId());
+
+        // create the attribute mapper
+        ProtocolMappersResource protocolMappers = findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(createClaimMapper("group-value", "group-value", "group-value", "String", true, true, true, true)).close();
+
+        try {
+            // test it
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNotNull(idToken.getOtherClaims());
+            assertNotNull(idToken.getOtherClaims().get("group-value"));
+            assertTrue(idToken.getOtherClaims().get("group-value") instanceof List);
+            assertEquals(5, ((List) idToken.getOtherClaims().get("group-value")).size());
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("user-value1"));
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("user-value2"));
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("value1"));
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("value2"));
+            assertTrue(((List) idToken.getOtherClaims().get("group-value")).contains("value3"));
+        } finally {
+            // revert
+            user.getAttributes().remove("group-value");
+            userResource.update(user);
+            userResource.leaveGroup(group2.getId());
+            adminClient.realm("test").groups().group(group2.getId()).remove();
+            adminClient.realm("test").groups().group(group1.getId()).remove();
             deleteMappers(protocolMappers);
         }
     }
