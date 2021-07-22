@@ -155,7 +155,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testFullExportImport();
 
         RealmResource testRealmRealm = adminClient.realm("test-realm");
-        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
+        RealmRepresentation realmRepresentation = testRealmRealm.toRepresentation();
+        realmRepresentation.setIdentityProviders(testRealmRealm.identityProviders().findAll());
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, realmRepresentation);
 
         // There should be 6 files in target directory (3 realm, 3 user)
         assertEquals(6, new File(targetDirPath).listFiles().length);
@@ -174,7 +176,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testRealmExportImport();
 
         RealmResource testRealmRealm = adminClient.realm("test-realm");
-        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
+        RealmRepresentation realmRepresentation = testRealmRealm.toRepresentation();
+        realmRepresentation.setIdentityProviders(testRealmRealm.identityProviders().findAll());
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, realmRepresentation);
 
         // There should be 4 files in target directory (1 realm, 12 users, 5 users per file)
         // (+ additional user service-account-test-app-authz that should not be there ???)
@@ -216,8 +220,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().runImport();
 
         RealmResource testRealmRealm = adminClient.realm("test-realm");
-
-        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
+        RealmRepresentation realmRepresentation = testRealmRealm.toRepresentation();
+        realmRepresentation.setIdentityProviders(testRealmRealm.identityProviders().findAll());
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, realmRepresentation);
     }
 
     @Test
