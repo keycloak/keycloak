@@ -67,6 +67,12 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.CertificatePolicies;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
+
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
@@ -382,6 +388,8 @@ public class CertificateValidator {
     X509Certificate[] _certChain;
     int _keyUsageBits;
     List<String> _extendedKeyUsage;
+    List<String> _certificatePolicy;
+    String _certificatePolicyMode;
     boolean _crlCheckingEnabled;
     boolean _crldpEnabled;
     CRLLoaderImpl _crlLoader;
@@ -394,6 +402,7 @@ public class CertificateValidator {
     }
     protected CertificateValidator(X509Certificate[] certChain,
                          int keyUsageBits, List<String> extendedKeyUsage,
+                                   List<String> certificatePolicy, String certificatePolicyMode,
                                    boolean cRLCheckingEnabled,
                                    boolean cRLDPCheckingEnabled,
                                    CRLLoaderImpl crlLoader,
@@ -404,6 +413,8 @@ public class CertificateValidator {
         _certChain = certChain;
         _keyUsageBits = keyUsageBits;
         _extendedKeyUsage = extendedKeyUsage;
+        _certificatePolicy = certificatePolicy;
+        _certificatePolicyMode = certificatePolicyMode;
         _crlCheckingEnabled = cRLCheckingEnabled;
         _crldpEnabled = cRLDPCheckingEnabled;
         _crlLoader = crlLoader;
@@ -483,12 +494,58 @@ public class CertificateValidator {
         }
     }
 
+    private static void validatePolicy(X509Certificate[] certs, List<String> expectedPolicies, String policyCheckMode) throws GeneralSecurityException {
+        if (expectedPolicies == null || expectedPolicies.size() == 0) {
+            logger.debug("Certificate Policy validation is not enabled.");
+            return;
+        }
+
+        Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
+        if (certExtensions == null)
+            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate extensions were found");
+
+        CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
+
+        if (policies == null)
+            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate policy extensions were found");
+
+        List<String> policyList = new LinkedList<>();
+        Arrays.stream(policies.getPolicyInformation()).forEach(p -> policyList.add(p.getPolicyIdentifier().toString().toLowerCase()));
+
+        logger.debugf("Certificate policies found: %s", String.join(",", policyList));
+
+        if (policyCheckMode == CERTIFICATE_POLICY_MODE_ANY)
+        {
+            boolean hasMatch = expectedPolicies.stream().anyMatch(p -> policyList.contains(p.toLowerCase()));
+            if (!hasMatch) {
+                String message = String.format("Certificate Policy check failed: mode = ANY, found = \'%s\', expected = \'%s\'.",
+                    String.join(",", policyList), String.join(",", expectedPolicies));
+                throw new GeneralSecurityException(message);
+            }
+        }
+        else
+        {
+            for (String policy : expectedPolicies) {
+                if (!policyList.contains(policy.toLowerCase())) {
+                    String message = String.format("Certificate Policy check failed: mode = ALL, certificate policy \'%s\' is missing.", policy);
+                    throw new GeneralSecurityException(message);
+                }
+            }
+        }
+    }
+
     public CertificateValidator validateKeyUsage() throws GeneralSecurityException {
         validateKeyUsage(_certChain, _keyUsageBits);
         return this;
     }
+
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
         validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return this;
+    }
+
+    public CertificateValidator validatePolicy() throws GeneralSecurityException {
+        validatePolicy(_certChain, _certificatePolicy, _certificatePolicyMode);
         return this;
     }
 
@@ -643,6 +700,8 @@ public class CertificateValidator {
         KeycloakSession session;
         int _keyUsageBits;
         List<String> _extendedKeyUsage;
+        List<String> _certificatePolicy;
+        String _certificatePolicyMode;
         boolean _crlCheckingEnabled;
         boolean _crldpEnabled;
         CRLLoaderImpl _crlLoader;
@@ -653,6 +712,7 @@ public class CertificateValidator {
 
         public CertificateValidatorBuilder() {
             _extendedKeyUsage = new LinkedList<>();
+            _certificatePolicy = new LinkedList<>();
             _keyUsageBits = 0;
         }
 
@@ -756,6 +816,30 @@ public class CertificateValidator {
             }
         }
 
+        public class CertificatePolicyValidationBuilder {
+
+            CertificateValidatorBuilder _parent;
+            protected CertificatePolicyValidationBuilder(CertificateValidatorBuilder parent) {
+                _parent = parent;
+            }
+
+            public CertificatePolicyValidationBuilder mode(String mode) {
+                _certificatePolicyMode = mode;
+                return this;
+            }
+
+            public CertificateValidatorBuilder parse(String certificatePolicy) {
+                if (certificatePolicy == null || certificatePolicy.trim().length() == 0)
+                    return _parent;
+
+                String[] strs = certificatePolicy.split("[,;:]");
+                for (String str : strs) {
+                    _certificatePolicy.add(str.trim());
+                }
+                return _parent;
+            }
+        }
+
         public class RevocationStatusCheckBuilder {
 
             CertificateValidatorBuilder _parent;
@@ -844,6 +928,10 @@ public class CertificateValidator {
             return new ExtendedKeyUsageValidationBuilder(this);
         }
 
+        public CertificatePolicyValidationBuilder certificatePolicy() {
+            return new CertificatePolicyValidationBuilder(this);
+        }
+
         public RevocationStatusCheckBuilder revocation() {
             return new RevocationStatusCheckBuilder(this);
         }
@@ -857,6 +945,7 @@ public class CertificateValidator {
                  _crlLoader = new CRLFileLoader(session, "");
             }
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
+                    _certificatePolicy, _certificatePolicyMode,
                     _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled,
                     new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled);
         }

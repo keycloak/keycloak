@@ -87,6 +87,11 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             USERNAME_EMAIL_MAPPER
     };
 
+    private static final String[] certificatePolicyModes = {
+            CERTIFICATE_POLICY_MODE_ALL,
+            CERTIFICATE_POLICY_MODE_ANY
+    };
+
     protected static final List<ProviderConfigProperty> configProperties;
     static {
         List<String> mappingSourceTypes = new LinkedList<>();
@@ -201,6 +206,22 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         extendedKeyUsage.setLabel("Validate Extended Key Usage");
         extendedKeyUsage.setHelpText("Validates the extended purposes of the certificate's key using certificate's Extended Key Usage extension. Leaving the field blank will disable Extended Key Usage validation. See RFC 5280 for a detailed definition of X509 Extended Key Usage extension.");
 
+        ProviderConfigProperty certificatePolicy = new ProviderConfigProperty();
+        certificatePolicy.setType(STRING_TYPE);
+        certificatePolicy.setName(CERTIFICATE_POLICY);
+        certificatePolicy.setLabel("Validate Certificate Policy");
+        certificatePolicy.setHelpText("Validates the certificate policies of the certificate's key using certificate's Policy extension. Leaving the field blank will disable Certificate Policies validation. See RFC 5280 for a detailed definition of X509 Certificate Policy extension.");
+
+        List<String> certificatePolicyModesOptions = new LinkedList<>();
+        Collections.addAll(certificatePolicyModesOptions, certificatePolicyModes);
+        ProviderConfigProperty certificatePolicyMode = new ProviderConfigProperty();
+        certificatePolicyMode.setType(ProviderConfigProperty.LIST_TYPE);
+        certificatePolicyMode.setName(CERTIFICATE_POLICY_MODE);
+        certificatePolicyMode.setLabel("Certificate Policy Validation Mode");
+        certificatePolicyMode.setHelpText("If Certificate Policy validation is specified, indicates whether it should match all or at least one of the specified policies.");
+        certificatePolicyMode.setDefaultValue(certificatePolicyModes[0]);
+        certificatePolicyMode.setOptions(certificatePolicyModesOptions);
+
         ProviderConfigProperty identityConfirmationPageDisallowed = new ProviderConfigProperty();
         identityConfirmationPageDisallowed.setType(BOOLEAN_TYPE);
         identityConfirmationPageDisallowed.setName(CONFIRMATION_PAGE_DISALLOWED);
@@ -222,6 +243,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 ocspResponderCert,
                 keyUsage,
                 extendedKeyUsage,
+                certificatePolicy,
+                certificatePolicyMode,
                 identityConfirmationPageDisallowed);
     }
 

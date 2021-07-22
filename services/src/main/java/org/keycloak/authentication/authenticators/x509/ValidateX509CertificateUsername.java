@@ -76,6 +76,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             validator.checkRevocationStatus()
                     .validateKeyUsage()
                     .validateExtendedKeyUsage()
+                    .validatePolicy()
                     .validateTimestamps();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
