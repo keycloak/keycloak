@@ -33,5 +33,6 @@
     <modules>
         <module>adapter-galleon-pack</module>
         <module>server-galleon-pack</module>
-   </modules>
+    </modules>
+
 </project>
