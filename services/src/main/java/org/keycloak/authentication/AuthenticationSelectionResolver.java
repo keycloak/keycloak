@@ -156,6 +156,11 @@ class AuthenticationSelectionResolver {
         }
 
         Authenticator localAuthenticator = processor.getSession().getProvider(Authenticator.class, execution.getAuthenticator());
+        if (!localAuthenticator.configuredFor(processor.getSession(), processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())) {
+            // only show authenticators that are configured for the user
+            return;
+        }
+
         if (!(localAuthenticator instanceof CredentialValidator)) {
             nonCredentialExecutions.add(execution);
         } else {
