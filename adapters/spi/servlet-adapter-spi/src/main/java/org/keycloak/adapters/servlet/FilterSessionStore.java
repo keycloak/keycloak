@@ -211,6 +211,7 @@ public class FilterSessionStore implements AdapterSessionStore {
                         return super.getParameterValues(name);
                     }
                     String[] values = request.getParameterValues(name);
+                    if (values == null) return null;
                     List<String> list = new LinkedList<>();
                     if (values != null) {
                         for (String val : values) list.add(val);
