@@ -17,12 +17,15 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
@@ -30,14 +33,13 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Mappings UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
- * i.e. "address.country".  This will create a nested
- * json object within the toke claim.
+ * Mapping UserModel.attribute to an ID Token claim.  Token claim name can be a full qualified nested object name,
+ * i.e. "address.country".  This will create a nested json object within the token claim.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, OIDCAccessTokenResponseMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -131,5 +133,14 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         return mapper;
     }
 
+    protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, 
+            UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
 
+        UserModel user = userSession.getUser();
+        String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+        boolean aggregateAttrs = Boolean.valueOf(mappingModel.getConfig().get(ProtocolMapperUtils.AGGREGATE_ATTRS));
+        Collection<String> attributeValue = KeycloakModelUtils.resolveAttribute(user, attributeName, aggregateAttrs);
+        if (attributeValue == null) return;
+        OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, attributeValue);
+    }
 }
