@@ -46,6 +46,7 @@
                     <tr>
                         <th>{{:: 'name' | translate}}</th>
                         <th>{{:: 'provider' | translate}}</th>
+                        <th>{{:: 'alias' | translate}}</th>
                         <th>{{:: 'enabled' | translate}}</th>
                         <th>{{:: 'hidden' | translate}}</th>
                         <th>{{:: 'link-only-column' | translate}}</th>
@@ -63,6 +64,7 @@
                             </a>
                         </td>
                         <td>{{identityProvider.providerId}}</td>
+                        <td>{{identityProvider.alias}}</td>
                         <td translate="{{identityProvider.enabled}}"></td>
                         <td translate="{{identityProvider.config.hideOnLoginPage == 'true'}}"></td>
                         <td translate="{{identityProvider.linkOnly}}"></td>
