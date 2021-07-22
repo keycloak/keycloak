@@ -104,7 +104,7 @@ public class PreAuthActionsHandler {
             return false;
         }
         String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
-        if (origin == null || origin.equals("null")) {
+        if (origin == null) {
             log.debug("checkCorsPreflight: no origin header");
             return false;
         }
