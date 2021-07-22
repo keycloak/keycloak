@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.admin;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -39,6 +40,7 @@ public class DeclarativeUserTest extends AbstractAdminTest {
                 + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"aName\", " + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"custom-a\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"custom-hidden\"},"
                 + "{\"name\": \"attr1\", " + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"attr2\", " + PERMISSIONS_ALL + "}]}");
     }
@@ -64,6 +66,37 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         assertTrue(attrCustomA.isEmpty());
         assertTrue(attributes.containsKey("custom-a"));
         assertTrue(attributes.containsKey("aName"));
+    }
+
+    @Test
+    public void testDoNotReturnAttributeIfNotReadble() {
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.singleAttribute("attr1", "value1user1");
+        user1.singleAttribute("attr2", "value2user1");
+        String user1Id = createUser(user1);
+
+        user1 = realm.users().get(user1Id).toRepresentation();
+        Map<String, List<String>> attributes = user1.getAttributes();
+        assertEquals(4, attributes.size());
+        assertFalse(attributes.containsKey("custom-hidden"));
+
+        setUserProfileConfiguration(this.realm, "{\"attributes\": ["
+                + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"aName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"custom-a\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"custom-hidden\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr1\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\", " + PERMISSIONS_ALL + "}]}");
+
+
+        user1 = realm.users().get(user1Id).toRepresentation();
+        attributes = user1.getAttributes();
+        assertEquals(5, attributes.size());
+        assertTrue(attributes.containsKey("custom-hidden"));
     }
 
     private String createUser(UserRepresentation userRep) {
