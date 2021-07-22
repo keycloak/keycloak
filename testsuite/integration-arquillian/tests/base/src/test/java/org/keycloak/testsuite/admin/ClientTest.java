@@ -50,6 +50,7 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -237,6 +238,14 @@ public class ClientTest extends AbstractAdminTest {
         realm.clients().get(id).remove();
         assertNull(ApiUtil.findClientResourceByClientId(realm, "my-app"));
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
+    }
+
+    @Test
+    public void removeInternalClientExpectingForbiddenException() {
+        String id = ApiUtil.findClientByClientId(realmsResouce().realm("master"), "test-realm")
+                .toRepresentation().getId();
+
+        assertThrows(ForbiddenException.class, () -> realmsResouce().realm("master").clients().get(id).remove());
     }
 
     @Test

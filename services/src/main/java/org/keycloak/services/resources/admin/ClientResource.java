@@ -72,6 +72,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -223,8 +224,12 @@ public class ClientResource {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        new ClientManager(new RealmManager(session)).removeClient(realm, client);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        if (new ClientManager(new RealmManager(session)).removeClient(realm, client)) {
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        }
+        else {
+            throw new ForbiddenException();
+        }
     }
 
 

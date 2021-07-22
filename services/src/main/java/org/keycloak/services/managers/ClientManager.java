@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -96,7 +97,8 @@ public class ClientManager {
 
 
     public boolean removeClient(RealmModel realm, ClientModel client) {
-        if (realm.removeClient(client.getId())) {
+        if (!isInternalClient(realmManager.getSession().realms().getRealmsStream(), client.getClientId())
+                && realm.removeClient(client.getId())) {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
                 sessions.onClientRemoved(realm, client);
@@ -366,4 +368,7 @@ public class ClientManager {
         return authenticator.getAdapterConfiguration(client);
     }
 
+    private boolean isInternalClient(Stream<RealmModel> stream, String clientId) {
+        return stream.anyMatch(realm -> clientId.equals(realm.getName() + "-realm"));
+    }
 }
