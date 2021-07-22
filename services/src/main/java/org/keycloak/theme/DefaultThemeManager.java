@@ -49,7 +49,7 @@ public class DefaultThemeManager implements ThemeManager {
     private final DefaultThemeManagerFactory factory;
     private final KeycloakSession session;
     private List<ThemeProvider> providers;
-    private String defaultTheme;
+    private final String defaultTheme;
 
     public DefaultThemeManager(DefaultThemeManagerFactory factory, KeycloakSession session) {
         this.factory = factory;
@@ -64,11 +64,13 @@ public class DefaultThemeManager implements ThemeManager {
     }
 
     private String typeBasedDefault(Theme.Type type) {
+        boolean isProduct = Profile.isProduct();
+
         if ((type == Theme.Type.ACCOUNT) && isAccount2Enabled()) {
-            return "keycloak.v2";
+            return isProduct ? "rh-sso.v2" : "keycloak.v2";
         }
-        
-        return "keycloak";
+
+        return isProduct ? "rh-sso" : "keycloak";
     }
     
     @Override
@@ -94,9 +96,9 @@ public class DefaultThemeManager implements ThemeManager {
         if (!isAccount2Enabled() && theme.getName().equals("keycloak.v2")) {
             theme = loadTheme("keycloak", type);
         }
-        
-        if (!isAccount2Enabled() && theme.getName().equals("rhsso.v2")) {
-            theme = loadTheme("rhsso", type);
+
+        if (!isAccount2Enabled() && theme.getName().equals("rh-sso.v2")) {
+            theme = loadTheme("rh-sso", type);
         }
         
         return theme;
