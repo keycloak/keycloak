@@ -1496,7 +1496,7 @@
                         var promise = createPromise();
 
                         var logoutUrl = kc.createLogoutUrl(options);
-                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
+                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes,clearcache=yes');
 
                         var error;
 
