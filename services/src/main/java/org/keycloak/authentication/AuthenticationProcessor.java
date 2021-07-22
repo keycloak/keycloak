@@ -695,7 +695,7 @@ public class AuthenticationProcessor {
                     break;
                 case USER_TEMPORARILY_DISABLED:
                     event.error(Errors.USER_TEMPORARILY_DISABLED);
-                    forms.addError(new FormMessage(Messages.INVALID_USER));
+                    forms.addError(new FormMessage(Messages.ACCOUNT_TEMPORARILY_DISABLED));
                     break;
                 case INVALID_CLIENT_SESSION:
                     event.error(Errors.INVALID_CODE);
