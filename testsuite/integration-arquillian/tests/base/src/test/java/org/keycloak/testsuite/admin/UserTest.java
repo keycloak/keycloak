@@ -40,7 +40,6 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
@@ -93,7 +92,6 @@ import javax.mail.internet.MimeMessage;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -723,7 +721,7 @@ public class UserTest extends AbstractAdminTest {
 
         createUser(user);
 
-        List<UserRepresentation> users = realm.users().search("wit", null, null);
+        List<UserRepresentation> users = realm.users().search("*wit*", null, null);
         assertEquals(1, users.size());
     }
 
@@ -925,25 +923,131 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void search() {
-        createUsers();
+    public void infixSearch() {
+        List<String> userIds = createUsers();
 
-        List<UserRepresentation> users = realm.users().search("username1", null, null);
-        assertEquals(1, users.size());
+        // Username search
+        List<UserRepresentation> users = realm.users().search("*1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
 
-        users = realm.users().search("first1", null, null);
-        assertEquals(1, users.size());
+        users = realm.users().search("*y*", null, null);
+        assertThat(users.size(), is(0));
 
-        users = realm.users().search("last", null, null);
-        assertEquals(9, users.size());
+        users = realm.users().search("*name*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("**", null, null);
+        assertThat(users, hasSize(9));
+
+        // First/Last name search
+        users = realm.users().search("*first1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("*last*", null, null);
+        assertThat(users, hasSize(9));
+
+        // Email search
+        users = realm.users().search("*@localhost*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("*1@local*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
     }
 
     @Test
-    public void count() {
+    public void prefixSearch() {
+        List<String> userIds = createUsers();
+
+        // Username search
+        List<UserRepresentation> users = realm.users().search("user", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("user*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("name", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("name*", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("username1", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("username1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search(null, null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("*", null, null);
+        assertThat(users, hasSize(9));
+
+        // First/Last name search
+        users = realm.users().search("first1", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("first1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("last", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("last*", null, null);
+        assertThat(users, hasSize(9));
+
+        // Email search
+        users = realm.users().search("user1@local", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("user1@local*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+    }
+
+    @Test
+    public void circumfixSearchNotSupported() {
         createUsers();
 
-        Integer count = realm.users().count();
-        assertEquals(9, count.intValue());
+        List<UserRepresentation> users = realm.users().search("u*name", null, null);
+        assertThat(users, hasSize(0));
+    }
+
+    @Test
+    public void exactSearch() {
+        List<String> userIds = createUsers();
+
+        // Username search
+        List<UserRepresentation> users = realm.users().search("\"username1\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("\"user\"", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("\"\"", null, null);
+        assertThat(users, hasSize(0));
+
+        // First/Last name search
+        users = realm.users().search("\"first1\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        // Email search
+        users = realm.users().search("\"user1@localhost\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
     }
 
     @Test

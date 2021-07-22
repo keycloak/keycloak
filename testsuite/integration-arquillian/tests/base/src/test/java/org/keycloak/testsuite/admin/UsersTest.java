@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -49,7 +48,7 @@ import java.util.Optional;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class UsersTest extends AbstractAdminTest {
 
@@ -111,25 +110,81 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersBySearchWithViewPermission() {
-        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
-        //search all
-        assertThat(realm.users().count("user"), is(2));
-        //search first name
-        assertThat(realm.users().count("FirstName"), is(2));
-        assertThat(realm.users().count("user2FirstName"), is(1));
-        //search last name
-        assertThat(realm.users().count("LastName"), is(2));
-        assertThat(realm.users().count("user2LastName"), is(1));
-        //search in email
-        assertThat(realm.users().count("@example.com"), is(2));
-        assertThat(realm.users().count("user1@example.com"), is(1));
-        //search for something not existing
-        assertThat(realm.users().count("notExisting"), is(0));
-        //search for empty string
-        assertThat(realm.users().count(""), is(2));
-        //search not specified (defaults to simply /count)
-        assertThat(realm.users().count(null), is(2));
+        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(realmId, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+
+        // Prefix search count
+        Integer count = realm.users().count("user");
+        assertThat(count, is(3));
+
+        count = realm.users().count("user*");
+        assertThat(count, is(3));
+
+        count = realm.users().count("er");
+        assertThat(count, is(0));
+
+        count = realm.users().count("");
+        assertThat(count, is(3));
+
+        count = realm.users().count("*");
+        assertThat(count, is(3));
+
+        count = realm.users().count("user2FirstName");
+        assertThat(count, is(1));
+
+        count = realm.users().count("user2First");
+        assertThat(count, is(1));
+
+        count = realm.users().count("user2First*");
+        assertThat(count, is(1));
+
+        count = realm.users().count("user1@example");
+        assertThat(count, is(1));
+
+        count = realm.users().count("user1@example*");
+        assertThat(count, is(1));
+
+        count = realm.users().count(null);
+        assertThat(count, is(3));
+
+        // Infix search count
+        count = realm.users().count("*user*");
+        assertThat(count, is(3));
+
+        count = realm.users().count("**");
+        assertThat(count, is(3));
+
+        count = realm.users().count("*foobar*");
+        assertThat(count, is(0));
+
+        count = realm.users().count("*LastName*");
+        assertThat(count, is(3));
+
+        count = realm.users().count("*FirstName*");
+        assertThat(count, is(3));
+
+        count = realm.users().count("*@example.com*");
+        assertThat(count, is(3));
+
+        // Exact search count
+        count = realm.users().count("\"user1\"");
+        assertThat(count, is(1));
+
+        count = realm.users().count("\"1\"");
+        assertThat(count, is(0));
+
+        count = realm.users().count("\"\"");
+        assertThat(count, is(0));
+
+        count = realm.users().count("\"user1FirstName\"");
+        assertThat(count, is(1));
+
+        count = realm.users().count("\"user1LastName\"");
+        assertThat(count, is(1));
+
+        count = realm.users().count("\"user1@example.com\"");
+        assertThat(count, is(1));
     }
 
     @Test
@@ -184,13 +239,13 @@ public class UsersTest extends AbstractAdminTest {
         //search all
         assertThat(testRealmResource.users().count("user"), is(3));
         //search first name
-        assertThat(testRealmResource.users().count("FirstName"), is(3));
+        assertThat(testRealmResource.users().count("*FirstName*"), is(3));
         assertThat(testRealmResource.users().count("user2FirstName"), is(1));
         //search last name
-        assertThat(testRealmResource.users().count("LastName"), is(3));
+        assertThat(testRealmResource.users().count("*LastName*"), is(3));
         assertThat(testRealmResource.users().count("user2LastName"), is(1));
         //search in email
-        assertThat(testRealmResource.users().count("@example.com"), is(3));
+        assertThat(testRealmResource.users().count("*@example.com*"), is(3));
         assertThat(testRealmResource.users().count("user1@example.com"), is(1));
         //search for something not existing
         assertThat(testRealmResource.users().count("notExisting"), is(0));
