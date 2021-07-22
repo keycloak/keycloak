@@ -18,6 +18,8 @@
 package org.keycloak.protocol.oidc;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -41,6 +43,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
     private final KeycloakSession session;
     private final TokenManager tokenManager;
     private final RealmModel realm;
+    private static final Logger logger = Logger.getLogger(AccessTokenIntrospectionProvider.class);
 
     public AccessTokenIntrospectionProvider(KeycloakSession session) {
         this.session = session;
@@ -81,6 +84,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
             accessToken = verifier.verify().getToken();
         } catch (VerificationException e) {
+            logger.debug("JWT check failed: " + e.getMessage());
             return null;
         }
 
