@@ -194,7 +194,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
      */
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final SubsystemMarshallingContext context) throws XMLStreamException {
-        context.startSubsystemElement(KeycloakExtension.NAMESPACE, false);
+        context.startSubsystemElement(KeycloakExtension.CURRENT_NAMESPACE, false);
         writeRealms(writer, context);
         writeSecureDeployments(writer, context);
         writer.writeEndElement();
