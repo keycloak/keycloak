@@ -477,8 +477,23 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClient = getClient(response.getClientId());
         Assert.assertEquals("poll", kcClient.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT));
 
-        // update
+        // Create with ping mode (failes due missing clientNotificationEndpoint)
         clientRep.setBackchannelTokenDeliveryMode("ping");
+        try {
+            reg.oidc().create(clientRep);
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
+        }
+
+        // Create with ping mode (success)
+        clientRep.setBackchannelClientNotificationEndpoint("https://foo/bar");
+        response = reg.oidc().create(clientRep);
+        Assert.assertEquals("ping", response.getBackchannelTokenDeliveryMode());
+        Assert.assertEquals("https://foo/bar", response.getBackchannelClientNotificationEndpoint());
+
+        // Create with push mode (fails)
+        clientRep.setBackchannelTokenDeliveryMode("push");
         try {
             reg.oidc().create(clientRep);
             fail();

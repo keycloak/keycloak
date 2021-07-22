@@ -128,6 +128,8 @@ public class OIDCClientRepresentation {
     // OIDC CIBA
     private String backchannel_token_delivery_mode;
 
+    private String backchannel_client_notification_endpoint;
+
     private String backchannel_authentication_request_signing_alg;
 
     // FAPI JARM
@@ -508,6 +510,14 @@ public class OIDCClientRepresentation {
 
     public void setBackchannelTokenDeliveryMode(String backchannel_token_delivery_mode) {
         this.backchannel_token_delivery_mode = backchannel_token_delivery_mode;
+    }
+
+    public String getBackchannelClientNotificationEndpoint() {
+        return backchannel_client_notification_endpoint;
+    }
+
+    public void setBackchannelClientNotificationEndpoint(String backchannel_client_notification_endpoint) {
+        this.backchannel_client_notification_endpoint = backchannel_client_notification_endpoint;
     }
 
     public String getBackchannelAuthenticationRequestSigningAlg() {

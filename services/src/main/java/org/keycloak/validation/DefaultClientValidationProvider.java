@@ -19,6 +19,7 @@ package org.keycloak.validation;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
@@ -113,6 +114,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     public ValidationResult validate(ValidationContext<ClientModel> context) {
         validateUrls(context);
         validatePairwiseInClientModel(context);
+        new CibaClientValidation(context).validate();
 
         return context.toResult();
     }
@@ -121,6 +123,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     public ValidationResult validate(ClientValidationContext.OIDCContext context) {
         validateUrls(context);
         validatePairwiseInOIDCClient(context);
+        new CibaClientValidation(context).validate();
 
         return context.toResult();
     }

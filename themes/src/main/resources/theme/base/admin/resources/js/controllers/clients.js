@@ -1320,6 +1320,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         var attrVal7 = $scope.client.attributes['request.object.encryption.enc'];
         $scope.requestObjectEncryptionEnc = attrVal7==null ? 'any' : attrVal7;
 
+        var attrVal8 = $scope.client.attributes['ciba.backchannel.auth.request.signing.alg'];
+        $scope.cibaBackchannelAuthRequestSigningAlg = attrVal8==null ? 'any' : attrVal8;
+
         if ($scope.client.attributes["exclude.session.state.from.auth.response"]) {
             if ($scope.client.attributes["exclude.session.state.from.auth.response"] == "true") {
                 $scope.excludeSessionStateFromAuthResponse = true;
@@ -1343,6 +1346,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                $scope.oidcCibaGrantEnabled = false;
            }
        }
+
+       $scope.cibaBackchannelTokenDeliveryMode = $scope.client.attributes['ciba.backchannel.token.delivery.mode'];
 
        if ($scope.client.attributes["use.refresh.tokens"]) {
            if ($scope.client.attributes["use.refresh.tokens"] == "true") {
@@ -1554,11 +1559,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     };
 
     $scope.changeCibaBackchannelAuthRequestSigningAlg = function() {
-        if ($scope.cibaBackchannelAuthRequestSigningAlg === 'none') {
+        if ($scope.cibaBackchannelAuthRequestSigningAlg === 'any') {
             $scope.clientEdit.attributes['ciba.backchannel.auth.request.signing.alg'] = null;
         } else {
             $scope.clientEdit.attributes['ciba.backchannel.auth.request.signing.alg'] = $scope.cibaBackchannelAuthRequestSigningAlg;
         }
+    };
+
+    $scope.changeCibaBackchannelTokenDeliveryMode = function() {
+        $scope.clientEdit.attributes['ciba.backchannel.token.delivery.mode'] = $scope.cibaBackchannelTokenDeliveryMode;
     };
 
     $scope.changeAuthorizationSignedResponseAlg = function() {
