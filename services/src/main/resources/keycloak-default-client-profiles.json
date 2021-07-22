@@ -110,6 +110,28 @@
           }
         }
       ]
+    },
+    {
+      "name" : "fapi-ciba",
+      "description" : "Client profile, which enforce clients to conform 'Financial-grade API: Client Initiated Backchannel Authentication Profile' specification (Implementer's Draft ver1'). To satisfy FAPI-CIBA, both this profile and fapi-1-advanced global profile need to be used.",
+      "executors" : [
+        {
+          "executor": "secure-ciba-req-sig-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor" : "secure-ciba-session",
+          "configuration" : {}
+        },
+        {
+          "executor" : "secure-ciba-signed-authn-req",
+          "configuration" : {
+            "available-period" : "3600"
+          }
+        }
+      ]
     }
   ]
 }
