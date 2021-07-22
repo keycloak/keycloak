@@ -242,11 +242,7 @@ public class AdminEventBuilder {
         eventCopy.setId(UUID.randomUUID().toString());
 
         if (store != null) {
-            try {
-                store.onEvent(eventCopy, includeRepresentation);
-            } catch (Throwable t) {
-                ServicesLogger.LOGGER.failedToSaveEvent(t);
-            }
+            store.onEvent(eventCopy, includeRepresentation);
         }
 
         if (listeners != null) {
