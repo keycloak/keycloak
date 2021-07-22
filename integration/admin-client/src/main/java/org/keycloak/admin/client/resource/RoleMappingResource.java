@@ -17,7 +17,9 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.keycloak.representations.idm.CompositeRoleRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -34,7 +36,11 @@ import javax.ws.rs.core.MediaType;
 public interface RoleMappingResource {
 
     @GET
-    MappingsRepresentation getAll();
+    MappingsRepresentation<RoleRepresentation> getAll();
+
+    @GET
+    @Path("overview")
+    MappingsRepresentation<CompositeRoleRepresentation> getOverview();
 
     @Path("realm")
     RoleScopeResource realmLevel();

@@ -17,39 +17,28 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.List;
-
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientMappingsRepresentation<E extends RoleRepresentation> {
-    protected String id;
-    protected String client;
+public class CompositeRoleRepresentation extends RoleRepresentation {
+    private RoleRepresentation parent;
 
-    protected List<E> mappings;
+    public CompositeRoleRepresentation() {}
 
-    public String getId() {
-        return id;
+    public CompositeRoleRepresentation(RoleRepresentation role) {
+        this.setId(role.getId());
+        this.setName(role.getName());
+        this.setDescription(role.getDescription());
+        this.setComposite(role.isComposite());
+        this.setClientRole(role.getClientRole());
+        this.setContainerId(role.getContainerId());
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public RoleRepresentation getParent() {
+        return parent;
     }
 
-    public String getClient() {
-        return client;
-    }
-
-    public void setClient(String client) {
-        this.client = client;
-    }
-
-    public List<E> getMappings() {
-        return mappings;
-    }
-
-    public void setMappings(List<E> mappings) {
-        this.mappings = mappings;
+    public void setParent(RoleRepresentation parent) {
+        this.parent = parent;
     }
 }

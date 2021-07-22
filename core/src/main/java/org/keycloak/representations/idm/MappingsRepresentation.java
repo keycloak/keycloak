@@ -24,23 +24,23 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class MappingsRepresentation {
-    protected List<RoleRepresentation> realmMappings;
-    protected Map<String, ClientMappingsRepresentation> clientMappings;
+public class MappingsRepresentation<E extends RoleRepresentation> {
+    protected List<E> realmMappings;
+    protected Map<String, ClientMappingsRepresentation<E>> clientMappings;
 
-    public List<RoleRepresentation> getRealmMappings() {
+    public List<E> getRealmMappings() {
         return realmMappings;
     }
 
-    public void setRealmMappings(List<RoleRepresentation> realmMappings) {
+    public void setRealmMappings(List<E> realmMappings) {
         this.realmMappings = realmMappings;
     }
 
-    public Map<String, ClientMappingsRepresentation> getClientMappings() {
+    public Map<String, ClientMappingsRepresentation<E>> getClientMappings() {
         return clientMappings;
     }
 
-    public void setClientMappings(Map<String, ClientMappingsRepresentation> clientMappings) {
+    public void setClientMappings(Map<String, ClientMappingsRepresentation<E>> clientMappings) {
         this.clientMappings = clientMappings;
     }
 }

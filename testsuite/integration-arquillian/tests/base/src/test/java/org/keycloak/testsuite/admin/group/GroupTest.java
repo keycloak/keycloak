@@ -738,7 +738,7 @@ public class GroupTest extends AbstractGroupTest {
             assertNames(roles.clientLevel(clientId).listEffective(), "client-role", "client-composite", "client-child");
 
             // Get mapping representation
-            MappingsRepresentation all = roles.getAll();
+            MappingsRepresentation<RoleRepresentation> all = roles.getAll();
             assertNames(all.getRealmMappings(), "realm-role", "realm-composite");
             assertEquals(1, all.getClientMappings().size());
             assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");

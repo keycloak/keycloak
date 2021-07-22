@@ -507,7 +507,7 @@ public class ExportImportUtil {
 
     private static List<RoleRepresentation> clientScopeMappings(ClientResource client) {
         List<RoleRepresentation> clientScopeMappings = new LinkedList<>();
-        Map<String, ClientMappingsRepresentation> clientRoles = client.getScopeMappings().getAll().getClientMappings();
+        Map<String, ClientMappingsRepresentation<RoleRepresentation>> clientRoles = client.getScopeMappings().getAll().getClientMappings();
         if (clientRoles == null) return clientScopeMappings;
 
         for (String clientKey : clientRoles.keySet()) {
@@ -520,7 +520,7 @@ public class ExportImportUtil {
 
     private static List<RoleRepresentation> clientScopeMappings(ClientScopeResource client) {
         List<RoleRepresentation> clientScopeMappings = new LinkedList<>();
-        Map<String, ClientMappingsRepresentation> clientRoles = client.getScopeMappings().getAll().getClientMappings();
+        Map<String, ClientMappingsRepresentation<RoleRepresentation>> clientRoles = client.getScopeMappings().getAll().getClientMappings();
         if (clientRoles == null) return clientScopeMappings;
 
         for (String clientKey : clientRoles.keySet()) {

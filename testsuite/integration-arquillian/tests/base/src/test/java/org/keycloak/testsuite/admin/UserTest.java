@@ -50,6 +50,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CompositeRoleRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -2113,10 +2114,16 @@ public class UserTest extends AbstractAdminTest {
         assertTrue(clientCompositeRoleFromList.getAttributes().containsKey("attribute1"));
 
         // Get mapping representation
-        MappingsRepresentation all = roles.getAll();
+        MappingsRepresentation<RoleRepresentation> all = roles.getAll();
         assertNames(all.getRealmMappings(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
         assertEquals(1, all.getClientMappings().size());
         assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
+
+        // Get mapping overview
+        MappingsRepresentation<CompositeRoleRepresentation> overview = roles.getOverview();
+        assertNames(overview.getClientMappings().get("myclient").getMappings(), "client-child");
+        long count = overview.getClientMappings().get("myclient").getMappings().stream().map(r -> r.getParent() != null).count();
+        assertEquals(1, count);
 
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();

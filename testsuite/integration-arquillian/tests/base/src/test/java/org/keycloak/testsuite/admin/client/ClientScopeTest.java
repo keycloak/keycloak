@@ -245,7 +245,7 @@ public class ClientScopeTest extends AbstractClientTest {
         assertRolesNotPresent(availableRealm, "role1", "role2");
         assertRolesPresent(effectiveRealm, "role1", "role2");
         assertRolesPresent(accountRoles, AccountRoles.VIEW_PROFILE);
-        MappingsRepresentation mappingsRep = clientScopes().get(scopeId).getScopeMappings().getAll();
+        MappingsRepresentation<RoleRepresentation> mappingsRep = clientScopes().get(scopeId).getScopeMappings().getAll();
         assertRolesPresent(mappingsRep.getRealmMappings(), "role1");
         assertRolesPresent(mappingsRep.getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
 

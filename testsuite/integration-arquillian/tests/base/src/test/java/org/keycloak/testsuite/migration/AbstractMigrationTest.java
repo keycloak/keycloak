@@ -375,7 +375,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         ClientResource clientResource = realm.clients().get(accountConsoleClient.getId());
 
-        MappingsRepresentation scopes = clientResource.getScopeMappings().getAll();
+        MappingsRepresentation<RoleRepresentation> scopes = clientResource.getScopeMappings().getAll();
         assertNull(scopes.getRealmMappings());
         assertEquals(1, scopes.getClientMappings().size());
         assertEquals(1, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
