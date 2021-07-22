@@ -66,6 +66,20 @@
                 </div>
                 <kc-tooltip>{{:: 'ldap.sync-registrations.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['syncRegistrations'][0] == 'true'">
+                <label class="col-md-2 control-label" for="filterRegistrations">{{:: 'filter-registrations' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['filterRegistrations'][0]" name="filterRegistrations" id="filterRegistrations" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.filter-registrations.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="(instance.config['filterRegistrations'][0] == 'true' && instance.config['syncRegistrations'][0] == 'true')">
+                <label class="col-md-2 control-label" for="registrationsRegexFilter">{{:: 'registrations-regex-filter' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="registrationsRegexFilter" type="text" ng-model="instance.config['registrationsRegexFilter'][0]" placeholder="{{:: 'registrations-regex-filter-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.registrations-regex-filter.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="vendor"><span class="required">*</span> {{:: 'vendor' | translate}}</label>
                 <div class="col-md-6">

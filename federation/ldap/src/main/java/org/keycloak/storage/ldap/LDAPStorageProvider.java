@@ -273,9 +273,23 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return "true".equalsIgnoreCase(model.getConfig().getFirst(LDAPConstants.SYNC_REGISTRATIONS)) && editMode == UserStorageProvider.EditMode.WRITABLE;
     }
 
+    //returns true if username matches the filter, the filter is disabled or blank.
+    public boolean checkRegistrationFilter(String username) {
+        if ("true".equalsIgnoreCase(model.getConfig().getFirst(LDAPConstants.FILTER_REGISTRATIONS)))
+        {
+            String matcher = model.getConfig().getFirst(LDAPConstants.REGISTRATIONS_REGEX_FILTER);
+            if (matcher.isBlank()) {
+                return true;
+            }
+            return username.toLowerCase().matches(matcher);
+        } else {
+            return true;
+        }
+    }
+
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        if (!synchronizeRegistrations()) {
+        if (!synchronizeRegistrations() || !checkRegistrationFilter(username)) {
             return null;
         }
         UserModel user = null;

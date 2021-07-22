@@ -84,6 +84,8 @@ public class LDAPConstants {
 
     // Config option to specify if registrations will be synced or not
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
+    public static final String FILTER_REGISTRATIONS = "filterRegistrations";
+    public static final String REGISTRATIONS_REGEX_FILTER = "registrationsRegexFilter";
 
     // Custom user search filter
     public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
