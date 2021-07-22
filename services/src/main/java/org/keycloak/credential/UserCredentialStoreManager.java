@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -273,12 +274,17 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     public CredentialValidationOutput authenticate(KeycloakSession session, RealmModel realm, CredentialInput input) {
         Stream<CredentialAuthentication> credentialAuthenticationStream = getEnabledStorageProviders(realm, CredentialAuthentication.class);
         credentialAuthenticationStream = Stream.concat(credentialAuthenticationStream,
-                getCredentialProviders(session, CredentialAuthentication.class));
+                getCredentialProviders(session, CredentialAuthentication.class))
+                .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()));
 
-        return credentialAuthenticationStream
-                .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
+        List<CredentialAuthentication> credentialAuthenticationList = credentialAuthenticationStream.collect(Collectors.toList());
+        if (credentialAuthenticationList.isEmpty())
+            return null;
+
+        return credentialAuthenticationList.stream()
                 .map(credentialAuthentication -> credentialAuthentication.authenticate(realm, input))
-                .findFirst().orElse(null);
+                .filter(credentialValidationOutput -> CredentialValidationOutput.Status.AUTHENTICATED.equals(credentialValidationOutput.getAuthStatus()) || CredentialValidationOutput.Status.CONTINUE.equals(credentialValidationOutput.getAuthStatus()))
+                .findFirst().orElse(CredentialValidationOutput.failed());
     }
 
     @Override

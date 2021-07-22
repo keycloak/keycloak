@@ -116,3 +116,72 @@ uid: gsstestserver
 userPassword: gsstestpwd
 krb5PrincipalName: gsstestserver/xxx@KEYCLOAK.ORG
 krb5KeyVersionNumber: 0
+
+
+# ADDING entry for multiple ldap userstorage with kerberos configured
+
+dn: ou=groupA, ou=People,dc=keycloak,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: groupA
+
+dn: ou=groupB, ou=People,dc=keycloak,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: groupB
+
+dn: uid=user1A,ou=groupA,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: user1A
+sn: groupA
+mail: user1A@keycloak.org
+uid: user1A
+userPassword: secret
+krb5PrincipalName: user1A@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=user2A,ou=groupA,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: user2A
+sn: groupA
+mail: user2A@keycloak.org
+uid: user2A
+userPassword: secret
+krb5PrincipalName: user2A@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=user1B,ou=groupB,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: user1B
+sn: groupB
+mail: user1B@keycloak.org
+uid: user1B
+userPassword: secret
+krb5PrincipalName: user1B@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
+dn: uid=user2B,ou=groupB,ou=People,dc=keycloak,dc=org
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: user2B
+sn: groupB
+mail: user2B@keycloak.org
+uid: user2B
+userPassword: secret
+krb5PrincipalName: user2B@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0

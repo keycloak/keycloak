@@ -41,6 +41,9 @@ public class LDAPTestConfiguration {
 
     private static final Logger log = Logger.getLogger(LDAPTestConfiguration.class);
 
+    public static final String NAME = "name";
+    public static final String PRIORITY = "priority";
+
     private int sleepTime;
     private boolean startEmbeddedLdapServer = true;
     private boolean caseSensitiveLogin = true;
@@ -61,8 +64,11 @@ public class LDAPTestConfiguration {
         PROP_MAPPINGS.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, "idm.test.ldap.batch.size.for.sync");
         PROP_MAPPINGS.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, "idm.test.ldap.username.ldap.attribute");
         PROP_MAPPINGS.put(LDAPConstants.RDN_LDAP_ATTRIBUTE, "idm.test.ldap.rdn.ldap.attribute");
+        PROP_MAPPINGS.put(LDAPConstants.UUID_LDAP_ATTRIBUTE, "idm.test.ldap.uuid.ldap.attribute");
         PROP_MAPPINGS.put(LDAPConstants.USER_OBJECT_CLASSES, "idm.test.ldap.user.object.classes");
         PROP_MAPPINGS.put(LDAPConstants.EDIT_MODE, "idm.test.ldap.edit.mode");
+        PROP_MAPPINGS.put(NAME, "idm.test.ldap.provider.name");
+        PROP_MAPPINGS.put(PRIORITY, "idm.test.ldap.priority");
 
         PROP_MAPPINGS.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "idm.test.kerberos.allow.kerberos.authentication");
         PROP_MAPPINGS.put(KerberosConstants.KERBEROS_REALM, "idm.test.kerberos.realm");
