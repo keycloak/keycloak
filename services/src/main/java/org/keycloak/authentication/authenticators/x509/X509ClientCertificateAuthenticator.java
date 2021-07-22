@@ -85,6 +85,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
                 validator.checkRevocationStatus()
+                         .validateTrust()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
                          .validateTimestamps();
