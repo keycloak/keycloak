@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
@@ -48,6 +49,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -580,6 +582,31 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
             int notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
             Assert.assertThat(notBefore, equalTo(20));
+        });
+    }
+
+    @Test
+    @ModelTest
+    public void testEnableServiceAccount(KeycloakSession session) throws Exception {
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesEnableServiceAccount) -> {
+            KeycloakSession currentSession = sesEnableServiceAccount;
+            RealmModel realm = currentSession.realms().getRealmByName("original");
+
+            ClientModel client = realm.addClient("foo");
+
+            RealmManager realmMgr = new RealmManager(currentSession);
+            ClientManager clientMgr = new ClientManager(realmMgr);
+            clientMgr.enableServiceAccount(client);
+
+            UserModel searched = currentSession.users().getServiceAccount(client);
+            List<RoleModel> roleModels = searched.getRoleMappingsStream().collect(Collectors.toList());
+
+            // assert service account hasn't roles
+            MatcherAssert.assertThat(roleModels, is(empty()));
+
+            // Remove client
+            clientMgr.removeClient(realm, client);
         });
     }
 
