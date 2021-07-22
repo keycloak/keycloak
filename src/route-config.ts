@@ -17,8 +17,7 @@ import { AddOpenIdConnect } from "./identity-providers/add/AddOpenIdConnect";
 import { DetailSettings } from "./identity-providers/add/DetailSettings";
 import { IdentityProvidersSection } from "./identity-providers/IdentityProvidersSection";
 import { PageNotFoundSection } from "./PageNotFoundSection";
-import { RealmRolesSection } from "./realm-roles/RealmRolesSection";
-import { RealmRoleTabs } from "./realm-roles/RealmRoleTabs";
+import realmRoleRoutes from "./realm-roles/routes";
 import { AESGeneratedSettings } from "./realm-settings/key-providers/aes-generated/AESGeneratedForm";
 import { ECDSAGeneratedSettings } from "./realm-settings/key-providers/ecdsa-generated/ECDSAGeneratedForm";
 import { HMACGeneratedSettings } from "./realm-settings/key-providers/hmac-generated/HMACGeneratedForm";
@@ -51,37 +50,8 @@ export const routes: RouteDef[] = [
   ...authenticationRoutes,
   ...clientRoutes,
   ...clientScopesRoutes,
+  ...realmRoleRoutes,
   ...realmRoutes,
-  {
-    path: "/:realm/clients/:clientId/roles/add-role",
-    component: RealmRoleTabs,
-    breadcrumb: (t) => t("roles:createRole"),
-    access: "manage-realm",
-  },
-  {
-    path: "/:realm/clients/:clientId/roles/:id/:tab?",
-    component: RealmRoleTabs,
-    breadcrumb: (t) => t("roles:roleDetails"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/roles",
-    component: RealmRolesSection,
-    breadcrumb: (t) => t("roles:roleList"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/roles/add-role",
-    component: RealmRoleTabs,
-    breadcrumb: (t) => t("roles:createRole"),
-    access: "manage-realm",
-  },
-  {
-    path: "/:realm/roles/:id/:tab?",
-    component: RealmRoleTabs,
-    breadcrumb: (t) => t("roles:roleDetails"),
-    access: "view-realm",
-  },
   {
     path: "/:realm/users",
     component: UsersSection,
