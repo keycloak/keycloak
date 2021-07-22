@@ -32,7 +32,7 @@ import java.util.Map;
 public interface EmailTemplateProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
-    
+
     EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     EmailTemplateProvider setRealm(RealmModel realm);
