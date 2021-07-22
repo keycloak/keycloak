@@ -114,6 +114,12 @@
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
+        <app.server.1.debug.port>7301</app.server.1.debug.port>
+        <app.server.1.debug.suspend>n</app.server.1.debug.suspend>
+        <app.server.1.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.1.debug.suspend},address=localhost:${app.server.1.debug.port}</app.server.1.jboss.jvm.debug.args>
+        <app.server.2.debug.port>7302</app.server.2.debug.port>
+        <app.server.2.debug.suspend>n</app.server.2.debug.suspend>
+        <app.server.2.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.2.debug.suspend},address=localhost:${app.server.2.debug.port}</app.server.2.jboss.jvm.debug.args>
         <app.server.memory.Xms>64m</app.server.memory.Xms>
         <app.server.memory.Xmx>512m</app.server.memory.Xmx>
         <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
@@ -561,6 +567,8 @@
                             <app.server.truststore.password>${app.server.truststore.password}</app.server.truststore.password>
                             <app.server.keystore>${app.server.keystore}</app.server.keystore>
                             <app.server.keystore.password>${app.server.keystore.password}</app.server.keystore.password>
+                            <app.server.1.jboss.jvm.debug.args>${app.server.1.jboss.jvm.debug.args}</app.server.1.jboss.jvm.debug.args>
+                            <app.server.2.jboss.jvm.debug.args>${app.server.2.jboss.jvm.debug.args}</app.server.2.jboss.jvm.debug.args>
                             <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
                             <tomcat.javax.net.ssl.properties>${tomcat.javax.net.ssl.properties}</tomcat.javax.net.ssl.properties>
 
