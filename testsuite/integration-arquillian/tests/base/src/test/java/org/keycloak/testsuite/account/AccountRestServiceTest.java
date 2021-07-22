@@ -285,7 +285,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user = updateAndGet(user);
 
-            assertEquals(1, user.getAttributes().size());
+            if (isDeclarativeUserProfile()) {
+                assertEquals(2, user.getAttributes().size());
+                assertTrue(user.getAttributes().get("attr1").isEmpty());
+            } else {
+                assertEquals(1, user.getAttributes().size());
+            }
             assertEquals(2, user.getAttributes().get("attr2").size());
             assertThat(user.getAttributes().get("attr2"), containsInAnyOrder("val2", "val3"));
 
@@ -1367,5 +1372,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(401, response.getStatus());
 
         // custom-audience client is used only in this test so no need to revert the changes
+    }
+
+    protected boolean isDeclarativeUserProfile() {
+        return false;
     }
 }

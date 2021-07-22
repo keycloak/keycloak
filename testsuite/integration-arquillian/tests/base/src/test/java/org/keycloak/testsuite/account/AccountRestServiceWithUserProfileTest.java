@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.account;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -49,7 +48,12 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         enableDynamicUserProfile();
         setUserProfileConfiguration(null);
     }
-    
+
+    @Override
+    protected boolean isDeclarativeUserProfile() {
+        return true;
+    }
+
     private static String UP_CONFIG_FOR_METADATA = "{\"attributes\": ["
             + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {\"scopes\":[\"profile\"]}, \"displayName\": \"${profile.firstName}\", \"validations\": {\"length\": { \"max\": 255 }}},"
             + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}, \"displayName\": \"Last name\", \"annotations\": {\"formHintKey\" : \"userEmailFormFieldHint\", \"anotherKey\" : 10, \"yetAnotherKey\" : \"some value\"}},"
@@ -158,21 +162,23 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
     @Test
     @Override
     public void testUpdateProfile() throws IOException {
-        // TODO uncomment next lines once KEYCLOAK-18839 is patched
-//        setUserProfileConfiguration("{\"attributes\": ["
-//                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-//                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-//                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
-//                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
-//                + "]}");
-//        super.testUpdateProfile();
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+        super.testUpdateProfile();
     }
     
     @Test
     @Override
     public void testUpdateSingleField() throws IOException {
-        // TODO uncomment next lines once KEYCLOAK-18839 is patched
-        // super.testUpdateSingleField();
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+         super.testUpdateSingleField();
     }
     
     protected void setUserProfileConfiguration(String configuration) {
