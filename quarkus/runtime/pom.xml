@@ -466,6 +466,11 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jgroups.aws.s3</groupId>
+            <artifactId>native-s3-ping</artifactId>
+            <version>${native-s3-ping.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

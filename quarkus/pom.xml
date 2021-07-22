@@ -42,6 +42,7 @@
         <snakeyaml.version>1.28</snakeyaml.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <wildfly.common.format.version>1.5.4.Final-format-001</wildfly.common.format.version>
+        <native-s3-ping.version>1.0.0.Final</native-s3-ping.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
