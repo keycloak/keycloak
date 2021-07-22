@@ -46,5 +46,6 @@ public enum AuthenticationFlowError {
     IDENTITY_PROVIDER_ERROR,
     DISPLAY_NOT_SUPPORTED,
 
-    ACCESS_DENIED
+    ACCESS_DENIED,
+    SESSION_LIMIT_EXCEEDED
 }

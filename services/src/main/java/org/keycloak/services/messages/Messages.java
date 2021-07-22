@@ -277,4 +277,6 @@ public class Messages {
     public static final String OAUTH2_DEVICE_VERIFICATION_FAILED = "oauth2DeviceVerificationFailedMessage";
     public static final String OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER = "oauth2DeviceVerificationFailedHeader";
     public static final String OAUTH2_DEVICE_CONSENT_DENIED = "oauth2DeviceConsentDeniedMessage";
+    public static final String SESSION_LIMIT_EXCEEDED = "sessionLimitExceeded";
+
 }

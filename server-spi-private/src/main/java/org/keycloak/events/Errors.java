@@ -110,4 +110,6 @@ public interface Errors {
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
     String EXPIRED_OAUTH2_USER_CODE = "expired_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
+    String SESSION_LIMIT_EXCEEDED= "session_limit_exceeded";
+
 }
