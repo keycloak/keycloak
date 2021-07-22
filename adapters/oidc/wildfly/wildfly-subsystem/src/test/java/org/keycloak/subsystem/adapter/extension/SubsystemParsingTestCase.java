@@ -21,6 +21,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -113,6 +114,20 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         return new String[]{
                 "/subsystem-templates/keycloak-adapter.xml"
         };
+    }
+
+    /**
+     * Checks if the subsystem is still capable of reading a configuration that uses version 1.1 of the schema.
+     *
+     * @throws Exception if an error occurs while running the test.
+     */
+    @Test
+    public void testSubsystem1_1() throws Exception {
+        KernelServices servicesA = super.createKernelServicesBuilder(createAdditionalInitialization())
+                .setSubsystemXml(readResource("keycloak-1.1.xml")).build();
+        Assert.assertTrue("Subsystem boot failed!", servicesA.isSuccessfulBoot());
+        ModelNode modelA = servicesA.readWholeModel();
+        super.validateModel(modelA);
     }
 
     /**
