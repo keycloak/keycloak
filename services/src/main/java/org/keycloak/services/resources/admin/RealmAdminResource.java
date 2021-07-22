@@ -716,6 +716,7 @@ public class RealmAdminResource {
      * @param types The types of events to return
      * @param client App or oauth client name
      * @param user User id
+     * @param sessionId Session ID
      * @param ipAddress IP address
      * @param dateTo To date
      * @param dateFrom From date
@@ -728,7 +729,8 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
-                                               @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                               @QueryParam("user") String user, @QueryParam("sessionId") String sessionId,
+                                               @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
                                                @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
         auth.realm().requireViewEvents();
@@ -750,6 +752,10 @@ public class RealmAdminResource {
 
         if (user != null) {
             query.user(user);
+        }
+
+        if (sessionId != null) {
+            query.sessionId(sessionId);
         }
 
         if(dateFrom != null) {

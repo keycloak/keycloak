@@ -67,7 +67,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
     @Test
     public void save() {
-        testing().onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
     }
 
     @Test
@@ -76,31 +76,32 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
 
-        testing().onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(newest, EventType.REGISTER, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(newest, EventType.REGISTER, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(oldest, EventType.LOGIN, "realmId", "clientId2", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
+        testing().onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(newest, EventType.REGISTER, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(newest, EventType.REGISTER, "realmId", "clientId", "userId2", "sessionId2", "127.0.0.1", "error"));
+        testing().onEvent(create(EventType.LOGIN, "realmId2", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(oldest, EventType.LOGIN, "realmId", "clientId2", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId2", "sessionId2", "127.0.0.1", "error"));
 
-        Assert.assertEquals(5, testing().queryEvents(null, null, "clientId", null, null, null, null, null, null).size());
-        Assert.assertEquals(5, testing().queryEvents("realmId", null, null, null, null, null, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, toList(EventType.LOGIN), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(6, testing().queryEvents(null, toList(EventType.LOGIN, EventType.REGISTER), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, "userId", null, null, null, null, null).size());
+        Assert.assertEquals(5, testing().queryEvents(null, null, "clientId", null, null, null, null, null, null, null).size());
+        Assert.assertEquals(5, testing().queryEvents("realmId", null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, toList(EventType.LOGIN), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(6, testing().queryEvents(null, toList(EventType.LOGIN, EventType.REGISTER), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, "userId", null, null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, "sessionId", null, null, null, null, null).size());
 
-        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.REGISTER), null, "userId", null, null, null, null, null).size());
+        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.REGISTER), null, "userId", null, null, null, null, null, null).size());
 
-        Assert.assertEquals(2, testing().queryEvents(null, null, null, null, null, null, null, null, 2).size());
-        Assert.assertEquals(1, testing().queryEvents(null, null, null, null, null, null, null, 5, null).size());
+        Assert.assertEquals(2, testing().queryEvents(null, null, null, null, null, null, null, null, null, 2).size());
+        Assert.assertEquals(1, testing().queryEvents(null, null, null, null, null, null, null, null, 5, null).size());
 
-        Assert.assertEquals(newest, testing().queryEvents(null, null, null, null, null, null, null, null, 1).get(0).getTime());
-        Assert.assertEquals(oldest, testing().queryEvents(null, null, null, null, null, null, null, 5, 1).get(0).getTime());
+        Assert.assertEquals(newest, testing().queryEvents(null, null, null, null, null, null, null, null, null, 1).get(0).getTime());
+        Assert.assertEquals(oldest, testing().queryEvents(null, null, null, null, null, null, null, null, 5, 1).get(0).getTime());
 
         testing().clearEventStore("realmId");
         testing().clearEventStore("realmId2");
 
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, null, null, null, null).size());
 
         String d1 = "2015-03-04";
         String d2 = "2015-03-05";
@@ -124,84 +125,84 @@ public class EventStoreProviderTest extends AbstractEventsTest {
             e.printStackTrace();
         }
 
-        testing().onEvent(create(date1, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date1, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date2, EventType.REGISTER, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date2, EventType.REGISTER, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(date3, EventType.CODE_TO_TOKEN, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(date3, EventType.LOGOUT, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(date4, EventType.UPDATE_PROFILE, "realmId2", "clientId2", "userId2", "127.0.0.1", "error"));
-        testing().onEvent(create(date4, EventType.UPDATE_EMAIL, "realmId2", "clientId2", "userId2", "127.0.0.1", "error"));
+        testing().onEvent(create(date1, EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(date1, EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(date2, EventType.REGISTER, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(date2, EventType.REGISTER, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(date3, EventType.CODE_TO_TOKEN, "realmId", "clientId", "userId2", "sessionId2", "127.0.0.1", "error"));
+        testing().onEvent(create(date3, EventType.LOGOUT, "realmId", "clientId", "userId2", "sessionId2", "127.0.0.1", "error"));
+        testing().onEvent(create(date4, EventType.UPDATE_PROFILE, "realmId2", "clientId2", "userId2", "sessionId2", "127.0.0.1", "error"));
+        testing().onEvent(create(date4, EventType.UPDATE_EMAIL, "realmId2", "clientId2", "userId2", "sessionId2", "127.0.0.1", "error"));
 
-        Assert.assertEquals(6, testing().queryEvents(null, null, "clientId", null, null, null, null, null, null).size());
-        Assert.assertEquals(2, testing().queryEvents(null, null, "clientId2", null, null, null, null, null, null).size());
+        Assert.assertEquals(6, testing().queryEvents(null, null, "clientId", null, null, null, null, null, null, null).size());
+        Assert.assertEquals(2, testing().queryEvents(null, null, "clientId2", null, null, null, null, null, null, null).size());
 
-        Assert.assertEquals(6, testing().queryEvents("realmId", null, null, null, null, null, null, null, null).size());
-        Assert.assertEquals(2, testing().queryEvents("realmId2", null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(6, testing().queryEvents("realmId", null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(2, testing().queryEvents("realmId2", null, null, null, null, null, null, null, null, null).size());
 
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, "userId", null, null, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, "userId2", null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, "userId", null, null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, "userId2", null, null, null, null, null, null).size());
 
-        Assert.assertEquals(2, testing().queryEvents(null, toList(EventType.LOGIN), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(2, testing().queryEvents(null, toList(EventType.REGISTER), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, toList(EventType.LOGIN, EventType.REGISTER), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.CODE_TO_TOKEN), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.LOGOUT), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.UPDATE_PROFILE), null, null, null, null, null, null, null).size());
-        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.UPDATE_EMAIL), null, null, null, null, null, null, null).size());
+        Assert.assertEquals(2, testing().queryEvents(null, toList(EventType.LOGIN), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(2, testing().queryEvents(null, toList(EventType.REGISTER), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, toList(EventType.LOGIN, EventType.REGISTER), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.CODE_TO_TOKEN), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.LOGOUT), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.UPDATE_PROFILE), null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.UPDATE_EMAIL), null, null, null, null, null, null, null, null).size());
 
-        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, d1, null, null, null, null).size());
-        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, null, d4, null, null, null).size());
+        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, null, d1, null,  null,null, null).size());
+        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, null, null, d4, null, null, null).size());
 
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, d3, null, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, d2, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, d3, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, null, d2, null, null, null).size());
 
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, d7, null, null, null, null).size());
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, d6, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, d7, null, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, d6, null, null, null).size());
 
-        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, d1, d4, null, null, null).size());
-        Assert.assertEquals(6, testing().queryEvents(null, null, null, null, d2, d4, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, d1, d2, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, d3, d4, null, null, null).size());
+        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, null, d1, d4, null, null, null).size());
+        Assert.assertEquals(6, testing().queryEvents(null, null, null, null, null, d2, d4, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, d1, d2, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, d3, d4, null, null, null).size());
 
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, d5, d6, null, null, null).size());
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, d7, d8, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, d5, d6, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, d7, d8, null, null, null).size());
     }
 
     @Test
     public void clear() {
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 20000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 20000, EventType.LOGIN, "realmId", "clientId", "userId", "sessionId",  "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "sessionId",  "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "sessionId",  "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId2", "clientId", "userId", "sessionId",  "127.0.0.1", "error"));
 
         testing().clearEventStore("realmId");
 
-        Assert.assertEquals(1, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(1, testing().queryEvents(null, null, null, null, null, null, null, null, null, null).size());
     }
 
     @Test
     public void lengthExceedLimit(){
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", StringUtils.repeat("clientId", 100), "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, StringUtils.repeat("realmId", 100), "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", StringUtils.repeat("userId", 100), "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", StringUtils.repeat("clientId", 100), "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, StringUtils.repeat("realmId", 100), "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", StringUtils.repeat("userId", 100), "sessionId", "127.0.0.1", "error"));
 
     }
 
     @Test
     public void maxLengthWithNull(){
-        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, null, null, null, "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, null, null, null, null, "127.0.0.1", "error"));
     }
 
     @Test
     public void clearOld() {
-        testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 200000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
-        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 200000, EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, "realmId2", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
+        testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId2", "clientId", "userId", "sessionId", "127.0.0.1", "error"));
 
         // Set expiration of events for "realmId" .
         RealmRepresentation realm = realmsResouce().realm("realmId").toRepresentation();
@@ -210,7 +211,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
         // The first 2 events from realmId will be deleted
         testing().clearExpiredEvents();
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, null, null, null, null, null).size());
 
         // Set expiration of events for realmId2 as well
         RealmRepresentation realm2 = realmsResouce().realm("realmId2").toRepresentation();
@@ -219,12 +220,12 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
         // The first event from "realmId2" will be deleted now
         testing().clearExpiredEvents();
-        Assert.assertEquals(3, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(3, testing().queryEvents(null, null, null, null, null, null, null, null, null, null).size());
 
         // set time offset to the future. The remaining 2 events from "realmId" and 1 event from "realmId2" should be expired now
         setTimeOffset(150);
         testing().clearExpiredEvents();
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, null, null, null, null).size());
 
         // Revert expirations
         realm.setEventsExpiration(0);
@@ -233,21 +234,22 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         realmsResouce().realm("realmId2").update(realm2);
     }
 
-    private EventRepresentation create(EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
-        return create(System.currentTimeMillis(), event, realmId, clientId, userId, ipAddress, error);
+    private EventRepresentation create(EventType event, String realmId, String clientId, String userId, String sessionId, String ipAddress, String error) {
+        return create(System.currentTimeMillis(), event, realmId, clientId, userId, sessionId, ipAddress, error);
     }
 
-    private EventRepresentation create(Date date, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
-        return create(date.getTime(), event, realmId, clientId, userId, ipAddress, error);
+    private EventRepresentation create(Date date, EventType event, String realmId, String clientId, String userId, String sessionId, String ipAddress, String error) {
+        return create(date.getTime(), event, realmId, clientId, userId, sessionId, ipAddress, error);
     }
 
-    private EventRepresentation create(long time, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
+    private EventRepresentation create(long time, EventType event, String realmId, String clientId, String userId, String sessionId, String ipAddress, String error) {
         EventRepresentation e = new EventRepresentation();
         e.setTime(time);
         e.setType(event.toString());
         e.setRealmId(realmId);
         e.setClientId(clientId);
         e.setUserId(userId);
+        e.setSessionId(sessionId);
         e.setIpAddress(ipAddress);
         e.setError(error);
 

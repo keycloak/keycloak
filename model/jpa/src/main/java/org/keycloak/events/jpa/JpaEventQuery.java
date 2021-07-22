@@ -86,6 +86,12 @@ public class JpaEventQuery implements EventQuery {
         return this;
     }
 
+	@Override
+	public EventQuery sessionId(String sessionId) {
+		predicates.add(cb.equal(root.get("sessionId"), sessionId));
+		return this;
+	}
+
     @Override
     public EventQuery fromDate(Date fromDate) {
         predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), fromDate.getTime()));

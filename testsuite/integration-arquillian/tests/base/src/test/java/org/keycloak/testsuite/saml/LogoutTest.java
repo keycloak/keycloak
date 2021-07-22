@@ -313,7 +313,7 @@ public class LogoutTest extends AbstractSamlTest {
 
     private void assertLogoutEvent(String clientId) {
         List<EventRepresentation> logoutEvents = adminClient.realm(REALM_NAME)
-                .getEvents(Arrays.asList(EventType.LOGOUT.name()), clientId, null, null, null, null, null, null);
+                .getEvents(Arrays.asList(EventType.LOGOUT.name()), clientId, null, null, null, null, null, null, null);
 
         assertFalse(logoutEvents.isEmpty());
         assertEquals(1, logoutEvents.size());
