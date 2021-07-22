@@ -44,6 +44,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -153,7 +155,16 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         if (subjectTokenType == null) {
             subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
         }
-        return validateJwt(event, subjectToken, subjectTokenType);
+        BrokeredIdentityContext context = validateJwt(event, subjectToken, subjectTokenType);
+        Map<String, Object> contextData = context.getContextData();
+        JsonWebToken parsedToken = (JsonWebToken) contextData.get(VALIDATED_ACCESS_TOKEN);
+        if (parsedToken == null && OAuth2Constants.JWT_TOKEN_TYPE.equals(subjectTokenType)) {
+            // this provider accepts jwt access tokens during exchange and makes the token available when importing
+            // users through exchange
+            // the token might not be available when the previous validation uses the userinfo endpoint
+            contextData.put(VALIDATED_ACCESS_TOKEN, validateToken(subjectToken, true));
+        }
+        return context;
     }
 
 
