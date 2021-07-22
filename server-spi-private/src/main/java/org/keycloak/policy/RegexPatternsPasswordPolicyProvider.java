@@ -21,6 +21,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -41,10 +42,24 @@ public class RegexPatternsPasswordPolicyProvider implements PasswordPolicyProvid
     @Override
     public PolicyError validate(String username, String password) {
         Pattern pattern = context.getRealm().getPasswordPolicy().getPolicyConfig(RegexPatternsPasswordPolicyProviderFactory.ID);
-        Matcher matcher = pattern.matcher(password);
-        if (!matcher.matches()) {
-            return new PolicyError(ERROR_MESSAGE, pattern.pattern());
+        if (pattern != null) {
+            Matcher matcher = pattern.matcher(password);
+            if (!matcher.matches()) {
+                return new PolicyError(ERROR_MESSAGE, pattern.pattern());
+            }
         }
+
+        Set<Object> regexPolicyConfig = context.getRealm().getPasswordPolicy().getRegexPolicyConfig();
+        if (!regexPolicyConfig.isEmpty()) {
+            for (Object o : regexPolicyConfig) {
+                Pattern p = (Pattern) o;
+                Matcher m = p.matcher(password);
+                if (!m.matches()) {
+                    return new PolicyError(ERROR_MESSAGE, p.pattern());
+                }
+            }
+        }
+
         return null;
     }
 
