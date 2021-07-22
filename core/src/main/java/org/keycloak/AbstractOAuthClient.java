@@ -130,7 +130,7 @@ public class AbstractOAuthClient {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(uri)
                 .replaceQueryParam(OAuth2Constants.CODE, null)
                 .replaceQueryParam(OAuth2Constants.STATE, null);
-        return builder.build().toString();
+        return builder.buildAsString();
     }
 
 }
