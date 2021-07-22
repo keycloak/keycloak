@@ -94,6 +94,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
@@ -1860,6 +1861,78 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientResource.update(clientRep);
             revertCIBASettings(clientResource, clientRep);
         }
+    }
+
+    @Test
+    public void testConfidentialClientAcceptExecutorExecutor() throws Exception {
+        String clientPublicId = generateSuffixedName("public-app");
+        String cidPublic = createClientByAdmin(clientPublicId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret("app-secret");
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.TRUE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+
+        String username = "nutzername-rot";
+        Map<String, String> additionalParameters = new HashMap<>();
+        additionalParameters.put("user_device", "mobile");
+        String bindingMessage = "bmbmbmbm";
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Erstes Profil")
+                    .addExecutor(ConfidentialClientAcceptExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        // user Backchannel Authentication Request
+        AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientPublicId, "app-secret", username, bindingMessage, null, additionalParameters);
+        assertThat(response.getStatusCode(), is(equalTo(400)));
+        assertThat(response.getError(), is(OAuthErrorException.INVALID_CLIENT));
+        assertThat(response.getErrorDescription(), is("invalid client access type"));
+
+        String clientConfidentialId = generateSuffixedName("confidential-app");
+        String clientConfidentialSecret = "app-secret";
+        String cidConfidential = createClientByAdmin(clientConfidentialId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientConfidentialSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+
+        // user Backchannel Authentication Request
+        response = doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, additionalParameters);
+
+        updateClientByAdmin(cidConfidential, (ClientRepresentation cRep) -> {
+            cRep.setPublicClient(Boolean.TRUE);
+        });
+
+        // user Token Request
+        OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(clientConfidentialId, clientConfidentialSecret, response.getAuthReqId());
+        assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+        assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
+        assertThat(tokenRes.getErrorDescription(), is("invalid client access type"));
     }
 
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {

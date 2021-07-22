@@ -45,7 +45,9 @@ public class ConfidentialClientAcceptExecutor implements ClientPolicyExecutorPro
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
-            	checkIsConfidentialClient();
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
+                checkIsConfidentialClient();
                 return;
             default:
                 return;
