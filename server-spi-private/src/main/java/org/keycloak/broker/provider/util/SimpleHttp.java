@@ -313,7 +313,7 @@ public class SimpleHttp {
             }
         }
 
-        return new UrlEncodedFormEntity(urlParameters);
+        return new UrlEncodedFormEntity(urlParameters, "UTF-8");
     }
 
     public static class Response {
