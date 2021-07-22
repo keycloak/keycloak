@@ -1103,6 +1103,27 @@ public class AuthenticationManagementResource {
     }
 
     /**
+     * Reset required action
+     *
+     * @param alias Alias of required action
+     */
+    @Path("/required-actions/{alias}/reset")
+    @POST
+    @NoCache
+    public void resetRequiredAction(@PathParam("alias") String alias) {
+        auth.realm().requireManageRealm();
+        session.users().getUsersStream(realm, false).forEach(user -> {
+            session.userCache().evict(realm, user);
+            user.addRequiredAction(alias);
+        });
+        adminEvent.operation(OperationType.ACTION).resource(ResourceType.REQUIRED_ACTION).resourcePath(session.getContext().getUri()).success();
+        if (session.getTransactionManager().isActive()) {
+            session.getTransactionManager().commit();
+        }
+    }
+
+
+    /**
      * Get authenticator provider's configuration description
      */
     @Path("config-description/{providerId}")
